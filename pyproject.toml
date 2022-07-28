@@ -25,3 +25,7 @@ dependencies = []
 [project-urls]
 "Repository" = "https://github.com/fplewniak/pyDetecDiv"
 "Documentation" = "https://fplewniak.github.io/pyDetecDiv/"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+python_functions = "*_test"
