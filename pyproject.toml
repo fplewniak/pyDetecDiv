@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pyDetecDiv"
+name = "pydetecdiv"
 version = "0.0.0"
 description = "Python tools for DetecDiv (https://github.com/gcharvin/DetecDiv/)"
 license = {text = "CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21"}
