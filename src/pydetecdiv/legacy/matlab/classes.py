@@ -1,10 +1,10 @@
 """
 Definition of classes mapping exactly classes defined in the DetecDiv MATLAB version.
 """
+import re
 import json
 import numpy as np
 import jsonpickle
-import re
 
 
 class Shallow:
@@ -104,7 +104,7 @@ class ROI:
 
     def __init__(self, id: str = '', value: list = None, path: str = '', image: np.ndarray = None,
                  channelid: list = None, proc: list = None, parent: str = '', display: dict = None,
-                 history: dict = None, classes: list = None, train: list = None, results: list = None,):
+                 history: dict = None, classes: list = None, train: list = None, results: list = None, ):
         self.id = id
         self.value = [] if value is None else value
         self.path = path
