@@ -12,7 +12,7 @@ class Shallow:
     The shallow object containing information about the DetecDiv poject
     """
 
-    def __init__(self, tag: str = "shallow project", io: object = None, fov: list = None, processing: list = None):
+    def __init__(self, tag: str = 'shallow project', io: object = None, fov=None, processing=None):
         """
         :param tag: a string
         :param io: IO object containing information about original data files
@@ -21,8 +21,8 @@ class Shallow:
         """
         self.tag = tag
         self.io = IO() if io is None else IO(**io)
-        self.fov = [] if fov is None else [FOV(**f) for f in fov]
-        self.processing = [] if processing is None else Processing(**processing)
+        self.fov = None if fov is None else FOV(**fov) if not isinstance(fov, list) else [FOV(**f) for f in fov]
+        self.processing = None if processing is None else Processing(**processing)
 
     @property
     def json(self) -> str:
@@ -60,11 +60,11 @@ class FOV:
     Field Of View containing information about the complete field of view.
     """
 
-    def __init__(self, id: str = "", srcpath: str = "", srclist: str = "", channel: list = None,
+    def __init__(self, id: str = '', srcpath: str = '', srclist: str = '', channel: list = None,
                  frames: list = None, interval: list = None, binning: list = None, contours: list = None,
-                 tag: str = "field of view", comments: str = "", number: int = 0, channels: int = 3,
-                 orientation: int = 0, display: dict = None, crop: list = None, drift: list = None, roi = None,
-                 flaggedROIs = None):
+                 tag: str = 'field of view', comments: str = '', number: int = 0, channels: int = 3,
+                 orientation: int = 0, display: dict = None, crop: list = None, drift: list = None, roi=None,
+                 flaggedROIs=None):
         self.id = id
         self.srcpath = srcpath
         self.srclist = srclist
@@ -82,7 +82,7 @@ class FOV:
         self.crop = [] if crop is None else crop
         self.drift = [] if drift is None else drift
         self.roi = None if roi is None else ROI(**roi) if not isinstance(roi, list) else [ROI(**r) for r in roi]
-        self.flaggedROIs = None if flaggedROIs is None else ROI(**flaggedROIs) if not isinstance(flaggedROIs, list)\
+        self.flaggedROIs = None if flaggedROIs is None else ROI(**flaggedROIs) if not isinstance(flaggedROIs, list) \
             else [ROI(**r) for r in flaggedROIs]
 
 
@@ -91,7 +91,7 @@ class IO:
     IO object containing the path to the original data.
     """
 
-    def __init__(self, path: str = "", file: str = ""):
+    def __init__(self, path: str = '', file: str = ''):
         self.path = path
         self.file = file
 
@@ -102,9 +102,9 @@ class ROI:
     view if unecessary.
     """
 
-    def __init__(self, id: str = "", value: list = None, path: str = "", image: np.ndarray = None,
-                 channelid: list = None, proc: list = None, parent: str = "", display: dict = None,
-                 history: dict = None, classes: list = None, train: list = None, results: list = None):
+    def __init__(self, id: str = '', value: list = None, path: str = '', image: np.ndarray = None,
+                 channelid: list = None, proc: list = None, parent: str = '', display: dict = None,
+                 history: dict = None, classes: list = None, train: list = None, results: list = None,):
         self.id = id
         self.value = [] if value is None else value
         self.path = path
@@ -124,8 +124,8 @@ class Processor:
     Processor object providing information about data processor applied to regions of interest.
     """
 
-    def __init__(self, id: int = 0, typeid: int = 0, path: str = "", strid: str = "", description: str = "",
-                 category: str = "", param: list = None, processFun: str = "", processArg: dict = None,
+    def __init__(self, id: int = 0, typeid: int = 0, path: str = '', strid: str = '', description: str = '',
+                 category: str = '', param: list = None, processFun: str = '', processArg: dict = None,
                  history: list = None):
         self.id = id
         self.typeid = typeid
@@ -141,12 +141,11 @@ class Processor:
 
 class Processing:
     """
-    Decription of process applied to regions of interest
+    Description of process applied to regions of interest
     """
 
-    def __init__(self, roi: object, classification: dict = None, processor: list = None):
-        if not isinstance(roi, list):
-            roi = [] if roi is None else [roi]
-        self.roi = None if roi is None else ROI(**roi) if not isinstance(roi, list) else [ROI(**r) for r in roi]
+    def __init__(self, roi: dict = None, classification: dict = None, processor: list = None):
+        self.roi = {} if roi is None else roi
         self.classification = {} if classification is None else classification
-        self.processor = [] if processor is None else [Processor(**p) for p in processor]
+        self.processor = None if processor is None else Processor(**processor) \
+            if not isinstance(processor, list) else [Processor(**p) for p in processor]
