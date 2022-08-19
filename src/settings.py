@@ -4,6 +4,7 @@
 Settings management according to XDG base directory specification
 http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
 """
+import os
 import configparser
 from pathlib import Path
 import xdg.BaseDirectory
@@ -23,11 +24,15 @@ def get_default_settings() -> dict:
 
 def get_config_files():
     """
-    Get a list configuration files conforming to the XDG Base directory specification for Linux OS. This function does
-    not check whether files exist as this is done anyway while trying to read configuration.
+    Get a list configuration files conforming to the XDG Base directory specification for Linux and Mac OS or located
+    in APPDATA folder for Microsoft Windows. This function does not check whether files exist as this is done anyway
+    while trying to read configuration.
     :return: a list of configuration files
     """
-    config_files = [Path(d).joinpath('settings.ini') for d in xdg.BaseDirectory.load_config_paths('pyDetecDiv')]
+    if 'APPDATA' in os.environ.keys():
+        config_files = [Path(os.environ['APPDATA']).joinpath('pyDetecDiv').joinpath('settings.ini')]
+    else:
+        config_files = [Path(d).joinpath('settings.ini') for d in xdg.BaseDirectory.load_config_paths('pyDetecDiv')]
     return config_files
 
 
