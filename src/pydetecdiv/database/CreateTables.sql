@@ -130,5 +130,5 @@ CREATE TABLE ROIprocess (
     processing INTEGER REFERENCES Processing (id) ON DELETE CASCADE
                        NOT NULL
 );
-
+COMMIT;
 
