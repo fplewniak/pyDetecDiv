@@ -21,6 +21,12 @@ class ShallowDb(abc.ABC):
         Abstract method enforcing the implementation of a close() method in all shallow database connectors
         """
 
+    @abc.abstractmethod
+    def save_fov(self, fov_dict: dict = None):
+        """
+        Abstract method enforcing the implementation of method to save a FOV in a database
+        """
+
 
 def open_project(dbname: str = None) -> ShallowDb:
     """
@@ -48,6 +54,13 @@ class _ShallowSQL(ShallowDb):
         self.name = dbname
         self.con = None
 
+    @abc.abstractmethod
+    def executescript(self, script: str):
+        """
+        An abstract method defining the signature for DBMS-specific SQL script execution methods
+        :param script: a string representing the SQL script to be executed
+        """
+
     def create(self):
         """
         Reads the SQL script 'CreateTables.sql' resource file and passes it to the executescript method of the subclass
@@ -60,6 +73,9 @@ class _ShallowSQL(ShallowDb):
         Close the current connexion.
         """
         self.con.close()
+
+    def save_fov(self, fov_dict: dict = None):
+        pass
 
 
 class _ShallowSQLite3(_ShallowSQL):
