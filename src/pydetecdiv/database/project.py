@@ -4,8 +4,11 @@
 Project database management
 """
 import abc
-import sqlite3
+import pathlib
+import re
 from importlib.resources import files as resource_files
+import sqlalchemy
+from sqlalchemy.orm import Session
 import pydetecdiv
 from pydetecdiv.settings import get_config_value
 
@@ -52,27 +55,36 @@ class _ShallowSQL(ShallowDb):
 
     def __init__(self, dbname):
         self.name = dbname
-        self.con = None
+        self.engine = None
 
-    @abc.abstractmethod
-    def executescript(self, script: str):
+    def executescript(self, script: pathlib.Path):
         """
-        An abstract method defining the signature for DBMS-specific SQL script execution methods
-        :param script: a string representing the SQL script to be executed
+        Reads a file containing several SQL statements in a free format.
+        :param script: the path of the SQL script to be executed
         """
+        try:
+            with Session(self.engine, future=True) as session:
+                with open(script, 'r') as f:
+                    statements = re.split(r';\s*$', f.read(), flags=re.MULTILINE)
+                    for statement in statements:
+                        if statement:
+                            session.execute(sqlalchemy.text(statement))
+                session.commit()
+        except sqlalchemy.exc.OperationalError as exc:
+            print(exc)
 
     def create(self):
         """
         Reads the SQL script 'CreateTables.sql' resource file and passes it to the executescript method of the subclass
         for execution according to the DBMS-specific functionalities.
         """
-        self.executescript(resource_files(pydetecdiv.database).joinpath('CreateTables.sql').read_text())
+        self.executescript(resource_files(pydetecdiv.database).joinpath('CreateTables.sql'))
 
     def close(self):
         """
         Close the current connexion.
         """
-        self.con.close()
+        self.engine.dispose()
 
     def save_fov(self, fov_dict: dict = None):
         pass
@@ -85,16 +97,5 @@ class _ShallowSQLite3(_ShallowSQL):
 
     def __init__(self, dbname):
         super().__init__(dbname)
-        self.con = sqlite3.connect(self.name)
-        self.cursor = self.con.cursor()
+        self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}')
         super().create()
-
-    def executescript(self, script: str):
-        """
-        Execute a SQL script and handling exceptions
-        :param script:
-        """
-        try:
-            self.cursor.executescript(script)
-        except sqlite3.OperationalError as exc:
-            print(exc)
