@@ -1,7 +1,7 @@
 #  CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21
 #  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
 """
-Project database management
+Project database management for persistence layer
 """
 import abc
 import pathlib
@@ -25,9 +25,12 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
-    def save_fov(self, fov_dict: dict = None):
+    def get_objects(self, class_: type = None, query=None):
         """
-        Abstract method enforcing the implementation of method to save a FOV in a database
+        Abstract method enforcing the implementation of method returning a list of objects corresponding to a query
+        :param class_: the class of the requested objects
+        :param query: a query represented by a dictionary specifying the constraints that must be met by object
+        attributes
         """
 
 
@@ -78,7 +81,8 @@ class _ShallowSQL(ShallowDb):
         Reads the SQL script 'CreateTables.sql' resource file and passes it to the executescript method of the subclass
         for execution according to the DBMS-specific functionalities.
         """
-        self.executescript(resource_files(pydetecdiv.database).joinpath('CreateTables.sql'))
+        if not self.engine.table_names():
+            self.executescript(resource_files(pydetecdiv.database).joinpath('CreateTables.sql'))
 
     def close(self):
         """
@@ -86,8 +90,19 @@ class _ShallowSQL(ShallowDb):
         """
         self.engine.dispose()
 
-    def save_fov(self, fov_dict: dict = None):
-        pass
+    def get_objects(self, class_: type = None, query: list=None):
+        """
+
+        :param class_:
+        :param query:
+        """
+        stmt = sqlalchemy.select(class_.dao)
+        if query is not None:
+            for q in query:
+                stmt = stmt.where(q)
+        with Session(self.engine) as session:
+            result = session.execute(stmt)
+            return [class_(row) for row in result]
 
 
 class _ShallowSQLite3(_ShallowSQL):
