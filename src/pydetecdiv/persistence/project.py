@@ -17,7 +17,7 @@ def open_project(dbname: str = None) -> ShallowDb:
     """
     dbms = get_config_value('project', 'dbms')
     if dbms == 'SQLite3':
-        dbname = dbname if dbname is not None else get_config_value('project.sqlite', 'persistence')
+        dbname = dbname if dbname is not None else get_config_value('project.sqlite', 'database')
         db = _ShallowSQLite3(dbname)
     else:
         print(f'{dbms} is not implemented')
