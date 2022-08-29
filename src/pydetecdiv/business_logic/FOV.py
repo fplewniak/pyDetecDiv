@@ -3,7 +3,7 @@
 """
  A class defining the business logic methods that can be applied to Fields Of View
 """
-from pydetecdiv.database.dao.sqlalchemy.orm import FOV_DAO
+from pydetecdiv.persistence.sqlalchemy.dao.orm import FOV_DAO
 from pydetecdiv.business_logic.ROI import ROI
 
 
@@ -23,8 +23,8 @@ class FOV():
         return self.data.id
 
     # How should this work ?
-    # Ask FOV_DAO to return the list ? (then, who's supposed to keep track of the database engine?)
-    # Use a function get_roi_list(self.data) ? (but where to put it, and pass the database engine?)
+    # Ask FOV_DAO to return the list ? (then, who's supposed to keep track of the persistence engine?)
+    # Use a function get_roi_list(self.data) ? (but where to put it, and pass the persistence engine?)
     # Use a proxy pattern, mediator pattern ? Which pattern is best to use here ?
     #@property
     #def roi_list(self):

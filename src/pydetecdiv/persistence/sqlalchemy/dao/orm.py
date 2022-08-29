@@ -5,7 +5,7 @@
 Classes of DAO accessing data in Tables, created by Table reflection
 """
 from sqlalchemy.orm import registry
-from pydetecdiv.database.dao.sqlalchemy.tables import Tables
+from pydetecdiv.persistence.sqlalchemy.dao.tables import Tables
 
 mapper_registry = registry()
 Base = mapper_registry.generate_base()

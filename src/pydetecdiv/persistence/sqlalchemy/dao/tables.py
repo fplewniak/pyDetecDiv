@@ -3,7 +3,7 @@
 
 """
 A class for the creation of tables that will serve to:
-    1) create a database if it does not exist, thus ensuring consistency between the database structure and ORM objects
+    1) create a persistence if it does not exist, thus ensuring consistency between the persistence structure and ORM objects
     2) create the ORM classes in orm.py
 """
 from sqlalchemy import Table, Column, Integer, String

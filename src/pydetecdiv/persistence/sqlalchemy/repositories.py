@@ -1,58 +1,14 @@
-#  CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21
-#  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
-"""
-Project database management for persistence layer
-"""
-import abc
 import pathlib
 import re
 from importlib.resources import files as resource_files
 import sqlalchemy
 from sqlalchemy.orm import Session
 import pydetecdiv
-from pydetecdiv.settings import get_config_value
-
-
-class ShallowDb(abc.ABC):
-    """
-    Abstract class used as an interface to encapsulate project database access
-    """
-
-    @abc.abstractmethod
-    def close(self):
-        """
-        Abstract method enforcing the implementation of a close() method in all shallow database connectors
-        """
-
-    @abc.abstractmethod
-    def get_objects(self, class_: type = None, query=None):
-        """
-        Abstract method enforcing the implementation of method returning a list of objects corresponding to a query
-        :param class_: the class of the requested objects
-        :param query: a query represented by a dictionary specifying the constraints that must be met by object
-        attributes
-        """
-
-
-def open_project(dbname: str = None) -> ShallowDb:
-    """
-    A function to open a shallow database from its name. The type of database is defined in the [project] sections of
-    the configuration file settings.ini
-    :param dbname: the database name
-    :return: a shallowDb abstract connector encapsulating the concrete connectors
-    """
-    dbms = get_config_value('project', 'dbms')
-    if dbms == 'SQLite3':
-        dbname = dbname if dbname is not None else get_config_value('project.sqlite', 'database')
-        db = _ShallowSQLite3(dbname)
-    else:
-        print(f'{dbms} is not implemented')
-    return db
-
+from pydetecdiv.persistence.repository import ShallowDb
 
 class _ShallowSQL(ShallowDb):
     """
-    A generic shallow SQL database used to provide the common methods for SQL databases. DBMS-specific methods should be
+    A generic shallow SQL persistence used to provide the common methods for SQL databases. DBMS-specific methods should be
     implemented in subclasses of this one.
     """
 
@@ -107,7 +63,7 @@ class _ShallowSQL(ShallowDb):
 
 class _ShallowSQLite3(_ShallowSQL):
     """
-    A concrete shallow SQLite3 database inheriting _ShallowSQL and implementing SQLite3-specific engine.
+    A concrete shallow SQLite3 persistence inheriting _ShallowSQL and implementing SQLite3-specific engine.
     """
 
     def __init__(self, dbname):

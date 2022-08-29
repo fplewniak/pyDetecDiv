@@ -3,7 +3,7 @@
 """
  A class defining the business logic methods that can be applied to Regions Of Interest
 """
-from pydetecdiv.database.dao.sqlalchemy.orm import ROI_DAO
+from pydetecdiv.persistence.sqlalchemy.dao.orm import ROI_DAO
 
 class ROI():
     dao_class = ROI_DAO
