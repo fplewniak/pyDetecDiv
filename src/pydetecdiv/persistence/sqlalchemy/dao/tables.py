@@ -13,10 +13,7 @@ from sqlalchemy import MetaData
 class Tables():
     def __init__(self):
         self.metadata_obj = MetaData()
-
-    @property
-    def fov(self):
-        return Table(
+        self.fov = Table(
             'FOV',
             self.metadata_obj,
             Column('id', Integer, primary_key=True),
@@ -25,10 +22,7 @@ class Tables():
             Column('xsize', Integer),
             Column('ysize', Integer)
         )
-
-    @property
-    def roi(self):
-        return Table(
+        self.roi = Table(
             'ROI',
             self.metadata_obj,
             Column('id', Integer, primary_key=True),
@@ -39,6 +33,7 @@ class Tables():
             Column('x1', Integer),
             Column('y1', Integer),
         )
+
 
 
 
