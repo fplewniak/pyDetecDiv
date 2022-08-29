@@ -7,6 +7,7 @@ import pydetecdiv
 from pydetecdiv.persistence.repository import ShallowDb
 from pydetecdiv.persistence.sqlalchemy.dao.orm import FOV_DAO, ROI_DAO
 
+
 class _ShallowSQL(ShallowDb):
     """
     A generic shallow SQL persistence used to provide the common methods for SQL databases. DBMS-specific methods should be
@@ -20,18 +21,17 @@ class _ShallowSQL(ShallowDb):
         self.name = dbname
         self.engine = None
 
-    def executescript(self, script: pathlib.Path):
+    def executescript(self, script: str):
         """
-        Reads a file containing several SQL statements in a free format.
-        :param script: the path of the SQL script to be executed
+        Reads a string containing several SQL statements in a free format.
+        :param script: the string representing the SQL script to be executed
         """
         try:
             with Session(self.engine, future=True) as session:
-                with open(script, 'r') as f:
-                    statements = re.split(r';\s*$', f.read(), flags=re.MULTILINE)
-                    for statement in statements:
-                        if statement:
-                            session.execute(sqlalchemy.text(statement))
+                statements = re.split(r';\s*$', script, flags=re.MULTILINE)
+                for statement in statements:
+                    if statement:
+                        session.execute(sqlalchemy.text(statement))
                 session.commit()
         except sqlalchemy.exc.OperationalError as exc:
             print(exc)
@@ -42,7 +42,8 @@ class _ShallowSQL(ShallowDb):
         for execution according to the DBMS-specific functionalities.
         """
         if not self.engine.table_names():
-            self.executescript(resource_files(pydetecdiv.persistence).joinpath('CreateTables.sql'))
+            with open(resource_files(pydetecdiv.persistence).joinpath('CreateTables.sql'), 'r') as f:
+                self.executescript(f.read())
 
     def close(self):
         """
@@ -50,7 +51,7 @@ class _ShallowSQL(ShallowDb):
         """
         self.engine.dispose()
 
-    def get_objects(self, class_: type = None, query: list=None):
+    def get_objects(self, class_: type = None, query: list = None):
         """
 
         :param class_:
