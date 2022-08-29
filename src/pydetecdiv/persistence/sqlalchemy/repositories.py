@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 import pydetecdiv
 from pydetecdiv.persistence.repository import ShallowDb
 from pydetecdiv.persistence.sqlalchemy.dao.orm import FOV_DAO, ROI_DAO
+from pydetecdiv.persistence.sqlalchemy.dao.tables import Tables
 
 
 class _ShallowSQL(ShallowDb):
@@ -42,8 +43,10 @@ class _ShallowSQL(ShallowDb):
         for execution according to the DBMS-specific functionalities.
         """
         if not self.engine.table_names():
-            with open(resource_files(pydetecdiv.persistence).joinpath('CreateTables.sql'), 'r') as f:
-                self.executescript(f.read())
+            tables = Tables()
+            tables.metadata_obj.create_all(self.engine)
+            #with open(resource_files(pydetecdiv.persistence).joinpath('CreateTables.sql'), 'r') as f:
+            #    self.executescript(f.read())
 
     def close(self):
         """
