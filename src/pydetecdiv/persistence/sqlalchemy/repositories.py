@@ -5,12 +5,16 @@ import sqlalchemy
 from sqlalchemy.orm import Session
 import pydetecdiv
 from pydetecdiv.persistence.repository import ShallowDb
+from pydetecdiv.persistence.sqlalchemy.dao.orm import FOV_DAO, ROI_DAO
 
 class _ShallowSQL(ShallowDb):
     """
     A generic shallow SQL persistence used to provide the common methods for SQL databases. DBMS-specific methods should be
     implemented in subclasses of this one.
     """
+    class_mapping = {'FOV': FOV_DAO,
+                     'ROI': ROI_DAO,
+                     }
 
     def __init__(self, dbname):
         self.name = dbname
@@ -38,7 +42,7 @@ class _ShallowSQL(ShallowDb):
         for execution according to the DBMS-specific functionalities.
         """
         if not self.engine.table_names():
-            self.executescript(resource_files(pydetecdiv.database).joinpath('CreateTables.sql'))
+            self.executescript(resource_files(pydetecdiv.persistence).joinpath('CreateTables.sql'))
 
     def close(self):
         """
@@ -52,13 +56,13 @@ class _ShallowSQL(ShallowDb):
         :param class_:
         :param query:
         """
-        stmt = sqlalchemy.select(class_.dao)
+        stmt = sqlalchemy.select(self.class_mapping[class_.__name__])
         if query is not None:
             for q in query:
                 stmt = stmt.where(q)
         with Session(self.engine) as session:
             result = session.execute(stmt)
-            return [class_(row) for row in result]
+            return [class_({"name": row['FOV_DAO'].name}) for row in result]
 
 
 class _ShallowSQLite3(_ShallowSQL):

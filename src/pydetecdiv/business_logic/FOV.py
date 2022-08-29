@@ -3,24 +3,21 @@
 """
  A class defining the business logic methods that can be applied to Fields Of View
 """
-from pydetecdiv.persistence.sqlalchemy.dao.orm import FOV_DAO
-from pydetecdiv.business_logic.ROI import ROI
 
 
 class FOV():
     # A class attribute defining the mapping between the business and data access classes
-    dao = FOV_DAO
 
-    def __init__(self, data: FOV_DAO):
-        self.data = data['FOV_DAO']
+    def __init__(self, data: dict):
+        self.data = data
 
     @property
     def name(self):
-        return self.data.name
+        return self.data['name']
 
     @property
     def id(self):
-        return self.data.id
+        return self.data['id']
 
     # How should this work ?
     # Ask FOV_DAO to return the list ? (then, who's supposed to keep track of the persistence engine?)
