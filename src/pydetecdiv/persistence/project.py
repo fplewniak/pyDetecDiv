@@ -10,8 +10,8 @@ from pydetecdiv.persistence.sqlalchemy.repositories import _ShallowSQLite3
 
 def open_project(dbname: str = None) -> ShallowDb:
     """
-    A function to open a shallow persistence from its name. The type of persistence is defined in the [project] sections of
-    the configuration file settings.ini
+    A function to open a shallow persistence from its name. The type of persistence is defined in the [project] sections
+    of the configuration file settings.ini
     :param dbname: the persistence name
     :return: a shallowDb abstract connector encapsulating the concrete connectors
     """
