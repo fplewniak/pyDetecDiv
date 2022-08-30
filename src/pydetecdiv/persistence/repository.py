@@ -6,10 +6,12 @@ concrete repositories.
 """
 import abc
 
+
 class ShallowDb(abc.ABC):
     """
     Abstract class used as an interface to encapsulate project persistence access
     """
+
     @abc.abstractmethod
     def create(self):
         """
@@ -23,13 +25,10 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_objects(self, class_: type = None, query=None):
+    def _get_objects(self, tables: list = None, query: list = None):
         """
         Abstract method enforcing the implementation of method returning a list of objects corresponding to a query
         :param class_: the class of the requested objects
         :param query: a query represented by a dictionary specifying the constraints that must be met by object
         attributes
         """
-
-
-

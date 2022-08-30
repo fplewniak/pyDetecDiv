@@ -7,7 +7,6 @@ import re
 import sqlalchemy
 from sqlalchemy.orm import Session
 from pydetecdiv.persistence.repository import ShallowDb
-from pydetecdiv.persistence.sqlalchemy.dao.orm import FOV_DAO, ROI_DAO
 from pydetecdiv.persistence.sqlalchemy.dao.tables import Tables
 
 
@@ -16,9 +15,6 @@ class _ShallowSQL(ShallowDb):
     A generic shallow SQL persistence used to provide the common methods for SQL databases. DBMS-specific methods should
     be implemented in subclasses of this one.
     """
-    class_mapping = {'FOV': FOV_DAO,
-                     'ROI': ROI_DAO,
-                     }
 
     def __init__(self, dbname):
         self.name = dbname
@@ -53,20 +49,23 @@ class _ShallowSQL(ShallowDb):
         """
         self.engine.dispose()
 
-    def get_objects(self, class_: type = None, query: list = None):
+    def _get_objects(self, tables: list = None, query: list = None):
         """
-
-        :param class_:
-        :param query:
+        Get objects specified by the table list and satisfying the conditions defined by the list of queries. This
+        method is not supposed to be called from outside this class.
+        :param tables: a list of tables or columns thereof to select rows from. Can be defined by t.list[table_name] or
+        t.columns(table_name).column_name or any combination thereof.
+        :param query: a list of queries on tables
+        :return a list of dictionaries representing the requested objects obtained from sqlalchemy.engine.RowMapping
+        objects returned by results.mappings()
         """
-        dao_name = self.class_mapping[class_.__name__].__name__
-        stmt = sqlalchemy.select(self.class_mapping[class_.__name__])
+        stmt = sqlalchemy.select(tables)
         if query is not None:
             for q in query:
-                stmt = stmt.where(sqlalchemy.text(q))
+                stmt = stmt.where(q)
         with Session(self.engine) as session:
-            result = session.execute(stmt)
-            return [class_({'id': row[dao_name].id, 'name': row[dao_name].name}) for row in result]
+            results = session.execute(stmt)
+            return [row.items() for row in results.mappings()]
 
 
 class _ShallowSQLite3(_ShallowSQL):

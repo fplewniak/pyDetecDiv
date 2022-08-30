@@ -3,196 +3,211 @@
 
 """
 A class for the creation of tables that will serve to:
-    1) create a persistence if it does not exist, thus ensuring consistency between the persistence structure and ORM objects
-    2) create the ORM classes in orm.py
+    1) create a persistence database if it does not exist, thus ensuring consistency across the persistence layer
+    2) create the ORM classes in orm.py, but this role may be removed in the near future if the ORM is abandoned.
 """
 from sqlalchemy import Table, Column, Integer, String, Time, DateTime
 from sqlalchemy import ForeignKey
 from sqlalchemy import MetaData
-from sqlalchemy.schema import UniqueConstraint, Index
+from sqlalchemy.schema import Index
 from sqlalchemy import text
 
 
 class Tables():
+    """
+    A class defining the database tables for data access mapping. These tables are used to create the actual persistence
+    database, specify SQL queries, and get results
+    """
     def __init__(self):
         self.metadata_obj = MetaData()
-        self.fov = Table(
-            'FOV',
-            self.metadata_obj,
-            Column('id', Integer, primary_key=True, autoincrement='auto'),
-            Column('name', String, unique=True),
-            Column('comments', String),
-            Column('xsize', Integer, nullable=False, server_default=text('1000')),
-            Column('ysize', Integer, nullable=False, server_default=text('1000')),
-        )
 
-        self.fov_data = Table(
-            'FOVdata',
-            self.metadata_obj,
-            Column('id', Integer, primary_key=True, autoincrement='auto'),
-            Column('fov', ForeignKey('FOV.id'), nullable=False, index=True),
-            Column('imagedata', ForeignKey('ImageData.id'), nullable=False, index=True),
-            Index('fovdata_idx', 'fov', 'imagedata')
-        )
+        self.list = {
+            'FOV': Table(
+                'FOV',
+                self.metadata_obj,
+                Column('id', Integer, primary_key=True, autoincrement='auto'),
+                Column('name', String, unique=True),
+                Column('comments', String),
+                Column('xsize', Integer, nullable=False, server_default=text('1000')),
+                Column('ysize', Integer, nullable=False, server_default=text('1000')),
+            ),
 
-        self.fov_process = Table(
-            'FOVprocess',
-            self.metadata_obj,
-            Column('id', Integer, primary_key=True, autoincrement='auto'),
-            Column('fov', ForeignKey('FOV.id'), nullable=False, index=True),
-            Column('processing', ForeignKey('Processing.id'), nullable=False, index=True),
-        )
+            'FOVdata': Table(
+                'FOVdata',
+                self.metadata_obj,
+                Column('id', Integer, primary_key=True, autoincrement='auto'),
+                Column('fov', ForeignKey('FOV.id'), nullable=False, index=True),
+                Column('imagedata', ForeignKey('ImageData.id'), nullable=False, index=True),
+                Index('fovdata_idx', 'fov', 'imagedata')
+            ),
 
-        self.roi = Table(
-            'ROI',
-            self.metadata_obj,
-            Column('id', Integer, primary_key=True, autoincrement='auto'),
-            Column('name', String, unique=True),
-            Column('fov', ForeignKey('FOV.id'), nullable=False, index=True),
-            Column('x0', Integer, nullable=False, server_default=text('0')),
-            Column('y0', Integer, nullable=False, server_default=text('-1')),
-            Column('x1', Integer, nullable=False, server_default=text('0')),
-            Column('y1', Integer, nullable=False, server_default=text('-1')),
-        )
+            'FOVprocess': Table(
+                'FOVprocess',
+                self.metadata_obj,
+                Column('id', Integer, primary_key=True, autoincrement='auto'),
+                Column('fov', ForeignKey('FOV.id'), nullable=False, index=True),
+                Column('processing', ForeignKey('Processing.id'), nullable=False, index=True),
+            ),
 
-        self.roi_data = Table(
-            'ROIdata',
-            self.metadata_obj,
-            Column('id', Integer, primary_key=True, autoincrement='auto'),
-            Column('roi', ForeignKey('ROI.id'), nullable=False, index=True),
-            Column('imagedata', ForeignKey('ImageData.id'), nullable=False, index=True),
-            Index('roidata_idx', 'roi', 'imagedata')
-        )
+            'ROI': Table(
+                'ROI',
+                self.metadata_obj,
+                Column('id', Integer, primary_key=True, autoincrement='auto'),
+                Column('name', String, unique=True),
+                Column('fov', ForeignKey('FOV.id'), nullable=False, index=True),
+                Column('x0', Integer, nullable=False, server_default=text('0')),
+                Column('y0', Integer, nullable=False, server_default=text('-1')),
+                Column('x1', Integer, nullable=False, server_default=text('0')),
+                Column('y1', Integer, nullable=False, server_default=text('-1')),
+            ),
 
-        self.roi_process = Table(
-            'ROIprocess',
-            self.metadata_obj,
-            Column('id', Integer, primary_key=True, autoincrement='auto'),
-            Column('roi', ForeignKey('ROI.id'), nullable=False, index=True),
-            Column('processing', ForeignKey('Processing.id'), nullable=False, index=True),
-        )
+            'ROIdata': Table(
+                'ROIdata',
+                self.metadata_obj,
+                Column('id', Integer, primary_key=True, autoincrement='auto'),
+                Column('roi', ForeignKey('ROI.id'), nullable=False, index=True),
+                Column('imagedata', ForeignKey('ImageData.id'), nullable=False, index=True),
+                Index('roidata_idx', 'roi', 'imagedata')
+            ),
 
-        self.image = Table(
-            'Image',
-            self.metadata_obj,
-            Column('id', Integer, primary_key=True, autoincrement='auto'),
-            Column('z', Integer, nullable=False, server_default=text('0')),
-            Column('t', Integer, nullable=False, server_default=text('0')),
-            Column('xdrift', Integer, nullable=False, server_default=text('0')),
-            Column('ydrift', Integer, nullable=False, server_default=text('0')),
-            Column('data', ForeignKey('ImageData.id'), nullable=False, index=True),
-            Index('zt_idx', 'z', 't')
-        )
+            'ROIprocess': Table(
+                'ROIprocess',
+                self.metadata_obj,
+                Column('id', Integer, primary_key=True, autoincrement='auto'),
+                Column('roi', ForeignKey('ROI.id'), nullable=False, index=True),
+                Column('processing', ForeignKey('Processing.id'), nullable=False, index=True),
+            ),
 
-        self.image_data = Table(
-            'ImageData',
-            self.metadata_obj,
-            Column('id', Integer, primary_key=True, autoincrement='auto'),
-            Column('name', String, server_default='original capture', unique=True),
-            Column('channel', Integer, nullable=False, server_default=text('0')),
-            Column('x0', Integer, nullable=False, server_default=text('0')),
-            Column('y0', Integer, nullable=False, server_default=text('-1')),
-            Column('x1', Integer, nullable=False, server_default=text('0')),
-            Column('y1', Integer, nullable=False, server_default=text('-1')),
-            Column('zsize', Integer, nullable=False, server_default=text('1')),
-            Column('tsize', Integer, nullable=False, server_default=text('1')),
-            Column('interval', Time, nullable=False, server_default=text('0')),
-            Column('orderdims', String, nullable=False, server_default='xyzct'),
-            Column('resource', ForeignKey('FileResource.id'), nullable=False, index=True),
-            Column('path', String, nullable=False),
-            Column('mimetype', String),
-        )
+            'Image': Table(
+                'Image',
+                self.metadata_obj,
+                Column('id', Integer, primary_key=True, autoincrement='auto'),
+                Column('z', Integer, nullable=False, server_default=text('0')),
+                Column('t', Integer, nullable=False, server_default=text('0')),
+                Column('xdrift', Integer, nullable=False, server_default=text('0')),
+                Column('ydrift', Integer, nullable=False, server_default=text('0')),
+                Column('data', ForeignKey('ImageData.id'), nullable=False, index=True),
+                Index('zt_idx', 'z', 't')
+            ),
 
-        self.file_resource = Table(
-            'FileResource',
-            self.metadata_obj,
-            Column('id', Integer, primary_key=True, autoincrement='auto'),
-            Column('locator', String, nullable=False, unique=True),
-            Column('mimetype', String),
-        )
+            'ImageData': Table(
+                'ImageData',
+                self.metadata_obj,
+                Column('id', Integer, primary_key=True, autoincrement='auto'),
+                Column('name', String, server_default='original capture', unique=True),
+                Column('channel', Integer, nullable=False, server_default=text('0')),
+                Column('x0', Integer, nullable=False, server_default=text('0')),
+                Column('y0', Integer, nullable=False, server_default=text('-1')),
+                Column('x1', Integer, nullable=False, server_default=text('0')),
+                Column('y1', Integer, nullable=False, server_default=text('-1')),
+                Column('zsize', Integer, nullable=False, server_default=text('1')),
+                Column('tsize', Integer, nullable=False, server_default=text('1')),
+                Column('interval', Time, nullable=False, server_default=text('0')),
+                Column('orderdims', String, nullable=False, server_default='xyzct'),
+                Column('resource', ForeignKey('FileResource.id'), nullable=False, index=True),
+                Column('path', String, nullable=False),
+                Column('mimetype', String),
+            ),
 
-        self.results = Table(
-            'Results',
-            self.metadata_obj,
-            Column('id', Integer, primary_key=True, autoincrement='auto'),
-            Column('classification', String, nullable=False, index=True),
-            Column('freetext', String),
-        )
+            'FileResource': Table(
+                'FileResource',
+                self.metadata_obj,
+                Column('id', Integer, primary_key=True, autoincrement='auto'),
+                Column('locator', String, nullable=False, unique=True),
+                Column('mimetype', String),
+            ),
 
-        self.result_data = Table(
-            'ResultData',
-            self.metadata_obj,
-            Column('id', Integer, primary_key=True, autoincrement='auto'),
-            Column('results', ForeignKey('Results.id'), nullable=False, index=True),
-            Column('resource', ForeignKey('FileResource.id'), nullable=False, index=True),
-            Column('path', String, nullable=False),
-            Column('mimetype', String),
-        )
+            'Results': Table(
+                'Results',
+                self.metadata_obj,
+                Column('id', Integer, primary_key=True, autoincrement='auto'),
+                Column('classification', String, nullable=False, index=True),
+                Column('freetext', String),
+            ),
 
-        self.result_image_data = Table(
-            'ResultImageData',
-            self.metadata_obj,
-            Column('id', Integer, primary_key=True, autoincrement='auto'),
-            Column('results', ForeignKey('Results.id'), nullable=False, index=True),
-            Column('imagedata', ForeignKey('ImageData.id'), nullable=False, index=True),
-        )
+            'ResultData': Table(
+                'ResultData',
+                self.metadata_obj,
+                Column('id', Integer, primary_key=True, autoincrement='auto'),
+                Column('results', ForeignKey('Results.id'), nullable=False, index=True),
+                Column('resource', ForeignKey('FileResource.id'), nullable=False, index=True),
+                Column('path', String, nullable=False),
+                Column('mimetype', String),
+            ),
 
-        self.processor = Table(
-            'Processor',
-            self.metadata_obj,
-            Column('id', Integer, primary_key=True, autoincrement='auto'),
-            Column('name', String, nullable=False, unique=True),
-            Column('type', String, nullable=False),
-            Column('description', String, ),
-        )
+            'ResultImageData': Table(
+                'ResultImageData',
+                self.metadata_obj,
+                Column('id', Integer, primary_key=True, autoincrement='auto'),
+                Column('results', ForeignKey('Results.id'), nullable=False, index=True),
+                Column('imagedata', ForeignKey('ImageData.id'), nullable=False, index=True),
+            ),
 
-        self.processing = Table(
-            'Processing',
-            self.metadata_obj,
-            Column('id', Integer, primary_key=True, autoincrement='auto'),
-            Column('processor', ForeignKey('Processor.id'), nullable=False, index=True),
-            Column('parameters', String),
-        )
+            'Processor': Table(
+                'Processor',
+                self.metadata_obj,
+                Column('id', Integer, primary_key=True, autoincrement='auto'),
+                Column('name', String, nullable=False, unique=True),
+                Column('type', String, nullable=False),
+                Column('description', String, ),
+            ),
 
-        self.history = Table(
-            'History',
-            self.metadata_obj,
-            Column('id', Integer, primary_key=True, autoincrement='auto'),
-            Column('time', DateTime, index=True),
-        )
+            'Processing': Table(
+                'Processing',
+                self.metadata_obj,
+                Column('id', Integer, primary_key=True, autoincrement='auto'),
+                Column('processor', ForeignKey('Processor.id'), nullable=False, index=True),
+                Column('parameters', String),
+            ),
 
-        self.history_fov_process = Table(
-            'HistoryFOVprocess',
-            self.metadata_obj,
-            Column('id', Integer, primary_key=True, autoincrement='auto'),
-            Column('history', ForeignKey('History.id'), nullable=False, index=True),
-            Column('fovprocess', ForeignKey('FOVprocess.id'), nullable=False, index=True),
-            Column('results', ForeignKey('Results.id'), nullable=False, index=True),
-            Index('history_fov_idx', 'history', 'fovprocess', 'results')
-        )
+            'History': Table(
+                'History',
+                self.metadata_obj,
+                Column('id', Integer, primary_key=True, autoincrement='auto'),
+                Column('time', DateTime, index=True),
+            ),
 
-        self.history_roi_process = Table(
-            'HistoryROIprocess',
-            self.metadata_obj,
-            Column('id', Integer, primary_key=True, autoincrement='auto'),
-            Column('history', ForeignKey('History.id'), nullable=False, index=True),
-            Column('roiprocess', ForeignKey('ROIprocess.id'), nullable=False, index=True),
-            Column('results', ForeignKey('Results.id'), nullable=False, index=True),
-            Index('history_roi_idx', 'history', 'roiprocess', 'results')
-        )
+            'HistoryFOVprocess': Table(
+                'HistoryFOVprocess',
+                self.metadata_obj,
+                Column('id', Integer, primary_key=True, autoincrement='auto'),
+                Column('history', ForeignKey('History.id'), nullable=False, index=True),
+                Column('fovprocess', ForeignKey('FOVprocess.id'), nullable=False, index=True),
+                Column('results', ForeignKey('Results.id'), nullable=False, index=True),
+                Index('history_fov_idx', 'history', 'fovprocess', 'results')
+            ),
 
-        self.dataset = Table(
-            'Dataset',
-            self.metadata_obj,
-            Column('id', Integer, primary_key=True, autoincrement='auto'),
-            Column('name', String, nullable=False, unique=True),
-        )
+            'HistoryROIprocess': Table(
+                'HistoryROIprocess',
+                self.metadata_obj,
+                Column('id', Integer, primary_key=True, autoincrement='auto'),
+                Column('history', ForeignKey('History.id'), nullable=False, index=True),
+                Column('roiprocess', ForeignKey('ROIprocess.id'), nullable=False, index=True),
+                Column('results', ForeignKey('Results.id'), nullable=False, index=True),
+                Index('history_roi_idx', 'history', 'roiprocess', 'results')
+            ),
 
-        self.image_dataset = Table(
-            'ImageDataset',
-            self.metadata_obj,
-            Column('id', Integer, primary_key=True, autoincrement='auto'),
-            Column('dataset', ForeignKey('Dataset.id'), nullable=False, index=True),
-            Column('image', ForeignKey('Image.id'), nullable=False, index=True),
-            Index('image_dataset_idx', 'dataset', 'image')
-        )
+            'Dataset': Table(
+                'Dataset',
+                self.metadata_obj,
+                Column('id', Integer, primary_key=True, autoincrement='auto'),
+                Column('name', String, nullable=False, unique=True),
+            ),
+
+            'ImageDataset': Table(
+                'ImageDataset',
+                self.metadata_obj,
+                Column('id', Integer, primary_key=True, autoincrement='auto'),
+                Column('dataset', ForeignKey('Dataset.id'), nullable=False, index=True),
+                Column('image', ForeignKey('Image.id'), nullable=False, index=True),
+                Index('image_dataset_idx', 'dataset', 'image')
+            )
+        }
+
+    def columns(self, table: str = None):
+        """
+        Gets columns of a table designated by its name for simpler access to results
+        :param table: the table name
+        :return: the requested columns from the table object
+        """
+        return self.list[table].c
