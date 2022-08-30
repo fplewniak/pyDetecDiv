@@ -1,9 +1,11 @@
-import pathlib
+#  CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21
+#  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
+"""
+Concrete Repositories using a SQL database with the sqlalchemy toolkit
+"""
 import re
-from importlib.resources import files as resource_files
 import sqlalchemy
 from sqlalchemy.orm import Session
-import pydetecdiv
 from pydetecdiv.persistence.repository import ShallowDb
 from pydetecdiv.persistence.sqlalchemy.dao.orm import FOV_DAO, ROI_DAO
 from pydetecdiv.persistence.sqlalchemy.dao.tables import Tables
@@ -11,8 +13,8 @@ from pydetecdiv.persistence.sqlalchemy.dao.tables import Tables
 
 class _ShallowSQL(ShallowDb):
     """
-    A generic shallow SQL persistence used to provide the common methods for SQL databases. DBMS-specific methods should be
-    implemented in subclasses of this one.
+    A generic shallow SQL persistence used to provide the common methods for SQL databases. DBMS-specific methods should
+    be implemented in subclasses of this one.
     """
     class_mapping = {'FOV': FOV_DAO,
                      'ROI': ROI_DAO,
@@ -39,14 +41,11 @@ class _ShallowSQL(ShallowDb):
 
     def create(self):
         """
-        Reads the SQL script 'CreateTables.sql' resource file and passes it to the executescript method of the subclass
-        for execution according to the DBMS-specific functionalities.
+        Gets SqlAlchemy tables defining the project database schema and creates the database if it does not exist.
         """
         if not self.engine.table_names():
             tables = Tables()
             tables.metadata_obj.create_all(self.engine)
-            #with open(resource_files(pydetecdiv.persistence).joinpath('CreateTables.sql'), 'r') as f:
-            #    self.executescript(f.read())
 
     def close(self):
         """
@@ -60,13 +59,14 @@ class _ShallowSQL(ShallowDb):
         :param class_:
         :param query:
         """
+        dao_name = self.class_mapping[class_.__name__].__name__
         stmt = sqlalchemy.select(self.class_mapping[class_.__name__])
         if query is not None:
             for q in query:
-                stmt = stmt.where(q)
+                stmt = stmt.where(sqlalchemy.text(q))
         with Session(self.engine) as session:
             result = session.execute(stmt)
-            return [class_({"name": row['FOV_DAO'].name}) for row in result]
+            return [class_({'id': row[dao_name].id, 'name': row[dao_name].name}) for row in result]
 
 
 class _ShallowSQLite3(_ShallowSQL):

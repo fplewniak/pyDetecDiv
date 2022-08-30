@@ -1,7 +1,8 @@
 #  CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21
 #  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
 """
-Project persistence management for persistence layer
+Definition of the Repository interface accessible from the Business-logic layer and that must be implemented by
+concrete repositories.
 """
 import abc
 
@@ -9,6 +10,11 @@ class ShallowDb(abc.ABC):
     """
     Abstract class used as an interface to encapsulate project persistence access
     """
+    @abc.abstractmethod
+    def create(self):
+        """
+        Abstract method enforcing the implementation of a create() method in all shallow persistence connectors
+        """
 
     @abc.abstractmethod
     def close(self):
