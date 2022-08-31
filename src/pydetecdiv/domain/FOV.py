@@ -3,15 +3,13 @@
 """
  A class defining the business logic methods that can be applied to Fields Of View
 """
+from pydetecdiv.domain.dso import DomainSpecificObject
 
 
-class FOV():
+class FOV(DomainSpecificObject):
     """
     A business-logic class defining valid operations and attributes of Fields of view (FOV)
     """
-
-    def __init__(self, data: dict):
-        self.data = data
 
     @property
     def name(self):
@@ -21,18 +19,12 @@ class FOV():
         """
         return self.data['name']
 
-    @property
-    def id(self):
-        """
-        Returns the id of this FOV
-        :return: an integer
-        """
-        return self.data['id']
-
     # How should this work ?
     # Ask FOV_DAO to return the list ? (then, who's supposed to keep track of the persistence engine?)
-    # Use a function get_roi_list(self.data) ? (but where to put it, and pass the persistence engine?)
+    # Use a function get_roi_list(self) ? could be in repository, for SQL dbms, sqlalchemy could use Tables for that,
+    # determining the appropriate table from the self class name and sending the appropriate SQL queries accordingly
     # Use a proxy pattern, mediator pattern ? Which pattern is best to use here ?
     # @property
     # def roi_list(self):
-    #    return [ROI(roi_dao) for roi_dao in self.data.get_roi_list()]
+    #    roi = self.project.get_dataframe(ROI)
+    #    return roi[roi.fov == self.id]

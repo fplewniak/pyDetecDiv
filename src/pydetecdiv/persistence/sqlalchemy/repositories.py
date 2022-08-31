@@ -65,10 +65,20 @@ class _ShallowSQL(ShallowDb):
                 stmt = stmt.where(q)
         with Session(self.engine) as session:
             results = session.execute(stmt)
-            return [row.items() for row in results.mappings()]
+            return [dict(row.items()) for row in results.mappings()]
+
+    def get_objects(self, class_name: str = None):
+        """
+        Return objects of a given class specified by its name, which should be also the name of the corresponding
+        sqlalchemy Table
+        :param class_name: the class name
+        :return: a list of dictionaries containing the data for the requested objects
+        """
+        tables = Tables()
+        return self._get_objects(tables.list[class_name])
 
 
-class _ShallowSQLite3(_ShallowSQL):
+class ShallowSQLite3(_ShallowSQL):
     """
     A concrete shallow SQLite3 persistence inheriting _ShallowSQL and implementing SQLite3-specific engine.
     """
