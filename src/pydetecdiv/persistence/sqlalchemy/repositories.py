@@ -7,6 +7,7 @@ import re
 import sqlalchemy
 from sqlalchemy.orm import Session
 from pandas import DataFrame
+from pandas import read_sql
 from pydetecdiv.persistence.repository import ShallowDb
 from pydetecdiv.persistence.sqlalchemy.dao.tables import Tables
 
@@ -58,16 +59,13 @@ class _ShallowSQL(ShallowDb):
         :param classes: a list of tables or columns thereof to select rows from. Can be defined by t.list[table_name] or
         t.columns(table_name).column_name or any combination thereof
         :param query: a list of queries on tables
-        :return a list of dictionaries representing the requested objects obtained from sqlalchemy.engine.RowMapping
-        objects returned by results.mappings()
+        :return a DataFrame containing the requested objects
         """
         stmt = sqlalchemy.select(classes)
         if query is not None:
             for q in query:
                 stmt = stmt.where(q)
-        with Session(self.engine) as session:
-            results = session.execute(stmt)
-            return DataFrame(results.mappings())
+        return read_sql(stmt, self.engine)
 
     def get_object_list(self, class_name: str = None, as_list: bool = True):
         """
