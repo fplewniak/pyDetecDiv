@@ -19,6 +19,7 @@ class _ShallowSQL(ShallowDb):
     def __init__(self, dbname):
         self.name = dbname
         self.engine = None
+        self.tables = None
 
     def executescript(self, script: str):
         """
@@ -39,9 +40,9 @@ class _ShallowSQL(ShallowDb):
         """
         Gets SqlAlchemy tables defining the project database schema and creates the database if it does not exist.
         """
+        self.tables = Tables()
         if not self.engine.table_names():
-            tables = Tables()
-            tables.metadata_obj.create_all(self.engine)
+            self.tables.metadata_obj.create_all(self.engine)
 
     def close(self):
         """
@@ -74,8 +75,8 @@ class _ShallowSQL(ShallowDb):
         :param class_name: the class name
         :return: a list of dictionaries containing the data for the requested objects
         """
-        tables = Tables()
-        return self._get_objects(tables.list[class_name])
+        #tables = Tables()
+        return self._get_objects(self.tables.list[class_name])
 
 
 class ShallowSQLite3(_ShallowSQL):
