@@ -6,6 +6,7 @@ Concrete Repositories using a SQL database with the sqlalchemy toolkit
 import re
 import sqlalchemy
 from sqlalchemy.orm import Session
+from pandas import DataFrame
 from pydetecdiv.persistence.repository import ShallowDb
 from pydetecdiv.persistence.sqlalchemy.dao.tables import Tables
 
@@ -50,7 +51,7 @@ class _ShallowSQL(ShallowDb):
         """
         self.engine.dispose()
 
-    def _get_objects(self, classes: list = None, query: list = None) -> list:
+    def _get_objects(self, classes: list = None, query: list = None) -> DataFrame:
         """
         Get objects specified by the table list and satisfying the conditions defined by the list of queries. This
         method is not supposed to be called from outside this class
@@ -66,17 +67,21 @@ class _ShallowSQL(ShallowDb):
                 stmt = stmt.where(q)
         with Session(self.engine) as session:
             results = session.execute(stmt)
-            return [dict(row.items()) for row in results.mappings()]
+            return DataFrame(results.mappings())
 
-    def get_objects(self, class_name: str = None) -> list:
+    def get_object_list(self, class_name: str = None, as_list: bool = True):
         """
-        Return objects of a given class specified by its name, which should be also the name of the corresponding
-        sqlalchemy Table
+        Return a list of objects of a given class specified by its name, which should be also the name of the
+        corresponding sqlalchemy Table
         :param class_name: the class name
-        :return: a list of dictionaries containing the data for the requested objects
+        :param as_list: if True, returns a list of dictionaries else returns a DataFrame
+        :return: a DataFrame or a list of dictionaries containing the data for the requested objects
         """
-        #classes = Tables()
-        return self._get_objects(self.tables.list[class_name])
+        if as_list:
+            object_list = self._get_objects(self.tables.list[class_name]).to_dict(orient='records')
+        else:
+            object_list = self._get_objects(self.tables.list[class_name])
+        return object_list
 
 
 class ShallowSQLite3(_ShallowSQL):

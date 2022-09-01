@@ -26,19 +26,11 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
-    def _get_objects(self, classes: list = None, query: list = None) -> list:
-        """
-        Abstract method enforcing the implementation of method returning a list of objects corresponding to a query
-        :param classes: the class of the requested objects
-        :param query: a query
-        :return: a list of dictionaries representing the requested objects
-        """
-
-    @abc.abstractmethod
-    def get_objects(self, class_name: str = None) -> list:
+    def get_object_list(self, class_name: str = None, as_list=False):
         """
         Abstract method enforcing the implementation of a method returning the list of all objects of a given class
         specified by its name
         :param class_name: the class name of the requested objects
-        :return: a list of dictionaries containing the data for the requested objects
+        :param dataframe: if True, returns a DataFrame else returns a list of dictionaries
+        :return: a DataFrame or a list of dictionaries containing the data for the requested objects
         """
