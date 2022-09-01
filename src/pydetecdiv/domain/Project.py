@@ -3,7 +3,7 @@
 """
 The central class for keeping track of all available objects in a project.
 """
-from pandas import DataFrame, Series
+from pandas import DataFrame
 from pydetecdiv.persistence.project import open_project
 
 
@@ -22,7 +22,7 @@ class Project:
         :param class_: the class of the objects to be returned
         :return: a list of all the objects of that class in the project with all their associated metadata
         """
-        return [class_(self, o) for o in self.repository.get_objects(class_.__name__)]
+        return [class_(self, o) for o in self.repository.get_object_list(class_.__name__)]
 
     def get_dataframe(self, class_: type = None) -> DataFrame:
         """
@@ -30,4 +30,4 @@ class Project:
         :param class_: the class of the objects whose list will be returned
         :return: a DataFrame containing the list of objects
         """
-        return DataFrame([Series(o) for o in self.repository.get_objects(class_.__name__)])
+        return self.repository.get_object_list(class_.__name__, as_list=False)
