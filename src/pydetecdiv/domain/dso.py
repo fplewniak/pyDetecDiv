@@ -29,4 +29,3 @@ class DomainSpecificObject:
         :return: an integer
         """
         return self.data['id']
-

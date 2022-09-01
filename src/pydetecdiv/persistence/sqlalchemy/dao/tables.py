@@ -2,7 +2,7 @@
 #  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
 
 """
-A class for the creation of tables that will serve to:
+A class for the creation of classes that will serve to:
     1) create a persistence database if it does not exist, thus ensuring consistency across the persistence layer
     2) create the ORM classes in orm.py, but this role may be removed in the near future if the ORM is abandoned.
 """
@@ -13,10 +13,10 @@ from sqlalchemy.schema import Index
 from sqlalchemy import text
 
 
-class Tables():
+class Tables:
     """
-    A class defining the database tables for data access mapping. These tables are used to create the actual persistence
-    database, specify SQL queries, and get results
+    A class defining the database classes for data access mapping. These classes are used to create the actual
+    persistence database, specify SQL queries, and get results
     """
     def __init__(self):
         self.metadata_obj = MetaData()
@@ -203,6 +203,13 @@ class Tables():
                 Index('image_dataset_idx', 'dataset', 'image')
             )
         }
+
+    def create(self, engine):
+        """
+        Create a database designated by engine from the list of tables
+        :param engine: the database engine
+        """
+        self.metadata_obj.create_all(engine)
 
     def columns(self, table: str = None):
         """

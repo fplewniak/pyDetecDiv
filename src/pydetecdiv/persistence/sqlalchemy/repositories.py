@@ -13,7 +13,7 @@ from pydetecdiv.persistence.sqlalchemy.dao.tables import Tables
 class _ShallowSQL(ShallowDb):
     """
     A generic shallow SQL persistence used to provide the common methods for SQL databases. DBMS-specific methods should
-    be implemented in subclasses of this one.
+    be implemented in subclasses of this one
     """
 
     def __init__(self, dbname):
@@ -23,7 +23,7 @@ class _ShallowSQL(ShallowDb):
 
     def executescript(self, script: str):
         """
-        Reads a string containing several SQL statements in a free format.
+        Reads a string containing several SQL statements in a free format
         :param script: the string representing the SQL script to be executed
         """
         try:
@@ -38,29 +38,29 @@ class _ShallowSQL(ShallowDb):
 
     def create(self):
         """
-        Gets SqlAlchemy tables defining the project database schema and creates the database if it does not exist.
+        Gets SqlAlchemy classes defining the project database schema and creates the database if it does not exist.
         """
         self.tables = Tables()
         if not self.engine.table_names():
-            self.tables.metadata_obj.create_all(self.engine)
+            self.tables.create(self.engine)
 
     def close(self):
         """
-        Close the current connexion.
+        Close the current connexion
         """
         self.engine.dispose()
 
-    def _get_objects(self, tables: list = None, query: list = None):
+    def _get_objects(self, classes: list = None, query: list = None) -> list:
         """
         Get objects specified by the table list and satisfying the conditions defined by the list of queries. This
-        method is not supposed to be called from outside this class.
-        :param tables: a list of tables or columns thereof to select rows from. Can be defined by t.list[table_name] or
-        t.columns(table_name).column_name or any combination thereof.
+        method is not supposed to be called from outside this class
+        :param classes: a list of tables or columns thereof to select rows from. Can be defined by t.list[table_name] or
+        t.columns(table_name).column_name or any combination thereof
         :param query: a list of queries on tables
         :return a list of dictionaries representing the requested objects obtained from sqlalchemy.engine.RowMapping
         objects returned by results.mappings()
         """
-        stmt = sqlalchemy.select(tables)
+        stmt = sqlalchemy.select(classes)
         if query is not None:
             for q in query:
                 stmt = stmt.where(q)
@@ -68,23 +68,23 @@ class _ShallowSQL(ShallowDb):
             results = session.execute(stmt)
             return [dict(row.items()) for row in results.mappings()]
 
-    def get_objects(self, class_name: str = None):
+    def get_objects(self, class_name: str = None) -> list:
         """
         Return objects of a given class specified by its name, which should be also the name of the corresponding
         sqlalchemy Table
         :param class_name: the class name
         :return: a list of dictionaries containing the data for the requested objects
         """
-        #tables = Tables()
+        #classes = Tables()
         return self._get_objects(self.tables.list[class_name])
 
 
 class ShallowSQLite3(_ShallowSQL):
     """
-    A concrete shallow SQLite3 persistence inheriting _ShallowSQL and implementing SQLite3-specific engine.
+    A concrete shallow SQLite3 persistence inheriting _ShallowSQL and implementing SQLite3-specific engine
     """
 
-    def __init__(self, dbname):
+    def __init__(self, dbname: str = None) -> ShallowDb:
         super().__init__(dbname)
         self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}')
         super().create()

@@ -15,7 +15,8 @@ class ShallowDb(abc.ABC):
     @abc.abstractmethod
     def create(self):
         """
-        Abstract method enforcing the implementation of a create() method in all shallow persistence connectors
+        Abstract method enforcing the implementation in all shallow persistence connectors of a create() method for
+        creating the database if it does not exist
         """
 
     @abc.abstractmethod
@@ -25,16 +26,16 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
-    def _get_objects(self, tables: list = None, query: list = None):
+    def _get_objects(self, classes: list = None, query: list = None) -> list:
         """
         Abstract method enforcing the implementation of method returning a list of objects corresponding to a query
-        :param class_: the class of the requested objects
+        :param classes: the class of the requested objects
         :param query: a query
         :return: a list of dictionaries representing the requested objects
         """
 
     @abc.abstractmethod
-    def get_objects(self, class_name: str = None):
+    def get_objects(self, class_name: str = None) -> list:
         """
         Abstract method enforcing the implementation of a method returning the list of all objects of a given class
         specified by its name
