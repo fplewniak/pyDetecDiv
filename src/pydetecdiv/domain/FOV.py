@@ -3,21 +3,13 @@
 """
  A class defining the business logic methods that can be applied to Fields Of View
 """
-from pydetecdiv.domain.dso import DomainSpecificObject
+from pydetecdiv.domain.dso import *
 
 
-class FOV(DomainSpecificObject):
+class FOV(NamedDSO):
     """
     A business-logic class defining valid operations and attributes of Fields of view (FOV)
     """
-
-    @property
-    def name(self):
-        """
-        Returns the name of this FOV
-        :return: a str
-        """
-        return self.data['name']
 
     # How should this work ?
     # Ask FOV_DAO to return the list ? (then, who's supposed to keep track of the persistence engine?)

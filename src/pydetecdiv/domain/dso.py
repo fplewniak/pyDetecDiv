@@ -5,6 +5,7 @@ Domain specific generic attributes and methods shared by all domain objects. Oth
 should inherit from this class
 """
 from pydetecdiv.domain.Project import Project
+from pydetecdiv.exceptions import MissingNameError
 
 
 class DomainSpecificObject:
@@ -20,6 +21,8 @@ class DomainSpecificObject:
         the 'id' of this object in the project.
         """
         self.data = data if data is not None else {'id': None}
+        if 'id' not in self.data:
+            self.data['id'] = None
         self.project = project
 
     @property
@@ -29,3 +32,21 @@ class DomainSpecificObject:
         :return: an integer
         """
         return self.data['id']
+
+
+class NamedDSO(DomainSpecificObject):
+    """
+    A domain-specific class for objects with a name.
+    """
+    def __init__(self, project: Project, data: dict = None):
+        super().__init__(project, data)
+        if 'name' not in self.data:
+            raise MissingNameError(self)
+
+    @property
+    def name(self):
+        """
+        Returns the name of this object
+        :return: a str
+        """
+        return self.data['name']

@@ -3,18 +3,11 @@
 """
  A class defining the business logic methods that can be applied to Regions Of Interest
 """
-from pydetecdiv.domain.dso import DomainSpecificObject
+from pydetecdiv.domain.dso import *
 
 
-class ROI(DomainSpecificObject):
+class ROI(NamedDSO):
     """
     A business-logic class defining valid operations and attributes of Regions of interest (ROI)
     """
 
-    @property
-    def name(self):
-        """
-        Returns the name of this ROI
-        :return: a str
-        """
-        return self.data['name']
