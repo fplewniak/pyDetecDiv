@@ -33,11 +33,18 @@ class DomainSpecificObject:
         """
         return self.data['id']
 
+    def validate(self):
+        """
+        Validate the current object and pass it to persistence layer to save it
+        """
+        raise NotImplementedError(f'Validate method is not implemented in class {self.__class__.__name__}')
+
 
 class NamedDSO(DomainSpecificObject):
     """
     A domain-specific class for objects with a name.
     """
+
     def __init__(self, project: Project, data: dict = None):
         super().__init__(project, data)
         if 'name' not in self.data:

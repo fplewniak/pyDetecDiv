@@ -3,13 +3,25 @@
 """
  A class defining the business logic methods that can be applied to Fields Of View
 """
-from pydetecdiv.domain.dso import *
+from pydetecdiv.domain.dso import NamedDSO
 
 
 class FOV(NamedDSO):
     """
     A business-logic class defining valid operations and attributes of Fields of view (FOV)
     """
+
+    @property
+    def shape(self):
+        """
+        Shape property for FOV image
+        :return: a tuple of two int with x and y dimensions
+        """
+        return self.data['xsize'], self.data['ysize']
+
+    @shape.setter
+    def shape(self, shape: tuple = (1000, 1000)):
+        self.data['xsize'], self.data['ysize'] = shape
 
     # How should this work ?
     # Ask FOV_DAO to return the list ? (then, who's supposed to keep track of the persistence engine?)
