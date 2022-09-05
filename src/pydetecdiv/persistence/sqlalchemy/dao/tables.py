@@ -215,6 +215,6 @@ class Tables:
         """
         Gets columns of a table designated by its name for simpler access to results
         :param table: the table name
-        :return: the requested columns from the table object
+        :return: the requested column collection from the table object
         """
         return self.list[table].c
