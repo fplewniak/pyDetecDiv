@@ -33,6 +33,15 @@ class Project:
         """
         return self.repository.get_object_list(class_.__name__, as_list=False)
 
+    def get_object_by_id(self, class_: type, id_: int) -> object:
+        """
+        Get an object referenced by its id
+        :param class_: the class of the requested object
+        :param id_: the id reference of the object
+        :return: the desired object
+        """
+        return self.get_objects_by_id(class_, [id_])[0]
+
     def get_objects_by_id(self, class_: type, id_list: list = None) -> list:
         """
         Get a list of objects of one class from a list of id references
