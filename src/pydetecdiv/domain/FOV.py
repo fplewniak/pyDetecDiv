@@ -23,6 +23,9 @@ class FOV(NamedDSO):
     def shape(self, shape: tuple = (1000, 1000)):
         self.data['xsize'], self.data['ysize'] = shape
 
+    def __repr__(self):
+        return f'{self.id} {self.name} {self.shape}'
+
     # How should this work ?
     # Ask FOV_DAO to return the list ? (then, who's supposed to keep track of the persistence engine?)
     # Use a function get_roi_list(self) ? could be in repository, for SQL dbms, sqlalchemy could use Tables for that,
