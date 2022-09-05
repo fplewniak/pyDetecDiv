@@ -33,17 +33,6 @@ class Project:
         """
         return self.repository.get_object_list(class_.__name__, as_list=False)
 
-    def get_object_by_id(self, class_: type, id_: int) -> object:
-        """
-        Get an object referenced by its id
-        :param class_: the class of the requested object
-        :param id_: the id reference of the object
-        :return: the desired object
-        """
-        obj_df = self.get_dataframe(class_)
-        obj_df_selection = obj_df[obj_df.id == id_]
-        return class_(self, obj_df_selection.to_dict(orient='records')[0])
-
     def get_objects_by_id(self, class_: type, id_list: list = None) -> list:
         """
         Get a list of objects of one class from a list of id references
@@ -51,4 +40,11 @@ class Project:
         :param id_list: the list of id references
         :return: the list of objects
         """
-        return self.get_objects(class_) if id_list is None else [self.get_object_by_id(class_, id_) for id_ in id_list]
+        if id_list is None:
+            obj = self.get_objects(class_)
+        else:
+            id_list = id_list if isinstance(id_list, list) else [id_list]
+            obj_df = self.get_dataframe(class_)
+            obj_df_selection = [obj_df[obj_df.id == id_] for id_ in id_list]
+            obj = [class_(self, o.to_dict(orient='records')[0]) for o in obj_df_selection]
+        return obj
