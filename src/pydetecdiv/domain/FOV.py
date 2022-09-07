@@ -3,35 +3,55 @@
 """
  A class defining the business logic methods that can be applied to Fields Of View
 """
-from pydetecdiv.domain.dso import NamedDSO
+from pydetecdiv.domain.dso import NamedDSO, ImageAssociatedDSO
 
 
-class FOV(NamedDSO):
+class FOV(NamedDSO, ImageAssociatedDSO):
     """
     A business-logic class defining valid operations and attributes of Fields of view (FOV)
     """
 
-    @property
-    def shape(self):
-        """
-        Shape property for FOV image
-        :return: a tuple of two int with x and y dimensions
-        """
-        return self.data['xsize'], self.data['ysize']
+    def __init__(self, comments: str = None, **kwargs):
+        super().__init__(**kwargs)
+        self.comments = comments
 
-    @shape.setter
-    def shape(self, shape: tuple = (1000, 1000)):
-        self.data['xsize'], self.data['ysize'] = shape
+    def record(self, include_roi_list=False):
+        """
+        Returns a record dictionary of the current FOV, including or not a list of associated ROIs as a sub-dictionary
+        :param include_roi_list: if True, the record will contain a field 'roi_list' with the associated ROIs
+        :type include_roi_list: bool
+        :return: record dictionary
+        :rtype: dict
+        """
+        record = {
+            'id': self.id,
+            'name': self.name,
+            'comments': self.comments,
+            'shape': self.shape
+        }
+        if include_roi_list:
+            record['roi_list'] = self.roi_list
+        return record
 
     def __repr__(self):
-        return f'{self.id} {self.name} {self.shape}'
+        return f'{self.record()}'
 
-    # How should this work ?
-    # Ask FOV_DAO to return the list ? (then, who's supposed to keep track of the persistence engine?)
-    # Use a function get_roi_list(self) ? could be in repository, for SQL dbms, sqlalchemy could use Tables for that,
-    # determining the appropriate table from the self class name and sending the appropriate SQL queries accordingly
-    # Use a proxy pattern, mediator pattern ? Which pattern is best to use here ?
-    # @property
-    # def roi_list(self):
-    #    roi = self.project.get_dataframe(ROI)
-    #    return roi[roi.fov == self.id]
+    def __eq__(self, other):
+        """
+        Defines equality of FOV objects as having the same id, same name and same shape
+        :param other: the other FOV object to compare with the current one
+        :type other: FOV
+        :return: True if both FOVs are equal
+        :rtype: bool
+        """
+        is_eq = [self.id == other.id, self.name == other.name, self.shape == self.shape]
+        return all(is_eq)
+
+    @property
+    def roi_list(self):
+        """
+        Returns the list of ROI objects whose parent if the current FOV
+        :return: the list of associated ROIs
+        :rtype: list of ROI objects
+        """
+        return self.project.get_roi_list_in_fov(self)

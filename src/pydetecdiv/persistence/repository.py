@@ -26,11 +26,22 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_object_list(self, class_name: str = None, as_list: bool = False):
+    def get_records(self, class_):
         """
-        Abstract method enforcing the implementation of a method returning the list of all objects of a given class
-        specified by its name
-        :param class_name: the class name of the requested objects
-        :param as_list: if True, returns a list of dictionaries else returns a DataFrame
-        :return: a DataFrame or a list of dictionaries containing the data for the requested objects
+        Abstract method enforcing the implementation of a method returning the list of all object records of a given
+        class specified by its name
+        :param class_: the class of the requested objects
+        :type class_: a class
+        :return: a list of records (i.e. dictionaries) containing the data for the requested objects
+        """
+
+    @abc.abstractmethod
+    def get_roi_list_in_fov(self, fov_id):
+        """
+        Abstract method enforcing the implementation of a method returning the list of records for all ROI in the FOV
+        with id == fov_id
+        :param fov_id: the id of the FOV
+        :type fov_id: int
+        :return: a list of ROIs whose parent if the FOV with id == fov_id
+        :rtype: list of dictionaries (records)
         """
