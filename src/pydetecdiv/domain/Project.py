@@ -23,8 +23,9 @@ class Project:
 
     def add_new_dso_to_pool(self, dso):
         """
-
-        :param dso:
+        Adds a newly created domain specific object (has no id) to the pool of objects that need to receive an id and
+        to be saved by the persistence layer
+        :param dso: the newly created domain-specific object to add to the pool
         :type dso: DomainSpecificObject
         """
         class_name = dso.__class__.__name__
