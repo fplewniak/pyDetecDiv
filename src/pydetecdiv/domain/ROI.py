@@ -19,7 +19,7 @@ class ROI(NamedDSO, ImageAssociatedDSO):
         self.fov = fov
         self.top_left = top_left
         self.bottom_right = bottom_right
-        self.check_validity()
+        self.validate()
 
     def __eq__(self, o):
         """

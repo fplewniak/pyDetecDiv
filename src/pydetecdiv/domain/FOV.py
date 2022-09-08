@@ -14,6 +14,7 @@ class FOV(NamedDSO, ImageAssociatedDSO):
     def __init__(self, comments: str = None, **kwargs):
         super().__init__(**kwargs)
         self.comments = comments
+        self.validate()
 
     def record(self, include_roi_list=False):
         """

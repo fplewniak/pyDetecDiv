@@ -3,6 +3,7 @@
 """
 Custom exceptions to handle errors and enforce requirements
 """
+import pydetecdiv.domain.dso
 
 
 class MissingNameError(Warning):
@@ -26,7 +27,8 @@ class JuttingError(Warning):
     def __init__(self, region, parent):
         r_name = region.__class__.__name__
         p_name = parent.__class__.__name__
-        self.message = f'{r_name} {region.id} is protruding out of its parent {p_name} with id {parent.id}.'
+        name = region.name if issubclass(region.__class__, pydetecdiv.domain.dso.NamedDSO) else ''
+        self.message = f'{r_name} {name} is protruding out of its parent {p_name} with id {parent.id}.'
         super().__init__(self.message)
 
     def __str__(self):

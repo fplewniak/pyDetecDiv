@@ -24,15 +24,24 @@ class DomainSpecificObject:
             self.id = None
         else:
             self.id = kwargs['id']
-        if self.id is None:
-            self.project.add_new_dso_to_pool(self)
+        # if self.id is None:
+        #     self.project.add_new_dso_to_pool(self)
         self.data = kwargs
+
+    def check_validity(self):
+        """
+        Checks the validity of the current object
+        """
+        pass
 
     def validate(self):
         """
-        Validate the current object and pass it to persistence layer to save it
+        Validate the current object and pass newly created object pool in current project if it has no id
+        This method should be called
         """
-        raise NotImplementedError(f'Validate method is not implemented in class {self.__class__.__name__}')
+        self.check_validity()
+        if self.id is None:
+            self.project.add_new_dso_to_pool(self)
 
 
 class NamedDSO(DomainSpecificObject):
