@@ -7,7 +7,6 @@ import re
 import sqlalchemy
 from sqlalchemy.orm import Session
 from pandas import DataFrame
-from pandas import read_sql
 from pydetecdiv.persistence.repository import ShallowDb
 from pydetecdiv.persistence.sqlalchemy.dao.tables import Tables
 from pydetecdiv.domain.dso import DomainSpecificObject
