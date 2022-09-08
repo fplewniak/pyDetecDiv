@@ -18,9 +18,22 @@ classifiers=[
         "Intended Audience :: Developers",
         "License :: OSI Approved :: CEA CNRS Inria Logiciel Libre License, version 2.1 (CeCILL-2.1)",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
-    ]
+]
+
 requires-python = ">=3.6.0"
-dependencies = ["pyxdg", "omero-py", "pylibjpeg", "pylibjpeg-libjpeg", "scikit-image", "matplotlib", "numpy", "scipy"]
+dependencies = [
+    #"matplotlib",
+    #"numpy",
+    #"omero-py",
+    "pandas",
+    #"pylibjpeg",
+    #"pylibjpeg-libjpeg",
+    "pyxdg",
+    #"scikit-image",
+    #"scipy",
+    "sqlalchemy",
+    #"tifffile",
+]
 
 [project-urls]
 "Repository" = "https://github.com/fplewniak/pyDetecDiv"
