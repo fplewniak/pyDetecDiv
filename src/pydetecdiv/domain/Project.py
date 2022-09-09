@@ -6,7 +6,6 @@ The central class for keeping track of all available objects in a project.
 from pandas import DataFrame
 from pydetecdiv.persistence.project import open_project
 from pydetecdiv.domain.dso import DomainSpecificObject
-from pydetecdiv.domain.FOV import FOV
 from pydetecdiv.domain.ROI import ROI
 
 
