@@ -46,7 +46,7 @@ class ROI(NamedDSO, BoxedDSO):
         return self._fov
 
     @fov.setter
-    def fov(self, fov: FOV = None):
+    def fov(self, fov):
         self._fov = fov if isinstance(fov, FOV) or fov is None else self.project.get_object_by_id(FOV, fov)
 
     @property

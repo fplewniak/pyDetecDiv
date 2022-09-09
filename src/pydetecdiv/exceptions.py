@@ -11,7 +11,7 @@ class MissingNameError(Warning):
     Exception raised for missing name in data when creating a NamedDSO
     """
 
-    def __init__(self, obj: object):
+    def __init__(self, obj):
         self.message = f'Trying to create a {obj.__class__.__name__} (named object) without any name.'
         super().__init__(self.message)
 

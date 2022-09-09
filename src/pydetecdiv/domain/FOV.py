@@ -11,7 +11,7 @@ class FOV(NamedDSO, BoxedDSO):
     A business-logic class defining valid operations and attributes of Fields of view (FOV)
     """
 
-    def __init__(self, comments: str = None, **kwargs):
+    def __init__(self, comments=None, **kwargs):
         super().__init__(**kwargs)
         self.comments = comments
         self.validate()

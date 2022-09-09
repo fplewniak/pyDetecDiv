@@ -211,7 +211,7 @@ class Tables:
         """
         self.metadata_obj.create_all(engine)
 
-    def columns(self, table: str = None):
+    def columns(self, table):
         """
         Gets columns of a table designated by its name for simpler access to results
         :param table: the table name

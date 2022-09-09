@@ -54,7 +54,7 @@ class Project:
         """
         return DataFrame(self.get_records(class_))
 
-    def get_records(self, class_: type = DomainSpecificObject) -> list:
+    def get_records(self, class_=DomainSpecificObject) -> list:
         """
         Get a list of records containing all domain objects of a given class in the current project
         :param class_: the class of the objects whose records will be returned
@@ -93,7 +93,7 @@ class Project:
             obj = [class_(project=self, **rec) for rec in self.get_records(class_) if rec['id'] in id_list]
         return obj
 
-    def get_roi_list_in_fov(self, fov: FOV):
+    def get_roi_list_in_fov(self, fov):
         """
         Get a list of ROIs whose parent is the specified FOV. This method also looks into the pool of new objects to
         fetch newly created ROIs associated with the FOV
