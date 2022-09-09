@@ -34,7 +34,7 @@ class FOVdao(Base):
         """
         stmt = self.__table__.select(where_clause)
         result = self.engine.execute(stmt)
-        return [FOVdao._create_record(fov) for fov in DataFrame(result.mappings()).to_dict('records')]
+        return [FOVdao.create_record(fov) for fov in DataFrame(result.mappings()).to_dict('records')]
 
     @staticmethod
     def create_record(fov):
@@ -51,7 +51,9 @@ class FOVdao(Base):
         return {'id': fov['id'],
                 'name': fov['name'],
                 'comments': fov['comments'],
-                'shape': (fov['xsize'], fov['ysize'])
+                'top_left': (0, 0),
+                'bottom_right': (fov['xsize'] - 1, fov['ysize'] - 1),
+                'size': (fov['xsize'], fov['ysize']),
                 }
 
     def roi_list(self, fov_id):
@@ -104,5 +106,5 @@ class ROIdao(Base):
                 'fov': roi['fov'],
                 'top_left': (roi['x0'], roi['y0']),
                 'bottom_right': (roi['x1'], roi['y1']),
-                'shape': (roi['x1'] - roi['x0'] + 1, roi['y1'] - roi['y0'] + 1)
+                'size': (roi['x1'] - roi['x0'] + 1, roi['y1'] - roi['y0'] + 1)
                 }

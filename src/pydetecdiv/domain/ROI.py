@@ -4,21 +4,18 @@
  A class defining the business logic methods that can be applied to Regions Of Interest
 """
 from pydetecdiv.exceptions import JuttingError
-from pydetecdiv.domain.dso import NamedDSO, ImageAssociatedDSO
+from pydetecdiv.domain.dso import NamedDSO, BoxedDSO
 from pydetecdiv.domain.FOV import FOV
-from pydetecdiv.utils.Shapes import Box
 
 
-class ROI(NamedDSO, ImageAssociatedDSO):
+class ROI(NamedDSO, BoxedDSO):
     """
     A business-logic class defining valid operations and attributes of Regions of interest (ROI)
     """
 
-    def __init__(self, fov=None, top_left: tuple = (0, 0), bottom_right: tuple = (-1, -1), **kwargs):
+    def __init__(self, fov=None, **kwargs):
         super().__init__(**kwargs)
         self.fov = fov
-        self.top_left = top_left
-        self.bottom_right = bottom_right
         self.validate()
 
     def __eq__(self, o):
@@ -36,7 +33,7 @@ class ROI(NamedDSO, ImageAssociatedDSO):
         """
         Checks the current ROI lies within its parent. If it does not, this method will throw a JuttingError exception
         """
-        if not Box(self.top_left, self.bottom_right).lies_in(Box(shape=self.fov.shape)):
+        if not self.box.lies_in(self.fov.box):
             raise JuttingError(self, self.fov)
 
     @property
@@ -53,40 +50,14 @@ class ROI(NamedDSO, ImageAssociatedDSO):
         self._fov = fov if isinstance(fov, FOV) or fov is None else self.project.get_object_by_id(FOV, fov)
 
     @property
-    def top_left(self):
-        """
-        The top-left corner of the ROI in the FOV
-        :return: the coordinates of the top-left corner
-        :rtype: a tuple of two int
-        """
-        return self._top_left
-
-    @top_left.setter
-    def top_left(self, top_left: tuple = (0, 0)):
-        self._top_left = top_left
-
-    @property
     def bottom_right(self):
         """
         The bottom-right corner of the ROI in the FOV
         :return: the coordinates of the bottom-right corner
         :rtype: a tuple of two int
         """
-        return self._bottom_right
-
-    @bottom_right.setter
-    def bottom_right(self, bottom_right: tuple = (-1, -1)):
-        self._bottom_right = (self.fov.shape[0] - 1 if bottom_right[0] == -1 else bottom_right[0],
-                              self.fov.shape[1] - 1 if bottom_right[1] == -1 else bottom_right[1])
-
-    @property
-    def shape(self):
-        """
-        The shape (dimension) of the ROI computed from the coordinates of its corners
-        :return: the dimension of the ROI
-        :rtype: a tuple of two int
-        """
-        return self.bottom_right[0] - self.top_left[0] + 1, self.bottom_right[1] - self.top_left[1] + 1
+        return (self.fov.size[0] - 1 if self._bottom_right[0] == -1 else self._bottom_right[0],
+                self.fov.size[1] - 1 if self._bottom_right[1] == -1 else self._bottom_right[1])
 
     def record(self):
         """
@@ -98,9 +69,9 @@ class ROI(NamedDSO, ImageAssociatedDSO):
             'id': self.id,
             'name': self.name,
             'fov': self._fov,
-            'top_left': self._top_left,
-            'bottom_right': self._bottom_right,
-            'shape': self.shape
+            'top_left': self.top_left,
+            'bottom_right': self.bottom_right,
+            'size': self.size
         }
 
     def __repr__(self):

@@ -3,10 +3,10 @@
 """
  A class defining the business logic methods that can be applied to Fields Of View
 """
-from pydetecdiv.domain.dso import NamedDSO, ImageAssociatedDSO
+from pydetecdiv.domain.dso import NamedDSO, BoxedDSO
 
 
-class FOV(NamedDSO, ImageAssociatedDSO):
+class FOV(NamedDSO, BoxedDSO):
     """
     A business-logic class defining valid operations and attributes of Fields of view (FOV)
     """
@@ -28,7 +28,9 @@ class FOV(NamedDSO, ImageAssociatedDSO):
             'id': self.id,
             'name': self.name,
             'comments': self.comments,
-            'shape': self.shape
+            'top_left': self.top_left,
+            'bottom_right': self.bottom_right,
+            'size': self.size
         }
         if include_roi_list:
             record['roi_list'] = self.roi_list
@@ -39,13 +41,13 @@ class FOV(NamedDSO, ImageAssociatedDSO):
 
     def __eq__(self, other):
         """
-        Defines equality of FOV objects as having the same id, same name and same shape
+        Defines equality of FOV objects as having the same id, same name and same size
         :param other: the other FOV object to compare with the current one
         :type other: FOV
         :return: True if both FOVs are equal
         :rtype: bool
         """
-        is_eq = [self.id == other.id, self.name == other.name, self.shape == self.shape]
+        is_eq = [self.id == other.id, self.name == other.name, self.size == self.size]
         return all(is_eq)
 
     @property

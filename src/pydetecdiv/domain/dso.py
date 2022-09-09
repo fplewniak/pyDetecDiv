@@ -5,6 +5,8 @@ Domain specific generic attributes and methods shared by all domain objects. Oth
 should inherit from this class
 """
 from pydetecdiv.exceptions import MissingNameError
+from pydetecdiv.utils.Shapes import Box
+
 
 class DomainSpecificObject:
     """
@@ -32,7 +34,6 @@ class DomainSpecificObject:
         """
         Checks the validity of the current object
         """
-        pass
 
     def validate(self):
         """
@@ -49,7 +50,7 @@ class NamedDSO(DomainSpecificObject):
     A domain-specific class for objects with a name.
     """
 
-    def __init__(self, name=None,  **kwargs):
+    def __init__(self, name=None, **kwargs):
         if name is None:
             raise MissingNameError(self)
         super().__init__(**kwargs)
@@ -65,24 +66,49 @@ class NamedDSO(DomainSpecificObject):
         return self._name
 
 
-class ImageAssociatedDSO(DomainSpecificObject):
+class BoxedDSO(DomainSpecificObject):
     """
-    A domain-specific class for objects associated with an image, and therefore having a shape.
+    A domain-specific class for objects that can be represented as a rectangular box (i.e. having top left and bottom
+    right corners).
     """
 
-    def __init__(self, shape=(None, None), **kwargs):
+    def __init__(self, top_left=None, bottom_right=None, **kwargs):
         super().__init__(**kwargs)
-        self._shape = shape
+        self._top_left = top_left
+        self._bottom_right = bottom_right
 
     @property
-    def shape(self):
+    def box(self):
         """
-        Shape property of object
-        :return: x and y dimensions of the associated image
-        :rtype: tuple of two int
+        Returns a Box object that can represent the current object
+        :return: a box with the same coordinates
+        :rtype: Box
         """
-        return self._shape
+        return Box(self.top_left, self.bottom_right)
 
-    @shape.setter
-    def shape(self, shape=(None, None)):
-        self._shape = shape
+    @property
+    def top_left(self):
+        """
+        The top-left corner of the ROI in the FOV
+        :return: the coordinates of the top-left corner
+        :rtype: a tuple of two int
+        """
+        return self._top_left
+
+    @property
+    def bottom_right(self):
+        """
+        The bottom-right corner of the ROI in the FOV
+        :return: the coordinates of the bottom-right corner
+        :rtype: a tuple of two int
+        """
+        return self._bottom_right
+
+    @property
+    def size(self):
+        """
+        The size (dimension) of the object obtained from its associated box
+        :return: the dimension of the boxed object
+        :rtype: a tuple of two int
+        """
+        return self.box.size
