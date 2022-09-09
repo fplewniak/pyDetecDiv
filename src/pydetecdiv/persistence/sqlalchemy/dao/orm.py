@@ -22,19 +22,23 @@ class DAO:
     """
     __table__ = None
 
-    def __init__(self, engine):
-        self.engine = engine
+    def __init__(self, session):
+        self.session = session
 
     def get_records(self, where_clause):
         """
         A method to get from the SQL database, all records verifying the specified where clause
+        Example of use:
+        roi_records = roidao.get_records((ROIdao.fov == FOVdao.id) & (FOVdao.name == 'fov1')) retrieves all ROI records
+        associated with FOV whose name is 'fov1'
+
         :param where_clause: the selection 'where clause' that can be specified using DAO classes or tables
         :type where_clause: a sqlachemy where clause defining the SQL selection query
         :return: a list of records as dictionaries
         :rtype: list of dict
         """
         stmt = self.__table__.select(where_clause)
-        result = self.engine.execute(stmt)
+        result = self.session.execute(stmt)
         return [self.__class__.create_record(rec) for rec in DataFrame(result.mappings()).to_dict('records')]
 
     @staticmethod
@@ -83,7 +87,7 @@ class FOVdao(DAO, Base):
         :return: a list of ROI records with parent FOV id == fov_id
         :rtype: list
         """
-        roi_dao = ROIdao(self.engine)
+        roi_dao = ROIdao(self.session)
         return roi_dao.get_records(tables.list['ROI'].c.fov == fov_id)
 
 

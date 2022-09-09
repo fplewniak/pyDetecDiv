@@ -27,6 +27,7 @@ class _ShallowSQL(ShallowDb):
     def __init__(self, dbname):
         self.name = dbname
         self.engine = None
+        self.session = None
         self.tables = None
 
     def executescript(self, script):
@@ -36,12 +37,12 @@ class _ShallowSQL(ShallowDb):
         :type script: str
         """
         try:
-            with Session(self.engine, future=True) as session:
+            #with Session(self.engine, future=True) as session:
                 statements = re.split(r';\s*$', script, flags=re.MULTILINE)
                 for statement in statements:
                     if statement:
-                        session.execute(sqlalchemy.text(statement))
-                session.commit()
+                        self.session.execute(sqlalchemy.text(statement))
+                self.session.commit()
         except sqlalchemy.exc.OperationalError as exc:
             print(exc)
 
@@ -80,7 +81,7 @@ class _ShallowSQL(ShallowDb):
         if query is not None:
             for q in query:
                 stmt = stmt.where(q)
-        result = self.engine.execute(stmt)
+        result = self.session.execute(stmt)
         return DataFrame(result.mappings())
 
     def _get_records(self, class_name=None, query=None):
@@ -116,7 +117,7 @@ class _ShallowSQL(ShallowDb):
         :return: a list of ROIs whose parent if the FOV with id == fov_id
         :rtype: list of dictionaries (records)
         """
-        fov_dao = FOVdao(self.engine)
+        fov_dao = FOVdao(self.session)
         return fov_dao.roi_list(fov_id)
 
 
@@ -128,4 +129,5 @@ class ShallowSQLite3(_ShallowSQL):
     def __init__(self, dbname=None):
         super().__init__(dbname)
         self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}')
+        self.session = Session(self.engine, future = True)
         super().create()
