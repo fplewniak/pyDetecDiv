@@ -37,12 +37,12 @@ class _ShallowSQL(ShallowDb):
         :type script: str
         """
         try:
-            #with Session(self.engine, future=True) as session:
-                statements = re.split(r';\s*$', script, flags=re.MULTILINE)
-                for statement in statements:
-                    if statement:
-                        self.session.execute(sqlalchemy.text(statement))
-                self.session.commit()
+            # with Session(self.engine, future=True) as session:
+            statements = re.split(r';\s*$', script, flags=re.MULTILINE)
+            for statement in statements:
+                if statement:
+                    self.session.execute(sqlalchemy.text(statement))
+            self.session.commit()
         except sqlalchemy.exc.OperationalError as exc:
             print(exc)
 
@@ -99,15 +99,45 @@ class _ShallowSQL(ShallowDb):
         return [self.dao[class_name].create_record(rec) for rec in
                 self._get_raw_objects_df(selection, query).to_dict('records')]
 
-    def get_records(self, class_=DomainSpecificObject):
+    # def _get_records_using_dao(self, class_name=None, query=None):
+    #     return [self.dao[class_name](self.session).get_records(where_clause) for where_clause in query]
+
+    def get_dataframe(self, class_=DomainSpecificObject, id_list=None):
         """
-        A method returning the list of all object records of a given class
+        Get a DataFrame containing the list of all domain objects of a given class in the current project
+        :param class_: the class of the objects whose list will be returned
+        :type class_: class inheriting DomainSpecificObject
+        :param id_list: the list of ids of objects to retrieve
+        :type id_list: a list of int
+        :return: a DataFrame containing the list of objects
+        :rtype: DataFrame containing the records representing the requested domain-specific objects
+        """
+        return DataFrame(self.get_records(class_, id_list))
+
+    def get_record(self, class_=DomainSpecificObject, id_=None):
+        """
+        A method returning an object record of a given class from its id
+        :param class_: the class of object to get the record of
+        :type class_: class
+        :param id_: the id of the requested object
+        :type id_: int
+        :return: the object record
+        :rtype: dict (record)
+        """
+        return self._get_records(class_.__name__, [self.tables.list[class_.__name__].c.id == id_])[0]
+
+    def get_records(self, class_=DomainSpecificObject, id_list=None):
+        """
+        A method returning the list of all object records of a given class or select those whose id is in id_list
         :param class_: the class of objects to get records of
         :type class_: class
+        :param id_list: the list of ids of objects to retrieve
+        :type id_list: a list of int
         :return: a list of records
         :rtype: list of dictionaries (records)
         """
-        return self._get_records(class_.__name__)
+        return self._get_records(class_.__name__) if id_list is None else [self.get_record(class_, id_) for id_ in
+                                                                           id_list]
 
     def get_roi_list_in_fov(self, fov_id):
         """
@@ -129,5 +159,5 @@ class ShallowSQLite3(_ShallowSQL):
     def __init__(self, dbname=None):
         super().__init__(dbname)
         self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}')
-        self.session = Session(self.engine, future = True)
+        self.session = Session(self.engine, future=True)
         super().create()

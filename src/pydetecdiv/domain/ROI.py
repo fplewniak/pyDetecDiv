@@ -47,7 +47,7 @@ class ROI(NamedDSO, BoxedDSO):
 
     @fov.setter
     def fov(self, fov):
-        self._fov = fov if isinstance(fov, FOV) or fov is None else self.project.get_object_by_id(FOV, fov)
+        self._fov = fov if isinstance(fov, FOV) or fov is None else self.project.get_object(FOV, fov)
 
     @property
     def bottom_right(self):
