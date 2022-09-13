@@ -59,6 +59,18 @@ class _ShallowSQL(ShallowDb):
         """
         self.engine.dispose()
 
+    def save(self, class_name, record):
+        """
+        Save the object represented by the record
+        :param class_name: the class name of the object to save into SQL database
+        :type class_name: str
+        :param record: the record representing the object
+        :type record: dict
+        """
+        if record['id'] is None:
+            return self.dao[class_name](self.session).insert(record)
+        return self.dao[class_name](self.session).update(record)
+
     def _get_raw_objects_df(self, selection=None, query=None):
         """
         Get objects specified by the table list and satisfying the conditions defined by the list of queries. This
@@ -136,7 +148,7 @@ class _ShallowSQL(ShallowDb):
         :rtype: list of dictionaries (records)
         """
         return self._get_records(class_name) if id_list is None else [self.get_record(class_name, id_) for id_ in
-                                                                               id_list]
+                                                                      id_list]
 
     def get_roi_list_in_fov(self, fov_id):
         """

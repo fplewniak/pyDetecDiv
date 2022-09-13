@@ -26,8 +26,10 @@ class DomainSpecificObject:
             self.id_ = None
         else:
             self.id_ = kwargs['id']
-        # if self.id is None:
-        #     self.project.add_new_dso_to_pool(self)
+        if self.id_ is None:
+            self.updated = True
+        else:
+            self.updated = False
         self.data = kwargs
 
     def check_validity(self):
@@ -37,12 +39,16 @@ class DomainSpecificObject:
 
     def validate(self):
         """
-        Validate the current object and pass newly created object pool in current project if it has no id
-        This method should be called
+        Validate the current object and pass newly created and updated object to project for saving modifications. Sets
+        the id of the object for new objects.
+        This method should be called at the creation or at each modification of an object (i.e. in the __init__ and all
+        setter methods
         """
         self.check_validity()
-        if self.id_ is None:
-            self.project.add_new_dso_to_pool(self)
+        if self.updated:
+            id_ = self.project.save(self)
+            if id_ is not None:
+                self.id_ = id_
 
 
 class NamedDSO(DomainSpecificObject):
@@ -64,6 +70,17 @@ class NamedDSO(DomainSpecificObject):
         :rtype: str
         """
         return self._name
+
+    @name.setter
+    def name(self, name):
+        """
+        Returns the name of this object
+        :return: the name of the current object
+        :rtype: str
+        """
+        self._name = name
+        self.updated = True
+        self.validate()
 
 
 class BoxedDSO(DomainSpecificObject):
@@ -95,6 +112,12 @@ class BoxedDSO(DomainSpecificObject):
         """
         return self._top_left
 
+    @top_left.setter
+    def top_left(self, top_left):
+        self._top_left = top_left
+        self.updated = True
+        self.validate()
+
     @property
     def bottom_right(self):
         """
@@ -103,6 +126,12 @@ class BoxedDSO(DomainSpecificObject):
         :rtype: a tuple of two int
         """
         return self._bottom_right
+
+    @bottom_right.setter
+    def bottom_right(self, bottom_right):
+        self._bottom_right = bottom_right
+        self.updated = True
+        self.validate()
 
     @property
     def size(self):

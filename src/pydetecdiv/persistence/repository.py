@@ -26,6 +26,17 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
+    def save(self, class_name, record):
+        """
+        Abstract method enforcing the implementation of a save() method in all shallow persistence connectors
+        :param class_name: the class name of the object to save into SQL database
+        :type class_name: str
+        :param record: the record representing the object
+        :type record: dict
+        """
+
+
+    @abc.abstractmethod
     def get_dataframe(self, class_name, id_list=None):
         """
         Abstract method enforcing the implementation of a method returning a pandas DataFrame containing the list of

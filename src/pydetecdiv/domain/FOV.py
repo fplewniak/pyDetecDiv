@@ -13,8 +13,11 @@ class FOV(NamedDSO, BoxedDSO):
 
     def __init__(self, comments=None, **kwargs):
         super().__init__(**kwargs)
-        self.comments = comments
+        self._comments = comments
         self.validate()
+
+    def check_validity(self):
+        ...
 
     def record(self, include_roi_list=False):
         """
@@ -49,6 +52,21 @@ class FOV(NamedDSO, BoxedDSO):
         """
         is_eq = [self.id_ == other.id_, self.name == other.name, self.size == self.size]
         return all(is_eq)
+
+    @property
+    def comments(self):
+        """
+        comments property of FOV
+        :return: the comments
+        :rtype: str
+        """
+        return self._comments
+
+    @comments.setter
+    def comments(self, comments):
+        self._comments = comments
+        self.updated = True
+        self.validate()
 
     @property
     def roi_list(self):

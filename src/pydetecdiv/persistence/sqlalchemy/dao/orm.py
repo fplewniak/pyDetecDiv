@@ -7,6 +7,7 @@ These objects are responsible for providing the domain layer with lists of compa
 domain-specific objects.
 """
 from sqlalchemy.orm import registry
+from sqlalchemy.sql.expression import Insert, Update
 from pandas import DataFrame
 from pydetecdiv.persistence.sqlalchemy.dao.tables import Tables
 
@@ -25,6 +26,46 @@ class DAO:
     def __init__(self, session):
         self.session = session
 
+    def insert(self, rec):
+        """
+        Inserts data in SQL database for a newly created object
+        :param rec: the record representing the object
+        :type rec: dict
+        :return: the primary key of the newly created object
+        :rtype: int
+        """
+        record = self.__class__._translate_record(rec)
+        primary_key = self.session.execute(Insert(self.__class__).values(record)).inserted_primary_key[0]
+        self.session.commit()
+        return primary_key
+
+    def update(self, rec):
+        """
+        Updates data in SQL database for the object corresponding to the record, which should contain the id of the
+        modified object
+        :param rec: the record representing the object
+        :type rec: dict
+        """
+        id_ = rec['id']
+        record = self.__class__._translate_record(rec)
+        self.session.execute(Update(self.__class__, whereclause=self.__class__.id == id_).values(record))
+        self.session.commit()
+
+    @staticmethod
+    def _translate_record(rec):
+        """
+        A private method to translate the data exchange record into a record suitable for insertion in the SQL database.
+        This method in DAO, does not do anything and passes the record as is. It is supposed to be overridden by
+        subclasses in order to actually translate the records accordingly
+        :param rec: the record to be translated representing the object
+        :type rec: dict
+        :return: the translated record
+        :rtype: dict
+        """
+        exclude = []
+        translate = {}
+        return DAO.translate_record(rec, exclude, translate)
+
     def get_records(self, where_clause):
         """
         A method to get from the SQL database, all records verifying the specified where clause
@@ -40,6 +81,30 @@ class DAO:
         stmt = self.__table__.select(where_clause)
         result = self.session.execute(stmt)
         return [self.__class__.create_record(rec) for rec in DataFrame(result.mappings()).to_dict('records')]
+
+    @staticmethod
+    def translate_record(record, exclude, translate):
+        """
+        The actual translation engine reading the record fields and translating or excluding them if they occur in the
+        translate or exclude variables
+        :param record: the record to be translated
+        :type record: dict
+        :param exclude: a list of fields that must not be passed to the SQL engine
+        :type exclude: list
+        :param translate: a list of fields that must be translated and the corresponding columns
+        :type translate: dict
+        :return: the translated record
+        :rtype: dict
+        """
+        rec = {}
+        for key in record:
+            if key in exclude:
+                continue
+            if key in translate:
+                rec[translate[key][0]], rec[translate[key][1]] = record[key]
+            else:
+                rec[key] = record[key]
+        return rec
 
     @staticmethod
     def create_record(rec):
@@ -58,6 +123,19 @@ class FOVdao(DAO, Base):
     DAO class for access to FOV records from the SQL database
     """
     __table__ = tables.list['FOV']
+
+    @staticmethod
+    def _translate_record(rec):
+        """
+        A private method to translate the data exchange record into a record suitable for insertion in the SQL database
+        :param rec: the record to be translated representing the FOV
+        :type rec: dict
+        :return: the translated record
+        :rtype: dict
+        """
+        exclude = ['id', 'top_left', 'bottom_right']
+        translate = {'size': ('xsize', 'ysize'), }
+        return DAO.translate_record(rec, exclude, translate)
 
     @staticmethod
     def create_record(rec):
@@ -96,6 +174,19 @@ class ROIdao(DAO, Base):
     DAO class for access to ROI records from the SQL database
     """
     __table__ = tables.list['ROI']
+
+    @staticmethod
+    def _translate_record(rec):
+        """
+        A private method to translate the data exchange record into a record suitable for insertion in the SQL database
+        :param rec: the record to be translated representing the ROI
+        :type rec: dict
+        :return: the translated record
+        :rtype: dict
+        """
+        exclude = ['id', 'size', ]
+        translate = {'top_left': ('x0', 'y0'), 'bottom_right': ('x1', 'y1')}
+        return DAO.translate_record(rec, exclude, translate)
 
     @staticmethod
     def create_record(rec):

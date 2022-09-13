@@ -47,7 +47,9 @@ class ROI(NamedDSO, BoxedDSO):
 
     @fov.setter
     def fov(self, fov):
+        self.updated = True
         self._fov = fov if isinstance(fov, FOV) or fov is None else self.project.get_object(FOV, fov)
+        self.validate()
 
     @property
     def bottom_right(self):
@@ -68,7 +70,7 @@ class ROI(NamedDSO, BoxedDSO):
         return {
             'id': self.id_,
             'name': self.name,
-            'fov': self._fov,
+            'fov': self._fov.id_,
             'top_left': self.top_left,
             'bottom_right': self.bottom_right,
             'size': self.size

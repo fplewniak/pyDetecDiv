@@ -32,6 +32,19 @@ class Project:
         else:
             self.new_dso_pool[class_name].append(dso)
 
+    def save(self, dso):
+        """
+        Save an object to the repository if it is new or has been modified
+        :param dso: the domain-specific object to save
+        :type dso: DomainSpecificObject
+        :return: the id of the saved object if it was created
+        :rtype: int
+        """
+        id_ = self.repository.save(dso.__class__.__name__, dso.record())
+        dso.updated = False
+        #print(f'saving {dso}')
+        return id_
+
     def get_object(self, class_=DomainSpecificObject, id_=None) -> DomainSpecificObject:
         """
         Get an object referenced by its id
