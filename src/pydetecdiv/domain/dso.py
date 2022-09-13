@@ -23,9 +23,9 @@ class DomainSpecificObject:
         """
         self.project = project
         if 'id' not in kwargs:
-            self.id = None
+            self.id_ = None
         else:
-            self.id = kwargs['id']
+            self.id_ = kwargs['id']
         # if self.id is None:
         #     self.project.add_new_dso_to_pool(self)
         self.data = kwargs
@@ -41,7 +41,7 @@ class DomainSpecificObject:
         This method should be called
         """
         self.check_validity()
-        if self.id is None:
+        if self.id_ is None:
             self.project.add_new_dso_to_pool(self)
 
 

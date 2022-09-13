@@ -26,7 +26,7 @@ class ROI(NamedDSO, BoxedDSO):
         :return: True if both ROIs are equal
         :rtype: bool
         """
-        is_eq = [self.id == o.id, self.fov == o.fov, self.top_left == o.top_left, self.bottom_right == o.bottom_right]
+        is_eq = [self.id_ == o.id_, self.fov == o.fov, self.top_left == o.top_left, self.bottom_right == o.bottom_right]
         return all(is_eq)
 
     def check_validity(self):
@@ -66,7 +66,7 @@ class ROI(NamedDSO, BoxedDSO):
         :rtype: dict
         """
         return {
-            'id': self.id,
+            'id': self.id_,
             'name': self.name,
             'fov': self._fov,
             'top_left': self.top_left,

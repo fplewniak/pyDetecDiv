@@ -25,7 +25,7 @@ class FOV(NamedDSO, BoxedDSO):
         :rtype: dict
         """
         record = {
-            'id': self.id,
+            'id': self.id_,
             'name': self.name,
             'comments': self.comments,
             'top_left': self.top_left,
@@ -47,7 +47,7 @@ class FOV(NamedDSO, BoxedDSO):
         :return: True if both FOVs are equal
         :rtype: bool
         """
-        is_eq = [self.id == other.id, self.name == other.name, self.size == self.size]
+        is_eq = [self.id_ == other.id_, self.name == other.name, self.size == self.size]
         return all(is_eq)
 
     @property

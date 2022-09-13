@@ -65,6 +65,6 @@ class Project:
         :return: the list of ROIs whose parent is the specified FOV
         :rtype: list of ROI objects
         """
-        roi_records = [ROI(project=self, **rec) for rec in self.repository.get_roi_list_in_fov(fov.id)]
+        roi_records = [ROI(project=self, **rec) for rec in self.repository.get_roi_list_in_fov(fov.id_)]
         new_roi = [roi for roi in self.new_dso_pool['ROI'] if roi.fov == fov] if 'ROI' in self.new_dso_pool else []
         return roi_records + new_roi
