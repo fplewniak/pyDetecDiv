@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 from pandas import DataFrame
 from pydetecdiv.persistence.repository import ShallowDb
 from pydetecdiv.persistence.sqlalchemy.dao.tables import Tables
-from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.persistence.sqlalchemy.dao.orm import FOVdao, ROIdao
 
 
@@ -102,42 +101,42 @@ class _ShallowSQL(ShallowDb):
     # def _get_records_using_dao(self, class_name=None, query=None):
     #     return [self.dao[class_name](self.session).get_records(where_clause) for where_clause in query]
 
-    def get_dataframe(self, class_=DomainSpecificObject, id_list=None):
+    def get_dataframe(self, class_name, id_list=None):
         """
         Get a DataFrame containing the list of all domain objects of a given class in the current project
-        :param class_: the class of the objects whose list will be returned
-        :type class_: class inheriting DomainSpecificObject
+        :param class_name: the class name of the objects whose list will be returned
+        :type class_name: str
         :param id_list: the list of ids of objects to retrieve
         :type id_list: a list of int
         :return: a DataFrame containing the list of objects
         :rtype: DataFrame containing the records representing the requested domain-specific objects
         """
-        return DataFrame(self.get_records(class_, id_list))
+        return DataFrame(self.get_records(class_name, id_list))
 
-    def get_record(self, class_=DomainSpecificObject, id_=None):
+    def get_record(self, class_name, id_=None):
         """
         A method returning an object record of a given class from its id
-        :param class_: the class of object to get the record of
-        :type class_: class
+        :param class_name: the class name of object to get the record of
+        :type class_name: str
         :param id_: the id of the requested object
         :type id_: int
         :return: the object record
         :rtype: dict (record)
         """
-        return self._get_records(class_.__name__, [self.tables.list[class_.__name__].c.id == id_])[0]
+        return self._get_records(class_name, [self.tables.list[class_name].c.id == id_])[0]
 
-    def get_records(self, class_=DomainSpecificObject, id_list=None):
+    def get_records(self, class_name, id_list=None):
         """
         A method returning the list of all object records of a given class or select those whose id is in id_list
-        :param class_: the class of objects to get records of
-        :type class_: class
+        :param class_name: the class name of objects to get records of
+        :type class_name: str
         :param id_list: the list of ids of objects to retrieve
         :type id_list: a list of int
         :return: a list of records
         :rtype: list of dictionaries (records)
         """
-        return self._get_records(class_.__name__) if id_list is None else [self.get_record(class_, id_) for id_ in
-                                                                           id_list]
+        return self._get_records(class_name) if id_list is None else [self.get_record(class_name, id_) for id_ in
+                                                                               id_list]
 
     def get_roi_list_in_fov(self, fov_id):
         """

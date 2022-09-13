@@ -3,7 +3,6 @@
 """
 The central class for keeping track of all available objects in a project.
 """
-from pandas import DataFrame
 from pydetecdiv.persistence.project import open_project
 from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.domain.ROI import ROI
@@ -43,7 +42,7 @@ class Project:
         :return: the desired object
         :rtype: object (DomainSpecificObject)
         """
-        return class_(project=self, **self.repository.get_record(class_, id_))
+        return class_(project=self, **self.repository.get_record(class_.__name__, id_))
 
     def get_objects(self, class_=DomainSpecificObject, id_list=None):
         """
@@ -55,7 +54,7 @@ class Project:
         :return: a list of all the objects of that class in the project with all their associated metadata
         :rtype: list of the requested domain-specific objects
         """
-        return [class_(project=self, **rec) for rec in self.repository.get_records(class_, id_list)]
+        return [class_(project=self, **rec) for rec in self.repository.get_records(class_.__name__, id_list)]
 
     def get_roi_list_in_fov(self, fov):
         """

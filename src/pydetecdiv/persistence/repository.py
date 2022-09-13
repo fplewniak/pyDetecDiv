@@ -26,12 +26,12 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_dataframe(self, class_, id_list=None):
+    def get_dataframe(self, class_name, id_list=None):
         """
-        Abstract method enforcing the implemetation of a method returning a pandas DataFrame containing the list of
+        Abstract method enforcing the implementation of a method returning a pandas DataFrame containing the list of
         objects of a given class in the current project whose id is in id_list
-        :param class_: the class of the objects whose list will be returned
-        :type class_: class inheriting DomainSpecificObject
+        :param class_name: the class name of the objects whose list will be returned
+        :type class_name: str
         :param id_list: the list of ids of objects to retrieve
         :type id_list: a list of int
         :return: a DataFrame containing the list of objects
@@ -39,25 +39,25 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_record(self, class_, id_):
+    def get_record(self, class_name, id_):
         """
         Abstract method enforcing the implementation of a method returning an object record of a given
         class whose id is id_
-        :param class_: the class of the requested object
-        :type class_: a class
-        :param id_list: the id of the reaquested object
-        :type id_list: int
+        :param class_name: the class of the requested object
+        :type class_name: str
+        :param id_: the id of the reaquested object
+        :type id_: int
         :return: a record (i.e. dictionary) containing the data for the requested object
         :rtype: dict
         """
 
     @abc.abstractmethod
-    def get_records(self, class_, id_list):
+    def get_records(self, class_name, id_list):
         """
         Abstract method enforcing the implementation of a method returning the list of all object records of a given
         class specified by its name or a list of objects whose id is in id_list
-        :param class_: the class of the requested objects
-        :type class_: a class
+        :param class_name: the class name of the requested objects
+        :type class_name: str
         :param id_list: the list of ids for objects
         :type id_list: list of int
         :return: a list of records (i.e. dictionaries) containing the data for the requested objects
