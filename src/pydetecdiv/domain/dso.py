@@ -28,6 +28,9 @@ class DomainSpecificObject:
             self.id_ = kwargs['id']
         self.data = kwargs
 
+    def delete(self):
+        self.project.delete(self)
+
     def check_validity(self):
         """
         Checks the validity of the current object

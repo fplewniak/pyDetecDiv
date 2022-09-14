@@ -6,6 +6,7 @@ Concrete Repositories using a SQL database with the sqlalchemy toolkit
 import re
 import sqlalchemy
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.expression import Delete
 from sqlalchemy.pool import SingletonThreadPool
 from pandas import DataFrame
 from pydetecdiv.persistence.repository import ShallowDb
@@ -70,6 +71,10 @@ class _ShallowSQL(ShallowDb):
         if record['id'] is None:
             return self.dao[class_name](self.session).insert(record)
         return self.dao[class_name](self.session).update(record)
+
+    def delete(self, class_name, id_):
+        self.session.execute(Delete(self.dao[class_name], whereclause=self.dao[class_name].id == id_))
+        self.session.commit()
 
     def _get_raw_objects_df(self, selection=None, query=None):
         """

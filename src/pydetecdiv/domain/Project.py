@@ -31,6 +31,9 @@ class Project:
             id_ = dso.id_
         return id_
 
+    def delete(self, dso):
+        self.repository.delete(dso.__class__.__name__, dso.id_)
+
     def get_object(self, class_=DomainSpecificObject, id_=None) -> DomainSpecificObject:
         """
         Get an object referenced by its id

@@ -16,6 +16,12 @@ class FOV(NamedDSO, BoxedDSO):
         self._comments = comments
         self.validate(updated=False)
 
+    def delete(self):
+        #Does not work: returns <bound method FOV.delete of {'id': 2, 'name': 'fov_inserted_new', ...
+        for roi in self.roi_list:
+            roi.delete()
+        self.project.delete(self)
+
     def check_validity(self):
         """
         Checks the current FOV is valid
