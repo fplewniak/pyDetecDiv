@@ -85,7 +85,7 @@ class Box:
         :return: True if the current box is totally comprised in the other one
         :rtype: bool
         """
-        return self.top_left[0] >= other.top_left[0] \
-               and self.bottom_right[0] <= other.bottom_right[0] \
-               and self.top_left[1] >= other.top_left[1] \
-               and self.bottom_right[1] <= other.bottom_right[1]
+        return (self.top_left[0] >= other.top_left[0]
+                and self.bottom_right[0] <= other.bottom_right[0]
+                and self.top_left[1] >= other.top_left[1]
+                and self.bottom_right[1] <= other.bottom_right[1])
