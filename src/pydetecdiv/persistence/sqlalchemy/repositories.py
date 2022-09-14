@@ -6,6 +6,7 @@ Concrete Repositories using a SQL database with the sqlalchemy toolkit
 import re
 import sqlalchemy
 from sqlalchemy.orm import Session
+from sqlalchemy.pool import SingletonThreadPool
 from pandas import DataFrame
 from pydetecdiv.persistence.repository import ShallowDb
 from pydetecdiv.persistence.sqlalchemy.dao.tables import Tables
@@ -36,7 +37,6 @@ class _ShallowSQL(ShallowDb):
         :type script: str
         """
         try:
-            # with Session(self.engine, future=True) as session:
             statements = re.split(r';\s*$', script, flags=re.MULTILINE)
             for statement in statements:
                 if statement:
@@ -169,6 +169,9 @@ class ShallowSQLite3(_ShallowSQL):
 
     def __init__(self, dbname=None):
         super().__init__(dbname)
-        self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}')
+        self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}', poolclass=SingletonThreadPool)
+        # self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}', poolclass=SingletonThreadPool,
+        #                                        echo=True, echo_pool='debug')
         self.session = Session(self.engine, future=True)
+        self.session.begin()
         super().create()

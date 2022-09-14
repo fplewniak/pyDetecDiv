@@ -166,7 +166,7 @@ class FOVdao(DAO, Base):
         :rtype: list
         """
         roi_dao = ROIdao(self.session)
-        return roi_dao.get_records(tables.list['ROI'].c.fov == fov_id)
+        return roi_dao.get_records(ROIdao.fov == fov_id)
 
 
 class ROIdao(DAO, Base):
