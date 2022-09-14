@@ -16,7 +16,7 @@ class ROI(NamedDSO, BoxedDSO):
     def __init__(self, fov=None, **kwargs):
         super().__init__(**kwargs)
         self.fov = fov
-        self.validate()
+        self.validate(updated=False)
 
     def __eq__(self, o):
         """
@@ -47,7 +47,6 @@ class ROI(NamedDSO, BoxedDSO):
 
     @fov.setter
     def fov(self, fov):
-        self.updated = True
         self._fov = fov if isinstance(fov, FOV) or fov is None else self.project.get_object(FOV, fov)
         self.validate()
 

@@ -41,8 +41,8 @@ class Project:
         :rtype: int
         """
         id_ = self.repository.save(dso.__class__.__name__, dso.record())
-        dso.updated = False
-        #print(f'saving {dso}')
+        if id_ is None:
+            id_ = dso.id_
         return id_
 
     def get_object(self, class_=DomainSpecificObject, id_=None) -> DomainSpecificObject:

@@ -14,9 +14,12 @@ class FOV(NamedDSO, BoxedDSO):
     def __init__(self, comments=None, **kwargs):
         super().__init__(**kwargs)
         self._comments = comments
-        self.validate()
+        self.validate(updated=False)
 
     def check_validity(self):
+        """
+        Checks the current FOV is valid
+        """
         ...
 
     def record(self, include_roi_list=False):
@@ -65,7 +68,6 @@ class FOV(NamedDSO, BoxedDSO):
     @comments.setter
     def comments(self, comments):
         self._comments = comments
-        self.updated = True
         self.validate()
 
     @property

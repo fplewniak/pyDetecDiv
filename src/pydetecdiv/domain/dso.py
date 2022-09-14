@@ -26,10 +26,6 @@ class DomainSpecificObject:
             self.id_ = None
         else:
             self.id_ = kwargs['id']
-        if self.id_ is None:
-            self.updated = True
-        else:
-            self.updated = False
         self.data = kwargs
 
     def check_validity(self):
@@ -37,7 +33,7 @@ class DomainSpecificObject:
         Checks the validity of the current object
         """
 
-    def validate(self):
+    def validate(self, updated=True):
         """
         Validate the current object and pass newly created and updated object to project for saving modifications. Sets
         the id of the object for new objects.
@@ -45,10 +41,8 @@ class DomainSpecificObject:
         setter methods
         """
         self.check_validity()
-        if self.updated:
-            id_ = self.project.save(self)
-            if id_ is not None:
-                self.id_ = id_
+        if updated or self.id_ is None:
+            self.id_ = self.project.save(self)
 
 
 class NamedDSO(DomainSpecificObject):
@@ -79,7 +73,6 @@ class NamedDSO(DomainSpecificObject):
         :rtype: str
         """
         self._name = name
-        self.updated = True
         self.validate()
 
 
@@ -115,7 +108,6 @@ class BoxedDSO(DomainSpecificObject):
     @top_left.setter
     def top_left(self, top_left):
         self._top_left = top_left
-        self.updated = True
         self.validate()
 
     @property
@@ -130,7 +122,6 @@ class BoxedDSO(DomainSpecificObject):
     @bottom_right.setter
     def bottom_right(self, bottom_right):
         self._bottom_right = bottom_right
-        self.updated = True
         self.validate()
 
     @property
