@@ -17,20 +17,6 @@ class Project:
     def __init__(self, dbname=None, dbms=None):
         self.repository = open_project(dbname, dbms)
         self.dbname = dbname
-        self.new_dso_pool = {}
-
-    def add_new_dso_to_pool(self, dso):
-        """
-        Adds a newly created domain specific object (has no id) to the pool of objects that need to receive an id and
-        to be saved by the persistence layer
-        :param dso: the newly created domain-specific object to add to the pool
-        :type dso: DomainSpecificObject
-        """
-        class_name = dso.__class__.__name__
-        if class_name not in self.new_dso_pool:
-            self.new_dso_pool[class_name] = [dso]
-        else:
-            self.new_dso_pool[class_name].append(dso)
 
     def save(self, dso):
         """
@@ -79,5 +65,4 @@ class Project:
         :rtype: list of ROI objects
         """
         roi_records = [ROI(project=self, **rec) for rec in self.repository.get_roi_list_in_fov(fov.id_)]
-        new_roi = [roi for roi in self.new_dso_pool['ROI'] if roi.fov == fov] if 'ROI' in self.new_dso_pool else []
-        return roi_records + new_roi
+        return roi_records
