@@ -17,7 +17,9 @@ class FOV(NamedDSO, BoxedDSO):
         self.validate(updated=False)
 
     def delete(self):
-        #Does not work: returns <bound method FOV.delete of {'id': 2, 'name': 'fov_inserted_new', ...
+        """
+        Delete the current FOV, first deleting all linked ROIs that would be consequently left orphaned
+        """
         for roi in self.roi_list:
             roi.delete()
         self.project.delete(self)
