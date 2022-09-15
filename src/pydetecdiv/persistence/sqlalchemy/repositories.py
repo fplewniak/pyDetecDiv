@@ -29,7 +29,7 @@ class _ShallowSQL(ShallowDb):
         self.name = dbname
         self.engine = None
         self.session = None
-        self.tables = None
+        self.tables = {'FOV': FOVdao.__table__, 'ROI': ROIdao.__table__}
 
     def executescript(self, script):
         """
@@ -50,9 +50,10 @@ class _ShallowSQL(ShallowDb):
         """
         Gets SqlAlchemy classes defining the project database schema and creates the database if it does not exist.
         """
-        self.tables = Tables()
+        #self.tables = Tables()
         if not self.engine.table_names():
-            self.tables.create(self.engine)
+            FOVdao.metadata.create_all(self.engine)
+            #self.tables.create(self.engine)
 
     def close(self):
         """
@@ -85,30 +86,6 @@ class _ShallowSQL(ShallowDb):
         self.session.execute(Delete(self.dao[class_name], whereclause=self.dao[class_name].id == id_))
         self.session.commit()
 
-    def _get_raw_objects_df(self, selection=None, query=None):
-        """
-        Get objects specified by the table list and satisfying the conditions defined by the list of queries. This
-        method is not supposed to be called from outside this class
-        Example of usage to retrieve FOVs and the name of their associated ROIs:
-        roi_table = self.tables.list['ROI']
-        fov_table = self.tables.list['FOV']
-        self._get_objects([fov_table, roi_table.c.name], query=[fov_table.c.id == roi_table.c.fov])
-
-        :param selection: a list of tables or columns thereof to select rows from. Can be defined by a list containing
-         t.list[table_name] or t.columns(table_name).column_name or any combination thereof
-        :param query: a list of queries on tables
-        :type selection: list of tables of columns to select from the database
-        :type query: a list of sqlalchemy where clauses
-        :return a DataFrame containing the requested objects
-        :rtype: DataFrame
-        """
-        stmt = sqlalchemy.select(selection)
-        if query is not None:
-            for q in query:
-                stmt = stmt.where(q)
-        result = self.session.execute(stmt)
-        return DataFrame(result.mappings())
-
     def _get_records(self, class_name=None, query=None):
         """
         A private method returning the list of all object records of a given class specified by its name and verifying a
@@ -120,12 +97,11 @@ class _ShallowSQL(ShallowDb):
         :return: a list of records
         :rtype: list of dictionaries (records)
         """
-        selection = self.tables.list[class_name]
-        return [self.dao[class_name].create_record(rec) for rec in
-                self._get_raw_objects_df(selection, query).to_dict('records')]
-
-    # def _get_records_using_dao(self, class_name=None, query=None):
-    #     return [self.dao[class_name](self.session).get_records(where_clause) for where_clause in query]
+        dao_list = self.session.query(self.dao[class_name])
+        if query is not None:
+            for q in query:
+                dao_list = dao_list.where(q)
+        return [obj.create_record() for obj in dao_list]
 
     def get_dataframe(self, class_name, id_list=None):
         """
@@ -149,7 +125,7 @@ class _ShallowSQL(ShallowDb):
         :return: the object record
         :rtype: dict (record)
         """
-        return self._get_records(class_name, [self.tables.list[class_name].c.id == id_])[0]
+        return self.session.get(self.dao[class_name], id_).create_record()
 
     def get_records(self, class_name, id_list=None):
         """
@@ -161,8 +137,11 @@ class _ShallowSQL(ShallowDb):
         :return: a list of records
         :rtype: list of dictionaries (records)
         """
-        return self._get_records(class_name) if id_list is None else [self.get_record(class_name, id_) for id_ in
-                                                                      id_list]
+        if id_list is not None:
+            dao_list = self.session.query(self.dao[class_name]).where(self.dao[class_name].id.in_(id_list))
+        else:
+            dao_list = self.session.query(self.dao[class_name])
+        return [obj.create_record() for obj in dao_list]
 
     def get_roi_list_in_fov(self, fov_id):
         """
@@ -172,8 +151,7 @@ class _ShallowSQL(ShallowDb):
         :return: a list of ROIs whose parent if the FOV with id == fov_id
         :rtype: list of dictionaries (records)
         """
-        fov_dao = FOVdao(self.session)
-        return fov_dao.roi_list(fov_id)
+        return FOVdao(self.session).roi_list(fov_id)
 
 
 class ShallowSQLite3(_ShallowSQL):

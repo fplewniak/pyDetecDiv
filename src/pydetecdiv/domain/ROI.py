@@ -60,6 +60,11 @@ class ROI(NamedDSO, BoxedDSO):
         return (self.fov.size[0] - 1 if self._bottom_right[0] == -1 else self._bottom_right[0],
                 self.fov.size[1] - 1 if self._bottom_right[1] == -1 else self._bottom_right[1])
 
+    @bottom_right.setter
+    def bottom_right(self, bottom_right):
+        self._bottom_right = bottom_right
+        self.validate()
+
     def record(self):
         """
         Returns a record dictionary of the current ROI

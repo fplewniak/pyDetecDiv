@@ -6,20 +6,24 @@ Classes of DAO accessing data in SQL Tables, created by Table reflection.
 These objects are responsible for providing the domain layer with lists of compatible records for the creation of
 domain-specific objects.
 """
-from sqlalchemy.orm import registry
+from sqlalchemy.orm import registry, joinedload
 from sqlalchemy.sql.expression import Insert, Update
+from sqlalchemy import Column, Integer, String, Time, DateTime, ForeignKey
+from sqlalchemy.schema import Index
+from sqlalchemy import text
+from sqlalchemy.orm import relationship
 from pandas import DataFrame
-from pydetecdiv.persistence.sqlalchemy.dao.tables import Tables
 
+# from pydetecdiv.persistence.sqlalchemy.dao.tables import Tables
+#
 mapper_registry = registry()
 Base = mapper_registry.generate_base()
-tables = Tables()
 
 
 class DAO:
     """
-    Data Access Object class defining methods common to all DAOs. Actual DAOs should inherit of this class first in
-    order to inherit the __init__ method.
+    Data Access Object class defining methods common to all DAOs. This class is not meant to be used directly.
+    Actual DAOs should inherit of this class first in order to inherit the __init__ method.
     """
     __table__ = None
     exclude = []
@@ -96,12 +100,9 @@ class DAO:
                 rec[key] = record[key]
         return rec
 
-    @staticmethod
-    def create_record(rec):
+    def create_record(self):
         """
         Template for method converting a DAO row dictionary into a DSO record
-        :param rec: the DAO record to convert into a DSO record
-        :type rec: dict
         :return: a DSO record
         :rtype: dict
         """
@@ -112,28 +113,32 @@ class FOVdao(DAO, Base):
     """
     DAO class for access to FOV records from the SQL database
     """
-    __table__ = tables.list['FOV']
+    __tablename__ = 'FOV'
     exclude = ['id', 'top_left', 'bottom_right']
     translate = {'size': ('xsize', 'ysize'), }
 
-    @staticmethod
-    def create_record(rec):
+    id = Column(Integer, primary_key=True, autoincrement='auto')
+    name = Column(String, unique=True)
+    comments = Column(String)
+    xsize = Column(Integer, nullable=False, server_default=text('1000'))
+    ysize = Column(Integer, nullable=False, server_default=text('1000'))
+
+    roi_list_ = relationship('ROIdao')
+
+    def create_record(self):
         """
         A method creating a DAO record dictionary from a fov row dictionary. This method is used to convert the SQL
         table columns into the FOV record fields expected by the domain layer
-        :param rec: The dictionary created by the SQL database query and representing the data as it is stored in the
-        database. This dictionary will be converted by this method into a dictionary record suitable for the domain
-        layer
-        :type rec: dict
         :return a FOV record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """
-        return {'id': rec['id'],
-                'name': rec['name'],
-                'comments': rec['comments'],
+        # rec = rec['FOVdao']
+        return {'id': self.id,
+                'name': self.name,
+                'comments': self.comments,
                 'top_left': (0, 0),
-                'bottom_right': (rec['xsize'] - 1, rec['ysize'] - 1),
-                'size': (rec['xsize'], rec['ysize']),
+                'bottom_right': (self.xsize - 1, self.ysize - 1),
+                'size': (self.xsize, self.ysize),
                 }
 
     def roi_list(self, fov_id):
@@ -144,34 +149,40 @@ class FOVdao(DAO, Base):
         :return: a list of ROI records with parent FOV id == fov_id
         :rtype: list
         """
-        roi_dao = ROIdao(self.session)
-        return roi_dao.get_records(ROIdao.__table__.c.fov == fov_id)
+        return [roi.create_record()
+                for roi in self.session.query(FOVdao)
+                .options(joinedload(FOVdao.roi_list_))
+                .filter(FOVdao.id == fov_id)
+                .first().roi_list_]
 
 
 class ROIdao(DAO, Base):
     """
     DAO class for access to ROI records from the SQL database
     """
-    __table__ = tables.list['ROI']
+    __tablename__ = 'ROI'
     exclude = ['id', 'size', ]
     translate = {'top_left': ('x0', 'y0'), 'bottom_right': ('x1', 'y1')}
 
-    @staticmethod
-    def create_record(rec):
+    id = Column(Integer, primary_key=True, autoincrement='auto')
+    name = Column(String, unique=True)
+    fov = Column(Integer, ForeignKey('FOV.id'), nullable=False, index=True)
+    x0 = Column(Integer, nullable=False, server_default=text('0'))
+    y0 = Column(Integer, nullable=False, server_default=text('-1'))
+    x1 = Column(Integer, nullable=False, server_default=text('0'))
+    y1 = Column(Integer, nullable=False, server_default=text('-1'))
+
+    def create_record(self):
         """
         A method creating a record dictionary from a roi row dictionary. This method is used to convert the SQL
         table columns into the ROI record fields expected by the domain layer
-        :param rec: The dictionary created by the SQL database query and representing the data as it is stored in the
-        database. This dictionary will be converted by this method into a dictionary record suitable for the domain
-        layer
-        :type rec: dict
         :return a ROI record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """
-        return {'id': rec['id'],
-                'name': rec['name'],
-                'fov': rec['fov'],
-                'top_left': (rec['x0'], rec['y0']),
-                'bottom_right': (rec['x1'], rec['y1']),
-                'size': (rec['x1'] - rec['x0'] + 1, rec['y1'] - rec['y0'] + 1)
+        return {'id': self.id,
+                'name': self.name,
+                'fov': self.fov,
+                'top_left': (self.x0, self.y0),
+                'bottom_right': (self.x1, self.y1),
+                'size': (self.x1 - self.x0 + 1, self.y1 - self.y0 + 1)
                 }
