@@ -30,6 +30,11 @@ class Project:
         return id_
 
     def delete(self, dso):
+        """
+        Delete a domain-specific object
+        :param dso: the object to delete
+        :type class_name: object (DomainSpecificObject)
+        """
         self.repository.delete_object(dso.__class__.__name__, dso.id_)
 
     def get_object(self, class_=DomainSpecificObject, id_=None) -> DomainSpecificObject:
