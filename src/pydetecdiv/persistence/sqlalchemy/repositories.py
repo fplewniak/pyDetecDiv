@@ -60,19 +60,28 @@ class _ShallowSQL(ShallowDb):
         """
         self.engine.dispose()
 
-    def save(self, class_name, record):
+    def save_object(self, class_name, record):
         """
         Save the object represented by the record
         :param class_name: the class name of the object to save into SQL database
         :type class_name: str
         :param record: the record representing the object
         :type record: dict
+        :return: the id of the created or updated object
+        :rtype: int
         """
         if record['id'] is None:
             return self.dao[class_name](self.session).insert(record)
         return self.dao[class_name](self.session).update(record)
 
-    def delete(self, class_name, id_):
+    def delete_object(self, class_name, id_):
+        """
+        Delete an object of class name = class_name with id = id_
+        :param class_name: the class name of the object to delete
+        :type class_name: str
+        :param id_: the id of the object to delete
+        :type id_: int
+        """
         self.session.execute(Delete(self.dao[class_name], whereclause=self.dao[class_name].id == id_))
         self.session.commit()
 

@@ -45,11 +45,14 @@ class DAO:
         modified object
         :param rec: the record representing the object
         :type rec: dict
+        :return: the primary key of the updated object
+        :rtype: int
         """
         id_ = rec['id']
         record = self.__class__._translate_record(rec)
         self.session.execute(Update(self.__class__, whereclause=self.__class__.id == id_).values(record))
         self.session.commit()
+        return id_
 
     @staticmethod
     def _translate_record(rec):

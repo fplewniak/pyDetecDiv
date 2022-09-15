@@ -26,15 +26,24 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
-    def save(self, class_name, record):
+    def save_object(self, class_name, record):
         """
-        Abstract method enforcing the implementation of a save() method in all shallow persistence connectors
-        :param class_name: the class name of the object to save into SQL database
+        Abstract method enforcing the implementation of a save_object() method in all shallow persistence connectors
+        :param class_name: the class name of the object to save
         :type class_name: str
         :param record: the record representing the object
         :type record: dict
         """
 
+    @abc.abstractmethod
+    def delete_object(self, class_name, id_):
+        """
+        Abstract method enforcing the implementation of a delete_object() method in all shallow persistence connectors
+        :param class_name: the class name of the object to delete
+        :type class_name: str
+        :param id_: the id of the object to delete
+        :type id_: int
+        """
 
     @abc.abstractmethod
     def get_dataframe(self, class_name, id_list=None):

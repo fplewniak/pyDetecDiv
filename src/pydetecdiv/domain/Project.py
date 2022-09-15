@@ -26,13 +26,11 @@ class Project:
         :return: the id of the saved object if it was created
         :rtype: int
         """
-        id_ = self.repository.save(dso.__class__.__name__, dso.record())
-        if id_ is None:
-            id_ = dso.id_
+        id_ = self.repository.save_object(dso.__class__.__name__, dso.record())
         return id_
 
     def delete(self, dso):
-        self.repository.delete(dso.__class__.__name__, dso.id_)
+        self.repository.delete_object(dso.__class__.__name__, dso.id_)
 
     def get_object(self, class_=DomainSpecificObject, id_=None) -> DomainSpecificObject:
         """
