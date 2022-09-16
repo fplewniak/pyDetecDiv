@@ -12,10 +12,7 @@ from sqlalchemy import Column, Integer, String, Time, DateTime, ForeignKey
 from sqlalchemy.schema import Index
 from sqlalchemy import text
 from sqlalchemy.orm import relationship
-from pandas import DataFrame
 
-# from pydetecdiv.persistence.sqlalchemy.dao.tables import Tables
-#
 mapper_registry = registry()
 Base = mapper_registry.generate_base()
 
@@ -54,9 +51,9 @@ class DAO:
         :return: the primary key of the updated object
         :rtype: int
         """
-        id_ = rec['id']
+        id_ = rec['id_']
         record = self.translate_record(rec, self.exclude, self.translate)
-        self.session.execute(Update(self.__table__, whereclause=self.__table__.c.id == id_).values(record))
+        self.session.execute(Update(self.__table__, whereclause=self.__table__.c.id_ == id_).values(record))
         self.session.commit()
         return id_
 
@@ -64,7 +61,7 @@ class DAO:
         """
         A method to get from the SQL database, all records verifying the specified where clause
         Example of use:
-        roi_records = roidao.get_records((ROIdao.fov == FOVdao.id) & (FOVdao.name == 'fov1')) retrieves all ROI records
+        roi_records = roidao.get_records((ROIdao.fov == FOVdao.id_) & (FOVdao.name == 'fov1')) retrieves all ROI records
         associated with FOV whose name is 'fov1'
 
         :param where_clause: the selection 'where clause' that can be specified using DAO classes or tables
@@ -74,7 +71,7 @@ class DAO:
         """
         stmt = self.__table__.select(where_clause)
         result = self.session.execute(stmt)
-        return [self.__class__.create_record(rec) for rec in DataFrame(result.mappings()).to_dict('records')]
+        return [obj.record for obj in result]
 
     @staticmethod
     def translate_record(record, exclude, translate):
@@ -100,13 +97,14 @@ class DAO:
                 rec[key] = record[key]
         return rec
 
-    def create_record(self):
+    @property
+    def record(self):
         """
         Template for method converting a DAO row dictionary into a DSO record
         :return: a DSO record
         :rtype: dict
         """
-        raise NotImplementedError('Call to a create_record(rec) method that is not implemented')
+        raise NotImplementedError('Call to a record() method that is not implemented')
 
 
 class FOVdao(DAO, Base):
@@ -117,7 +115,7 @@ class FOVdao(DAO, Base):
     exclude = ['id', 'top_left', 'bottom_right']
     translate = {'size': ('xsize', 'ysize'), }
 
-    id = Column(Integer, primary_key=True, autoincrement='auto')
+    id_ = Column(Integer, primary_key=True, autoincrement='auto')
     name = Column(String, unique=True)
     comments = Column(String)
     xsize = Column(Integer, nullable=False, server_default=text('1000'))
@@ -125,7 +123,8 @@ class FOVdao(DAO, Base):
 
     roi_list_ = relationship('ROIdao')
 
-    def create_record(self):
+    @property
+    def record(self):
         """
         A method creating a DAO record dictionary from a fov row dictionary. This method is used to convert the SQL
         table columns into the FOV record fields expected by the domain layer
@@ -133,7 +132,7 @@ class FOVdao(DAO, Base):
         :rtype: dict
         """
         # rec = rec['FOVdao']
-        return {'id': self.id,
+        return {'id': self.id_,
                 'name': self.name,
                 'comments': self.comments,
                 'top_left': (0, 0),
@@ -149,10 +148,10 @@ class FOVdao(DAO, Base):
         :return: a list of ROI records with parent FOV id == fov_id
         :rtype: list
         """
-        return [roi.create_record()
+        return [roi.record
                 for roi in self.session.query(FOVdao)
                 .options(joinedload(FOVdao.roi_list_))
-                .filter(FOVdao.id == fov_id)
+                .filter(FOVdao.id_ == fov_id)
                 .first().roi_list_]
 
 
@@ -161,28 +160,29 @@ class ROIdao(DAO, Base):
     DAO class for access to ROI records from the SQL database
     """
     __tablename__ = 'ROI'
-    exclude = ['id', 'size', ]
-    translate = {'top_left': ('x0', 'y0'), 'bottom_right': ('x1', 'y1')}
+    exclude = ['id_', 'size', ]
+    translate = {'top_left': ('x0_', 'y0_'), 'bottom_right': ('x1_', 'y1_')}
 
-    id = Column(Integer, primary_key=True, autoincrement='auto')
+    id_ = Column(Integer, primary_key=True, autoincrement='auto')
     name = Column(String, unique=True)
-    fov = Column(Integer, ForeignKey('FOV.id'), nullable=False, index=True)
-    x0 = Column(Integer, nullable=False, server_default=text('0'))
-    y0 = Column(Integer, nullable=False, server_default=text('-1'))
-    x1 = Column(Integer, nullable=False, server_default=text('0'))
-    y1 = Column(Integer, nullable=False, server_default=text('-1'))
+    fov = Column(Integer, ForeignKey('FOV.id_'), nullable=False, index=True)
+    x0_ = Column(Integer, nullable=False, server_default=text('0'))
+    y0_ = Column(Integer, nullable=False, server_default=text('-1'))
+    x1_ = Column(Integer, nullable=False, server_default=text('0'))
+    y1_ = Column(Integer, nullable=False, server_default=text('-1'))
 
-    def create_record(self):
+    @property
+    def record(self):
         """
         A method creating a record dictionary from a roi row dictionary. This method is used to convert the SQL
         table columns into the ROI record fields expected by the domain layer
         :return a ROI record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """
-        return {'id': self.id,
+        return {'id': self.id_,
                 'name': self.name,
                 'fov': self.fov,
-                'top_left': (self.x0, self.y0),
-                'bottom_right': (self.x1, self.y1),
-                'size': (self.x1 - self.x0 + 1, self.y1 - self.y0 + 1)
+                'top_left': (self.x0_, self.y0_),
+                'bottom_right': (self.x1_, self.y1_),
+                'size': (self.x1_ - self.x0_ + 1, self.y1_ - self.y0_ + 1)
                 }

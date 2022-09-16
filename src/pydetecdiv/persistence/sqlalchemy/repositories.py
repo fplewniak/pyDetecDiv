@@ -10,7 +10,6 @@ from sqlalchemy.sql.expression import Delete
 from sqlalchemy.pool import SingletonThreadPool
 from pandas import DataFrame
 from pydetecdiv.persistence.repository import ShallowDb
-from pydetecdiv.persistence.sqlalchemy.dao.tables import Tables
 from pydetecdiv.persistence.sqlalchemy.dao.orm import FOVdao, ROIdao
 
 
@@ -71,7 +70,7 @@ class _ShallowSQL(ShallowDb):
         :return: the id of the created or updated object
         :rtype: int
         """
-        if record['id'] is None:
+        if record['id_'] is None:
             return self.dao[class_name](self.session).insert(record)
         return self.dao[class_name](self.session).update(record)
 
@@ -83,7 +82,7 @@ class _ShallowSQL(ShallowDb):
         :param id_: the id of the object to delete
         :type id_: int
         """
-        self.session.execute(Delete(self.dao[class_name], whereclause=self.dao[class_name].id == id_))
+        self.session.execute(Delete(self.dao[class_name], whereclause=self.dao[class_name].id_ == id_))
         self.session.commit()
 
     def _get_records(self, class_name=None, query=None):
@@ -101,7 +100,7 @@ class _ShallowSQL(ShallowDb):
         if query is not None:
             for q in query:
                 dao_list = dao_list.where(q)
-        return [obj.create_record() for obj in dao_list]
+        return [obj.record for obj in dao_list]
 
     def get_dataframe(self, class_name, id_list=None):
         """
@@ -125,7 +124,7 @@ class _ShallowSQL(ShallowDb):
         :return: the object record
         :rtype: dict (record)
         """
-        return self.session.get(self.dao[class_name], id_).create_record()
+        return self.session.get(self.dao[class_name], id_).record
 
     def get_records(self, class_name, id_list=None):
         """
@@ -138,10 +137,10 @@ class _ShallowSQL(ShallowDb):
         :rtype: list of dictionaries (records)
         """
         if id_list is not None:
-            dao_list = self.session.query(self.dao[class_name]).where(self.dao[class_name].id.in_(id_list))
+            dao_list = self.session.query(self.dao[class_name]).where(self.dao[class_name].id_.in_(id_list))
         else:
             dao_list = self.session.query(self.dao[class_name])
-        return [obj.create_record() for obj in dao_list]
+        return [obj.record for obj in dao_list]
 
     def get_roi_list_in_fov(self, fov_id):
         """
