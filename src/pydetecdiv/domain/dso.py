@@ -22,10 +22,10 @@ class DomainSpecificObject:
         :type **kwargs: dict
         """
         self.project = project
-        if 'id' not in kwargs:
+        if 'id_' not in kwargs:
             self.id_ = None
         else:
-            self.id_ = kwargs['id']
+            self.id_ = kwargs['id_']
         self.data = kwargs
 
     def __eq__(self, o):

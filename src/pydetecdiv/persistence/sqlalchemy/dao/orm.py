@@ -132,7 +132,7 @@ class FOVdao(DAO, Base):
         :rtype: dict
         """
         # rec = rec['FOVdao']
-        return {'id': self.id_,
+        return {'id_': self.id_,
                 'name': self.name,
                 'comments': self.comments,
                 'top_left': (0, 0),
@@ -179,7 +179,7 @@ class ROIdao(DAO, Base):
         :return a ROI record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """
-        return {'id': self.id_,
+        return {'id_': self.id_,
                 'name': self.name,
                 'fov': self.fov,
                 'top_left': (self.x0_, self.y0_),
