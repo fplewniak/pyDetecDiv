@@ -30,7 +30,7 @@ class FOV(NamedDSO, BoxedDSO):
         """
         ...
 
-    def record(self, include_roi_list=False):
+    def record(self, include_roi_list=False, no_id = False):
         """
         Returns a record dictionary of the current FOV, including or not a list of associated ROIs as a sub-dictionary
         :param include_roi_list: if True, the record will contain a field 'roi_list' with the associated ROIs
@@ -39,13 +39,14 @@ class FOV(NamedDSO, BoxedDSO):
         :rtype: dict
         """
         record = {
-            'id_': self.id_,
             'name': self.name,
             'comments': self.comments,
             'top_left': self.top_left,
             'bottom_right': self.bottom_right,
             'size': self.size
         }
+        if not no_id:
+            record['id_'] = self.id_
         if include_roi_list:
             record['roi_list'] = self.roi_list
         return record

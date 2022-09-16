@@ -54,20 +54,25 @@ class ROI(NamedDSO, BoxedDSO):
         self._bottom_right = bottom_right
         self.validate()
 
-    def record(self):
+    def record(self, no_id=False):
         """
         Returns a record dictionary of the current ROI
+        :param no_id: if True, the id_ is not passed included in the record to allow transfer from one project to
+        another
+        :type no_id: bool
         :return: record dictionary
         :rtype: dict
         """
-        return {
-            'id_': self.id_,
+        record = {
             'name': self.name,
             'fov': self._fov.id_,
             'top_left': self.top_left,
             'bottom_right': self.bottom_right,
             'size': self.size
         }
+        if not no_id:
+            record['id_'] = self.id_
+        return record
 
     def __repr__(self):
         return f'{self.record()}'
