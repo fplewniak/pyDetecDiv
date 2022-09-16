@@ -9,7 +9,6 @@ domain-specific objects.
 from sqlalchemy.orm import registry, joinedload
 from sqlalchemy.sql.expression import Insert, Update
 from sqlalchemy import Column, Integer, String, Time, DateTime, ForeignKey
-from sqlalchemy.schema import Index
 from sqlalchemy import text
 from sqlalchemy.orm import relationship
 
@@ -131,7 +130,6 @@ class FOVdao(DAO, Base):
         :return a FOV record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """
-        # rec = rec['FOVdao']
         return {'id_': self.id_,
                 'name': self.name,
                 'comments': self.comments,
