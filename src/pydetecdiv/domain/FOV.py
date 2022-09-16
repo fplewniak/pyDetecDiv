@@ -39,7 +39,7 @@ class FOV(NamedDSO, BoxedDSO):
         :rtype: dict
         """
         record = {
-            'id': self.id_,
+            'id_': self.id_,
             'name': self.name,
             'comments': self.comments,
             'top_left': self.top_left,
@@ -52,17 +52,6 @@ class FOV(NamedDSO, BoxedDSO):
 
     def __repr__(self):
         return f'{self.record()}'
-
-    def __eq__(self, other):
-        """
-        Defines equality of FOV objects as having the same id, same name and same size
-        :param other: the other FOV object to compare with the current one
-        :type other: FOV
-        :return: True if both FOVs are equal
-        :rtype: bool
-        """
-        is_eq = [self.id_ == other.id_, self.name == other.name, self.size == self.size]
-        return all(is_eq)
 
     @property
     def comments(self):

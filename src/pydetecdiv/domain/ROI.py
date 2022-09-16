@@ -15,19 +15,8 @@ class ROI(NamedDSO, BoxedDSO):
 
     def __init__(self, fov=None, **kwargs):
         super().__init__(**kwargs)
-        self.fov = fov
+        self._fov = fov if isinstance(fov, FOV) or fov is None else self.project.get_object(FOV, fov)
         self.validate(updated=False)
-
-    def __eq__(self, o):
-        """
-        Defines equality of ROI objects as having the same id, same FOV parent and same location
-        :param other: the other ROI object to compare with the current one
-        :type other: ROI
-        :return: True if both ROIs are equal
-        :rtype: bool
-        """
-        is_eq = [self.id_ == o.id_, self.fov == o.fov, self.top_left == o.top_left, self.bottom_right == o.bottom_right]
-        return all(is_eq)
 
     def check_validity(self):
         """
@@ -72,7 +61,7 @@ class ROI(NamedDSO, BoxedDSO):
         :rtype: dict
         """
         return {
-            'id': self.id_,
+            'id_': self.id_,
             'name': self.name,
             'fov': self._fov.id_,
             'top_left': self.top_left,

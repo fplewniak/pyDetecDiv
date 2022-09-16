@@ -28,6 +28,17 @@ class DomainSpecificObject:
             self.id_ = kwargs['id']
         self.data = kwargs
 
+    def __eq__(self, o):
+        """
+        Defines equality of domain-specific objects as having the same id and same class
+        :param other: the other dso to compare with the current one
+        :type other: DomainSpecificObject
+        :return: True if both objects are the same
+        :rtype: bool
+        """
+        is_eq = [self.id_ == o.id_, self.__class__ == o.__class__]
+        return all(is_eq)
+
     def delete(self):
         """
         Delete the current object
