@@ -17,6 +17,7 @@ class Project:
     def __init__(self, dbname=None, dbms=None):
         self.repository = open_project(dbname, dbms)
         self.dbname = dbname
+        self.pool = {}
 
     def save(self, dso):
         """
@@ -33,8 +34,9 @@ class Project:
         """
         Delete a domain-specific object
         :param dso: the object to delete
-        :type class_: object (DomainSpecificObject)
+        :type dso: object (DomainSpecificObject)
         """
+        self.release_dso(dso.__class__, dso.id_)
         self.repository.delete_object(dso.__class__.__name__, dso.id_)
 
     def get_object(self, class_=DomainSpecificObject, id_=None) -> DomainSpecificObject:
@@ -47,7 +49,8 @@ class Project:
         :return: the desired object
         :rtype: object (DomainSpecificObject)
         """
-        return class_(project=self, **self.repository.get_record(class_.__name__, id_))
+        # return class_(project=self, **self.repository.get_record(class_.__name__, id_))
+        return self.build_dso(class_, self.repository.get_record(class_.__name__, id_))
 
     def get_objects(self, class_=DomainSpecificObject, id_list=None):
         """
@@ -59,7 +62,8 @@ class Project:
         :return: a list of all the objects of that class in the project with all their associated metadata
         :rtype: list of the requested domain-specific objects
         """
-        return [class_(project=self, **rec) for rec in self.repository.get_records(class_.__name__, id_list)]
+        # return [class_(project=self, **rec) for rec in self.repository.get_records(class_.__name__, id_list)]
+        return [self.build_dso(class_, rec) for rec in self.repository.get_records(class_.__name__, id_list)]
 
     def get_roi_list_in_fov(self, fov):
         """
@@ -70,5 +74,37 @@ class Project:
         :return: the list of ROIs whose parent is the specified FOV
         :rtype: list of ROI objects
         """
-        roi_records = [ROI(project=self, **rec) for rec in self.repository.get_roi_list_in_fov(fov.id_)]
+        # roi_records = [ROI(project=self, **rec) for rec in self.repository.get_roi_list_in_fov(fov.id_)]
+        roi_records = [self.build_dso(ROI, rec) for rec in self.repository.get_roi_list_in_fov(fov.id_)]
         return roi_records
+
+    def build_dso(self, class_, rec):
+        """
+        factory method to build a dso of class class_ from record rec or return the pooled object if it was already
+        created
+        :param class_: the class of the dso to build
+        :type class_: type (class)
+        :param rec: the record representing the object to build (if id_ is not in the record, the object is a new
+        creation
+        :type rec: dict
+        :return: the requested object
+        :rtype: DomainSpecificObject
+        """
+        if 'id_' in rec and (class_.__name__, rec['id_']) in self.pool:
+            return self.pool[(class_.__name__, rec['id_'])]
+        obj = class_(project=self, **rec)
+        obj.validate()
+        self.pool[(class_.__name__, obj.id_)] = obj
+        return obj
+
+    def release_dso(self, class_, id_):
+        """
+        remove a dso from the pool. This should be done when deleting an object with delete() method or to release an
+        object that is not needed any more
+        :param class_: the class of the object to be removed from the pool
+        :type class_: class
+        :param id_: the id of the object to be removed from the pool
+        :type id_: int
+        """
+        if (class_.__name__, id_) in self.pool:
+            del self.pool[(class_.__name__, id_)]

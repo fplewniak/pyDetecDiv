@@ -61,6 +61,17 @@ class DomainSpecificObject:
         if updated or self.id_ is None:
             self.id_ = self.project.save(self)
 
+    def record(self):
+        """
+        Returns a record dictionary of the current ROI
+        :return: record dictionary
+        :rtype: dict
+        """
+        return {
+            'id_': self.id_,
+            'data': self.data,
+        }
+
 
 class NamedDSO(DomainSpecificObject):
     """
