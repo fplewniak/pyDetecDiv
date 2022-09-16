@@ -93,7 +93,6 @@ class Project:
         if 'id_' in rec and (class_.__name__, rec['id_']) in self.pool:
             return self.pool[(class_.__name__, rec['id_'])]
         obj = class_(project=self, **rec)
-        obj.validate()
         self.pool[(class_.__name__, obj.id_)] = obj
         return obj
 
