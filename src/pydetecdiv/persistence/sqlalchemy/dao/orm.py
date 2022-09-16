@@ -110,7 +110,7 @@ class FOVdao(DAO, Base):
     DAO class for access to FOV records from the SQL database
     """
     __tablename__ = 'FOV'
-    exclude = ['id', 'top_left', 'bottom_right']
+    exclude = ['id_', 'top_left', 'bottom_right']
     translate = {'size': ('xsize', 'ysize'), }
 
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
