@@ -21,7 +21,7 @@ class DAO:
     Data Access Object class defining methods common to all DAOs. This class is not meant to be used directly.
     Actual DAOs should inherit of this class first in order to inherit the __init__ method.
     """
-    __table__ = None
+    id_ = None
     exclude = []
     translate = {}
 
@@ -52,7 +52,7 @@ class DAO:
         """
         id_ = rec['id_']
         record = self.translate_record(rec, self.exclude, self.translate)
-        self.session.execute(Update(self.__table__, whereclause=self.__table__.c.id_ == id_).values(record))
+        self.session.execute(Update(self.__class__, whereclause=self.__class__.id_ == id_).values(record))
         self.session.commit()
         return id_
 
@@ -68,9 +68,8 @@ class DAO:
         :return: a list of records as dictionaries
         :rtype: list of dict
         """
-        stmt = self.__table__.select(where_clause)
-        result = self.session.execute(stmt)
-        return [obj.record for obj in result]
+        dao_list = self.session.query(self.__class__).where(where_clause)
+        return [obj.record for obj in dao_list]
 
     @staticmethod
     def translate_record(record, exclude, translate):
