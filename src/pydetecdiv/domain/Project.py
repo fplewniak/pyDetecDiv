@@ -33,7 +33,7 @@ class Project:
         """
         Delete a domain-specific object
         :param dso: the object to delete
-        :type class_name: object (DomainSpecificObject)
+        :type class_: object (DomainSpecificObject)
         """
         self.repository.delete_object(dso.__class__.__name__, dso.id_)
 
