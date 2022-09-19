@@ -4,6 +4,7 @@
 Domain specific generic attributes and methods shared by all domain objects. Other domain classes (except Project)
 should inherit from this class
 """
+import copy
 from pydetecdiv.exceptions import MissingNameError
 from pydetecdiv.utils.Shapes import Box
 
@@ -61,16 +62,18 @@ class DomainSpecificObject:
         if updated or self.id_ is None:
             self.id_ = self.project.save(self)
 
-    def record(self):
+    def record(self, no_id=False):
         """
-        Returns a record dictionary of the current ROI
+        Returns a record dictionary of the current DSO
         :return: record dictionary
         :rtype: dict
         """
-        return {
-            'id_': self.id_,
-            'data': self.data,
-        }
+        record = copy.deepcopy(self.data)
+        if no_id:
+            del record['id_']
+        else:
+            record['id_'] = self.id_
+        return record
 
 
 class NamedDSO(DomainSpecificObject):
