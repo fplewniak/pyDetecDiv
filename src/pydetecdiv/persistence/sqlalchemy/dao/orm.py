@@ -25,8 +25,8 @@ class DAO:
     exclude = []
     translate = {}
 
-    def __init__(self, session):
-        self.session = session
+    def __init__(self, session_maker):
+        self.session_maker = session_maker
 
     def insert(self, rec):
         """
@@ -37,8 +37,9 @@ class DAO:
         :rtype: int
         """
         record = self.translate_record(rec, self.exclude, self.translate)
-        primary_key = self.session.execute(Insert(self.__class__).values(record)).inserted_primary_key[0]
-        self.session.commit()
+        with self.session_maker() as session:
+            primary_key = session.execute(Insert(self.__class__).values(record)).inserted_primary_key[0]
+            session.commit()
         return primary_key
 
     def update(self, rec):
@@ -52,8 +53,9 @@ class DAO:
         """
         id_ = rec['id_']
         record = self.translate_record(rec, self.exclude, self.translate)
-        self.session.execute(Update(self.__class__, whereclause=self.__class__.id_ == id_).values(record))
-        self.session.commit()
+        with self.session_maker() as session:
+            session.execute(Update(self.__class__, whereclause=self.__class__.id_ == id_).values(record))
+            session.commit()
         return id_
 
     def get_records(self, where_clause):
@@ -68,7 +70,8 @@ class DAO:
         :return: a list of records as dictionaries
         :rtype: list of dict
         """
-        dao_list = self.session.query(self.__class__).where(where_clause)
+        with self.session_maker() as session:
+            dao_list = session.query(self.__class__).where(where_clause)
         return [obj.record for obj in dao_list]
 
     @staticmethod
@@ -114,7 +117,7 @@ class FOVdao(DAO, Base):
     translate = {'size': ('xsize', 'ysize'), }
 
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
-    name = Column(String, unique=True)
+    name = Column(String, unique=True, nullable=False)
     comments = Column(String)
     xsize = Column(Integer, nullable=False, server_default=text('1000'))
     ysize = Column(Integer, nullable=False, server_default=text('1000'))
@@ -145,11 +148,13 @@ class FOVdao(DAO, Base):
         :return: a list of ROI records with parent FOV id == fov_id
         :rtype: list
         """
-        return [roi.record
-                for roi in self.session.query(FOVdao)
-                .options(joinedload(FOVdao.roi_list_))
-                .filter(FOVdao.id_ == fov_id)
-                .first().roi_list_]
+        with self.session_maker() as session:
+            roi_list = [roi.record
+                        for roi in session.query(FOVdao)
+                        .options(joinedload(FOVdao.roi_list_))
+                        .filter(FOVdao.id_ == fov_id)
+                        .first().roi_list_]
+        return roi_list
 
 
 class ROIdao(DAO, Base):
@@ -161,7 +166,7 @@ class ROIdao(DAO, Base):
     translate = {'top_left': ('x0_', 'y0_'), 'bottom_right': ('x1_', 'y1_')}
 
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
-    name = Column(String, unique=True)
+    name = Column(String, unique=True, nullable=False)
     fov = Column(Integer, ForeignKey('FOV.id_'), nullable=False, index=True)
     x0_ = Column(Integer, nullable=False, server_default=text('0'))
     y0_ = Column(Integer, nullable=False, server_default=text('-1'))

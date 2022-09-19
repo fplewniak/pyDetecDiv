@@ -5,9 +5,9 @@ Concrete Repositories using a SQL database with the sqlalchemy toolkit
 """
 import re
 import sqlalchemy
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.expression import Delete
-from sqlalchemy.pool import SingletonThreadPool
+from sqlalchemy.pool import NullPool
 from pandas import DataFrame
 from pydetecdiv.persistence.repository import ShallowDb
 from pydetecdiv.persistence.sqlalchemy.dao.orm import FOVdao, ROIdao
@@ -26,9 +26,8 @@ class _ShallowSQL(ShallowDb):
 
     def __init__(self, dbname):
         self.name = dbname
-        self.engine = None
-        self.session = None
-        self.tables = {'FOV': FOVdao.__table__, 'ROI': ROIdao.__table__}
+        self.engine = sqlalchemy.create_engine('sqlite+pysqlite://', poolclass=NullPool)
+        self.session_maker = sessionmaker(self.engine)
 
     def executescript(self, script):
         """
@@ -38,10 +37,10 @@ class _ShallowSQL(ShallowDb):
         """
         try:
             statements = re.split(r';\s*$', script, flags=re.MULTILINE)
-            for statement in statements:
-                if statement:
-                    self.session.execute(sqlalchemy.text(statement))
-            self.session.commit()
+            with self.session_maker() as session:
+                for statement in statements:
+                    if statement:
+                        session.execute(sqlalchemy.text(statement))
         except sqlalchemy.exc.OperationalError as exc:
             print(exc)
 
@@ -49,10 +48,8 @@ class _ShallowSQL(ShallowDb):
         """
         Gets SqlAlchemy classes defining the project database schema and creates the database if it does not exist.
         """
-        #self.tables = Tables()
         if not self.engine.table_names():
             FOVdao.metadata.create_all(self.engine)
-            #self.tables.create(self.engine)
 
     def close(self):
         """
@@ -71,8 +68,8 @@ class _ShallowSQL(ShallowDb):
         :rtype: int
         """
         if record['id_'] is None:
-            return self.dao[class_name](self.session).insert(record)
-        return self.dao[class_name](self.session).update(record)
+            return self.dao[class_name](self.session_maker).insert(record)
+        return self.dao[class_name](self.session_maker).update(record)
 
     def delete_object(self, class_name, id_):
         """
@@ -82,8 +79,9 @@ class _ShallowSQL(ShallowDb):
         :param id_: the id of the object to delete
         :type id_: int
         """
-        self.session.execute(Delete(self.dao[class_name], whereclause=self.dao[class_name].id_ == id_))
-        self.session.commit()
+        with self.session_maker() as session:
+            session.execute(Delete(self.dao[class_name], whereclause=self.dao[class_name].id_ == id_))
+            session.commit()
 
     def _get_records(self, class_name=None, query=None):
         """
@@ -96,10 +94,11 @@ class _ShallowSQL(ShallowDb):
         :return: a list of records
         :rtype: list of dictionaries (records)
         """
-        dao_list = self.session.query(self.dao[class_name])
-        if query is not None:
-            for q in query:
-                dao_list = dao_list.where(q)
+        with self.session_maker() as session:
+            dao_list = session.query(self.dao[class_name])
+            if query is not None:
+                for q in query:
+                    dao_list = dao_list.where(q)
         return [obj.record for obj in dao_list]
 
     def get_dataframe(self, class_name, id_list=None):
@@ -124,7 +123,8 @@ class _ShallowSQL(ShallowDb):
         :return: the object record
         :rtype: dict (record)
         """
-        return self.session.get(self.dao[class_name], id_).record
+        with self.session_maker() as session:
+            return session.get(self.dao[class_name], id_).record
 
     def get_records(self, class_name, id_list=None):
         """
@@ -136,10 +136,11 @@ class _ShallowSQL(ShallowDb):
         :return: a list of records
         :rtype: list of dictionaries (records)
         """
-        if id_list is not None:
-            dao_list = self.session.query(self.dao[class_name]).where(self.dao[class_name].id_.in_(id_list))
-        else:
-            dao_list = self.session.query(self.dao[class_name])
+        with self.session_maker() as session:
+            if id_list is not None:
+                dao_list = session.query(self.dao[class_name]).where(self.dao[class_name].id_.in_(id_list))
+            else:
+                dao_list = session.query(self.dao[class_name])
         return [obj.record for obj in dao_list]
 
     def get_roi_list_in_fov(self, fov_id):
@@ -150,7 +151,7 @@ class _ShallowSQL(ShallowDb):
         :return: a list of ROIs whose parent if the FOV with id == fov_id
         :rtype: list of dictionaries (records)
         """
-        return FOVdao(self.session).roi_list(fov_id)
+        return FOVdao(self.session_maker).roi_list(fov_id)
 
 
 class ShallowSQLite3(_ShallowSQL):
@@ -160,9 +161,6 @@ class ShallowSQLite3(_ShallowSQL):
 
     def __init__(self, dbname=None):
         super().__init__(dbname)
-        self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}', poolclass=SingletonThreadPool)
-        # self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}', poolclass=SingletonThreadPool,
-        #                                        echo=True, echo_pool='debug')
-        self.session = Session(self.engine, future=True)
-        self.session.begin()
+        self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}', poolclass=NullPool)
+        self.session_maker = sessionmaker(self.engine, future=True)
         super().create()
