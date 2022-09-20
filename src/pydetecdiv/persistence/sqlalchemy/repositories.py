@@ -169,10 +169,18 @@ class _ShallowSQL(ShallowDb):
         :return: a list of records
         :rtype: list of dict
         """
+        linked_records = []
         if class_name == 'ImageData':
-            linked_records = self.dao[parent_class_name](self.session_maker).image_data(parent_id)
+            if parent_class_name in ['FileResource', 'FOV']:
+                linked_records = self.dao[parent_class_name](self.session_maker).image_data(parent_id)
+        if class_name == 'FOV':
+            if parent_class_name in ['ImageData']:
+                linked_records = self.dao[parent_class_name](self.session_maker).fov_list(parent_id)
+            if parent_class_name in ['ROI']:
+                linked_records = [self.get_record(class_name, self.get_record(parent_class_name, parent_id)['id_'])]
         if class_name == 'ROI':
-            linked_records = self.dao[parent_class_name](self.session_maker).roi_list(parent_id)
+            if parent_class_name in ['FOV']:
+                linked_records = self.dao[parent_class_name](self.session_maker).roi_list(parent_id)
         return linked_records
 
 

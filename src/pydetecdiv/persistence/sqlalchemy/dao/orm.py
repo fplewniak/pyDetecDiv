@@ -128,7 +128,7 @@ class FOVdao(DAO, Base):
 
     roi_list_ = relationship('ROIdao')
 
-    # image_data = relationship("FovData", back_populates='fov')
+    image_data_list = relationship("FovData", back_populates='one_fov', lazy='joined')
 
     @property
     def record(self):
@@ -145,6 +145,22 @@ class FOVdao(DAO, Base):
                 'bottom_right': (self.xsize - 1, self.ysize - 1),
                 'size': (self.xsize, self.ysize),
                 }
+
+    def image_data(self, fov_id):
+        """
+        A method returning the list of Image data objects in File resource with id_ == resource_id
+        :param resource_id: the id of the file resource
+        :type resource_id: int
+        :return: a list of ImageData records with parent File resource id_ == resource_id
+        :rtype: list
+        """
+        with self.session_maker() as session:
+            image_data = [association.image_data.record
+                          for association in session.query(FOVdao)
+                          .options(joinedload(FOVdao.image_data_list))
+                          .filter(FOVdao.id_ == fov_id)
+                          .first().image_data_list]
+        return image_data
 
     def roi_list(self, fov_id):
         """
@@ -219,7 +235,24 @@ class ImageDataDao(DAO, Base):
     path = Column(String, )
     mimetype = Column(String)
 
-    # fov_list = relationship("FovData", back_populates="fov")
+    fov_list_ = relationship("FovData", back_populates='image_data', lazy='joined')
+
+    def fov_list(self, image_data_id):
+        """
+        A method returning the list of Image data objects in File resource with id_ == resource_id
+        :param resource_id: the id of the file resource
+        :type resource_id: int
+        :return: a list of ImageData records with parent File resource id_ == resource_id
+        :rtype: list
+        """
+        with self.session_maker() as session:
+            fov_list = [association.one_fov.record
+                          for association in session.query(ImageDataDao)
+                          .options(joinedload(ImageDataDao.fov_list_))
+                          .filter(ImageDataDao.id_ == image_data_id)
+                          .first().fov_list_]
+        return fov_list
+
 
     @property
     def record(self):
@@ -287,13 +320,12 @@ class FileResourceDao(DAO, Base):
                 'mimetype': self.mimetype,
                 }
 
-# class FovData(Base):
-#     """
-#     Association many to many between FOV and Image data
-#     """
-#     __tablename__ = "FOVdata"
-#
-#     left_id = Column(ForeignKey("FOV.id_"), primary_key=True)
-#     right_id = Column(ForeignKey("ImageData.id_"), primary_key=True)
-#     fov = relationship("FOV", back_populates="image_data")
-#     image_data = relationship("ImageData", back_populates="fov_list")
+class FovData(DAO, Base):
+    """
+    Association many to many between FOV and Image data
+    """
+    __tablename__ = "FOVdata"
+    left_id = Column(ForeignKey("FOV.id_"), primary_key=True)
+    right_id = Column(ForeignKey("ImageData.id_"), primary_key=True)
+    one_fov = relationship("FOVdao", back_populates='image_data_list', lazy='joined')
+    image_data = relationship("ImageDataDao", back_populates='fov_list_', lazy='joined')
