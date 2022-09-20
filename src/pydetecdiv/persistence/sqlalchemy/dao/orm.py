@@ -93,7 +93,11 @@ class DAO:
             if key in exclude:
                 continue
             if key in translate:
-                rec[translate[key][0]], rec[translate[key][1]] = record[key]
+                if isinstance(translate[key], list) or isinstance(translate[key], tuple):
+                    for translated_key, value in zip(translate[key], record[key]):
+                        rec[translated_key] = value
+                else:
+                    rec[translate[key]] = record[key]
             else:
                 rec[key] = record[key]
         return rec
@@ -123,6 +127,8 @@ class FOVdao(DAO, Base):
     ysize = Column(Integer, nullable=False, server_default=text('1000'))
 
     roi_list_ = relationship('ROIdao')
+
+    # image_data = relationship("FovData", back_populates='fov')
 
     @property
     def record(self):
@@ -190,13 +196,13 @@ class ROIdao(DAO, Base):
                 }
 
 
-class ImageDatadao(DAO, Base):
+class ImageDataDao(DAO, Base):
     """
     DAO class for access to ImageData records from the SQL database
     """
     __tablename__ = 'ImageData'
     exclude = ['id_', ]
-    translate = {'top_left': ('x0_', 'y0_'), 'bottom_right': ('x1_', 'y1_')}
+    translate = {'top_left': ('x0_', 'y0_'), 'bottom_right': ('x1_', 'y1_'), 'file_resource': 'resource'}
 
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
     name = Column(String, unique=True, )
@@ -207,38 +213,40 @@ class ImageDatadao(DAO, Base):
     y1_ = Column(Integer, nullable=False, server_default=text('-1'))
     stacks = Column(Integer, nullable=False, server_default=text('1'))
     frames = Column(Integer, nullable=False, server_default=text('1'))
-    interval = Column(Time, nullable=False, server_default=text('1'))
+    interval = Column(Time, )
     orderdims = Column(String, nullable=False, server_default=text('xyzct'))
     resource = Column(Integer, ForeignKey('FileResource.id_'), nullable=False, index=True)
-    path = Column(String,)
+    path = Column(String, )
     mimetype = Column(String)
+
+    # fov_list = relationship("FovData", back_populates="fov")
 
     @property
     def record(self):
         """
-        A method creating a record dictionary from a roi row dictionary. This method is used to convert the SQL
-        table columns into the ROI record fields expected by the domain layer
-        :return a ROI record as a dictionary with keys() appropriate for handling by the domain layer
+        A method creating a record dictionary from a image data row dictionary. This method is used to convert the SQL
+        table columns into the image data record fields expected by the domain layer
+        :return an image data record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """
         return {'id_': self.id_,
                 'name': self.name,
+                'top_left': (self.x0_, self.y0_),
+                'bottom_right': (self.x1_, self.y1_),
                 'channel': self.channel,
                 'stacks': self.stacks,
                 'frames': self.frames,
                 'interval': self.interval,
                 'orderdims': self.orderdims,
-                'top_left': (self.x0_, self.y0_),
-                'bottom_right': (self.x1_, self.y1_),
-                'size': (self.x1_ - self.x0_ + 1, self.y1_ - self.y0_ + 1),
-                'resource': self.resource,
+                'file_resource': self.resource,
                 'path': self.path,
                 'mimetype': self.mimetype,
                 }
 
-class FileResource(DAO, Base):
+
+class FileResourceDao(DAO, Base):
     """
-    DAO class for access to ImageData records from the SQL database
+    DAO class for access to FileReource records from the SQL database
     """
     __tablename__ = 'FileResource'
     exclude = ['id_', ]
@@ -248,15 +256,44 @@ class FileResource(DAO, Base):
     locator = Column(String, unique=True, )
     mimetype = Column(String)
 
+    image_data_ = relationship('ImageDataDao')
+
+    def image_data(self, resource_id):
+        """
+        A method returning the list of Image data objects in File resource with id_ == resource_id
+        :param resource_id: the id of the file resource
+        :type resource_id: int
+        :return: a list of ImageData records with parent File resource id_ == resource_id
+        :rtype: list
+        """
+        with self.session_maker() as session:
+            image_data = [image_data.record
+                          for image_data in session.query(FileResourceDao)
+                          .options(joinedload(FileResourceDao.image_data_))
+                          .filter(FileResourceDao.id_ == resource_id)
+                          .first().image_data_]
+        return image_data
+
     @property
     def record(self):
         """
-        A method creating a record dictionary from a roi row dictionary. This method is used to convert the SQL
-        table columns into the ROI record fields expected by the domain layer
-        :return a ROI record as a dictionary with keys() appropriate for handling by the domain layer
+        A method creating a record dictionary from a file resource row dictionary. This method is used to convert the
+        SQL table columns into the file resource record fields expected by the domain layer
+        :return a file resource record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """
         return {'id_': self.id_,
                 'locator': self.locator,
                 'mimetype': self.mimetype,
                 }
+
+# class FovData(Base):
+#     """
+#     Association many to many between FOV and Image data
+#     """
+#     __tablename__ = "FOVdata"
+#
+#     left_id = Column(ForeignKey("FOV.id_"), primary_key=True)
+#     right_id = Column(ForeignKey("ImageData.id_"), primary_key=True)
+#     fov = relationship("FOV", back_populates="image_data")
+#     image_data = relationship("ImageData", back_populates="fov_list")

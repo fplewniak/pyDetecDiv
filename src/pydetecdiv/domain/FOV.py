@@ -35,6 +35,8 @@ class FOV(NamedDSO, BoxedDSO):
         Returns a record dictionary of the current FOV, including or not a list of associated ROIs as a sub-dictionary
         :param include_roi_list: if True, the record will contain a field 'roi_list' with the associated ROIs
         :type include_roi_list: bool
+        :param no_id: if True, does not return id_ (useful for transferring from one project to another)
+        :type no_id: bool
         :return: record dictionary
         :rtype: dict
         """
@@ -75,4 +77,5 @@ class FOV(NamedDSO, BoxedDSO):
         :return: the list of associated ROIs
         :rtype: list of ROI objects
         """
-        return self.project.get_roi_list_in_fov(self)
+        return self.project.get_linked_objects('ROI', self)
+        #return self.project.get_roi_list_in_fov(self)

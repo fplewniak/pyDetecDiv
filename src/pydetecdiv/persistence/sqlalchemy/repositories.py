@@ -10,7 +10,7 @@ from sqlalchemy.sql.expression import Delete
 from sqlalchemy.pool import NullPool
 from pandas import DataFrame
 from pydetecdiv.persistence.repository import ShallowDb
-from pydetecdiv.persistence.sqlalchemy.dao.orm import FOVdao, ROIdao
+from pydetecdiv.persistence.sqlalchemy.dao.orm import FOVdao, ROIdao, ImageDataDao, FileResourceDao
 
 
 class _ShallowSQL(ShallowDb):
@@ -21,7 +21,9 @@ class _ShallowSQL(ShallowDb):
     """
     dao = {
         'FOV': FOVdao,
-        'ROI': ROIdao
+        'ROI': ROIdao,
+        'ImageData': ImageDataDao,
+        'FileResource': FileResourceDao
     }
 
     def __init__(self, dbname):
@@ -146,12 +148,32 @@ class _ShallowSQL(ShallowDb):
     def get_roi_list_in_fov(self, fov_id):
         """
         A method returning the list of records for all ROI in the FOV with id == fov_id
+        This method is obsolete and should be replaced with a call to get_linked_records('ROI', 'FOV', fov_id)
         :param fov_id: the id of the FOV
         :type fov_id: int
         :return: a list of ROIs whose parent if the FOV with id == fov_id
         :rtype: list of dictionaries (records)
         """
         return FOVdao(self.session_maker).roi_list(fov_id)
+
+    def get_linked_records(self, class_name, parent_class_name, parent_id):
+        """
+        A method returning the list of records for all objects of class defined by class_name that are linked to object
+        of class parent_class_name with id_ = parent_id
+        :param class_name: the class name of the objects to retrieve records for
+        :type class_name: str
+        :param parent_class_name: the class nae of the parent object
+        :type parent_class_name: str
+        :param parent_id: the id of the parent object
+        :type parent_id: int
+        :return: a list of records
+        :rtype: list of dict
+        """
+        if class_name == 'ImageData':
+            linked_records = self.dao[parent_class_name](self.session_maker).image_data(parent_id)
+        if class_name == 'ROI':
+            linked_records = self.dao[parent_class_name](self.session_maker).roi_list(parent_id)
+        return linked_records
 
 
 class ShallowSQLite3(_ShallowSQL):
