@@ -93,7 +93,7 @@ class DAO:
             if key in exclude:
                 continue
             if key in translate:
-                if isinstance(translate[key], list) or isinstance(translate[key], tuple):
+                if isinstance(translate[key], (list, tuple)):
                     for translated_key, value in zip(translate[key], record[key]):
                         rec[translated_key] = value
                 else:
@@ -148,10 +148,10 @@ class FOVdao(DAO, Base):
 
     def image_data(self, fov_id):
         """
-        A method returning the list of Image data objects in File resource with id_ == resource_id
-        :param resource_id: the id of the file resource
-        :type resource_id: int
-        :return: a list of ImageData records with parent File resource id_ == resource_id
+        A method returning the list of Image data object records linked to FOV with id_ == fov_id
+        :param fov_id: the id of the FOV
+        :type fov_id: int
+        :return: a list of ImageData records linked to FOV with id_ == fov_id
         :rtype: list
         """
         with self.session_maker() as session:
@@ -164,7 +164,7 @@ class FOVdao(DAO, Base):
 
     def roi_list(self, fov_id):
         """
-        A method returning the list of ROIs whose parent FOV has id == fov_id
+        A method returning the list of ROI records whose parent FOV has id == fov_id
         :param fov_id: the id of the FOV
         :type fov_id: int
         :return: a list of ROI records with parent FOV id == fov_id
@@ -239,20 +239,19 @@ class ImageDataDao(DAO, Base):
 
     def fov_list(self, image_data_id):
         """
-        A method returning the list of Image data objects in File resource with id_ == resource_id
-        :param resource_id: the id of the file resource
-        :type resource_id: int
-        :return: a list of ImageData records with parent File resource id_ == resource_id
+        A method returning the list of FOV object records linked to ImageData with id_ == image_data_id
+        :param image_data_id: the id of the Image data
+        :type image_data_id: int
+        :return: a list of FOV records linked to ImageData with id_ == image_data_id
         :rtype: list
         """
         with self.session_maker() as session:
             fov_list = [association.one_fov.record
-                          for association in session.query(ImageDataDao)
-                          .options(joinedload(ImageDataDao.fov_list_))
-                          .filter(ImageDataDao.id_ == image_data_id)
-                          .first().fov_list_]
+                        for association in session.query(ImageDataDao)
+                        .options(joinedload(ImageDataDao.fov_list_))
+                        .filter(ImageDataDao.id_ == image_data_id)
+                        .first().fov_list_]
         return fov_list
-
 
     @property
     def record(self):
@@ -320,6 +319,7 @@ class FileResourceDao(DAO, Base):
                 'mimetype': self.mimetype,
                 }
 
+
 class FovData(DAO, Base):
     """
     Association many to many between FOV and Image data
@@ -329,3 +329,15 @@ class FovData(DAO, Base):
     right_id = Column(ForeignKey("ImageData.id_"), primary_key=True)
     one_fov = relationship("FOVdao", back_populates='image_data_list', lazy='joined')
     image_data = relationship("ImageDataDao", back_populates='fov_list_', lazy='joined')
+
+    @property
+    def record(self):
+        """
+        A method creating a record dictionary from a FovData row dictionary.
+        :return a FovData record as a dictionary with keys() appropriate for handling by the domain layer
+        :rtype: dict
+        """
+        return {
+            'fov': self.left_id,
+            'image_data': self.right_id,
+        }
