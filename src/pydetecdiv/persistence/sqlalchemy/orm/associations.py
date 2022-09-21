@@ -5,10 +5,10 @@ ORM classes describing associations between DAOs/tables
 """
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy.orm import relationship
-from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
+from pydetecdiv.persistence.sqlalchemy.orm.main import Base
 
 
-class FovData(DAO, Base):
+class FovData(Base):
     """
     Association many to many between FOV and Image data
     """
