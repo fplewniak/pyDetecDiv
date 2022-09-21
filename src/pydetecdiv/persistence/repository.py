@@ -85,12 +85,16 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_roi_list_in_fov(self, fov_id):
+    def get_linked_records(self, class_name, parent_class_name, parent_id):
         """
-        Abstract method enforcing the implementation of a method returning the list of records for all ROI in the FOV
-        with id == fov_id
-        :param fov_id: the id of the FOV
-        :type fov_id: int
-        :return: a list of ROIs whose parent if the FOV with id == fov_id
-        :rtype: list of dictionaries (records)
+        Abstract method enforcing the implemetnation of a method returning the list of records for all objects of class
+         defined by class_name that are linked to object of class parent_class_name with id_ = parent_id
+        :param class_name: the class name of the objects to retrieve records for
+        :type class_name: str
+        :param parent_class_name: the class nae of the parent object
+        :type parent_class_name: str
+        :param parent_id: the id of the parent object
+        :type parent_id: int
+        :return: a list of records
+        :rtype: list of dict
         """

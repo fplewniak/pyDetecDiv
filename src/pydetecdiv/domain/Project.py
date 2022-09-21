@@ -73,19 +73,6 @@ class Project:
         # return [class_(project=self, **rec) for rec in self.repository.get_records(class_.__name__, id_list)]
         return [self.build_dso(class_, rec) for rec in self.repository.get_records(class_.__name__, id_list)]
 
-    def get_roi_list_in_fov(self, fov):
-        """
-        Get a list of ROIs whose parent is the specified FOV. This method also looks into the pool of new objects to
-        fetch newly created ROIs associated with the FOV
-        This method is obsolete and should be replaced with a call to get_linked_objects('ROI', fov)
-        :param fov: FOV object to retrieve the list of associated ROIs
-        :type: FOV
-        :return: the list of ROIs whose parent is the specified FOV
-        :rtype: list of ROI objects
-        """
-        roi_records = [self.build_dso(ROI, rec) for rec in self.repository.get_roi_list_in_fov(fov.id_)]
-        return roi_records
-
     def get_linked_objects(self, class_name, linked_to=None):
         """
         A method returning the list of all objects of class defined by class_name that are linked to an object specified

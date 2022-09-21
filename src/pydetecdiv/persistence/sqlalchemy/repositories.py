@@ -146,17 +146,6 @@ class _ShallowSQL(ShallowDb):
                 dao_list = session.query(self.dao[class_name])
         return [obj.record for obj in dao_list]
 
-    def get_roi_list_in_fov(self, fov_id):
-        """
-        A method returning the list of records for all ROI in the FOV with id == fov_id
-        This method is obsolete and should be replaced with a call to get_linked_records('ROI', 'FOV', fov_id)
-        :param fov_id: the id of the FOV
-        :type fov_id: int
-        :return: a list of ROIs whose parent if the FOV with id == fov_id
-        :rtype: list of dictionaries (records)
-        """
-        return FOVdao(self.session_maker).roi_list(fov_id)
-
     def get_linked_records(self, class_name, parent_class_name, parent_id):
         """
         A method returning the list of records for all objects of class defined by class_name that are linked to object
