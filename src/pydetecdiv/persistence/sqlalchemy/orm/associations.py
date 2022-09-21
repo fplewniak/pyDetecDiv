@@ -8,6 +8,23 @@ from sqlalchemy.orm import relationship
 from pydetecdiv.persistence.sqlalchemy.orm.main import Base
 
 
+class Linker:
+    @staticmethod
+    def associations():
+        return {
+            ('FOVdao', 'ImageDataDao'): FovData,
+            ('ImageDataDao', 'FOVdao'): FovData,
+        }
+
+    @staticmethod
+    def link(obj1, obj2):
+        return Linker.associations()[(obj1.__class__.__name__, obj2.__class__.__name__)].link(obj1, obj2)
+
+    @staticmethod
+    def unlink(obj1, obj2):
+        ...
+
+
 class FovData(Base):
     """
     Association many to many between FOV and Image data
@@ -25,6 +42,16 @@ class FovData(Base):
     @staticmethod
     def image_data_to_fov():
         return relationship("FovData", back_populates='image_data_', lazy='joined')
+
+    @staticmethod
+    def link(obj1, obj2):
+        a = FovData()
+        if obj1.__class__.__name__ == 'FOVdao':
+            a.image_data_ = obj2
+            obj1.image_data_list.append(a)
+        else:
+            a.fov_ = obj2
+            obj1.fov_list_.append(a)
 
     @property
     def record(self):

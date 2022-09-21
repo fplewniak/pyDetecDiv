@@ -12,6 +12,7 @@ from pandas import DataFrame
 from pydetecdiv.persistence.repository import ShallowDb
 from pydetecdiv.persistence.sqlalchemy.orm.main import mapper_registry
 from pydetecdiv.persistence.sqlalchemy.orm.dao import dso_dao_mapping as dao
+from pydetecdiv.persistence.sqlalchemy.orm.associations import Linker
 
 
 class _ShallowSQL(ShallowDb):
@@ -165,7 +166,12 @@ class _ShallowSQL(ShallowDb):
                 linked_records = dao[parent_class_name](self.session_maker).roi_list(parent_id)
         return linked_records
 
-    #def link(self, class1_name, id_1, class2_name, id_2):
+    def link(self, class1_name, id_1, class2_name, id_2):
+        with self.session_maker() as session:
+            obj1 = session.get(dao[class1_name], id_1)
+            obj2 = session.get(dao[class2_name], id_2)
+            Linker.link(obj1, obj2)
+            session.commit()
 
 
 
