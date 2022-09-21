@@ -10,7 +10,8 @@ from sqlalchemy.sql.expression import Delete
 from sqlalchemy.pool import NullPool
 from pandas import DataFrame
 from pydetecdiv.persistence.repository import ShallowDb
-from pydetecdiv.persistence.sqlalchemy.dao.orm import FOVdao, ROIdao, ImageDataDao, FileResourceDao
+from pydetecdiv.persistence.sqlalchemy.orm.main import mapper_registry
+from pydetecdiv.persistence.sqlalchemy.orm.dao import FOVdao, ROIdao, ImageDataDao, FileResourceDao
 
 
 class _ShallowSQL(ShallowDb):
@@ -51,7 +52,7 @@ class _ShallowSQL(ShallowDb):
         Gets SqlAlchemy classes defining the project database schema and creates the database if it does not exist.
         """
         if not self.engine.table_names():
-            FOVdao.metadata.create_all(self.engine)
+            mapper_registry.metadata.create_all(self.engine)
 
     def close(self):
         """

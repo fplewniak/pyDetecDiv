@@ -4,7 +4,7 @@
 """
 A class for the creation of classes that will serve to:
     1) create a persistence database if it does not exist, thus ensuring consistency across the persistence layer
-    2) create the ORM classes in orm.py, but this role may be removed in the near future if the ORM is abandoned.
+    2) create the ORM classes in main.py, but this role may be removed in the near future if the ORM is abandoned.
 """
 from sqlalchemy import Table, Column, Integer, String, Time, DateTime
 from sqlalchemy import ForeignKey

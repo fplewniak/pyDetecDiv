@@ -25,8 +25,6 @@ class ImageData(BoxedDSO):
         self.orderdims = orderdims
         self.path = path
         self.mimetype = mimetype
-
-
         self.validate(updated=False)
 
     def check_validity(self):
@@ -49,6 +47,15 @@ class ImageData(BoxedDSO):
         self._file_resource = (file_resource if isinstance(file_resource, FileResource) or file_resource is None
                                else self.project.get_object(FileResource, file_resource))
         self.validate()
+
+    @property
+    def fov_list(self):
+        """
+        Returns the list of ROI objects whose parent if the current FOV
+        :return: the list of associated ROIs
+        :rtype: list of ROI objects
+        """
+        return self.project.get_linked_objects('FOV', self)
 
     @property
     def bottom_right(self):
@@ -77,7 +84,6 @@ class ImageData(BoxedDSO):
         """
         record = {
             'name': self.name,
-            # 'fov': self.fov.id_,
             'top_left': self.top_left,
             'bottom_right': self.bottom_right,
             'channel': self.channel,

@@ -79,3 +79,12 @@ class FOV(NamedDSO, BoxedDSO):
         """
         return self.project.get_linked_objects('ROI', self)
         #return self.project.get_roi_list_in_fov(self)
+
+    @property
+    def image_data(self):
+        """
+        Returns the list of ROI objects whose parent if the current FOV
+        :return: the list of associated ROIs
+        :rtype: list of ROI objects
+        """
+        return self.project.get_linked_objects('ImageData', self)
