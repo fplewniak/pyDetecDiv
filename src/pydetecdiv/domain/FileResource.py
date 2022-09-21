@@ -49,4 +49,4 @@ class FileResource(DomainSpecificObject):
         :return: the list of associated ROIs
         :rtype: list of ROI objects
         """
-        return self.project.get_linked_objects('ImageData', linked_to=self)
+        return self.project.get_linked_objects('ImageData', to=self)

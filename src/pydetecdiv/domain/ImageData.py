@@ -55,7 +55,7 @@ class ImageData(BoxedDSO):
         :return: the list of associated ROIs
         :rtype: list of ROI objects
         """
-        return self.project.get_linked_objects('FOV', self)
+        return self.project.get_linked_objects('FOV', to=self)
 
     @property
     def bottom_right(self):

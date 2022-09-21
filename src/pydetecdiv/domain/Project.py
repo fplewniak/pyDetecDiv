@@ -8,6 +8,7 @@ from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.domain.ROI import ROI
 from pydetecdiv.domain.ImageData import ImageData
 from pydetecdiv.domain.FOV import FOV
+from pydetecdiv.domain.FileResource import FileResource
 
 
 class Project:
@@ -23,6 +24,7 @@ class Project:
             'ROI': ROI,
             'FOV': FOV,
             'ImageData': ImageData,
+            'FileResource': FileResource,
         }
         self.pool = {}
 
@@ -70,22 +72,21 @@ class Project:
         :return: a list of all the objects of that class in the project with all their associated metadata
         :rtype: list of the requested domain-specific objects
         """
-        # return [class_(project=self, **rec) for rec in self.repository.get_records(class_.__name__, id_list)]
         return [self.build_dso(class_, rec) for rec in self.repository.get_records(class_.__name__, id_list)]
 
-    def get_linked_objects(self, class_name, linked_to=None):
+    def get_linked_objects(self, class_name, to=None):
         """
         A method returning the list of all objects of class defined by class_name that are linked to an object specified
         by linked_to
         :param class_name: the class name of the objects to retrieve
         :type class_name: str
-        :param linked_to: the object the retrieve objects should be linked to
-        :type linked_to: DomainSpecificObject
+        :param to: the object the retrieve objects should be linked to
+        :type to: DomainSpecificObject
         :return: the list of objects linked to linked_to object
         :rtype: list of objects
         """
         object_list = [self.build_dso(self.classes[class_name], rec) for rec in
-                       self.repository.get_linked_records(class_name, linked_to.__class__.__name__, linked_to.id_)]
+                       self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_)]
         return object_list
 
     def build_dso(self, class_, rec):

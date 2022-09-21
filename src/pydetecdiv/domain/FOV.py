@@ -77,8 +77,7 @@ class FOV(NamedDSO, BoxedDSO):
         :return: the list of associated ROIs
         :rtype: list of ROI objects
         """
-        return self.project.get_linked_objects('ROI', self)
-        #return self.project.get_roi_list_in_fov(self)
+        return self.project.get_linked_objects('ROI', to=self)
 
     @property
     def image_data(self):
@@ -87,4 +86,4 @@ class FOV(NamedDSO, BoxedDSO):
         :return: the list of associated ROIs
         :rtype: list of ROI objects
         """
-        return self.project.get_linked_objects('ImageData', self)
+        return self.project.get_linked_objects('ImageData', to=self)
