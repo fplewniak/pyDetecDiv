@@ -16,16 +16,16 @@ class Project:
     Project class to keep track of the database connection and providing basic methods to retrieve objects. Actually
     hide repository from other domain classes
     """
+    classes = {
+        'ROI': ROI,
+        'FOV': FOV,
+        'ImageData': ImageData,
+        'FileResource': FileResource,
+    }
 
     def __init__(self, dbname=None, dbms=None):
         self.repository = open_project(dbname, dbms)
         self.dbname = dbname
-        self.classes = {
-            'ROI': ROI,
-            'FOV': FOV,
-            'ImageData': ImageData,
-            'FileResource': FileResource,
-        }
         self.pool = {}
 
     def save(self, dso):
@@ -46,33 +46,32 @@ class Project:
         :param dso: the object to delete
         :type dso: object (DomainSpecificObject)
         """
-        self.release_dso(dso.__class__, dso.id_)
+        self.release_dso(dso.__class__.__name__, dso.id_)
         self.repository.delete_object(dso.__class__.__name__, dso.id_)
 
-    def get_object(self, class_=DomainSpecificObject, id_=None) -> DomainSpecificObject:
+    def get_object(self, class_name, id_=None) -> DomainSpecificObject:
         """
         Get an object referenced by its id
-        :param class_: the class of the requested object
+        :param class_name: the class of the requested object
         :param id_: the id reference of the object
-        :type class_: class inheriting DomainSpecificObject
+        :type class_name: class inheriting DomainSpecificObject
         :type id_: int
         :return: the desired object
         :rtype: object (DomainSpecificObject)
         """
-        # return class_(project=self, **self.repository.get_record(class_.__name__, id_))
-        return self.build_dso(class_, self.repository.get_record(class_.__name__, id_))
+        return self.build_dso(class_name, self.repository.get_record(class_name, id_))
 
-    def get_objects(self, class_=DomainSpecificObject, id_list=None):
+    def get_objects(self, class_name, id_list=None):
         """
         Get a list of all domain objects of a given class in the current project retrieved from the repository
-        :param class_: the class of the domain-specific objects to be returned
-        :type class_: class inheriting DomainSpecificObject
+        :param class_name: the class name of the domain-specific objects to be returned
+        :type class_name: str
         :param id_list: the list of ids for the objects to retrieve
         :type id_list: list of int
         :return: a list of all the objects of that class in the project with all their associated metadata
         :rtype: list of the requested domain-specific objects
         """
-        return [self.build_dso(class_, rec) for rec in self.repository.get_records(class_.__name__, id_list)]
+        return [self.build_dso(class_name, rec) for rec in self.repository.get_records(class_name, id_list)]
 
     def get_linked_objects(self, class_name, to=None):
         """
@@ -85,36 +84,39 @@ class Project:
         :return: the list of objects linked to linked_to object
         :rtype: list of objects
         """
-        object_list = [self.build_dso(self.classes[class_name], rec) for rec in
+        object_list = [self.build_dso(class_name, rec) for rec in
                        self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_)]
         return object_list
 
-    def build_dso(self, class_, rec):
+    def link_objects(self, dso1, dso2):
+        self.repository.link(dso1.__class__.__name__, dso1.id_, dso2.__class__.__name__, dso2.id_, )
+
+    def build_dso(self, class_name, rec):
         """
         factory method to build a dso of class class_ from record rec or return the pooled object if it was already
         created
-        :param class_: the class of the dso to build
-        :type class_: type (class)
+        :param class_name: the class name of the dso to build
+        :type class_name: str
         :param rec: the record representing the object to build (if id_ is not in the record, the object is a new
         creation
         :type rec: dict
         :return: the requested object
         :rtype: DomainSpecificObject
         """
-        if 'id_' in rec and (class_.__name__, rec['id_']) in self.pool:
-            return self.pool[(class_.__name__, rec['id_'])]
-        obj = class_(project=self, **rec)
-        self.pool[(class_.__name__, obj.id_)] = obj
+        if 'id_' in rec and (class_name, rec['id_']) in self.pool:
+            return self.pool[(class_name, rec['id_'])]
+        obj = Project.classes[class_name](project=self, **rec)
+        self.pool[(class_name, obj.id_)] = obj
         return obj
 
-    def release_dso(self, class_, id_):
+    def release_dso(self, class_name, id_):
         """
         remove a dso from the pool. This should be done when deleting an object with delete() method or to release an
         object that is not needed any more
-        :param class_: the class of the object to be removed from the pool
-        :type class_: class
+        :param class_name: the class name of the object to be removed from the pool
+        :type class_name: str
         :param id_: the id of the object to be removed from the pool
         :type id_: int
         """
-        if (class_.__name__, id_) in self.pool:
-            del self.pool[(class_.__name__, id_)]
+        if (class_name, id_) in self.pool:
+            del self.pool[(class_name, id_)]

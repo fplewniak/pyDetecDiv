@@ -11,22 +11,14 @@ from sqlalchemy.pool import NullPool
 from pandas import DataFrame
 from pydetecdiv.persistence.repository import ShallowDb
 from pydetecdiv.persistence.sqlalchemy.orm.main import mapper_registry
-from pydetecdiv.persistence.sqlalchemy.orm.dao import FOVdao, ROIdao, ImageDataDao, FileResourceDao
+from pydetecdiv.persistence.sqlalchemy.orm.dao import dso_dao_mapping as dao
 
 
 class _ShallowSQL(ShallowDb):
     """
     A generic shallow SQL persistence used to provide the common methods for SQL databases. DBMS-specific methods should
     be implemented in subclasses of this one.
-    The dao dictionary maps the correspondence between domain-specific class names and DAO classes
     """
-    dao = {
-        'FOV': FOVdao,
-        'ROI': ROIdao,
-        'ImageData': ImageDataDao,
-        'FileResource': FileResourceDao
-    }
-
     def __init__(self, dbname):
         self.name = dbname
         self.engine = sqlalchemy.create_engine('sqlite+pysqlite://', poolclass=NullPool)
@@ -71,8 +63,8 @@ class _ShallowSQL(ShallowDb):
         :rtype: int
         """
         if record['id_'] is None:
-            return self.dao[class_name](self.session_maker).insert(record)
-        return self.dao[class_name](self.session_maker).update(record)
+            return dao[class_name](self.session_maker).insert(record)
+        return dao[class_name](self.session_maker).update(record)
 
     def delete_object(self, class_name, id_):
         """
@@ -83,7 +75,7 @@ class _ShallowSQL(ShallowDb):
         :type id_: int
         """
         with self.session_maker() as session:
-            session.execute(Delete(self.dao[class_name], whereclause=self.dao[class_name].id_ == id_))
+            session.execute(Delete(dao[class_name], whereclause=dao[class_name].id_ == id_))
             session.commit()
 
     def _get_records(self, class_name=None, query=None):
@@ -98,7 +90,7 @@ class _ShallowSQL(ShallowDb):
         :rtype: list of dictionaries (records)
         """
         with self.session_maker() as session:
-            dao_list = session.query(self.dao[class_name])
+            dao_list = session.query(dao[class_name])
             if query is not None:
                 for q in query:
                     dao_list = dao_list.where(q)
@@ -127,7 +119,7 @@ class _ShallowSQL(ShallowDb):
         :rtype: dict (record)
         """
         with self.session_maker() as session:
-            return session.get(self.dao[class_name], id_).record
+            return session.get(dao[class_name], id_).record
 
     def get_records(self, class_name, id_list=None):
         """
@@ -141,9 +133,9 @@ class _ShallowSQL(ShallowDb):
         """
         with self.session_maker() as session:
             if id_list is not None:
-                dao_list = session.query(self.dao[class_name]).where(self.dao[class_name].id_.in_(id_list))
+                dao_list = session.query(dao[class_name]).where(dao[class_name].id_.in_(id_list))
             else:
-                dao_list = session.query(self.dao[class_name])
+                dao_list = session.query(dao[class_name])
         return [obj.record for obj in dao_list]
 
     def get_linked_records(self, class_name, parent_class_name, parent_id):
@@ -162,16 +154,19 @@ class _ShallowSQL(ShallowDb):
         linked_records = []
         if class_name == 'ImageData':
             if parent_class_name in ['FileResource', 'FOV']:
-                linked_records = self.dao[parent_class_name](self.session_maker).image_data(parent_id)
+                linked_records = dao[parent_class_name](self.session_maker).image_data(parent_id)
         if class_name == 'FOV':
             if parent_class_name in ['ImageData']:
-                linked_records = self.dao[parent_class_name](self.session_maker).fov_list(parent_id)
+                linked_records = dao[parent_class_name](self.session_maker).fov_list(parent_id)
             if parent_class_name in ['ROI']:
                 linked_records = [self.get_record(class_name, self.get_record(parent_class_name, parent_id)['id_'])]
         if class_name == 'ROI':
             if parent_class_name in ['FOV']:
-                linked_records = self.dao[parent_class_name](self.session_maker).roi_list(parent_id)
+                linked_records = dao[parent_class_name](self.session_maker).roi_list(parent_id)
         return linked_records
+
+    #def link(self, class1_name, id_1, class2_name, id_2):
+
 
 
 class ShallowSQLite3(_ShallowSQL):

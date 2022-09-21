@@ -16,7 +16,7 @@ class ImageData(BoxedDSO):
                  path=None, mimetype=None, **kwargs):
         super().__init__(**kwargs)
         self._file_resource = (file_resource if isinstance(file_resource, FileResource) or file_resource is None
-                               else self.project.get_object(FileResource, file_resource))
+                               else self.project.get_object('FileResource', file_resource))
         self.name = name
         self.channel = channel
         self.stacks = stacks
@@ -45,7 +45,7 @@ class ImageData(BoxedDSO):
     @file_resource.setter
     def file_resource(self, file_resource):
         self._file_resource = (file_resource if isinstance(file_resource, FileResource) or file_resource is None
-                               else self.project.get_object(FileResource, file_resource))
+                               else self.project.get_object('FileResource', file_resource))
         self.validate()
 
     @property
