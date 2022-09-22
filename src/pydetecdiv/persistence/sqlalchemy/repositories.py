@@ -158,7 +158,7 @@ class _ShallowSQL(ShallowDb):
             if parent_class_name in ['FileResource', 'FOV']:
                 linked_records = dao[parent_class_name](self.session_maker).image_data(parent_id)
         if class_name == 'FOV':
-            if parent_class_name in ['ImageData']:
+            if parent_class_name in ['ImageData', 'FileResource', ]:
                 linked_records = dao[parent_class_name](self.session_maker).fov_list(parent_id)
             if parent_class_name in ['ROI']:
                 linked_records = [self.get_record(class_name, self.get_record(parent_class_name, parent_id)['id_'])]
