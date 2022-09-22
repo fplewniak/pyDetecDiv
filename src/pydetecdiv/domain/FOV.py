@@ -30,11 +30,9 @@ class FOV(NamedDSO, BoxedDSO):
         """
         ...
 
-    def record(self, include_roi_list=False, no_id=False):
+    def record(self, no_id=False):
         """
-        Returns a record dictionary of the current FOV, including or not a list of associated ROIs as a sub-dictionary
-        :param include_roi_list: if True, the record will contain a field 'roi_list' with the associated ROIs
-        :type include_roi_list: bool
+        Returns a record dictionary of the current FOV
         :param no_id: if True, does not return id_ (useful for transferring from one project to another)
         :type no_id: bool
         :return: record dictionary
@@ -49,8 +47,6 @@ class FOV(NamedDSO, BoxedDSO):
         }
         if not no_id:
             record['id_'] = self.id_
-        if include_roi_list:
-            record['roi_list'] = self.roi_list
         return record
 
     def __repr__(self):
@@ -87,3 +83,19 @@ class FOV(NamedDSO, BoxedDSO):
         :rtype: list of ROI objects
         """
         return self.project.get_linked_objects('ImageData', to=self)
+
+    def add_image_data(self, image_data):
+        """
+        Link an ImageData object to the current FOV
+        :param image_data: ImageData object
+        :type image_data: ImageData
+        """
+        self.project.link_objects(self, image_data)
+
+    def detach_image_data(self, image_data):
+        """
+        Remove the image data from the list of ImageData objects linked to the current FOV
+        :param image_data: ImageData object
+        :type image_data: ImageData
+        """
+        self.project.unlink_objects(self, image_data)
