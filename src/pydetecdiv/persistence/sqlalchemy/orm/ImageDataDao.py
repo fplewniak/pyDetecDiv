@@ -6,7 +6,7 @@ Image data access DAO
 from sqlalchemy import text, Column, Integer, String, Time, ForeignKey
 from sqlalchemy.orm import joinedload
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
-from pydetecdiv.persistence.sqlalchemy.orm.associations import FovData
+from pydetecdiv.persistence.sqlalchemy.orm.associations import FovData, RoiData
 
 
 class ImageDataDao(DAO, Base):
@@ -33,6 +33,7 @@ class ImageDataDao(DAO, Base):
     mimetype = Column(String)
 
     fov_list_ = FovData.image_data_to_fov()
+    roi_list_ = RoiData.image_data_to_roi()
 
     def fov_list(self, image_data_id):
         """
@@ -49,6 +50,22 @@ class ImageDataDao(DAO, Base):
                         .filter(ImageDataDao.id_ == image_data_id)
                         .first().fov_list_]
         return fov_list
+
+    def roi_list(self, image_data_id):
+        """
+        A method returning the list of ROI object records linked to ImageData with id_ == image_data_id
+        :param image_data_id: the id of the Image data
+        :type image_data_id: int
+        :return: a list of ROI records linked to ImageData with id_ == image_data_id
+        :rtype: list
+        """
+        with self.session_maker() as session:
+            roi_list = [association.roi_.record
+                        for association in session.query(ImageDataDao)
+                        .options(joinedload(ImageDataDao.roi_list_))
+                        .filter(ImageDataDao.id_ == image_data_id)
+                        .first().roi_list_]
+        return roi_list
 
     @property
     def record(self):

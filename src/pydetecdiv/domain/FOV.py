@@ -3,10 +3,10 @@
 """
  A class defining the business logic methods that can be applied to Fields Of View
 """
-from pydetecdiv.domain.dso import NamedDSO, BoxedDSO
+from pydetecdiv.domain.dso import NamedDSO, BoxedDSO, DsoWithImageData
 
 
-class FOV(NamedDSO, BoxedDSO):
+class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
     """
     A business-logic class defining valid operations and attributes of Fields of view (FOV)
     """
@@ -74,28 +74,3 @@ class FOV(NamedDSO, BoxedDSO):
         :rtype: list of ROI objects
         """
         return self.project.get_linked_objects('ROI', to=self)
-
-    @property
-    def image_data(self):
-        """
-        Returns the list of ROI objects whose parent if the current FOV
-        :return: the list of associated ROIs
-        :rtype: list of ROI objects
-        """
-        return self.project.get_linked_objects('ImageData', to=self)
-
-    def add_image_data(self, image_data):
-        """
-        Link an ImageData object to the current FOV
-        :param image_data: ImageData object
-        :type image_data: ImageData
-        """
-        self.project.link_objects(self, image_data)
-
-    def detach_image_data(self, image_data):
-        """
-        Remove the image data from the list of ImageData objects linked to the current FOV
-        :param image_data: ImageData object
-        :type image_data: ImageData
-        """
-        self.project.unlink_objects(self, image_data)

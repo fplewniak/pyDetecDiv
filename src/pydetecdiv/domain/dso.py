@@ -163,3 +163,32 @@ class BoxedDSO(DomainSpecificObject):
         :rtype: a tuple of two int
         """
         return self.box.size
+
+class DsoWithImageData(DomainSpecificObject):
+    """
+    A domain-specific class for objects that are associated with Image data
+    """
+    @property
+    def image_data(self):
+        """
+        Returns the list of ROI objects whose parent if the current FOV
+        :return: the list of associated ROIs
+        :rtype: list of ROI objects
+        """
+        return self.project.get_linked_objects('ImageData', to=self)
+
+    def add_image_data(self, image_data):
+        """
+        Link an ImageData object to the current ROI
+        :param image_data: ImageData object
+        :type image_data: ImageData
+        """
+        self.project.link_objects(self, image_data)
+
+    def detach_image_data(self, image_data):
+        """
+        Remove the image data from the list of ImageData objects linked to the current ROI
+        :param image_data: ImageData object
+        :type image_data: ImageData
+        """
+        self.project.unlink_objects(self, image_data)

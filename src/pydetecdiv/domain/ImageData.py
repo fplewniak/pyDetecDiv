@@ -51,11 +51,20 @@ class ImageData(BoxedDSO):
     @property
     def fov_list(self):
         """
-        Returns the list of ROI objects whose parent if the current FOV
+        Returns the list of FOV objects associated to the current Image data
+        :return: the list of associated FOV
+        :rtype: list of FOV objects
+        """
+        return self.project.get_linked_objects('FOV', to=self)
+
+    @property
+    def roi_list(self):
+        """
+        Returns the list of ROI objects associated to the current Image data
         :return: the list of associated ROIs
         :rtype: list of ROI objects
         """
-        return self.project.get_linked_objects('FOV', to=self)
+        return self.project.get_linked_objects('ROI', to=self)
 
     @property
     def bottom_right(self):

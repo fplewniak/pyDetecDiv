@@ -155,16 +155,17 @@ class _ShallowSQL(ShallowDb):
         """
         linked_records = []
         if class_name == 'ImageData':
-            if parent_class_name in ['FileResource', 'FOV']:
+            if parent_class_name in ['FileResource', 'FOV', 'ROI']:
                 linked_records = dao[parent_class_name](self.session_maker).image_data(parent_id)
         if class_name == 'FOV':
-            if parent_class_name in ['ImageData', 'FileResource', ]:
+            if parent_class_name in ['ImageData', 'FileResource',]:
                 linked_records = dao[parent_class_name](self.session_maker).fov_list(parent_id)
             if parent_class_name in ['ROI']:
                 linked_records = [self.get_record(class_name, self.get_record(parent_class_name, parent_id)['id_'])]
         if class_name == 'ROI':
-            if parent_class_name in ['FOV']:
+            if parent_class_name in ['FOV', 'ImageData',]:
                 linked_records = dao[parent_class_name](self.session_maker).roi_list(parent_id)
+
         return linked_records
 
     def link(self, class1_name, id_1, class2_name, id_2):

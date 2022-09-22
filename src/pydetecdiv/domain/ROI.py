@@ -4,11 +4,11 @@
  A class defining the business logic methods that can be applied to Regions Of Interest
 """
 from pydetecdiv.exceptions import JuttingError
-from pydetecdiv.domain.dso import NamedDSO, BoxedDSO
+from pydetecdiv.domain.dso import NamedDSO, BoxedDSO, DsoWithImageData
 from pydetecdiv.domain.FOV import FOV
 
 
-class ROI(NamedDSO, BoxedDSO):
+class ROI(NamedDSO, BoxedDSO, DsoWithImageData):
     """
     A business-logic class defining valid operations and attributes of Regions of interest (ROI)
     """

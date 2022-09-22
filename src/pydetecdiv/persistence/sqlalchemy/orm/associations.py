@@ -22,6 +22,8 @@ class Linker:
         association_list = {
             ('FOVdao', 'ImageDataDao'): FovData,
             ('ImageDataDao', 'FOVdao'): FovData,
+            ('ROIdao', 'ImageDataDao'): RoiData,
+            ('ImageDataDao', 'ROIdao'): RoiData,
         }
         return association_list[(class1_name, class2_name)]
 
@@ -92,5 +94,63 @@ class FovData(Base):
         """
         return {
             'fov': self.fov,
+            'image_data': self.image_data,
+        }
+
+
+class RoiData(Base):
+    """
+    Association many to many between ROI and Image data
+    """
+    __tablename__ = "ROIdata"
+    roi = Column(ForeignKey("ROI.id_"), primary_key=True)
+    image_data = Column(ForeignKey("ImageData.id_"), primary_key=True)
+    roi_ = relationship("ROIdao", back_populates='image_data_list', lazy='joined')
+    image_data_ = relationship("ImageDataDao", back_populates='roi_list_', lazy='joined')
+
+    @staticmethod
+    def roi_to_image_data():
+        """
+        Defines and returns the relationship from ROI to ImageData tables
+        :return: the relationship between ROI and ImageData
+        :rtype: sqlalchemy.orm.RelationshipProperty object
+        """
+        return relationship("RoiData", back_populates='roi_', lazy='joined')
+
+    @staticmethod
+    def image_data_to_roi():
+        """
+        Defines and returns the relationship from ImageData to ROI tables
+        :return: the relationship between ImageData and ROI
+        :rtype: sqlalchemy.orm.RelationshipProperty object
+        """
+        return relationship("RoiData", back_populates='image_data_', lazy='joined')
+
+    @staticmethod
+    def link(obj1, obj2):
+        """
+        Creates a link between the specified ROIdao and ImageDataDao objects.
+        :param obj1: the first object to link
+        :type obj1: ROIdao or ImageDataDao
+        :param obj2: the second object to link
+        :type obj2: ImageDataDao or ROIdao
+        """
+        a = RoiData()
+        if obj1.__class__.__name__ == 'ROIdao':
+            a.image_data_ = obj2
+            obj1.image_data_list.append(a)
+        else:
+            a.roi_ = obj2
+            obj1.roi_list_.append(a)
+
+    @property
+    def record(self):
+        """
+        A method creating a record dictionary from a ROIData row dictionary.
+        :return a ROIData record as a dictionary with keys() appropriate for handling by the domain layer
+        :rtype: dict
+        """
+        return {
+            'roi': self.roi,
             'image_data': self.image_data,
         }

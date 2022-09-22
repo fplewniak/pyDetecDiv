@@ -4,10 +4,10 @@
  A class defining the business logic methods that can be applied to Fields Of View
 """
 import numpy as np
-from pydetecdiv.domain.dso import DomainSpecificObject
+from pydetecdiv.domain.dso import DsoWithImageData
 
 
-class FileResource(DomainSpecificObject):
+class FileResource(DsoWithImageData):
     """
     A business-logic class defining valid operations and attributes of a File resource
     """
@@ -42,15 +42,6 @@ class FileResource(DomainSpecificObject):
 
     def __repr__(self):
         return f'{self.record()}'
-
-    @property
-    def image_data(self):
-        """
-        Returns the list of ImageData objects whose parent is the current File resource
-        :return: the list of associated Image data
-        :rtype: list of ImageData objects
-        """
-        return self.project.get_linked_objects('ImageData', to=self)
 
     @property
     def fov_list(self):
