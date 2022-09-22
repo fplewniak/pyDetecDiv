@@ -11,8 +11,8 @@ from pydetecdiv.persistence.sqlalchemy.orm.ImageDataDao import ImageDataDao
 from pydetecdiv.persistence.sqlalchemy.orm.FileResourceDao import FileResourceDao
 
 dso_dao_mapping = {
-        'FOV': FOVdao,
-        'ROI': ROIdao,
-        'ImageData': ImageDataDao,
-        'FileResource': FileResourceDao
-    }
+    'FOV': FOVdao,
+    'ROI': ROIdao,
+    'ImageData': ImageDataDao,
+    'FileResource': FileResourceDao,
+}
