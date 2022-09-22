@@ -89,6 +89,14 @@ class Project:
         return object_list
 
     def link_objects(self, dso1, dso2):
+        """
+        Create a direct link between two objects. This method only works for objects that have a direct logical
+        connection. It does not work to create transitive links with intermediate objects.
+        :param dso1: first domain-specific object to link
+        :type dso1: object
+        :param dso2: second domain-specific object to link
+        :type dso2: object
+        """
         self.repository.link(dso1.__class__.__name__, dso1.id_, dso2.__class__.__name__, dso2.id_, )
 
     def build_dso(self, class_name, rec):

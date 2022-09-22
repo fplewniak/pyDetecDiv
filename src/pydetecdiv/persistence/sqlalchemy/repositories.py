@@ -20,6 +20,7 @@ class _ShallowSQL(ShallowDb):
     A generic shallow SQL persistence used to provide the common methods for SQL databases. DBMS-specific methods should
     be implemented in subclasses of this one.
     """
+
     def __init__(self, dbname):
         self.name = dbname
         self.engine = sqlalchemy.create_engine('sqlite+pysqlite://', poolclass=NullPool)
@@ -167,6 +168,18 @@ class _ShallowSQL(ShallowDb):
         return linked_records
 
     def link(self, class1_name, id_1, class2_name, id_2):
+        """
+        Create a link between two domain-specific objects. There must be a direct link defined in Linker class,
+        otherwise, the link cannot be created.
+        :param class1_name: the class name of the first object to link
+        :type class1_name: str
+        :param id_1: the id of the first object to link
+        :type id_1: int
+        :param class2_name: the class name of the second object to link
+        :type class2_name: str
+        :param id_2: the id of the second object to link
+        :type id_2: int
+        """
         with self.session_maker() as session:
             obj1 = session.get(dao[class1_name], id_1)
             obj2 = session.get(dao[class2_name], id_2)
