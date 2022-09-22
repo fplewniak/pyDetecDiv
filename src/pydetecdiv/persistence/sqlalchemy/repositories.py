@@ -186,6 +186,23 @@ class _ShallowSQL(ShallowDb):
             Linker.link(obj1, obj2)
             session.commit()
 
+    def unlink(self, class1_name, id_1, class2_name, id_2):
+        """
+        Remove the link between two domain-specific objects. There must be a direct link defined in Linker class,
+        otherwise, the link cannot be removed.
+        :param class1_name: the class name of the first object to unlink
+        :type class1_name: str
+        :param id_1: the id of the first object to unlink
+        :type id_1: int
+        :param class2_name: the class name of the second object to unlink
+        :type class2_name: str
+        :param id_2: the id of the second object to unlink
+        :type id_2: int
+        """
+        with self.session_maker() as session:
+            dao1_class, dao2_class = dao[class1_name].__name__, dao[class2_name].__name__
+            session.delete(session.get(Linker.association(dao1_class, dao2_class), (id_1, id_2)))
+            session.commit()
 
 
 class ShallowSQLite3(_ShallowSQL):
