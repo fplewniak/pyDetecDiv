@@ -3,6 +3,7 @@
 """
  A class defining the business logic methods that can be applied to Fields Of View
 """
+import numpy as np
 from pydetecdiv.domain.dso import DomainSpecificObject
 
 
@@ -45,8 +46,18 @@ class FileResource(DomainSpecificObject):
     @property
     def image_data(self):
         """
-        Returns the list of ROI objects whose parent if the current FOV
-        :return: the list of associated ROIs
-        :rtype: list of ROI objects
+        Returns the list of ImageData objects whose parent is the current File resource
+        :return: the list of associated Image data
+        :rtype: list of ImageData objects
         """
         return self.project.get_linked_objects('ImageData', to=self)
+
+    @property
+    def fov_list(self):
+        """
+        Returns the list of FOV objects linked to the current File resource. This link is transitive and is obtained
+        through the link to ImageData
+        :return: the list of associated FOV
+        :rtype: list of FOV objects
+        """
+        return list(np.array([img.fov_list for img in self.image_data]).flat)
