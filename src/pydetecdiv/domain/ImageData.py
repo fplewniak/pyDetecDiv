@@ -3,6 +3,7 @@
 """
  A class defining the business logic methods that can be applied to Regions Of Interest
 """
+from pandas import DataFrame
 from pydetecdiv.domain.dso import BoxedDSO
 from pydetecdiv.domain.FileResource import FileResource
 
@@ -12,16 +13,15 @@ class ImageData(BoxedDSO):
     A business-logic class defining valid operations and attributes of Regions of interest (ROI)
     """
 
-    def __init__(self, file_resource=None, name=None, channel=0, stacks=1, frames=1, interval=None, orderdims='xyzct',
-                 path=None, mimetype=None, **kwargs):
+    def __init__(self, file_resource=None, name=None, channel=0, stack_interval=None,
+                 frame_interval=None, orderdims='xyzct', path=None, mimetype=None, **kwargs):
         super().__init__(**kwargs)
         self._file_resource = (file_resource if isinstance(file_resource, FileResource) or file_resource is None
                                else self.project.get_object('FileResource', file_resource))
         self.name = name
         self.channel = channel
-        self.stacks = stacks
-        self.frames = frames
-        self.interval = interval
+        self.stack_interval = stack_interval
+        self.frame_interval = frame_interval
         self.orderdims = orderdims
         self.path = path
         self.mimetype = mimetype
@@ -67,6 +67,46 @@ class ImageData(BoxedDSO):
         return self.project.get_linked_objects('ROI', to=self)
 
     @property
+    def image_list(self):
+        """
+        Returns the list of ROI objects associated to the current Image data
+        :return: the list of associated ROIs
+        :rtype: list of ROI objects
+        """
+        return self.project.get_linked_objects('Image', to=self)
+
+    @property
+    def videos(self):
+        """
+        Returns a list of lists of associated images grouped by z-index. Each sublist can be considered as a video.
+        :return: the list of video
+        :rtype: a list of list of Image objects
+        """
+        if len(self.image_list):
+            df = DataFrame.from_records([img.record() for img in self.image_list])
+            videos = df.sort_values(by=['z', 't']).groupby('z')
+            videos_rec = [videos.get_group(z).to_dict(orient='records') for z in videos.groups]
+            return [[self.project.get_object('Image', frame_rec['id_']) for frame_rec in video_rec] for video_rec in
+                    videos_rec]
+        return []
+
+
+    @property
+    def stacks(self):
+        """
+        Returns a list of lists of associated images grouped by time index. Each sublist can be considered as a stacked
+        image.
+        :return: the list of stacks
+        :rtype: a list of list of Image objects
+        """
+        if len(self.image_list):
+            df = DataFrame.from_records([img.record() for img in self.image_list])
+            stacks = df.sort_values(by=['t', 'z']).groupby('t')
+            stacks_rec = [stacks.get_group(frame).to_dict(orient='records') for frame in stacks.groups]
+            return [[self.project.get_object('Image', z_rec['id_']) for z_rec in stack_rec] for stack_rec in stacks_rec]
+        return []
+
+    @property
     def bottom_right(self):
         """
         The bottom-right corner of the ROI in the FOV
@@ -96,9 +136,10 @@ class ImageData(BoxedDSO):
             'top_left': self.top_left,
             'bottom_right': self.bottom_right,
             'channel': self.channel,
-            'stacks': self.stacks,
-            'frames': self.frames,
-            'interval': self.interval,
+            'stacks': len(self.stacks),
+            'stack_interval': self.stack_interval,
+            'videos': len(self.videos),
+            'frame_interval': self.frame_interval,
             'orderdims': self.orderdims,
             'file_resource': self.file_resource.id_,
             'path': self.path,

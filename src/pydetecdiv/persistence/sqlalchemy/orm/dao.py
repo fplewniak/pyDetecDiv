@@ -8,6 +8,7 @@ The dso_dao_mapping dictionary maps the correspondence between domain-specific c
 from pydetecdiv.persistence.sqlalchemy.orm.FOVdao import FOVdao
 from pydetecdiv.persistence.sqlalchemy.orm.ROIdao import ROIdao
 from pydetecdiv.persistence.sqlalchemy.orm.ImageDataDao import ImageDataDao
+from pydetecdiv.persistence.sqlalchemy.orm.ImageDao import ImageDao
 from pydetecdiv.persistence.sqlalchemy.orm.FileResourceDao import FileResourceDao
 
 dso_dao_mapping = {
@@ -15,4 +16,5 @@ dso_dao_mapping = {
     'ROI': ROIdao,
     'ImageData': ImageDataDao,
     'FileResource': FileResourceDao,
+    'Image': ImageDao,
 }

@@ -9,6 +9,7 @@ from pydetecdiv.domain.ROI import ROI
 from pydetecdiv.domain.ImageData import ImageData
 from pydetecdiv.domain.FOV import FOV
 from pydetecdiv.domain.FileResource import FileResource
+from pydetecdiv.domain.Image import Image
 
 
 class Project:
@@ -21,6 +22,7 @@ class Project:
         'FOV': FOV,
         'ImageData': ImageData,
         'FileResource': FileResource,
+        'Image': Image,
     }
 
     def __init__(self, dbname=None, dbms=None):
@@ -36,7 +38,7 @@ class Project:
         :return: the id of the saved object if it was created
         :rtype: int
         """
-        print(dso.record)
+        #print(dso.record())
         id_ = self.repository.save_object(dso.__class__.__name__, dso.record())
         return id_
 
