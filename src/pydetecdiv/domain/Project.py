@@ -3,6 +3,7 @@
 """
 The central class for keeping track of all available objects in a project.
 """
+import itertools
 from pydetecdiv.persistence.project import open_project
 from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.domain.ROI import ROI
@@ -29,6 +30,10 @@ class Project:
         self.repository = open_project(dbname, dbms)
         self.dbname = dbname
         self.pool = {}
+
+    def create_object(self, class_name, record):
+        id_ = self.repository.save_object(class_name, record)
+        return id_
 
     def save(self, dso):
         """
@@ -73,7 +78,20 @@ class Project:
         :return: a list of all the objects of that class in the project with all their associated metadata
         :rtype: list of the requested domain-specific objects
         """
+        if class_name == 'ROI':
+            return self._get_rois()
         return [self.build_dso(class_name, rec) for rec in self.repository.get_records(class_name, id_list)]
+
+    def _get_rois(self):
+        return itertools.chain(*[fov.roi_list for fov in self.get_objects('FOV')])
+
+    def has_links(self, class_name, to=None):
+        if self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_):
+            return True
+        return False
+
+    def count_links(self, class_name, to=None):
+        return len(self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_))
 
     def get_linked_objects(self, class_name, to=None):
         """
@@ -125,6 +143,7 @@ class Project:
         :rtype: DomainSpecificObject
         """
         if 'id_' in rec and (class_name, rec['id_']) in self.pool:
+            self.pool[(class_name, rec['id_'])].check_validity()
             return self.pool[(class_name, rec['id_'])]
         obj = Project.classes[class_name](project=self, **rec)
         self.pool[(class_name, obj.id_)] = obj

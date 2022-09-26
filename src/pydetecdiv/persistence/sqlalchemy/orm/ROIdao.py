@@ -21,8 +21,8 @@ class ROIdao(DAO, Base):
     name = Column(String, unique=True, nullable=False)
     fov = Column(Integer, ForeignKey('FOV.id_'), nullable=False, index=True)
     x0_ = Column(Integer, nullable=False, server_default=text('0'))
-    y0_ = Column(Integer, nullable=False, server_default=text('-1'))
-    x1_ = Column(Integer, nullable=False, server_default=text('0'))
+    y0_ = Column(Integer, nullable=False, server_default=text('0'))
+    x1_ = Column(Integer, nullable=False, server_default=text('-1'))
     y1_ = Column(Integer, nullable=False, server_default=text('-1'))
 
     image_data_list = RoiData.roi_to_image_data()

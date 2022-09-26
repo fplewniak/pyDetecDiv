@@ -30,6 +30,14 @@ class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
         """
         ...
 
+
+    def validate(self, updated=True):
+        super().validate(updated)
+        if self.project.count_links('ROI', to=self) == 0:
+            self.project.create_object('ROI',
+                                       record={'id_': None, 'name': f'full-{self.name}', 'fov': self.id_,
+                                               'top_left': (0, 0), 'bottom_right': (-1, -1)})
+
     def record(self, no_id=False):
         """
         Returns a record dictionary of the current FOV
@@ -73,4 +81,9 @@ class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
         :return: the list of associated ROIs
         :rtype: list of ROI objects
         """
-        return self.project.get_linked_objects('ROI', to=self)
+        roi_list = self.project.get_linked_objects('ROI', to=self)
+        return roi_list if len(roi_list) == 1 else roi_list[1:]
+
+    @property
+    def full_fov_roi(self):
+        return self.project.get_linked_objects('ROI', to=self)[0]

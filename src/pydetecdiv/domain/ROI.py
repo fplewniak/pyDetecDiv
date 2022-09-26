@@ -18,6 +18,13 @@ class ROI(NamedDSO, BoxedDSO, DsoWithImageData):
         self._fov = fov if isinstance(fov, FOV) or fov is None else self.project.get_object('FOV', fov)
         self.validate(updated=False)
 
+    def delete(self):
+        """
+        Deletes this ROI if and only if it is not the full-FOV one which should serve to keep track of original data.
+        """
+        if self is not self.fov.full_fov_roi:
+            self.project.delete(self)
+
     def check_validity(self):
         """
         Checks the current ROI lies within its parent. If it does not, this method will throw a JuttingError exception
