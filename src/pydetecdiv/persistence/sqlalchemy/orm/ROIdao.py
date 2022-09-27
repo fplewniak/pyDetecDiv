@@ -4,9 +4,9 @@
 Access to ROI data
 """
 from sqlalchemy import Column, Integer, String, ForeignKey, text
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, relationship
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
-from pydetecdiv.persistence.sqlalchemy.orm.associations import RoiData
+#from pydetecdiv.persistence.sqlalchemy.orm.associations import RoiData
 
 
 class ROIdao(DAO, Base):
@@ -25,7 +25,7 @@ class ROIdao(DAO, Base):
     x1_ = Column(Integer, nullable=False, server_default=text('-1'))
     y1_ = Column(Integer, nullable=False, server_default=text('-1'))
 
-    image_data_list = RoiData.roi_to_image_data()
+    image_data_list = relationship('ImageDataDao')
 
     @property
     def record(self):
@@ -52,8 +52,8 @@ class ROIdao(DAO, Base):
         :rtype: list
         """
         with self.session_maker() as session:
-            image_data = [association.image_data_.record
-                          for association in session.query(ROIdao)
+            image_data = [image_data.record
+                          for image_data in session.query(ROIdao)
                           .options(joinedload(ROIdao.image_data_list))
                           .filter(ROIdao.id_ == roi_id)
                           .first().image_data_list]
