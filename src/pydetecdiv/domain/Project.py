@@ -31,7 +31,17 @@ class Project:
         self.dbname = dbname
         self.pool = {}
 
-    def create_object(self, class_name, record):
+    def save_record(self, class_name, record):
+        """
+        Creates and saves an object of class named class_name from its record without requiring the creation of a DSO.
+        This method can be useful for creating associated objects with mutual dependency.
+        :param class_name: the class name of the object to create
+        :type class_name: str
+        :param record: the record representing the object to create
+        :type record: dict
+        :return: the id of the created object
+        :rtype: int
+        """
         id_ = self.repository.save_object(class_name, record)
         return id_
 
@@ -73,24 +83,54 @@ class Project:
         Get a list of all domain objects of a given class in the current project retrieved from the repository
         :param class_name: the class name of the domain-specific objects to be returned
         :type class_name: str
-        :param id_list: the list of ids for the objects to retrieve
+        :param id_list: the list of ids for the objects to be retrieved
         :type id_list: list of int
         :return: a list of all the objects of that class in the project with all their associated metadata
         :rtype: list of the requested domain-specific objects
         """
         if class_name == 'ROI':
-            return self._get_rois()
+            return self._get_rois(id_list)
         return [self.build_dso(class_name, rec) for rec in self.repository.get_records(class_name, id_list)]
 
-    def _get_rois(self):
-        return itertools.chain(*[fov.roi_list for fov in self.get_objects('FOV')])
+    def _get_rois(self, id_list=None):
+        """
+        Gets ROIs using FOV.roi_list properties for all FOVs in order to show the initial ROIs only for FOVs that have
+        no other defined ROI. This method is used by the generic get_objects method to deal with the special case of
+        initial ROIs
+        :param id_list: the list of ids for the ROIs to be retrieved
+        :type id_list: list of int
+        :return: a list of the requested ROIs
+        :rtype: list of ROI objects
+        """
+        all_rois = itertools.chain(*[fov.roi_list for fov in self.get_objects('FOV')])
+        if id_list is None:
+            return all_rois
+        return [roi for roi in all_rois if roi.id_ in id_list]
 
     def has_links(self, class_name, to=None):
+        """
+        Checks whether there are links to a given object from objects of a given class.
+        :param class_name: the name of the class from which the existence of links is tested
+        :type class_name: str
+        :param to: the object which is tested for existence of links from class_name class
+        :type to: DomainSpecificObject object
+        :return: True if links exist, False otherwise
+        :rtype: bool
+        """
         if self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_):
             return True
         return False
 
     def count_links(self, class_name, to=None):
+        """
+        Counts the number of objects of a given class having a link to an object
+        :param class_name: the name of the class whose links to the specified object are counted
+        :type class_name: str
+        :param to: the object to which links are counted
+        :type to: DomainSpecificObject object
+        :return: the number of objects of class class_name that are linked to the specified object
+        :rtype: bool
+        """
         return len(self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_))
 
     def get_linked_objects(self, class_name, to=None):

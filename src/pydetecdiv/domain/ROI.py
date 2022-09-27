@@ -22,7 +22,7 @@ class ROI(NamedDSO, BoxedDSO, DsoWithImageData):
         """
         Deletes this ROI if and only if it is not the full-FOV one which should serve to keep track of original data.
         """
-        if self is not self.fov.full_fov_roi:
+        if self is not self.fov.initial_roi:
             self.project.delete(self)
 
     def check_validity(self):
