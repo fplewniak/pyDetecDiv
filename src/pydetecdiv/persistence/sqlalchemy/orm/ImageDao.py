@@ -21,6 +21,7 @@ class ImageDao(DAO, Base):
     y_drift = Column(Integer, nullable=False, server_default=text('0'))
     z = Column(Integer, nullable=False, server_default=text('0'))
     t = Column(Integer, nullable=False, server_default=text('0'))
+    resource = Column(Integer, ForeignKey('FileResource.id_'), nullable=False, index=True)
 
     @property
     def record(self):
@@ -34,5 +35,6 @@ class ImageDao(DAO, Base):
                 'image_data': self.image_data,
                 'drift': (self.x_drift, self.y_drift),
                 'z': self.z,
-                't': self.t
+                't': self.t,
+                'resource': self.resource,
                 }

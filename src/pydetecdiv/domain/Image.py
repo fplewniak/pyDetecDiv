@@ -3,9 +3,10 @@
 """
  A class defining the business logic methods that can be applied to images
 """
-#from pydetecdiv.exceptions import JuttingError
+# from pydetecdiv.exceptions import JuttingError
 from pydetecdiv.domain.dso import BoxedDSO, DsoWithImageData
 from pydetecdiv.domain.ImageData import ImageData
+from pydetecdiv.domain.FileResource import FileResource
 
 
 class Image(BoxedDSO, DsoWithImageData):
@@ -13,11 +14,12 @@ class Image(BoxedDSO, DsoWithImageData):
     A business-logic class defining valid operations and attributes of images
     """
 
-    def __init__(self, image_data=None, drift=(0, 0), z=0, t=0, **kwargs):
+    def __init__(self, image_data=None, resource=None, drift=(0, 0), z=0, t=0, **kwargs):
         super().__init__(**kwargs)
-        self._image_data = self._image_data = (
-            image_data if isinstance(image_data, ImageData) or image_data is None else self.project.get_object(
-                'ImageData', image_data))
+        self._image_data = (image_data if isinstance(image_data, ImageData)
+                                          or image_data is None else self.project.get_object('ImageData', image_data))
+        self._resource = (resource if isinstance(resource, FileResource)
+                                      or resource is None else self.project.get_object('FileResource', resource))
         self.drift = drift
         self.z_ = z
         self.t = t
@@ -43,6 +45,22 @@ class Image(BoxedDSO, DsoWithImageData):
         self._image_data = (
             image_data if isinstance(image_data, ImageData) or image_data is None else self.project.get_object(
                 'ImageData', image_data))
+        self.validate()
+
+    @property
+    def resource(self):
+        """
+        property returning the image data this image is related to
+        :return: the parent ImageData object
+        :rtype: ImageData
+        """
+        return self._resource
+
+    @resource.setter
+    def resource(self, resource):
+        self._resource = (
+            resource if isinstance(resource, FileResource) or resource is None else self.project.get_object(
+                'FileResource', resource))
         self.validate()
 
     @property
@@ -112,6 +130,7 @@ class Image(BoxedDSO, DsoWithImageData):
         """
         record = {
             'image_data': self._image_data.id_,
+            'resource': self._resource.id_,
             'top_left': self.top_left,
             'bottom_right': self.bottom_right,
             'drift': self.drift,
