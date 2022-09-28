@@ -6,7 +6,7 @@ Access to ROI data
 from sqlalchemy import Column, Integer, String, ForeignKey, text
 from sqlalchemy.orm import joinedload, relationship
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
-#from pydetecdiv.persistence.sqlalchemy.orm.associations import RoiData
+import pydetecdiv.persistence.sqlalchemy.orm.dao as dao
 
 
 class ROIdao(DAO, Base):
@@ -58,3 +58,17 @@ class ROIdao(DAO, Base):
                           .filter(ROIdao.id_ == roi_id)
                           .first().image_data_list]
         return image_data
+
+    def image_list(self, roi_id):
+        """
+        A method returning the Image records linked to ImageData with id_ == roi_id
+        :param roi_id: the id of the ROI
+        :type roi_id: int
+        :return: a list containing the Image records linked to ROI with id_ == roi_id
+        :rtype: list
+        """
+        with self.session_maker() as session:
+            image_list = [image.record for image in
+                          session.query(dao.ImageDao).filter(dao.ImageDataDao.id_ == dao.ImageDao.image_data).filter(
+                              roi_id == dao.ImageDataDao.roi).all()]
+        return image_list

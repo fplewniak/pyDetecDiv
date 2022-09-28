@@ -87,7 +87,7 @@ class ShallowDb(abc.ABC):
     @abc.abstractmethod
     def get_linked_records(self, class_name, parent_class_name, parent_id):
         """
-        Abstract method enforcing the implemetnation of a method returning the list of records for all objects of class
+        Abstract method enforcing the implementation of a method returning the list of records for all objects of class
          defined by class_name that are linked to object of class parent_class_name with id_ = parent_id
         :param class_name: the class name of the objects to retrieve records for
         :type class_name: str
@@ -97,4 +97,34 @@ class ShallowDb(abc.ABC):
         :type parent_id: int
         :return: a list of records
         :rtype: list of dict
+        """
+
+    @abc.abstractmethod
+    def link(self, class1_name, id_1, class2_name, id_2):
+        """
+        Create a link between two domain-specific objects. There must be a direct link defined in Linker class,
+        otherwise, the link cannot be created.
+        :param class1_name: the class name of the first object to link
+        :type class1_name: str
+        :param id_1: the id of the first object to link
+        :type id_1: int
+        :param class2_name: the class name of the second object to link
+        :type class2_name: str
+        :param id_2: the id of the second object to link
+        :type id_2: int
+        """
+
+    @abc.abstractmethod
+    def unlink(self, class1_name, id_1, class2_name, id_2):
+        """
+        Remove the link between two domain-specific objects. There must be a direct link defined in Linker class,
+        otherwise, the link cannot be removed.
+        :param class1_name: the class name of the first object to unlink
+        :type class1_name: str
+        :param id_1: the id of the first object to unlink
+        :type id_1: int
+        :param class2_name: the class name of the second object to unlink
+        :type class2_name: str
+        :param id_2: the id of the second object to unlink
+        :type id_2: int
         """

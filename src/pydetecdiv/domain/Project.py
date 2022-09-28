@@ -9,7 +9,6 @@ from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.domain.ROI import ROI
 from pydetecdiv.domain.ImageData import ImageData
 from pydetecdiv.domain.FOV import FOV
-from pydetecdiv.domain.FileResource import FileResource
 from pydetecdiv.domain.Image import Image
 
 
@@ -22,7 +21,6 @@ class Project:
         'ROI': ROI,
         'FOV': FOV,
         'ImageData': ImageData,
-        'FileResource': FileResource,
         'Image': Image,
     }
 
@@ -53,7 +51,6 @@ class Project:
         :return: the id of the saved object if it was created
         :rtype: int
         """
-        #print(dso.record())
         id_ = self.repository.save_object(dso.__class__.__name__, dso.record())
         return id_
 
@@ -148,7 +145,7 @@ class Project:
                        self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_)]
         return object_list
 
-    def link_objects(self, dso1, dso2):
+    def link_objects(self, dso1: DomainSpecificObject, dso2: DomainSpecificObject):
         """
         Create a direct link between two objects. This method only works for objects that have a direct logical
         connection. It does not work to create transitive links with intermediate objects.
@@ -159,7 +156,7 @@ class Project:
         """
         self.repository.link(dso1.__class__.__name__, dso1.id_, dso2.__class__.__name__, dso2.id_, )
 
-    def unlink_objects(self, dso1, dso2):
+    def unlink_objects(self, dso1: DomainSpecificObject, dso2: DomainSpecificObject):
         """
         Delete a direct link between two objects. This method only works for objects that have a direct logical
         connection. It does not work to delete transitive links with intermediate objects.

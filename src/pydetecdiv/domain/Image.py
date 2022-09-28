@@ -3,10 +3,8 @@
 """
  A class defining the business logic methods that can be applied to images
 """
-# from pydetecdiv.exceptions import JuttingError
 from pydetecdiv.domain.dso import BoxedDSO, DsoWithImageData
 from pydetecdiv.domain.ImageData import ImageData
-from pydetecdiv.domain.FileResource import FileResource
 
 
 class Image(BoxedDSO, DsoWithImageData):
@@ -14,13 +12,14 @@ class Image(BoxedDSO, DsoWithImageData):
     A business-logic class defining valid operations and attributes of images
     """
 
-    def __init__(self, image_data=None, resource=None, drift=(0, 0), z=0, t=0, **kwargs):
+    def __init__(self, image_data=None, locator=None, mimetype=None, drift=(0, 0), c=0, z=0, t=0, **kwargs):
         super().__init__(**kwargs)
         self._image_data = (image_data if isinstance(image_data, ImageData)
                                           or image_data is None else self.project.get_object('ImageData', image_data))
-        self._resource = (resource if isinstance(resource, FileResource)
-                                      or resource is None else self.project.get_object('FileResource', resource))
+        self.locator = locator
+        self.mimetype = mimetype
         self.drift = drift
+        self.c_ = c
         self.z_ = z
         self.t = t
         self.validate(updated=False)
@@ -48,20 +47,22 @@ class Image(BoxedDSO, DsoWithImageData):
         self.validate()
 
     @property
-    def resource(self):
+    def roi(self):
         """
-        property returning the image data this image is related to
-        :return: the parent ImageData object
-        :rtype: ImageData
+        property returning the ROI this image is related to
+        :return: the parent ROI object
+        :rtype: ROI
         """
-        return self._resource
+        return self.project.get_linked_objects('ROI', to=self)[0]
 
-    @resource.setter
-    def resource(self, resource):
-        self._resource = (
-            resource if isinstance(resource, FileResource) or resource is None else self.project.get_object(
-                'FileResource', resource))
-        self.validate()
+    @property
+    def fov(self):
+        """
+        property returning the ROI this image is related to
+        :return: the parent ROI object
+        :rtype: ROI
+        """
+        return self.project.get_linked_objects('FOV', to=self)[0]
 
     @property
     def top_left(self):
@@ -73,10 +74,6 @@ class Image(BoxedDSO, DsoWithImageData):
         """
         return self.image_data.top_left
 
-    @top_left.setter
-    def top_left(self, top_left):
-        self.image_data.top_left = top_left
-
     @property
     def bottom_right(self):
         """
@@ -87,9 +84,19 @@ class Image(BoxedDSO, DsoWithImageData):
         """
         return self.image_data.bottom_right
 
-    @bottom_right.setter
-    def bottom_right(self, bottom_right):
-        self.image_data.bottom_right = bottom_right
+    @property
+    def c(self):
+        """
+        The channel of this image
+        :return: the channel index
+        :rtype: int
+        """
+        return self.c_
+
+    @c.setter
+    def c(self, c):
+        self.c_ = c
+        self.validate()
 
     @property
     def z(self):
@@ -130,10 +137,12 @@ class Image(BoxedDSO, DsoWithImageData):
         """
         record = {
             'image_data': self._image_data.id_,
-            'resource': self._resource.id_,
+            'locator': self.locator,
+            'mimetype': self.mimetype,
             'top_left': self.top_left,
             'bottom_right': self.bottom_right,
             'drift': self.drift,
+            'c': self.c,
             'z': self.z,
             't': self.t,
             'size': self.size

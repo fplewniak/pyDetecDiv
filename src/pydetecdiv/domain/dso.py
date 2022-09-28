@@ -32,8 +32,8 @@ class DomainSpecificObject:
     def __eq__(self, o):
         """
         Defines equality of domain-specific objects as having the same id and same class
-        :param other: the other dso to compare with the current one
-        :type other: DomainSpecificObject
+        :param o: the other dso to compare with the current one
+        :type o: DomainSpecificObject
         :return: True if both objects are the same
         :rtype: bool
         """
@@ -164,10 +164,12 @@ class BoxedDSO(DomainSpecificObject):
         """
         return self.box.size
 
+
 class DsoWithImageData(DomainSpecificObject):
     """
     A domain-specific class for objects that are associated with Image data
     """
+
     @property
     def image_data(self):
         """

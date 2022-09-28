@@ -47,6 +47,15 @@ class ROI(NamedDSO, BoxedDSO, DsoWithImageData):
         self.validate()
 
     @property
+    def image_list(self):
+        """
+        Return a list of images related to this ROI
+        :return: list of images
+        :rtype: list of Image objects
+        """
+        return self.project.get_linked_objects('Image', to=self)
+
+    @property
     def bottom_right(self):
         """
         The bottom-right corner of the ROI in the FOV

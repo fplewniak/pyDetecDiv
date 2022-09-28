@@ -5,7 +5,6 @@
 """
 from pandas import DataFrame
 from pydetecdiv.domain.dso import BoxedDSO
-from pydetecdiv.domain.FileResource import FileResource
 from pydetecdiv.domain.ROI import ROI
 
 
@@ -14,13 +13,11 @@ class ImageData(BoxedDSO):
     A business-logic class defining valid operations and attributes of Regions of interest (ROI)
     """
 
-    def __init__(self, file_resource=None, roi=None, name=None, channel=0, stack_interval=None,
+    def __init__(self, roi=None, name=None, channel=0, stack_interval=None,
                  frame_interval=None, orderdims='xyzct', path=None, mimetype=None, **kwargs):
         super().__init__(**kwargs)
-        self._file_resource = (file_resource if isinstance(file_resource, FileResource) or file_resource is None
-                               else self.project.get_object('FileResource', file_resource))
         self._roi = (roi if isinstance(roi, ROI) or roi is None
-                               else self.project.get_object('ROI', roi))
+                     else self.project.get_object('ROI', roi))
         self.name = name
         self.channel = channel
         self.stack_interval = stack_interval
@@ -37,33 +34,18 @@ class ImageData(BoxedDSO):
         ...
 
     @property
-    def file_resource(self):
-        """
-        property returning the File resource object where this ImageData is stored
-        :return: the parent FileResource object
-        :rtype: FileResource
-        """
-        return self._file_resource
-
-    @file_resource.setter
-    def file_resource(self, file_resource):
-        self._file_resource = (file_resource if isinstance(file_resource, FileResource) or file_resource is None
-                               else self.project.get_object('FileResource', file_resource))
-        self.validate()
-
-    @property
     def roi(self):
         """
-        property returning the File resource object where this ImageData is stored
-        :return: the parent FileResource object
-        :rtype: FileResource
+        property returning the ROI object corresponding to the ImageData
+        :return: the parent ROI object
+        :rtype: ROI
         """
         return self._roi
 
     @roi.setter
     def roi(self, roi):
         self._roi = (roi if isinstance(roi, ROI) or roi is None
-                               else self.project.get_object('ROI', roi))
+                     else self.project.get_object('ROI', roi))
         self.validate()
 
     @property
@@ -107,7 +89,6 @@ class ImageData(BoxedDSO):
             return [[self.project.get_object('Image', frame_rec['id_']) for frame_rec in video_rec] for video_rec in
                     videos_rec]
         return []
-
 
     @property
     def stacks(self):
@@ -158,9 +139,6 @@ class ImageData(BoxedDSO):
             'stack_interval': self.stack_interval,
             'frame_interval': self.frame_interval,
             'orderdims': self.orderdims,
-            'resource': self.file_resource.id_,
-            'path': self.path,
-            'mimetype': self.mimetype,
         }
         if not no_id:
             record['id_'] = self.id_

@@ -3,10 +3,12 @@
 """
 Access to FOV data
 """
-from sqlalchemy import Column, Integer, String, text
+import itertools
+
+from sqlalchemy import Column, Integer, String, text, select
 from sqlalchemy.orm import relationship, joinedload
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
-from pydetecdiv.persistence.sqlalchemy.orm.associations import FovData
+import pydetecdiv.persistence.sqlalchemy.orm.dao as dao
 
 
 class FOVdao(DAO, Base):
@@ -25,7 +27,7 @@ class FOVdao(DAO, Base):
 
     roi_list_ = relationship('ROIdao')
 
-    image_data_list = FovData.fov_to_image_data()
+    # image_data_list = FovData.fov_to_image_data()
 
     @property
     def record(self):
@@ -52,11 +54,8 @@ class FOVdao(DAO, Base):
         :rtype: list
         """
         with self.session_maker() as session:
-            image_data = [association.image_data_.record
-                          for association in session.query(FOVdao)
-                          .options(joinedload(FOVdao.image_data_list))
-                          .filter(FOVdao.id_ == fov_id)
-                          .first().image_data_list]
+            image_data = [i.record for i in itertools.chain(
+                *[roi.image_data_list for roi in session.query(dao.ROIdao).filter(dao.ROIdao.fov == fov_id).all()])]
         return image_data
 
     def roi_list(self, fov_id):
@@ -74,3 +73,21 @@ class FOVdao(DAO, Base):
                         .filter(FOVdao.id_ == fov_id)
                         .first().roi_list_]
         return roi_list
+
+    def image_list(self, fov_id):
+        """
+        A method returning the Image records linked to FOV with id_ == fov_id
+        :param fov_id: the id of the Image data
+        :type fov_id: int
+        :return: a list containing the Image records linked to FOV with id_ == fov_id
+        :rtype: list
+        """
+        with self.session_maker() as session:
+            image_list = [image.record for image in
+                          session.scalars(
+                              select(dao.ImageDao)
+                              .where(dao.ImageDataDao.id_ == dao.ImageDao.image_data)
+                              .where(dao.ROIdao.id_ == dao.ImageDataDao.roi)
+                              .where(fov_id == dao.ROIdao.fov)
+                          )]
+        return image_list
