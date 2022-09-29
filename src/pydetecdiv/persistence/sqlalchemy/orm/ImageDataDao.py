@@ -15,23 +15,18 @@ class ImageDataDao(DAO, Base):
     """
     __tablename__ = 'ImageData'
     exclude = ['id_', 'stacks', 'videos']
-    translate = {'top_left': ('x0_', 'y0_'), 'bottom_right': ('x1_', 'y1_')}
+    translate = {}
 
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
     roi = Column(Integer, ForeignKey('ROI.id_'), nullable=False, index=True)
     name = Column(String, )
-    channel = Column(Integer, nullable=False, )
-    x0_ = Column(Integer, nullable=False, server_default=text('0'))
-    y0_ = Column(Integer, nullable=False, server_default=text('-1'))
-    x1_ = Column(Integer, nullable=False, server_default=text('0'))
-    y1_ = Column(Integer, nullable=False, server_default=text('-1'))
     stack_interval = Column(Float, )
     frame_interval = Column(Float, )
     orderdims = Column(String, nullable=False, server_default=text('xyzct'))
 
     image_list_ = relationship('ImageDao')
 
-    def fov_list(self, image_data_id):
+    def fov(self, image_data_id):
         """
         A method returning the FOV object record linked to ImageData with id_ == image_data_id
         :param image_data_id: the id of the Image data
@@ -40,10 +35,9 @@ class ImageDataDao(DAO, Base):
         :rtype: list
         """
         with self.session_maker() as session:
-            fov_list = [fov.record for fov in
-                        session.query(dao.FOVdao).filter(ImageDataDao.id_ == image_data_id).filter(
-                            dao.FOVdao.id_ == dao.ROIdao.fov).filter(dao.ROIdao.id_ == ImageDataDao.roi).all()]
-        return fov_list
+            fov= session.query(dao.FOVdao).filter(ImageDataDao.id_ == image_data_id).filter(
+                            dao.FOVdao.id_ == dao.ROIdao.fov).filter(dao.ROIdao.id_ == ImageDataDao.roi).first().record
+        return [fov]
 
     def image_list(self, image_data_id):
         """
@@ -72,9 +66,6 @@ class ImageDataDao(DAO, Base):
         return {'id_': self.id_,
                 'name': self.name,
                 'roi': self.roi,
-                'top_left': (self.x0_, self.y0_),
-                'bottom_right': (self.x1_, self.y1_),
-                'channel': self.channel,
                 'stack_interval': self.stack_interval,
                 'frame_interval': self.frame_interval,
                 'orderdims': self.orderdims,

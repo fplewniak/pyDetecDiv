@@ -40,6 +40,9 @@ class DomainSpecificObject:
         is_eq = [self.id_ == o.id_, self.__class__ == o.__class__]
         return all(is_eq)
 
+    def __repr__(self):
+        return f'{self.record()}'
+
     def delete(self):
         """
         Delete the current object
@@ -130,7 +133,7 @@ class BoxedDSO(DomainSpecificObject):
     @property
     def top_left(self):
         """
-        The top-left corner of the ROI in the FOV
+        The top-left corner of the Box in the coordinate system
         :return: the coordinates of the top-left corner
         :rtype: a tuple of two int
         """
@@ -144,7 +147,7 @@ class BoxedDSO(DomainSpecificObject):
     @property
     def bottom_right(self):
         """
-        The bottom-right corner of the ROI in the FOV
+        The bottom-right corner of the Box in the coordinate system
         :return: the coordinates of the bottom-right corner
         :rtype: a tuple of two int
         """
@@ -173,24 +176,8 @@ class DsoWithImageData(DomainSpecificObject):
     @property
     def image_data(self):
         """
-        Returns the list of ROI objects whose parent if the current FOV
-        :return: the list of associated ROIs
-        :rtype: list of ROI objects
+        Returns the list of ImageData objects whose parent if the current DSO
+        :return: the list of associated ImageData objects
+        :rtype: list of ImageData objects
         """
         return self.project.get_linked_objects('ImageData', to=self)
-
-    def add_image_data(self, image_data):
-        """
-        Link an ImageData object to the current ROI
-        :param image_data: ImageData object
-        :type image_data: ImageData
-        """
-        self.project.link_objects(self, image_data)
-
-    def detach_image_data(self, image_data):
-        """
-        Remove the image data from the list of ImageData objects linked to the current ROI
-        :param image_data: ImageData object
-        :type image_data: ImageData
-        """
-        self.project.unlink_objects(self, image_data)

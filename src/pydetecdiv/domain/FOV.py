@@ -61,9 +61,6 @@ class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
             record['id_'] = self.id_
         return record
 
-    def __repr__(self):
-        return f'{self.record()}'
-
     @property
     def comments(self):
         """
@@ -96,6 +93,7 @@ class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
         :rtype: list of Image objects
         """
         return self.project.get_linked_objects('Image', to=self)
+
 
     @property
     def initial_roi(self):

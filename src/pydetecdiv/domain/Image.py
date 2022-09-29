@@ -3,13 +3,13 @@
 """
  A class defining the business logic methods that can be applied to images
 """
-from pydetecdiv.domain.dso import BoxedDSO, DsoWithImageData
+from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.domain.ImageData import ImageData
 
 
-class Image(BoxedDSO, DsoWithImageData):
+class Image(DomainSpecificObject):
     """
-    A business-logic class defining valid operations and attributes of images
+    A business-logic class defining valid operations and attributes of 2D images
     """
 
     def __init__(self, image_data=None, locator=None, mimetype=None, drift=(0, 0), c=0, z=0, t=0, **kwargs):
@@ -72,7 +72,7 @@ class Image(BoxedDSO, DsoWithImageData):
         :return: top left coordinates
         :rtype: tuple of int
         """
-        return self.image_data.top_left
+        return self.roi.top_left
 
     @property
     def bottom_right(self):
@@ -82,7 +82,7 @@ class Image(BoxedDSO, DsoWithImageData):
         :return: the coordinates of the bottom-right corner
         :rtype: a tuple of two int
         """
-        return self.image_data.bottom_right
+        return self.roi.bottom_right
 
     @property
     def c(self):
@@ -139,17 +139,11 @@ class Image(BoxedDSO, DsoWithImageData):
             'image_data': self._image_data.id_,
             'locator': self.locator,
             'mimetype': self.mimetype,
-            'top_left': self.top_left,
-            'bottom_right': self.bottom_right,
             'drift': self.drift,
             'c': self.c,
             'z': self.z,
             't': self.t,
-            'size': self.size
         }
         if not no_id:
             record['id_'] = self.id_
         return record
-
-    def __repr__(self):
-        return f'{self.record()}'

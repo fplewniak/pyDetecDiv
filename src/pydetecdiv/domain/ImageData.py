@@ -4,27 +4,22 @@
  A class defining the business logic methods that can be applied to Regions Of Interest
 """
 from pandas import DataFrame
-from pydetecdiv.domain.dso import BoxedDSO
+from pydetecdiv.domain.dso import NamedDSO
 from pydetecdiv.domain.ROI import ROI
 
 
-class ImageData(BoxedDSO):
+class ImageData(NamedDSO):
     """
-    A business-logic class defining valid operations and attributes of Regions of interest (ROI)
+    A business-logic class defining valid operations and attributes of 5D Image data related to ROIs
     """
 
-    def __init__(self, roi=None, name=None, channel=0, stack_interval=None,
-                 frame_interval=None, orderdims='xyzct', path=None, mimetype=None, **kwargs):
+    def __init__(self, roi=None, stack_interval=None, frame_interval=None, orderdims='xyzct', **kwargs):
         super().__init__(**kwargs)
         self._roi = (roi if isinstance(roi, ROI) or roi is None
                      else self.project.get_object('ROI', roi))
-        self.name = name
-        self.channel = channel
         self.stack_interval = stack_interval
         self.frame_interval = frame_interval
         self.orderdims = orderdims
-        self.path = path
-        self.mimetype = mimetype
         self.validate(updated=False)
 
     def check_validity(self):
@@ -49,22 +44,13 @@ class ImageData(BoxedDSO):
         self.validate()
 
     @property
-    def fov_list(self):
+    def fov(self):
         """
         Returns the list of FOV objects associated to the current Image data
         :return: the list of associated FOV
         :rtype: list of FOV objects
         """
-        return self.project.get_linked_objects('FOV', to=self)
-
-    @property
-    def roi_list(self):
-        """
-        Returns the list of ROI objects associated to the current Image data
-        :return: the list of associated ROIs
-        :rtype: list of ROI objects
-        """
-        return self.project.get_linked_objects('ROI', to=self)
+        return self.project.get_linked_objects('FOV', to=self)[0]
 
     @property
     def image_list(self):
@@ -105,21 +91,24 @@ class ImageData(BoxedDSO):
             return [[self.project.get_object('Image', z_rec['id_']) for z_rec in stack_rec] for stack_rec in stacks_rec]
         return []
 
+    def top_left(self):
+        """
+        The top left coordinates of the image relative to the file. These are retrieved from the parent ImageData
+        object
+        :return: top left coordinates
+        :rtype: tuple of int
+        """
+        return self.roi.top_left
+
     @property
     def bottom_right(self):
         """
-        The bottom-right corner of the ROI in the FOV
+        The bottom right coordinates of the image relative to the file. These are retrieved from the parent ImageData
+        object
         :return: the coordinates of the bottom-right corner
         :rtype: a tuple of two int
         """
-        return self._bottom_right
-        # return (self.fov.size[0] - 1 if self._bottom_right[0] == -1 else self._bottom_right[0],
-        #         self.fov.size[1] - 1 if self._bottom_right[1] == -1 else self._bottom_right[1])
-
-    @bottom_right.setter
-    def bottom_right(self, bottom_right):
-        self._bottom_right = bottom_right
-        self.validate()
+        return self.roi.bottom_right
 
     def record(self, no_id=False):
         """
@@ -133,9 +122,6 @@ class ImageData(BoxedDSO):
         record = {
             'name': self.name,
             'roi': self._roi.id_,
-            'top_left': self.top_left,
-            'bottom_right': self.bottom_right,
-            'channel': self.channel,
             'stack_interval': self.stack_interval,
             'frame_interval': self.frame_interval,
             'orderdims': self.orderdims,
@@ -143,6 +129,3 @@ class ImageData(BoxedDSO):
         if not no_id:
             record['id_'] = self.id_
         return record
-
-    def __repr__(self):
-        return f'{self.record()}'

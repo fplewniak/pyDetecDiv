@@ -15,7 +15,9 @@ from pydetecdiv.domain.Image import Image
 class Project:
     """
     Project class to keep track of the database connection and providing basic methods to retrieve objects. Actually
-    hide repository from other domain classes
+    hides repository from other domain classes. This class handles actual records and domain-specific objects while the
+    repository deals with records and data-access objects. Data exchange between Repository and Project objects is
+    achieved through the use of dict representing standardized records.
     """
     classes = {
         'ROI': ROI,
@@ -52,6 +54,9 @@ class Project:
         :rtype: int
         """
         id_ = self.repository.save_object(dso.__class__.__name__, dso.record())
+        class_name = dso.__class__.__name__
+        if (class_name, id_) not in self.pool:
+            self.pool[(class_name, id_)] = dso
         return id_
 
     def delete(self, dso):
@@ -133,7 +138,7 @@ class Project:
     def get_linked_objects(self, class_name, to=None):
         """
         A method returning the list of all objects of class defined by class_name that are linked to an object specified
-        by linked_to
+        by argument to=
         :param class_name: the class name of the objects to retrieve
         :type class_name: str
         :param to: the object the retrieve objects should be linked to
@@ -148,7 +153,8 @@ class Project:
     def link_objects(self, dso1: DomainSpecificObject, dso2: DomainSpecificObject):
         """
         Create a direct link between two objects. This method only works for objects that have a direct logical
-        connection. It does not work to create transitive links with intermediate objects.
+        connection defined in an association table. It does not work to create transitive links with intermediate
+        objects
         :param dso1: first domain-specific object to link
         :type dso1: object
         :param dso2: second domain-specific object to link
@@ -159,7 +165,8 @@ class Project:
     def unlink_objects(self, dso1: DomainSpecificObject, dso2: DomainSpecificObject):
         """
         Delete a direct link between two objects. This method only works for objects that have a direct logical
-        connection. It does not work to delete transitive links with intermediate objects.
+        connection defined in an association table. It does not work to delete transitive links with intermediate
+        objects
         :param dso1: first domain-specific object to unlink
         :type dso1: object
         :param dso2: second domain-specific object to unlink
@@ -170,7 +177,10 @@ class Project:
     def build_dso(self, class_name, rec):
         """
         factory method to build a dso of class class_ from record rec or return the pooled object if it was already
-        created
+        created. Note that if the object was already in the pool, values in the record are not used to update the
+        object. To make any change to the object's attribute, the object's class methods and setter should be used
+        instead as they ensure that values are checked for validity and new attributes are saved to the persistence
+        back-end
         :param class_name: the class name of the dso to build
         :type class_name: str
         :param rec: the record representing the object to build (if id_ is not in the record, the object is a new
@@ -180,7 +190,7 @@ class Project:
         :rtype: DomainSpecificObject
         """
         if 'id_' in rec and (class_name, rec['id_']) in self.pool:
-            self.pool[(class_name, rec['id_'])].check_validity()
+            # self.pool[(class_name, rec['id_'])].check_validity()
             return self.pool[(class_name, rec['id_'])]
         obj = Project.classes[class_name](project=self, **rec)
         self.pool[(class_name, obj.id_)] = obj

@@ -89,6 +89,3 @@ class ROI(NamedDSO, BoxedDSO, DsoWithImageData):
         if not no_id:
             record['id_'] = self.id_
         return record
-
-    def __repr__(self):
-        return f'{self.record()}'
