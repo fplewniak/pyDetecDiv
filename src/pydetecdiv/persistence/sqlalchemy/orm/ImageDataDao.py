@@ -71,7 +71,7 @@ class ImageDataDao(DAO, Base):
         return {'id_': self.id_,
                 'name': self.name,
                 'roi': self.roi,
-                'shape': tuple(eval(v) for v in self.orderdims),
+                'shape': tuple(self.__getattribute__(v) for v in self.orderdims),
                 'stack_interval': self.stack_interval,
                 'frame_interval': self.frame_interval,
                 'orderdims': self.orderdims,

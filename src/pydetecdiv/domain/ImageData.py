@@ -32,6 +32,11 @@ class ImageData(NamedDSO):
 
     @property
     def shape(self):
+        """
+        The shape of the ImageData 5D matrix
+        :return: the shape of the matrix
+        :rtype: tuple of int
+        """
         return self._shape
 
     @shape.setter
