@@ -13,10 +13,12 @@ class ImageData(NamedDSO):
     A business-logic class defining valid operations and attributes of 5D Image data related to ROIs
     """
 
-    def __init__(self, roi=None, stack_interval=None, frame_interval=None, orderdims='xyzct', **kwargs):
+    def __init__(self, roi=None, shape=(1000, 1000, 1, 1, 1), stack_interval=None, frame_interval=None,
+                 orderdims='xyzct', **kwargs):
         super().__init__(**kwargs)
         self._roi = (roi if isinstance(roi, ROI) or roi is None
                      else self.project.get_object('ROI', roi))
+        self._shape = shape
         self.stack_interval = stack_interval
         self.frame_interval = frame_interval
         self.orderdims = orderdims
@@ -27,6 +29,15 @@ class ImageData(NamedDSO):
         Checks the current ImageData object is valid
         """
         ...
+
+    @property
+    def shape(self):
+        return self._shape
+
+    @shape.setter
+    def shape(self, shape=(1000, 1000, 1, 1, 1)):
+        self._shape = shape
+        self.validate()
 
     @property
     def roi(self):
@@ -122,6 +133,7 @@ class ImageData(NamedDSO):
         record = {
             'name': self.name,
             'roi': self._roi.id_,
+            'shape': self._shape,
             'stack_interval': self.stack_interval,
             'frame_interval': self.frame_interval,
             'orderdims': self.orderdims,

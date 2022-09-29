@@ -89,6 +89,10 @@ class DAO:
         for key in record:
             if key in exclude:
                 continue
+            if (key == 'shape') and ('orderdims' in record):
+                print(key)
+                translate[key] = tuple(record['orderdims'])
+                print(translate['shape'])
             if key in translate:
                 if isinstance(translate[key], (list, tuple)):
                     for translated_key, value in zip(translate[key], record[key]):

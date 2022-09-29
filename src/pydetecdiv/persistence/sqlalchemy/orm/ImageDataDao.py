@@ -20,6 +20,11 @@ class ImageDataDao(DAO, Base):
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
     roi = Column(Integer, ForeignKey('ROI.id_'), nullable=False, index=True)
     name = Column(String, )
+    x = Column(Integer, nullable=False, server_default=text('1000'))
+    y = Column(Integer, nullable=False, server_default=text('1000'))
+    z = Column(Integer, nullable=False, server_default=text('1'))
+    c = Column(Integer, nullable=False, server_default=text('1'))
+    t = Column(Integer, nullable=False, server_default=text('1'))
     stack_interval = Column(Float, )
     frame_interval = Column(Float, )
     orderdims = Column(String, nullable=False, server_default=text('xyzct'))
@@ -66,6 +71,7 @@ class ImageDataDao(DAO, Base):
         return {'id_': self.id_,
                 'name': self.name,
                 'roi': self.roi,
+                'shape': tuple(eval(v) for v in self.orderdims),
                 'stack_interval': self.stack_interval,
                 'frame_interval': self.frame_interval,
                 'orderdims': self.orderdims,
