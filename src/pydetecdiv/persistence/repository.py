@@ -85,14 +85,14 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_linked_records(self, class_name, parent_class_name, parent_id):
+    def get_linked_records(self, cls_name, parent_cls_name, parent_id):
         """
         Abstract method enforcing the implementation of a method returning the list of records for all objects of class
          defined by class_name that are linked to object of class parent_class_name with id_ = parent_id
-        :param class_name: the class name of the objects to retrieve records for
-        :type class_name: str
-        :param parent_class_name: the class nae of the parent object
-        :type parent_class_name: str
+        :param cls_name: the class name of the objects to retrieve records for
+        :type cls_name: str
+        :param parent_cls_name: the class nae of the parent object
+        :type parent_cls_name: str
         :param parent_id: the id of the parent object
         :type parent_id: int
         :return: a list of records

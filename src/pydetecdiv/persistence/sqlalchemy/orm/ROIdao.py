@@ -69,6 +69,8 @@ class ROIdao(DAO, Base):
         """
         with self.session_maker() as session:
             image_list = [image.record for image in
-                          session.query(dao.ImageDao).filter(dao.ImageDataDao.id_ == dao.ImageDao.image_data).filter(
-                              roi_id == dao.ImageDataDao.roi).all()]
+                          session.query(dao.ImageDao)
+                          .filter(dao.ImageDataDao.id_ == dao.ImageDao.image_data)
+                          .filter(roi_id == dao.ImageDataDao.roi)
+                          .all()]
         return image_list

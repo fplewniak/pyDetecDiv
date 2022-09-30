@@ -140,41 +140,40 @@ class _ShallowSQL(ShallowDb):
                 dao_list = session.query(dao[class_name])
         return [obj.record for obj in dao_list]
 
-    def get_linked_records(self, class_name, parent_class_name, parent_id):
+    def get_linked_records(self, cls_name, parent_cls_name, parent_id):
         """
-        A method returning the list of records for all objects of class defined by class_name that are linked to object
-        of class parent_class_name with id_ = parent_id
-        :param class_name: the class name of the objects to retrieve records for
-        :type class_name: str
-        :param parent_class_name: the class nae of the parent object
-        :type parent_class_name: str
+        A method returning the list of records for all objects of class defined by cls_name that are linked to object
+        of class parent_cls_name with id_ = parent_id
+        :param cls_name: the class name of the objects to retrieve records for
+        :type cls_name: str
+        :param parent_cls_name: the class nae of the parent object
+        :type parent_cls_name: str
         :param parent_id: the id of the parent object
         :type parent_id: int
         :return: a list of records
         :rtype: list of dict
         """
         linked_records = []
-        if class_name == 'ImageData':
-            if parent_class_name in ['Image']:
-                linked_records = [
-                    self.get_record(class_name, self.get_record(parent_class_name, parent_id)['image_data'])]
-            if parent_class_name in ['FOV', 'ROI']:
-                linked_records = dao[parent_class_name](self.session_maker).image_data(parent_id)
-        if class_name == 'FOV':
-            if parent_class_name in ['ROI']:
-                linked_records = [self.get_record(class_name, self.get_record(parent_class_name, parent_id)['fov'])]
-            if parent_class_name in ['Image', 'ImageData', ]:
-                linked_records = dao[parent_class_name](self.session_maker).fov(parent_id)
-        if class_name == 'ROI':
-            if parent_class_name in ['ImageData', ]:
-                linked_records = [self.get_record(class_name, self.get_record(parent_class_name, parent_id)['roi'])]
-            if parent_class_name in ['FOV', ]:
-                linked_records = dao[parent_class_name](self.session_maker).roi_list(parent_id)
-            if parent_class_name in ['Image', ]:
-                linked_records = dao[parent_class_name](self.session_maker).roi(parent_id)
-        if class_name == 'Image':
-            if parent_class_name in ['ImageData', 'FOV', 'ROI']:
-                linked_records = dao[parent_class_name](self.session_maker).image_list(parent_id)
+        if cls_name == 'ImageData':
+            if parent_cls_name in ['Image']:
+                linked_records = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['image_data'])]
+            if parent_cls_name in ['FOV', 'ROI']:
+                linked_records = dao[parent_cls_name](self.session_maker).image_data(parent_id)
+        if cls_name == 'FOV':
+            if parent_cls_name in ['ROI']:
+                linked_records = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['fov'])]
+            if parent_cls_name in ['Image', 'ImageData', ]:
+                linked_records = dao[parent_cls_name](self.session_maker).fov(parent_id)
+        if cls_name == 'ROI':
+            if parent_cls_name in ['ImageData', ]:
+                linked_records = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['roi'])]
+            if parent_cls_name in ['FOV', ]:
+                linked_records = dao[parent_cls_name](self.session_maker).roi_list(parent_id)
+            if parent_cls_name in ['Image', ]:
+                linked_records = dao[parent_cls_name](self.session_maker).roi(parent_id)
+        if cls_name == 'Image':
+            if parent_cls_name in ['ImageData', 'FOV', 'ROI']:
+                linked_records = dao[parent_cls_name](self.session_maker).image_list(parent_id)
 
         return linked_records
 

@@ -4,6 +4,7 @@
 The central class for keeping track of all available objects in a project.
 """
 import itertools
+from collections import defaultdict
 from pydetecdiv.persistence.project import open_project
 from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.domain.ROI import ROI
@@ -29,7 +30,7 @@ class Project:
     def __init__(self, dbname=None, dbms=None):
         self.repository = open_project(dbname, dbms)
         self.dbname = dbname
-        self.pool = {}
+        self.pool = defaultdict(DomainSpecificObject)
 
     def save_record(self, class_name, record):
         """
@@ -54,9 +55,8 @@ class Project:
         :rtype: int
         """
         id_ = self.repository.save_object(dso.__class__.__name__, dso.record())
-        class_name = dso.__class__.__name__
-        if (class_name, id_) not in self.pool:
-            self.pool[(class_name, id_)] = dso
+        if (dso.__class__.__name__, id_) not in self.pool:
+            self.pool[(dso.__class__.__name__, id_)] = dso
         return id_
 
     def delete(self, dso):
@@ -65,7 +65,7 @@ class Project:
         :param dso: the object to delete
         :type dso: object (DomainSpecificObject)
         """
-        self.release_dso(dso.__class__.__name__, dso.id_)
+        del self.pool[dso.__class__.__name__, dso.id_]
         self.repository.delete_object(dso.__class__.__name__, dso.id_)
 
     def get_object(self, class_name, id_=None) -> DomainSpecificObject:
@@ -106,7 +106,7 @@ class Project:
         """
         all_rois = itertools.chain(*[fov.roi_list for fov in self.get_objects('FOV')])
         if id_list is None:
-            return all_rois
+            return list(all_rois)
         return [roi for roi in all_rois if roi.id_ in id_list]
 
     def has_links(self, class_name, to=None):
@@ -139,6 +139,8 @@ class Project:
         """
         A method returning the list of all objects of class defined by class_name that are linked to an object specified
         by argument to=
+        Note that for ROIs linked to a FOV, this method also returns the initial ROI (full-FOV) even if other ROIs have
+        been created. If initial ROIs are not desired, then the FOV.roi_list property should be used instead.
         :param class_name: the class name of the objects to retrieve
         :type class_name: str
         :param to: the object the retrieve objects should be linked to
@@ -190,20 +192,7 @@ class Project:
         :rtype: DomainSpecificObject
         """
         if 'id_' in rec and (class_name, rec['id_']) in self.pool:
-            # self.pool[(class_name, rec['id_'])].check_validity()
             return self.pool[(class_name, rec['id_'])]
         obj = Project.classes[class_name](project=self, **rec)
         self.pool[(class_name, obj.id_)] = obj
         return obj
-
-    def release_dso(self, class_name, id_):
-        """
-        remove a dso from the pool. This should be done when deleting an object with delete() method or to release an
-        object that is not needed any more
-        :param class_name: the class name of the object to be removed from the pool
-        :type class_name: str
-        :param id_: the id of the object to be removed from the pool
-        :type id_: int
-        """
-        if (class_name, id_) in self.pool:
-            del self.pool[(class_name, id_)]

@@ -97,8 +97,7 @@ class ImageData(NamedDSO):
             df = DataFrame.from_records([img.record() for img in self.image_list])
             videos = df.sort_values(by=['z', 't']).groupby('z')
             videos_rec = [videos.get_group(z).to_dict(orient='records') for z in videos.groups]
-            return [[self.project.get_object('Image', frame_rec['id_']) for frame_rec in video_rec] for video_rec in
-                    videos_rec]
+            return [[self.project.get_object('Image', f['id_']) for f in v] for v in videos_rec]
         return []
 
     @property
@@ -113,7 +112,7 @@ class ImageData(NamedDSO):
             df = DataFrame.from_records([img.record() for img in self.image_list])
             stacks = df.sort_values(by=['t', 'z']).groupby('t')
             stacks_rec = [stacks.get_group(frame).to_dict(orient='records') for frame in stacks.groups]
-            return [[self.project.get_object('Image', z_rec['id_']) for z_rec in stack_rec] for stack_rec in stacks_rec]
+            return [[self.project.get_object('Image', z_rec['id_']) for z_rec in s] for s in stacks_rec]
         return []
 
     def top_left(self):

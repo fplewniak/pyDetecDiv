@@ -4,7 +4,6 @@
 Access to FOV data
 """
 import itertools
-
 from sqlalchemy import Column, Integer, String, text, select
 from sqlalchemy.orm import relationship, joinedload
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
@@ -54,8 +53,11 @@ class FOVdao(DAO, Base):
         :rtype: list
         """
         with self.session_maker() as session:
-            image_data = [i.record for i in itertools.chain(
-                *[roi.image_data_list for roi in session.query(dao.ROIdao).filter(dao.ROIdao.fov == fov_id).all()])]
+            image_data = [i.record
+                          for i in itertools.chain(*[roi.image_data_list
+                                                     for roi in session.query(dao.ROIdao)
+                                                   .filter(dao.ROIdao.fov == fov_id)
+                                                   .all()])]
         return image_data
 
     def roi_list(self, fov_id):
