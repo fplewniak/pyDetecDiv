@@ -4,6 +4,7 @@
  A class defining the business logic methods that can be applied to Regions Of Interest
 """
 from pandas import DataFrame
+from collections import namedtuple
 from pydetecdiv.domain.dso import NamedDSO
 from pydetecdiv.domain.ROI import ROI
 
@@ -47,7 +48,8 @@ class ImageData(NamedDSO):
         :rtype: tuple of int
         """
         self.check_validity()
-        return tuple(self._shape[key] for key in self.orderdims)
+        Shape = namedtuple('Shape', list(self.orderdims))
+        return Shape(**self._shape)
 
     @shape.setter
     def shape(self, shape=(1000, 1000, 1, 1, 1)):
