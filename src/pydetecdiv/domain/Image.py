@@ -14,8 +14,7 @@ class Image(DomainSpecificObject):
 
     def __init__(self, image_data=None, locator=None, mimetype=None, drift=(0, 0), c=0, z=0, t=0, **kwargs):
         super().__init__(**kwargs)
-        self._image_data = (image_data if isinstance(image_data, ImageData)
-                                          or image_data is None else self.project.get_object('ImageData', image_data))
+        self._image_data = image_data.id_ if isinstance(image_data, ImageData) else image_data
         self.locator = locator
         self.mimetype = mimetype
         self.drift = drift
@@ -37,13 +36,11 @@ class Image(DomainSpecificObject):
         :return: the parent ImageData object
         :rtype: ImageData
         """
-        return self._image_data
+        return self.project.get_object('ImageData', self._image_data)
 
     @image_data.setter
     def image_data(self, image_data):
-        self._image_data = (
-            image_data if isinstance(image_data, ImageData) or image_data is None else self.project.get_object(
-                'ImageData', image_data))
+        self._image_data = image_data.id_ if isinstance(image_data, ImageData) else image_data
         self.validate()
 
     @property
@@ -136,7 +133,7 @@ class Image(DomainSpecificObject):
         :rtype: dict
         """
         record = {
-            'image_data': self._image_data.id_,
+            'image_data': self._image_data,
             'locator': self.locator,
             'mimetype': self.mimetype,
             'drift': self.drift,

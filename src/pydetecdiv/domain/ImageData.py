@@ -16,19 +16,28 @@ class ImageData(NamedDSO):
     def __init__(self, roi=None, shape=(1000, 1000, 1, 1, 1), stack_interval=None, frame_interval=None,
                  orderdims='xyzct', **kwargs):
         super().__init__(**kwargs)
-        self._roi = (roi if isinstance(roi, ROI) or roi is None
-                     else self.project.get_object('ROI', roi))
-        self._shape = shape
+        self._roi = roi.id_ if isinstance(roi, ROI) else roi
+        self.orderdims = orderdims
+        self._shape = dict(zip(self.orderdims, shape))
         self.stack_interval = stack_interval
         self.frame_interval = frame_interval
-        self.orderdims = orderdims
         self.validate(updated=False)
 
     def check_validity(self):
         """
-        Checks the current ImageData object is valid
+        Checks the current ImageData object is valid and consistent with its image content. If
+        not, the shape values are updated
         """
-        ...
+        if (self.id_ is not None) and len(self.image_list):
+            shape = {'x': self._shape['x'],
+                     'y': self._shape['y'],
+                     'z': len(set(i.z for i in self.image_list)),
+                     'c': len(set(i.c for i in self.image_list)),
+                     't': len(set(i.t for i in self.image_list))
+                     }
+            if shape != self._shape:
+                self._shape = shape
+                self.id_ = self.project.save(self)
 
     @property
     def shape(self):
@@ -37,11 +46,12 @@ class ImageData(NamedDSO):
         :return: the shape of the matrix
         :rtype: tuple of int
         """
-        return self._shape
+        self.check_validity()
+        return tuple(self._shape[key] for key in self.orderdims)
 
     @shape.setter
     def shape(self, shape=(1000, 1000, 1, 1, 1)):
-        self._shape = shape
+        self._shape = dict(zip(self.orderdims, shape))
         self.validate()
 
     @property
@@ -51,12 +61,11 @@ class ImageData(NamedDSO):
         :return: the parent ROI object
         :rtype: ROI
         """
-        return self._roi
+        return self.project.get_object('ROI', self._roi)
 
     @roi.setter
     def roi(self, roi):
-        self._roi = (roi if isinstance(roi, ROI) or roi is None
-                     else self.project.get_object('ROI', roi))
+        self._roi = roi.id_ if isinstance(roi, ROI) else roi
         self.validate()
 
     @property
@@ -137,7 +146,7 @@ class ImageData(NamedDSO):
         """
         record = {
             'name': self.name,
-            'roi': self._roi.id_,
+            'roi': self._roi,
             'shape': self._shape,
             'stack_interval': self.stack_interval,
             'frame_interval': self.frame_interval,

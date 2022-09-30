@@ -15,7 +15,7 @@ class ImageDataDao(DAO, Base):
     """
     __tablename__ = 'ImageData'
     exclude = ['id_', 'stacks', 'videos']
-    translate = {}
+    translate = {'shape': {}}
 
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
     roi = Column(Integer, ForeignKey('ROI.id_'), nullable=False, index=True)

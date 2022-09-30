@@ -15,7 +15,7 @@ class ROI(NamedDSO, BoxedDSO, DsoWithImageData):
 
     def __init__(self, fov=None, **kwargs):
         super().__init__(**kwargs)
-        self._fov = fov if isinstance(fov, FOV) or fov is None else self.project.get_object('FOV', fov)
+        self._fov = fov.id_ if isinstance(fov, FOV) else fov
         self.validate(updated=False)
 
     def delete(self):
@@ -39,11 +39,11 @@ class ROI(NamedDSO, BoxedDSO, DsoWithImageData):
         :return: the parent FOV object
         :rtype: FOV
         """
-        return self._fov
+        return self.project.get_object('FOV', self._fov)
 
     @fov.setter
     def fov(self, fov):
-        self._fov = fov if isinstance(fov, FOV) or fov is None else self.project.get_object('FOV', fov)
+        self._fov = fov.id_ if isinstance(fov, FOV) else fov
         self.validate()
 
     @property
@@ -81,7 +81,7 @@ class ROI(NamedDSO, BoxedDSO, DsoWithImageData):
         """
         record = {
             'name': self.name,
-            'fov': self._fov.id_,
+            'fov': self._fov,
             'top_left': self.top_left,
             'bottom_right': self.bottom_right,
             'size': self.size
