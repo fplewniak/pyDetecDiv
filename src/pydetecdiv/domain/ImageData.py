@@ -3,8 +3,8 @@
 """
  A class defining the business logic methods that can be applied to Regions Of Interest
 """
-from pandas import DataFrame
 from collections import namedtuple
+from pandas import DataFrame
 from pydetecdiv.domain.dso import NamedDSO
 from pydetecdiv.domain.ROI import ROI
 
@@ -32,9 +32,9 @@ class ImageData(NamedDSO):
         if (self.id_ is not None) and len(self.image_list):
             shape = {'x': self._shape['x'],
                      'y': self._shape['y'],
-                     'z': len(set(i.z for i in self.image_list)),
+                     'z': len(set(i.layer for i in self.image_list)),
                      'c': len(set(i.c for i in self.image_list)),
-                     't': len(set(i.t for i in self.image_list))
+                     't': len(set(i.frame for i in self.image_list))
                      }
             if shape != self._shape:
                 self._shape = shape
@@ -97,7 +97,7 @@ class ImageData(NamedDSO):
         """
         if len(self.image_list):
             df = DataFrame.from_records([img.record() for img in self.image_list])
-            videos = df.sort_values(by=['z', 't']).groupby('z')
+            videos = df.sort_values(by=['layer', 'frame']).groupby('layer')
             videos_rec = [videos.get_group(z).to_dict(orient='records') for z in videos.groups]
             return [[self.project.get_object('Image', f['id_']) for f in v] for v in videos_rec]
         return []
@@ -112,7 +112,7 @@ class ImageData(NamedDSO):
         """
         if len(self.image_list):
             df = DataFrame.from_records([img.record() for img in self.image_list])
-            stacks = df.sort_values(by=['t', 'z']).groupby('t')
+            stacks = df.sort_values(by=['frame', 'layer']).groupby('frame')
             stacks_rec = [stacks.get_group(frame).to_dict(orient='records') for frame in stacks.groups]
             return [[self.project.get_object('Image', z_rec['id_']) for z_rec in s] for s in stacks_rec]
         return []

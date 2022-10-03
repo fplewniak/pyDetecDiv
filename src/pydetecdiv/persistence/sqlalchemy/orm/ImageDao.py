@@ -14,19 +14,23 @@ class ImageDao(DAO, Base):
     """
     __tablename__ = 'Image'
     __table_args__ = (
-        UniqueConstraint('locator', 'c', 'z', 't', name='resource'),
+        UniqueConstraint('resource', 'c', 'z', 't', name='resource'),
+        UniqueConstraint('image_data', 'layer', 'frame', name='layer_frame'),
     )
-    exclude = ['id_', 'size', 'top_left', 'bottom_right']
-    translate = {'drift': ('x_drift', 'y_drift'), }
+    exclude = ['id_', 'size', 'top_left', 'bottom_right', ]
+    translate = {'drift': ('x_drift', 'y_drift'), 'location': {}}
 
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
     image_data = Column(Integer, ForeignKey('ImageData.id_'), nullable=False, index=True)
     x_drift = Column(Integer, nullable=False, server_default=text('0'))
     y_drift = Column(Integer, nullable=False, server_default=text('0'))
+    layer = Column(Integer, nullable=False, server_default=text('0'))
+    frame = Column(Integer, nullable=False, server_default=text('0'))
+    resource = Column(String, nullable=False, )
+    order = Column(String, nullable=False, server_default=text('zct'))
     c = Column(Integer, nullable=False, server_default=text('0'))
     z = Column(Integer, nullable=False, server_default=text('0'))
     t = Column(Integer, nullable=False, server_default=text('0'))
-    locator = Column(String, nullable=False, )
     mimetype = Column(String)
 
     def roi(self, image_id):
@@ -69,9 +73,10 @@ class ImageDao(DAO, Base):
         return {'id_': self.id_,
                 'image_data': self.image_data,
                 'drift': (self.x_drift, self.y_drift),
-                'c': self.c,
-                'z': self.z,
-                't': self.t,
-                'locator': self.locator,
+                'layer': self.layer,
+                'frame': self.frame,
+                'resource': self.resource,
+                'location': tuple(self.__getattribute__(v) for v in self.order),
+                'order': self.order,
                 'mimetype': self.mimetype,
                 }

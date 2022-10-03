@@ -3,6 +3,7 @@
 """
  A class defining the business logic methods that can be applied to images
 """
+from collections import namedtuple
 from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.domain.ImageData import ImageData
 
@@ -12,15 +13,17 @@ class Image(DomainSpecificObject):
     A business-logic class defining valid operations and attributes of 2D images
     """
 
-    def __init__(self, image_data=None, locator=None, mimetype=None, drift=(0, 0), c=0, z=0, t=0, **kwargs):
+    def __init__(self, image_data=None, resource=None, location=(0, 0, 0), mimetype=None, drift=(0, 0), layer=0,
+                 frame=0, order='zct', **kwargs):
         super().__init__(**kwargs)
         self._image_data = image_data.id_ if isinstance(image_data, ImageData) else image_data
-        self.locator = locator
-        self.mimetype = mimetype
-        self.drift = drift
-        self.c_ = c
-        self.z_ = z
-        self.t = t
+        self._resource = resource
+        self._mimetype = mimetype
+        self._drift = drift
+        self._order = order
+        self._location = dict(zip(self.order, location))
+        self._layer = layer
+        self._frame = frame
         self.validate(updated=False)
 
     def check_validity(self):
@@ -82,17 +85,74 @@ class Image(DomainSpecificObject):
         return self.roi.bottom_right
 
     @property
+    def resource(self):
+        """
+        Returns the image resource (file, etc.) storing the image
+        :return: the image resource
+        :rtype: str
+        """
+        return self._resource
+
+    @resource.setter
+    def resource(self, resource):
+        self._resource = resource
+        self.validate()
+
+    @property
+    def mimetype(self):
+        """
+        The mime-type of the image resource
+        :return: the mime-type
+        :rtype: str
+        """
+        return self._mimetype
+
+    @mimetype.setter
+    def mimetype(self, mimetype):
+        self._mimetype = mimetype
+        self.validate()
+
+    @property
+    def location(self):
+        """
+        The location of the image in the resource as indexes for z, c, and t
+        :return: the location of the image
+        :rtype: a named tuple
+        """
+        Location = namedtuple('Location', list(self.order))
+        return Location(**self._location)
+
+    @location.setter
+    def location(self, location):
+        self._location = dict(zip(self.order, location))
+        self.validate()
+
+    @property
+    def order(self):
+        """
+        The order the z, c and t dimensions are stored in the resource
+        :return: the order of z, c and t dimensions
+        :rtype: str
+        """
+        return self._order
+
+    @order.setter
+    def order(self, order='zct'):
+        self._order = order
+        self.validate()
+
+    @property
     def c(self):
         """
         The channel of this image
         :return: the channel index
         :rtype: int
         """
-        return self.c_
+        return self._location['c']
 
     @c.setter
     def c(self, c):
-        self.c_ = c
+        self._location['c'] = c
         self.validate()
 
     @property
@@ -102,11 +162,20 @@ class Image(DomainSpecificObject):
         :return: the z index
         :rtype: int
         """
-        return self.z_
+        return self._location['z']
 
     @z.setter
     def z(self, z):
-        self.z_ = z
+        self._location['z'] = z
+        self.validate()
+
+    @property
+    def layer(self):
+        return self._layer
+
+    @layer.setter
+    def layer(self, layer):
+        self._layer = layer
         self.validate()
 
     @property
@@ -116,11 +185,33 @@ class Image(DomainSpecificObject):
         :return: the time index
         :rtype: int
         """
-        return self.t_
+        return self._location['t']
 
     @t.setter
     def t(self, t):
-        self.t_ = t
+        self._location['t'] = t
+        self.validate()
+
+    @property
+    def frame(self):
+        return self._frame
+
+    @frame.setter
+    def frame(self, frame):
+        self._frame = frame
+        self.validate()
+
+    @property
+    def drift(self):
+        return self._drift
+
+    @property
+    def time(self):
+        return self.frame * self.image_data.frame_interval
+
+    @drift.setter
+    def drift(self, drift=(0,0)):
+        self._drift = drift
         self.validate()
 
     def record(self, no_id=False):
@@ -134,12 +225,13 @@ class Image(DomainSpecificObject):
         """
         record = {
             'image_data': self._image_data,
-            'locator': self.locator,
-            'mimetype': self.mimetype,
-            'drift': self.drift,
-            'c': self.c,
-            'z': self.z,
-            't': self.t,
+            'layer': self._layer,
+            'frame': self._frame,
+            'drift': self._drift,
+            'resource': self._resource,
+            'location': self._location,
+            'order': self._order,
+            'mimetype': self._mimetype,
         }
         if not no_id:
             record['id_'] = self.id_
