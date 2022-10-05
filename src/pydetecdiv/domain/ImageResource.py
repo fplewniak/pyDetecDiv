@@ -66,6 +66,20 @@ class ImageResource:
         self.data = np.block([self.data, data])
         return self
 
+    @staticmethod
+    def compose(data_list):
+        """
+        Compose a multi-channel image from a list of single channel images.
+        There is no verification that input data are actually single channels, so this method may also be used to
+        create matrices that are not really multi-channel images but an arbitrary set of grayscale images stored in
+        the channel dimension
+        :param data_list: the 5D image data to compose
+        :type data_list: a list of 5D ndarrays
+        :return: the composite multi-channel image
+        :rtype: a ndarray
+        """
+        return np.block(data_list)
+
 
 class HDF5dataset(ImageResource):
     """
