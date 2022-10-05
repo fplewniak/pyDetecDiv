@@ -22,14 +22,15 @@ classifiers=[
 
 requires-python = ">=3.6.0"
 dependencies = [
+    "h5py",
     #"matplotlib",
-    #"numpy",
+    "numpy",
     #"omero-py",
     "pandas",
     #"pylibjpeg",
     #"pylibjpeg-libjpeg",
     "pyxdg",
-    #"scikit-image",
+    "scikit-image",
     #"scipy",
     "sqlalchemy",
     #"tifffile",
