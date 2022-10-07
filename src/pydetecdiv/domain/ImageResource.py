@@ -4,6 +4,8 @@
  Classes to manipulate Image resources: loading data from files, etc
 """
 import glob
+import re
+
 import h5py
 import numpy as np
 import skimage.io as skio
@@ -16,19 +18,59 @@ class ImageResource:
     Frames, layers or channels can be added to the data, using the corresponding methods.
     """
 
-    def __init__(self, path):
+    def __init__(self, path, t_pattern=None):
         self.path = path
         self.data = np.array([])
         if isinstance(self.path, str):
             self.path = glob.glob(path)
+        self.t_pattern = t_pattern
 
     def load_data(self):
         """
         Load the image data from files as a 5D matrix
         """
-        self.data = np.array([skio.ImageCollection(path).concatenate() for path in self.path])
-        if len(self.data.shape) == 4:
-            self.data = np.expand_dims(self.data, -1)
+        print('Loading data...')
+        if self.data.size == 0:
+            if self.t_pattern is None:
+                self.data = ImageResource.get_data_from_path(self.path)
+            else:
+                #self.data = self.get_data_from_path(self.path)
+                # As a matter of fact, should get a list of lists of files representing time sequences of stacks.
+                self.t_pattern = r' (\S+.+\S+) ' if self.t_pattern is None else self.t_pattern
+            #     self.z_pattern = r' (\S+.+\S+) ' if self.z_pattern is None else f' (\S+{self.z_pattern}\S+) '
+                r_t_comp = re.compile(self.t_pattern)
+                path_str = ' '.join(sorted(self.path))
+                for t in sorted(set(r_t_comp.findall(path_str))):
+                    print(sorted(glob.glob(f'{t}*')))
+                    if self.data.size == 0:
+                        self.data = ImageResource.get_data_from_path(sorted(glob.glob(f'{t}*')))
+                    else:
+                        self.stack(ImageResource.get_data_from_path(sorted(glob.glob(f'{t}*'))))
+            # r_z_comp = re.compile(self.z_pattern)
+            # path_str = ' '.join(sorted(self.path))
+            # for t in set(r_t_comp.findall(path_str)):
+            #     path_str = ' '.join(sorted(glob.glob(f'{t}*')))
+            #     print(r_z_comp.findall(path_str))
+            #     if self.data.size == 0:
+            #         self.data = self.get_data_from_path(r_z_comp.findall(path_str))
+            #     else:
+            #         self.stack(self.get_data_from_path(r_z_comp.findall(path_str)))
+        return self
+
+    @staticmethod
+    def get_data_from_path(path_list):
+        data = np.array([skio.ImageCollection(p).concatenate() for p in path_list])
+        if len(data.shape) == 4:
+            data = np.expand_dims(data, -1)
+        return data
+
+    # @property
+    # def shape(self):
+    #     if self.data.size == 0:
+    #         shape = self.load_data().shape
+    #         self.free_data()
+    #         return shape
+    #     return self.data.shape
 
     def free_data(self):
         """
