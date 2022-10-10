@@ -98,6 +98,18 @@ class ImageResource:
         self.data = np.hstack([self.data, data])
         return self
 
+    @property
+    def z_max(self):
+        """
+        Property returning the maximum value accross all z layers at each pixel for each unit of time and each channel
+        :return: the resulting 5D matrix with only one layer
+        :rtype: 5D numpy array
+        """
+        data = np.amax(self.data, axis=1)
+        if len(data.shape) == 4:
+            data = np.expand_dims(data, 1)
+        return data
+
     def add_channels(self, data):
         """
         Add new channels to the image data (last dimension)
