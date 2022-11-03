@@ -158,7 +158,7 @@ class Image(DomainSpecificObject):
     @property
     def z(self):
         """
-        The z-index of this image
+        The z-index of this image in the image resource defined by self._resource
         :return: the z index
         :rtype: int
         """
@@ -171,6 +171,11 @@ class Image(DomainSpecificObject):
 
     @property
     def layer(self):
+        """
+        The actual z position (layer) of this image
+        :return: the actual layer index
+        :rtype: int
+        """
         return self._layer
 
     @layer.setter
@@ -181,7 +186,7 @@ class Image(DomainSpecificObject):
     @property
     def t(self):
         """
-        The time index of this image
+        The time index of this image in the image resource defined by self._resource
         :return: the time index
         :rtype: int
         """
@@ -194,6 +199,11 @@ class Image(DomainSpecificObject):
 
     @property
     def frame(self):
+        """
+        The actual time frame index of this image equal to the number of frame_interval since the first frame
+        :return: the actual frame index
+        :rtype: int
+        """
         return self._frame
 
     @frame.setter
@@ -203,10 +213,19 @@ class Image(DomainSpecificObject):
 
     @property
     def drift(self):
+        """
+        The (x, y) drift of this image relative to the first one
+        :return: position drift
+        :rtype: tuple of int
+        """
         return self._drift
 
     @property
     def time(self):
+        """
+        The actual time of this image computed from the image actual index and frame_interval
+        :return:
+        """
         return self.frame * self.image_data.frame_interval
 
     @drift.setter
