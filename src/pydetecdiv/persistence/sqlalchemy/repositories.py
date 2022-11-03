@@ -23,8 +23,6 @@ class _ShallowSQL(ShallowDb):
 
     def __init__(self, dbname):
         self.name = dbname
-        self.engine = sqlalchemy.create_engine('sqlite+pysqlite://', poolclass=NullPool)
-        self.session_maker = sessionmaker(self.engine)
 
     def executescript(self, script):
         """
