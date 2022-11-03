@@ -34,10 +34,6 @@ class ImageResource:
             if self.t_pattern is None:
                 self.data = ImageResource.get_data_from_path(self.path)
             else:
-                #self.data = self.get_data_from_path(self.path)
-                # As a matter of fact, should get a list of lists of files representing time sequences of stacks.
-                self.t_pattern = r' (\S+.+\S+) ' if self.t_pattern is None else self.t_pattern
-            #     self.z_pattern = r' (\S+.+\S+) ' if self.z_pattern is None else f' (\S+{self.z_pattern}\S+) '
                 r_t_comp = re.compile(self.t_pattern)
                 path_str = ' '.join(sorted(self.path))
                 for t in sorted(set(r_t_comp.findall(path_str))):
@@ -46,35 +42,40 @@ class ImageResource:
                         self.data = ImageResource.get_data_from_path(sorted(glob.glob(f'{t}*')))
                     else:
                         self.stack(ImageResource.get_data_from_path(sorted(glob.glob(f'{t}*'))))
-            # r_z_comp = re.compile(self.z_pattern)
-            # path_str = ' '.join(sorted(self.path))
-            # for t in set(r_t_comp.findall(path_str)):
-            #     path_str = ' '.join(sorted(glob.glob(f'{t}*')))
-            #     print(r_z_comp.findall(path_str))
-            #     if self.data.size == 0:
-            #         self.data = self.get_data_from_path(r_z_comp.findall(path_str))
-            #     else:
-            #         self.stack(self.get_data_from_path(r_z_comp.findall(path_str)))
         return self
 
     @staticmethod
     def get_data_from_path(path_list):
+        """
+        Get image data as a 5D matrix resulting from the concatenation of images in a collection defined by a list of
+        files
+        :param path_list: the list of image files
+        :type path_list: list of str
+        :return: the image data array
+        :rtype: numpy ndarray
+        """
         data = np.array([skio.ImageCollection(p).concatenate() for p in path_list])
         if len(data.shape) == 4:
             data = np.expand_dims(data, -1)
         return data
 
-    # @property
-    # def shape(self):
-    #     if self.data.size == 0:
-    #         shape = self.load_data().shape
-    #         self.free_data()
-    #         return shape
-    #     return self.data.shape
+    @property
+    def shape(self):
+        """
+        Returns the shape of data if data has been loaded, otherwise it temporarily loads the data to determine its
+        shape before liberating the memory.
+        :return: the shape of data
+        :rtype: tuple
+        """
+        if self.data.size == 0:
+            shape = self.load_data().shape
+            self.free_data()
+            return shape
+        return self.data.shape
 
     def free_data(self):
         """
-        Liberates previously loaded data to allow its removal by the garbage collector.
+        Liberates previously loaded data to free memory.
         """
         self.data = np.array([])
 
@@ -101,7 +102,7 @@ class ImageResource:
     @property
     def z_max(self):
         """
-        Property returning the maximum value accross all z layers at each pixel for each unit of time and each channel
+        Property returning the maximum value across all z layers at each pixel for each unit of time and each channel
         :return: the resulting 5D matrix with only one layer
         :rtype: 5D numpy array
         """
@@ -151,8 +152,6 @@ class HDF5dataset(ImageResource):
     def load_data(self):
         """
         Load the image data from a dataset in a HDF5 file as a 5D matrix
-        :param ds_names: list name of datasets to load
-        :type ds_names: list of str
         """
         self.ds_names = self.h5_file.keys() if self.ds_names is None else self.ds_names
         self.data = np.concatenate([[self.h5_file[ds_name] for ds_name in self.ds_names]])
