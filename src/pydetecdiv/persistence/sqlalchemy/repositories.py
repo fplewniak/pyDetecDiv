@@ -5,36 +5,37 @@ Concrete Repositories using a SQL database with the sqlalchemy toolkit
 """
 import re
 import sqlalchemy
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql.expression import Delete
+from sqlalchemy.pool import NullPool
 from pandas import DataFrame
-from pandas import read_sql
 from pydetecdiv.persistence.repository import ShallowDb
-from pydetecdiv.persistence.sqlalchemy.dao.tables import Tables
+from pydetecdiv.persistence.sqlalchemy.orm.main import mapper_registry
+from pydetecdiv.persistence.sqlalchemy.orm.dao import dso_dao_mapping as dao
+from pydetecdiv.persistence.sqlalchemy.orm.associations import Linker
 
 
 class _ShallowSQL(ShallowDb):
     """
     A generic shallow SQL persistence used to provide the common methods for SQL databases. DBMS-specific methods should
-    be implemented in subclasses of this one
+    be implemented in subclasses of this one.
     """
 
     def __init__(self, dbname):
         self.name = dbname
-        self.engine = None
-        self.tables = None
 
-    def executescript(self, script: str):
+    def executescript(self, script):
         """
         Reads a string containing several SQL statements in a free format
         :param script: the string representing the SQL script to be executed
+        :type script: str
         """
         try:
-            with Session(self.engine, future=True) as session:
-                statements = re.split(r';\s*$', script, flags=re.MULTILINE)
+            statements = re.split(r';\s*$', script, flags=re.MULTILINE)
+            with self.session_maker() as session:
                 for statement in statements:
                     if statement:
                         session.execute(sqlalchemy.text(statement))
-                session.commit()
         except sqlalchemy.exc.OperationalError as exc:
             print(exc)
 
@@ -42,9 +43,8 @@ class _ShallowSQL(ShallowDb):
         """
         Gets SqlAlchemy classes defining the project database schema and creates the database if it does not exist.
         """
-        self.tables = Tables()
         if not self.engine.table_names():
-            self.tables.create(self.engine)
+            mapper_registry.metadata.create_all(self.engine)
 
     def close(self):
         """
@@ -52,39 +52,165 @@ class _ShallowSQL(ShallowDb):
         """
         self.engine.dispose()
 
-    def _get_objects(self, selection: list = None, query: list = None) -> DataFrame:
+    def save_object(self, class_name, record):
         """
-        Get objects specified by the table list and satisfying the conditions defined by the list of queries. This
-        method is not supposed to be called from outside this class
-        Example of usage to retrieve FOVs and the name of their associated ROIs:
-        roi_table = self.tables.list['ROI']
-        fov_table = self.tables.list['FOV']
-        self._get_objects([fov_table, roi_table.c.name], query=[fov_table.c.id == roi_table.c.fov])
+        Save the object represented by the record
+        :param class_name: the class name of the object to save into SQL database
+        :type class_name: str
+        :param record: the record representing the object
+        :type record: dict
+        :return: the id of the created or updated object
+        :rtype: int
+        """
+        if record['id_'] is None:
+            return dao[class_name](self.session_maker).insert(record)
+        return dao[class_name](self.session_maker).update(record)
 
-        :param selection: a list of tables or columns thereof to select rows from. Can be defined by a list containing
-         t.list[table_name] or t.columns(table_name).column_name or any combination thereof
-        :param query: a list of queries on tables
-        :return a DataFrame containing the requested objects
+    def delete_object(self, class_name, id_):
         """
-        stmt = sqlalchemy.select(selection)
-        if query is not None:
-            for q in query:
-                stmt = stmt.where(q)
-        return read_sql(stmt, self.engine)
+        Delete an object of class name = class_name with id = id_
+        :param class_name: the class name of the object to delete
+        :type class_name: str
+        :param id_: the id of the object to delete
+        :type id_: int
+        """
+        with self.session_maker() as session:
+            session.execute(Delete(dao[class_name], whereclause=dao[class_name].id_ == id_))
+            session.commit()
 
-    def get_object_list(self, class_name: str = None, as_list: bool = True):
+    def _get_records(self, class_name=None, query=None):
         """
-        Return a list of objects of a given class specified by its name, which should be also the name of the
-        corresponding sqlalchemy Table
-        :param class_name: the class name
-        :param as_list: if True, returns a list of dictionaries else returns a DataFrame
-        :return: a DataFrame or a list of dictionaries containing the data for the requested objects
+        A private method returning the list of all object records of a given class specified by its name and verifying a
+        query built from a list of where clauses
+        :param class_name: the name of the class of objects to get records of
+        :param query: a list of sqlalchemy where clauses defining the selection SQL query
+        :type class_name: str
+        :type query: list of where clauses
+        :return: a list of records
+        :rtype: list of dictionaries (records)
         """
-        if as_list:
-            object_list = self._get_objects(self.tables.list[class_name]).to_dict(orient='records')
-        else:
-            object_list = self._get_objects(self.tables.list[class_name])
-        return object_list
+        with self.session_maker() as session:
+            dao_list = session.query(dao[class_name])
+            if query is not None:
+                for q in query:
+                    dao_list = dao_list.where(q)
+        return [obj.record for obj in dao_list]
+
+    def get_dataframe(self, class_name, id_list=None):
+        """
+        Get a DataFrame containing the list of all domain objects of a given class in the current project
+        :param class_name: the class name of the objects whose list will be returned
+        :type class_name: str
+        :param id_list: the list of ids of objects to retrieve
+        :type id_list: a list of int
+        :return: a DataFrame containing the list of objects
+        :rtype: DataFrame containing the records representing the requested domain-specific objects
+        """
+        return DataFrame(self.get_records(class_name, id_list))
+
+    def get_record(self, class_name, id_=None):
+        """
+        A method returning an object record of a given class from its id
+        :param class_name: the class name of object to get the record of
+        :type class_name: str
+        :param id_: the id of the requested object
+        :type id_: int
+        :return: the object record
+        :rtype: dict (record)
+        """
+        with self.session_maker() as session:
+            return session.get(dao[class_name], id_).record
+
+    def get_records(self, class_name, id_list=None):
+        """
+        A method returning the list of all object records of a given class or select those whose id is in id_list
+        :param class_name: the class name of objects to get records of
+        :type class_name: str
+        :param id_list: the list of ids of objects to retrieve
+        :type id_list: a list of int
+        :return: a list of records
+        :rtype: list of dictionaries (records)
+        """
+        with self.session_maker() as session:
+            if id_list is not None:
+                dao_list = session.query(dao[class_name]).where(dao[class_name].id_.in_(id_list))
+            else:
+                dao_list = session.query(dao[class_name])
+        return [obj.record for obj in dao_list]
+
+    def get_linked_records(self, cls_name, parent_cls_name, parent_id):
+        """
+        A method returning the list of records for all objects of class defined by cls_name that are linked to object
+        of class parent_cls_name with id_ = parent_id
+        :param cls_name: the class name of the objects to retrieve records for
+        :type cls_name: str
+        :param parent_cls_name: the class nae of the parent object
+        :type parent_cls_name: str
+        :param parent_id: the id of the parent object
+        :type parent_id: int
+        :return: a list of records
+        :rtype: list of dict
+        """
+        linked_records = []
+        if cls_name == 'ImageData':
+            if parent_cls_name in ['Image']:
+                linked_records = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['image_data'])]
+            if parent_cls_name in ['FOV', 'ROI']:
+                linked_records = dao[parent_cls_name](self.session_maker).image_data(parent_id)
+        if cls_name == 'FOV':
+            if parent_cls_name in ['ROI']:
+                linked_records = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['fov'])]
+            if parent_cls_name in ['Image', 'ImageData', ]:
+                linked_records = dao[parent_cls_name](self.session_maker).fov(parent_id)
+        if cls_name == 'ROI':
+            if parent_cls_name in ['ImageData', ]:
+                linked_records = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['roi'])]
+            if parent_cls_name in ['FOV', ]:
+                linked_records = dao[parent_cls_name](self.session_maker).roi_list(parent_id)
+            if parent_cls_name in ['Image', ]:
+                linked_records = dao[parent_cls_name](self.session_maker).roi(parent_id)
+        if cls_name == 'Image':
+            if parent_cls_name in ['ImageData', 'FOV', 'ROI']:
+                linked_records = dao[parent_cls_name](self.session_maker).image_list(parent_id)
+
+        return linked_records
+
+    def link(self, class1_name, id_1, class2_name, id_2):
+        """
+        Create a link between two domain-specific objects. There must be a direct link defined in Linker class,
+        otherwise, the link cannot be created.
+        :param class1_name: the class name of the first object to link
+        :type class1_name: str
+        :param id_1: the id of the first object to link
+        :type id_1: int
+        :param class2_name: the class name of the second object to link
+        :type class2_name: str
+        :param id_2: the id of the second object to link
+        :type id_2: int
+        """
+        with self.session_maker() as session:
+            obj1 = session.get(dao[class1_name], id_1)
+            obj2 = session.get(dao[class2_name], id_2)
+            Linker.link(obj1, obj2)
+            session.commit()
+
+    def unlink(self, class1_name, id_1, class2_name, id_2):
+        """
+        Remove the link between two domain-specific objects. There must be a direct link defined in Linker class,
+        otherwise, the link cannot be removed.
+        :param class1_name: the class name of the first object to unlink
+        :type class1_name: str
+        :param id_1: the id of the first object to unlink
+        :type id_1: int
+        :param class2_name: the class name of the second object to unlink
+        :type class2_name: str
+        :param id_2: the id of the second object to unlink
+        :type id_2: int
+        """
+        with self.session_maker() as session:
+            dao1_class, dao2_class = dao[class1_name].__name__, dao[class2_name].__name__
+            session.delete(session.get(Linker.association(dao1_class, dao2_class), (id_1, id_2)))
+            session.commit()
 
 
 class ShallowSQLite3(_ShallowSQL):
@@ -92,7 +218,8 @@ class ShallowSQLite3(_ShallowSQL):
     A concrete shallow SQLite3 persistence inheriting _ShallowSQL and implementing SQLite3-specific engine
     """
 
-    def __init__(self, dbname: str = None) -> ShallowDb:
+    def __init__(self, dbname=None):
         super().__init__(dbname)
-        self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}')
+        self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}', poolclass=NullPool)
+        self.session_maker = sessionmaker(self.engine, future=True)
         super().create()

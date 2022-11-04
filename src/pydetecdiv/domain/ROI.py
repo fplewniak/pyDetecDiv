@@ -3,63 +3,89 @@
 """
  A class defining the business logic methods that can be applied to Regions Of Interest
 """
-from pydetecdiv.domain.dso import NamedDSO
+from pydetecdiv.exceptions import JuttingError
+from pydetecdiv.domain.dso import NamedDSO, BoxedDSO, DsoWithImageData
 from pydetecdiv.domain.FOV import FOV
 
 
-class ROI(NamedDSO):
+class ROI(NamedDSO, BoxedDSO, DsoWithImageData):
     """
     A business-logic class defining valid operations and attributes of Regions of interest (ROI)
     """
+
+    def __init__(self, fov=None, **kwargs):
+        super().__init__(**kwargs)
+        self._fov = fov.id_ if isinstance(fov, FOV) else fov
+        self.validate(updated=False)
+
+    def delete(self):
+        """
+        Deletes this ROI if and only if it is not the full-FOV one which should serve to keep track of original data.
+        """
+        if self is not self.fov.initial_roi:
+            self.project.delete(self)
+
+    def check_validity(self):
+        """
+        Checks the current ROI lies within its parent. If it does not, this method will throw a JuttingError exception
+        """
+        if not self.box.lies_in(self.fov.box):
+            raise JuttingError(self, self.fov)
 
     @property
     def fov(self):
         """
         property returning the FOV object this ROI is a region of
         :return: the parent FOV object
+        :rtype: FOV
         """
-        return self.project.get_object_by_id(FOV, self.data['fov'])
+        return self.project.get_object('FOV', self._fov)
 
     @fov.setter
-    def fov(self, fov: FOV = None):
-        self.data['fov'] = fov.id
+    def fov(self, fov):
+        self._fov = fov.id_ if isinstance(fov, FOV) else fov
+        self.validate()
 
     @property
-    def top_left(self):
+    def image_list(self):
         """
-        The top-left corner of the ROI in the FOV
-        :return: a tuple of two int with the coordinates of the top-left corner
+        Return a list of images related to this ROI
+        :return: list of images
+        :rtype: list of Image objects
         """
-        return self.data['x0'], self.data['y0']
-
-    @top_left.setter
-    def top_left(self, top_left: tuple = (0, 0)):
-        # TODO check the values are within the FOV image
-        (self.data['x0'], self.data['y0']) = top_left
+        return self.project.get_linked_objects('Image', to=self)
 
     @property
     def bottom_right(self):
         """
         The bottom-right corner of the ROI in the FOV
-        :return: a tuple of two int with the coordinates of the bottom-right corner
+        :return: the coordinates of the bottom-right corner
+        :rtype: a tuple of two int
         """
-        return self.data['x1'], self.data['y1']
+        return (self.fov.size[0] - 1 if self._bottom_right[0] == -1 else self._bottom_right[0],
+                self.fov.size[1] - 1 if self._bottom_right[1] == -1 else self._bottom_right[1])
 
     @bottom_right.setter
-    def bottom_right(self, bottom_right: tuple = (-1, -1)):
-        # TODO check the values are within the FOV image
-        (self.data['x1'], self.data['y1']) = bottom_right
+    def bottom_right(self, bottom_right):
+        self._bottom_right = bottom_right
+        self.validate()
 
-    @property
-    def shape(self):
-        x1 = self.fov.shape[0] - 1 if self.bottom_right[0] < 0 else self.bottom_right[0]
-        y1 = self.fov.shape[1] - 1 if self.bottom_right[1] < 0 else self.bottom_right[1]
-        shape = (x1 - self.top_left[0] + 1, y1 - self.top_left[1] + 1)
-        return shape
-
-    def __repr__(self):
-        return f'{self.id} {self.name} {self.top_left} {self.bottom_right}'
-
-    def __dict__(self):
-        return dict(id=self.id, name=self.name, fov=dict(id=self.fov.id, name=self.fov.name), top_left=self.top_left,
-                    bottom_right=self.bottom_right)
+    def record(self, no_id=False):
+        """
+        Returns a record dictionary of the current ROI
+        :param no_id: if True, the id_ is not passed included in the record to allow transfer from one project to
+        another
+        :type no_id: bool
+        :return: record dictionary
+        :rtype: dict
+        """
+        record = {
+            'name': self.name,
+            'fov': self._fov,
+            'top_left': self.top_left,
+            'bottom_right': self.bottom_right,
+            'size': self.size
+        }
+        if not no_id:
+            record['id_'] = self.id_
+        return record

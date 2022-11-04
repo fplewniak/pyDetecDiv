@@ -3,35 +3,103 @@
 """
  A class defining the business logic methods that can be applied to Fields Of View
 """
-from pydetecdiv.domain.dso import NamedDSO
+from pydetecdiv.domain.dso import NamedDSO, BoxedDSO, DsoWithImageData
 
 
-class FOV(NamedDSO):
+class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
     """
     A business-logic class defining valid operations and attributes of Fields of view (FOV)
     """
 
+    def __init__(self, comments=None, **kwargs):
+        super().__init__(**kwargs)
+        self._comments = comments
+        self.validate(updated=False)
+
+    def delete(self):
+        """
+        Delete the current FOV, first deleting all linked ROIs that would be consequently left orphaned
+        """
+        for roi in self.roi_list:
+            roi.delete()
+        self.project.delete(self)
+
+    def check_validity(self):
+        """
+        Checks the current FOV is valid
+        """
+        ...
+
+    def validate(self, updated=True):
+        """
+        Validates the current FOV and checks whether it is associated with an initial ROI. If not, the initial ROI is
+        created
+        :param updated: True if the FOV has been updated, False otherwise
+        :type updated: bool
+        """
+        super().validate(updated)
+        if self.project.count_links('ROI', to=self) == 0:
+            self.project.save_record('ROI', record={'id_': None, 'name': f'full-{self.name}', 'fov': self.id_,
+                                                    'top_left': (0, 0), 'bottom_right': (-1, -1)})
+
+    def record(self, no_id=False):
+        """
+        Returns a record dictionary of the current FOV
+        :param no_id: if True, does not return id_ (useful for transferring from one project to another)
+        :type no_id: bool
+        :return: record dictionary
+        :rtype: dict
+        """
+        record = {
+            'name': self.name,
+            'comments': self.comments,
+            'top_left': self.top_left,
+            'bottom_right': self.bottom_right,
+            'size': self.size
+        }
+        if not no_id:
+            record['id_'] = self.id_
+        return record
+
     @property
-    def shape(self):
+    def comments(self):
         """
-        Shape property for FOV image
-        :return: a tuple of two int with x and y dimensions
+        comments property of FOV
+        :return: the comments
+        :rtype: str
         """
-        return self.data['xsize'], self.data['ysize']
+        return self._comments
 
-    @shape.setter
-    def shape(self, shape: tuple = (1000, 1000)):
-        self.data['xsize'], self.data['ysize'] = shape
+    @comments.setter
+    def comments(self, comments):
+        self._comments = comments
+        self.validate()
 
-    def __repr__(self):
-        return f'{self.id} {self.name} {self.shape}'
+    @property
+    def roi_list(self):
+        """
+        Returns the list of ROI objects whose parent if the current FOV
+        :return: the list of associated ROIs
+        :rtype: list of ROI objects
+        """
+        roi_list = self.project.get_linked_objects('ROI', to=self)
+        return roi_list if len(roi_list) == 1 else roi_list[1:]
 
-    # How should this work ?
-    # Ask FOV_DAO to return the list ? (then, who's supposed to keep track of the persistence engine?)
-    # Use a function get_roi_list(self) ? could be in repository, for SQL dbms, sqlalchemy could use Tables for that,
-    # determining the appropriate table from the self class name and sending the appropriate SQL queries accordingly
-    # Use a proxy pattern, mediator pattern ? Which pattern is best to use here ?
-    # @property
-    # def roi_list(self):
-    #    roi = self.project.get_dataframe(ROI)
-    #    return roi[roi.fov == self.id]
+    @property
+    def image_list(self):
+        """
+        Return a list of images related to this FOV
+        :return: list of images
+        :rtype: list of Image objects
+        """
+        return self.project.get_linked_objects('Image', to=self)
+
+
+    @property
+    def initial_roi(self):
+        """
+        Return the initial ROI, created at the creation of this FOV and representing the full FOV
+        :return: the initial ROI
+        :rtype: ROI object
+        """
+        return self.project.get_linked_objects('ROI', to=self)[0]
