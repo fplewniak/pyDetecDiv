@@ -3,26 +3,39 @@
 """
 Concrete Repositories using a SQL database with the sqlalchemy toolkit
 """
+import os
 import re
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.expression import Delete
 from sqlalchemy.pool import NullPool
 from pandas import DataFrame
+from bioimageit_core.plugins.data_factory import metadataServices
 from pydetecdiv.persistence.repository import ShallowDb
 from pydetecdiv.persistence.sqlalchemy.orm.main import mapper_registry
 from pydetecdiv.persistence.sqlalchemy.orm.dao import dso_dao_mapping as dao
 from pydetecdiv.persistence.sqlalchemy.orm.associations import Linker
+from pydetecdiv.persistence.bioimageit.request import Request
+from pydetecdiv.persistence.bioimageit.plugins.data_sqlite import SQLiteMetadataServiceBuilder
+from pydetecdiv.settings import get_config_value
 
-
-class _ShallowSQL(ShallowDb):
+class ShallowSQLite3(ShallowDb):
     """
-    A generic shallow SQL persistence used to provide the common methods for SQL databases. DBMS-specific methods should
-    be implemented in subclasses of this one.
+    A concrete shallow SQLite3 persistence inheriting ShallowDb and implementing SQLite3-specific engine
     """
 
-    def __init__(self, dbname):
+    def __init__(self, dbname=None):
         self.name = dbname
+        self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}', poolclass=NullPool)
+        self.session_maker = sessionmaker(self.engine, future=True)
+
+        self.bioiit_req = Request(get_config_value('bioimageit', 'config_file'))
+        metadataServices.register_builder('SQLITE', SQLiteMetadataServiceBuilder())
+        self.bioiit_req.connect()
+        self.bioiit_exp = None
+
+        super().create()
+
 
     def executescript(self, script):
         """
@@ -43,8 +56,12 @@ class _ShallowSQL(ShallowDb):
         """
         Gets SqlAlchemy classes defining the project database schema and creates the database if it does not exist.
         """
+        exp_name = str(os.path.splitext(os.path.basename(self.name))[0])
         if not self.engine.table_names():
             mapper_registry.metadata.create_all(self.engine)
+            self.bioiit_exp = self.bioiit_req.create_experiment(exp_name)
+        else:
+            self.bioiit_exp = self.bioiit_req.get_experiment_by_name(exp_name)
 
     def close(self):
         """
@@ -211,15 +228,3 @@ class _ShallowSQL(ShallowDb):
             dao1_class, dao2_class = dao[class1_name].__name__, dao[class2_name].__name__
             session.delete(session.get(Linker.association(dao1_class, dao2_class), (id_1, id_2)))
             session.commit()
-
-
-class ShallowSQLite3(_ShallowSQL):
-    """
-    A concrete shallow SQLite3 persistence inheriting _ShallowSQL and implementing SQLite3-specific engine
-    """
-
-    def __init__(self, dbname=None):
-        super().__init__(dbname)
-        self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}', poolclass=NullPool)
-        self.session_maker = sessionmaker(self.engine, future=True)
-        super().create()

@@ -19,6 +19,7 @@ def get_default_settings() -> dict:
             'project.sqlite': {'persistence': 'pydetecdiv.sqlite3', },
             'project.mysql': {'persistence': 'pydetecdiv', 'host': 'localhost', 'credentials': 'mysql.credentials', },
             'omero': {'host': 'localhost', 'credentials': 'omero.credentials', },
+            'bioimageit': {'config': '/data2/BioImageIT/config.json'}
             }
 
 

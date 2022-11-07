@@ -12,6 +12,7 @@ Request
 import os.path
 
 import bioimageit_core.api.request
+from bioimageit_core import ConfigAccess
 
 
 class Request(bioimageit_core.api.request.Request):
@@ -79,6 +80,7 @@ class Request(bioimageit_core.api.request.Request):
         :type observers: list of Observer objects
         """
         print(f'Please wait while importing data into {experiment.raw_dataset.name} dataset')
+        author = ConfigAccess.instance().config['user'] if author == '' else author
         df = self.data_service.import_glob(experiment, files_glob,
                                            author=author, format_=format_, date=date, observers=None)
         print('OK')
@@ -102,3 +104,9 @@ class Request(bioimageit_core.api.request.Request):
         else:
             self._run_job_sequence(job)
         return job.experiment
+
+    def get_experiment_by_name(self, name):
+        config = ConfigAccess.instance().config
+        uri = os.path.join(config['workspace'], name, f'{name}.db')
+        print(uri)
+        return self.get_experiment(str(uri))
