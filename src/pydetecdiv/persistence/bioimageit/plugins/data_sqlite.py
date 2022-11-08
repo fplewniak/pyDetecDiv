@@ -75,9 +75,9 @@ class SQLiteMetadataService(LocalMetadataService):
             con.execute(f'UPDATE data SET key_val = json_remove(key_val, "$.{key}") WHERE dataset = "{dataset.uuid}";')
             con.commit()
 
-    def annotate_using_regex(self, experiment, dataset, source, keys_, regex):
+    def create_annotations_using_regex(self, experiment, dataset, source, keys_, regex):
         """
-        annotate_using_regex(experiment, experiment.raw_dataset,
+        create_annotations_using_regex(experiment, experiment.raw_dataset,
           lambda x: os.path.join(x['source_dir'],x['name']) ,
           ('group', 'ROI', 'FOV', 'position', 'frame'),
           r'.*\/([^\/]+)\/(Pos(\d+)_(\d+_\d+))_frame_(\d\d\d\d).tif')
@@ -98,21 +98,25 @@ class SQLiteMetadataService(LocalMetadataService):
         with sqlite3.connect(experiment.md_uri) as con:
             df = pandas.read_sql_query('SELECT * from data', con)
 
-            pattern = re.compile(regex)
+        pattern = re.compile(regex)
 
-            call_back = source if callable(source) else lambda x: x[source]
+        call_back = source if callable(source) else lambda x: x[source]
 
-            for i in df.index[df['dataset'] == dataset.uuid].to_list():
-                m = re.match(pattern, call_back(df.loc[i, ]))
-                if m:
-                    key_val = json.loads(df.loc[i, 'key_val'])
-                    key_val.update(dict(zip(keys_, m.groups())))
-                    df.loc[i, 'key_val'] = json.dumps(key_val)
+        for i in df.index[df['dataset'] == dataset.uuid].to_list():
+            m = re.match(pattern, call_back(df.loc[i, ]))
+            if m:
+                key_val = json.loads(df.loc[i, 'key_val'])
+                key_val.update(dict(zip(keys_, m.groups())))
+                df.loc[i, 'key_val'] = json.dumps(key_val)
+        return df
+
+    def annotate_using_regex(self, experiment, dataset, source, keys_, regex):
+        df = self.create_annotations_using_regex(experiment, dataset, source, keys_, regex)
+        with sqlite3.connect(experiment.md_uri) as con:
             con.cursor().execute('DELETE from data')
             df.to_sql('data', con, if_exists='append', index=False)
             experiment.keys = [key[0] for key
                                in con.execute('SELECT DISTINCT key FROM json_each(key_val), data').fetchall()]
-        return df
 
     def create_experiment(self, name, author, date='now', keys=None,
                           destination=''):
@@ -451,6 +455,7 @@ class SQLiteMetadataService(LocalMetadataService):
         n = len(files)
         data_dir_path = os.path.join(os.path.dirname(experiment.raw_dataset.url[0]), experiment.raw_dataset.name)
         date = format_date(date)
+        author = ConfigAccess.instance().config['user'] if author == '' else author
         df = pandas.DataFrame(columns=['uuid', 'name', 'dataset', 'author', 'date', 'url', 'format',
                                        'source_dir', 'metadata', 'key_val'])
         df['author'] = pandas.Series(data=[author]*n)

@@ -3,8 +3,11 @@
 """
 Concrete Repositories using a SQL database with the sqlalchemy toolkit
 """
+import json
 import os
 import re
+
+import pandas
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.expression import Delete
@@ -18,6 +21,7 @@ from pydetecdiv.persistence.sqlalchemy.orm.associations import Linker
 from pydetecdiv.persistence.bioimageit.request import Request
 from pydetecdiv.persistence.bioimageit.plugins.data_sqlite import SQLiteMetadataServiceBuilder
 from pydetecdiv.settings import get_config_value
+
 
 class ShallowSQLite3(ShallowDb):
     """
@@ -34,8 +38,7 @@ class ShallowSQLite3(ShallowDb):
         self.bioiit_req.connect()
         self.bioiit_exp = None
 
-        super().create()
-
+        self.create()
 
     def executescript(self, script):
         """
@@ -57,7 +60,7 @@ class ShallowSQLite3(ShallowDb):
         Gets SqlAlchemy classes defining the project database schema and creates the database if it does not exist.
         """
         exp_name = str(os.path.splitext(os.path.basename(self.name))[0])
-        if not self.engine.table_names():
+        if not sqlalchemy.inspect(self.engine).get_table_names():
             mapper_registry.metadata.create_all(self.engine)
             self.bioiit_exp = self.bioiit_req.create_experiment(exp_name)
         else:
@@ -68,6 +71,31 @@ class ShallowSQLite3(ShallowDb):
         Close the current connexion
         """
         self.engine.dispose()
+
+    def import_images(self, source_path):
+        """
+        Import images from a source path. All files corresponding to the path will be imported.
+        :param source_path: the source path (glob pattern)
+        :type source_path: str
+        """
+        self.bioiit_req.import_glob(self.bioiit_exp, source_path)
+
+    def annotate_raw_data(self, source, keys_, regex):
+        """
+        Returns a DataFrame containing all the metadata associated to raw data, including annotations created using a
+        regular expression applied to a field or a combination thereof.
+        :param source: the database field or combination of fields to apply the regular expression to
+        :type source: str or callable returning a str
+        :param keys_: the list of classes created objects belong to
+        :type keys_: tuple of str
+        :param regex: regular expression defining the DSOs' names
+        :type regex: regular expression str
+        :return: a table of all the metadata associated to raw data
+        :rtype: pandas DataFrame
+        """
+        dataset = self.bioiit_req.get_dataset(self.bioiit_exp, 'data')
+        df = self.bioiit_req.data_service.create_annotations_using_regex(self.bioiit_exp, dataset, source, keys_, regex)
+        return pandas.DataFrame([json.loads(k) for k in df.key_val]).join(df.drop(labels='key_val', axis=1))
 
     def save_object(self, class_name, record):
         """

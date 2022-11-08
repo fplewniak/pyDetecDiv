@@ -80,8 +80,7 @@ class Request(bioimageit_core.api.request.Request):
         :type observers: list of Observer objects
         """
         print(f'Please wait while importing data into {experiment.raw_dataset.name} dataset')
-        author = ConfigAccess.instance().config['user'] if author == '' else author
-        df = self.data_service.import_glob(experiment, files_glob,
+        self.data_service.import_glob(experiment, files_glob,
                                            author=author, format_=format_, date=date, observers=None)
         print('OK')
 

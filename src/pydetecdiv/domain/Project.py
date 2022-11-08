@@ -32,6 +32,39 @@ class Project:
         self.dbname = dbname
         self.pool = defaultdict(DomainSpecificObject)
 
+    def import_images(self, source_path):
+        """
+        Import images from a source path. All files corresponding to the path will be imported.
+        :param source_path: the source path (glob pattern)
+        :type source_path: str
+        """
+        self.repository.import_images(source_path)
+
+    def create_dsos_from_raw_data(self, source, keys_, regex):
+        """
+        Create domain-specific objects from raw data using a regular expression applied to a bioimageit database field
+        or a combination thereof specified by source. DSOs to create are specified by the values in keys.
+        :param source: the database field or combination of fields to apply the regular expression to
+        :type source: str or callable returning a str
+        :param keys_: the list of classes created objects belong to
+        :type keys_: tuple of str
+        :param regex: regular expression defining the DSOs' names
+        :type regex: regular expression str
+        """
+        # TODO add a file argument for metadata to complete information about dsos, for example position of a ROI, etc.
+        # TODO ultimately creation of dsos should be the responsibility of DSO classes themselves in order to keep this
+        # TODO class as small as possible
+        df = self.repository.annotate_raw_data(source, keys_, regex)
+        if 'FOV' in keys_:
+            fov_names = [f.name for f in self.get_objects('FOV')]
+            for fov in df.FOV.drop_duplicates().values:
+                if fov not in fov_names:
+                    FOV(project=self, name=fov, top_left=(0, 0), bottom_right=(999, 999))
+                #TODO link this fov to image data uuid
+
+        for k in keys_:
+            print(df.filter([k, 'uuid']))
+
     def save_record(self, class_name, record):
         """
         Creates and saves an object of class named class_name from its record without requiring the creation of a DSO.
