@@ -32,6 +32,18 @@ class Project:
         self.dbname = dbname
         self.pool = defaultdict(DomainSpecificObject)
 
+    def commit(self):
+        """
+        Commit operations performed on objects (creation and update) to save them into the repository.
+        """
+        self.repository.commit()
+
+    def cancel(self):
+        """
+        Cancel operations performed on objects since last commit
+        """
+        self.repository.rollback()
+
     def import_images(self, source_path):
         """
         Import images from a source path. All files corresponding to the path will be imported.

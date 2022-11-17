@@ -22,8 +22,8 @@ class DAO:
     exclude = []
     translate = {}
 
-    def __init__(self, session_maker):
-        self.session_maker = session_maker
+    def __init__(self, session):
+        self.session = session
 
     def insert(self, rec):
         """
@@ -34,9 +34,10 @@ class DAO:
         :rtype: int
         """
         record = self.translate_record(rec, self.exclude, self.translate)
-        with self.session_maker() as session:
-            primary_key = session.execute(Insert(self.__class__).values(record)).inserted_primary_key[0]
-            session.commit()
+        primary_key = self.session.execute(Insert(self.__class__).values(record)).inserted_primary_key[0]
+        # with self.session() as session:
+        #     primary_key = session.execute(Insert(self.__class__).values(record)).inserted_primary_key[0]
+        #     session.commit()
         return primary_key
 
     def update(self, rec):
@@ -50,9 +51,8 @@ class DAO:
         """
         id_ = rec['id_']
         record = self.translate_record(rec, self.exclude, self.translate)
-        with self.session_maker() as session:
-            session.execute(Update(self.__class__, whereclause=self.__class__.id_ == id_).values(record))
-            session.commit()
+        self.session.execute(Update(self.__class__, whereclause=self.__class__.id_ == id_).values(record))
+        #self.session.commit()
         return id_
 
     def get_records(self, where_clause):
@@ -67,8 +67,7 @@ class DAO:
         :return: a list of records as dictionaries
         :rtype: list of dict
         """
-        with self.session_maker() as session:
-            dao_list = session.query(self.__class__).where(where_clause)
+        dao_list = self.session.query(self.__class__).where(where_clause)
         return [obj.record for obj in dao_list]
 
     @staticmethod

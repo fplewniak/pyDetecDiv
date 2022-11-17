@@ -40,10 +40,9 @@ class ImageDao(DAO, Base):
         :return: the related ROI dao in a list
         :rtype: list of one ROIdao object
         """
-        with self.session_maker() as session:
-            roi = session.get(dao.ROIdao, (session.query(dao.ImageDataDao)
-                                           .filter(dao.ImageDataDao.id_ == ImageDao.image_data)
-                                           .filter(ImageDao.id_ == image_id).first().roi)).record
+        roi = self.session.get(dao.ROIdao, (self.session.query(dao.ImageDataDao)
+                                            .filter(dao.ImageDataDao.id_ == ImageDao.image_data)
+                                            .filter(ImageDao.id_ == image_id).first().roi)).record
         return [roi]
 
     def fov(self, image_id):
@@ -55,11 +54,11 @@ class ImageDao(DAO, Base):
         :param image_id:
         :return:
         """
-        with self.session_maker() as session:
-            fov = session.get(dao.FOVdao, (session.get(dao.ROIdao, (session.query(dao.ImageDataDao)
-                                                                    .filter(dao.ImageDataDao.id_ == ImageDao.image_data)
-                                                                    .filter(
-                ImageDao.id_ == image_id).first().roi)).fov)).record
+        fov = self.session.get(dao.FOVdao, (self.session.get(dao.ROIdao, (self.session.query(dao.ImageDataDao)
+                                                                          .filter(
+            dao.ImageDataDao.id_ == ImageDao.image_data)
+                                                                          .filter(
+            ImageDao.id_ == image_id).first().roi)).fov)).record
         return [fov]
 
     @property

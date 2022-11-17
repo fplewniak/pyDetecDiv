@@ -51,12 +51,11 @@ class ROIdao(DAO, Base):
         :return: a list of ImageData records linked to ROI with id_ == roi_id
         :rtype: list
         """
-        with self.session_maker() as session:
-            image_data = [image_data.record
-                          for image_data in session.query(ROIdao)
-                          .options(joinedload(ROIdao.image_data_list))
-                          .filter(ROIdao.id_ == roi_id)
-                          .first().image_data_list]
+        image_data = [image_data.record
+                      for image_data in self.session.query(ROIdao)
+                      .options(joinedload(ROIdao.image_data_list))
+                      .filter(ROIdao.id_ == roi_id)
+                      .first().image_data_list]
         return image_data
 
     def image_list(self, roi_id):
@@ -67,10 +66,9 @@ class ROIdao(DAO, Base):
         :return: a list containing the Image records linked to ROI with id_ == roi_id
         :rtype: list
         """
-        with self.session_maker() as session:
-            image_list = [image.record for image in
-                          session.query(dao.ImageDao)
-                          .filter(dao.ImageDataDao.id_ == dao.ImageDao.image_data)
-                          .filter(roi_id == dao.ImageDataDao.roi)
-                          .all()]
+        image_list = [image.record for image in
+                      self.session.query(dao.ImageDao)
+                      .filter(dao.ImageDataDao.id_ == dao.ImageDao.image_data)
+                      .filter(roi_id == dao.ImageDataDao.roi)
+                      .all()]
         return image_list

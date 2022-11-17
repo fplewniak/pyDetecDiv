@@ -11,7 +11,6 @@ import pandas
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.expression import Delete
-from sqlalchemy.pool import NullPool
 from pandas import DataFrame
 from bioimageit_core.plugins.data_factory import metadataServices
 from pydetecdiv.persistence.repository import ShallowDb
@@ -30,8 +29,9 @@ class ShallowSQLite3(ShallowDb):
 
     def __init__(self, dbname=None):
         self.name = dbname
-        self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}', poolclass=NullPool)
+        self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}')
         self.session_maker = sessionmaker(self.engine, future=True)
+        self.session_ = None
 
         self.bioiit_req = Request(get_config_value('bioimageit', 'config_file'))
         metadataServices.register_builder('SQLITE', SQLiteMetadataServiceBuilder())
@@ -39,6 +39,30 @@ class ShallowSQLite3(ShallowDb):
         self.bioiit_exp = None
 
         self.create()
+
+    @property
+    def session(self):
+        """
+        Property returning the sqlalchemy Session object attached to the repository
+        :return:
+        """
+        if self.session_ is None:
+            self.session_ = self.session_maker()
+        return self.session_
+
+    def commit(self):
+        """
+        Commit the current transaction
+        """
+        if self.session_ is not None:
+            self.session_.commit()
+
+    def rollback(self):
+        """
+        Rollback the current transaction
+        """
+        if self.session_ is not None:
+            self.session_.rollback()
 
     def executescript(self, script):
         """
@@ -48,10 +72,9 @@ class ShallowSQLite3(ShallowDb):
         """
         try:
             statements = re.split(r';\s*$', script, flags=re.MULTILINE)
-            with self.session_maker() as session:
-                for statement in statements:
-                    if statement:
-                        session.execute(sqlalchemy.text(statement))
+            for statement in statements:
+                if statement:
+                    self.session.execute(sqlalchemy.text(statement))
         except sqlalchemy.exc.OperationalError as exc:
             print(exc)
 
@@ -108,8 +131,8 @@ class ShallowSQLite3(ShallowDb):
         :rtype: int
         """
         if record['id_'] is None:
-            return dao[class_name](self.session_maker).insert(record)
-        return dao[class_name](self.session_maker).update(record)
+            return dao[class_name](self.session).insert(record)
+        return dao[class_name](self.session).update(record)
 
     def delete_object(self, class_name, id_):
         """
@@ -119,9 +142,8 @@ class ShallowSQLite3(ShallowDb):
         :param id_: the id of the object to delete
         :type id_: int
         """
-        with self.session_maker() as session:
-            session.execute(Delete(dao[class_name], whereclause=dao[class_name].id_ == id_))
-            session.commit()
+        self.session.execute(Delete(dao[class_name], whereclause=dao[class_name].id_ == id_))
+        # self.session.commit()
 
     def _get_records(self, class_name=None, query=None):
         """
@@ -134,11 +156,11 @@ class ShallowSQLite3(ShallowDb):
         :return: a list of records
         :rtype: list of dictionaries (records)
         """
-        with self.session_maker() as session:
-            dao_list = session.query(dao[class_name])
-            if query is not None:
-                for q in query:
-                    dao_list = dao_list.where(q)
+        dao_list = self.session.query(dao[class_name])
+        if query is not None:
+            for q in query:
+                dao_list = dao_list.where(q)
+
         return [obj.record for obj in dao_list]
 
     def get_dataframe(self, class_name, id_list=None):
@@ -163,8 +185,7 @@ class ShallowSQLite3(ShallowDb):
         :return: the object record
         :rtype: dict (record)
         """
-        with self.session_maker() as session:
-            return session.get(dao[class_name], id_).record
+        return self.session.get(dao[class_name], id_).record
 
     def get_records(self, class_name, id_list=None):
         """
@@ -176,11 +197,10 @@ class ShallowSQLite3(ShallowDb):
         :return: a list of records
         :rtype: list of dictionaries (records)
         """
-        with self.session_maker() as session:
-            if id_list is not None:
-                dao_list = session.query(dao[class_name]).where(dao[class_name].id_.in_(id_list))
-            else:
-                dao_list = session.query(dao[class_name])
+        if id_list is not None:
+            dao_list = self.session.query(dao[class_name]).where(dao[class_name].id_.in_(id_list))
+        else:
+            dao_list = self.session.query(dao[class_name])
         return [obj.record for obj in dao_list]
 
     def get_linked_records(self, cls_name, parent_cls_name, parent_id):
@@ -201,22 +221,22 @@ class ShallowSQLite3(ShallowDb):
             if parent_cls_name in ['Image']:
                 linked_records = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['image_data'])]
             if parent_cls_name in ['FOV', 'ROI']:
-                linked_records = dao[parent_cls_name](self.session_maker).image_data(parent_id)
+                linked_records = dao[parent_cls_name](self.session).image_data(parent_id)
         if cls_name == 'FOV':
             if parent_cls_name in ['ROI']:
                 linked_records = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['fov'])]
             if parent_cls_name in ['Image', 'ImageData', ]:
-                linked_records = dao[parent_cls_name](self.session_maker).fov(parent_id)
+                linked_records = dao[parent_cls_name](self.session).fov(parent_id)
         if cls_name == 'ROI':
             if parent_cls_name in ['ImageData', ]:
                 linked_records = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['roi'])]
             if parent_cls_name in ['FOV', ]:
-                linked_records = dao[parent_cls_name](self.session_maker).roi_list(parent_id)
+                linked_records = dao[parent_cls_name](self.session).roi_list(parent_id)
             if parent_cls_name in ['Image', ]:
-                linked_records = dao[parent_cls_name](self.session_maker).roi(parent_id)
+                linked_records = dao[parent_cls_name](self.session).roi(parent_id)
         if cls_name == 'Image':
             if parent_cls_name in ['ImageData', 'FOV', 'ROI']:
-                linked_records = dao[parent_cls_name](self.session_maker).image_list(parent_id)
+                linked_records = dao[parent_cls_name](self.session).image_list(parent_id)
 
         return linked_records
 
@@ -233,11 +253,9 @@ class ShallowSQLite3(ShallowDb):
         :param id_2: the id of the second object to link
         :type id_2: int
         """
-        with self.session_maker() as session:
-            obj1 = session.get(dao[class1_name], id_1)
-            obj2 = session.get(dao[class2_name], id_2)
-            Linker.link(obj1, obj2)
-            session.commit()
+        obj1 = self.session.get(dao[class1_name], id_1)
+        obj2 = self.session.get(dao[class2_name], id_2)
+        Linker.link(obj1, obj2)
 
     def unlink(self, class1_name, id_1, class2_name, id_2):
         """
@@ -252,7 +270,5 @@ class ShallowSQLite3(ShallowDb):
         :param id_2: the id of the second object to unlink
         :type id_2: int
         """
-        with self.session_maker() as session:
-            dao1_class, dao2_class = dao[class1_name].__name__, dao[class2_name].__name__
-            session.delete(session.get(Linker.association(dao1_class, dao2_class), (id_1, id_2)))
-            session.commit()
+        dao1_class, dao2_class = dao[class1_name].__name__, dao[class2_name].__name__
+        self.session.delete(self.session.get(Linker.association(dao1_class, dao2_class), (id_1, id_2)))

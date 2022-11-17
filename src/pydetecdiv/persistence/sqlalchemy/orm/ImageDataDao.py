@@ -39,9 +39,8 @@ class ImageDataDao(DAO, Base):
         :return: a list containing the FOV record linked to ImageData with id_ == image_data_id
         :rtype: list
         """
-        with self.session_maker() as session:
-            fov= session.query(dao.FOVdao).filter(ImageDataDao.id_ == image_data_id).filter(
-                            dao.FOVdao.id_ == dao.ROIdao.fov).filter(dao.ROIdao.id_ == ImageDataDao.roi).first().record
+        fov = self.session.query(dao.FOVdao).filter(ImageDataDao.id_ == image_data_id).filter(
+            dao.FOVdao.id_ == dao.ROIdao.fov).filter(dao.ROIdao.id_ == ImageDataDao.roi).first().record
         return [fov]
 
     def image_list(self, image_data_id):
@@ -52,12 +51,11 @@ class ImageDataDao(DAO, Base):
         :return: a list of ROI records with parent FOV id == fov_id
         :rtype: list
         """
-        with self.session_maker() as session:
-            image_list = [image.record
-                          for image in session.query(ImageDataDao)
-                          .options(joinedload(ImageDataDao.image_list_))
-                          .filter(ImageDataDao.id_ == image_data_id)
-                          .first().image_list_]
+        image_list = [image.record
+                      for image in self.session.query(ImageDataDao)
+                      .options(joinedload(ImageDataDao.image_list_))
+                      .filter(ImageDataDao.id_ == image_data_id)
+                      .first().image_list_]
         return image_list
 
     @property
