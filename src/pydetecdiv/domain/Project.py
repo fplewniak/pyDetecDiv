@@ -69,9 +69,9 @@ class Project:
         df = self.repository.annotate_raw_data(source, keys_, regex)
         if 'FOV' in keys_:
             fov_names = [f.name for f in self.get_objects('FOV')]
-            for fov in df.FOV.drop_duplicates().values:
-                if fov not in fov_names:
-                    FOV(project=self, name=fov, top_left=(0, 0), bottom_right=(999, 999))
+            for fov_name in df.FOV.drop_duplicates().values:
+                if fov_name not in fov_names:
+                    FOV(project=self, name=fov_name, top_left=(0, 0), bottom_right=(999, 999))
                 #TODO link this fov to image data uuid
 
         for k in keys_:

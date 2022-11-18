@@ -15,7 +15,6 @@ import glob
 import platform
 import os
 import os.path
-import sqlite3
 import json
 import re
 from shutil import copyfile
@@ -39,7 +38,7 @@ from bioimageit_core.containers.data_containers import (METADATA_TYPE_RAW,
                                                         DatasetInfo,
                                                         )
 from bioimageit_core.plugins.data_local import LocalMetadataService
-
+import sqlalchemy
 
 
 class SQLiteMetadataServiceBuilder:
@@ -60,6 +59,10 @@ class SQLiteMetadataService(LocalMetadataService):
 
     def __init__(self):
         self.service_name = 'SQLiteMetadataService'
+        self.session = None
+
+    def connect_to_session(self, session):
+        self.session = session
 
     def clear_annotation(self, experiment, dataset, key):
         """
@@ -71,9 +74,8 @@ class SQLiteMetadataService(LocalMetadataService):
         :param key: the key to remove from the dataset annotations
         :type key: str
         """
-        with sqlite3.connect(experiment.md_uri) as con:
-            con.execute(f'UPDATE data SET key_val = json_remove(key_val, "$.{key}") WHERE dataset = "{dataset.uuid}";')
-            con.commit()
+        self.session.execute(sqlalchemy.text(
+            f'UPDATE data SET key_val = json_remove(key_val, "$.{key}") WHERE dataset = "{dataset.uuid}";'))
 
     def create_annotations_using_regex(self, experiment, dataset, source, keys_, regex):
         """
@@ -95,15 +97,15 @@ class SQLiteMetadataService(LocalMetadataService):
         :return: a DataFrame representing the data table with updated annotations
         :rtype: pandas DataFrame
         """
-        with sqlite3.connect(experiment.md_uri) as con:
-            df = pandas.read_sql_query('SELECT * from data', con)
+        con = self.session.connection()
+        df = pandas.read_sql_query('SELECT * from data', con)
 
         pattern = re.compile(regex)
 
         call_back = source if callable(source) else lambda x: x[source]
 
         for i in df.index[df['dataset'] == dataset.uuid].to_list():
-            m = re.match(pattern, call_back(df.loc[i, ]))
+            m = re.match(pattern, call_back(df.loc[i,]))
             if m:
                 key_val = json.loads(df.loc[i, 'key_val'])
                 key_val.update(dict(zip(keys_, m.groups())))
@@ -112,13 +114,13 @@ class SQLiteMetadataService(LocalMetadataService):
 
     def annotate_using_regex(self, experiment, dataset, source, keys_, regex):
         df = self.create_annotations_using_regex(experiment, dataset, source, keys_, regex)
-        with sqlite3.connect(experiment.md_uri) as con:
-            con.cursor().execute('DELETE from data')
-            df.to_sql('data', con, if_exists='append', index=False)
-            experiment.keys = [key[0] for key
-                               in con.execute('SELECT DISTINCT key FROM json_each(key_val), data').fetchall()]
+        con = self.session.connection()
+        con.execute('DELETE from data')
+        df.to_sql('data', con, if_exists='append', index=False)
+        experiment.keys = [key[0] for key
+                           in con.execute('SELECT DISTINCT key FROM json_each(key_val), data').fetchall()]
 
-    def create_experiment(self, name, author, date='now', keys=None,
+    def create_experiment(self, name, author='', date='now', keys=None,
                           destination=''):
         """Create a new experiment
 
@@ -173,15 +175,20 @@ class SQLiteMetadataService(LocalMetadataService):
                 'directory already exists'
             )
 
-        # create the SQLite3 database
-        container.md_uri = os.path.join(experiment_path, f'{container.name}.db')
-        with sqlite3.connect(container.md_uri) as con:
-            con.executescript(SQLiteMetadataService.sqlite_db_creation_script())
+        # # create the SQLite3 database
+        # container.md_uri = os.path.join(experiment_path, f'{container.name}.db')
+        # try:
+        #     statements = re.split(r';\s*$', self.sqlite_db_creation_script(), flags=re.MULTILINE)
+        #     for statement in statements:
+        #         if statement:
+        #             self.session.execute(sqlalchemy.text(statement))
+        # except sqlalchemy.exc.OperationalError as exc:
+        #     print(exc)
 
         # create an empty raw dataset
         raw_dataset = Dataset()
         raw_dataset.uuid = generate_uuid()
-        raw_dataset.md_uri = (container.md_uri, raw_dataset.uuid)
+        raw_dataset.md_uri = (experiment_path, raw_dataset.uuid)
         raw_dataset.name = 'data'
         os.mkdir(os.path.join(experiment_path, raw_dataset.name))
         raw_dataset.type = METADATA_TYPE_RAW
@@ -235,21 +242,20 @@ class SQLiteMetadataService(LocalMetadataService):
         """
         md_uri = os.path.abspath(md_uri)
         if os.path.isfile(md_uri):
-            with sqlite3.connect(md_uri) as con:
-                container = Experiment()
-                container.md_uri = md_uri
-                cur = con.cursor()
-                container.uuid, container.name, container.author, container.date, rds = cur.execute(
-                    'SELECT * FROM experiment').fetchone()
-                rds_uuid, rds_name, = cur.execute(f'SELECT uuid, name FROM dataset where uuid = "{rds}"').fetchone()
-                container.raw_dataset = DatasetInfo(rds_name, (md_uri, rds_uuid), rds_uuid)
+            container = Experiment()
+            container.md_uri = md_uri
+            container.uuid, container.name, container.author, container.date, rds = self.session.execute(
+                'SELECT * FROM experiment').fetchone()
+            rds_uuid, rds_name, = self.session.execute(
+                f'SELECT uuid, name FROM dataset where uuid = "{rds}"').fetchone()
+            container.raw_dataset = DatasetInfo(rds_name, (md_uri, rds_uuid), rds_uuid)
 
-                for pds_uuid, pds_name in cur.execute(
-                        'SELECT uuid, name FROM dataset where type = "processed"').fetchall():
-                    container.processed_datasets.append(DatasetInfo(pds_name, (md_uri, pds_uuid), pds_uuid))
-                container.keys = [key[0] for key in
-                                   con.execute('SELECT DISTINCT key FROM json_each(key_val), data').fetchall()]
-                return container
+            for pds_uuid, pds_name in self.session.execute(
+                    'SELECT uuid, name FROM dataset where type = "processed"').fetchall():
+                container.processed_datasets.append(DatasetInfo(pds_name, (md_uri, pds_uuid), pds_uuid))
+            container.keys = [key[0] for key in
+                              self.session.execute('SELECT DISTINCT key FROM json_each(key_val), data').fetchall()]
+            return container
         raise DataServiceError('Cannot find the experiment metadata from the given URI')
 
     def update_experiment(self, experiment):
@@ -261,23 +267,25 @@ class SQLiteMetadataService(LocalMetadataService):
             Container of the experiment metadata
 
         """
-        with sqlite3.connect(os.path.abspath(experiment.md_uri)) as con:
-            cur = con.cursor()
-            cur.execute('INSERT OR IGNORE INTO experiment VALUES (?,?,?,?,?)', (experiment.uuid,
-                                                                                experiment.name,
-                                                                                experiment.author,
-                                                                                experiment.date,
-                                                                                experiment.raw_dataset.uuid))
-            cur.execute(
-                'UPDATE experiment SET (uuid, name, author, date, raw_dataset) = (?,?,?,?,?) WHERE uuid = ?',
-                (experiment.uuid,
-                 experiment.name,
-                 experiment.author,
-                 experiment.date,
-                 experiment.raw_dataset.uuid,
-                 experiment.uuid)
-            )
-            con.commit()
+        statement = sqlalchemy.text('INSERT OR IGNORE INTO experiment VALUES (:uuid,:name,:author,:date,:raw_dataset)')
+        self.session.connection().execute(statement,
+                                          uuid=experiment.uuid,
+                                          name=experiment.name,
+                                          author=experiment.author,
+                                          date=experiment.date,
+                                          raw_dataset=experiment.raw_dataset.uuid)
+
+        statement = sqlalchemy.text("""
+        UPDATE experiment 
+        SET (uuid, name, author, date, raw_dataset) = (:uuid,:name,:author,:date,:raw_dataset)
+        WHERE uuid = :uuid
+        """)
+        self.session.connection().execute(statement,
+                                          uuid=experiment.uuid,
+                                          name=experiment.name,
+                                          author=experiment.author,
+                                          date=experiment.date,
+                                          raw_dataset=experiment.raw_dataset.uuid)
 
     def import_data(self, experiment, data_path, name, author, format_, date='now', key_value_pairs=dict):
         """import one data to the experiment
@@ -453,17 +461,21 @@ class SQLiteMetadataService(LocalMetadataService):
         """
         files = glob.glob(files_glob)
         n = len(files)
-        data_dir_path = os.path.join(os.path.dirname(experiment.raw_dataset.url[0]), experiment.raw_dataset.name)
+        # Note that the code line below used to be
+        # data_dir_path = os.path.join(os.path.dirname(experiment.raw_dataset.url[0]), experiment.raw_dataset.name)
+        # because the url was actually the path to the database file in experiment directory. It is now the experiment
+        # directory only. Maybe try and find another and better way
+        data_dir_path = os.path.join(experiment.raw_dataset.url[0], experiment.raw_dataset.name)
         date = format_date(date)
         author = ConfigAccess.instance().config['user'] if author == '' else author
         df = pandas.DataFrame(columns=['uuid', 'name', 'dataset', 'author', 'date', 'url', 'format',
-                                       'source_dir', 'metadata', 'key_val'])
-        df['author'] = pandas.Series(data=[author]*n)
-        df['dataset'] = pandas.Series(data=[experiment.raw_dataset.uuid]*n)
-        df['date'] = pandas.Series(data=[date]*n)
-        df['format'] = pandas.Series(data=[format_]*n)
-        df['metadata'] = pandas.Series(data=['{}']*n)
-        df['key_val'] = pandas.Series(data=['{}']*n)
+                                       'source_dir', 'meta_data', 'key_val'])
+        df['author'] = pandas.Series(data=[author] * n)
+        df['dataset'] = pandas.Series(data=[experiment.raw_dataset.uuid] * n)
+        df['date'] = pandas.Series(data=[date] * n)
+        df['format'] = pandas.Series(data=[format_] * n)
+        df['meta_data'] = pandas.Series(data=['{}'] * n)
+        df['key_val'] = pandas.Series(data=['{}'] * n)
 
         for i, file in enumerate(files):
             df.loc[i, 'uuid'] = generate_uuid()
@@ -471,12 +483,15 @@ class SQLiteMetadataService(LocalMetadataService):
             df.loc[i, 'url'] = os.path.join(data_dir_path, df.loc[i, 'name'])
             df.loc[i, 'source_dir'] = os.path.dirname(file)
 
-        with sqlite3.connect(experiment.md_uri) as con:
+        con = self.session.connection()
+        try:
             df.to_sql('data', con, if_exists='append', index=False)
             if platform.system() == 'Windows':
                 os.popen(f'copy {files_glob} {data_dir_path}')
             else:
                 os.popen(f'cp {files_glob} {data_dir_path}')
+        except:
+            print('Could not import data')
         return df
 
     def import_dir(self, experiment, dir_uri, filter_, author, format_, date,
@@ -545,41 +560,36 @@ class SQLiteMetadataService(LocalMetadataService):
         RawData object containing the data metadata
 
         """
-        with sqlite3.connect(os.path.abspath(md_uri[0])) as con:
-            cur = con.cursor()
+        try:
             container = cls()
             container.md_uri = md_uri
+            statement = sqlalchemy.text("""
+                SELECT 
+                    data.uuid,
+                    data.name, 
+                    data.dataset,
+                    data.format,
+                    data.author,
+                    data.date,
+                    data.url,
+                    data.source_dir,
+                    data.meta_data,
+                    data.key_val 
+                FROM data
+                WHERE data.uuid = :uuid
+                """)
             container.uuid, container.name, container.dataset, \
             container.format, container.author, \
             container.date, container.uri, \
-            container.source_dir, metadata, key_value_pairs = cur.execute("""
-            SELECT 
-                data.uuid,
-                data.name, 
-                data.dataset,
-                data.format,
-                data.author,
-                data.date,
-                data.url,
-                data.source_dir,
-                data.metadata,
-                data.key_val 
-            FROM data
-            WHERE data.uuid = ?
-            """, md_uri[1]).fetchone()
+            container.source_dir, metadata, key_value_pairs = self.session.connection().execute(statement, uuid=md_uri[1]).fetchone()
             # metadata
             container.metadata = json.loads(metadata)
             container.key_value_pairs = json.loads(key_value_pairs)
 
-            # read keys from the experiment !!! What's use for this ???
-            # experiment = self.get_experiment(md_uri[0])
-            # for key in experiment.keys:
-            #     if 'key_value_pairs' in metadata:
-            #         if key not in metadata['key_value_pairs']:
-            #             container.key_value_pairs[key] = ''
             return container
-        # raise DataServiceError(f'Metadata file format not supported: {md_uri}')
-        return None
+        except:
+            # raise DataServiceError(f'Metadata file format not supported: {md_uri}')
+            return None
 
     def update_raw_data(self, raw_data):
         """Read a raw data from the database
@@ -591,38 +601,43 @@ class SQLiteMetadataService(LocalMetadataService):
 
         """
         raw_data.type = METADATA_TYPE_RAW
-        with sqlite3.connect(raw_data.md_uri[0]) as con:
-            cur = con.cursor()
-            cur.execute('INSERT OR IGNORE INTO data VALUES (?,?,?,?,?,?,?,?,?,?)', (raw_data.uuid,
-                                                                                    raw_data.name,
-                                                                                    raw_data.dataset,
-                                                                                    raw_data.author,
-                                                                                    raw_data.date,
-                                                                                    raw_data.uri,
-                                                                                    raw_data.format,
-                                                                                    raw_data.source_dir,
-                                                                                    str(raw_data.metadata),
-                                                                                    json.dumps(
-                                                                                        raw_data.key_value_pairs)))
-            cur.execute(
+        try:
+            statement = sqlalchemy.text("""
+            INSERT OR IGNORE INTO data 
+            VALUES (:uuid, :name, :dataset, :author, :date, :uri, :format_, :source_dir, :metadata, :key_val)
+            """)
+            self.session.connection().execute(statement,
+                                 uuid=raw_data.uuid,
+                                 name=raw_data.name,
+                                 dataset=raw_data.dataset,
+                                 author=raw_data.author,
+                                 date=raw_data.date,
+                                 uri=raw_data.uri,
+                                 format_=raw_data.format,
+                                 source_dir=raw_data.source_dir,
+                                 metadata=str(raw_data.metadata),
+                                 key_val=json.dumps(raw_data.key_value_pairs))
+
+            statement = sqlalchemy.text(
                 """
             UPDATE data
-            SET (uuid, name, dataset, author, date, url, format, source_dir, metadata, key_val) = (?,?,?,?,?,?,?,?,?,?)
-            WHERE uuid = ?
-            """,
-                (raw_data.uuid,
-                 raw_data.name,
-                 raw_data.dataset,
-                 raw_data.author,
-                 raw_data.date,
-                 raw_data.uri,
-                 raw_data.format,
-                 raw_data.source_dir,
-                 str(raw_data.metadata),
-                 json.dumps(raw_data.key_value_pairs),
-                 raw_data.uuid)
-            )
-            con.commit()
+            SET (uuid, name, dataset, author, date, url, format, source_dir, meta_data, key_val) = 
+            (:uuid, :name, :dataset, :author, :date, :uri, :format_, :source_dir, :metadata, :key_val)
+            WHERE uuid = :uuid
+            """)
+            self.session.connection().execute(statement,
+                                 uuid=raw_data.uuid,
+                                 name=raw_data.name,
+                                 dataset=raw_data.dataset,
+                                 author=raw_data.author,
+                                 date=raw_data.date,
+                                 uri=raw_data.uri,
+                                 format_=raw_data.format,
+                                 source_dir=raw_data.source_dir,
+                                 metadata=str(raw_data.metadata),
+                                 key_val=json.dumps(raw_data.key_value_pairs))
+        except:
+            print('Could not update raw data')
 
     def get_processed_data(self, md_uri):
         """Read a processed data from the database
@@ -641,14 +656,12 @@ class SQLiteMetadataService(LocalMetadataService):
 
         if container is not None:
             # origin run
-            with sqlite3.connect(md_uri[0]) as con:
-                cur = con.cursor()
-                run_uuid = cur.execute(
-                    """
-                    SELECT dataset.run FROM data, dataset
-                    WHERE data.uuid = ? AND data.dataset = dataset.uuid
-                    """, md_uri[1]).fetchone()[0]
-                container.run = run_uuid
+            statement = sqlalchemy.text("""
+                SELECT dataset.run FROM data, dataset
+                WHERE data.uuid = :uuid AND data.dataset = dataset.uuid
+                """)
+            run_uuid = self.session.connection().execute(statement, uuid=md_uri[1]).fetchone()[0]
+            container.run = run_uuid
             # container.run = self.get_run((md_uri[0], run_uuid))
 
             return container
@@ -664,39 +677,43 @@ class SQLiteMetadataService(LocalMetadataService):
             Container with the processed data metadata
 
         """
-        with sqlite3.connect(processed_data.md_uri[0]) as con:
-            cur = con.cursor()
-            cur.execute('INSERT OR IGNORE INTO data VALUES (?,?,?,?,?,?,?,?,?,?)', (processed_data.uuid,
-                                                                                    processed_data.name,
-                                                                                    processed_data.dataset,
-                                                                                    processed_data.author,
-                                                                                    processed_data.date,
-                                                                                    processed_data.uri,
-                                                                                    processed_data.format,
-                                                                                    processed_data.source_dir,
-                                                                                    str(processed_data.metadata),
-                                                                                    json.dumps(
-                                                                                        processed_data.key_value_pairs))
-                        )
-            cur.execute(
+        try:
+            statement = sqlalchemy.text("""
+                        INSERT OR IGNORE INTO data 
+                        VALUES (:uuid, :name, :dataset, :author, :date, :uri, :format_, :source_dir, :metadata, :key_val)
+                        """)
+            self.session.execute(self.session.connection().execute(statement,
+                                                      uuid=processed_data.uuid,
+                                                      name=processed_data.name,
+                                                      dataset=processed_data.dataset,
+                                                      author=processed_data.author,
+                                                      date=processed_data.date,
+                                                      uri=processed_data.uri,
+                                                      format_=processed_data.format,
+                                                      source_dir=processed_data.source_dir,
+                                                      metadata=str(processed_data.metadata),
+                                                      key_val=json.dumps(processed_data.key_value_pairs))
+                                 )
+            statement = sqlalchemy.text(
                 """
             UPDATE data
-            SET (uuid, name, dataset, author, date, url, format, source_dir, metadata, key_val) = (?,?,?,?,?,?,?,?,?,?)
-            WHERE uuid = ?
-            """,
-                (processed_data.uuid,
-                 processed_data.name,
-                 processed_data.dataset,
-                 processed_data.author,
-                 processed_data.date,
-                 processed_data.uri,
-                 processed_data.format,
-                 processed_data.source_dir,
-                 str(processed_data.metadata),
-                 json.dumps(processed_data.key_value_pairs),
-                 processed_data.uuid)
-            )
-            con.commit()
+            SET (uuid, name, dataset, author, date, url, format, source_dir, meta_data, key_val) = 
+            (:uuid, :name, :dataset, :author, :date, :uri, :format_, :source_dir, :metadata, :key_val)
+            WHERE uuid = :uuid
+            """)
+            self.session.connection().execute(statement,
+                                 uuid=processed_data.uuid,
+                                 name=processed_data.name,
+                                 dataset=processed_data.dataset,
+                                 author=processed_data.author,
+                                 date=processed_data.date,
+                                 uri=processed_data.uri,
+                                 format_=processed_data.format,
+                                 source_dir=processed_data.source_dir,
+                                 metadata=str(processed_data.metadata),
+                                 key_val=json.dumps(processed_data.key_value_pairs))
+        except:
+            print('Could not update processed data')
 
         dataset = self.get_dataset((processed_data.md_uri[0], processed_data.dataset))
         dataset.type = METADATA_TYPE_PROCESSED
@@ -717,21 +734,21 @@ class SQLiteMetadataService(LocalMetadataService):
         Dataset object containing the dataset metadata
 
         """
-        with sqlite3.connect(md_uri[0]) as con:
-            cur = con.cursor()
+        try:
             container = Dataset()
 
-            container.uuid, container.name, container.type, container.run = cur.execute(
+            container.uuid, container.name, container.type, container.run = self.session.execute(
                 f'SELECT * FROM dataset where uuid = "{md_uri[1]}"').fetchone()
             container.md_uri = md_uri
             container.url = os.path.join(os.path.dirname(md_uri[0]), container.name)
 
-            for uuid in cur.execute(f'SELECT uuid FROM data where dataset = "{container.uuid}"'):
+            for uuid in self.session.execute(f'SELECT uuid FROM data where dataset = "{container.uuid}"'):
                 container.uris.append(
                     Container((md_uri[0], uuid), uuid))
 
             return container
-        raise DataServiceError('Dataset not found')
+        except:
+            raise DataServiceError('Dataset not found')
 
     def update_dataset(self, dataset):
         """Read a processed data from the database
@@ -742,30 +759,38 @@ class SQLiteMetadataService(LocalMetadataService):
             Container with the dataset metadata
 
         """
-        with sqlite3.connect(dataset.md_uri[0]) as con:
-            cur = con.cursor()
-            cur.execute('INSERT OR IGNORE INTO dataset VALUES (?,?,?,?)', (dataset.uuid,
-                                                                           dataset.name,
-                                                                           dataset.type,
-                                                                           dataset.run))
-            cur.execute('UPDATE dataset SET (uuid, name, type, run) = (?,?,?,?) WHERE uuid = ?',
-                        (dataset.uuid,
-                         dataset.name,
-                         dataset.type,
-                         dataset.run,
-                         dataset.uuid))
-            con.commit()
-        # md_uri = os.path.abspath(dataset.md_uri)
-        # metadata = dict()
-        # metadata['uuid'] = dataset.uuid
-        # metadata['name'] = dataset.name
-        # metadata['urls'] = list()
-        # for uri in dataset.uris:
-        #     print('uri=', uri)
-        #     tmp_url = SQLiteMetadataService.to_unix_path(
-        #         SQLiteMetadataService.relative_path(uri.md_uri, md_uri))
-        #     metadata['urls'].append({"uuid": uri.uuid, 'url': tmp_url})
-        # self._write_json(metadata, md_uri)
+        try:
+            statement = sqlalchemy.text(
+                'INSERT OR IGNORE INTO dataset VALUES (:uuid, :name, :type_, :run)'
+            )
+            self.session.connection().execute(statement,
+                                 uuid=dataset.uuid,
+                                 name=dataset.name,
+                                 type_=dataset.type,
+                                 run=dataset.run)
+
+            statement = sqlalchemy.text(
+                'UPDATE dataset SET (uuid, name, type, run) = (:uuid, :name, :type_, :run)  WHERE uuid = :uuid'
+            )
+            self.session.connection().execute(statement,
+                                 uuid=dataset.uuid,
+                                 name=dataset.name,
+                                 type_=dataset.type,
+                                 run=dataset.run)
+        except:
+            print('Could not update dataset')
+    # md_uri = os.path.abspath(dataset.md_uri)
+    # metadata = dict()
+    # metadata['uuid'] = dataset.uuid
+    # metadata['name'] = dataset.name
+    # metadata['urls'] = list()
+    # for uri in dataset.uris:
+    #     print('uri=', uri)
+    #     tmp_url = SQLiteMetadataService.to_unix_path(
+    #         SQLiteMetadataService.relative_path(uri.md_uri, md_uri))
+    #     metadata['urls'].append({"uuid": uri.uuid, 'url': tmp_url})
+    # self._write_json(metadata, md_uri)
+
 
     def create_dataset(self, experiment, dataset_name):
         """Create a processed dataset in an experiment
@@ -804,6 +829,7 @@ class SQLiteMetadataService(LocalMetadataService):
 
         return container
 
+
     def create_run(self, dataset, run_info):
         """Create a new run metadata
 
@@ -838,6 +864,7 @@ class SQLiteMetadataService(LocalMetadataService):
         self._write_run(run_info)
         return run_info
 
+
     def get_dataset_runs(self, dataset):
         """Read the run metadata from a dataset
 
@@ -853,6 +880,7 @@ class SQLiteMetadataService(LocalMetadataService):
         run_uri = (dataset.md_uri[0], dataset.run)
         return [self.get_run(run_uri)]
 
+
     def get_run(self, md_uri):
         """Read a run metadata from the data base
 
@@ -866,18 +894,17 @@ class SQLiteMetadataService(LocalMetadataService):
         Run: object containing the run metadata
 
         """
-        with sqlite3.connect(md_uri[0]) as con:
-            cur = con.cursor()
+        try:
             container = Run()
 
-            container.uuid, container.process_name, process_uri, inputs, parameters = cur.execute(
+            container.uuid, container.process_name, process_uri, inputs, parameters = self.session.execute(
                 f'SELECT * FROM run where uuid = "{md_uri[1]}"').fetchone()
             container.md_uri = md_uri
             container.process_uri = SQLiteMetadataService.normalize_path_sep(process_uri)
             container.inputs = json.loads(inputs)
             container.parameters = json.loads(parameters)
 
-            ds_uuid = cur.execute(f'SELECT uuid FROM dataset where run = "{container.uuid}"').fetchone()[0]
+            ds_uuid = self.session.execute(f'SELECT uuid FROM dataset where run = "{container.uuid}"').fetchone()[0]
             container.processed_dataset = self.get_dataset((md_uri[0], ds_uuid))
             container.uri = os.path.join(os.path.dirname(md_uri[0]), container.processed_dataset.name)
             # container.processed_dataset = Container(
@@ -888,7 +915,9 @@ class SQLiteMetadataService(LocalMetadataService):
             #     metadata['processed_dataset']['uuid']
             # )
             return container
-        raise DataServiceError('Run not found')
+        except:
+            raise DataServiceError('Run not found')
+
 
     def _write_run(self, run):
         """Write a run metadata to the data base
@@ -899,7 +928,7 @@ class SQLiteMetadataService(LocalMetadataService):
             Object containing the run metadata
 
         """
-        with sqlite3.connect(run.md_uri[0]) as con:
+        try:
             run_process_url = SQLiteMetadataService.to_unix_path(run.process_uri)
             run_inputs = [{
                 'name': input_.name,
@@ -910,22 +939,31 @@ class SQLiteMetadataService(LocalMetadataService):
 
             run_parameters = [{'name': parameter.name, 'value': parameter.value} for parameter in run.parameters]
 
-            cur = con.cursor()
-            cur.execute('INSERT OR IGNORE INTO run VALUES (?,?,?,?,?)', (run.uuid,
-                                                                         run.process_name,
-                                                                         run_process_url,
-                                                                         json.dumps(run_inputs),
-                                                                         json.dumps(run_parameters)))
-            cur.execute(
-                'UPDATE run SET (uuid, process_name, process_url, inputs, parameters) = (?,?,?,?,?) WHERE uuid = ?',
-                (run.uuid,
-                 run.process_name,
-                 run_process_url,
-                 json.dumps(run_inputs),
-                 json.dumps(run_parameters),
-                 run.uuid)
+            statement = sqlalchemy.text(
+                'INSERT OR IGNORE INTO run VALUES (:uuid, :process_name, :process_url, :inputs, :parameters)'
             )
-            con.commit()
+            self.session.connection().execute(statement,
+                                 uuid=run.uuid,
+                                 process_name=run.process_name,
+                                 process_url=run_process_url,
+                                 inputs=json.dumps(run_inputs),
+                                 parameters=json.dumps(run_parameters))
+
+            statement = sqlalchemy.text(
+                """
+                UPDATE run
+                SET (uuid, process_name, process_url, inputs, parameters) = (:uuid, :process_name, :process_url, :inputs, :parameters)
+                WHERE uuid = :uuid
+                """
+            )
+            self.session.connection().execute(statement,
+                                 uuid=run.uuid,
+                                 process_name=run.process_name,
+                                 process_url=run_process_url,
+                                 inputs=json.dumps(run_inputs),
+                                 parameters=json.dumps(run_parameters))
+        except:
+            print('Could not write run metadata')
 
         # metadata['processed_dataset'] = {"uuid": run.processed_dataset.uuid,
         #                                  "url": dataset_rel_url}
@@ -945,8 +983,10 @@ class SQLiteMetadataService(LocalMetadataService):
         #         {'name': parameter.name, 'value': parameter.value}
         #     )
 
+
     def get_data_uri(self, data_container):
         return data_container.uri.replace('\\', '\\\\')
+
 
     def create_data_uri(self, dataset, run, processed_data):
         """Create the URI of the new data
@@ -972,6 +1012,7 @@ class SQLiteMetadataService(LocalMetadataService):
         processed_data.uri = os.path.join(dataset_dir,
                                           dataset.name, f"{processed_data.name}.{extension}").replace('\\', '\\\\')
         return processed_data
+
 
     def create_data(self, dataset, run, processed_data):
         """Create a new processed data for a given dataset
@@ -1014,11 +1055,13 @@ class SQLiteMetadataService(LocalMetadataService):
 
         return processed_data
 
+
     def download_data(self, md_uri, destination_file_uri):
         if destination_file_uri == '':
             raw_data = self.get_raw_data(md_uri)
             return raw_data.uri
         return destination_file_uri
+
 
     def view_data(self, md_uri):
         raw_data = self.get_raw_data(md_uri)
@@ -1029,6 +1072,7 @@ class SQLiteMetadataService(LocalMetadataService):
             return zarr.open(os.path.join(raw_data.uri, "0", "0"), mode='r')
         return None
 
+
     @staticmethod
     def sqlite_db_creation_script():
         """
@@ -1037,68 +1081,68 @@ class SQLiteMetadataService(LocalMetadataService):
         :rtype: str
         """
         return """
-        --
--- File generated with SQLiteStudio v3.3.3 on lun. oct. 31 09:42:57 2022
---
--- Text encoding used: UTF-8
---
-PRAGMA foreign_keys = off;
-BEGIN TRANSACTION;
-
--- Table: data
-CREATE TABLE data (
-    uuid       STRING (36, 36) PRIMARY KEY ON CONFLICT ROLLBACK,
-    name       TEXT,
-    dataset    TEXT            REFERENCES dataset (uuid),
-    author     TEXT,
-    date       DATE,
-    url        TEXT,
-    format     TEXT,
-    source_dir TEXT,
-    metadata   TEXT,
-    key_val    TEXT,
-    CONSTRAINT no_dup_files UNIQUE (
-        name,
-        source_dir
-    )
-    ON CONFLICT IGNORE
-);
-
-
--- Table: dataset
-CREATE TABLE dataset (
-    uuid STRING (36, 36) PRIMARY KEY,
-    name TEXT            UNIQUE,
-    type TEXT            CHECK (type IN ('raw', 'processed') ) 
-                         DEFAULT ('raw'),
-    run  TEXT            REFERENCES run (uuid) 
-                         CHECK ( (type = 'raw' AND 
-                                  run IS NULL) OR 
-                                 (type = 'processed' AND 
-                                  run IS NOT NULL) ) 
-);
-
-
--- Table: experiment
-CREATE TABLE experiment (
-    uuid        STRING (36, 36) CONSTRAINT [unique] PRIMARY KEY ON CONFLICT ROLLBACK,
-    name        TEXT,
-    author      TEXT,
-    date        DATE,
-    raw_dataset TEXT
-);
-
-
--- Table: run
-CREATE TABLE run (
-    uuid         STRING (36, 36) PRIMARY KEY,
-    process_name TEXT,
-    process_url  TEXT,
-    inputs       TEXT,
-    parameters   TEXT
-);
-
-
-COMMIT TRANSACTION;
-PRAGMA foreign_keys = on;
-        """
+            --
+    -- File generated with SQLiteStudio v3.3.3 on lun. oct. 31 09:42:57 2022
+    --
+    -- Text encoding used: UTF-8
+    --
+    PRAGMA foreign_keys = off;
+    BEGIN TRANSACTION;
+    
+    -- Table: data
+    CREATE TABLE data (
+        uuid       STRING (36, 36) PRIMARY KEY ON CONFLICT ROLLBACK,
+        name       TEXT,
+        dataset    TEXT            REFERENCES dataset (uuid),
+        author     TEXT,
+        date       DATE,
+        url        TEXT,
+        format     TEXT,
+        source_dir TEXT,
+        meta_data   TEXT,
+        key_val    TEXT,
+        CONSTRAINT no_dup_files UNIQUE (
+            name,
+            source_dir
+        )
+        ON CONFLICT IGNORE
+    );
+    
+    
+    -- Table: dataset
+    CREATE TABLE dataset (
+        uuid STRING (36, 36) PRIMARY KEY,
+        name TEXT            UNIQUE,
+        type TEXT            CHECK (type IN ('raw', 'processed') ) 
+                             DEFAULT ('raw'),
+        run  TEXT            REFERENCES run (uuid) 
+                             CHECK ( (type = 'raw' AND 
+                                      run IS NULL) OR 
+                                     (type = 'processed' AND 
+                                      run IS NOT NULL) ) 
+    );
+    
+    
+    -- Table: experiment
+    CREATE TABLE experiment (
+        uuid        STRING (36, 36) CONSTRAINT [unique] PRIMARY KEY ON CONFLICT ROLLBACK,
+        name        TEXT,
+        author      TEXT,
+        date        DATE,
+        raw_dataset TEXT
+    );
+    
+    
+    -- Table: run
+    CREATE TABLE run (
+        uuid         STRING (36, 36) PRIMARY KEY,
+        process_name TEXT,
+        process_url  TEXT,
+        inputs       TEXT,
+        parameters   TEXT
+    );
+    
+    
+    COMMIT TRANSACTION;
+    PRAGMA foreign_keys = on;
+            """

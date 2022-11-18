@@ -33,9 +33,10 @@ class ShallowSQLite3(ShallowDb):
         self.session_maker = sessionmaker(self.engine, future=True)
         self.session_ = None
 
-        self.bioiit_req = Request(get_config_value('bioimageit', 'config_file'))
+        self.bioiit_req = Request(get_config_value('bioimageit', 'config_file'), debug=False)
         metadataServices.register_builder('SQLITE', SQLiteMetadataServiceBuilder())
         self.bioiit_req.connect()
+        self.bioiit_req.data_service.connect_to_session(self.session)
         self.bioiit_exp = None
 
         self.create()

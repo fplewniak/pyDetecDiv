@@ -7,6 +7,7 @@ Main DAO class for accessing data in SQL Tables. Subclasses are responsible for 
 of compatible records for the creation of domain-specific objects.
 """
 from sqlalchemy.orm import registry
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql.expression import Insert, Update
 
 mapper_registry = registry()
