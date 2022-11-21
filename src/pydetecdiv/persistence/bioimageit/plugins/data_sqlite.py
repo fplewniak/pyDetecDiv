@@ -64,6 +64,23 @@ class SQLiteMetadataService(LocalMetadataService):
     def connect_to_session(self, session):
         self.session = session
 
+    def determine_links_using_regex(self, dataset, source, keys_, regex):
+        con = self.session.connection()
+        df = pandas.read_sql_query('SELECT * from data', con)
+
+        pattern = re.compile(regex)
+
+        call_back = source if callable(source) else lambda x: x[source]
+
+        links = list()
+        for i in df.index[df['dataset'] == dataset.uuid].to_list():
+            m = re.match(pattern, call_back(df.loc[i,]))
+            if m:
+                key_val = {'id_': df.loc[i, 'id_']}
+                key_val.update(dict(zip(keys_, m.groups())))
+                links.append(key_val)
+        return pandas.DataFrame(links)
+
     def clear_annotation(self, experiment, dataset, key):
         """
         Clear annotations with the specified key in a dataset
@@ -251,7 +268,7 @@ class SQLiteMetadataService(LocalMetadataService):
             container.raw_dataset = DatasetInfo(rds_name, (md_uri, rds_uuid), rds_uuid)
 
             for pds_uuid, pds_name in self.session.execute(
-                    'SELECT uuid, name FROM dataset where type = "processed"').fetchall():
+                    'SELECT uuid, name FROM dataset where type_ = "processed"').fetchall():
                 container.processed_datasets.append(DatasetInfo(pds_name, (md_uri, pds_uuid), pds_uuid))
             container.keys = [key[0] for key in
                               self.session.execute('SELECT DISTINCT key FROM json_each(key_val), data').fetchall()]
@@ -744,7 +761,7 @@ class SQLiteMetadataService(LocalMetadataService):
 
             for uuid in self.session.execute(f'SELECT uuid FROM data where dataset = "{container.uuid}"'):
                 container.uris.append(
-                    Container((md_uri[0], uuid), uuid))
+                    Container((md_uri[0], uuid[0]), uuid[0]))
 
             return container
         except:
@@ -1113,12 +1130,12 @@ class SQLiteMetadataService(LocalMetadataService):
     CREATE TABLE dataset (
         uuid STRING (36, 36) PRIMARY KEY,
         name TEXT            UNIQUE,
-        type TEXT            CHECK (type IN ('raw', 'processed') ) 
+        type TEXT            CHECK (type_ IN ('raw', 'processed') ) 
                              DEFAULT ('raw'),
         run  TEXT            REFERENCES run (uuid) 
-                             CHECK ( (type = 'raw' AND 
+                             CHECK ( (type_ = 'raw' AND 
                                       run IS NULL) OR 
-                                     (type = 'processed' AND 
+                                     (type_ = 'processed' AND 
                                       run IS NOT NULL) ) 
     );
     

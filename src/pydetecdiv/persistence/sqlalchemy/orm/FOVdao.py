@@ -8,6 +8,7 @@ from sqlalchemy import Column, Integer, String, text, select
 from sqlalchemy.orm import relationship, joinedload
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 import pydetecdiv.persistence.sqlalchemy.orm.dao as dao
+from pydetecdiv.persistence.sqlalchemy.orm.associations import FovData
 
 
 class FOVdao(DAO, Base):
@@ -26,7 +27,7 @@ class FOVdao(DAO, Base):
 
     roi_list_ = relationship('ROIdao')
 
-    # image_data_list = FovData.fov_to_image_data()
+    data_list = FovData.fov_to_data()
 
     @property
     def record(self):
@@ -43,6 +44,13 @@ class FOVdao(DAO, Base):
                 'bottom_right': (self.xsize - 1, self.ysize - 1),
                 'size': (self.xsize, self.ysize),
                 }
+
+    def data(self, fov_id):
+        return [i.record
+                for i in self.session.query(dao.DataDao)
+                .filter(FovData.data == dao.DataDao.id_)
+                .filter(FovData.fov == fov_id)
+        ]
 
     def image_data(self, fov_id):
         """

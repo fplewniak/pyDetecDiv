@@ -7,6 +7,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey, text, Date
 from sqlalchemy.orm import joinedload, relationship
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 import pydetecdiv.persistence.sqlalchemy.orm.dao as dao
+from pydetecdiv.persistence.sqlalchemy.orm.associations import FovData
 
 
 class DataDao(DAO, Base):
@@ -15,7 +16,8 @@ class DataDao(DAO, Base):
     """
     __tablename__ = 'data'
 
-    uuid = Column(String(36), primary_key=True)
+    id_ = Column(Integer, primary_key=True, autoincrement='auto')
+    uuid = Column(String(36))
     name = Column(String, unique=True, nullable=False)
     dataset = Column(String, ForeignKey('dataset.uuid'), nullable=False, index=True)
     author = Column(String)
@@ -25,7 +27,9 @@ class DataDao(DAO, Base):
     source_dir = Column(String)
     meta_data = Column(String)
     key_val = Column(String)
-    fov = Column(Integer, ForeignKey('FOV.id_'), index=True)
+    # fov = Column(Integer, ForeignKey('FOV.id_'), index=True)
+
+    fov_list_ = FovData.data_to_fov()
 
     @property
     def record(self):
@@ -35,15 +39,16 @@ class DataDao(DAO, Base):
         :return a data record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """
-        return {'uuid': self.uuid,
+        return {'id_': self.id_,
+                'uuid': self.uuid,
                 'name': self.name,
                 'dataset': self.dataset,
                 'author': self.author,
                 'date': self.date,
                 'url': self.url,
-                'format': self.format,
+                'format_': self.format,
                 'source_dir': self.source_dir,
-                'metadata': self.meta_data,
+                'meta_data': self.meta_data,
                 'key_val': self.key_val,
-                'fov': self.fov
+                # 'fov': self.fov
                 }

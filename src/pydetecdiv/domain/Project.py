@@ -10,6 +10,7 @@ from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.domain.ROI import ROI
 from pydetecdiv.domain.ImageData import ImageData
 from pydetecdiv.domain.FOV import FOV
+from pydetecdiv.domain.Data import Data
 from pydetecdiv.domain.Image import Image
 
 
@@ -23,6 +24,7 @@ class Project:
     classes = {
         'ROI': ROI,
         'FOV': FOV,
+        'Data': Data,
         'ImageData': ImageData,
         'Image': Image,
     }
@@ -51,8 +53,9 @@ class Project:
         :type source_path: str
         """
         self.repository.import_images(source_path)
+        self.commit()
 
-    def create_dsos_from_raw_data(self, source, keys_, regex):
+    def create_fov_from_raw_data(self, source, regex):
         """
         Create domain-specific objects from raw data using a regular expression applied to a bioimageit database field
         or a combination thereof specified by source. DSOs to create are specified by the values in keys.
@@ -63,19 +66,15 @@ class Project:
         :param regex: regular expression defining the DSOs' names
         :type regex: regular expression str
         """
-        # TODO add a file argument for metadata to complete information about dsos, for example position of a ROI, etc.
-        # TODO ultimately creation of dsos should be the responsibility of DSO classes themselves in order to keep this
-        # TODO class as small as possible
-        df = self.repository.annotate_raw_data(source, keys_, regex)
-        if 'FOV' in keys_:
-            fov_names = [f.name for f in self.get_objects('FOV')]
-            for fov_name in df.FOV.drop_duplicates().values:
-                if fov_name not in fov_names:
-                    FOV(project=self, name=fov_name, top_left=(0, 0), bottom_right=(999, 999))
-                #TODO link this fov to image data uuid
-
-        for k in keys_:
-            print(df.filter([k, 'uuid']))
+        df = self.repository.determine_fov(source, regex)
+        fov_names = [f.name for f in self.get_objects('FOV')]
+        for fov_name in df.FOV.drop_duplicates().values:
+            if fov_name not in fov_names:
+                FOV(project=self, name=fov_name, top_left=(0, 0), bottom_right=(999, 999))
+        id_mapping={fov.name: fov.id_ for fov in self.get_objects('FOV')}
+        df['FOV'] = df['FOV'].map(id_mapping)
+        for data_id, fov_id in df.values:
+            self.link_objects(self.get_object('FOV', int(fov_id)), self.get_object('Data', int(data_id)))
 
     def save_record(self, class_name, record):
         """

@@ -88,7 +88,7 @@ class ShallowSQLite3(ShallowDb):
             mapper_registry.metadata.create_all(self.engine)
             self.bioiit_exp = self.bioiit_req.create_experiment(exp_name)
         else:
-            self.bioiit_exp = self.bioiit_req.get_experiment_by_name(exp_name)
+            self.bioiit_exp = self.bioiit_req.get_experiment(self.name)
 
     def close(self):
         """
@@ -103,6 +103,14 @@ class ShallowSQLite3(ShallowDb):
         :type source_path: str
         """
         self.bioiit_req.import_glob(self.bioiit_exp, source_path)
+
+    def determine_fov(self, source, regex):
+        return self.determine_links_using_regex('data', source, ('FOV',), regex)
+
+    def determine_links_using_regex(self, dataset_name, source, keys_, regex):
+        dataset = self.bioiit_req.get_dataset(self.bioiit_exp, dataset_name)
+        df = self.bioiit_req.data_service.determine_links_using_regex(dataset, source, keys_, regex)
+        return df
 
     def annotate_raw_data(self, source, keys_, regex):
         """
@@ -228,6 +236,8 @@ class ShallowSQLite3(ShallowDb):
                 linked_records = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['fov'])]
             if parent_cls_name in ['Image', 'ImageData', ]:
                 linked_records = dao[parent_cls_name](self.session).fov(parent_id)
+            if parent_cls_name in ['data', ]:
+                linked_records = dao[parent_cls_name](self.session).fov_list(parent_id)
         if cls_name == 'ROI':
             if parent_cls_name in ['ImageData', ]:
                 linked_records = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['roi'])]
@@ -238,6 +248,9 @@ class ShallowSQLite3(ShallowDb):
         if cls_name == 'Image':
             if parent_cls_name in ['ImageData', 'FOV', 'ROI']:
                 linked_records = dao[parent_cls_name](self.session).image_list(parent_id)
+        if cls_name == 'Data':
+            if parent_cls_name in ['FOV']:
+                linked_records = dao[parent_cls_name](self.session).data(parent_id)
 
         return linked_records
 
