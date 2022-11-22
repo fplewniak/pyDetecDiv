@@ -76,6 +76,13 @@ class Project:
             self.link_objects(self.get_object('FOV', int(fov_id)), self.get_object('Data', int(data_id)))
 
     def id_mapping(self, class_name):
+        """
+        Return name to id_ mapping for objects of a given class
+        :param class_name: the class name
+        :type class_name: str
+        :return: the name to id_ mapping
+        :rtype: dict
+        """
         return {obj.name: obj.id_ for obj in self.get_objects(class_name)}
 
     def save_record(self, class_name, record):

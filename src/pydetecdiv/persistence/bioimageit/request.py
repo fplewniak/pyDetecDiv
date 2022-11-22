@@ -12,10 +12,13 @@ Request
 import os.path
 
 import bioimageit_core.api.request
-from bioimageit_core import ConfigAccess
 
 
 class Request(bioimageit_core.api.request.Request):
+    """
+    A class extending the BioIMageIT Request class in order to add some features without having to modify the original
+    code.
+    """
 
     def annotate_raw_data_using_regex(self, experiment, keys_, regex):
         """
@@ -29,7 +32,7 @@ class Request(bioimageit_core.api.request.Request):
         """
         print(f'Please, wait while annotating raw dataset of {experiment.name}')
         self.data_service.annotate_using_regex(experiment, experiment.raw_dataset,
-                                               lambda x: os.path.join(x['source_dir'],x['name']), keys_, regex)
+                                               lambda x: os.path.join(x['source_dir'], x['name']), keys_, regex)
         print('OK')
 
     def annotate_using_regex(self, experiment, dataset, source, keys_, regex):
@@ -81,7 +84,7 @@ class Request(bioimageit_core.api.request.Request):
         """
         print(f'Please wait while importing data into {experiment.raw_dataset.name} dataset')
         self.data_service.import_glob(experiment, files_glob,
-                                           author=author, format_=format_, date=date, observers=None)
+                                      author=author, format_=format_, date=date, observers=None)
         print('OK')
 
     def run(self, job):
@@ -103,9 +106,3 @@ class Request(bioimageit_core.api.request.Request):
         else:
             self._run_job_sequence(job)
         return job.experiment
-
-    def get_experiment_by_name(self, name):
-        config = ConfigAccess.instance().config
-        uri = os.path.join(config['workspace'], name, f'{name}.db')
-        print(uri)
-        return self.get_experiment(str(uri))

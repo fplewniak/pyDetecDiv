@@ -62,9 +62,29 @@ class SQLiteMetadataService(LocalMetadataService):
         self.session = None
 
     def connect_to_session(self, session):
+        """
+        Associate an open SQLite session to the data service
+        :param session: A SQLite session
+        :type session: sqlalchemy.orm.session.Session
+        """
         self.session = session
 
     def determine_links_using_regex(self, dataset, source, keys_, regex):
+        """
+        Determines links between data in dataset and other objects in database. The returned DataFrame can be used to
+        populate a table in SQLite database
+        :param dataset: the dataset
+        :type dataset: Dataset Container or DatasetInfo Container
+        :param source: a string (column name) or callable returning a string that the regular expression will be
+        applied to
+        :type source: callable or str
+        :param keys_: the column names (one object class per column)
+        :type keys_: tuple of str
+        :param regex: the regular expression defining how to extract the values corresponding to the specified keys
+        :type regex: regular expression str
+        :return: a DataFrame representing the links between data and objects (one object per column)
+        :rtype: pandas DataFrame
+        """
         con = self.session.connection()
         df = pandas.read_sql_query('SELECT * from data', con)
 
@@ -81,7 +101,7 @@ class SQLiteMetadataService(LocalMetadataService):
                 links.append(key_val)
         return pandas.DataFrame(links)
 
-    def clear_annotation(self, experiment, dataset, key):
+    def clear_annotation(self, dataset, key):
         """
         Clear annotations with the specified key in a dataset
         :param experiment: the experiment containing the dataset to update
@@ -94,8 +114,10 @@ class SQLiteMetadataService(LocalMetadataService):
         self.session.execute(sqlalchemy.text(
             f'UPDATE data SET key_val = json_remove(key_val, "$.{key}") WHERE dataset = "{dataset.uuid}";'))
 
-    def create_annotations_using_regex(self, experiment, dataset, source, keys_, regex):
+    def create_annotations_using_regex(self, dataset, source, keys_, regex):
         """
+        Use regular expression to create a DataFrame containing annotations of data in a dataset. Basic usage is as
+        follows:
         create_annotations_using_regex(experiment, experiment.raw_dataset,
           lambda x: os.path.join(x['source_dir'],x['name']) ,
           ('group', 'ROI', 'FOV', 'position', 'frame'),
@@ -130,6 +152,20 @@ class SQLiteMetadataService(LocalMetadataService):
         return df
 
     def annotate_using_regex(self, experiment, dataset, source, keys_, regex):
+        """
+        Use DataFrame returned by create_annotations_using_regex method to annotate data in dataset
+        :param experiment: the experiment containing the dataset to annotate
+        :type experiment: Experiment Container
+        :param dataset: the dataset to annotate
+        :type dataset: Dataset Container or DatasetInfo Container
+        :param source: a string (column name) or callable returning a string that the regular expression will be
+        applied to
+        :type source: callable or str
+        :param keys_: the annotation keys
+        :type keys_: tuple of str
+        :param regex: the regular expression defining how to extract the values corresponding to the specified keys
+        :type regex: regular expression str
+        """
         df = self.create_annotations_using_regex(experiment, dataset, source, keys_, regex)
         con = self.session.connection()
         con.execute('DELETE from data')
@@ -137,8 +173,7 @@ class SQLiteMetadataService(LocalMetadataService):
         experiment.keys = [key[0] for key
                            in con.execute('SELECT DISTINCT key FROM json_each(key_val), data').fetchall()]
 
-    def create_experiment(self, name, author='', date='now', keys=None,
-                          destination=''):
+    def create_experiment(self, name, author='', date='now', keys=None, destination=''):
         """Create a new experiment
 
         Parameters
@@ -387,8 +422,7 @@ class SQLiteMetadataService(LocalMetadataService):
 
         return metadata
 
-    def _import_file_bioformat(self, raw_dataset_uri, file_path, destination_dir, data_name, author,
-                               date):
+    def _import_file_bioformat(self, raw_dataset_uri, file_path, destination_dir, data_name, author, date):
         fiji_exe = ConfigAccess.instance().get('fiji')
         cmd = f'{fiji_exe} --headless -macro bioimageit_convert.ijm "file,{file_path},' \
               f'{destination_dir},{data_name},{author},{date}"'
@@ -507,8 +541,8 @@ class SQLiteMetadataService(LocalMetadataService):
                 os.popen(f'copy {files_glob} {data_dir_path}')
             else:
                 os.popen(f'cp {files_glob} {data_dir_path}')
-        except:
-            print('Could not import data')
+        except RuntimeError as error:
+            raise DataServiceError('Could not import data') from error
         return df
 
     def import_dir(self, experiment, dir_uri, filter_, author, format_, date,
@@ -598,15 +632,15 @@ class SQLiteMetadataService(LocalMetadataService):
             container.uuid, container.name, container.dataset, \
             container.format, container.author, \
             container.date, container.uri, \
-            container.source_dir, metadata, key_value_pairs = self.session.connection().execute(statement, uuid=md_uri[1]).fetchone()
+            container.source_dir, \
+            metadata, key_value_pairs = self.session.connection().execute(statement, uuid=md_uri[1]).fetchone()
             # metadata
             container.metadata = json.loads(metadata)
             container.key_value_pairs = json.loads(key_value_pairs)
 
             return container
-        except:
-            # raise DataServiceError(f'Metadata file format not supported: {md_uri}')
-            return None
+        except RuntimeError as error:
+            raise DataServiceError(f'Error getting data from database: {md_uri[1]}') from error
 
     def update_raw_data(self, raw_data):
         """Read a raw data from the database
@@ -637,10 +671,10 @@ class SQLiteMetadataService(LocalMetadataService):
 
             statement = sqlalchemy.text(
                 """
-            UPDATE data
-            SET (uuid, name, dataset, author, date, url, format, source_dir, meta_data, key_val) = 
-            (:uuid, :name, :dataset, :author, :date, :uri, :format_, :source_dir, :metadata, :key_val)
-            WHERE uuid = :uuid
+UPDATE data
+SET (uuid, name, dataset, author, date, url, format, source_dir, meta_data, key_val) =
+(:uuid, :name, :dataset, :author, :date, :uri, :format_, :source_dir, :metadata, :key_val)
+WHERE uuid = :uuid
             """)
             self.session.connection().execute(statement,
                                  uuid=raw_data.uuid,
@@ -653,8 +687,8 @@ class SQLiteMetadataService(LocalMetadataService):
                                  source_dir=raw_data.source_dir,
                                  metadata=str(raw_data.metadata),
                                  key_val=json.dumps(raw_data.key_value_pairs))
-        except:
-            print('Could not update raw data')
+        except RuntimeError as error:
+            raise DataServiceError('Could not update raw data') from error
 
     def get_processed_data(self, md_uri):
         """Read a processed data from the database
@@ -713,10 +747,10 @@ class SQLiteMetadataService(LocalMetadataService):
                                  )
             statement = sqlalchemy.text(
                 """
-            UPDATE data
-            SET (uuid, name, dataset, author, date, url, format, source_dir, meta_data, key_val) = 
-            (:uuid, :name, :dataset, :author, :date, :uri, :format_, :source_dir, :metadata, :key_val)
-            WHERE uuid = :uuid
+UPDATE data
+SET (uuid, name, dataset, author, date, url, format, source_dir, meta_data, key_val) =
+(:uuid, :name, :dataset, :author, :date, :uri, :format_, :source_dir, :metadata, :key_val)
+WHERE uuid = :uuid
             """)
             self.session.connection().execute(statement,
                                  uuid=processed_data.uuid,
@@ -729,8 +763,8 @@ class SQLiteMetadataService(LocalMetadataService):
                                  source_dir=processed_data.source_dir,
                                  metadata=str(processed_data.metadata),
                                  key_val=json.dumps(processed_data.key_value_pairs))
-        except:
-            print('Could not update processed data')
+        except RuntimeError as error:
+            raise DataServiceError('Could not update processed data') from error
 
         dataset = self.get_dataset((processed_data.md_uri[0], processed_data.dataset))
         dataset.type = METADATA_TYPE_PROCESSED
@@ -764,8 +798,8 @@ class SQLiteMetadataService(LocalMetadataService):
                     Container((md_uri[0], uuid[0]), uuid[0]))
 
             return container
-        except:
-            raise DataServiceError('Dataset not found')
+        except RuntimeError as error:
+            raise DataServiceError('Dataset not found') from error
 
     def update_dataset(self, dataset):
         """Read a processed data from the database
@@ -794,8 +828,8 @@ class SQLiteMetadataService(LocalMetadataService):
                                  name=dataset.name,
                                  type_=dataset.type,
                                  run=dataset.run)
-        except:
-            print('Could not update dataset')
+        except RuntimeError as error:
+            raise DataServiceError('Could not update dataset') from error
     # md_uri = os.path.abspath(dataset.md_uri)
     # metadata = dict()
     # metadata['uuid'] = dataset.uuid
@@ -932,8 +966,8 @@ class SQLiteMetadataService(LocalMetadataService):
             #     metadata['processed_dataset']['uuid']
             # )
             return container
-        except:
-            raise DataServiceError('Run not found')
+        except RuntimeError as error:
+            raise DataServiceError('Run not found') from error
 
 
     def _write_run(self, run):
@@ -968,9 +1002,9 @@ class SQLiteMetadataService(LocalMetadataService):
 
             statement = sqlalchemy.text(
                 """
-                UPDATE run
-                SET (uuid, process_name, process_url, inputs, parameters) = (:uuid, :process_name, :process_url, :inputs, :parameters)
-                WHERE uuid = :uuid
+UPDATE run
+SET (uuid, process_name, process_url, inputs, parameters) = (:uuid, :process_name, :process_url, :inputs, :parameters)
+WHERE uuid = :uuid
                 """
             )
             self.session.connection().execute(statement,
@@ -979,8 +1013,8 @@ class SQLiteMetadataService(LocalMetadataService):
                                  process_url=run_process_url,
                                  inputs=json.dumps(run_inputs),
                                  parameters=json.dumps(run_parameters))
-        except:
-            print('Could not write run metadata')
+        except RuntimeError as error:
+            raise DataServiceError('Could not write run metadata') from error
 
         # metadata['processed_dataset'] = {"uuid": run.processed_dataset.uuid,
         #                                  "url": dataset_rel_url}

@@ -17,7 +17,10 @@ from pydetecdiv.persistence.sqlalchemy.orm.RunDao import RunDao
 dso_dao_mapping = {
     'FOV': FOVdao,
     'ROI': ROIdao,
+    'Experiment': ExperimentDao,
+    'DataSet': DatasetDao,
     'Data': DataDao,
+    'Run': RunDao,
     'ImageData': ImageDataDao,
     'Image': ImageDao,
 }

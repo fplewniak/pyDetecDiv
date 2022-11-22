@@ -38,10 +38,6 @@ class Linker:
         """
         Linker.association(obj1.__class__.__name__, obj2.__class__.__name__).link(obj1, obj2)
 
-    @staticmethod
-    def link_exists(obj1, obj2):
-        Linker.association(obj1.__class__.__name__, obj2.__class__.__name__).link_exists(obj1, obj2)
-
 
 class FovData(Base):
     """
@@ -74,11 +70,11 @@ class FovData(Base):
     @staticmethod
     def _link(obj1, obj2):
         """
-        Creates a link between the specified FOVdao and ImageDataDao objects.
+        Creates a link between the specified FOVdao and DataDao objects.
         :param obj1: the first object to link
-        :type obj1: FOVdao or ImageDataDao
+        :type obj1: FOVdao or DataDao
         :param obj2: the second object to link
-        :type obj2: ImageDataDao or FOVdao
+        :type obj2: DataDao or FOVdao
         """
         a = FovData()
         if obj1.__class__.__name__ == 'FOVdao':
@@ -90,6 +86,14 @@ class FovData(Base):
 
     @staticmethod
     def link(obj1, obj2):
+        """
+        Checks there the existence of a link between the specified FOVdao and DataDao objects and creates a link
+        (calling the _link method) only if there is no preexisting link.
+        :param obj1: the first object to link
+        :type obj1: FOVdao or DataDao
+        :param obj2: the second object to link
+        :type obj2: DataDao or FOVdao
+        """
         if obj1.__class__.__name__ == 'FOVdao':
             query = obj1.session.query(FovData).filter(FovData.fov == obj1.id_).filter(FovData.data == obj2.id_)
         else:

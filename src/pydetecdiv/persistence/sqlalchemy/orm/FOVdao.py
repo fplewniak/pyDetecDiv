@@ -46,6 +46,13 @@ class FOVdao(DAO, Base):
                 }
 
     def data(self, fov_id):
+        """
+        Returns a list of DataDao objects linked to the FOVdao object with the specified id_
+        :param fov_id: the id_ of the FOV
+        :type fov_id: int
+        :return: the list of Data records linked to the FOV
+        :type: list of dict
+        """
         return [i.record
                 for i in self.session.query(dao.DataDao)
                 .filter(FovData.data == dao.DataDao.id_)

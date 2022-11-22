@@ -3,10 +3,8 @@
 """
 Access to ROI data
 """
-from sqlalchemy import Column, Integer, String, ForeignKey, text, Date
-from sqlalchemy.orm import joinedload, relationship
+from sqlalchemy import Column, String, ForeignKey
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
-import pydetecdiv.persistence.sqlalchemy.orm.dao as dao
 
 
 class DatasetDao(DAO, Base):

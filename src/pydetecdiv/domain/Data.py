@@ -3,15 +3,12 @@
 """
  A class defining the business logic methods that can be applied to Regions Of Interest
 """
-from collections import namedtuple
-from pandas import DataFrame
 from pydetecdiv.domain.dso import NamedDSO
-from pydetecdiv.domain.ROI import ROI
 
 
 class Data(NamedDSO):
     """
-    A business-logic class defining valid operations and attributes of 5D Image data related to ROIs
+    A business-logic class defining valid operations and attributes of data
     """
 
     def __init__(self, uuid, dataset, author, date, url, format_, source_dir, meta_data, key_val, **kwargs):
@@ -29,33 +26,32 @@ class Data(NamedDSO):
 
     def check_validity(self):
         """
-        Checks the current ImageData object is valid and consistent with its image content. If
+        Checks the current Data object is valid and consistent with its image content. If
         not, the shape values are updated
         """
         ...
 
     def validate(self, updated=True):
         """
-        Validates the current FOV and checks whether it is associated with an initial ROI. If not, the initial ROI is
-        created
-        :param updated: True if the FOV has been updated, False otherwise
+        Validates the current Data
+        :param updated: True if the Data has been updated, False otherwise
         :type updated: bool
         """
-        super().validate(updated)
+        ...
 
     @property
     def fov_list(self):
         """
-        Returns the list of ROI objects associated to the current Image data
-        :return: the list of associated ROIs
-        :rtype: list of ROI objects
+        Returns the list of FOV objects associated to the current data
+        :return: the list of associated FOVs
+        :rtype: list of FOV objects
         """
         return self.project.get_linked_objects('FOV', to=self)
 
 
     def record(self, no_id=False):
         """
-        Returns a record dictionary of the current ROI
+        Returns a record dictionary of the current Data
         :param no_id: if True, the id_ is not passed included in the record to allow transfer from one project to
         another
         :type no_id: bool
