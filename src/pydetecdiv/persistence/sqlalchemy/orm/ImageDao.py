@@ -21,6 +21,7 @@ class ImageDao(DAO, Base):
     translate = {'drift': ('x_drift', 'y_drift'), 'location': {}}
 
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
+    uuid = Column(String(36),)
     image_data = Column(Integer, ForeignKey('ImageData.id_'), nullable=False, index=True)
     x_drift = Column(Integer, nullable=False, server_default=text('0'))
     y_drift = Column(Integer, nullable=False, server_default=text('0'))
@@ -78,4 +79,5 @@ class ImageDao(DAO, Base):
                 'location': tuple(self.__getattribute__(v) for v in self.order),
                 'order': self.order,
                 'mimetype': self.mimetype,
+                'uuid': self.uuid,
                 }

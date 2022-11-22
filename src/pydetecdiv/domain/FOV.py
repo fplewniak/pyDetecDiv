@@ -55,7 +55,8 @@ class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
             'comments': self.comments,
             'top_left': self.top_left,
             'bottom_right': self.bottom_right,
-            'size': self.size
+            'size': self.size,
+            'uuid': self.uuid
         }
         if not no_id:
             record['id_'] = self.id_

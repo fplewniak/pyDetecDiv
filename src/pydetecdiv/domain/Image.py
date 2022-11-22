@@ -251,6 +251,7 @@ class Image(DomainSpecificObject):
             'location': self._location,
             'order': self._order,
             'mimetype': self._mimetype,
+            'uuid': self.uuid
         }
         if not no_id:
             record['id_'] = self.id_

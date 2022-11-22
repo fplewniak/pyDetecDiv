@@ -25,7 +25,6 @@ class DataDao(DAO, Base):
     source_dir = Column(String)
     meta_data = Column(String)
     key_val = Column(String)
-    # fov = Column(Integer, ForeignKey('FOV.id_'), index=True)
 
     fov_list_ = FovData.data_to_fov()
 

@@ -4,6 +4,7 @@
 Domain specific generic attributes and methods shared by all domain objects. Other domain classes (except Project)
 should inherit from this class
 """
+import uuid
 from pydetecdiv.exceptions import MissingNameError
 from pydetecdiv.utils.Shapes import Box
 
@@ -26,6 +27,11 @@ class DomainSpecificObject:
             self.id_ = None
         else:
             self.id_ = kwargs['id_']
+
+        if 'uuid' not in kwargs:
+            self.uuid = str(uuid.uuid4())
+        else:
+            self.uuid = kwargs['uuid']
         self.data = kwargs
 
     def __eq__(self, o):

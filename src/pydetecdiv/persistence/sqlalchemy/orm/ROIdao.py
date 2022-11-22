@@ -24,6 +24,7 @@ class ROIdao(DAO, Base):
     y0_ = Column(Integer, nullable=False, server_default=text('0'))
     x1_ = Column(Integer, nullable=False, server_default=text('-1'))
     y1_ = Column(Integer, nullable=False, server_default=text('-1'))
+    uuid = Column(String(36))
 
     image_data_list = relationship('ImageDataDao')
 
@@ -40,7 +41,8 @@ class ROIdao(DAO, Base):
                 'fov': self.fov,
                 'top_left': (self.x0_, self.y0_),
                 'bottom_right': (self.x1_, self.y1_),
-                'size': (self.x1_ - self.x0_ + 1, self.y1_ - self.y0_ + 1)
+                'size': (self.x1_ - self.x0_ + 1, self.y1_ - self.y0_ + 1),
+                'uuid': self.uuid
                 }
 
     def image_data(self, roi_id):

@@ -24,6 +24,7 @@ class FOVdao(DAO, Base):
     comments = Column(String)
     xsize = Column(Integer, nullable=False, server_default=text('1000'))
     ysize = Column(Integer, nullable=False, server_default=text('1000'))
+    uuid = Column(String(36))
 
     roi_list_ = relationship('ROIdao')
 
@@ -43,6 +44,7 @@ class FOVdao(DAO, Base):
                 'top_left': (0, 0),
                 'bottom_right': (self.xsize - 1, self.ysize - 1),
                 'size': (self.xsize, self.ysize),
+                'uuid': self.uuid
                 }
 
     def data(self, fov_id):

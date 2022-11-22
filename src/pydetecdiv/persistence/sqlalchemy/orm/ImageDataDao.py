@@ -18,6 +18,7 @@ class ImageDataDao(DAO, Base):
     translate = {'shape': {}}
 
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
+    uuid = Column(String(36),)
     roi = Column(Integer, ForeignKey('ROI.id_'), nullable=False, index=True)
     name = Column(String, )
     x = Column(Integer, nullable=False, server_default=text('1000'))
@@ -73,4 +74,5 @@ class ImageDataDao(DAO, Base):
                 'stack_interval': self.stack_interval,
                 'frame_interval': self.frame_interval,
                 'orderdims': self.orderdims,
+                'uuid': self.uuid,
                 }

@@ -59,7 +59,6 @@ class Data(NamedDSO):
         :rtype: dict
         """
         record = {
-            'uuid': self.uuid,
             'name': self.name,
             'dataset': self.dataset,
             'author': self.author,
@@ -68,7 +67,8 @@ class Data(NamedDSO):
             'format_': self.format_,
             'source_dir': self.source_dir,
             'meta_data': self.meta_data,
-            'key_val': self.key_val
+            'key_val': self.key_val,
+            'uuid': self.uuid
         }
         if not no_id:
             record['id_'] = self.id_

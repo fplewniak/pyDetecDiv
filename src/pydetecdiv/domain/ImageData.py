@@ -152,6 +152,7 @@ class ImageData(NamedDSO):
             'stack_interval': self.stack_interval,
             'frame_interval': self.frame_interval,
             'orderdims': self.orderdims,
+            'uuid': self.uuid
         }
         if not no_id:
             record['id_'] = self.id_
