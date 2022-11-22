@@ -5,7 +5,7 @@ Access to ROI data
 """
 from sqlalchemy import Column, Integer, String, ForeignKey, UniqueConstraint, text
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
-import pydetecdiv.persistence.sqlalchemy.orm.dao as dao
+from pydetecdiv.persistence.sqlalchemy.orm import dao
 
 
 class ImageDao(DAO, Base):

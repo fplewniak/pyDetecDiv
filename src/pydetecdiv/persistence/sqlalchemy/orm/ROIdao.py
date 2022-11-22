@@ -6,7 +6,7 @@ Access to ROI data
 from sqlalchemy import Column, Integer, String, ForeignKey, text
 from sqlalchemy.orm import joinedload, relationship
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
-import pydetecdiv.persistence.sqlalchemy.orm.dao as dao
+from pydetecdiv.persistence.sqlalchemy.orm import dao
 
 
 class ROIdao(DAO, Base):

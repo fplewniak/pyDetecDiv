@@ -7,7 +7,7 @@ import itertools
 from sqlalchemy import Column, Integer, String, text, select
 from sqlalchemy.orm import relationship, joinedload
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
-import pydetecdiv.persistence.sqlalchemy.orm.dao as dao
+from pydetecdiv.persistence.sqlalchemy.orm import dao
 from pydetecdiv.persistence.sqlalchemy.orm.associations import FovData
 
 
