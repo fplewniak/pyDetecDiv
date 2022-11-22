@@ -787,7 +787,7 @@ class SQLiteMetadataService(LocalMetadataService):
                                  run=dataset.run)
 
             statement = sqlalchemy.text(
-                'UPDATE dataset SET (uuid, name, type, run) = (:uuid, :name, :type_, :run)  WHERE uuid = :uuid'
+                'UPDATE dataset SET (uuid, name, type_, run) = (:uuid, :name, :type_, :run)  WHERE uuid = :uuid'
             )
             self.session.connection().execute(statement,
                                  uuid=dataset.uuid,
