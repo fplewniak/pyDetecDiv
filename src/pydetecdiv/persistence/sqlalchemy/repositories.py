@@ -254,6 +254,20 @@ class ShallowSQLite3(ShallowDb):
 
         return linked_records
 
+    def _get_dao(self, class_name, id_=None):
+        """
+        A method returning a DAO of a given class from its id
+        :param class_name: the class name of object to get the record of
+        :type class_name: str
+        :param id_: the id of the requested object
+        :type id_: int
+        :return: the DAO
+        :rtype: object
+        """
+        obj = self.session.get(dao[class_name], id_)
+        obj.session = self.session
+        return obj
+
     def link(self, class1_name, id_1, class2_name, id_2):
         """
         Create a link between two domain-specific objects. There must be a direct link defined in Linker class,
@@ -267,8 +281,8 @@ class ShallowSQLite3(ShallowDb):
         :param id_2: the id of the second object to link
         :type id_2: int
         """
-        obj1 = self.session.get(dao[class1_name], id_1)
-        obj2 = self.session.get(dao[class2_name], id_2)
+        obj1 = self._get_dao(class1_name, id_1)
+        obj2 = self._get_dao(class2_name, id_2)
         Linker.link(obj1, obj2)
 
     def unlink(self, class1_name, id_1, class2_name, id_2):

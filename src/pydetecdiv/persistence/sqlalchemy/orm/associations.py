@@ -12,6 +12,7 @@ class Linker:
     """
     A class providing methods for linking two Data access objects.
     """
+
     @staticmethod
     def association(class1_name, class2_name):
         """
@@ -36,6 +37,10 @@ class Linker:
         :type obj2: DAO
         """
         Linker.association(obj1.__class__.__name__, obj2.__class__.__name__).link(obj1, obj2)
+
+    @staticmethod
+    def link_exists(obj1, obj2):
+        Linker.association(obj1.__class__.__name__, obj2.__class__.__name__).link_exists(obj1, obj2)
 
 
 class FovData(Base):
@@ -67,7 +72,7 @@ class FovData(Base):
         return relationship("FovData", back_populates='data_', lazy='joined')
 
     @staticmethod
-    def link(obj1, obj2):
+    def _link(obj1, obj2):
         """
         Creates a link between the specified FOVdao and ImageDataDao objects.
         :param obj1: the first object to link
@@ -82,6 +87,15 @@ class FovData(Base):
         else:
             a.fov_ = obj2
             obj1.fov_list_.append(a)
+
+    @staticmethod
+    def link(obj1, obj2):
+        if obj1.__class__.__name__ == 'FOVdao':
+            query = obj1.session.query(FovData).filter(FovData.fov == obj1.id_).filter(FovData.data == obj2.id_)
+        else:
+            query = obj1.session.query(FovData).filter(FovData.fov == obj2.id_).filter(FovData.data == obj1.id_)
+        if query.first() is None:
+            FovData._link(obj1, obj2)
 
     @property
     def record(self):
