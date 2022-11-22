@@ -71,10 +71,12 @@ class Project:
         for fov_name in df.FOV.drop_duplicates().values:
             if fov_name not in fov_names:
                 FOV(project=self, name=fov_name, top_left=(0, 0), bottom_right=(999, 999))
-        id_mapping={fov.name: fov.id_ for fov in self.get_objects('FOV')}
-        df['FOV'] = df['FOV'].map(id_mapping)
+        df['FOV'] = df['FOV'].map(self.id_mapping('FOV'))
         for data_id, fov_id in df.values:
             self.link_objects(self.get_object('FOV', int(fov_id)), self.get_object('Data', int(data_id)))
+
+    def id_mapping(self, class_name):
+        return {obj.name: obj.id_ for obj in self.get_objects(class_name)}
 
     def save_record(self, class_name, record):
         """
