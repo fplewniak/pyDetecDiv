@@ -18,7 +18,7 @@ dso_dao_mapping = {
     'FOV': FOVdao,
     'ROI': ROIdao,
     'Experiment': ExperimentDao,
-    'DataSet': DatasetDao,
+    'Dataset': DatasetDao,
     'Data': DataDao,
     'Run': RunDao,
     'ImageData': ImageDataDao,

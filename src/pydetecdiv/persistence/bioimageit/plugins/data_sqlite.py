@@ -240,6 +240,7 @@ class SQLiteMetadataService(LocalMetadataService):
         # create an empty raw dataset
         raw_dataset = Dataset()
         raw_dataset.uuid = generate_uuid()
+        raw_dataset.url = experiment_path
         raw_dataset.md_uri = (experiment_path, raw_dataset.uuid)
         raw_dataset.name = 'data'
         os.mkdir(os.path.join(experiment_path, raw_dataset.name))
@@ -298,13 +299,13 @@ class SQLiteMetadataService(LocalMetadataService):
             container.md_uri = md_uri
             container.uuid, container.name, container.author, container.date, rds = self.session.execute(
                 'SELECT * FROM experiment').fetchone()
-            rds_uuid, rds_name, = self.session.execute(
-                f'SELECT uuid, name FROM dataset where uuid = "{rds}"').fetchone()
-            container.raw_dataset = DatasetInfo(rds_name, (md_uri, rds_uuid), rds_uuid)
+            rds_uuid, rds_url, rds_name, = self.session.execute(
+                f'SELECT uuid, url, name FROM dataset where uuid = "{rds}"').fetchone()
+            container.raw_dataset = DatasetInfo(rds_name, (rds_url, rds_uuid), rds_uuid)
 
-            for pds_uuid, pds_name in self.session.execute(
-                    'SELECT uuid, name FROM dataset where type_ = "processed"').fetchall():
-                container.processed_datasets.append(DatasetInfo(pds_name, (md_uri, pds_uuid), pds_uuid))
+            for pds_uuid, pds_url, pds_name in self.session.execute(
+                    'SELECT uuid, url, name FROM dataset where type_ = "processed"').fetchall():
+                container.processed_datasets.append(DatasetInfo(pds_name, (pds_url, pds_uuid), pds_uuid))
             container.keys = [key[0] for key in
                               self.session.execute('SELECT DISTINCT key FROM json_each(key_val), data').fetchall()]
             return container
@@ -788,7 +789,7 @@ WHERE uuid = :uuid
         try:
             container = Dataset()
 
-            container.uuid, container.name, container.type, container.run = self.session.execute(
+            container.uuid, container.name, container.url, container.type, container.run = self.session.execute(
                 f'SELECT * FROM dataset where uuid = "{md_uri[1]}"').fetchone()
             container.md_uri = md_uri
             container.url = os.path.join(os.path.dirname(md_uri[0]), container.name)
@@ -812,20 +813,22 @@ WHERE uuid = :uuid
         """
         try:
             statement = sqlalchemy.text(
-                'INSERT OR IGNORE INTO dataset VALUES (:uuid, :name, :type_, :run)'
+                'INSERT OR IGNORE INTO dataset VALUES (:uuid, :name, :url, :type_, :run)'
             )
             self.session.connection().execute(statement,
                                  uuid=dataset.uuid,
                                  name=dataset.name,
+                                 url=dataset.url,
                                  type_=dataset.type,
                                  run=dataset.run)
 
             statement = sqlalchemy.text(
-                'UPDATE dataset SET (uuid, name, type_, run) = (:uuid, :name, :type_, :run)  WHERE uuid = :uuid'
+                'UPDATE dataset SET (uuid, name, url, type_, run) = (:uuid, :name, :url, :type_, :run)  WHERE uuid = :uuid'
             )
             self.session.connection().execute(statement,
                                  uuid=dataset.uuid,
                                  name=dataset.name,
+                                 url=dataset.url,
                                  type_=dataset.type,
                                  run=dataset.run)
         except RuntimeError as error:

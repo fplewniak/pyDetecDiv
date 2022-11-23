@@ -20,11 +20,11 @@ class FOVdao(DAO, Base):
     translate = {'size': ('xsize', 'ysize'), }
 
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
+    uuid = Column(String(36))
     name = Column(String, unique=True, nullable=False)
     comments = Column(String)
     xsize = Column(Integer, nullable=False, server_default=text('1000'))
     ysize = Column(Integer, nullable=False, server_default=text('1000'))
-    uuid = Column(String(36))
 
     roi_list_ = relationship('ROIdao')
 

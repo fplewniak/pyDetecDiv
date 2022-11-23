@@ -3,7 +3,7 @@
 """
 Access to ROI data
 """
-from sqlalchemy import Column, String
+from sqlalchemy import Column, Integer, String
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 
 
@@ -13,7 +13,8 @@ class RunDao(DAO, Base):
     """
     __tablename__ = 'run'
 
-    uuid = Column(String(36), primary_key=True)
+    id_ = Column(Integer, primary_key=True, autoincrement='auto')
+    uuid = Column(String(36),)
     process_name = Column(String, nullable=False,)
     process_url = Column(String, nullable=False,)
     inputs = Column(String)
@@ -27,7 +28,8 @@ class RunDao(DAO, Base):
         :return a dataset record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """
-        return {'uuid': self.uuid,
+        return {'id_': self.id_,
+                'uuid': self.uuid,
                 'process_name': self.process_name,
                 'process_url': self.process_url,
                 'inputs': self.inputs,

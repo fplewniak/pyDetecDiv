@@ -39,7 +39,7 @@ class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
         """
         super().validate(updated)
         if self.project.count_links('ROI', to=self) == 0:
-            self.project.save_record('ROI', record={'id_': None, 'name': f'full-{self.name}', 'fov': self.id_,
+            self.project.build_dso('ROI', {'id_': None, 'name': f'full-{self.name}', 'fov': self.id_,
                                                     'top_left': (0, 0), 'bottom_right': (-1, -1)})
 
     def record(self, no_id=False):

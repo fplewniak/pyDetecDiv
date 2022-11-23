@@ -4,6 +4,7 @@
 Access to ROI data
 """
 from sqlalchemy import Column, String, ForeignKey
+from sqlalchemy.orm import relationship, joinedload
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 
 
@@ -15,8 +16,29 @@ class DatasetDao(DAO, Base):
 
     uuid = Column(String(36), primary_key=True)
     name = Column(String, unique=True, nullable=False)
+    url = Column(String)
     type_ = Column(String)
     run = Column(String, ForeignKey('run.uuid'), nullable=True, index=True)
+
+    data_list_ = relationship('DataDao')
+
+    def data_list(self, dataset_id):
+        """
+        A method returning the list of ROI records whose parent FOV has id == fov_id
+        :param fov_id: the id of the FOV
+        :type fov_id: int
+        :return: a list of ROI records with parent FOV id == fov_id
+        :rtype: list
+        """
+        if self.session.query(DatasetDao).filter(DatasetDao.id_ == dataset_id).first() is not None:
+            data_list = [roi.record
+                        for roi in self.session.query(DatasetDao)
+                        .options(joinedload(DatasetDao.data_list_))
+                        .filter(DatasetDao.id_ == dataset_id)
+                        .first().data_list_]
+        else:
+            data_list = []
+        return data_list
 
     @property
     def record(self):
@@ -28,6 +50,7 @@ class DatasetDao(DAO, Base):
         """
         return {'uuid': self.uuid,
                 'name': self.name,
-                'type': self.type_,
+                'url': self.url,
+                'type_': self.type_,
                 'run': self.run
                 }

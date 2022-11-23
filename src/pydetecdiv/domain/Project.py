@@ -12,6 +12,8 @@ from pydetecdiv.domain.ImageData import ImageData
 from pydetecdiv.domain.FOV import FOV
 from pydetecdiv.domain.Data import Data
 from pydetecdiv.domain.Image import Image
+from pydetecdiv.domain.Run import Run
+from pydetecdiv.domain.Dataset import Dataset
 
 
 class Project:
@@ -25,6 +27,8 @@ class Project:
         'ROI': ROI,
         'FOV': FOV,
         'Data': Data,
+        'Dataset': Dataset,
+        'Run': Run,
         'ImageData': ImageData,
         'Image': Image,
     }

@@ -273,6 +273,8 @@ class ShallowSQLite3(ShallowDb):
         if cls_name == 'Data':
             if parent_cls_name in ['FOV']:
                 linked_records = dao[parent_cls_name](self.session).data(parent_id)
+            if parent_cls_name in ['Dataset']:
+                linked_records = dao[parent_cls_name](self.session).data_list(parent_id)
 
         return linked_records
 
