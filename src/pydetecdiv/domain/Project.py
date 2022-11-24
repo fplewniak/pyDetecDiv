@@ -10,6 +10,7 @@ from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.domain.ROI import ROI
 from pydetecdiv.domain.ImageData import ImageData
 from pydetecdiv.domain.FOV import FOV
+from pydetecdiv.domain.Experiment import Experiment
 from pydetecdiv.domain.Data import Data
 from pydetecdiv.domain.Image import Image
 from pydetecdiv.domain.Run import Run
@@ -26,6 +27,7 @@ class Project:
     classes = {
         'ROI': ROI,
         'FOV': FOV,
+        'Experiment': Experiment,
         'Data': Data,
         'Dataset': Dataset,
         'Run': Run,
