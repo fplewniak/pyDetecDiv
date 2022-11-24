@@ -16,7 +16,7 @@ class DomainSpecificObject:
 
     def __init__(self, project=None, **kwargs):
         """
-        Initialization of the object with a link to the Project it belongs to and associated data as a dictionary
+        Initialization of the object with a link to the Project it belongs to and associated _data as a dictionary
         :param project: the project object this object belongs to
         :param **kwargs: a dictionary containing the record used to create the domain-specific object.
         :type project: Project object
@@ -32,7 +32,7 @@ class DomainSpecificObject:
             self.uuid = str(uuid.uuid4())
         else:
             self.uuid = kwargs['uuid']
-        self.data = kwargs
+        self._data = kwargs
 
     def __eq__(self, o):
         """
@@ -77,7 +77,7 @@ class DomainSpecificObject:
         :rtype: dict
         """
         exclude_keys = set(['id_']) if no_id else set()
-        return {k: self.data[k] for k in set(list(self.data.keys())) - set(exclude_keys)}
+        return {k: self._data[k] for k in set(list(self._data.keys())) - set(exclude_keys)}
 
 
 class NamedDSO(DomainSpecificObject):
@@ -171,7 +171,7 @@ class BoxedDSO(DomainSpecificObject):
 
 class DsoWithImageData(DomainSpecificObject):
     """
-    A domain-specific class for objects that are associated with Image data
+    A domain-specific class for objects that are associated with Image _data
     """
 
     @property

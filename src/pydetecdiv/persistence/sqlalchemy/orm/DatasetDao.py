@@ -24,18 +24,18 @@ class DatasetDao(DAO, Base):
 
     def data_list(self, dataset_id):
         """
-        A method returning the list of ROI records whose parent FOV has id == fov_id
-        :param fov_id: the id of the FOV
-        :type fov_id: int
-        :return: a list of ROI records with parent FOV id == fov_id
-        :rtype: list
+        A method returning the list of Data records whose parent Dataset has id_ == dataset_id
+        :param dataset_id: the id of the Dataset
+        :type dataset_id: str
+        :return: a list of Data records whose parent Dataset has id_ == dataset_id
+        :rtype: list of dict
         """
         if self.session.query(DatasetDao).filter(DatasetDao.id_ == dataset_id).first() is not None:
-            data_list = [roi.record
-                        for roi in self.session.query(DatasetDao)
-                        .options(joinedload(DatasetDao.data_list_))
-                        .filter(DatasetDao.id_ == dataset_id)
-                        .first().data_list_]
+            data_list = [data.record
+                         for data in self.session.query(DatasetDao)
+                         .options(joinedload(DatasetDao.data_list_))
+                         .filter(DatasetDao.id_ == dataset_id)
+                         .first().data_list_]
         else:
             data_list = []
         return data_list

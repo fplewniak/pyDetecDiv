@@ -14,7 +14,7 @@ class Data(NamedDSO):
     def __init__(self, uuid, dataset, author, date, url, format_, source_dir, meta_data, key_val, **kwargs):
         super().__init__(**kwargs)
         self.uuid = uuid
-        self.dataset = dataset
+        self.dataset_ = dataset
         self.author = author
         self.date = date
         self.url = url
@@ -40,7 +40,11 @@ class Data(NamedDSO):
         ...
 
     @property
-    def fov_list(self):
+    def dataset(self):
+        return self.project.get_object('Dataset', self.dataset_)
+
+    @property
+    def fov(self):
         """
         Returns the list of FOV objects associated to the current data
         :return: the list of associated FOVs
@@ -60,7 +64,7 @@ class Data(NamedDSO):
         """
         record = {
             'name': self.name,
-            'dataset': self.dataset,
+            'dataset': self.dataset_,
             'author': self.author,
             'date': self.date,
             'url': self.url,

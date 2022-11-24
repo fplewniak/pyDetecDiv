@@ -6,6 +6,9 @@ Access to ROI data
 from sqlalchemy import Column, Integer, String, ForeignKey, Date
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 from pydetecdiv.persistence.sqlalchemy.orm.associations import FovData
+from pydetecdiv.persistence.sqlalchemy.orm import dao
+
+from sqlalchemy.orm import joinedload
 
 
 class DataDao(DAO, Base):
@@ -49,3 +52,26 @@ class DataDao(DAO, Base):
                 'key_val': self.key_val,
                 # 'fov': self.fov
                 }
+
+    def fov_list(self, data_id):
+        """
+        A method returning the list of FOV records whose parent Data has id_ == data_id
+        :param data_id: the id of the Data
+        :type data_id: str
+        :return: a list of FOV records with parent Data has id_ == data_id
+        :rtype: list of dict
+        """
+        if self.session.query(DataDao).filter(DataDao.id_ == data_id).first() is not None:
+            fov_list = [i.record
+                        for i in self.session.query(dao.FOVdao)
+                        .filter(FovData.data == data_id)
+                        .filter(FovData.fov == dao.FOVdao.id_)
+                        ]
+            # Alternative method to retrieve the fov_list:
+            # fov_list = [fov_data.fov_.record for fov_data in self.session.query(DataDao)
+            #             .options(joinedload(DataDao.fov_list_))
+            #             .filter(DataDao.id_ == data_id)
+            #             .first().fov_list_]
+        else:
+            fov_list = []
+        return fov_list

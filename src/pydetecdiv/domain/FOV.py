@@ -77,6 +77,11 @@ class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
         self.validate()
 
     @property
+    def data(self):
+        data = self.project.get_linked_objects('Data', to=self)
+        return data
+
+    @property
     def roi_list(self):
         """
         Returns the list of ROI objects whose parent if the current FOV
