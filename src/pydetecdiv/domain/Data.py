@@ -52,7 +52,6 @@ class Data(NamedDSO):
         """
         return self.project.get_linked_objects('FOV', to=self)
 
-
     def record(self, no_id=False):
         """
         Returns a record dictionary of the current Data

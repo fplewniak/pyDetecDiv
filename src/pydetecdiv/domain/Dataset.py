@@ -34,7 +34,13 @@ class Dataset(NamedDSO):
         """
         ...
 
+    @property
     def data_list(self):
+        """
+        returns the list of data files in dataset
+        :return: list of Data objects
+        :rtype: list of Data objects
+        """
         return self.project.get_linked_objects('Data', to=self)
 
     def record(self, no_id=False):
