@@ -41,7 +41,7 @@ class Experiment(NamedDSO):
         :return: raw dataset
         :rtype: Dataset object
         """
-        return self.project.get_object('Dataset', to=self.raw_dataset_)
+        return self.project.get_object('Dataset', id_=self.raw_dataset_)
 
     def record(self, no_id=False):
         """
