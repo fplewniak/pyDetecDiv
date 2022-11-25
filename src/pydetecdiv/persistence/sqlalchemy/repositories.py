@@ -134,7 +134,7 @@ class ShallowSQLite3(ShallowDb):
         df = self.bioiit_req.data_service.determine_links_using_regex(dataset, source, keys_, regex)
         return df
 
-    def annotate_raw_data(self, source, keys_, regex):
+    def annotate_data(self, dataset_name, source, keys_, regex):
         """
         Returns a DataFrame containing all the metadata associated to raw data, including annotations created using a
         regular expression applied to a field or a combination thereof.
@@ -147,8 +147,8 @@ class ShallowSQLite3(ShallowDb):
         :return: a table of all the metadata associated to raw data
         :rtype: pandas DataFrame
         """
-        dataset = self.bioiit_req.get_dataset(self.bioiit_exp, 'data')
-        df = self.bioiit_req.data_service.create_annotations_using_regex(self.bioiit_exp, dataset, source, keys_, regex)
+        dataset = self.bioiit_req.get_dataset(self.bioiit_exp, dataset_name)
+        df = self.bioiit_req.data_service.create_annotations_using_regex(dataset, source, keys_, regex)
         return pandas.DataFrame([json.loads(k) for k in df.key_val]).join(df.drop(labels='key_val', axis=1))
 
     def save_object(self, class_name, record):

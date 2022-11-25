@@ -40,6 +40,38 @@ class Project:
         self.dbname = dbname
         self.pool = defaultdict(DomainSpecificObject)
 
+    @property
+    def uuid(self):
+        """
+        Property returning the uuid associated to this project
+        :return:
+        """
+        return self.get_objects('Experiment')[0].uuid
+
+    @property
+    def author(self):
+        """
+        Property returning the author associated to this project
+        :return:
+        """
+        return self.get_objects('Experiment')[0].author
+
+    @property
+    def date(self):
+        """
+        Property returning the date of this project
+        :return:
+        """
+        return self.get_objects('Experiment')[0].date
+
+    @property
+    def raw_dataset(self):
+        """
+        Property returning the raw dataset object associated to this project
+        :return:
+        """
+        return self.get_objects('Experiment')[0].raw_dataset
+
     def commit(self):
         """
         Commit operations performed on objects (creation and update) to save them into the repository.
@@ -61,6 +93,23 @@ class Project:
         self.repository.import_images(source_path)
         self.commit()
 
+    def annotate(self, dataset, source, columns, regex):
+        """
+        Annotate data in a dataset using a regular expression applied to columns specified by source (column name or
+        callable returning a str built from column names)
+        :param dataset: the dataset DSO whose data should be annotated
+        :type dataset: Dataset object
+        :param source: source column(s) used to determine the annotations
+        :type source: str or callable
+        :param columns: annotation columns to add to the dataframe representing Data objects
+        :type columns: tuple of str
+        :param regex: the regular expression defining columns
+        :type regex: str
+        :return: a table representing annotated Data objects
+        :rtype: pandas DataFrame
+        """
+        return self.repository.annotate_data(dataset.name, source, columns, regex)
+
     def create_fov_from_raw_data(self, source, regex):
         """
         Create domain-specific objects from raw data using a regular expression applied to a bioimageit database field
@@ -72,7 +121,7 @@ class Project:
         :param regex: regular expression defining the DSOs' names
         :type regex: regular expression str
         """
-        df = self.repository.determine_fov(source, regex)
+        df = self.annotate(self.raw_dataset, source, ('FOV',), regex).loc[:, ['id_', 'FOV']]
         fov_names = [f.name for f in self.get_objects('FOV')]
         for fov_name in df.FOV.drop_duplicates().values:
             if fov_name not in fov_names:
