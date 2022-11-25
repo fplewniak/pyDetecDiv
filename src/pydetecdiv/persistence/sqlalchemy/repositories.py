@@ -138,6 +138,8 @@ class ShallowSQLite3(ShallowDb):
         """
         Returns a DataFrame containing all the metadata associated to raw data, including annotations created using a
         regular expression applied to a field or a combination thereof.
+        :param dataset_name: name of dataset to annotate
+        :type dataset_name: str
         :param source: the database field or combination of fields to apply the regular expression to
         :type source: str or callable returning a str
         :param keys_: the list of classes created objects belong to
