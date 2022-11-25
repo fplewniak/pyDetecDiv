@@ -258,16 +258,16 @@ class ShallowSQLite3(ShallowDb):
         if cls_name == 'FOV':
             if parent_cls_name in ['ROI']:
                 linked_records = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['fov'])]
-            if parent_cls_name in ['Image', 'ImageData', ]:
+            if parent_cls_name in ['Image', 'ImageData']:
                 linked_records = dao[parent_cls_name](self.session).fov(parent_id)
-            if parent_cls_name in ['Data', ]:
+            if parent_cls_name in ['Data']:
                 linked_records = dao[parent_cls_name](self.session).fov_list(parent_id)
         if cls_name == 'ROI':
-            if parent_cls_name in ['ImageData',]:
+            if parent_cls_name in ['ImageData']:
                 linked_records = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['roi'])]
-            if parent_cls_name in ['FOV', ]:
+            if parent_cls_name in ['FOV']:
                 linked_records = dao[parent_cls_name](self.session).roi_list(parent_id)
-            if parent_cls_name in ['Image', ]:
+            if parent_cls_name in ['Image']:
                 linked_records = dao[parent_cls_name](self.session).roi(parent_id)
         if cls_name == 'Image':
             if parent_cls_name in ['ImageData', 'FOV', 'ROI']:
