@@ -15,6 +15,7 @@ import glob
 import platform
 import os
 import os.path
+from datetime import datetime
 import json
 import re
 from shutil import copyfile
@@ -59,15 +60,17 @@ class SQLiteMetadataService(LocalMetadataService):
 
     def __init__(self):
         self.service_name = 'SQLiteMetadataService'
+        self.repository = None
         self.session = None
 
-    def connect_to_session(self, session):
+    def connect_to_session(self, session, repository):
         """
         Associate an open SQLite session to the data service
         :param session: A SQLite session
         :type session: sqlalchemy.orm.session.Session
         """
         self.session = session
+        self.repository = repository
 
     def determine_links_using_regex(self, dataset, source, keys_, regex):
         """
@@ -198,6 +201,7 @@ class SQLiteMetadataService(LocalMetadataService):
         if keys is None:
             keys = []
         container = Experiment()
+        container.id_ = None
         container.uuid = generate_uuid()
         container.name = name
         container.author = author
@@ -320,25 +324,34 @@ class SQLiteMetadataService(LocalMetadataService):
             Container of the experiment metadata
 
         """
-        statement = sqlalchemy.text('INSERT OR IGNORE INTO experiment VALUES (:uuid,:name,:author,:date,:raw_dataset)')
-        self.session.connection().execute(statement,
-                                          uuid=experiment.uuid,
-                                          name=experiment.name,
-                                          author=experiment.author,
-                                          date=experiment.date,
-                                          raw_dataset=experiment.raw_dataset.uuid)
-
-        statement = sqlalchemy.text("""
-        UPDATE experiment 
-        SET (uuid, name, author, date, raw_dataset) = (:uuid,:name,:author,:date,:raw_dataset)
-        WHERE uuid = :uuid
-        """)
-        self.session.connection().execute(statement,
-                                          uuid=experiment.uuid,
-                                          name=experiment.name,
-                                          author=experiment.author,
-                                          date=experiment.date,
-                                          raw_dataset=experiment.raw_dataset.uuid)
+        record = {
+            'id_': experiment.id_,
+            'uuid': experiment.uuid,
+            'name': experiment.name,
+            'author': experiment.author,
+            'date': datetime.datetime.now() if experiment.date == 'now' else datetime.fromisoformat(experiment.date),
+            'raw_dataset': experiment.raw_dataset.uuid,
+        }
+        self.repository.save_object('Experiment', record)
+        # statement = sqlalchemy.text('INSERT OR IGNORE INTO experiment VALUES (:uuid,:name,:author,:date,:raw_dataset)')
+        # self.session.connection().execute(statement,
+        #                                   uuid=experiment.uuid,
+        #                                   name=experiment.name,
+        #                                   author=experiment.author,
+        #                                   date=experiment.date,
+        #                                   raw_dataset=experiment.raw_dataset.uuid)
+        #
+        # statement = sqlalchemy.text("""
+        # UPDATE experiment
+        # SET (uuid, name, author, date, raw_dataset) = (:uuid,:name,:author,:date,:raw_dataset)
+        # WHERE uuid = :uuid
+        # """)
+        # self.session.connection().execute(statement,
+        #                                   uuid=experiment.uuid,
+        #                                   name=experiment.name,
+        #                                   author=experiment.author,
+        #                                   date=experiment.date,
+        #                                   raw_dataset=experiment.raw_dataset.uuid)
 
     def import_data(self, experiment, data_path, name, author, format_, date='now', key_value_pairs=dict):
         """import one data to the experiment
@@ -659,16 +672,16 @@ class SQLiteMetadataService(LocalMetadataService):
             VALUES (:uuid, :name, :dataset, :author, :date, :uri, :format_, :source_dir, :metadata, :key_val)
             """)
             self.session.connection().execute(statement,
-                                 uuid=raw_data.uuid,
-                                 name=raw_data.name,
-                                 dataset=raw_data.dataset,
-                                 author=raw_data.author,
-                                 date=raw_data.date,
-                                 uri=raw_data.uri,
-                                 format_=raw_data.format,
-                                 source_dir=raw_data.source_dir,
-                                 metadata=str(raw_data.metadata),
-                                 key_val=json.dumps(raw_data.key_value_pairs))
+                                              uuid=raw_data.uuid,
+                                              name=raw_data.name,
+                                              dataset=raw_data.dataset,
+                                              author=raw_data.author,
+                                              date=raw_data.date,
+                                              uri=raw_data.uri,
+                                              format_=raw_data.format,
+                                              source_dir=raw_data.source_dir,
+                                              metadata=str(raw_data.metadata),
+                                              key_val=json.dumps(raw_data.key_value_pairs))
 
             statement = sqlalchemy.text(
                 """
@@ -678,16 +691,16 @@ SET (uuid, name, dataset, author, date, url, format, source_dir, meta_data, key_
 WHERE uuid = :uuid
             """)
             self.session.connection().execute(statement,
-                                 uuid=raw_data.uuid,
-                                 name=raw_data.name,
-                                 dataset=raw_data.dataset,
-                                 author=raw_data.author,
-                                 date=raw_data.date,
-                                 uri=raw_data.uri,
-                                 format_=raw_data.format,
-                                 source_dir=raw_data.source_dir,
-                                 metadata=str(raw_data.metadata),
-                                 key_val=json.dumps(raw_data.key_value_pairs))
+                                              uuid=raw_data.uuid,
+                                              name=raw_data.name,
+                                              dataset=raw_data.dataset,
+                                              author=raw_data.author,
+                                              date=raw_data.date,
+                                              uri=raw_data.uri,
+                                              format_=raw_data.format,
+                                              source_dir=raw_data.source_dir,
+                                              metadata=str(raw_data.metadata),
+                                              key_val=json.dumps(raw_data.key_value_pairs))
         except RuntimeError as error:
             raise DataServiceError('Could not update raw data') from error
 
@@ -735,16 +748,16 @@ WHERE uuid = :uuid
                         VALUES (:uuid, :name, :dataset, :author, :date, :uri, :format_, :source_dir, :metadata, :key_val)
                         """)
             self.session.execute(self.session.connection().execute(statement,
-                                                      uuid=processed_data.uuid,
-                                                      name=processed_data.name,
-                                                      dataset=processed_data.dataset,
-                                                      author=processed_data.author,
-                                                      date=processed_data.date,
-                                                      uri=processed_data.uri,
-                                                      format_=processed_data.format,
-                                                      source_dir=processed_data.source_dir,
-                                                      metadata=str(processed_data.metadata),
-                                                      key_val=json.dumps(processed_data.key_value_pairs))
+                                                                   uuid=processed_data.uuid,
+                                                                   name=processed_data.name,
+                                                                   dataset=processed_data.dataset,
+                                                                   author=processed_data.author,
+                                                                   date=processed_data.date,
+                                                                   uri=processed_data.uri,
+                                                                   format_=processed_data.format,
+                                                                   source_dir=processed_data.source_dir,
+                                                                   metadata=str(processed_data.metadata),
+                                                                   key_val=json.dumps(processed_data.key_value_pairs))
                                  )
             statement = sqlalchemy.text(
                 """
@@ -754,16 +767,16 @@ SET (uuid, name, dataset, author, date, url, format, source_dir, meta_data, key_
 WHERE uuid = :uuid
             """)
             self.session.connection().execute(statement,
-                                 uuid=processed_data.uuid,
-                                 name=processed_data.name,
-                                 dataset=processed_data.dataset,
-                                 author=processed_data.author,
-                                 date=processed_data.date,
-                                 uri=processed_data.uri,
-                                 format_=processed_data.format,
-                                 source_dir=processed_data.source_dir,
-                                 metadata=str(processed_data.metadata),
-                                 key_val=json.dumps(processed_data.key_value_pairs))
+                                              uuid=processed_data.uuid,
+                                              name=processed_data.name,
+                                              dataset=processed_data.dataset,
+                                              author=processed_data.author,
+                                              date=processed_data.date,
+                                              uri=processed_data.uri,
+                                              format_=processed_data.format,
+                                              source_dir=processed_data.source_dir,
+                                              metadata=str(processed_data.metadata),
+                                              key_val=json.dumps(processed_data.key_value_pairs))
         except RuntimeError as error:
             raise DataServiceError('Could not update processed data') from error
 
@@ -816,23 +829,24 @@ WHERE uuid = :uuid
                 'INSERT OR IGNORE INTO dataset VALUES (:uuid, :name, :url, :type_, :run)'
             )
             self.session.connection().execute(statement,
-                                 uuid=dataset.uuid,
-                                 name=dataset.name,
-                                 url=dataset.url,
-                                 type_=dataset.type,
-                                 run=dataset.run)
+                                              uuid=dataset.uuid,
+                                              name=dataset.name,
+                                              url=dataset.url,
+                                              type_=dataset.type,
+                                              run=dataset.run)
 
             statement = sqlalchemy.text(
                 'UPDATE dataset SET (uuid, name, url, type_, run) = (:uuid, :name, :url, :type_, :run)  WHERE uuid = :uuid'
             )
             self.session.connection().execute(statement,
-                                 uuid=dataset.uuid,
-                                 name=dataset.name,
-                                 url=dataset.url,
-                                 type_=dataset.type,
-                                 run=dataset.run)
+                                              uuid=dataset.uuid,
+                                              name=dataset.name,
+                                              url=dataset.url,
+                                              type_=dataset.type,
+                                              run=dataset.run)
         except RuntimeError as error:
             raise DataServiceError('Could not update dataset') from error
+
     # md_uri = os.path.abspath(dataset.md_uri)
     # metadata = dict()
     # metadata['uuid'] = dataset.uuid
@@ -844,7 +858,6 @@ WHERE uuid = :uuid
     #         SQLiteMetadataService.relative_path(uri.md_uri, md_uri))
     #     metadata['urls'].append({"uuid": uri.uuid, 'url': tmp_url})
     # self._write_json(metadata, md_uri)
-
 
     def create_dataset(self, experiment, dataset_name):
         """Create a processed dataset in an experiment
@@ -883,7 +896,6 @@ WHERE uuid = :uuid
 
         return container
 
-
     def create_run(self, dataset, run_info):
         """Create a new run metadata
 
@@ -918,7 +930,6 @@ WHERE uuid = :uuid
         self._write_run(run_info)
         return run_info
 
-
     def get_dataset_runs(self, dataset):
         """Read the run metadata from a dataset
 
@@ -933,7 +944,6 @@ WHERE uuid = :uuid
         """
         run_uri = (dataset.md_uri[0], dataset.run)
         return [self.get_run(run_uri)]
-
 
     def get_run(self, md_uri):
         """Read a run metadata from the data base
@@ -972,7 +982,6 @@ WHERE uuid = :uuid
         except RuntimeError as error:
             raise DataServiceError('Run not found') from error
 
-
     def _write_run(self, run):
         """Write a run metadata to the data base
 
@@ -997,11 +1006,11 @@ WHERE uuid = :uuid
                 'INSERT OR IGNORE INTO run VALUES (:uuid, :process_name, :process_url, :inputs, :parameters)'
             )
             self.session.connection().execute(statement,
-                                 uuid=run.uuid,
-                                 process_name=run.process_name,
-                                 process_url=run_process_url,
-                                 inputs=json.dumps(run_inputs),
-                                 parameters=json.dumps(run_parameters))
+                                              uuid=run.uuid,
+                                              process_name=run.process_name,
+                                              process_url=run_process_url,
+                                              inputs=json.dumps(run_inputs),
+                                              parameters=json.dumps(run_parameters))
 
             statement = sqlalchemy.text(
                 """
@@ -1011,11 +1020,11 @@ WHERE uuid = :uuid
                 """
             )
             self.session.connection().execute(statement,
-                                 uuid=run.uuid,
-                                 process_name=run.process_name,
-                                 process_url=run_process_url,
-                                 inputs=json.dumps(run_inputs),
-                                 parameters=json.dumps(run_parameters))
+                                              uuid=run.uuid,
+                                              process_name=run.process_name,
+                                              process_url=run_process_url,
+                                              inputs=json.dumps(run_inputs),
+                                              parameters=json.dumps(run_parameters))
         except RuntimeError as error:
             raise DataServiceError('Could not write run metadata') from error
 
@@ -1037,10 +1046,8 @@ WHERE uuid = :uuid
         #         {'name': parameter.name, 'value': parameter.value}
         #     )
 
-
     def get_data_uri(self, data_container):
         return data_container.uri.replace('\\', '\\\\')
-
 
     def create_data_uri(self, dataset, run, processed_data):
         """Create the URI of the new data
@@ -1066,7 +1073,6 @@ WHERE uuid = :uuid
         processed_data.uri = os.path.join(dataset_dir,
                                           dataset.name, f"{processed_data.name}.{extension}").replace('\\', '\\\\')
         return processed_data
-
 
     def create_data(self, dataset, run, processed_data):
         """Create a new processed data for a given dataset
@@ -1109,13 +1115,11 @@ WHERE uuid = :uuid
 
         return processed_data
 
-
     def download_data(self, md_uri, destination_file_uri):
         if destination_file_uri == '':
             raw_data = self.get_raw_data(md_uri)
             return raw_data.uri
         return destination_file_uri
-
 
     def view_data(self, md_uri):
         raw_data = self.get_raw_data(md_uri)

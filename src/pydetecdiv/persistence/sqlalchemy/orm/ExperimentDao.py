@@ -3,7 +3,7 @@
 """
 Access to ROI data
 """
-from sqlalchemy import Column, String, ForeignKey, Date
+from sqlalchemy import Column, String, Integer, ForeignKey, Date
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 
 
@@ -13,7 +13,8 @@ class ExperimentDao(DAO, Base):
     """
     __tablename__ = 'experiment'
 
-    uuid = Column(String(36), primary_key=True)
+    id_ = Column(Integer, primary_key=True, autoincrement='auto')
+    uuid = Column(String(36),)
     name = Column(String, unique=True, nullable=False)
     author = Column(String)
     date = Column(Date)
@@ -27,7 +28,8 @@ class ExperimentDao(DAO, Base):
         :return a data record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """
-        return {'uuid': self.uuid,
+        return {'id_': self.id_,
+                'uuid': self.uuid,
                 'name': self.name,
                 'author': self.author,
                 'date': self.date,
