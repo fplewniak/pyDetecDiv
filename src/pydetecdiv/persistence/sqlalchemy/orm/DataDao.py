@@ -14,6 +14,8 @@ class DataDao(DAO, Base):
     DAO class for access to BioImageIT data records from the SQL database
     """
     __tablename__ = 'data'
+    exclude = ['id_']
+    translate = {}
 
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
     uuid = Column(String(36))

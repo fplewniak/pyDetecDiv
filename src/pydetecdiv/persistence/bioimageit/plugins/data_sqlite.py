@@ -231,30 +231,22 @@ class SQLiteMetadataService(LocalMetadataService):
                 'directory already exists'
             )
 
-        # # create the SQLite3 database
-        # container.md_uri = os.path.join(experiment_path, f'{container.name}.db')
-        # try:
-        #     statements = re.split(r';\s*$', self.sqlite_db_creation_script(), flags=re.MULTILINE)
-        #     for statement in statements:
-        #         if statement:
-        #             self.session.execute(sqlalchemy.text(statement))
-        # except sqlalchemy.exc.OperationalError as exc:
-        #     print(exc)
-
         # create an empty raw dataset
         raw_dataset = Dataset()
+        raw_dataset.id_ = None
         raw_dataset.uuid = generate_uuid()
         raw_dataset.url = experiment_path
-        raw_dataset.md_uri = (experiment_path, raw_dataset.uuid)
+        raw_dataset.md_uri = (experiment_path, raw_dataset.id_)
         raw_dataset.name = 'data'
         os.mkdir(os.path.join(experiment_path, raw_dataset.name))
         raw_dataset.type = METADATA_TYPE_RAW
         raw_dataset.format = None
         raw_dataset.run = None
 
-        self.update_dataset(raw_dataset)
+        raw_dataset.md_uri = self.update_dataset(raw_dataset)
         container.raw_dataset = DatasetInfo(raw_dataset.name, raw_dataset.md_uri,
                                             raw_dataset.uuid)
+        container.raw_dataset.id_ = raw_dataset.md_uri
 
         # save the experiment metadata in SQLite3 database
         self.update_experiment(container)
@@ -297,15 +289,16 @@ class SQLiteMetadataService(LocalMetadataService):
         Experiment container with the experiment metadata
 
         """
-        md_uri = os.path.abspath(md_uri)
-        if os.path.isfile(md_uri):
+        #md_uri = os.path.abspath(md_uri)
+        experiment_path = os.path.join(ConfigAccess.instance().config['workspace'], md_uri)
+        if os.path.isdir(experiment_path):
             container = Experiment()
             container.md_uri = md_uri
-            container.uuid, container.name, container.author, container.date, rds = self.session.execute(
+            container.id_, container.uuid, container.name, container.author, container.date, rds = self.session.execute(
                 'SELECT * FROM experiment').fetchone()
             rds_uuid, rds_url, rds_name, = self.session.execute(
-                f'SELECT uuid, url, name FROM dataset where uuid = "{rds}"').fetchone()
-            container.raw_dataset = DatasetInfo(rds_name, (rds_url, rds_uuid), rds_uuid)
+                f'SELECT uuid, url, name FROM dataset where id_ = "{rds}"').fetchone()
+            container.raw_dataset = DatasetInfo(rds_name, rds, rds_uuid)
 
             for pds_uuid, pds_url, pds_name in self.session.execute(
                     'SELECT uuid, url, name FROM dataset where type_ = "processed"').fetchall():
@@ -330,28 +323,9 @@ class SQLiteMetadataService(LocalMetadataService):
             'name': experiment.name,
             'author': experiment.author,
             'date': datetime.datetime.now() if experiment.date == 'now' else datetime.fromisoformat(experiment.date),
-            'raw_dataset': experiment.raw_dataset.uuid,
+            'raw_dataset': experiment.raw_dataset.id_,
         }
         self.repository.save_object('Experiment', record)
-        # statement = sqlalchemy.text('INSERT OR IGNORE INTO experiment VALUES (:uuid,:name,:author,:date,:raw_dataset)')
-        # self.session.connection().execute(statement,
-        #                                   uuid=experiment.uuid,
-        #                                   name=experiment.name,
-        #                                   author=experiment.author,
-        #                                   date=experiment.date,
-        #                                   raw_dataset=experiment.raw_dataset.uuid)
-        #
-        # statement = sqlalchemy.text("""
-        # UPDATE experiment
-        # SET (uuid, name, author, date, raw_dataset) = (:uuid,:name,:author,:date,:raw_dataset)
-        # WHERE uuid = :uuid
-        # """)
-        # self.session.connection().execute(statement,
-        #                                   uuid=experiment.uuid,
-        #                                   name=experiment.name,
-        #                                   author=experiment.author,
-        #                                   date=experiment.date,
-        #                                   raw_dataset=experiment.raw_dataset.uuid)
 
     def import_data(self, experiment, data_path, name, author, format_, date='now', key_value_pairs=dict):
         """import one data to the experiment
@@ -824,40 +798,37 @@ WHERE uuid = :uuid
             Container with the dataset metadata
 
         """
-        try:
-            statement = sqlalchemy.text(
-                'INSERT OR IGNORE INTO dataset VALUES (:uuid, :name, :url, :type_, :run)'
-            )
-            self.session.connection().execute(statement,
-                                              uuid=dataset.uuid,
-                                              name=dataset.name,
-                                              url=dataset.url,
-                                              type_=dataset.type,
-                                              run=dataset.run)
-
-            statement = sqlalchemy.text(
-                'UPDATE dataset SET (uuid, name, url, type_, run) = (:uuid, :name, :url, :type_, :run)  WHERE uuid = :uuid'
-            )
-            self.session.connection().execute(statement,
-                                              uuid=dataset.uuid,
-                                              name=dataset.name,
-                                              url=dataset.url,
-                                              type_=dataset.type,
-                                              run=dataset.run)
-        except RuntimeError as error:
-            raise DataServiceError('Could not update dataset') from error
-
-    # md_uri = os.path.abspath(dataset.md_uri)
-    # metadata = dict()
-    # metadata['uuid'] = dataset.uuid
-    # metadata['name'] = dataset.name
-    # metadata['urls'] = list()
-    # for uri in dataset.uris:
-    #     print('uri=', uri)
-    #     tmp_url = SQLiteMetadataService.to_unix_path(
-    #         SQLiteMetadataService.relative_path(uri.md_uri, md_uri))
-    #     metadata['urls'].append({"uuid": uri.uuid, 'url': tmp_url})
-    # self._write_json(metadata, md_uri)
+        record = {
+            'id_': dataset.id_,
+            'uuid': dataset.uuid,
+            'name': dataset.name,
+            'url': dataset.url,
+            'type_': dataset.type,
+            'run': dataset.run,
+        }
+        return self.repository.save_object('Dataset', record)
+        # try:
+        #     statement = sqlalchemy.text(
+        #         'INSERT OR IGNORE INTO dataset VALUES (:uuid, :name, :url, :type_, :run)'
+        #     )
+        #     self.session.connection().execute(statement,
+        #                                       uuid=dataset.uuid,
+        #                                       name=dataset.name,
+        #                                       url=dataset.url,
+        #                                       type_=dataset.type,
+        #                                       run=dataset.run)
+        #
+        #     statement = sqlalchemy.text(
+        #         'UPDATE dataset SET (uuid, name, url, type_, run) = (:uuid, :name, :url, :type_, :run)  WHERE uuid = :uuid'
+        #     )
+        #     self.session.connection().execute(statement,
+        #                                       uuid=dataset.uuid,
+        #                                       name=dataset.name,
+        #                                       url=dataset.url,
+        #                                       type_=dataset.type,
+        #                                       run=dataset.run)
+        # except RuntimeError as error:
+        #     raise DataServiceError('Could not update dataset') from error
 
     def create_dataset(self, experiment, dataset_name):
         """Create a processed dataset in an experiment

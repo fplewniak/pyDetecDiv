@@ -12,13 +12,15 @@ class ExperimentDao(DAO, Base):
     DAO class for access to BioImageIT data records from the SQL database
     """
     __tablename__ = 'experiment'
+    exclude = ['id_']
+    translate = {}
 
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
     uuid = Column(String(36),)
     name = Column(String, unique=True, nullable=False)
     author = Column(String)
     date = Column(Date)
-    raw_dataset = Column(String, ForeignKey('dataset.uuid'), index=True)
+    raw_dataset = Column(String, ForeignKey('dataset.id_'), index=True)
 
     @property
     def record(self):

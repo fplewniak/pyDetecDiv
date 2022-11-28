@@ -12,6 +12,8 @@ class RunDao(DAO, Base):
     DAO class for access to BioImageIT dataset records from the SQL database
     """
     __tablename__ = 'run'
+    exclude = ['id_']
+    translate = {}
 
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
     uuid = Column(String(36),)

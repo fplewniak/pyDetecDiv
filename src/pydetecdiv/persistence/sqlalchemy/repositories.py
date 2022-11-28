@@ -88,7 +88,7 @@ class ShallowSQLite3(ShallowDb):
             mapper_registry.metadata.create_all(self.engine)
             self.bioiit_exp = self.bioiit_req.create_experiment(exp_name)
         else:
-            self.bioiit_exp = self.bioiit_req.get_experiment(self.name)
+            self.bioiit_exp = self.bioiit_req.get_experiment(exp_name)
 
     def close(self):
         """

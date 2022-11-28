@@ -3,7 +3,7 @@
 """
 Access to ROI data
 """
-from sqlalchemy import Column, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship, joinedload
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 
@@ -13,8 +13,11 @@ class DatasetDao(DAO, Base):
     DAO class for access to BioImageIT dataset records from the SQL database
     """
     __tablename__ = 'dataset'
+    exclude = ['id_']
+    translate = {}
 
-    uuid = Column(String(36), primary_key=True)
+    id_ = Column(Integer, primary_key=True, autoincrement='auto')
+    uuid = Column(String(36), )
     name = Column(String, unique=True, nullable=False)
     url = Column(String)
     type_ = Column(String)
@@ -48,7 +51,8 @@ class DatasetDao(DAO, Base):
         :return a dataset record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """
-        return {'uuid': self.uuid,
+        return {'id_': self.id_,
+                'uuid': self.uuid,
                 'name': self.name,
                 'url': self.url,
                 'type_': self.type_,
