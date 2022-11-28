@@ -322,7 +322,7 @@ class SQLiteMetadataService(LocalMetadataService):
             'uuid': experiment.uuid,
             'name': experiment.name,
             'author': experiment.author,
-            'date': datetime.datetime.now() if experiment.date == 'now' else datetime.fromisoformat(experiment.date),
+            'date': datetime.now() if experiment.date == 'now' else datetime.fromisoformat(experiment.date),
             'raw_dataset': experiment.raw_dataset.id_,
         }
         self.repository.save_object('Experiment', record)
@@ -504,14 +504,15 @@ class SQLiteMetadataService(LocalMetadataService):
         # data_dir_path = os.path.join(os.path.dirname(experiment.raw_dataset.url[0]), experiment.raw_dataset.name)
         # because the url was actually the path to the database file in experiment directory. It is now the experiment
         # directory only. Maybe try and find another and better way
-        data_dir_path = os.path.join(experiment.raw_dataset.url[0], experiment.raw_dataset.name)
-        date = format_date(date)
+        experiment_path = os.path.join(ConfigAccess.instance().config['workspace'], experiment.name)
+        data_dir_path = os.path.join(experiment_path, experiment.raw_dataset.name)
+        date = datetime.now() if date == 'now' else datetime.fromisoformat(date),
         author = ConfigAccess.instance().config['user'] if author == '' else author
         df = pandas.DataFrame(columns=['uuid', 'name', 'dataset', 'author', 'date', 'url', 'format',
                                        'source_dir', 'meta_data', 'key_val'])
         df['author'] = pandas.Series(data=[author] * n)
         df['dataset'] = pandas.Series(data=[experiment.raw_dataset.uuid] * n)
-        df['date'] = pandas.Series(data=[date] * n)
+        df['date'] = pandas.Series(data=[date[0]] * n)
         df['format'] = pandas.Series(data=[format_] * n)
         df['meta_data'] = pandas.Series(data=['{}'] * n)
         df['key_val'] = pandas.Series(data=['{}'] * n)
@@ -773,21 +774,21 @@ WHERE uuid = :uuid
         Dataset object containing the dataset metadata
 
         """
-        try:
-            container = Dataset()
+        record = self.repository.get_record('Dataset', md_uri)
+        container = Dataset()
+        container.id_ = record['id_']
+        container.uuid = record['uuid']
+        container.name = record['name']
+        container.url = os.path.join(record['url'], record['name'])
+        container.type = record['type_']
+        container.run = record['run']
+        container.md_uri = container.url
 
-            container.uuid, container.name, container.url, container.type, container.run = self.session.execute(
-                f'SELECT * FROM dataset where uuid = "{md_uri[1]}"').fetchone()
-            container.md_uri = md_uri
-            container.url = os.path.join(os.path.dirname(md_uri[0]), container.name)
+        for id_, uuid in self.session.execute(f'SELECT id_, uuid FROM data where dataset = "{container.uuid}"'):
+            container.uris.append(Container(id_, uuid))
 
-            for uuid in self.session.execute(f'SELECT uuid FROM data where dataset = "{container.uuid}"'):
-                container.uris.append(
-                    Container((md_uri[0], uuid[0]), uuid[0]))
+        return container
 
-            return container
-        except RuntimeError as error:
-            raise DataServiceError('Dataset not found') from error
 
     def update_dataset(self, dataset):
         """Read a processed data from the database
@@ -807,28 +808,6 @@ WHERE uuid = :uuid
             'run': dataset.run,
         }
         return self.repository.save_object('Dataset', record)
-        # try:
-        #     statement = sqlalchemy.text(
-        #         'INSERT OR IGNORE INTO dataset VALUES (:uuid, :name, :url, :type_, :run)'
-        #     )
-        #     self.session.connection().execute(statement,
-        #                                       uuid=dataset.uuid,
-        #                                       name=dataset.name,
-        #                                       url=dataset.url,
-        #                                       type_=dataset.type,
-        #                                       run=dataset.run)
-        #
-        #     statement = sqlalchemy.text(
-        #         'UPDATE dataset SET (uuid, name, url, type_, run) = (:uuid, :name, :url, :type_, :run)  WHERE uuid = :uuid'
-        #     )
-        #     self.session.connection().execute(statement,
-        #                                       uuid=dataset.uuid,
-        #                                       name=dataset.name,
-        #                                       url=dataset.url,
-        #                                       type_=dataset.type,
-        #                                       run=dataset.run)
-        # except RuntimeError as error:
-        #     raise DataServiceError('Could not update dataset') from error
 
     def create_dataset(self, experiment, dataset_name):
         """Create a processed dataset in an experiment
