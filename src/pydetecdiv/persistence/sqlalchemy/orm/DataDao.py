@@ -8,8 +8,6 @@ from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 from pydetecdiv.persistence.sqlalchemy.orm.associations import FovData
 from pydetecdiv.persistence.sqlalchemy.orm import dao
 
-from sqlalchemy.orm import joinedload
-
 
 class DataDao(DAO, Base):
     """

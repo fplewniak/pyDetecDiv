@@ -24,24 +24,6 @@ class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
             roi.delete()
         self.project.delete(self)
 
-    def check_validity(self):
-        """
-        Checks the current FOV is valid
-        """
-        ...
-
-    def validate(self, updated=True):
-        """
-        Validates the current FOV and checks whether it is associated with an initial ROI. If not, the initial ROI is
-        created
-        :param updated: True if the FOV has been updated, False otherwise
-        :type updated: bool
-        """
-        super().validate(updated)
-        # if self.project.count_links('ROI', to=self) == 0:
-        #     self.project.build_dso('ROI', {'id_': None, 'name': f'full-{self.name}', 'fov': self.id_,
-        #                                             'top_left': (0, 0), 'bottom_right': (-1, -1)})
-
     def record(self, no_id=False):
         """
         Returns a record dictionary of the current FOV
@@ -78,6 +60,11 @@ class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
 
     @property
     def data(self):
+        """
+        Property returning the Data objects associated to this FOV
+        :return: the data associated to this FOV
+        :rtype: list of Data objects
+        """
         data = self.project.get_linked_objects('Data', to=self)
         return data
 
@@ -100,7 +87,6 @@ class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
         :rtype: list of Image objects
         """
         return self.project.get_linked_objects('Image', to=self)
-
 
     @property
     def initial_roi(self):

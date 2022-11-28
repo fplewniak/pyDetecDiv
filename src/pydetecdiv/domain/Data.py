@@ -24,23 +24,13 @@ class Data(NamedDSO):
         self.key_val = key_val
         self.validate(updated=False)
 
-    def check_validity(self):
-        """
-        Checks the current Data object is valid and consistent with its image content. If
-        not, the shape values are updated
-        """
-        ...
-
-    def validate(self, updated=True):
-        """
-        Validates the current Data
-        :param updated: True if the Data has been updated, False otherwise
-        :type updated: bool
-        """
-        ...
-
     @property
     def dataset(self):
+        """
+        Property returning the Dataset object this data belongs to
+        :return: the Dataset this Data belongs to
+        :rtype: Dataset object
+        """
         return self.project.get_object('Dataset', self.dataset_)
 
     @property

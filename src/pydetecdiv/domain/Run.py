@@ -20,21 +20,6 @@ class Run(DomainSpecificObject):
         self.parameters = parameters
         self.validate()
 
-    def check_validity(self):
-        """
-        Checks the current Data object is valid and consistent with its image content. If
-        not, the shape values are updated
-        """
-        ...
-
-    def validate(self, updated=True):
-        """
-        Validates the current Data
-        :param updated: True if the Data has been updated, False otherwise
-        :type updated: bool
-        """
-        ...
-
     def record(self, no_id=False):
         """
         Returns a record dictionary of the current Data
