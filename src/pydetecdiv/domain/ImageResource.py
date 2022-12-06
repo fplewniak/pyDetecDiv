@@ -9,9 +9,46 @@ import re
 import h5py
 import numpy as np
 import skimage.io as skio
+import xmltodict
+import tifffile
+from tifffile import TiffFile, TiffSequence
 
 
 class ImageResource:
+    def __init__(self, path):
+        self.path = path
+        self._image_data = tifffile.memmap(path)
+
+    @property
+    def data(self):
+        if len(self._image_data.shape) == 4:
+            return np.expand_dims(self._image_data, 0)
+        if len(self._image_data.shape) == 3:
+            return np.expand_dims(np.expand_dims(self._image_data, 0), 0)
+        if len(self._image_data.shape) == 2:
+            return np.expand_dims(np.expand_dims(np.expand_dims(self._image_data, 0), 0), 0)
+        return self._image_data
+
+    @property
+    def shape(self):
+        return self.data.shape
+
+    @property
+    def dims(self):
+        return xmltodict.parse(TiffFile(self.path).ome_metadata)['OME']['Image']['Pixels']['@DimensionOrder']
+
+
+class SingleTiff(ImageResource):
+    def __init__(self, path):
+        super().__init__(path)
+
+
+class MultipleTiff(ImageResource):
+    def __init__(self, path, pattern=None):
+        self._image_data = TiffSequence(path, pattern=pattern)
+
+
+class ImageResourceDeprecated:
     """
     A class to access image data stored in files defined by an explicit path, a path pattern or a list of paths. Image
     data can be loaded from these files as a 5D matrix with the following arbitrary order: t, z, x, y, c

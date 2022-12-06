@@ -33,7 +33,7 @@ dependencies = [
     "scikit-image",
     #"scipy",
     "sqlalchemy",
-    #"tifffile",
+    "tifffile",
 ]
 
 [project-urls]

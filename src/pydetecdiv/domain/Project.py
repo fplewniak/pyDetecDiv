@@ -15,6 +15,7 @@ from pydetecdiv.domain.Data import Data
 from pydetecdiv.domain.Image import Image
 from pydetecdiv.domain.Run import Run
 from pydetecdiv.domain.Dataset import Dataset
+from pydetecdiv.domain.ImageResource import SingleTiff, MultipleTiff
 
 
 class Project:
@@ -83,6 +84,9 @@ class Project:
         Cancel operations performed on objects since last commit
         """
         self.repository.rollback()
+
+    def image_resource(self, path, pattern=None):
+        return SingleTiff(path) if isinstance(path, str) else MultipleTiff(path, pattern=pattern)
 
     def import_images(self, source_path):
         """
