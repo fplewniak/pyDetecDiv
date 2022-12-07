@@ -37,6 +37,9 @@ class ImageResource:
     def dims(self):
         return xmltodict.parse(TiffFile(self.path).ome_metadata)['OME']['Image']['Pixels']['@DimensionOrder']
 
+    def close(self):
+        self._image_data._mmap.close()
+
 
 class SingleTiff(ImageResource):
     def __init__(self, path):
