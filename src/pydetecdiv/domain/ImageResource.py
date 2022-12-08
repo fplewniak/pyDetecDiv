@@ -8,6 +8,7 @@ import re
 
 import h5py
 import numpy as np
+import pandas
 import skimage.io as skio
 import xmltodict
 import tifffile
@@ -21,6 +22,8 @@ class ImageResource:
 
     @property
     def data(self):
+        if self._image_data._mmap.closed:
+            self.open()
         if len(self._image_data.shape) == 4:
             return np.expand_dims(self._image_data, 0)
         if len(self._image_data.shape) == 3:
@@ -37,8 +40,12 @@ class ImageResource:
     def dims(self):
         return xmltodict.parse(TiffFile(self.path).ome_metadata)['OME']['Image']['Pixels']['@DimensionOrder']
 
+    def open(self):
+        self._image_data = tifffile.memmap(self.path)
+
     def close(self):
-        self._image_data._mmap.close()
+        if not self._image_data._mmap.closed:
+            self._image_data._mmap.close()
 
 
 class SingleTiff(ImageResource):
@@ -48,7 +55,36 @@ class SingleTiff(ImageResource):
 
 class MultipleTiff(ImageResource):
     def __init__(self, path, pattern=None):
-        self._image_data = TiffSequence(path, pattern=pattern)
+        df = pandas.DataFrame({'path': path})
+        new_cols = {'C': 0, 'T': 0, 'Z': 0}
+        new_cols.update(df.apply(lambda x: re.search(pattern, x['path']).groupdict(),
+                                 axis=1, result_type='expand').to_dict())
+        df = df.merge(pandas.DataFrame(new_cols), left_index=True, right_index=True)
+        stacks = df.sort_values(by=['C', 'T', 'Z']).groupby(['C', 'T'])
+
+        clist = df.sort_values(by=['C', 'T', 'Z'])['C'].drop_duplicates().to_list()
+        tlist = df.sort_values(by=['C', 'T', 'Z'])['T'].drop_duplicates().to_list()
+        zlist = df.sort_values(by=['C', 'T', 'Z'])['Z'].drop_duplicates().to_list()
+
+        img_res = TiffFile(df.loc[0, 'path']).asarray().shape
+        self._shape = (len(clist), len(tlist), len(zlist), img_res[0], img_res[1],)
+
+        self._image_data = tifffile.memmap(f'/data2/BioImageIT/workspace/fob1/test.tif', ome=True, metadata={'axes': 'CTZYX'},
+                                 shape=self._shape, dtype=np.uint16)
+
+        for i, c, t, z in zip(stacks.C.ffill().index, stacks.C.ffill(), stacks['T'].ffill(), stacks.Z.ffill()):
+            self._image_data[clist.index(c), tlist.index(t), zlist.index(z),...] = TiffFile(df.loc[i, 'path']).asarray()
+            # print(clist.index(c), tlist.index(t), zlist.index(z), df.loc[i, 'path'], c, t, z)
+        # groups = [stacks.get_group(s).path.tolist() for s in stacks.groups]
+        # self.groups = groups
+        # self.df = df
+        # for g in groups:
+        #     print(g)
+        # self._image_data = TiffSequence(path, pattern=pattern)
+
+    @property
+    def shape(self):
+        return self._shape
 
 
 class ImageResourceDeprecated:
