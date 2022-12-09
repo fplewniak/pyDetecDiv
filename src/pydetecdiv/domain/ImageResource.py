@@ -12,16 +12,28 @@ import pandas
 import skimage.io as skio
 import xmltodict
 import tifffile
+# from memory_profiler import profile
+import psutil
 from tifffile import TiffFile, TiffSequence
 
 
-class ImageResource:
-    def __init__(self, path):
+class SingleTiff:
+    """
+    A class to access image data stored in a multi-paged TIFF file defined by an explicit path. The file is memory
+    mapped to save RAM.
+    """
+
+    def __init__(self, path, **kwargs):
         self.path = path
-        self._image_data = tifffile.memmap(path)
+        self._image_data = tifffile.memmap(path, **kwargs)
 
     @property
     def data(self):
+        """
+        Property returning image data as a memory mapped numpy array.
+        :return: data array
+        :rtype: memory mapped numpy array
+        """
         if self._image_data._mmap.closed:
             self.open()
         if len(self._image_data.shape) == 4:
@@ -34,57 +46,101 @@ class ImageResource:
 
     @property
     def shape(self):
+        """
+        The shape of the image data
+        :return: the 5D array shape
+        :rtype: tuple of int
+        """
         return self.data.shape
 
     @property
-    def dims(self):
+    def dimension_order(self):
+        """
+        Dimension order of the 5D array
+        :return: the dimension order of the 5D image data
+        :rtype: list of str
+        """
         return xmltodict.parse(TiffFile(self.path).ome_metadata)['OME']['Image']['Pixels']['@DimensionOrder']
 
     def open(self):
+        """
+        Open the memory mapped file to access data
+        """
         self._image_data = tifffile.memmap(self.path)
 
     def close(self):
+        """
+        Close the memory mapped file
+        """
         if not self._image_data._mmap.closed:
             self._image_data._mmap.close()
 
+    def flush(self):
+        """
+        Flush the data to save changes to the meory mapped file
+        """
+        if not self._image_data._mmap.closed:
+            self._image_data._mmap.flush()
 
-class SingleTiff(ImageResource):
-    def __init__(self, path):
-        super().__init__(path)
+    def refresh(self):
+        """
+        Close and open the memory mapped file to save memory if needed. Useful when creating a new file or making lots
+        of changes.
+        """
+        self.close()
+        self.open()
 
 
-class MultipleTiff(ImageResource):
+class MultipleTiff():
+    """
+    A class to handle image data stored in multiple TIFF files (one per field of view) defined by a list path names.
+    """
+
     def __init__(self, path, pattern=None):
+        self.path = path
         df = pandas.DataFrame({'path': path})
         new_cols = {'C': 0, 'T': 0, 'Z': 0}
         new_cols.update(df.apply(lambda x: re.search(pattern, x['path']).groupdict(),
                                  axis=1, result_type='expand').to_dict())
         df = df.merge(pandas.DataFrame(new_cols), left_index=True, right_index=True)
         stacks = df.sort_values(by=['C', 'T', 'Z']).groupby(['C', 'T'])
+        self._file_groups = {s: stacks.get_group(s).path.tolist() for s in stacks.groups}
 
-        clist = df.sort_values(by=['C', 'T', 'Z'])['C'].drop_duplicates().to_list()
-        tlist = df.sort_values(by=['C', 'T', 'Z'])['T'].drop_duplicates().to_list()
-        zlist = df.sort_values(by=['C', 'T', 'Z'])['Z'].drop_duplicates().to_list()
+        self._dims = {dim: df.sort_values(by=['C', 'T', 'Z'])[dim].drop_duplicates().to_list() for dim in
+                      ['C', 'T', 'Z']}
 
         img_res = TiffFile(df.loc[0, 'path']).asarray().shape
-        self._shape = (len(clist), len(tlist), len(zlist), img_res[0], img_res[1],)
+        self._shape = (len(self._dims['C']), len(self._dims['T']), len(self._dims['Z']), img_res[0], img_res[1],)
 
-        self._image_data = tifffile.memmap(f'/data2/BioImageIT/workspace/fob1/test.tif', ome=True, metadata={'axes': 'CTZYX'},
-                                 shape=self._shape, dtype=np.uint16)
-
-        for i, c, t, z in zip(stacks.C.ffill().index, stacks.C.ffill(), stacks['T'].ffill(), stacks.Z.ffill()):
-            self._image_data[clist.index(c), tlist.index(t), zlist.index(z),...] = TiffFile(df.loc[i, 'path']).asarray()
-            # print(clist.index(c), tlist.index(t), zlist.index(z), df.loc[i, 'path'], c, t, z)
-        # groups = [stacks.get_group(s).path.tolist() for s in stacks.groups]
-        # self.groups = groups
-        # self.df = df
-        # for g in groups:
-        #     print(g)
-        # self._image_data = TiffSequence(path, pattern=pattern)
+        self._image_data = None
 
     @property
     def shape(self):
+        """
+        The shape of the image data
+        :return: the 5D array shape
+        :rtype: tuple of int
+        """
         return self._shape
+
+    def as_single_file(self, filename, max_mem=500):
+        """
+        Convert the set of files to a single multi-paged TIFF file.
+        :param filename: the name of the target multi-paged file
+        :type filename: str
+        :param max_mem: memory limit before refreshing the target multi-paged file during its creation
+        :type max_mem: int
+        :return: the target multi-paged TIFF file
+        :rtype: SingleTiff
+        """
+        single_tiff = SingleTiff(filename, ome=True, metadata={'axes': 'CTZYX'},
+                                 shape=self._shape, dtype=np.uint16)
+        for c, channel in enumerate(self._dims['C']):
+            for t, frame in enumerate(self._dims['T']):
+                single_tiff.data[c, t, ...] = TiffSequence(self._file_groups[(channel, frame)]).asarray()
+                if psutil.Process().memory_info().rss / (1024 * 1024) > max_mem:
+                    single_tiff.refresh()
+        return single_tiff
 
 
 class ImageResourceDeprecated:
@@ -108,16 +164,16 @@ class ImageResourceDeprecated:
         print('Loading data...')
         if self.data.size == 0:
             if self.t_pattern is None:
-                self.data = ImageResource.get_data_from_path(self.path)
+                self.data = ImageResourceDeprecated.get_data_from_path(self.path)
             else:
                 r_t_comp = re.compile(self.t_pattern)
                 path_str = ' '.join(sorted(self.path))
                 for t in sorted(set(r_t_comp.findall(path_str))):
                     print(sorted(glob.glob(f'{t}*')))
                     if self.data.size == 0:
-                        self.data = ImageResource.get_data_from_path(sorted(glob.glob(f'{t}*')))
+                        self.data = ImageResourceDeprecated.get_data_from_path(sorted(glob.glob(f'{t}*')))
                     else:
-                        self.stack(ImageResource.get_data_from_path(sorted(glob.glob(f'{t}*'))))
+                        self.stack(ImageResourceDeprecated.get_data_from_path(sorted(glob.glob(f'{t}*'))))
         return self
 
     @staticmethod
@@ -212,7 +268,7 @@ class ImageResourceDeprecated:
         return np.block(data_list)
 
 
-class HDF5dataset(ImageResource):
+class HDF5dataset(ImageResourceDeprecated):
     """
     A class to access image data stored in datasets of a HDF5 file. Image data can be loaded from these datasets as a
     5D matrix with the following arbitrary order: t, z, x, y, c
