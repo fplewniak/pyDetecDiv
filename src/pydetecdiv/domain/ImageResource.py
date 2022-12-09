@@ -97,22 +97,56 @@ class MultipleTiff():
     """
 
     def __init__(self, path, pattern=None):
-        self.path = path
-        df = pandas.DataFrame({'path': path})
+        self._df = pandas.DataFrame({'path': path})
         new_cols = {'C': 0, 'T': 0, 'Z': 0}
-        new_cols.update(df.apply(lambda x: re.search(pattern, x['path']).groupdict(),
+        new_cols.update(self._df.apply(lambda x: re.search(pattern, x['path']).groupdict(),
                                  axis=1, result_type='expand').to_dict())
-        df = df.merge(pandas.DataFrame(new_cols), left_index=True, right_index=True)
-        stacks = df.sort_values(by=['C', 'T', 'Z']).groupby(['C', 'T'])
-        self._file_groups = {s: stacks.get_group(s).path.tolist() for s in stacks.groups}
+        self._df = self._df.merge(pandas.DataFrame(new_cols), left_index=True, right_index=True)
+        stacks = self._df.sort_values(by=['C', 'T', 'Z']).groupby(['C', 'T'])
+        file_groups = {s: stacks.get_group(s).path.tolist() for s in stacks.groups}
 
-        self._dims = {dim: df.sort_values(by=['C', 'T', 'Z'])[dim].drop_duplicates().to_list() for dim in
+        dims = {dim: self._df.sort_values(by=['C', 'T', 'Z'])[dim].drop_duplicates().to_list() for dim in
                       ['C', 'T', 'Z']}
 
-        img_res = TiffFile(df.loc[0, 'path']).asarray().shape
-        self._shape = (len(self._dims['C']), len(self._dims['T']), len(self._dims['Z']), img_res[0], img_res[1],)
+        img_res = TiffFile(self._df.loc[0, 'path']).asarray().shape
+        self._shape = (len(dims['C']), len(dims['T']), len(dims['Z']), img_res[0], img_res[1],)
 
-        self._image_data = None
+        self._files = []
+        for c, channel in enumerate(dims['C']):
+            self._files.append([])
+            for t, frame in enumerate(dims['T']):
+                self._files[c].append([])
+                for z, _ in enumerate(dims['Z']):
+                    self._files[c][t].append(file_groups[(channel, frame)][z])
+        self._files = np.array(self._files)
+
+    def tiff_file(self, c=0, t=0, z=0):
+        """
+        Return the file corresponding to the image specified by the c, t and z coordinates
+        :param c: the channel index
+        :type c: int
+        :param t: the time index
+        :type t: int
+        :param z: the layer index
+        :type z: int
+        :return: the file specified by c, t, z
+        :rtype: TiffFile
+        """
+        return TiffFile(self._files[c, t, z])
+
+    def image(self, c=0, t=0, z=0):
+        """
+        Return image data (2D) corresponding to the file specified by the c, t, and z coordinates
+        :param c: the channel index
+        :type c: int
+        :param t: the time index
+        :type t: int
+        :param z: the layer index
+        :type z: int
+        :return: the image data
+        :rtype: ndarray
+        """
+        return self.tiff_file(c, t, z).asarray()
 
     @property
     def shape(self):
@@ -135,9 +169,9 @@ class MultipleTiff():
         """
         single_tiff = SingleTiff(filename, ome=True, metadata={'axes': 'CTZYX'},
                                  shape=self._shape, dtype=np.uint16)
-        for c, channel in enumerate(self._dims['C']):
-            for t, frame in enumerate(self._dims['T']):
-                single_tiff.data[c, t, ...] = TiffSequence(self._file_groups[(channel, frame)]).asarray()
+        for c, _ in enumerate(self._files):
+            for t, _ in enumerate(self._files[c]):
+                single_tiff.data[c, t, ...] = TiffSequence(self._files[c, t, :]).asarray()
                 if psutil.Process().memory_info().rss / (1024 * 1024) > max_mem:
                     single_tiff.refresh()
         return single_tiff
