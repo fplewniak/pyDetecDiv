@@ -249,36 +249,32 @@ class ShallowSQLite3(ShallowDb):
         :return: a list of records
         :rtype: list of dict
         """
-        linked_records = []
-        if cls_name == 'ImageData':
-            if parent_cls_name in ['Image']:
-                linked_records = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['image_data'])]
-            if parent_cls_name in ['FOV', 'ROI']:
-                linked_records = dao[parent_cls_name](self.session).image_data(parent_id)
-        if cls_name == 'FOV':
-            if parent_cls_name in ['ROI']:
-                linked_records = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['fov'])]
-            if parent_cls_name in ['Image', 'ImageData']:
-                linked_records = dao[parent_cls_name](self.session).fov(parent_id)
-            if parent_cls_name in ['Data']:
-                linked_records = dao[parent_cls_name](self.session).fov_list(parent_id)
-        if cls_name == 'ROI':
-            if parent_cls_name in ['ImageData']:
-                linked_records = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['roi'])]
-            if parent_cls_name in ['FOV']:
-                linked_records = dao[parent_cls_name](self.session).roi_list(parent_id)
-            if parent_cls_name in ['Image']:
-                linked_records = dao[parent_cls_name](self.session).roi(parent_id)
-        if cls_name == 'Image':
-            if parent_cls_name in ['ImageData', 'FOV', 'ROI']:
-                linked_records = dao[parent_cls_name](self.session).image_list(parent_id)
-        if cls_name == 'Data':
-            if parent_cls_name in ['FOV']:
-                linked_records = dao[parent_cls_name](self.session).data(parent_id)
-            if parent_cls_name in ['Dataset']:
-                linked_records = dao[parent_cls_name](self.session).data_list(parent_id)
-
-        return linked_records
+        match (cls_name, parent_cls_name):
+            case ['ImageData', 'Image']:
+                linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['image_data'])]
+            case ['ImageData', ('FOV' | 'ROI')]:
+                linked_rec = dao[parent_cls_name](self.session).image_data(parent_id)
+            case ['FOV', 'ROI']:
+                linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['fov'])]
+            case ['FOV', ('Image' | 'ImageData')]:
+                linked_rec = dao[parent_cls_name](self.session).fov(parent_id)
+            case ['FOV', 'Data']:
+                linked_rec = dao[parent_cls_name](self.session).fov_list(parent_id)
+            case ['ROI', 'ImageData']:
+                linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['roi'])]
+            case ['ROI', 'FOV']:
+                linked_rec = dao[parent_cls_name](self.session).roi_list(parent_id)
+            case ['ROI', 'Image']:
+                linked_rec = dao[parent_cls_name](self.session).roi(parent_id)
+            case ['Image', ('ImageData' | 'FOV' | 'ROI')]:
+                linked_rec = dao[parent_cls_name](self.session).image_list(parent_id)
+            case ['Data', 'FOV']:
+                linked_rec = dao[parent_cls_name](self.session).data(parent_id)
+            case ['Data', 'Dataset']:
+                linked_rec = dao[parent_cls_name](self.session).data_list(parent_id)
+            case _:
+                linked_rec = []
+        return linked_rec
 
     def _get_dao(self, class_name, id_=None):
         """
