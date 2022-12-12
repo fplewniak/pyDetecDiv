@@ -262,13 +262,13 @@ class ShallowSQLite3(ShallowDb):
                 linked_rec = dao[parent_cls_name](self.session).fov_list(parent_id)
             case ['ROI', 'ImageData']:
                 linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['roi'])]
-            case ['ROI', 'FOV']:
+            case ['ROI', ('FOV' | 'Data')]:
                 linked_rec = dao[parent_cls_name](self.session).roi_list(parent_id)
             case ['ROI', 'Image']:
                 linked_rec = dao[parent_cls_name](self.session).roi(parent_id)
             case ['Image', ('ImageData' | 'FOV' | 'ROI')]:
                 linked_rec = dao[parent_cls_name](self.session).image_list(parent_id)
-            case ['Data', 'FOV']:
+            case ['Data', ('FOV' | 'ROI')]:
                 linked_rec = dao[parent_cls_name](self.session).data(parent_id)
             case ['Data', 'Dataset']:
                 linked_rec = dao[parent_cls_name](self.session).data_list(parent_id)

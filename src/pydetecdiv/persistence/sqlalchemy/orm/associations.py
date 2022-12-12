@@ -112,3 +112,77 @@ class FovData(Base):
             'fov': self.fov,
             'data': self.data,
         }
+
+class ROIdata(Base):
+    """
+    Association many to many between ROI and Image data
+    """
+    __tablename__ = "ROIdata"
+    roi = Column(ForeignKey("ROI.id_"), primary_key=True)
+    data = Column(ForeignKey("data.id_"), primary_key=True)
+    roi_ = relationship("ROIdao", back_populates='data_list', lazy='joined')
+    data_ = relationship("DataDao", back_populates='roi_list_', lazy='joined')
+
+    @staticmethod
+    def roi_to_data():
+        """
+        Defines and returns the relationship from ROI to ImageData tables
+        :return: the relationship between ROI and ImageData
+        :rtype: sqlalchemy.orm.RelationshipProperty object
+        """
+        return relationship("ROIdata", back_populates='roi_', lazy='joined')
+
+    @staticmethod
+    def data_to_roi():
+        """
+        Defines and returns the relationship from ImageData to ROI tables
+        :return: the relationship between ImageData and ROI
+        :rtype: sqlalchemy.orm.RelationshipProperty object
+        """
+        return relationship("ROIdata", back_populates='data_', lazy='joined')
+
+    @staticmethod
+    def _link(obj1, obj2):
+        """
+        Creates a link between the specified ROIdao and DataDao objects.
+        :param obj1: the first object to link
+        :type obj1: ROIdao or DataDao
+        :param obj2: the second object to link
+        :type obj2: DataDao or ROIdao
+        """
+        a = ROIdata()
+        if obj1.__class__.__name__ == 'ROIdao':
+            a.data_ = obj2
+            obj1.data_list.append(a)
+        else:
+            a.fov_ = obj2
+            obj1.fov_list_.append(a)
+
+    @staticmethod
+    def link(obj1, obj2):
+        """
+        Checks there the existence of a link between the specified ROIdao and DataDao objects and creates a link
+        (calling the _link method) only if there is no preexisting link.
+        :param obj1: the first object to link
+        :type obj1: ROIdao or DataDao
+        :param obj2: the second object to link
+        :type obj2: DataDao or ROIdao
+        """
+        if obj1.__class__.__name__ == 'ROIdao':
+            query = obj1.session.query(ROIdata).filter(ROIdata.roi == obj1.id_).filter(ROIdata.data == obj2.id_)
+        else:
+            query = obj1.session.query(ROIdata).filter(ROIdata.roi == obj2.id_).filter(ROIdata.data == obj1.id_)
+        if query.first() is None:
+            ROIdata._link(obj1, obj2)
+
+    @property
+    def record(self):
+        """
+        A method creating a record dictionary from a ROIdata row dictionary.
+        :return a ROIdata record as a dictionary with keys() appropriate for handling by the domain layer
+        :rtype: dict
+        """
+        return {
+            'roi': self.roi,
+            'data': self.data,
+        }
