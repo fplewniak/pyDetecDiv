@@ -97,7 +97,7 @@ class SQLiteMetadataService(LocalMetadataService):
 
         links = list()
         for i in df.index[df['dataset'] == dataset.uuid].to_list():
-            m = re.match(pattern, call_back(df.loc[i,]))
+            m = re.search(pattern, call_back(df.loc[i,]))
             if m:
                 key_val = {'id_': df.loc[i, 'id_']}
                 key_val.update(dict(zip(keys_, m.groups())))
@@ -147,7 +147,7 @@ class SQLiteMetadataService(LocalMetadataService):
         call_back = source if callable(source) else lambda x: x[source]
 
         for i in df.index[df['dataset'] == dataset.uuid].to_list():
-            m = re.match(pattern, call_back(df.loc[i,]))
+            m = re.search(pattern, call_back(df.loc[i,]))
             if m:
                 key_val = json.loads(df.loc[i, 'key_val'])
                 key_val.update(dict(zip(keys_, m.groups())))
