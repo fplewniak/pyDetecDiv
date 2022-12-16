@@ -15,6 +15,7 @@ import tifffile
 # from memory_profiler import profile
 import psutil
 from tifffile import TiffFile, TiffSequence
+import cv2 as cv
 from vidstab import VidStab
 import pandas as pd
 
@@ -104,6 +105,16 @@ class SingleTiff:
             if psutil.Process().memory_info().rss / (1024 * 1024) > max_mem:
                 self.refresh()
         return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)
+
+    def correct_drift(self, drift, max_mem=5000):
+        for idx in drift.index:
+            for c in range(0, self.shape[0]):
+                for z in range(0, self.shape[2]):
+                    self.data[0, idx + 1, z, ...] = cv.warpAffine(np.array(self.data[0, idx + 1, z, ...]), np.float32(
+                        [[1, 0, -drift.iloc[idx].dx], [0, 1, -drift.iloc[idx].dy]]),
+                                                                  self.data[0, idx + 1, z, ...].shape)
+                    if psutil.Process().memory_info().rss / (1024 * 1024) > max_mem:
+                        self.refresh()
 
 
 class MultipleTiff():
