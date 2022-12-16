@@ -15,6 +15,8 @@ import tifffile
 # from memory_profiler import profile
 import psutil
 from tifffile import TiffFile, TiffSequence
+from vidstab import VidStab
+import pandas as pd
 
 
 class SingleTiff:
@@ -43,6 +45,9 @@ class SingleTiff:
         if len(self._image_data.shape) == 2:
             return np.expand_dims(np.expand_dims(np.expand_dims(self._image_data, 0), 0), 0)
         return self._image_data
+
+    def image(self, c=0, z=0, t=0):
+        return self.data[c, t, z, ...]
 
     @property
     def shape(self):
@@ -90,6 +95,16 @@ class SingleTiff:
         self.close()
         self.open()
 
+    def compute_drift(self, z=0, c=0, max_mem=5000):
+        stabilizer = VidStab()
+
+        for frame in range(0, self.shape[1]):
+            stabilized_frame = stabilizer.stabilize_frame(
+                input_frame=np.uint8(np.array(self.image(t=frame, z=z, c=c)) / 65535 * 255), smoothing_window=1)
+            if psutil.Process().memory_info().rss / (1024 * 1024) > max_mem:
+                self.refresh()
+        return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)
+
 
 class MultipleTiff():
     """
@@ -100,13 +115,13 @@ class MultipleTiff():
         self._df = pandas.DataFrame({'path': path})
         new_cols = {'C': 0, 'T': 0, 'Z': 0}
         new_cols.update(self._df.apply(lambda x: re.search(pattern, x['path']).groupdict(),
-                                 axis=1, result_type='expand').to_dict())
+                                       axis=1, result_type='expand').to_dict())
         self._df = self._df.merge(pandas.DataFrame(new_cols), left_index=True, right_index=True)
         stacks = self._df.sort_values(by=['C', 'T', 'Z']).groupby(['C', 'T'])
         file_groups = {s: stacks.get_group(s).path.tolist() for s in stacks.groups}
 
         dims = {dim: self._df.sort_values(by=['C', 'T', 'Z'])[dim].drop_duplicates().to_list() for dim in
-                      ['C', 'T', 'Z']}
+                ['C', 'T', 'Z']}
 
         img_res = TiffFile(self._df.loc[0, 'path']).asarray().shape
         self._shape = (len(dims['C']), len(dims['T']), len(dims['Z']), img_res[0], img_res[1],)
@@ -175,6 +190,14 @@ class MultipleTiff():
                 if psutil.Process().memory_info().rss / (1024 * 1024) > max_mem:
                     single_tiff.refresh()
         return single_tiff
+
+    def compute_drift(self, z=0, c=0, ):
+        stabilizer = VidStab()
+
+        for frame in range(0, self.shape[1]):
+            stabilized_frame = stabilizer.stabilize_frame(
+                input_frame=np.uint8(np.array(self.image(t=frame, z=z, c=c)) / 65535 * 255), smoothing_window=1)
+        return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)
 
 
 class ImageResourceDeprecated:
