@@ -172,7 +172,10 @@ class MultipleTiff():
         :return: the image data
         :rtype: ndarray
         """
-        return self.tiff_file(c, t, z).asarray()
+        tiff_file = self.tiff_file(c, t, z)
+        img = tiff_file.asarray()
+        tiff_file.close()
+        return img
 
     @property
     def shape(self):
@@ -209,6 +212,15 @@ class MultipleTiff():
             stabilized_frame = stabilizer.stabilize_frame(
                 input_frame=np.uint8(np.array(self.image(t=frame, z=z, c=c)) / 65535 * 255), smoothing_window=1)
         return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)
+
+    def correct_drift(self, drift):
+        for idx in drift.index:
+            for c in range(0, self.shape[0]):
+                for z in range(0, self.shape[2]):
+                    tifffile.imwrite(self._files[c, idx + 1, z],
+                                     cv.warpAffine(np.array(self.image(c=c, t=idx + 1, z=z)), np.float32(
+                                         [[1, 0, -drift.iloc[idx].dx], [0, 1, -drift.iloc[idx].dy]]),
+                                                   self.image(c=c, t=idx + 1, z=z).shape))
 
 
 class ImageResourceDeprecated:
