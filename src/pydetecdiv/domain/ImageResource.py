@@ -110,9 +110,9 @@ class SingleTiff:
         for idx in drift.index:
             for c in range(0, self.shape[0]):
                 for z in range(0, self.shape[2]):
-                    self.data[0, idx + 1, z, ...] = cv.warpAffine(np.array(self.data[0, idx + 1, z, ...]), np.float32(
+                    self.data[c, idx + 1, z, ...] = cv.warpAffine(np.array(self.data[c, idx + 1, z, ...]), np.float32(
                         [[1, 0, -drift.iloc[idx].dx], [0, 1, -drift.iloc[idx].dy]]),
-                                                                  self.data[0, idx + 1, z, ...].shape)
+                                                                  self.data[c, idx + 1, z, ...].shape)
                     if psutil.Process().memory_info().rss / (1024 * 1024) > max_mem:
                         self.refresh()
 
