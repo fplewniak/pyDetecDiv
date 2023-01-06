@@ -5,10 +5,9 @@
 """
 import glob
 import re
-
 import h5py
 import numpy as np
-import pandas
+import pandas as pd
 import skimage.io as skio
 import xmltodict
 import tifffile
@@ -17,7 +16,6 @@ import psutil
 from tifffile import TiffFile, TiffSequence
 import cv2 as cv
 from vidstab import VidStab
-import pandas as pd
 
 
 class SingleTiff:
@@ -48,6 +46,17 @@ class SingleTiff:
         return self._image_data
 
     def image(self, c=0, z=0, t=0):
+        """
+        Return a single-channel 2D image (one layer of one frame)
+        :param c: channel index
+        :type c: int
+        :param z: layer index
+        :type z: int
+        :param t: frame index
+        :type t: int
+        :return: the 2D image
+        :rtype: 2D memmap array
+        """
         return self.data[c, t, z, ...]
 
     @property
@@ -97,16 +106,37 @@ class SingleTiff:
         self.open()
 
     def compute_drift(self, z=0, c=0, max_mem=5000):
+        """
+        Compute x,y drift of frames along time for a channel and a layer. Return the list of dx,dy shifts to be used
+        with the correct_drift method
+        :param z: the layer index
+        :type z: int
+        :param c: the channel index
+        :type c: int
+        :param max_mem: maximum memory in MB to use for caching memmap. If that amount of memory is reached, then the
+        memmap is refreshed to clear memory
+        :type max_mem: int
+        :return: the list of dx,dy shifts
+        :rtype: pandas DataFrame with headers dx, dy and dr, frame index is equal to the DataFrame index
+        """
         stabilizer = VidStab()
 
         for frame in range(0, self.shape[1]):
-            stabilized_frame = stabilizer.stabilize_frame(
+            _ = stabilizer.stabilize_frame(
                 input_frame=np.uint8(np.array(self.image(t=frame, z=z, c=c)) / 65535 * 255), smoothing_window=1)
             if psutil.Process().memory_info().rss / (1024 * 1024) > max_mem:
                 self.refresh()
         return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)
 
     def correct_drift(self, drift, max_mem=5000):
+        """
+        Correct x,y drift of frames along time given a list of dx,dy shifts
+        :param drift: the list of dx and dy by frame
+        :type drift: pandas DataFrame with headers dx and dy, frame index is equal to the DataFrame index
+        :param max_mem: maximum memory in MB to use for caching memmap. If that amount of memory is reached, then the
+        memmap is refreshed to clear memory
+        :type max_mem: int
+        """
         for idx in drift.index:
             for c in range(0, self.shape[0]):
                 for z in range(0, self.shape[2]):
@@ -123,11 +153,11 @@ class MultipleTiff():
     """
 
     def __init__(self, path, pattern=None):
-        self._df = pandas.DataFrame({'path': path})
+        self._df = pd.DataFrame({'path': path})
         new_cols = {'C': 0, 'T': 0, 'Z': 0}
         new_cols.update(self._df.apply(lambda x: re.search(pattern, x['path']).groupdict(),
                                        axis=1, result_type='expand').to_dict())
-        self._df = self._df.merge(pandas.DataFrame(new_cols), left_index=True, right_index=True)
+        self._df = self._df.merge(pd.DataFrame(new_cols), left_index=True, right_index=True)
         stacks = self._df.sort_values(by=['C', 'T', 'Z']).groupby(['C', 'T'])
         file_groups = {s: stacks.get_group(s).path.tolist() for s in stacks.groups}
 
@@ -206,14 +236,29 @@ class MultipleTiff():
         return single_tiff
 
     def compute_drift(self, z=0, c=0, ):
+        """
+        Compute x,y drift of frames along time for a channel and a layer. Return the list of dx,dy shifts to be used
+        with the correct_drift method
+        :param z: the layer index
+        :type z: int
+        :param c: the channel index
+        :type c: int
+        :return: the list of dx,dy shifts
+        :rtype: pandas DataFrame with headers dx, dy and dr, frame index is equal to the DataFrame index
+        """
         stabilizer = VidStab()
 
         for frame in range(0, self.shape[1]):
-            stabilized_frame = stabilizer.stabilize_frame(
+            _ = stabilizer.stabilize_frame(
                 input_frame=np.uint8(np.array(self.image(t=frame, z=z, c=c)) / 65535 * 255), smoothing_window=1)
         return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)
 
     def correct_drift(self, drift):
+        """
+        Correct x,y drift of frames along time given a list of dx,dy shifts
+        :param drift: the list of dx and dy by frame
+        :type drift: pandas DataFrame with headers dx and dy, frame index is equal to the DataFrame index
+        """
         for idx in drift.index:
             for c in range(0, self.shape[0]):
                 for z in range(0, self.shape[2]):
