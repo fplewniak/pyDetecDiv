@@ -28,7 +28,7 @@ dependencies = [
     #"omero-py",
     "opencv-python",
     "pandas",
-    "psutils",
+    "psutil",
     #"pylibjpeg",
     #"pylibjpeg-libjpeg",
     "pyxdg",
