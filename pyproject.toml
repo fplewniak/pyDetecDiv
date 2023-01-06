@@ -26,6 +26,7 @@ dependencies = [
     "matplotlib",
     "numpy",
     #"omero-py",
+    "opencv-python",
     "pandas",
     "psutils",
     #"pylibjpeg",
@@ -35,6 +36,7 @@ dependencies = [
     #"scipy",
     "sqlalchemy",
     "tifffile",
+    "vidstab",
     "xmltodict",
 ]
 
