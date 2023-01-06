@@ -24,24 +24,6 @@ class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
             roi.delete()
         self.project.delete(self)
 
-    def check_validity(self):
-        """
-        Checks the current FOV is valid
-        """
-        ...
-
-    def validate(self, updated=True):
-        """
-        Validates the current FOV and checks whether it is associated with an initial ROI. If not, the initial ROI is
-        created
-        :param updated: True if the FOV has been updated, False otherwise
-        :type updated: bool
-        """
-        super().validate(updated)
-        if self.project.count_links('ROI', to=self) == 0:
-            self.project.save_record('ROI', record={'id_': None, 'name': f'full-{self.name}', 'fov': self.id_,
-                                                    'top_left': (0, 0), 'bottom_right': (-1, -1)})
-
     def record(self, no_id=False):
         """
         Returns a record dictionary of the current FOV
@@ -55,7 +37,8 @@ class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
             'comments': self.comments,
             'top_left': self.top_left,
             'bottom_right': self.bottom_right,
-            'size': self.size
+            'size': self.size,
+            'uuid': self.uuid
         }
         if not no_id:
             record['id_'] = self.id_
@@ -76,14 +59,25 @@ class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
         self.validate()
 
     @property
+    def data(self):
+        """
+        Property returning the Data objects associated to this FOV
+        :return: the data associated to this FOV
+        :rtype: list of Data objects
+        """
+        data = self.project.get_linked_objects('Data', to=self)
+        return data
+
+    @property
     def roi_list(self):
         """
         Returns the list of ROI objects whose parent if the current FOV
         :return: the list of associated ROIs
         :rtype: list of ROI objects
         """
-        roi_list = self.project.get_linked_objects('ROI', to=self)
-        return roi_list if len(roi_list) == 1 else roi_list[1:]
+        return self.project.get_linked_objects('ROI', to=self)
+        # roi_list = self.project.get_linked_objects('ROI', to=self)
+        # return roi_list if len(roi_list) == 1 else roi_list[1:]
 
     @property
     def image_list(self):
@@ -93,7 +87,6 @@ class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
         :rtype: list of Image objects
         """
         return self.project.get_linked_objects('Image', to=self)
-
 
     @property
     def initial_roi(self):

@@ -20,20 +20,22 @@ classifiers=[
         "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 
-requires-python = ">=3.6.0"
+requires-python = ">=3.10.0"
 dependencies = [
     "h5py",
-    #"matplotlib",
+    "matplotlib",
     "numpy",
     #"omero-py",
     "pandas",
+    "psutils",
     #"pylibjpeg",
     #"pylibjpeg-libjpeg",
     "pyxdg",
     "scikit-image",
     #"scipy",
     "sqlalchemy",
-    #"tifffile",
+    "tifffile",
+    "xmltodict",
 ]
 
 [project-urls]

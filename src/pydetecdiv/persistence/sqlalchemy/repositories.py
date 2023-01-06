@@ -3,26 +3,67 @@
 """
 Concrete Repositories using a SQL database with the sqlalchemy toolkit
 """
+import json
+import os
 import re
+
+import pandas
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.expression import Delete
-from sqlalchemy.pool import NullPool
 from pandas import DataFrame
+from bioimageit_core.plugins.data_factory import metadataServices
 from pydetecdiv.persistence.repository import ShallowDb
 from pydetecdiv.persistence.sqlalchemy.orm.main import mapper_registry
 from pydetecdiv.persistence.sqlalchemy.orm.dao import dso_dao_mapping as dao
 from pydetecdiv.persistence.sqlalchemy.orm.associations import Linker
+from pydetecdiv.persistence.bioimageit.request import Request
+from pydetecdiv.persistence.bioimageit.plugins.data_sqlite import SQLiteMetadataServiceBuilder
+from pydetecdiv.settings import get_config_value
 
 
-class _ShallowSQL(ShallowDb):
+class ShallowSQLite3(ShallowDb):
     """
-    A generic shallow SQL persistence used to provide the common methods for SQL databases. DBMS-specific methods should
-    be implemented in subclasses of this one.
+    A concrete shallow SQLite3 persistence inheriting ShallowDb and implementing SQLite3-specific engine
     """
 
-    def __init__(self, dbname):
+    def __init__(self, dbname=None):
         self.name = dbname
+        self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}')
+        self.session_maker = sessionmaker(self.engine, future=True)
+        self.session_ = None
+
+        self.bioiit_req = Request(get_config_value('bioimageit', 'config_file'), debug=False)
+        metadataServices.register_builder('SQLITE', SQLiteMetadataServiceBuilder())
+        self.bioiit_req.connect()
+        self.bioiit_req.data_service.connect_to_session(self.session, self)
+        self.bioiit_exp = None
+
+        self.create()
+
+    @property
+    def session(self):
+        """
+        Property returning the sqlalchemy Session object attached to the repository
+        :return:
+        """
+        if self.session_ is None:
+            self.session_ = self.session_maker()
+        return self.session_
+
+    def commit(self):
+        """
+        Commit the current transaction
+        """
+        if self.session_ is not None:
+            self.session_.commit()
+
+    def rollback(self):
+        """
+        Rollback the current transaction
+        """
+        if self.session_ is not None:
+            self.session_.rollback()
 
     def executescript(self, script):
         """
@@ -32,10 +73,9 @@ class _ShallowSQL(ShallowDb):
         """
         try:
             statements = re.split(r';\s*$', script, flags=re.MULTILINE)
-            with self.session_maker() as session:
-                for statement in statements:
-                    if statement:
-                        session.execute(sqlalchemy.text(statement))
+            for statement in statements:
+                if statement:
+                    self.session.execute(sqlalchemy.text(statement))
         except sqlalchemy.exc.OperationalError as exc:
             print(exc)
 
@@ -43,14 +83,75 @@ class _ShallowSQL(ShallowDb):
         """
         Gets SqlAlchemy classes defining the project database schema and creates the database if it does not exist.
         """
-        if not self.engine.table_names():
+        exp_name = str(os.path.splitext(os.path.basename(self.name))[0])
+        if not sqlalchemy.inspect(self.engine).get_table_names():
             mapper_registry.metadata.create_all(self.engine)
+            self.bioiit_exp = self.bioiit_req.create_experiment(exp_name)
+        else:
+            self.bioiit_exp = self.bioiit_req.get_experiment(exp_name)
 
     def close(self):
         """
         Close the current connexion
         """
         self.engine.dispose()
+
+    def import_images(self, source_path):
+        """
+        Import images from a source path. All files corresponding to the path will be imported.
+        :param source_path: the source path (glob pattern)
+        :type source_path: str
+        """
+        self.bioiit_req.import_glob(self.bioiit_exp, source_path)
+
+    def determine_fov(self, source, regex):
+        """
+        Uses metadata from raw data to name corresponding FOVs
+        :param source: the metadata source used to define FOV names
+        :type source: str or callable
+        :param regex: regular expression providing the source pattern defining FOV names
+        :type regex: regular expression str
+        :return: a DataFrame with the data id_ and FOV names
+        :rtype: pandas DataFrame
+        """
+        return self.determine_links_using_regex('data', source, ('FOV',), regex)
+
+    def determine_links_using_regex(self, dataset_name, source, keys_, regex):
+        """
+        Uses metadata from data in a given dataset to name corresponding objects (FOV, ROIs, etc.)
+        :param dataset_name: the name of the dataset
+        :type dataset_name: str
+        :param source: the metadata source used to define object names
+        :type source: str or callable
+        :param keys_: the designation of objects
+        :type keys_: a tuple of str
+        :param regex: regular expression providing the source pattern defining FOV names
+        :type regex: regular expression str
+        :return: a DataFrame with the data id_ and FOV names
+        :rtype: pandas DataFrame
+        """
+        dataset = self.bioiit_req.get_dataset(self.bioiit_exp, dataset_name)
+        df = self.bioiit_req.data_service.determine_links_using_regex(dataset, source, keys_, regex)
+        return df
+
+    def annotate_data(self, dataset_name, source, keys_, regex):
+        """
+        Returns a DataFrame containing all the metadata associated to raw data, including annotations created using a
+        regular expression applied to a field or a combination thereof.
+        :param dataset_name: name of dataset to annotate
+        :type dataset_name: str
+        :param source: the database field or combination of fields to apply the regular expression to
+        :type source: str or callable returning a str
+        :param keys_: the list of classes created objects belong to
+        :type keys_: tuple of str
+        :param regex: regular expression defining the DSOs' names
+        :type regex: regular expression str
+        :return: a table of all the metadata associated to raw data
+        :rtype: pandas DataFrame
+        """
+        dataset = self.bioiit_req.get_dataset(self.bioiit_exp, dataset_name)
+        df = self.bioiit_req.data_service.create_annotations_using_regex(dataset, source, keys_, regex)
+        return pandas.DataFrame([json.loads(k) for k in df.key_val]).join(df.drop(labels='key_val', axis=1))
 
     def save_object(self, class_name, record):
         """
@@ -63,8 +164,8 @@ class _ShallowSQL(ShallowDb):
         :rtype: int
         """
         if record['id_'] is None:
-            return dao[class_name](self.session_maker).insert(record)
-        return dao[class_name](self.session_maker).update(record)
+            return dao[class_name](self.session).insert(record)
+        return dao[class_name](self.session).update(record)
 
     def delete_object(self, class_name, id_):
         """
@@ -74,9 +175,8 @@ class _ShallowSQL(ShallowDb):
         :param id_: the id of the object to delete
         :type id_: int
         """
-        with self.session_maker() as session:
-            session.execute(Delete(dao[class_name], whereclause=dao[class_name].id_ == id_))
-            session.commit()
+        self.session.execute(Delete(dao[class_name], whereclause=dao[class_name].id_ == id_))
+        # self.session.commit()
 
     def _get_records(self, class_name=None, query=None):
         """
@@ -89,11 +189,11 @@ class _ShallowSQL(ShallowDb):
         :return: a list of records
         :rtype: list of dictionaries (records)
         """
-        with self.session_maker() as session:
-            dao_list = session.query(dao[class_name])
-            if query is not None:
-                for q in query:
-                    dao_list = dao_list.where(q)
+        dao_list = self.session.query(dao[class_name])
+        if query is not None:
+            for q in query:
+                dao_list = dao_list.where(q)
+
         return [obj.record for obj in dao_list]
 
     def get_dataframe(self, class_name, id_list=None):
@@ -118,8 +218,7 @@ class _ShallowSQL(ShallowDb):
         :return: the object record
         :rtype: dict (record)
         """
-        with self.session_maker() as session:
-            return session.get(dao[class_name], id_).record
+        return self.session.get(dao[class_name], id_).record
 
     def get_records(self, class_name, id_list=None):
         """
@@ -131,11 +230,10 @@ class _ShallowSQL(ShallowDb):
         :return: a list of records
         :rtype: list of dictionaries (records)
         """
-        with self.session_maker() as session:
-            if id_list is not None:
-                dao_list = session.query(dao[class_name]).where(dao[class_name].id_.in_(id_list))
-            else:
-                dao_list = session.query(dao[class_name])
+        if id_list is not None:
+            dao_list = self.session.query(dao[class_name]).where(dao[class_name].id_.in_(id_list))
+        else:
+            dao_list = self.session.query(dao[class_name])
         return [obj.record for obj in dao_list]
 
     def get_linked_records(self, cls_name, parent_cls_name, parent_id):
@@ -151,29 +249,46 @@ class _ShallowSQL(ShallowDb):
         :return: a list of records
         :rtype: list of dict
         """
-        linked_records = []
-        if cls_name == 'ImageData':
-            if parent_cls_name in ['Image']:
-                linked_records = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['image_data'])]
-            if parent_cls_name in ['FOV', 'ROI']:
-                linked_records = dao[parent_cls_name](self.session_maker).image_data(parent_id)
-        if cls_name == 'FOV':
-            if parent_cls_name in ['ROI']:
-                linked_records = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['fov'])]
-            if parent_cls_name in ['Image', 'ImageData', ]:
-                linked_records = dao[parent_cls_name](self.session_maker).fov(parent_id)
-        if cls_name == 'ROI':
-            if parent_cls_name in ['ImageData', ]:
-                linked_records = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['roi'])]
-            if parent_cls_name in ['FOV', ]:
-                linked_records = dao[parent_cls_name](self.session_maker).roi_list(parent_id)
-            if parent_cls_name in ['Image', ]:
-                linked_records = dao[parent_cls_name](self.session_maker).roi(parent_id)
-        if cls_name == 'Image':
-            if parent_cls_name in ['ImageData', 'FOV', 'ROI']:
-                linked_records = dao[parent_cls_name](self.session_maker).image_list(parent_id)
+        match (cls_name, parent_cls_name):
+            case ['ImageData', 'Image']:
+                linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['image_data'])]
+            case ['ImageData', ('FOV' | 'ROI')]:
+                linked_rec = dao[parent_cls_name](self.session).image_data(parent_id)
+            case ['FOV', 'ROI']:
+                linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['fov'])]
+            case ['FOV', ('Image' | 'ImageData')]:
+                linked_rec = dao[parent_cls_name](self.session).fov(parent_id)
+            case ['FOV', 'Data']:
+                linked_rec = dao[parent_cls_name](self.session).fov_list(parent_id)
+            case ['ROI', 'ImageData']:
+                linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['roi'])]
+            case ['ROI', ('FOV' | 'Data')]:
+                linked_rec = dao[parent_cls_name](self.session).roi_list(parent_id)
+            case ['ROI', 'Image']:
+                linked_rec = dao[parent_cls_name](self.session).roi(parent_id)
+            case ['Image', ('ImageData' | 'FOV' | 'ROI')]:
+                linked_rec = dao[parent_cls_name](self.session).image_list(parent_id)
+            case ['Data', ('FOV' | 'ROI')]:
+                linked_rec = dao[parent_cls_name](self.session).data(parent_id)
+            case ['Data', 'Dataset']:
+                linked_rec = dao[parent_cls_name](self.session).data_list(parent_id)
+            case _:
+                linked_rec = []
+        return linked_rec
 
-        return linked_records
+    def _get_dao(self, class_name, id_=None):
+        """
+        A method returning a DAO of a given class from its id
+        :param class_name: the class name of object to get the record of
+        :type class_name: str
+        :param id_: the id of the requested object
+        :type id_: int
+        :return: the DAO
+        :rtype: object
+        """
+        obj = self.session.get(dao[class_name], id_)
+        obj.session = self.session
+        return obj
 
     def link(self, class1_name, id_1, class2_name, id_2):
         """
@@ -188,11 +303,9 @@ class _ShallowSQL(ShallowDb):
         :param id_2: the id of the second object to link
         :type id_2: int
         """
-        with self.session_maker() as session:
-            obj1 = session.get(dao[class1_name], id_1)
-            obj2 = session.get(dao[class2_name], id_2)
-            Linker.link(obj1, obj2)
-            session.commit()
+        obj1 = self._get_dao(class1_name, id_1)
+        obj2 = self._get_dao(class2_name, id_2)
+        Linker.link(obj1, obj2)
 
     def unlink(self, class1_name, id_1, class2_name, id_2):
         """
@@ -207,19 +320,5 @@ class _ShallowSQL(ShallowDb):
         :param id_2: the id of the second object to unlink
         :type id_2: int
         """
-        with self.session_maker() as session:
-            dao1_class, dao2_class = dao[class1_name].__name__, dao[class2_name].__name__
-            session.delete(session.get(Linker.association(dao1_class, dao2_class), (id_1, id_2)))
-            session.commit()
-
-
-class ShallowSQLite3(_ShallowSQL):
-    """
-    A concrete shallow SQLite3 persistence inheriting _ShallowSQL and implementing SQLite3-specific engine
-    """
-
-    def __init__(self, dbname=None):
-        super().__init__(dbname)
-        self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}', poolclass=NullPool)
-        self.session_maker = sessionmaker(self.engine, future=True)
-        super().create()
+        dao1_class, dao2_class = dao[class1_name].__name__, dao[class2_name].__name__
+        self.session.delete(self.session.get(Linker.association(dao1_class, dao2_class), (id_1, id_2)))

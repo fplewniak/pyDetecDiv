@@ -5,13 +5,270 @@
 """
 import glob
 import re
-
 import h5py
 import numpy as np
+import pandas as pd
 import skimage.io as skio
+import xmltodict
+import tifffile
+# from memory_profiler import profile
+import psutil
+from tifffile import TiffFile, TiffSequence
+import cv2 as cv
+from vidstab import VidStab
 
 
-class ImageResource:
+class SingleTiff:
+    """
+    A class to access image data stored in a multi-paged TIFF file defined by an explicit path. The file is memory
+    mapped to save RAM.
+    """
+
+    def __init__(self, path, **kwargs):
+        self.path = path
+        self._image_data = tifffile.memmap(path, **kwargs)
+
+    @property
+    def data(self):
+        """
+        Property returning image data as a memory mapped numpy array.
+        :return: data array
+        :rtype: memory mapped numpy array
+        """
+        if self._image_data._mmap.closed:
+            self.open()
+        if len(self._image_data.shape) == 4:
+            return np.expand_dims(self._image_data, 0)
+        if len(self._image_data.shape) == 3:
+            return np.expand_dims(np.expand_dims(self._image_data, 0), 0)
+        if len(self._image_data.shape) == 2:
+            return np.expand_dims(np.expand_dims(np.expand_dims(self._image_data, 0), 0), 0)
+        return self._image_data
+
+    def image(self, c=0, z=0, t=0):
+        """
+        Return a single-channel 2D image (one layer of one frame)
+        :param c: channel index
+        :type c: int
+        :param z: layer index
+        :type z: int
+        :param t: frame index
+        :type t: int
+        :return: the 2D image
+        :rtype: 2D memmap array
+        """
+        return self.data[c, t, z, ...]
+
+    @property
+    def shape(self):
+        """
+        The shape of the image data
+        :return: the 5D array shape
+        :rtype: tuple of int
+        """
+        return self.data.shape
+
+    @property
+    def dimension_order(self):
+        """
+        Dimension order of the 5D array
+        :return: the dimension order of the 5D image data
+        :rtype: list of str
+        """
+        return xmltodict.parse(TiffFile(self.path).ome_metadata)['OME']['Image']['Pixels']['@DimensionOrder']
+
+    def open(self):
+        """
+        Open the memory mapped file to access data
+        """
+        self._image_data = tifffile.memmap(self.path)
+
+    def close(self):
+        """
+        Close the memory mapped file
+        """
+        if not self._image_data._mmap.closed:
+            self._image_data._mmap.close()
+
+    def flush(self):
+        """
+        Flush the data to save changes to the meory mapped file
+        """
+        if not self._image_data._mmap.closed:
+            self._image_data._mmap.flush()
+
+    def refresh(self):
+        """
+        Close and open the memory mapped file to save memory if needed. Useful when creating a new file or making lots
+        of changes.
+        """
+        self.close()
+        self.open()
+
+    def compute_drift(self, z=0, c=0, max_mem=5000):
+        """
+        Compute x,y drift of frames along time for a channel and a layer. Return the list of dx,dy shifts to be used
+        with the correct_drift method
+        :param z: the layer index
+        :type z: int
+        :param c: the channel index
+        :type c: int
+        :param max_mem: maximum memory in MB to use for caching memmap. If that amount of memory is reached, then the
+        memmap is refreshed to clear memory
+        :type max_mem: int
+        :return: the list of dx,dy shifts
+        :rtype: pandas DataFrame with headers dx, dy and dr, frame index is equal to the DataFrame index
+        """
+        stabilizer = VidStab()
+
+        for frame in range(0, self.shape[1]):
+            _ = stabilizer.stabilize_frame(
+                input_frame=np.uint8(np.array(self.image(t=frame, z=z, c=c)) / 65535 * 255), smoothing_window=1)
+            if psutil.Process().memory_info().rss / (1024 * 1024) > max_mem:
+                self.refresh()
+        return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)
+
+    def correct_drift(self, drift, max_mem=5000):
+        """
+        Correct x,y drift of frames along time given a list of dx,dy shifts
+        :param drift: the list of dx and dy by frame
+        :type drift: pandas DataFrame with headers dx and dy, frame index is equal to the DataFrame index
+        :param max_mem: maximum memory in MB to use for caching memmap. If that amount of memory is reached, then the
+        memmap is refreshed to clear memory
+        :type max_mem: int
+        """
+        for idx in drift.index:
+            for c in range(0, self.shape[0]):
+                for z in range(0, self.shape[2]):
+                    self.data[c, idx + 1, z, ...] = cv.warpAffine(np.array(self.data[c, idx + 1, z, ...]), np.float32(
+                        [[1, 0, -drift.iloc[idx].dx], [0, 1, -drift.iloc[idx].dy]]),
+                                                                  self.data[c, idx + 1, z, ...].shape)
+                    if psutil.Process().memory_info().rss / (1024 * 1024) > max_mem:
+                        self.refresh()
+
+
+class MultipleTiff():
+    """
+    A class to handle image data stored in multiple TIFF files (one per field of view) defined by a list path names.
+    """
+
+    def __init__(self, path, pattern=None):
+        self._df = pd.DataFrame({'path': path})
+        new_cols = {'C': 0, 'T': 0, 'Z': 0}
+        new_cols.update(self._df.apply(lambda x: re.search(pattern, x['path']).groupdict(),
+                                       axis=1, result_type='expand').to_dict())
+        self._df = self._df.merge(pd.DataFrame(new_cols), left_index=True, right_index=True)
+        stacks = self._df.sort_values(by=['C', 'T', 'Z']).groupby(['C', 'T'])
+        file_groups = {s: stacks.get_group(s).path.tolist() for s in stacks.groups}
+
+        dims = {dim: self._df.sort_values(by=['C', 'T', 'Z'])[dim].drop_duplicates().to_list() for dim in
+                ['C', 'T', 'Z']}
+
+        img_res = TiffFile(self._df.loc[0, 'path']).asarray().shape
+        self._shape = (len(dims['C']), len(dims['T']), len(dims['Z']), img_res[0], img_res[1],)
+
+        self._files = []
+        for c, channel in enumerate(dims['C']):
+            self._files.append([])
+            for t, frame in enumerate(dims['T']):
+                self._files[c].append([])
+                for z, _ in enumerate(dims['Z']):
+                    self._files[c][t].append(file_groups[(channel, frame)][z])
+        self._files = np.array(self._files)
+
+    def tiff_file(self, c=0, t=0, z=0):
+        """
+        Return the file corresponding to the image specified by the c, t and z coordinates
+        :param c: the channel index
+        :type c: int
+        :param t: the time index
+        :type t: int
+        :param z: the layer index
+        :type z: int
+        :return: the file specified by c, t, z
+        :rtype: TiffFile
+        """
+        return TiffFile(self._files[c, t, z])
+
+    def image(self, c=0, t=0, z=0):
+        """
+        Return image data (2D) corresponding to the file specified by the c, t, and z coordinates
+        :param c: the channel index
+        :type c: int
+        :param t: the time index
+        :type t: int
+        :param z: the layer index
+        :type z: int
+        :return: the image data
+        :rtype: ndarray
+        """
+        tiff_file = self.tiff_file(c, t, z)
+        img = tiff_file.asarray()
+        tiff_file.close()
+        return img
+
+    @property
+    def shape(self):
+        """
+        The shape of the image data
+        :return: the 5D array shape
+        :rtype: tuple of int
+        """
+        return self._shape
+
+    def as_single_file(self, filename, max_mem=500):
+        """
+        Convert the set of files to a single multi-paged TIFF file.
+        :param filename: the name of the target multi-paged file
+        :type filename: str
+        :param max_mem: memory limit before refreshing the target multi-paged file during its creation
+        :type max_mem: int
+        :return: the target multi-paged TIFF file
+        :rtype: SingleTiff
+        """
+        single_tiff = SingleTiff(filename, ome=True, metadata={'axes': 'CTZYX'},
+                                 shape=self._shape, dtype=np.uint16)
+        for c, _ in enumerate(self._files):
+            for t, _ in enumerate(self._files[c]):
+                single_tiff.data[c, t, ...] = TiffSequence(self._files[c, t, :]).asarray()
+                if psutil.Process().memory_info().rss / (1024 * 1024) > max_mem:
+                    single_tiff.refresh()
+        return single_tiff
+
+    def compute_drift(self, z=0, c=0, ):
+        """
+        Compute x,y drift of frames along time for a channel and a layer. Return the list of dx,dy shifts to be used
+        with the correct_drift method
+        :param z: the layer index
+        :type z: int
+        :param c: the channel index
+        :type c: int
+        :return: the list of dx,dy shifts
+        :rtype: pandas DataFrame with headers dx, dy and dr, frame index is equal to the DataFrame index
+        """
+        stabilizer = VidStab()
+
+        for frame in range(0, self.shape[1]):
+            _ = stabilizer.stabilize_frame(
+                input_frame=np.uint8(np.array(self.image(t=frame, z=z, c=c)) / 65535 * 255), smoothing_window=1)
+        return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)
+
+    def correct_drift(self, drift):
+        """
+        Correct x,y drift of frames along time given a list of dx,dy shifts
+        :param drift: the list of dx and dy by frame
+        :type drift: pandas DataFrame with headers dx and dy, frame index is equal to the DataFrame index
+        """
+        for idx in drift.index:
+            for c in range(0, self.shape[0]):
+                for z in range(0, self.shape[2]):
+                    tifffile.imwrite(self._files[c, idx + 1, z],
+                                     cv.warpAffine(np.array(self.image(c=c, t=idx + 1, z=z)), np.float32(
+                                         [[1, 0, -drift.iloc[idx].dx], [0, 1, -drift.iloc[idx].dy]]),
+                                                   self.image(c=c, t=idx + 1, z=z).shape))
+
+
+class ImageResourceDeprecated:
     """
     A class to access image data stored in files defined by an explicit path, a path pattern or a list of paths. Image
     data can be loaded from these files as a 5D matrix with the following arbitrary order: t, z, x, y, c
@@ -32,16 +289,16 @@ class ImageResource:
         print('Loading data...')
         if self.data.size == 0:
             if self.t_pattern is None:
-                self.data = ImageResource.get_data_from_path(self.path)
+                self.data = ImageResourceDeprecated.get_data_from_path(self.path)
             else:
                 r_t_comp = re.compile(self.t_pattern)
                 path_str = ' '.join(sorted(self.path))
                 for t in sorted(set(r_t_comp.findall(path_str))):
                     print(sorted(glob.glob(f'{t}*')))
                     if self.data.size == 0:
-                        self.data = ImageResource.get_data_from_path(sorted(glob.glob(f'{t}*')))
+                        self.data = ImageResourceDeprecated.get_data_from_path(sorted(glob.glob(f'{t}*')))
                     else:
-                        self.stack(ImageResource.get_data_from_path(sorted(glob.glob(f'{t}*'))))
+                        self.stack(ImageResourceDeprecated.get_data_from_path(sorted(glob.glob(f'{t}*'))))
         return self
 
     @staticmethod
@@ -136,7 +393,7 @@ class ImageResource:
         return np.block(data_list)
 
 
-class HDF5dataset(ImageResource):
+class HDF5dataset(ImageResourceDeprecated):
     """
     A class to access image data stored in datasets of a HDF5 file. Image data can be loaded from these datasets as a
     5D matrix with the following arbitrary order: t, z, x, y, c

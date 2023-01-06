@@ -19,6 +19,7 @@ def get_default_settings() -> dict:
             'project.sqlite': {'persistence': 'pydetecdiv.sqlite3', },
             'project.mysql': {'persistence': 'pydetecdiv', 'host': 'localhost', 'credentials': 'mysql.credentials', },
             'omero': {'host': 'localhost', 'credentials': 'omero.credentials', },
+            'bioimageit': {'config_file': '/data2/BioImageIT/config.json'}
             }
 
 
@@ -29,7 +30,7 @@ def get_config_files():
     while trying to read configuration.
     :return: a list of configuration files
     """
-    if 'APPDATA' in os.environ.keys():
+    if 'APPDATA' in os.environ:
         config_files = [Path(os.environ['APPDATA']).joinpath('pyDetecDiv').joinpath('settings.ini')]
     else:
         config_files = [Path(d).joinpath('settings.ini') for d in xdg.BaseDirectory.load_config_paths('pyDetecDiv')]
@@ -49,7 +50,7 @@ def get_config():
     if not config.sections():
         config.read_dict(get_default_settings())
         default_file = Path(xdg.BaseDirectory.save_config_path('pyDetecDiv')).joinpath('settings.ini')
-        with open(default_file, 'w') as f:
+        with os.open(default_file, 'w') as f:
             config.write(f)
     return config
 

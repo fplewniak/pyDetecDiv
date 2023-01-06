@@ -6,7 +6,7 @@ Image data access DAO
 from sqlalchemy import text, Column, Integer, String, ForeignKey, Float
 from sqlalchemy.orm import joinedload, relationship
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
-import pydetecdiv.persistence.sqlalchemy.orm.dao as dao
+from pydetecdiv.persistence.sqlalchemy.orm import dao
 
 
 class ImageDataDao(DAO, Base):
@@ -18,6 +18,7 @@ class ImageDataDao(DAO, Base):
     translate = {'shape': {}}
 
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
+    uuid = Column(String(36),)
     roi = Column(Integer, ForeignKey('ROI.id_'), nullable=False, index=True)
     name = Column(String, )
     x = Column(Integer, nullable=False, server_default=text('1000'))
@@ -39,9 +40,8 @@ class ImageDataDao(DAO, Base):
         :return: a list containing the FOV record linked to ImageData with id_ == image_data_id
         :rtype: list
         """
-        with self.session_maker() as session:
-            fov= session.query(dao.FOVdao).filter(ImageDataDao.id_ == image_data_id).filter(
-                            dao.FOVdao.id_ == dao.ROIdao.fov).filter(dao.ROIdao.id_ == ImageDataDao.roi).first().record
+        fov = self.session.query(dao.FOVdao).filter(ImageDataDao.id_ == image_data_id).filter(
+            dao.FOVdao.id_ == dao.ROIdao.fov).filter(dao.ROIdao.id_ == ImageDataDao.roi).first().record
         return [fov]
 
     def image_list(self, image_data_id):
@@ -52,12 +52,11 @@ class ImageDataDao(DAO, Base):
         :return: a list of ROI records with parent FOV id == fov_id
         :rtype: list
         """
-        with self.session_maker() as session:
-            image_list = [image.record
-                          for image in session.query(ImageDataDao)
-                          .options(joinedload(ImageDataDao.image_list_))
-                          .filter(ImageDataDao.id_ == image_data_id)
-                          .first().image_list_]
+        image_list = [image.record
+                      for image in self.session.query(ImageDataDao)
+                      .options(joinedload(ImageDataDao.image_list_))
+                      .filter(ImageDataDao.id_ == image_data_id)
+                      .first().image_list_]
         return image_list
 
     @property
@@ -75,4 +74,5 @@ class ImageDataDao(DAO, Base):
                 'stack_interval': self.stack_interval,
                 'frame_interval': self.frame_interval,
                 'orderdims': self.orderdims,
+                'uuid': self.uuid,
                 }

@@ -20,6 +20,19 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
+    def commit(self):
+        """
+        Abstract method enforcing the implementation of a method to save creations and updates of objects in repository
+        on disk
+        """
+
+    @abc.abstractmethod
+    def rollback(self):
+        """
+        Abstract method enforcing the implementation of a method cancelling operations that have not been committed
+        """
+
+    @abc.abstractmethod
     def close(self):
         """
         Abstract method enforcing the implementation of a close() method in all shallow persistence connectors

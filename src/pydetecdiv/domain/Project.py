@@ -10,7 +10,12 @@ from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.domain.ROI import ROI
 from pydetecdiv.domain.ImageData import ImageData
 from pydetecdiv.domain.FOV import FOV
+from pydetecdiv.domain.Experiment import Experiment
+from pydetecdiv.domain.Data import Data
 from pydetecdiv.domain.Image import Image
+from pydetecdiv.domain.Run import Run
+from pydetecdiv.domain.Dataset import Dataset
+from pydetecdiv.domain.ImageResource import SingleTiff, MultipleTiff
 
 
 class Project:
@@ -23,6 +28,10 @@ class Project:
     classes = {
         'ROI': ROI,
         'FOV': FOV,
+        'Experiment': Experiment,
+        'Data': Data,
+        'Dataset': Dataset,
+        'Run': Run,
         'ImageData': ImageData,
         'Image': Image,
     }
@@ -31,6 +40,109 @@ class Project:
         self.repository = open_project(dbname, dbms)
         self.dbname = dbname
         self.pool = defaultdict(DomainSpecificObject)
+
+    @property
+    def uuid(self):
+        """
+        Property returning the uuid associated to this project
+        :return:
+        """
+        return self.get_objects('Experiment')[0].uuid
+
+    @property
+    def author(self):
+        """
+        Property returning the author associated to this project
+        :return:
+        """
+        return self.get_objects('Experiment')[0].author
+
+    @property
+    def date(self):
+        """
+        Property returning the date of this project
+        :return:
+        """
+        return self.get_objects('Experiment')[0].date
+
+    @property
+    def raw_dataset(self):
+        """
+        Property returning the raw dataset object associated to this project
+        :return:
+        """
+        return self.get_objects('Experiment')[0].raw_dataset
+
+    def commit(self):
+        """
+        Commit operations performed on objects (creation and update) to save them into the repository.
+        """
+        self.repository.commit()
+
+    def cancel(self):
+        """
+        Cancel operations performed on objects since last commit
+        """
+        self.repository.rollback()
+
+    def image_resource(self, path, pattern=None):
+        return SingleTiff(path) if isinstance(path, str) else MultipleTiff(path, pattern=pattern)
+
+    def import_images(self, source_path):
+        """
+        Import images from a source path. All files corresponding to the path will be imported.
+        :param source_path: the source path (glob pattern)
+        :type source_path: str
+        """
+        self.repository.import_images(source_path)
+        self.commit()
+
+    def annotate(self, dataset, source, columns, regex):
+        """
+        Annotate data in a dataset using a regular expression applied to columns specified by source (column name or
+        callable returning a str built from column names)
+        :param dataset: the dataset DSO whose data should be annotated
+        :type dataset: Dataset object
+        :param source: source column(s) used to determine the annotations
+        :type source: str or callable
+        :param columns: annotation columns to add to the dataframe representing Data objects
+        :type columns: tuple of str
+        :param regex: the regular expression defining columns
+        :type regex: str
+        :return: a table representing annotated Data objects
+        :rtype: pandas DataFrame
+        """
+        return self.repository.annotate_data(dataset.name, source, columns, regex)
+
+    def create_fov_from_raw_data(self, source, regex):
+        """
+        Create domain-specific objects from raw data using a regular expression applied to a bioimageit database field
+        or a combination thereof specified by source. DSOs to create are specified by the values in keys.
+        :param source: the database field or combination of fields to apply the regular expression to
+        :type source: str or callable returning a str
+        :param keys_: the list of classes created objects belong to
+        :type keys_: tuple of str
+        :param regex: regular expression defining the DSOs' names
+        :type regex: regular expression str
+        """
+        df = self.annotate(self.raw_dataset, source, ('FOV',), regex).loc[:, ['id_', 'FOV']]
+        fov_names = [f.name for f in self.get_objects('FOV')]
+        for fov_name in df.FOV.drop_duplicates().values:
+            if fov_name not in fov_names:
+                FOV(project=self, name=fov_name, top_left=(0, 0), bottom_right=(999, 999))
+        df['FOV'] = df['FOV'].map(self.id_mapping('FOV'))
+        for data_id, fov_id in df.values:
+            self.link_objects(self.get_object('FOV', int(fov_id)), self.get_object('Data', int(data_id)))
+
+    def id_mapping(self, class_name):
+        """
+        Return name to id_ mapping for objects of a given class
+        :param class_name: the class name
+        :type class_name: str
+        :return: the name to id_ mapping
+        :rtype: dict
+        """
+        return {obj.name: obj.id_ for obj in self.get_objects(class_name)}
 
     def save_record(self, class_name, record):
         """

@@ -5,8 +5,9 @@ Access to ROI data
 """
 from sqlalchemy import Column, Integer, String, ForeignKey, text
 from sqlalchemy.orm import joinedload, relationship
+from pydetecdiv.persistence.sqlalchemy.orm.associations import ROIdata
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
-import pydetecdiv.persistence.sqlalchemy.orm.dao as dao
+from pydetecdiv.persistence.sqlalchemy.orm import dao
 
 
 class ROIdao(DAO, Base):
@@ -24,8 +25,10 @@ class ROIdao(DAO, Base):
     y0_ = Column(Integer, nullable=False, server_default=text('0'))
     x1_ = Column(Integer, nullable=False, server_default=text('-1'))
     y1_ = Column(Integer, nullable=False, server_default=text('-1'))
+    uuid = Column(String(36))
 
     image_data_list = relationship('ImageDataDao')
+    data_list = ROIdata.roi_to_data()
 
     @property
     def record(self):
@@ -40,7 +43,8 @@ class ROIdao(DAO, Base):
                 'fov': self.fov,
                 'top_left': (self.x0_, self.y0_),
                 'bottom_right': (self.x1_, self.y1_),
-                'size': (self.x1_ - self.x0_ + 1, self.y1_ - self.y0_ + 1)
+                'size': (self.x1_ - self.x0_ + 1, self.y1_ - self.y0_ + 1),
+                'uuid': self.uuid
                 }
 
     def image_data(self, roi_id):
@@ -51,12 +55,11 @@ class ROIdao(DAO, Base):
         :return: a list of ImageData records linked to ROI with id_ == roi_id
         :rtype: list
         """
-        with self.session_maker() as session:
-            image_data = [image_data.record
-                          for image_data in session.query(ROIdao)
-                          .options(joinedload(ROIdao.image_data_list))
-                          .filter(ROIdao.id_ == roi_id)
-                          .first().image_data_list]
+        image_data = [image_data.record
+                      for image_data in self.session.query(ROIdao)
+                      .options(joinedload(ROIdao.image_data_list))
+                      .filter(ROIdao.id_ == roi_id)
+                      .first().image_data_list]
         return image_data
 
     def image_list(self, roi_id):
@@ -67,10 +70,9 @@ class ROIdao(DAO, Base):
         :return: a list containing the Image records linked to ROI with id_ == roi_id
         :rtype: list
         """
-        with self.session_maker() as session:
-            image_list = [image.record for image in
-                          session.query(dao.ImageDao)
-                          .filter(dao.ImageDataDao.id_ == dao.ImageDao.image_data)
-                          .filter(roi_id == dao.ImageDataDao.roi)
-                          .all()]
+        image_list = [image.record for image in
+                      self.session.query(dao.ImageDao)
+                      .filter(dao.ImageDataDao.id_ == dao.ImageDao.image_data)
+                      .filter(roi_id == dao.ImageDataDao.roi)
+                      .all()]
         return image_list

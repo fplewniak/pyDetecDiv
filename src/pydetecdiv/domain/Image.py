@@ -26,12 +26,6 @@ class Image(DomainSpecificObject):
         self._frame = frame
         self.validate(updated=False)
 
-    def check_validity(self):
-        """
-        Checks the current Image validity
-        """
-        ...
-
     @property
     def image_data(self):
         """
@@ -229,7 +223,7 @@ class Image(DomainSpecificObject):
         return self.frame * self.image_data.frame_interval
 
     @drift.setter
-    def drift(self, drift=(0,0)):
+    def drift(self, drift=(0, 0)):
         self._drift = drift
         self.validate()
 
@@ -251,6 +245,7 @@ class Image(DomainSpecificObject):
             'location': self._location,
             'order': self._order,
             'mimetype': self._mimetype,
+            'uuid': self.uuid
         }
         if not no_id:
             record['id_'] = self.id_
