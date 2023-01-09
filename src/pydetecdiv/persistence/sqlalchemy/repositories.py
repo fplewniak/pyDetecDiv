@@ -220,6 +220,9 @@ class ShallowSQLite3(ShallowDb):
         """
         return self.session.get(dao[class_name], id_).record
 
+    def get_record_by_name(self, class_name, name=None):
+        return self.session.query(dao[class_name]).where(dao[class_name].name.in_([name]))[0].record
+
     def get_records(self, class_name, id_list=None):
         """
         A method returning the list of all object records of a given class or select those whose id is in id_list

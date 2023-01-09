@@ -192,6 +192,9 @@ class Project:
         """
         return self.build_dso(class_name, self.repository.get_record(class_name, id_))
 
+    def get_named_object(self, class_name, name=None) -> DomainSpecificObject:
+        return self.build_dso(class_name, self.repository.get_record_by_name(class_name, name))
+
     def get_objects(self, class_name, id_list=None):
         """
         Get a list of all domain objects of a given class in the current project retrieved from the repository
