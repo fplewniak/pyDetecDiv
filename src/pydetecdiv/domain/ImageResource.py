@@ -59,6 +59,14 @@ class SingleTiff:
         """
         return self.data[c, t, z, ...]
 
+    def as_texture(self, c=0, z=0, t=0):
+        img = self.image(c=0, z=0, t=0)/65535
+        width = img.shape[0]
+        height = img.shape[1]
+        channels = 4
+        texture = np.dstack([img, img, img, np.sign(img)]).flatten()
+        return width, height, channels, texture
+
     @property
     def shape(self):
         """

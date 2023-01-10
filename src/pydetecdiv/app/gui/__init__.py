@@ -2,6 +2,7 @@
 #  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
 import dearpygui.dearpygui as dpg
 from pydetecdiv.domain.Project import Project
+from pydetecdiv.app.gui.Viewers import ImageViewer
 
 
 class GenericWidget:
@@ -17,11 +18,17 @@ class GenericWidget:
 
 class ObjectPool:
     def __init__(self):
-        self.pool = {'Project': None}
+        self.pool = {'Project': None,
+                     'ImageViewer': ImageViewer(),
+                     }
 
     @property
     def project(self):
         return self.pool['Project']
+
+    @property
+    def image_viewer(self):
+        return self.pool['ImageViewer']
 
     def close_project(self):
         if self.project is not None:

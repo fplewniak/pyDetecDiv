@@ -2,6 +2,8 @@
 #  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
 import json
 import dearpygui.dearpygui as dpg
+
+import pydetecdiv.app.gui.Viewers
 from pydetecdiv.app.gui import object_pool
 
 
@@ -39,3 +41,9 @@ def select_fov(sender, app_data, user_data):
     Data files: {d}
     """
     dpg.set_value('info_text', info_text)
+
+def view_image(sender, app_data, user_data):
+    from pydetecdiv.domain.ImageResource import SingleTiff
+    object_pool.image_viewer.clear()
+    object_pool.image_viewer.imshow(SingleTiff(user_data))
+    # dpg.set_value("texture_tag", data)

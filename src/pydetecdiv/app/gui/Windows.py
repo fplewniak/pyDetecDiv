@@ -1,6 +1,11 @@
 #  CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21
 #  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
+import numpy
+import numpy as np
+
 import dearpygui.dearpygui as dpg
+
+import pydetecdiv.app.gui.callbacks
 from pydetecdiv.app.gui import GenericWidget
 import pydetecdiv.app.gui.Tools as Tools
 import pydetecdiv.app.gui.Selectors as Selectors
@@ -42,13 +47,17 @@ class Information(GenericWindow):
             dpg.add_text(source='info_text')
         self.show_hide()
 
-
+from pydetecdiv.domain.ImageResource import SingleTiff
 class Viewer(GenericWindow):
     def __init__(self, **kwargs):
         super().__init__('viewer_window', 'Viewer')
 
         with self.window:
-            ...
+            with dpg.group(horizontal=True):
+                dpg.add_button(label='FOV', callback=pydetecdiv.app.gui.callbacks.view_image,
+                               user_data='/data2/BioImageIT/workspace/fob1/Pos0_drift_corrected.tiff')
+                dpg.add_button(label='trap pattern', callback=pydetecdiv.app.gui.callbacks.view_image,
+                               user_data='/data2/BioImageIT/workspace/fob1/trap_pattern.tif')
         self.show_hide()
 
 
