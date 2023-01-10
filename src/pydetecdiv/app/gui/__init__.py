@@ -3,6 +3,7 @@
 import dearpygui.dearpygui as dpg
 from pydetecdiv.domain.Project import Project
 
+
 class GenericWidget:
     def __init__(self, tag, **kwargs):
         self.tag = tag
@@ -16,11 +17,17 @@ class GenericWidget:
 
 class ObjectPool:
     def __init__(self):
-        self.pool = {}
+        self.pool = {'Project': None}
 
     @property
     def project(self):
         return self.pool['Project']
+
+    def close_project(self):
+        if self.project is not None:
+            self.project.repository.close()
+            self.pool['Project'] = None
+        return self
 
     def set_project(self, dbname):
         self.pool['Project'] = Project(dbname)
@@ -28,5 +35,6 @@ class ObjectPool:
 
     def add_object(self, tag, obj):
         self.pool[tag] = obj
+
 
 object_pool = ObjectPool()

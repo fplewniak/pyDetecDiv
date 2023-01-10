@@ -13,7 +13,7 @@ if __name__ == '__main__':
     dpg.create_context()
 
     dpg.configure_app(docking=True, docking_space=True, init_file=Path(get_config_dir()).joinpath('gui.ini'))
-    dpg.create_viewport(title='pyDetecDiv', width=800, height=600, clear_color=[0, 0, 255, 255])
+    dpg.create_viewport(title=f'pyDetecDiv', width=800, height=600, clear_color=[0, 0, 255, 255])
     dpg.setup_dearpygui()
 
     menu = MenuBar()

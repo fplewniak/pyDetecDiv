@@ -2,15 +2,15 @@
 #  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
 import dearpygui.dearpygui as dpg
 from pydetecdiv.app.gui import GenericWidget
-
-def toggle_show(sender, app_data, user_data):
-    dpg.configure_item(user_data, show=not dpg.get_item_configuration(user_data)['show'])
+from pydetecdiv.app.gui.callbacks import quit_application, toggle_show
 
 class MenuBar(GenericWidget):
     def __init__(self, **kwargs):
         super().__init__('menu_bar')
 
         with dpg.viewport_menu_bar():
+            with dpg.menu(label="File"):
+                dpg.add_menu_item(label="Quit", callback=quit_application)
             with dpg.menu(label="Show/Hide"):
                 dpg.add_menu_item(label="Explorer", callback=toggle_show, user_data='explorer_window')
                 dpg.add_menu_item(label="Information", callback=toggle_show, user_data='info_window')
