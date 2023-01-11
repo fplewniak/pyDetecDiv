@@ -47,7 +47,7 @@ class Project:
         Property returning the uuid associated to this project
         :return:
         """
-        return self.get_objects('Experiment')[0].uuid
+        return self.get_named_object('Experiment', self.dbname).uuid
 
     @property
     def author(self):
@@ -55,7 +55,7 @@ class Project:
         Property returning the author associated to this project
         :return:
         """
-        return self.get_objects('Experiment')[0].author
+        return self.get_named_object('Experiment', self.dbname).author
 
     @property
     def date(self):
@@ -63,7 +63,7 @@ class Project:
         Property returning the date of this project
         :return:
         """
-        return self.get_objects('Experiment')[0].date
+        return self.get_named_object('Experiment', self.dbname).date
 
     @property
     def raw_dataset(self):
@@ -71,7 +71,7 @@ class Project:
         Property returning the raw dataset object associated to this project
         :return:
         """
-        return self.get_objects('Experiment')[0].raw_dataset
+        return self.get_named_object('Experiment', self.dbname).raw_dataset
 
     def commit(self):
         """
