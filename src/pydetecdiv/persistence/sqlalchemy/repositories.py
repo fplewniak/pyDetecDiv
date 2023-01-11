@@ -88,6 +88,7 @@ class ShallowSQLite3(ShallowDb):
         if not sqlalchemy.inspect(self.engine).get_table_names():
             mapper_registry.metadata.create_all(self.engine)
             self.bioiit_exp = self.bioiit_req.create_experiment(exp_name)
+            self.commit()
         else:
             self.bioiit_exp = self.bioiit_req.get_experiment(exp_name)
 
