@@ -26,7 +26,7 @@ class Explorer(GenericWindow):
             with dpg.collapsing_header(label='Projects', tag="Projects"):
                 Selectors.ProjectSelector()
             with dpg.collapsing_header(label='Datasets', tag="Datasets"):
-               ...
+                ...
             with dpg.collapsing_header(label='Data files', tag="Data files"):
                 ...
             with dpg.collapsing_header(label='Fields of View (FOVs)', tag="FOVs"):
@@ -47,7 +47,7 @@ class Information(GenericWindow):
             dpg.add_text(source='info_text')
         self.show_hide()
 
-from pydetecdiv.domain.ImageResource import SingleTiff
+
 class Viewer(GenericWindow):
     def __init__(self, **kwargs):
         super().__init__('viewer_window', 'Viewer')
@@ -56,8 +56,10 @@ class Viewer(GenericWindow):
             with dpg.group(horizontal=True):
                 dpg.add_button(label='FOV', callback=pydetecdiv.app.gui.callbacks.view_image,
                                user_data='/data2/BioImageIT/workspace/fob1/Pos0_drift_corrected.tiff')
-                dpg.add_button(label='trap pattern', callback=pydetecdiv.app.gui.callbacks.view_image,
-                               user_data='/data2/BioImageIT/workspace/fob1/trap_pattern.tif')
+                dpg.add_button(label='ROI example', callback=pydetecdiv.app.gui.callbacks.view_image,
+                               user_data='/data2/BioImageIT/workspace/fob1/ROI_example.tiff')
+                dpg.add_button(label='same ROI with drift correction', callback=pydetecdiv.app.gui.callbacks.view_image,
+                               user_data='/data2/BioImageIT/workspace/fob1/ROI_example_drift_corrected.tiff')
         self.show_hide()
 
 

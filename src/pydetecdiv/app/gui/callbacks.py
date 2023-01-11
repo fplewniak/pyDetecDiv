@@ -45,5 +45,5 @@ def select_fov(sender, app_data, user_data):
 def view_image(sender, app_data, user_data):
     from pydetecdiv.domain.ImageResource import SingleTiff
     object_pool.image_viewer.clear()
-    object_pool.image_viewer.imshow(SingleTiff(user_data))
+    object_pool.image_viewer.imshow(SingleTiff(path=user_data, mode='r'))
     # dpg.set_value("texture_tag", data)
