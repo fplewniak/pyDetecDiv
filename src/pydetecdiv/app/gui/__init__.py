@@ -6,7 +6,7 @@ from pydetecdiv.app.gui.Viewers import ImageViewer
 
 
 class GenericWidget:
-    def __init__(self, tag, **kwargs):
+    def __init__(self, tag=0, **kwargs):
         self.tag = tag
 
     def show_hide(self):
