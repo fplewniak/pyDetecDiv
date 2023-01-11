@@ -70,6 +70,7 @@ class Toolbox(GenericWindow):
         super().__init__('tools_window', 'Toolbox')
 
         with self.window:
+            Tools.CreateProject()
             Tools.ImportDataTool()
             Tools.ExtractROIs()
         self.show_hide()

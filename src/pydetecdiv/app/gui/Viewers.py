@@ -33,7 +33,7 @@ class ImageViewer():
                 dpg.add_text('C')
                 dpg.add_slider_int(max_value=image_resource.shape[0] - 1, clamped=True, width=-1,
                                callback=self.change_channel, user_data={'t': t, 'z': z})
-        with dpg.plot(label="Image viewer", tag='image_viewer', height=-1, equal_aspects=True, width=-1,
+        with dpg.plot(tag='image_viewer', height=-1, equal_aspects=True, width=-1,
                       parent='viewer_window'):
             dpg.add_plot_axis(dpg.mvXAxis, )
             with dpg.plot_axis(dpg.mvYAxis, ):
