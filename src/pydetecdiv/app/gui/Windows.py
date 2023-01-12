@@ -23,14 +23,16 @@ class Explorer(GenericWindow):
             dpg.add_text(tag='info_text', show=False)
             with dpg.collapsing_header(label='Projects', tag="Projects"):
                 Selectors.ProjectSelector()
+            with dpg.collapsing_header(label='Fields of View (FOVs)', tag="FOVs"):
+                Selectors.FovSelector()
+            with dpg.collapsing_header(label='Regions of Interest (ROIs)', tag="ROIs"):
+                Selectors.RoiSelector()
+
             with dpg.collapsing_header(label='Datasets', tag="Datasets"):
                 ...
             with dpg.collapsing_header(label='Data files', tag="Data files"):
                 ...
-            with dpg.collapsing_header(label='Fields of View (FOVs)', tag="FOVs"):
-                Selectors.FovSelector()
-            with dpg.collapsing_header(label='Regions of Interest (ROIs)', tag="ROIs"):
-                ...
+
             with dpg.collapsing_header(label='History', tag="History"):
                 ...
 

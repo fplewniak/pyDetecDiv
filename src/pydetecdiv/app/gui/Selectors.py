@@ -33,6 +33,8 @@ class ProjectSelector(GenericSelector):
         fov_list = [fov.name for fov in p.get_objects('FOV')]
         dpg.configure_item('fov_selector_combo', items=fov_list)
         dpg.set_value('fov_selector_combo', '')
+        dpg.configure_item('roi_selector_combo', items=[])
+        dpg.set_value('roi_selector_combo', '')
         dpg.set_viewport_title(f'pyDetecDiv: {app_data}')
 
 
@@ -49,6 +51,25 @@ class FovSelector(GenericSelector):
         info_text = f"""
         Name: {fov.name}
         Size: {fov.size}
+        Data files: {d}
+        """
+        dpg.set_value('info_text', info_text)
+        dpg.configure_item('roi_selector_combo', items=[roi.name for roi in fov.roi_list])
+        dpg.set_value('roi_selector_combo', '')
+
+class RoiSelector(GenericSelector):
+    def __init__(self, tag='roi_selector', **kwargs):
+        super().__init__(tag, 'Select ROI', [''], callback=self.select)
+        self.show_hide()
+
+    def select(self, sender, app_data, user_data):
+        p = object_pool.project
+        roi = p.get_named_object('ROI', app_data)
+        data_files = p.get_linked_objects('Data', to=roi)
+        d = f'{len(data_files)} files' if len(data_files) != 1 else data_files.name
+        info_text = f"""
+        Name: {roi.name}
+        Position: {roi.top_left} - {roi.bottom_right}
         Data files: {d}
         """
         dpg.set_value('info_text', info_text)
