@@ -15,20 +15,18 @@ class GenericWidget:
     def set_source(self, source=None):
         dpg.configure_item(self.tag, source=source)
 
+    def register(self):
+        register.add(self.tag, self)
 
-class ObjectPool:
+
+class Register:
     def __init__(self):
         self.pool = {'Project': None,
-                     'ImageViewer': ImageViewer(),
                      }
 
     @property
     def project(self):
         return self.pool['Project']
-
-    @property
-    def image_viewer(self):
-        return self.pool['ImageViewer']
 
     def close_project(self):
         if self.project is not None:
@@ -40,8 +38,17 @@ class ObjectPool:
         self.pool['Project'] = Project(dbname)
         return self
 
-    def add_object(self, tag, obj):
+    def add(self, tag, obj):
         self.pool[tag] = obj
+        return obj
+
+    def get(self, tag, default=None):
+        if self.exists(tag):
+            return self.pool[tag]
+        return self.add(tag, default)
+
+    def exists(self, tag):
+        return tag in self.pool
 
 
-object_pool = ObjectPool()
+register = Register()

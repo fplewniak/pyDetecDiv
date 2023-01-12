@@ -6,7 +6,8 @@ import dearpygui.dearpygui as dpg
 from pydetecdiv.app.gui import GenericWidget
 import pydetecdiv.app.gui.Tools as Tools
 import pydetecdiv.app.gui.Selectors as Selectors
-from pydetecdiv.app.gui import object_pool
+from pydetecdiv.app.gui.Viewers import ImageViewer
+from pydetecdiv.app.gui import register
 
 
 class GenericWindow(GenericWidget):
@@ -64,8 +65,7 @@ class Viewer(GenericWindow):
 
     def view_image(self, sender, app_data, user_data):
         from pydetecdiv.domain.ImageResource import SingleTiff
-        object_pool.image_viewer.clear()
-        object_pool.image_viewer.imshow(SingleTiff(path=user_data, mode='r'))
+        register.get('ImageViewer', default=ImageViewer()).clear().imshow(SingleTiff(path=user_data, mode='r'))
 
 class Toolbox(GenericWindow):
     def __init__(self, **kwargs):

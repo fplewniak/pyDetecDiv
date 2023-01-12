@@ -311,3 +311,12 @@ class Project:
         obj = Project.classes[class_name](project=self, **rec)
         self.pool[(class_name, obj.id_)] = obj
         return obj
+
+    def record(self):
+        return {
+            'name': self.dbname,
+            'author': self.author,
+            'date': str(self.date),
+            'FOV': len(self.get_objects('FOV')),
+            'ROI': len(self.get_objects('ROI'))
+        }

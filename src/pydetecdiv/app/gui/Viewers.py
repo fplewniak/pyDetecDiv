@@ -14,6 +14,7 @@ class ImageViewer():
             dpg.delete_item('image_control')
             self.active = False
             self.image_resource = None
+        return self
 
     def imshow(self, image_resource, c=0, z=0, t=0):
         self.image_resource = image_resource
@@ -39,6 +40,7 @@ class ImageViewer():
             with dpg.plot_axis(dpg.mvYAxis, ):
                 dpg.add_image_series("image_to_view", [0, 0], [width, height], label="image", tag='image')
         self.active = True
+        return self
 
     def change_time(self, sender, app_data, user_data):
         width, height, channels, data = self.image_resource.as_texture(c=user_data['c'], t=app_data, z=user_data['z'],)
