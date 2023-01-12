@@ -46,7 +46,7 @@ class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
 
     @property
     def info(self):
-        return  f"""
+        return f"""
 Name:                 {self.name}
 Size:                 {self.size}
 number of ROI:        {len(self.roi_list)}

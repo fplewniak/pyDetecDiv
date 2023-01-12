@@ -93,7 +93,7 @@ class ROI(NamedDSO, BoxedDSO, DsoWithImageData):
 
     @property
     def info(self):
-        return  f"""
+        return f"""
 Name:                 {self.name}
 FOV:                  {self.fov.name}
 Position:             {self.top_left} - {self.bottom_right}

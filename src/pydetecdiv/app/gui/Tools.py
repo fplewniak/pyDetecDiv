@@ -12,6 +12,7 @@ class GenericTool(GenericWidget):
         super().__init__(tag, **kwargs)
         self.tool = dpg.collapsing_header(label=label, tag=tag, show=False)
 
+
 class CreateProject(GenericTool):
     def __init__(self, **kwargs):
         super().__init__('createproject_tool', 'Create Project')
@@ -25,12 +26,14 @@ class CreateProject(GenericTool):
         registry.set_project(app_data)
         dpg.configure_item('project_selector_combo', items=list_projects())
 
+
 class ImportDataTool(GenericTool):
     def __init__(self, **kwargs):
         super().__init__('importdata_tool', 'Import Data')
         with self.tool:
             Selectors.ProjectSelector(tag='import_project_selector')
         self.show_hide()
+
 
 class ExtractROIs(GenericTool):
     def __init__(self, **kwargs):

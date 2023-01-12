@@ -59,7 +59,7 @@ class ROIdao(DAO, Base):
                 for i in self.session.query(dao.DataDao)
                 .filter(ROIdata.data == dao.DataDao.id_)
                 .filter(ROIdata.roi == roi_id)
-        ]
+                ]
 
     def image_data(self, roi_id):
         """

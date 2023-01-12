@@ -21,6 +21,7 @@ class GenericWidget:
         registry.add(self.tag, self)
         return self
 
+
 class Registry:
     def __init__(self):
         self.pool = {'Project': None,

@@ -2,6 +2,7 @@
 #  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
 import dearpygui.dearpygui as dpg
 
+
 class ImageViewer():
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -25,15 +26,15 @@ class ImageViewer():
             with dpg.group(horizontal=True):
                 dpg.add_text('T')
                 dpg.add_slider_int(max_value=image_resource.shape[1] - 1, clamped=True, width=-1,
-                               callback=self.change_time, user_data={'c': c, 'z': z})
+                                   callback=self.change_time, user_data={'c': c, 'z': z})
             with dpg.group(horizontal=True):
                 dpg.add_text('Z')
                 dpg.add_slider_int(max_value=image_resource.shape[2] - 1, clamped=True, width=-1,
-                               callback=self.change_layer, user_data={'c': c, 't': t})
+                                   callback=self.change_layer, user_data={'c': c, 't': t})
             with dpg.group(horizontal=True):
                 dpg.add_text('C')
                 dpg.add_slider_int(max_value=image_resource.shape[0] - 1, clamped=True, width=-1,
-                               callback=self.change_channel, user_data={'t': t, 'z': z})
+                                   callback=self.change_channel, user_data={'t': t, 'z': z})
         with dpg.plot(tag='image_viewer', height=-1, equal_aspects=True, width=-1,
                       parent='viewer_window'):
             dpg.add_plot_axis(dpg.mvXAxis, )
@@ -43,13 +44,13 @@ class ImageViewer():
         return self
 
     def change_time(self, sender, app_data, user_data):
-        width, height, channels, data = self.image_resource.as_texture(c=user_data['c'], t=app_data, z=user_data['z'],)
+        width, height, channels, data = self.image_resource.as_texture(c=user_data['c'], t=app_data, z=user_data['z'], )
         dpg.set_value("image_to_view", data)
 
     def change_layer(self, sender, app_data, user_data):
-        width, height, channels, data = self.image_resource.as_texture(c=user_data['c'], t=user_data['t'], z=app_data,)
+        width, height, channels, data = self.image_resource.as_texture(c=user_data['c'], t=user_data['t'], z=app_data, )
         dpg.set_value("image_to_view", data)
 
     def change_channel(self, sender, app_data, user_data):
-        width, height, channels, data = self.image_resource.as_texture(c=app_data, t=user_data['t'], z=user_data['z'],)
+        width, height, channels, data = self.image_resource.as_texture(c=app_data, t=user_data['t'], z=user_data['z'], )
         dpg.set_value("image_to_view", data)

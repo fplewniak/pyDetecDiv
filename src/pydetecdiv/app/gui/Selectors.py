@@ -1,7 +1,6 @@
 #  CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21
 #  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
 import abc
-import json
 import dearpygui.dearpygui as dpg
 from pydetecdiv.app.gui import GenericWidget
 from pydetecdiv.persistence.project import list_projects
@@ -17,11 +16,14 @@ class GenericSelector(GenericWidget):
 
     @abc.abstractmethod
     def select(self, sender, app_data, user_data):
-        ...
+        """
+        Abstract method enforcing the implementation of the select callback in all selectors
+        """
 
     def set(self, items, value):
         dpg.configure_item(f'{self.tag}_combo', items=items)
         dpg.set_value(f'{self.tag}_combo', value)
+
 
 class ProjectSelector(GenericSelector):
     def __init__(self, tag='project_selector', source=0, **kwargs):
@@ -48,7 +50,6 @@ class FovSelector(GenericSelector):
         fov = registry.project.get_named_object('FOV', app_data)
         registry.get('roi_selector').set([roi.name for roi in fov.roi_list], '')
         dpg.set_value('info_text', fov.info)
-
 
 
 class RoiSelector(GenericSelector):

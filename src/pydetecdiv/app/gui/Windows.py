@@ -67,6 +67,7 @@ class Viewer(GenericWindow):
         from pydetecdiv.domain.ImageResource import SingleTiff
         registry.get('ImageViewer', default=ImageViewer()).clear().imshow(SingleTiff(path=user_data, mode='r'))
 
+
 class Toolbox(GenericWindow):
     def __init__(self, **kwargs):
         super().__init__('tools_window', 'Toolbox')

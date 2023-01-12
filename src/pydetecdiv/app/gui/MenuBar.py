@@ -4,6 +4,7 @@ import dearpygui.dearpygui as dpg
 from pydetecdiv.app.gui import GenericWidget
 from pydetecdiv.app.gui import registry
 
+
 class MenuBar(GenericWidget):
     def __init__(self, **kwargs):
         super().__init__('menu_bar', **kwargs)
