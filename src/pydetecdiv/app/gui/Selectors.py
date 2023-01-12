@@ -10,24 +10,16 @@ from pydetecdiv.app.gui import register
 class GenericSelector(GenericWidget):
     def __init__(self, tag=0, label=None, combo_list=None, source=0, callback=None, **kwargs):
         super().__init__(tag, **kwargs)
-        self.combo = Combo(tag, label, combo_list, source, parent=self, **kwargs)
+        with dpg.group(horizontal=True, tag=tag, show=False):
+            dpg.add_text(label)
+            dpg.add_combo(combo_list, width=-1, tag=f'{self.tag}_combo', source=source, callback=self.select)
 
     def select(self, sender, app_data, user_data):
         ...
 
     def set(self, items, value):
-        self.combo.set(items, value)
-
-class Combo(GenericWidget):
-    def __init__(self, tag, label, combo_list, source, parent, **kwargs):
-        super().__init__(f'{tag}_combo', **kwargs)
-        with dpg.group(horizontal=True, tag=tag, show=False):
-            dpg.add_text(label)
-            dpg.add_combo(combo_list, width=-1, tag=self.tag, source=source, callback=parent.select)
-
-    def set(self, items, value):
-        dpg.configure_item(self.tag, items=items)
-        dpg.set_value(self.tag, value)
+        dpg.configure_item(f'{self.tag}_combo', items=items)
+        dpg.set_value(f'{self.tag}_combo', value)
 
 class ProjectSelector(GenericSelector):
     def __init__(self, tag='project_selector', source=0, **kwargs):
@@ -51,9 +43,8 @@ class FovSelector(GenericSelector):
         self.register()
 
     def select(self, sender, app_data, user_data):
-        p = register.project
-        fov = p.get_named_object('FOV', app_data)
-        data_files = p.get_linked_objects('Data', to=fov)
+        fov = register.project.get_named_object('FOV', app_data)
+        data_files = register.project.get_linked_objects('Data', to=fov)
         d = f'{len(data_files)} files' if len(data_files) != 1 else data_files.name
         info_text = f"""
         Name: {fov.name}
