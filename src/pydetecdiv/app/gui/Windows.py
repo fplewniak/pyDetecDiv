@@ -7,7 +7,7 @@ from pydetecdiv.app.gui import GenericWidget
 import pydetecdiv.app.gui.Tools as Tools
 import pydetecdiv.app.gui.Selectors as Selectors
 from pydetecdiv.app.gui.Viewers import ImageViewer
-from pydetecdiv.app.gui import register
+from pydetecdiv.app.gui import registry
 
 
 class GenericWindow(GenericWidget):
@@ -65,7 +65,7 @@ class Viewer(GenericWindow):
 
     def view_image(self, sender, app_data, user_data):
         from pydetecdiv.domain.ImageResource import SingleTiff
-        register.get('ImageViewer', default=ImageViewer()).clear().imshow(SingleTiff(path=user_data, mode='r'))
+        registry.get('ImageViewer', default=ImageViewer()).clear().imshow(SingleTiff(path=user_data, mode='r'))
 
 class Toolbox(GenericWindow):
     def __init__(self, **kwargs):

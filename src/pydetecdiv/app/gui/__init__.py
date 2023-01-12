@@ -11,15 +11,17 @@ class GenericWidget:
 
     def show_hide(self):
         dpg.configure_item(self.tag, show=not dpg.get_item_configuration(self.tag)['show'])
+        return self
 
     def set_source(self, source=None):
         dpg.configure_item(self.tag, source=source)
+        return self
 
     def register(self):
-        register.add(self.tag, self)
+        registry.add(self.tag, self)
+        return self
 
-
-class Register:
+class Registry:
     def __init__(self):
         self.pool = {'Project': None,
                      }
@@ -51,4 +53,4 @@ class Register:
         return tag in self.pool
 
 
-register = Register()
+registry = Registry()

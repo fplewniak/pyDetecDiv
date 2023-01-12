@@ -2,7 +2,7 @@
 #  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
 import dearpygui.dearpygui as dpg
 from pydetecdiv.app.gui import GenericWidget
-from pydetecdiv.app.gui import register
+from pydetecdiv.app.gui import registry
 
 class MenuBar(GenericWidget):
     def __init__(self, **kwargs):
@@ -19,7 +19,7 @@ class MenuBar(GenericWidget):
                 dpg.add_menu_item(label="Toolbox", callback=self.toggle_show, user_data='tools_window')
 
     def quit_application(self, sender, app_data, user_data):
-        register.close_project()
+        registry.close_project()
         dpg.stop_dearpygui()
 
     def toggle_show(self, sender, app_data, user_data):

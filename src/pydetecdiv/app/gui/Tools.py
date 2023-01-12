@@ -3,7 +3,7 @@
 import dearpygui.dearpygui as dpg
 from pydetecdiv.app.gui import GenericWidget
 import pydetecdiv.app.gui.Selectors as Selectors
-from pydetecdiv.app.gui import register
+from pydetecdiv.app.gui import registry
 from pydetecdiv.persistence.project import list_projects
 
 
@@ -22,7 +22,7 @@ class CreateProject(GenericTool):
         self.show_hide()
 
     def create_project(self, sender, app_data, user_data):
-        register.set_project(app_data)
+        registry.set_project(app_data)
         dpg.configure_item('project_selector_combo', items=list_projects())
 
 class ImportDataTool(GenericTool):

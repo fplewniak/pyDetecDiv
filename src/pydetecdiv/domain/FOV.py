@@ -45,6 +45,17 @@ class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
         return record
 
     @property
+    def info(self):
+        return  f"""
+Name:                 {self.name}
+Size:                 {self.size}
+number of ROI:        {len(self.roi_list)}
+number of datasets:   {len(self.project.get_linked_objects('Dataset', to=self))}
+number of data files: {len(self.project.get_linked_objects('Data', to=self))}
+Comments:             {self.comments}
+        """
+
+    @property
     def comments(self):
         """
         comments property of FOV

@@ -312,11 +312,15 @@ class Project:
         self.pool[(class_name, obj.id_)] = obj
         return obj
 
-    def record(self):
-        return {
-            'name': self.dbname,
-            'author': self.author,
-            'date': str(self.date),
-            'FOV': len(self.get_objects('FOV')),
-            'ROI': len(self.get_objects('ROI'))
-        }
+    @property
+    def info(self):
+        return f"""
+Name:               {self.dbname}
+Author:             {self.author}
+Date:               {self.date}
+number of FOV:      {len(self.get_objects('FOV'))}
+number of ROI:      {len(self.get_objects('ROI'))}
+number of datasets: {len(self.get_objects('Dataset'))}
+number of files:    {len(self.get_objects('Data'))}
+number of runs:     {len(self.get_objects('Run'))}
+        """
