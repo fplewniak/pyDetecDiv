@@ -30,9 +30,9 @@ class ProjectSelector(GenericSelector):
 
     def select(self, sender, app_data, user_data):
         register.close_project().set_project(app_data)
-        dpg.set_value('info_text', json.dumps(register.project.record(), indent=4))
         register.get('fov_selector').set([fov.name for fov in register.project.get_objects('FOV')], '')
         register.get('roi_selector').set([], '')
+        dpg.set_value('info_text', json.dumps(register.project.record(), indent=4))
         dpg.set_viewport_title(f'pyDetecDiv: {app_data}')
 
 
@@ -44,6 +44,7 @@ class FovSelector(GenericSelector):
 
     def select(self, sender, app_data, user_data):
         fov = register.project.get_named_object('FOV', app_data)
+        register.get('roi_selector').set([roi.name for roi in fov.roi_list], '')
         data_files = register.project.get_linked_objects('Data', to=fov)
         d = f'{len(data_files)} files' if len(data_files) != 1 else data_files.name
         info_text = f"""
@@ -53,7 +54,7 @@ class FovSelector(GenericSelector):
         ROI: {len(fov.roi_list)}
         """
         dpg.set_value('info_text', info_text)
-        register.get('roi_selector').set([roi.name for roi in fov.roi_list], '')
+
 
 
 class RoiSelector(GenericSelector):
