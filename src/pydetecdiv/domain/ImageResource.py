@@ -11,12 +11,47 @@ import pandas as pd
 import skimage.io as skio
 import xmltodict
 import tifffile
+from aicsimageio import AICSImage
 # from memory_profiler import profile
 import psutil
 from tifffile import TiffFile, TiffSequence
 import cv2 as cv
 from vidstab import VidStab
 
+class ImageResource:
+    def __init__(self, path, **kwargs):
+        self.path = path
+        self._image = AICSImage(path, **kwargs)
+
+    def image(self, dim_order_out='YX', **kwargs):
+        return self._image.get_image_dask_data(dim_order_out, **kwargs)
+
+    @property
+    def sizeT(self):
+        return self._image.dims.T
+
+    @property
+    def sizeZ(self):
+        return self._image.dims.Z
+
+    @property
+    def sizeC(self):
+        return self._image.dims.C
+
+    def as_texture(self, c=0, z=0, t=0, **kwargs):
+        img = self.image('YX', C=c, Z=z, T=t).compute()
+        img = img / np.max(img)
+        texture = np.dstack([img, img, img, np.sign(img)])
+        return self._image.dims.X, self._image.dims.Y, 4, texture.flatten()
+
+    @property
+    def shape(self):
+        """
+        The shape of the image data
+        :return: the 5D array shape
+        :rtype: tuple of int
+        """
+        return self._image.shape
 
 class MemMapTiff:
     """

@@ -22,10 +22,10 @@ class ImageViewer:
         :rtype: ImageViewer
         """
         if self.active:
+            self.active = False
             dpg.delete_item('image_registry')
             dpg.delete_item('image_viewer')
             dpg.delete_item('image_control')
-            self.active = False
             self.image_resource = None
         return self
 
@@ -50,15 +50,15 @@ class ImageViewer:
         with dpg.group(parent='viewer_window', tag='image_control'):
             with dpg.group(horizontal=True):
                 dpg.add_text('T')
-                dpg.add_slider_int(max_value=image_resource.shape[1] - 1, clamped=True, width=-1,
+                dpg.add_slider_int(max_value=image_resource.sizeT - 1, clamped=True, width=-1,
                                    callback=self.change_time, user_data={'c': c, 'z': z})
             with dpg.group(horizontal=True):
                 dpg.add_text('Z')
-                dpg.add_slider_int(max_value=image_resource.shape[2] - 1, clamped=True, width=-1,
+                dpg.add_slider_int(max_value=image_resource.sizeZ - 1, clamped=True, width=-1,
                                    callback=self.change_layer, user_data={'c': c, 't': t})
             with dpg.group(horizontal=True):
                 dpg.add_text('C')
-                dpg.add_slider_int(max_value=image_resource.shape[0] - 1, clamped=True, width=-1,
+                dpg.add_slider_int(max_value=image_resource.sizeC - 1, clamped=True, width=-1,
                                    callback=self.change_channel, user_data={'t': t, 'z': z})
         with dpg.plot(tag='image_viewer', height=-1, equal_aspects=True, width=-1,
                       parent='viewer_window'):

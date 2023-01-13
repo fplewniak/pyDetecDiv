@@ -8,6 +8,7 @@ import pydetecdiv.app.gui.Tools as Tools
 import pydetecdiv.app.gui.Selectors as Selectors
 from pydetecdiv.app.gui.Viewers import ImageViewer
 from pydetecdiv.app.gui import registry
+from pydetecdiv.domain.ImageResource import ImageResource
 
 
 class GenericWindow(GenericWidget):
@@ -45,8 +46,7 @@ class Explorer(GenericWindow):
         self.show_hide()
 
     def view_image(self, sender, app_data, user_data):
-        from pydetecdiv.domain.ImageResource import MemMapTiff
-        registry.get('ImageViewer', default=ImageViewer()).clear().imshow(MemMapTiff(path=user_data.file_path, mode='r'))
+        registry.get('ImageViewer', default=ImageViewer()).clear().imshow(ImageResource(path=user_data.file_path))
 
 
 class Information(GenericWindow):
@@ -75,8 +75,7 @@ class Viewer(GenericWindow):
         self.show_hide()
 
     def view_image(self, sender, app_data, user_data):
-        from pydetecdiv.domain.ImageResource import MemMapTiff
-        registry.get('ImageViewer', default=ImageViewer()).clear().imshow(MemMapTiff(path=user_data, mode='r'))
+        registry.get('ImageViewer', default=ImageViewer()).clear().imshow(ImageResource(path=user_data))
 
 
 class Toolbox(GenericWindow):
