@@ -210,7 +210,7 @@ class ShallowSQLite3(ShallowDb):
         """
         return DataFrame(self.get_records(class_name, id_list))
 
-    def get_record(self, class_name, id_=None):
+    def get_record(self, class_name, id_=None, uuid=None):
         """
         A method returning an object record of a given class from its id
         :param class_name: the class name of object to get the record of
@@ -220,10 +220,15 @@ class ShallowSQLite3(ShallowDb):
         :return: the object record
         :rtype: dict (record)
         """
-        return self.session.get(dao[class_name], id_).record
+        if id_ is not None:
+            return self.session.get(dao[class_name], id_).record
+        if uuid is not None:
+            return self.session.query(dao[class_name]).filter(dao[class_name].uuid == uuid).first().record
+        return None
+
 
     def get_record_by_name(self, class_name, name=None):
-        return self.session.query(dao[class_name]).where(dao[class_name].name.in_([name]))[0].record
+        return self.session.query(dao[class_name]).where(dao[class_name].name.in_([name])).first().record
 
     def get_records(self, class_name, id_list=None):
         """
@@ -277,6 +282,8 @@ class ShallowSQLite3(ShallowDb):
                 linked_rec = dao[parent_cls_name](self.session).data(parent_id)
             case ['Data', 'Dataset']:
                 linked_rec = dao[parent_cls_name](self.session).data_list(parent_id)
+            case ['Dataset', 'Data']:
+                linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['dataset'])]
             case _:
                 linked_rec = []
         return linked_rec

@@ -33,7 +33,7 @@ class ImageViewer:
         """
         Show an image contained in image resource for the specified channel, layer and frame
         :param image_resource: the image resource containing the image data
-        :type image_resource: SingleTiff or MultipleTiff object
+        :type image_resource: MemMapTiff or MultipleTiff object
         :param c: the channel index
         :type c: int
         :param z: the layer index

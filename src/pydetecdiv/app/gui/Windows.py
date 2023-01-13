@@ -22,22 +22,31 @@ class Explorer(GenericWindow):
 
         with self.window:
             dpg.add_text(tag='info_text', show=False)
+
             with dpg.collapsing_header(label='Projects', tag="Projects"):
                 Selectors.ProjectSelector()
+
             with dpg.collapsing_header(label='Fields of View (FOVs)', tag="FOVs"):
                 Selectors.FovSelector()
+
             with dpg.collapsing_header(label='Regions of Interest (ROIs)', tag="ROIs"):
                 Selectors.RoiSelector()
 
             with dpg.collapsing_header(label='Datasets', tag="Datasets"):
-                ...
+                Selectors.DatasetSelector()
+
             with dpg.collapsing_header(label='Data files', tag="Data files"):
-                ...
+                data_selector = Selectors.DataSelector()
+                dpg.add_button(label='View', callback=self.view_image, user_data=data_selector)
 
             with dpg.collapsing_header(label='History', tag="History"):
-                ...
+                dpg.add_text('Not implemented')
 
         self.show_hide()
+
+    def view_image(self, sender, app_data, user_data):
+        from pydetecdiv.domain.ImageResource import MemMapTiff
+        registry.get('ImageViewer', default=ImageViewer()).clear().imshow(MemMapTiff(path=user_data.file_path, mode='r'))
 
 
 class Information(GenericWindow):
@@ -61,11 +70,13 @@ class Viewer(GenericWindow):
                                user_data='/data2/BioImageIT/workspace/fob1/ROI_example.tiff')
                 dpg.add_button(label='same ROI with drift correction', callback=self.view_image,
                                user_data='/data2/BioImageIT/workspace/fob1/ROI_example_drift_corrected.tiff')
+                dpg.add_button(label='2D image', callback=self.view_image,
+                               user_data='/data2/BioImageIT/workspace/xxx/data/Pos9_5_89_frame_0572.tif')
         self.show_hide()
 
     def view_image(self, sender, app_data, user_data):
-        from pydetecdiv.domain.ImageResource import SingleTiff
-        registry.get('ImageViewer', default=ImageViewer()).clear().imshow(SingleTiff(path=user_data, mode='r'))
+        from pydetecdiv.domain.ImageResource import MemMapTiff
+        registry.get('ImageViewer', default=ImageViewer()).clear().imshow(MemMapTiff(path=user_data, mode='r'))
 
 
 class Toolbox(GenericWindow):

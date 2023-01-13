@@ -18,7 +18,7 @@ import cv2 as cv
 from vidstab import VidStab
 
 
-class SingleTiff:
+class MemMapTiff:
     """
     A class to access image data stored in a multi-paged TIFF file defined by an explicit path. The file is memory
     mapped to save RAM.
@@ -225,7 +225,7 @@ class MultipleTiff():
         """
         return self._shape
 
-    def as_single_file(self, filename, max_mem=500):
+    def as_memmap_tiff(self, filename, max_mem=500):
         """
         Convert the set of files to a single multi-paged TIFF file.
         :param filename: the name of the target multi-paged file
@@ -233,9 +233,9 @@ class MultipleTiff():
         :param max_mem: memory limit before refreshing the target multi-paged file during its creation
         :type max_mem: int
         :return: the target multi-paged TIFF file
-        :rtype: SingleTiff
+        :rtype: MemMapTiff
         """
-        single_tiff = SingleTiff(filename, ome=True, metadata={'axes': 'CTZYX'},
+        single_tiff = MemMapTiff(filename, ome=True, metadata={'axes': 'CTZYX'},
                                  shape=self._shape, dtype=np.uint16)
         for c, _ in enumerate(self._files):
             for t, _ in enumerate(self._files[c]):
