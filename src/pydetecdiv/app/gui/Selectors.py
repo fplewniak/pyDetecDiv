@@ -77,7 +77,6 @@ class DataSelector(GenericSelector):
     def select(self, sender, app_data, user_data):
         self.dso = registry.project.get_named_object('Data', app_data)
         dpg.set_value('info_text', self.dso.info)
-        print(self.file_path)
 
     @property
     def file_path(self):

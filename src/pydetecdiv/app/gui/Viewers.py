@@ -50,16 +50,16 @@ class ImageViewer:
         with dpg.group(parent='viewer_window', tag='image_control'):
             with dpg.group(horizontal=True):
                 dpg.add_text('T')
-                dpg.add_slider_int(max_value=image_resource.sizeT - 1, clamped=True, width=-1,
-                                   callback=self.change_time, user_data={'c': c, 'z': z})
+                dpg.add_slider_int(tag='t_slider', max_value=image_resource.sizeT - 1, clamped=True, width=-1,
+                                   callback=self.update_image)
             with dpg.group(horizontal=True):
                 dpg.add_text('Z')
-                dpg.add_slider_int(max_value=image_resource.sizeZ - 1, clamped=True, width=-1,
-                                   callback=self.change_layer, user_data={'c': c, 't': t})
+                dpg.add_slider_int(tag='z_slider', max_value=image_resource.sizeZ - 1, clamped=True, width=-1,
+                                   callback=self.update_image)
             with dpg.group(horizontal=True):
                 dpg.add_text('C')
-                dpg.add_slider_int(max_value=image_resource.sizeC - 1, clamped=True, width=-1,
-                                   callback=self.change_channel, user_data={'t': t, 'z': z})
+                dpg.add_slider_int(tag='c_slider', max_value=image_resource.sizeC - 1, clamped=True, width=-1,
+                                   callback=self.update_image)
         with dpg.plot(tag='image_viewer', height=-1, equal_aspects=True, width=-1,
                       parent='viewer_window'):
             dpg.add_plot_axis(dpg.mvXAxis, )
@@ -68,7 +68,7 @@ class ImageViewer:
         self.active = True
         return self
 
-    def change_time(self, _, app_data, user_data):
+    def update_image(self, _, app_data, user_data):
         """
         Callback method to change display to another frame
         :param _: dummy sender parameter that is not used
@@ -77,29 +77,11 @@ class ImageViewer:
         :param user_data: channel and layer indices
         :type user_data: dict
         """
-        _, _, _, data = self.image_resource.as_texture(c=user_data['c'], t=app_data, z=user_data['z'], )
+        _, _, _, data = self.image_resource.as_texture(c=dpg.get_value('c_slider'),
+                                                       t=dpg.get_value('t_slider'), z=dpg.get_value('z_slider'))
         dpg.set_value("image_to_view", data)
 
-    def change_layer(self, _, app_data, user_data):
-        """
-        Callback method to change display to another layer
-        :param _: dummy sender parameter that is not used
-        :param app_data: the layer index
-        :type app_data: int
-        :param user_data: channel and frame indices
-        :type user_data: dict
-        """
-        _, _, _, data = self.image_resource.as_texture(c=user_data['c'], t=user_data['t'], z=app_data, )
-        dpg.set_value("image_to_view", data)
-
-    def change_channel(self, _, app_data, user_data):
-        """
-        Callback method to change display to another channel
-        :param _: dummy sender parameter that is not used
-        :param app_data: the channel index
-        :type app_data: int
-        :param user_data: frame and layer indices
-        :type user_data: dict
-        """
-        _, _, _, data = self.image_resource.as_texture(c=app_data, t=user_data['t'], z=user_data['z'], )
-        dpg.set_value("image_to_view", data)
+    def run_video(self):
+        for z in range(0, self.image_resource.sizeZ):
+            dpg.set_value('z_slider', z)
+            self.update_image(None, None, None)

@@ -8,7 +8,7 @@ import pydetecdiv.app.gui.Tools as Tools
 import pydetecdiv.app.gui.Selectors as Selectors
 from pydetecdiv.app.gui.Viewers import ImageViewer
 from pydetecdiv.app.gui import registry
-from pydetecdiv.domain.ImageResource import ImageResource
+from pydetecdiv.domain.ImageResource import ImageResource, MemMapTiff
 
 
 class GenericWindow(GenericWidget):
@@ -46,6 +46,7 @@ class Explorer(GenericWindow):
         self.show_hide()
 
     def view_image(self, sender, app_data, user_data):
+        # registry.get('ImageViewer', default=ImageViewer()).clear().imshow(MemMapTiff(path=user_data.file_path, mode='r'))
         registry.get('ImageViewer', default=ImageViewer()).clear().imshow(ImageResource(path=user_data.file_path))
 
 
@@ -72,10 +73,15 @@ class Viewer(GenericWindow):
                                user_data='/data2/BioImageIT/workspace/fob1/ROI_example_drift_corrected.tiff')
                 dpg.add_button(label='2D image', callback=self.view_image,
                                user_data='/data2/BioImageIT/workspace/xxx/data/Pos9_5_89_frame_0572.tif')
+                dpg.add_button(label='Run', callback=self.run_video)
         self.show_hide()
 
     def view_image(self, sender, app_data, user_data):
-        registry.get('ImageViewer', default=ImageViewer()).clear().imshow(ImageResource(path=user_data))
+        # registry.get('ImageViewer', default=ImageViewer()).clear().imshow(MemMapTiff(path=user_data, mode='r'))
+        registry.get('ImageViewer', default=ImageViewer()).clear().imshow(ImageResource(path=user_data, mode='r'))
+
+    def run_video(self, sender):
+        registry.get('ImageViewer').run_video()
 
 
 class Toolbox(GenericWindow):

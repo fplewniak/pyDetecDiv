@@ -19,30 +19,40 @@ import cv2 as cv
 from vidstab import VidStab
 
 class ImageResource:
-    def __init__(self, path, **kwargs):
+    def __init__(self, path, mode='readwrite', **kwargs):
         self.path = path
-        self._image = AICSImage(path, **kwargs)
+        self._aics_image = AICSImage(path, **kwargs)
+        try:
+            self._memmap = MemMapTiff(path, mode=mode)
+        except ValueError:
+            self._memmap = None
 
-    def image(self, dim_order_out='YX', **kwargs):
-        return self._image.get_image_dask_data(dim_order_out, **kwargs)
+    def image(self, c=0, z=0, t=0, **kwargs):
+        xd = self._aics_image.get_xarray_dask_stack()
+        if 'S' not in xd.dims:
+            return xd.isel(I=0, T=t, C=c, Z=z)
+        return xd.isel(I=0, S=0, T=t, C=c, Z=z)
+
 
     @property
     def sizeT(self):
-        return self._image.dims.T
+        return self._aics_image.dims.T
 
     @property
     def sizeZ(self):
-        return self._image.dims.Z
+        return self._aics_image.dims.Z
 
     @property
     def sizeC(self):
-        return self._image.dims.C
+        return self._aics_image.dims.C
 
     def as_texture(self, c=0, z=0, t=0, **kwargs):
-        img = self.image('YX', C=c, Z=z, T=t).compute()
+        if self._memmap is not None:
+            return self._memmap.as_texture(c=c, z=z, t=t, **kwargs)
+        img = self.image(c=c, z=z, t=t).values
         img = img / np.max(img)
-        texture = np.dstack([img, img, img, np.sign(img)])
-        return self._image.dims.X, self._image.dims.Y, 4, texture.flatten()
+        texture = np.dstack([img, img, img, np.ones((self._aics_image.dims.Y, self._aics_image.dims.X))])
+        return self._aics_image.dims.X, self._aics_image.dims.Y, 4, texture.flatten()
 
     @property
     def shape(self):
@@ -51,7 +61,7 @@ class ImageResource:
         :return: the 5D array shape
         :rtype: tuple of int
         """
-        return self._image.shape
+        return self._aics_image.shape
 
 class MemMapTiff:
     """
@@ -111,6 +121,18 @@ class MemMapTiff:
         :rtype: tuple of int
         """
         return self.data.shape
+
+    @property
+    def sizeC(self):
+        return self.shape[0]
+
+    @property
+    def sizeT(self):
+        return self.shape[1]
+
+    @property
+    def sizeZ(self):
+        return self.shape[2]
 
     @property
     def dimension_order(self):
