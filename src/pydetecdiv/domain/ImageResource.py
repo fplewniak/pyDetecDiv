@@ -46,6 +46,14 @@ class ImageResource:
     def sizeC(self):
         return self._aics_image.dims.C
 
+    @property
+    def sizeX(self):
+        return self._aics_image.dims.X
+
+    @property
+    def sizeY(self):
+        return self._aics_image.dims.Y
+
     def as_texture(self, c=0, z=0, t=0, **kwargs):
         if self._memmap is not None:
             return self._memmap.as_texture(c=c, z=z, t=t, **kwargs)
@@ -62,6 +70,34 @@ class ImageResource:
         :rtype: tuple of int
         """
         return self._aics_image.shape
+
+    def compute_drift(self, z=0, c=0, max_mem=5000):
+        if self._memmap is not None:
+            return self._memmap.compute_drift(z=z, c=c, max_mem=max_mem)
+        stabilizer = VidStab()
+        for frame in range(0, self.sizeT):
+            _ = stabilizer.stabilize_frame(
+                input_frame=np.uint8(np.array(self.image(t=frame, z=z, c=c)) / 65535 * 255), smoothing_window=1)
+        return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)
+
+    def correct_drift(self, drift, filename=None, max_mem=5000):
+        new_memmap = MemMapTiff(filename, ome=True, metadata={'axes': 'CTZYX'},
+                                shape=(self.sizeC, self.sizeT, self.sizeZ, self.sizeY, self.sizeX), dtype=np.uint16)
+        if self._memmap is not None:
+            self._memmap.correct_drift(new_memmap, drift, max_mem=max_mem)
+        else:
+            for c in range(0, self.sizeC):
+                for z in range(0, self.sizeZ):
+                    new_memmap.data[c, 0 , z, ...] = self.image(c=c, t=0, z=z)
+                    for idx in drift.index:
+                        new_memmap.data[c, idx + 1, z, ...] = cv.warpAffine(np.array(self.image(c=c, t=idx+1, z=z)),
+                                                                            np.float32(
+                                                                                [[1, 0, -drift.iloc[idx].dx],
+                                                                                 [0, 1, -drift.iloc[idx].dy]]),
+                                                                            self.image(c=c, t=idx+1, z=z).shape)
+                        if psutil.Process().memory_info().rss / (1024 * 1024) > max_mem:
+                            self.refresh()
+
 
 class MemMapTiff:
     """
@@ -122,27 +158,6 @@ class MemMapTiff:
         """
         return self.data.shape
 
-    @property
-    def sizeC(self):
-        return self.shape[0]
-
-    @property
-    def sizeT(self):
-        return self.shape[1]
-
-    @property
-    def sizeZ(self):
-        return self.shape[2]
-
-    @property
-    def dimension_order(self):
-        """
-        Dimension order of the 5D array
-        :return: the dimension order of the 5D image data
-        :rtype: list of str
-        """
-        return xmltodict.parse(TiffFile(self.path).ome_metadata)['OME']['Image']['Pixels']['@DimensionOrder']
-
     def open(self):
         """
         Open the memory mapped file to access data
@@ -194,7 +209,7 @@ class MemMapTiff:
                 self.refresh()
         return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)
 
-    def correct_drift(self, drift, max_mem=5000):
+    def correct_drift(self, new_memmap, drift, max_mem=5000):
         """
         Correct x,y drift of frames along time given a list of dx,dy shifts
         :param drift: the list of dx and dy by frame
@@ -203,10 +218,12 @@ class MemMapTiff:
         memmap is refreshed to clear memory
         :type max_mem: int
         """
-        for idx in drift.index:
-            for c in range(0, self.shape[0]):
-                for z in range(0, self.shape[2]):
-                    self.data[c, idx + 1, z, ...] = cv.warpAffine(np.array(self.data[c, idx + 1, z, ...]), np.float32(
+
+        for c in range(0, self.shape[0]):
+            for z in range(0, self.shape[2]):
+                new_memmap.data[c, 0 , z, ...] = self.data[c, 0, z, ...]
+                for idx in drift.index:
+                    new_memmap.data[c, idx + 1, z, ...] = cv.warpAffine(np.array(self.data[c, idx + 1, z, ...]), np.float32(
                         [[1, 0, -drift.iloc[idx].dx], [0, 1, -drift.iloc[idx].dy]]),
                                                                   self.data[c, idx + 1, z, ...].shape)
                     if psutil.Process().memory_info().rss / (1024 * 1024) > max_mem:
