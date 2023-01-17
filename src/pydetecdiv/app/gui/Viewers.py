@@ -82,6 +82,6 @@ class ImageViewer:
         dpg.set_value("image_to_view", data)
 
     def run_video(self):
-        for z in range(0, self.image_resource.sizeZ):
-            dpg.set_value('z_slider', z)
+        for t in range(0, self.image_resource.sizeT):
+            dpg.set_value('t_slider', t)
             self.update_image(None, None, None)
