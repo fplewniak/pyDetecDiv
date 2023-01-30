@@ -28,6 +28,8 @@ class ImageResource:
             self._memmap = None
 
     def image(self, c=0, z=0, t=0, **kwargs):
+        if self._memmap is not None:
+            return self._memmap.image(c=c, z=z, t=t, **kwargs)
         xd = self._aics_image.get_xarray_dask_stack()
         if 'S' not in xd.dims:
             return xd.isel(I=0, T=t, C=c, Z=z)
@@ -105,9 +107,10 @@ class MemMapTiff:
     mapped to save RAM.
     """
 
-    def __init__(self, path, **kwargs):
+    def __init__(self, path, max_mem=5000, **kwargs):
         self.path = path
         self._image_data = tifffile.memmap(path, **kwargs)
+        self.max_mem = max_mem
 
     @property
     def data(self):
@@ -138,6 +141,8 @@ class MemMapTiff:
         :return: the 2D image
         :rtype: 2D memmap array
         """
+        if psutil.Process().memory_info().rss / (1024 * 1024) > self.max_mem:
+                self.refresh()
         return self.data[c, t, z, ...]
 
     def as_texture(self, c=0, z=0, t=0):
@@ -186,7 +191,7 @@ class MemMapTiff:
         self.close()
         self.open()
 
-    def compute_drift(self, z=0, c=0, max_mem=5000):
+    def compute_drift(self, z=0, c=0, max_mem=None):
         """
         Compute x,y drift of frames along time for a channel and a layer. Return the list of dx,dy shifts to be used
         with the correct_drift method
@@ -201,6 +206,7 @@ class MemMapTiff:
         :rtype: pandas DataFrame with headers dx, dy and dr, frame index is equal to the DataFrame index
         """
         stabilizer = VidStab()
+        max_mem = self.max_mem if max_mem is None else max_mem
 
         for frame in range(0, self.shape[1]):
             _ = stabilizer.stabilize_frame(
@@ -209,7 +215,7 @@ class MemMapTiff:
                 self.refresh()
         return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)
 
-    def correct_drift(self, new_memmap, drift, max_mem=5000):
+    def correct_drift(self, new_memmap, drift, max_mem=None):
         """
         Correct x,y drift of frames along time given a list of dx,dy shifts
         :param drift: the list of dx and dy by frame
@@ -218,6 +224,7 @@ class MemMapTiff:
         memmap is refreshed to clear memory
         :type max_mem: int
         """
+        max_mem = self.max_mem if max_mem is None else max_mem
 
         for c in range(0, self.shape[0]):
             for z in range(0, self.shape[2]):
