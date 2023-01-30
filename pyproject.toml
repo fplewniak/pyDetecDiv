@@ -32,6 +32,7 @@ dependencies = [
     "psutil",
     #"pylibjpeg",
     #"pylibjpeg-libjpeg",
+    "pyside6",
     "pyxdg",
     "scikit-image",
     #"scipy",

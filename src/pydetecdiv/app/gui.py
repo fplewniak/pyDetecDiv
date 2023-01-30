@@ -3,28 +3,18 @@
 """
  The Graphical User Interface to pyDetecDiv application
 """
-import dearpygui.dearpygui as dpg
-from pathlib import Path
-from pydetecdiv.settings import get_config_dir
+from PySide6.QtCore import QSettings
+from PySide6.QtWidgets import QApplication
 import pydetecdiv.app.gui.Windows as Windows
-from pydetecdiv.app.gui.MenuBar import MenuBar
+from pydetecdiv.settings import get_config_files
 
 if __name__ == '__main__':
-    dpg.create_context()
+    app = QApplication([])
 
-    dpg.configure_app(docking=True, docking_space=True, init_file=Path(get_config_dir()).joinpath('gui.ini'))
-    dpg.create_viewport(title=f'pyDetecDiv', width=800, height=600, clear_color=[0, 0, 255, 255])
-    dpg.show_metrics()
+    app.setApplicationName('pyDetecDiv')
 
-    dpg.setup_dearpygui()
+    main_window = Windows.MainWindow()
+    main_window.show()
 
-    menu = MenuBar()
+    app.exec()
 
-    explorer = Windows.Explorer()
-    info = Windows.Information()
-    toolbox = Windows.Toolbox()
-    viewer = Windows.Viewer()
-
-    dpg.show_viewport()
-    dpg.start_dearpygui()
-    dpg.destroy_context()
