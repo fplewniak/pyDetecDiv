@@ -3,10 +3,8 @@
 """
  The Graphical User Interface to pyDetecDiv application
 """
-from PySide6.QtCore import QSettings
 from PySide6.QtWidgets import QApplication
 import pydetecdiv.app.gui.Windows as Windows
-from pydetecdiv.settings import get_config_files
 
 if __name__ == '__main__':
     app = QApplication([])
