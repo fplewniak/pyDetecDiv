@@ -15,7 +15,7 @@ class NewProjectDialog(QWidget):
         self.setWindowModality(Qt.WindowModal)
 
         self.layout = QVBoxLayout(self)
-        self.label = QLabel('Enter the name for your new project:')
+        self.label = QLabel('Enter a name for your new project:')
         self.project_name = QLineEdit()
 
         self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal)
@@ -33,12 +33,20 @@ class NewProjectDialog(QWidget):
             error_msg.setText(f'Error: {p_name} project already exists!!!')
             error_msg.exec()
         else:
+            self.setDisabled(True)
+            self.repaint()
             pydetecdiv.app.project = Project(self.project_name.text())
             pydetecdiv.app.main_window.setWindowTitle(f'pyDetecDiv: {pydetecdiv.app.project.dbname}')
+
             self.hide()
 
     def cancel(self):
         self.hide()
+
+    def show(self) -> None:
+        self.setDisabled(False)
+        self.project_name.clear()
+        super().show()
 
 
 class NewProject(QAction):
