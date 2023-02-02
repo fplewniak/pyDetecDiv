@@ -21,6 +21,7 @@ class OpenProject(QAction):
     def open_project(self):
         print(list_projects())
 
+
 class SettingsDialog(QWidget):
     def __init__(self, main_window=None):
         super().__init__(main_window, Qt.Dialog)
@@ -30,7 +31,7 @@ class SettingsDialog(QWidget):
         self.file_dialog = QFileDialog(self)
         self.file_dialog.setWindowModality(Qt.WindowModal)
 
-        self.setFixedSize(534,150)
+        self.setFixedSize(534, 150)
         self.setObjectName('Settings')
         self.setWindowTitle('Settings')
         self.workspace = QLineEdit()
@@ -61,22 +62,16 @@ class SettingsDialog(QWidget):
 
         self.gridLayout.addWidget(self.label_workspace, 0, 0, 1, 1)
         self.gridLayout.addWidget(self.workspace, 1, 0, 1, 1)
-        self.gridLayout.addWidget(self.button_workspace, 1,1, 1, 1)
+        self.gridLayout.addWidget(self.button_workspace, 1, 1, 1, 1)
 
         self.gridLayout.addWidget(self.label_bioit, 2, 0, 1, 1)
         self.gridLayout.addWidget(self.bioit_conf, 3, 0, 1, 1)
         self.gridLayout.addWidget(self.button_bioit, 3, 1, 1, 1)
 
-        self.buttonBox = QDialogButtonBox()
-        self.buttonBox.setOrientation(Qt.Horizontal)
-        # self.buttonBox.setLayoutDirection(Qt.RightToLeft)
-        self.buttonBox.setStandardButtons(QDialogButtonBox.Ok|QDialogButtonBox.Cancel)
-        self.buttonBox.setCenterButtons(True)
+        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal)
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.cancel)
         self.gridLayout.addWidget(self.buttonBox, 4, 0, 1, 2)
-
-        # self.setLayout(self.gridLayout)
 
     def select_workspace(self):
         dir_name = os.path.dirname(self.settings.value("project/workspace"))
@@ -90,7 +85,7 @@ class SettingsDialog(QWidget):
 
     def select_bioit(self):
         dir_name = os.path.dirname(self.settings.value("bioimageit/config_file"))
-        file_name  = os.path.basename(self.settings.value("bioimageit/config_file"))
+        file_name = os.path.basename(self.settings.value("bioimageit/config_file"))
         self.file_dialog.setDirectory(dir_name)
         self.file_dialog.selectFile(file_name)
         self.file_dialog.setFileMode(QFileDialog.ExistingFile)
@@ -125,7 +120,7 @@ class SettingsDialog(QWidget):
 
 
 class Settings(QAction):
-    def __init__(self, parent,  main_window, icon=False):
+    def __init__(self, parent, main_window, icon=False):
         super().__init__("Settings", parent)
         self.w = SettingsDialog(main_window)
         if icon:
