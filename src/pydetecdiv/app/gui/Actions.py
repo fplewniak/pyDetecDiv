@@ -121,7 +121,7 @@ class SettingsDialog(QWidget):
 
 class Settings(QAction):
     def __init__(self, parent, icon=False):
-        super().__init__("&Settings", parent)
+        super().__init__("Settings", parent)
         self.w = SettingsDialog()
         if icon:
             self.setIcon(QIcon("/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/gear.png"))

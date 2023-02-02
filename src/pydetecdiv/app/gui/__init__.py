@@ -9,7 +9,7 @@ class FileMenu(QMenu):
         super().__init__(*args, **kwargs)
         menu = parent.menuBar().addMenu("&File")
         Actions.OpenProject(menu, icon=True).setShortcut("Ctrl+O")
-        Actions.Settings(menu).setShortcut("Ctrl+S")
+        Actions.Settings(menu)
         menu.addSeparator()
         Actions.Quit(menu).setShortcut("Ctrl+Q")
 
