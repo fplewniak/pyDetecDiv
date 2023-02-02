@@ -22,8 +22,8 @@ class OpenProject(QAction):
         print(list_projects())
 
 class SettingsDialog(QWidget):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, main_window=None):
+        super().__init__(main_window, Qt.Dialog)
         self.settings = get_settings()
         self.file_dialog = QFileDialog()
         self.setWindowModality(Qt.ApplicationModal)
@@ -111,7 +111,6 @@ class SettingsDialog(QWidget):
 
     @Slot()
     def cancel(self):
-        print('Cancel')
         self.hide()
 
     @Slot()
@@ -122,9 +121,9 @@ class SettingsDialog(QWidget):
 
 
 class Settings(QAction):
-    def __init__(self, parent, icon=False):
+    def __init__(self, parent,  main_window, icon=False):
         super().__init__("Settings", parent)
-        self.w = SettingsDialog()
+        self.w = SettingsDialog(main_window)
         if icon:
             self.setIcon(QIcon("/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/gear.png"))
             # self.setIcon(QIcon.fromTheme('preferences-desktop'))

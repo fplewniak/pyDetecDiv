@@ -9,18 +9,18 @@ class FileMenu(QMenu):
         super().__init__(*args, **kwargs)
         menu = parent.menuBar().addMenu("&File")
         Actions.OpenProject(menu, icon=True).setShortcut("Ctrl+O")
-        Actions.Settings(menu)
+        Actions.Settings(menu, parent)
         menu.addSeparator()
         Actions.Quit(menu).setShortcut("Ctrl+Q")
 
 
 class MainToolBar(QToolBar):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, parent, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setObjectName('Main toolbar')
 
         Actions.OpenProject(self, icon=True)
-        Actions.Settings(self, icon=True)
+        Actions.Settings(self, parent, icon=True)
         Actions.Quit(self, icon=True)
 
 
