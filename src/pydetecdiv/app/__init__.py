@@ -3,6 +3,8 @@
 from PySide6.QtCore import QSettings
 from pydetecdiv.settings import get_config_files
 
+project = None
+main_window = None
 
 def get_settings():
     return QSettings(str(get_config_files()[0]), QSettings.IniFormat)

@@ -3,14 +3,53 @@ import os.path
 from PySide6.QtCore import Slot, Qt, QRect, QFileSelector
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QApplication, QWidget, QLabel, QMainWindow, QVBoxLayout, QLineEdit, QDialogButtonBox, \
-    QGridLayout, QPushButton, QFileDialog
+    QGridLayout, QPushButton, QFileDialog, QComboBox
+from pydetecdiv.domain.Project import Project
 from pydetecdiv.persistence.project import list_projects
-from pydetecdiv.app import get_settings
+import pydetecdiv.app
+
+class OpenProjectDialog(QWidget):
+    def __init__(self):
+        super().__init__(pydetecdiv.app.main_window, Qt.Dialog)
+        self.project_list = list_projects()
+        self.setWindowModality(Qt.WindowModal)
+
+        self.layout = QVBoxLayout(self)
+        self.label = QLabel('Select a project:')
+        self.combo = QComboBox()
+        self.combo.addItems(self.project_list)
+
+        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.cancel)
+
+        self.layout.addWidget(self.label)
+        self.layout.addWidget(self.combo)
+        self.layout.addWidget(self.buttonBox)
+
+
+    def accept(self):
+        pydetecdiv.app.project = Project(self.combo.currentText())
+        pydetecdiv.app.main_window.setWindowTitle(f'pyDetecDiv: {pydetecdiv.app.project.dbname}')
+        self.hide()
+
+    def cancel(self):
+        self.hide()
+
+    def refresh(self):
+        self.combo.clear()
+        self.combo.addItems(list_projects())
+
+    @Slot()
+    def show(self) -> None:
+        self.refresh()
+        super().show()
 
 
 class OpenProject(QAction):
     def __init__(self, parent, icon=False):
         super().__init__("&Open project", parent)
+        self.w = OpenProjectDialog()
         if icon:
             self.setIcon(QIcon("/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/folder-horizontal-open.png"))
             # self.setIcon(QIcon.fromTheme('folder-open'))
@@ -19,13 +58,13 @@ class OpenProject(QAction):
 
     @Slot()
     def open_project(self):
-        print(list_projects())
+        self.w.show()
 
 
 class SettingsDialog(QWidget):
-    def __init__(self, main_window=None):
-        super().__init__(main_window, Qt.Dialog)
-        self.settings = get_settings()
+    def __init__(self):
+        super().__init__(pydetecdiv.app.main_window, Qt.Dialog)
+        self.settings = pydetecdiv.app.get_settings()
         self.setWindowModality(Qt.WindowModal)
 
         self.file_dialog = QFileDialog(self)
@@ -132,9 +171,9 @@ class SettingsDialog(QWidget):
 
 
 class Settings(QAction):
-    def __init__(self, parent, main_window, icon=False):
+    def __init__(self, parent, icon=False):
         super().__init__("Settings", parent)
-        self.w = SettingsDialog(main_window)
+        self.w = SettingsDialog()
         if icon:
             self.setIcon(QIcon("/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/gear.png"))
             # self.setIcon(QIcon.fromTheme('preferences-desktop'))

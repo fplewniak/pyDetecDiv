@@ -9,7 +9,7 @@ class FileMenu(QMenu):
         super().__init__(*args, **kwargs)
         menu = parent.menuBar().addMenu("&File")
         Actions.OpenProject(menu, icon=True).setShortcut("Ctrl+O")
-        Actions.Settings(menu, parent)
+        Actions.Settings(menu)
         menu.addSeparator()
         Actions.Quit(menu).setShortcut("Ctrl+Q")
 
@@ -20,7 +20,7 @@ class MainToolBar(QToolBar):
         self.setObjectName('Main toolbar')
 
         Actions.OpenProject(self, icon=True)
-        Actions.Settings(self, parent, icon=True)
+        Actions.Settings(self, icon=True)
         Actions.Quit(self, icon=True)
 
 
