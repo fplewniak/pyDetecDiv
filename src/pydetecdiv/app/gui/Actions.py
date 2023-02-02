@@ -68,9 +68,12 @@ class SettingsDialog(QWidget):
         self.gridLayout.addWidget(self.bioit_conf, 3, 0, 1, 1)
         self.gridLayout.addWidget(self.button_bioit, 3, 1, 1, 1)
 
-        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal)
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.cancel)
+        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok |
+                                          QDialogButtonBox.Cancel |
+                                          QDialogButtonBox.Apply |
+                                          QDialogButtonBox.RestoreDefaults,
+                                          Qt.Horizontal)
+        self.buttonBox.clicked.connect(self.clicked)
         self.gridLayout.addWidget(self.buttonBox, 4, 0, 1, 2)
 
     def select_workspace(self):
@@ -102,20 +105,29 @@ class SettingsDialog(QWidget):
         self.workspace.setText(self.file_dialog.selectedFiles()[0])
 
     @Slot()
-    def accept(self):
-        print('OK')
+    def clicked(self, button, *args, **kwargs):
+        match self.buttonBox.buttonRole(button):
+            case QDialogButtonBox.ButtonRole.ResetRole:
+                self.reset()
+            case QDialogButtonBox.ButtonRole.ApplyRole:
+                self.apply()
+            case QDialogButtonBox.ButtonRole.AcceptRole:
+                self.apply()
+                self.hide()
+            case QDialogButtonBox.RejectRole:
+                self.hide()
+
+    def apply(self):
         self.settings.setValue("project/workspace", self.workspace.text())
         self.settings.setValue("bioimageit/config_file", self.bioit_conf.text())
-        self.hide()
 
-    @Slot()
-    def cancel(self):
-        self.hide()
+    def reset(self):
+        self.workspace.setText(self.settings.value("project/workspace"))
+        self.bioit_conf.setText(self.settings.value("bioimageit/config_file"))
 
     @Slot()
     def show(self) -> None:
-        self.workspace.setText(self.settings.value("project/workspace"))
-        self.bioit_conf.setText(self.settings.value("bioimageit/config_file"))
+        self.reset()
         super().show()
 
 
