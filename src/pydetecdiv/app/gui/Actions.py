@@ -12,7 +12,7 @@ class OpenProject(QAction):
     def __init__(self, parent, icon=False):
         super().__init__("&Open project", parent)
         if icon:
-            self.setIcon(QIcon("/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/folder-open.png"))
+            self.setIcon(QIcon("/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/folder-horizontal-open.png"))
             # self.setIcon(QIcon.fromTheme('folder-open'))
         self.triggered.connect(self.open_project)
         parent.addAction(self)
@@ -26,6 +26,7 @@ class SettingsDialog(QWidget):
         super().__init__()
         self.settings = get_settings()
         self.file_dialog = QFileDialog()
+        self.setWindowModality(Qt.ApplicationModal)
 
         self.setFixedSize(534,150)
         self.setObjectName('Settings')
@@ -42,7 +43,8 @@ class SettingsDialog(QWidget):
 
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
 
-        icon = QIcon(QIcon.fromTheme(u"folder"))
+        # icon = QIcon(QIcon.fromTheme(u"folder"))
+        icon = QIcon("/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/folder-horizontal.png")
         self.label_workspace = QLabel('Workspace:')
         self.label_workspace.setAlignment(Qt.AlignBottom)
         self.button_workspace = QPushButton()
@@ -65,7 +67,7 @@ class SettingsDialog(QWidget):
 
         self.buttonBox = QDialogButtonBox()
         self.buttonBox.setOrientation(Qt.Horizontal)
-        self.buttonBox.setLayoutDirection(Qt.RightToLeft)
+        # self.buttonBox.setLayoutDirection(Qt.RightToLeft)
         self.buttonBox.setStandardButtons(QDialogButtonBox.Ok|QDialogButtonBox.Cancel)
         self.buttonBox.setCenterButtons(True)
         self.buttonBox.accepted.connect(self.accept)
