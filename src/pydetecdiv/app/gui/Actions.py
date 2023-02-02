@@ -25,8 +25,10 @@ class SettingsDialog(QWidget):
     def __init__(self, main_window=None):
         super().__init__(main_window, Qt.Dialog)
         self.settings = get_settings()
-        self.file_dialog = QFileDialog()
-        self.setWindowModality(Qt.ApplicationModal)
+        self.setWindowModality(Qt.WindowModal)
+
+        self.file_dialog = QFileDialog(self)
+        self.file_dialog.setWindowModality(Qt.WindowModal)
 
         self.setFixedSize(534,150)
         self.setObjectName('Settings')
@@ -82,6 +84,7 @@ class SettingsDialog(QWidget):
         self.file_dialog.setDirectory(dir_name)
         self.file_dialog.selectFile(base_name)
         self.file_dialog.setFileMode(QFileDialog.Directory)
+        self.file_dialog.setOption(QFileDialog.ShowDirsOnly, True)
         self.file_dialog.show()
         self.file_dialog.fileSelected.connect(self.update_workspace)
 
@@ -91,6 +94,7 @@ class SettingsDialog(QWidget):
         self.file_dialog.setDirectory(dir_name)
         self.file_dialog.selectFile(file_name)
         self.file_dialog.setFileMode(QFileDialog.ExistingFile)
+        self.file_dialog.setOption(QFileDialog.ShowDirsOnly, False)
         self.file_dialog.setNameFilters(["JSON files (*.json)"])
         self.file_dialog.selectNameFilter("JSON files (*.json)")
         self.file_dialog.show()
