@@ -8,9 +8,9 @@ from pydetecdiv.domain.Project import Project
 from pydetecdiv.persistence.project import list_projects
 import pydetecdiv.app
 
-class NewProjectDialog(QWidget):
+class NewProjectDialog(QDialog):
     def __init__(self):
-        super().__init__(pydetecdiv.app.main_window, Qt.Dialog)
+        super().__init__(pydetecdiv.app.main_window)
         self.project_list = list_projects()
         self.setWindowModality(Qt.WindowModal)
 
@@ -20,11 +20,14 @@ class NewProjectDialog(QWidget):
 
         self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal)
         self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.cancel)
+        self.buttonBox.rejected.connect(self.hide)
 
         self.layout.addWidget(self.label)
         self.layout.addWidget(self.project_name)
         self.layout.addWidget(self.buttonBox)
+
+        self.exec()
+        self.destroy()
 
     def accept(self):
         p_name = self.project_name.text()
@@ -40,28 +43,19 @@ class NewProjectDialog(QWidget):
 
             self.hide()
 
-    def cancel(self):
-        self.hide()
-
-    def show(self) -> None:
-        self.setDisabled(False)
-        self.project_name.clear()
-        super().show()
-
 
 class NewProject(QAction):
     def __init__(self, parent, icon=False):
         super().__init__("&New project", parent)
-        self.w = NewProjectDialog()
         if icon:
             self.setIcon(QIcon("/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/folder--plus.png"))
-        self.triggered.connect(self.w.show)
+        self.triggered.connect(NewProjectDialog)
         parent.addAction(self)
 
 
-class OpenProjectDialog(QWidget):
+class OpenProjectDialog(QDialog):
     def __init__(self):
-        super().__init__(pydetecdiv.app.main_window, Qt.Dialog)
+        super().__init__(pydetecdiv.app.main_window)
         self.project_list = list_projects()
         self.setWindowModality(Qt.WindowModal)
 
@@ -72,11 +66,14 @@ class OpenProjectDialog(QWidget):
 
         self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal)
         self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.cancel)
+        self.buttonBox.rejected.connect(self.hide)
 
         self.layout.addWidget(self.label)
         self.layout.addWidget(self.combo)
         self.layout.addWidget(self.buttonBox)
+
+        self.exec()
+        self.destroy(True)
 
 
     def accept(self):
@@ -84,44 +81,33 @@ class OpenProjectDialog(QWidget):
         pydetecdiv.app.main_window.setWindowTitle(f'pyDetecDiv: {pydetecdiv.app.project.dbname}')
         self.hide()
 
-    def cancel(self):
-        self.hide()
-
     def refresh(self):
         self.combo.clear()
         self.combo.addItems(list_projects())
-
-    @Slot()
-    def show(self) -> None:
-        self.refresh()
-        super().show()
 
 
 class OpenProject(QAction):
     def __init__(self, parent, icon=False):
         super().__init__("&Open project", parent)
-        self.w = OpenProjectDialog()
         if icon:
             self.setIcon(QIcon("/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/folder-horizontal-open.png"))
             # self.setIcon(QIcon.fromTheme('folder-open'))
-        self.triggered.connect(self.w.show)
+        self.triggered.connect(OpenProjectDialog)
         parent.addAction(self)
 
 
-class SettingsDialog(QWidget):
+class SettingsDialog(QDialog):
     def __init__(self):
-        super().__init__(pydetecdiv.app.main_window, Qt.Dialog)
+        super().__init__(pydetecdiv.app.main_window)
         self.settings = pydetecdiv.app.get_settings()
         self.setWindowModality(Qt.WindowModal)
-
-        self.file_dialog = QFileDialog(self)
-        self.file_dialog.setWindowModality(Qt.WindowModal)
 
         self.setFixedSize(534, 150)
         self.setObjectName('Settings')
         self.setWindowTitle('Settings')
         self.workspace = QLineEdit()
         self.bioit_conf = QLineEdit()
+        self.reset()
 
         self.gridLayoutWidget = QWidget(self)
         self.gridLayout = QGridLayout()
@@ -162,33 +148,36 @@ class SettingsDialog(QWidget):
         self.buttonBox.clicked.connect(self.clicked)
         self.gridLayout.addWidget(self.buttonBox, 4, 0, 1, 2)
 
+        self.exec()
+        self.destroy(True)
+
     def select_workspace(self):
         dir_name = os.path.dirname(self.settings.value("project/workspace"))
         base_name = os.path.basename(self.settings.value("project/workspace"))
-        self.file_dialog.setDirectory(dir_name)
-        self.file_dialog.selectFile(base_name)
-        self.file_dialog.setFileMode(QFileDialog.Directory)
-        self.file_dialog.setOption(QFileDialog.ShowDirsOnly, True)
-        self.file_dialog.show()
-        self.file_dialog.fileSelected.connect(self.update_workspace)
+        dir_dialog = QFileDialog(self)
+        dir_dialog.setWindowModality(Qt.WindowModal)
+        dir_dialog.setDirectory(dir_name)
+        dir_dialog.selectFile(base_name)
+        dir_dialog.setFileMode(QFileDialog.Directory)
+        dir_dialog.setOption(QFileDialog.ShowDirsOnly, True)
+        dir_dialog.fileSelected.connect(self.workspace.setText)
+        dir_dialog.exec()
+        dir_dialog.destroy()
 
     def select_bioit(self):
         dir_name = os.path.dirname(self.settings.value("bioimageit/config_file"))
         file_name = os.path.basename(self.settings.value("bioimageit/config_file"))
-        self.file_dialog.setDirectory(dir_name)
-        self.file_dialog.selectFile(file_name)
-        self.file_dialog.setFileMode(QFileDialog.ExistingFile)
-        self.file_dialog.setOption(QFileDialog.ShowDirsOnly, False)
-        self.file_dialog.setNameFilters(["JSON files (*.json)"])
-        self.file_dialog.selectNameFilter("JSON files (*.json)")
-        self.file_dialog.show()
-        self.file_dialog.fileSelected.connect(self.update_bioit)
-
-    def update_bioit(self):
-        self.bioit_conf.setText(self.file_dialog.selectedFiles()[0])
-
-    def update_workspace(self):
-        self.workspace.setText(self.file_dialog.selectedFiles()[0])
+        file_dialog = QFileDialog(self)
+        file_dialog.setWindowModality(Qt.WindowModal)
+        file_dialog.setDirectory(dir_name)
+        file_dialog.selectFile(file_name)
+        file_dialog.setFileMode(QFileDialog.ExistingFile)
+        file_dialog.setOption(QFileDialog.ShowDirsOnly, False)
+        file_dialog.setNameFilters(["JSON files (*.json)"])
+        file_dialog.selectNameFilter("JSON files (*.json)")
+        file_dialog.fileSelected.connect(self.bioit_conf.setText)
+        file_dialog.exec()
+        file_dialog.destroy()
 
     @Slot()
     def clicked(self, button, *args, **kwargs):
@@ -211,20 +200,14 @@ class SettingsDialog(QWidget):
         self.workspace.setText(self.settings.value("project/workspace"))
         self.bioit_conf.setText(self.settings.value("bioimageit/config_file"))
 
-    @Slot()
-    def show(self) -> None:
-        self.reset()
-        super().show()
-
 
 class Settings(QAction):
     def __init__(self, parent, icon=False):
         super().__init__("Settings", parent)
-        self.w = SettingsDialog()
         if icon:
             self.setIcon(QIcon("/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/gear.png"))
             # self.setIcon(QIcon.fromTheme('preferences-desktop'))
-        self.triggered.connect(self.w.show)
+        self.triggered.connect(SettingsDialog)
         parent.addAction(self)
 
 
@@ -234,9 +217,13 @@ class Quit(QAction):
         if icon:
             self.setIcon(QIcon("/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/door-open-out.png"))
             # self.setIcon(QIcon.fromTheme('application-exit'))
-        self.triggered.connect(self.quit_app)
+        self.triggered.connect(QApplication.quit)
         parent.addAction(self)
 
-    @Slot()
-    def quit_app(self):
-        QApplication.quit()
+class Help(QAction):
+    def __init__(self, parent, icon=False):
+        super().__init__("&Help", parent)
+        if icon:
+            self.setIcon(QIcon("/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/question.png"))
+        self.triggered.connect(lambda: print(len(QApplication.allWindows())))
+        parent.addAction(self)

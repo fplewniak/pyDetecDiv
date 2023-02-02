@@ -10,6 +10,7 @@ class FileMenu(QMenu):
         menu = parent.menuBar().addMenu("&File")
         Actions.OpenProject(menu, icon=True).setShortcut("Ctrl+O")
         Actions.NewProject(menu, icon=True).setShortcut("Ctrl+N")
+        menu.addSeparator()
         Actions.Settings(menu)
         menu.addSeparator()
         Actions.Quit(menu).setShortcut("Ctrl+Q")
@@ -22,9 +23,8 @@ class MainToolBar(QToolBar):
 
         Actions.OpenProject(self, icon=True)
         Actions.NewProject(self, icon=True)
-        Actions.Settings(self, icon=True)
         Actions.Quit(self, icon=True)
-
+        Actions.Help(self, icon=True)
 
 class MainStatusBar(QStatusBar):
     def __init__(self):
