@@ -143,7 +143,7 @@ class SettingsDialog(QDialog):
         self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok |
                                           QDialogButtonBox.Cancel |
                                           QDialogButtonBox.Apply |
-                                          QDialogButtonBox.RestoreDefaults,
+                                          QDialogButtonBox.Reset,
                                           Qt.Horizontal)
         self.buttonBox.clicked.connect(self.clicked)
         self.gridLayout.addWidget(self.buttonBox, 4, 0, 1, 2)
