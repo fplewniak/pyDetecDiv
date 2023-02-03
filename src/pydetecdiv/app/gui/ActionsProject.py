@@ -48,10 +48,13 @@ class NewProjectDialog(QDialog):
         elif len(p_name) == 0:
             ...
         else:
-            self.setDisabled(True)
+            self.label.setText(f'Creating {p_name}, please wait.')
+            self.project_name.setDisabled(True)
+            self.buttonBox.setDisabled(True)
+            self.adjustSize()
             self.repaint()
-            pydetecdiv.app.project = Project(self.project_name.text())
-            pydetecdiv.app.main_window.setWindowTitle(f'pyDetecDiv: {pydetecdiv.app.project.dbname}')
+            pydetecdiv.app.project = Project(p_name)
+            pydetecdiv.app.main_window.setWindowTitle(f'pyDetecDiv: {p_name}')
 
             self.hide()
 
