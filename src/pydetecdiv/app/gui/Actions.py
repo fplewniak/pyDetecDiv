@@ -18,7 +18,7 @@ class NewProjectDialog(QDialog):
 
         self.layout = QVBoxLayout(self)
         self.label = QLabel('Enter a name for your new project:')
-        self.project_name = QLineEdit()
+        self.project_name = QLineEdit('MyProject')
 
         name_filter = QRegularExpression()
         name_filter.setPattern('\\w[\\w-]*')
