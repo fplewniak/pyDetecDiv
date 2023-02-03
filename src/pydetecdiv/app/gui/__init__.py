@@ -1,13 +1,18 @@
 #  CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21
 #  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
+"""
+Main widgets to use with persistent windows
+"""
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QToolBar, QStatusBar, QMenu, QApplication
-import pydetecdiv.app.gui.ActionsSettings
-import pydetecdiv.app.gui.ActionsProject
+from  pydetecdiv.app.gui import ActionsSettings, ActionsProject
 import pydetecdiv.app.gui.resources
 
 
 class FileMenu(QMenu):
+    """
+    The main window File menu
+    """
     def __init__(self, parent, *args, **kwargs):
         super().__init__(*args, **kwargs)
         menu = parent.menuBar().addMenu("&File")
@@ -20,7 +25,10 @@ class FileMenu(QMenu):
 
 
 class MainToolBar(QToolBar):
-    def __init__(self, parent, *args, **kwargs):
+    """
+    The main toolbar of the main window
+    """
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setObjectName('Main toolbar')
         ActionsProject.OpenProject(self, icon=True)
@@ -30,12 +38,18 @@ class MainToolBar(QToolBar):
 
 
 class MainStatusBar(QStatusBar):
+    """
+    The status bar of the main window
+    """
     def __init__(self):
         super().__init__()
         self.setObjectName('Main status bar')
 
 
 class Quit(QAction):
+    """
+    Quit action, interrupting the application
+    """
     def __init__(self, parent, icon=False):
         super().__init__("&Quit", parent)
         if icon:
@@ -46,6 +60,9 @@ class Quit(QAction):
 
 
 class Help(QAction):
+    """
+    Action requesting global help
+    """
     def __init__(self, parent, icon=False):
         super().__init__("&Help", parent)
         if icon:

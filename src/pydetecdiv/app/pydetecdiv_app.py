@@ -3,16 +3,13 @@
 """
  The Graphical User Interface to pyDetecDiv application
 """
-from PySide6.QtWidgets import QApplication
-import pydetecdiv.app.gui.Windows as Windows
+from pydetecdiv.app import PyDetecDivApplication
+from pydetecdiv.app.gui.Windows import MainWindow
 
 if __name__ == '__main__':
-    app = QApplication([])
+    app = PyDetecDivApplication([])
 
-    app.setApplicationName('pyDetecDiv')
-
-    main_window = Windows.MainWindow()
-    main_window.show()
+    PyDetecDivApplication.main_window = MainWindow()
+    PyDetecDivApplication.main_window.show()
 
     app.exec()
-
