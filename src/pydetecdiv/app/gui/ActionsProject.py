@@ -12,6 +12,7 @@ class NewProjectDialog(QDialog):
     """
     A dialog window to create a new project
     """
+
     def __init__(self):
         super().__init__(PyDetecDivApplication.main_window)
 
@@ -65,8 +66,9 @@ class NewProjectDialog(QDialog):
 
 class NewProject(QAction):
     """
-    Action to open a for for project creation
+    Action to open a for project creation
     """
+
     def __init__(self, parent, icon=False):
         super().__init__("&New project", parent)
         if icon:
@@ -85,11 +87,13 @@ class NewProject(QAction):
         dialog.setTextValue('MyProject')
         ok = dialog.exec()
         if ok:
-            p_name = self.project_name.text()
+            p_name = dialog.textValue()
             if p_name in project_list():
                 error_msg = QMessageBox(self)
                 error_msg.setText(f'Error: {p_name} project already exists!!!')
                 error_msg.exec()
+            elif len(p_name) == 0:
+                ...
             else:
                 self.setDisabled(True)
                 self.repaint()
@@ -101,6 +105,7 @@ class OpenProjectDialog(QDialog):
     """
     A dialog window to open a project
     """
+
     def __init__(self):
         super().__init__(PyDetecDivApplication.main_window)
         self.setWindowModality(Qt.WindowModal)
@@ -135,6 +140,7 @@ class OpenProject(QAction):
     """
     Action to open a project chooser window
     """
+
     def __init__(self, parent, icon=False):
         super().__init__("&Open project", parent)
         if icon:
@@ -147,7 +153,7 @@ class OpenProject(QAction):
     def open_project(self):
         """
         A method to open a project using a QInputDialog instance instead of the OpenProjectDialog class above. This
-        method is not used at the moment but might be in the near future
+        method is not used at the moment but might be in the near future.
         """
         dialog = QInputDialog()
         dialog.setWindowTitle('Open project')
