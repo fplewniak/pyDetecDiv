@@ -62,6 +62,24 @@ class NewProject(QAction):
         self.triggered.connect(NewProjectDialog)
         parent.addAction(self)
 
+    def create_project(self):
+        dialog = QInputDialog()
+        dialog.setWindowTitle('Create project')
+        dialog.setLabelText('Enter a name for your new project:')
+        dialog.setTextValue('MyProject')
+        ok = dialog.exec()
+        if ok:
+            p_name = self.project_name.text()
+            if p_name in list_projects():
+                error_msg = QMessageBox(self)
+                error_msg.setText(f'Error: {p_name} project already exists!!!')
+                error_msg.exec()
+            else:
+                self.setDisabled(True)
+                self.repaint()
+                pydetecdiv.app.project = Project(self.project_name.text())
+                pydetecdiv.app.main_window.setWindowTitle(f'pyDetecDiv: {pydetecdiv.app.project.dbname}')
+
 
 class OpenProjectDialog(QDialog):
     def __init__(self):
@@ -104,7 +122,19 @@ class OpenProject(QAction):
             self.setIcon(QIcon("/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/folder-horizontal-open.png"))
             # self.setIcon(QIcon.fromTheme('folder-open'))
         self.triggered.connect(OpenProjectDialog)
+        # self.triggered.connect(self.open_project)
         parent.addAction(self)
+
+    def open_project(self):
+        dialog = QInputDialog()
+        dialog.setWindowTitle('Open project')
+        dialog.setLabelText('Select a project name:')
+        dialog.setComboBoxItems(sorted(list_projects()))
+        dialog.setComboBoxEditable(False)
+        ok = dialog.exec()
+        if ok:
+            pydetecdiv.app.project = Project(dialog.textValue())
+            pydetecdiv.app.main_window.setWindowTitle(f'pyDetecDiv: {pydetecdiv.app.project.dbname}')
 
 
 class SettingsDialog(QDialog):
