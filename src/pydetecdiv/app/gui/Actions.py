@@ -1,22 +1,30 @@
 import os.path
 
-from PySide6.QtCore import Slot, Qt, QRect, QFileSelector, QTimer
-from PySide6.QtGui import QAction, QIcon
-from PySide6.QtWidgets import QApplication, QWidget, QLabel, QMainWindow, QVBoxLayout, QLineEdit, QDialogButtonBox, \
-    QGridLayout, QPushButton, QFileDialog, QComboBox, QErrorMessage, QMessageBox, QDialog, QProgressDialog
+from PySide6.QtCore import Slot, Qt, QRect, QRegularExpression
+from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
+from PySide6.QtWidgets import (QApplication, QWidget, QLabel, QVBoxLayout, QLineEdit, QDialogButtonBox,
+    QGridLayout, QPushButton, QFileDialog, QComboBox, QMessageBox, QDialog, QInputDialog)
 from pydetecdiv.domain.Project import Project
 from pydetecdiv.persistence.project import list_projects
 import pydetecdiv.app
 
+
 class NewProjectDialog(QDialog):
     def __init__(self):
         super().__init__(pydetecdiv.app.main_window)
-        self.project_list = list_projects()
+
         self.setWindowModality(Qt.WindowModal)
+        self.setWindowTitle('Create project')
 
         self.layout = QVBoxLayout(self)
         self.label = QLabel('Enter a name for your new project:')
         self.project_name = QLineEdit()
+
+        name_filter = QRegularExpression()
+        name_filter.setPattern('\\w[\\w-]*')
+        validator = QRegularExpressionValidator()
+        validator.setRegularExpression(name_filter)
+        self.project_name.setValidator(validator)
 
         self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal)
         self.buttonBox.accepted.connect(self.accept)
@@ -35,6 +43,8 @@ class NewProjectDialog(QDialog):
             error_msg = QMessageBox(self)
             error_msg.setText(f'Error: {p_name} project already exists!!!')
             error_msg.exec()
+        elif len(p_name) == 0:
+            ...
         else:
             self.setDisabled(True)
             self.repaint()
@@ -57,10 +67,12 @@ class OpenProjectDialog(QDialog):
     def __init__(self):
         super().__init__(pydetecdiv.app.main_window)
         self.project_list = list_projects()
+
         self.setWindowModality(Qt.WindowModal)
+        self.setWindowTitle('Open project')
 
         self.layout = QVBoxLayout(self)
-        self.label = QLabel('Select a project:')
+        self.label = QLabel('Select a project name:')
         self.combo = QComboBox()
         self.combo.addItems(self.project_list)
 
@@ -74,7 +86,6 @@ class OpenProjectDialog(QDialog):
 
         self.exec()
         self.destroy(True)
-
 
     def accept(self):
         pydetecdiv.app.project = Project(self.combo.currentText())
@@ -219,6 +230,7 @@ class Quit(QAction):
             # self.setIcon(QIcon.fromTheme('application-exit'))
         self.triggered.connect(QApplication.quit)
         parent.addAction(self)
+
 
 class Help(QAction):
     def __init__(self, parent, icon=False):
