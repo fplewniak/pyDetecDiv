@@ -1,0 +1,13 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="icons">
+        <file alias="exit">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/control-power.png</file>
+        <file alias="settings">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/equalizer.png</file>
+        <file alias="help">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/question.png</file>
+
+        <file alias="file_chooser">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/folder-horizontal.png</file>
+
+        <file alias="new_project">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/folder--plus.png</file>
+        <file alias="open_project">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/folder-horizontal-open.png</file>
+    </qresource>
+</RCC>
