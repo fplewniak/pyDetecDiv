@@ -8,6 +8,19 @@ from PySide6.QtWidgets import (QLabel, QVBoxLayout, QLineEdit, QDialogButtonBox,
 from pydetecdiv.app import PyDetecDivApplication, project_list
 
 
+def project_name_validator():
+    """
+    Name validator to filter invalid character in project name
+    :return: the validator
+    :rtype: QRegularExpressionValidator
+    """
+    name_filter = QRegularExpression()
+    name_filter.setPattern('\\w[\\w-]*')
+    validator = QRegularExpressionValidator()
+    validator.setRegularExpression(name_filter)
+    return validator
+
+
 class NewProjectDialog(QDialog):
     """
     A dialog window to create a new project
@@ -23,11 +36,7 @@ class NewProjectDialog(QDialog):
         self.label = QLabel('Enter a name for your new project:')
         self.project_name = QLineEdit('MyProject')
 
-        name_filter = QRegularExpression()
-        name_filter.setPattern('\\w[\\w-]*')
-        validator = QRegularExpressionValidator()
-        validator.setRegularExpression(name_filter)
-        self.project_name.setValidator(validator)
+        self.project_name.setValidator(project_name_validator())
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal)
         self.button_box.accepted.connect(self.accept)
@@ -115,6 +124,8 @@ class OpenProjectDialog(QDialog):
         self.label = QLabel('Select a project name:')
         self.combo = QComboBox()
         self.combo.addItems(sorted(project_list()))
+        self.combo.setEditable(True)
+        self.combo.setValidator(project_name_validator())
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal)
         self.button_box.accepted.connect(self.accept)
@@ -131,8 +142,19 @@ class OpenProjectDialog(QDialog):
         """
         Open the project when the OK button has been clicked
         """
-        PyDetecDivApplication.open_project(self.combo.currentText())
-        PyDetecDivApplication.main_window.setWindowTitle(f'pyDetecDiv: {PyDetecDivApplication.project.dbname}')
+        p_name = self.combo.currentText()
+        if len(p_name) == 0:
+            return
+        if p_name not in project_list():
+            self.label.setText(f'Creating {p_name}, please wait.')
+            self.combo.setDisabled(True)
+            self.button_box.setDisabled(True)
+            self.adjustSize()
+            self.repaint()
+
+        PyDetecDivApplication.open_project(p_name)
+        PyDetecDivApplication.main_window.setWindowTitle(f'pyDetecDiv: {p_name}')
+
         self.hide()
 
 
