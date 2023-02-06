@@ -16,8 +16,8 @@ class FileMenu(QMenu):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(*args, **kwargs)
         menu = parent.menuBar().addMenu("&File")
-        ActionsProject.OpenProject(menu, icon=True).setShortcut("Ctrl+O")
-        ActionsProject.NewProject(menu, icon=True).setShortcut("Ctrl+N")
+        ActionsProject.OpenProject(menu).setShortcut("Ctrl+O")
+        ActionsProject.NewProject(menu).setShortcut("Ctrl+N")
         menu.addSeparator()
         ActionsSettings.Settings(menu)
         menu.addSeparator()
@@ -31,10 +31,10 @@ class MainToolBar(QToolBar):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setObjectName('Main toolbar')
-        ActionsProject.OpenProject(self, icon=True)
-        ActionsProject.NewProject(self, icon=True)
-        Quit(self, icon=True)
-        Help(self, icon=True)
+        ActionsProject.OpenProject(self)
+        ActionsProject.NewProject(self)
+        Quit(self)
+        Help(self)
 
 
 class MainStatusBar(QStatusBar):
@@ -50,11 +50,8 @@ class Quit(QAction):
     """
     Quit action, interrupting the application
     """
-    def __init__(self, parent, icon=False):
-        super().__init__("&Quit", parent)
-        if icon:
-            self.setIcon(QIcon(":icons/exit"))
-            # self.setIcon(QIcon.fromTheme('application-exit'))
+    def __init__(self, parent):
+        super().__init__(QIcon(":icons/exit"), "&Quit", parent)
         self.triggered.connect(QApplication.quit)
         parent.addAction(self)
 
@@ -64,8 +61,6 @@ class Help(QAction):
     Action requesting global help
     """
     def __init__(self, parent, icon=False):
-        super().__init__("&Help", parent)
-        if icon:
-            self.setIcon(QIcon(":icons/help"))
+        super().__init__(QIcon(":icons/help"), "&Help", parent)
         self.triggered.connect(lambda: print(len(QApplication.allWindows())))
         parent.addAction(self)

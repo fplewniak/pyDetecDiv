@@ -141,8 +141,6 @@ class Settings(QAction):
     """
 
     def __init__(self, parent, icon=False):
-        super().__init__("Settings", parent)
-        if icon:
-            self.setIcon(QIcon(":icons/settings"))
+        super().__init__(QIcon(":icons/settings"), "Settings", parent)
         self.triggered.connect(SettingsDialog)
         parent.addAction(self)
