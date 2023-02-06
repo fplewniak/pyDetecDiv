@@ -3,8 +3,8 @@
 """
 Definition of global objects and methods for easy access from all parts of the application
 """
-from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import QSettings
+from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout
+from PySide6.QtCore import Qt, QSettings, Slot
 from pydetecdiv.settings import get_config_files
 from pydetecdiv.persistence.project import list_projects
 from pydetecdiv.domain.Project import Project
@@ -31,6 +31,41 @@ class PyDetecDivApplication(QApplication):
         """
         cls.project = Project(project_name)
 
+
+class WaitDialog(QDialog):
+    """
+    Generic dialog box asking the user to wait for a thread to be finished. This box closes automatically when the
+    thread is complete and the parent window is hidden as well if it is specified. This should be used for processes
+    that do not last too long and that might generate inconsistency if cancelled as there is no possibility to interrupt
+    it
+    """
+
+    def __init__(self, msg='Please wait', thread=None, parent=None):
+        super().__init__(parent)
+        self.parent = parent
+        self.setWindowModality(Qt.WindowModal)
+        label = QLabel()
+        label.setStyleSheet("""
+        font-weight: bold;
+        """)
+        label.setText(msg)
+        layout = QVBoxLayout(self)
+        layout.addWidget(label)
+        self.setLayout(layout)
+        thread.start()
+        thread.finished.connect(self.thread_complete)
+        self.exec()
+        self.destroy()
+
+    @Slot()
+    def thread_complete(self):
+        """
+        Slot reacting to the end of the thread. The dialog box is destroyed and its parent is hidden if it has been
+        specified (not None)
+        """
+        if self.parent is not None:
+            self.parent.hide()
+        self.hide()
 
 def get_settings():
     """

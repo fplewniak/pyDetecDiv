@@ -1,10 +1,10 @@
 """
 Handling actions to open, create and interact with projects
 """
-from PySide6.QtCore import Qt, QRegularExpression
+from PySide6.QtCore import Qt, QRegularExpression, QThread, Slot
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QLabel, QVBoxLayout, QLineEdit, QDialogButtonBox, QComboBox, QMessageBox, QDialog)
-from pydetecdiv.app import PyDetecDivApplication, project_list
+from pydetecdiv.app import PyDetecDivApplication, project_list, WaitDialog
 
 
 class ProjectDialog(QDialog):
@@ -14,6 +14,7 @@ class ProjectDialog(QDialog):
 
     def __init__(self, new_project_dialog=False):
         super().__init__(PyDetecDivApplication.main_window)
+        self.wait = None
         self.new_project_dialog = new_project_dialog
         self.setWindowModality(Qt.WindowModal)
         self.layout = QVBoxLayout(self)
@@ -62,25 +63,13 @@ class ProjectDialog(QDialog):
         if len(p_name) == 0:
             ...
         elif p_name not in project_list():
-            self.label.setStyleSheet("""
-            font-weight: bold;
-            """)
-            self.label.setText(f'Creating {p_name}, please wait.')
-            self.project_name.setDisabled(True)
-            self.button_box.setDisabled(True)
-            self.adjustSize()
-            self.repaint()
-            PyDetecDivApplication.open_project(p_name)
-            PyDetecDivApplication.main_window.setWindowTitle(f'pyDetecDiv: {p_name}')
+            self.wait = WaitDialog(f'Creating {p_name}, please wait.',ProjectThread(p_name), self)
         elif self.new_project_dialog:
             error_msg = QMessageBox(self)
             error_msg.setText(f'Error: {p_name} project already exists!!!')
             error_msg.exec()
         else:
-            PyDetecDivApplication.open_project(p_name)
-            PyDetecDivApplication.main_window.setWindowTitle(f'pyDetecDiv: {p_name}')
-
-        self.hide()
+            self.wait = WaitDialog(f'Opening {p_name}, please wait.',ProjectThread(p_name), self)
 
     @staticmethod
     def project_name_validator():
@@ -96,6 +85,25 @@ class ProjectDialog(QDialog):
         return validator
 
 
+class ProjectThread(QThread):
+    """
+    Thread used to open or create a project while the user is informed of the running process. This allows to close
+    automatically the dialogs when the process is finished.
+    """
+
+    def __init__(self, p_name):
+        super().__init__()
+        self.p_name = p_name
+
+    @Slot()
+    def run(self):
+        """
+        Create or open the project
+        """
+        PyDetecDivApplication.open_project(self.p_name)
+        PyDetecDivApplication.main_window.setWindowTitle(f'pyDetecDiv: {self.p_name}')
+
+
 class NewProject(QAction):
     """
     Action to open a for project creation
@@ -103,15 +111,8 @@ class NewProject(QAction):
 
     def __init__(self, parent):
         super().__init__(QIcon(":icons/new_project"), "&New project", parent)
-        self.triggered.connect(self.new_project)
+        self.triggered.connect(lambda _: ProjectDialog(new_project_dialog=True))
         parent.addAction(self)
-
-    @staticmethod
-    def new_project():
-        """
-        Open a project creation dialog window
-        """
-        ProjectDialog(new_project_dialog=True)
 
 
 class OpenProject(QAction):
@@ -121,12 +122,5 @@ class OpenProject(QAction):
 
     def __init__(self, parent):
         super().__init__(QIcon(":icons/open_project"), "&Open project", parent)
-        self.triggered.connect(self.open_project)
+        self.triggered.connect(ProjectDialog)
         parent.addAction(self)
-
-    @staticmethod
-    def open_project():
-        """
-        Open an open/create project dialog
-        """
-        ProjectDialog()

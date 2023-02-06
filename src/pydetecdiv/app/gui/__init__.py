@@ -60,7 +60,8 @@ class Help(QAction):
     """
     Action requesting global help
     """
-    def __init__(self, parent, icon=False):
+    def __init__(self, parent):
         super().__init__(QIcon(":icons/help"), "&Help", parent)
         self.triggered.connect(lambda: print(len(QApplication.allWindows())))
+        self.triggered.connect(lambda: print(QApplication.allWindows()))
         parent.addAction(self)
