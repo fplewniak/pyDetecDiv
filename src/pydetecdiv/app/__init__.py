@@ -3,6 +3,8 @@
 """
 Definition of global objects and methods for easy access from all parts of the application
 """
+from contextlib import contextmanager
+
 from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout
 from PySide6.QtCore import Qt, QSettings, Slot, QThread
 
@@ -16,7 +18,6 @@ class PyDetecDivApplication(QApplication):
     """
     PyDetecDiv application class extending QApplication to keep track of the current project and main window
     """
-    project = None
     project_name = None
     main_window = None
 
@@ -24,22 +25,20 @@ class PyDetecDivApplication(QApplication):
         super().__init__(*args)
         self.setApplicationName('pyDetecDiv')
 
-    @classmethod
-    def open_project(cls, project_name):
-        """
-        Open a project from its name if it exists, create it otherwise and store the object in the global cls.project
-        class variable
-        :param project_name: the project name
-        :type project_name: str
-        """
-        cls.project_name = project_name
-        cls.project = Project(project_name)
-        cls.main_window.setWindowTitle(f'pyDetecDiv: {project_name}')
-
-    @classmethod
-    def close_project(cls):
-        cls.project.commit()
-        cls.project.repository.close()
+@contextmanager
+def pydetecdiv_project(project_name):
+    """
+    Context manager for projects.
+    :param project_name: the project name
+    :type project_name: str
+    """
+    PyDetecDivApplication.project_name = project_name
+    project = Project(project_name)
+    try:
+        yield project
+    finally:
+        project.commit()
+        project.repository.close()
 
 class PyDetecDivThread(QThread):
     """
@@ -48,18 +47,18 @@ class PyDetecDivThread(QThread):
 
     def __init__(self):
         super().__init__()
-        self.fn = None
+        self.func = None
         self.args = None
         self.kwargs = None
 
-    def set_function(self, fn, *args, **kwargs):
+    def set_function(self, func, *args, **kwargs):
         """
         DEfine the function to run in the thread
         :param fn: the function to run
         :param args: arguments passed to the function
         :param kwargs: keyword arguments passed to the function
         """
-        self.fn = fn
+        self.func = func
         self.args = args
         self.kwargs = kwargs
 
@@ -68,7 +67,7 @@ class PyDetecDivThread(QThread):
         """
         Run the function
         """
-        self.fn(*self.args, **self.kwargs)
+        self.func(*self.args, **self.kwargs)
 
 
 class WaitDialog(QDialog):

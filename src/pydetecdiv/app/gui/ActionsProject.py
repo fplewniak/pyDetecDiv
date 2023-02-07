@@ -1,10 +1,10 @@
 """
 Handling actions to open, create and interact with projects
 """
-from PySide6.QtCore import Qt, QRegularExpression, QThread, Slot
+from PySide6.QtCore import Qt, QRegularExpression
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QLabel, QVBoxLayout, QLineEdit, QDialogButtonBox, QComboBox, QMessageBox, QDialog)
-from pydetecdiv.app import PyDetecDivApplication, project_list, WaitDialog, PyDetecDivThread
+from pydetecdiv.app import PyDetecDivApplication, project_list, WaitDialog, PyDetecDivThread, pydetecdiv_project
 
 
 class ProjectDialog(QDialog):
@@ -86,9 +86,15 @@ class ProjectDialog(QDialog):
         validator.setRegularExpression(name_filter)
         return validator
 
-    def open_create_project(self, p_name):
-        PyDetecDivApplication.open_project(p_name)
-        PyDetecDivApplication.close_project()
+    def open_create_project(self, project_name):
+        """
+        Open a project called project_name, reate a new project if it does not exist, and set the Window title
+        accordingly before closing the project connexion.
+        :param project_name: the name of the project to open/create
+        :type project_name: str
+        """
+        with pydetecdiv_project(project_name) as project:
+            PyDetecDivApplication.main_window.setWindowTitle(f'pyDetecDiv: {project.dbname}')
 
 class NewProject(QAction):
     """
