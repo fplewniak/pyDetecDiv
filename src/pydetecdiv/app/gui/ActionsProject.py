@@ -4,7 +4,7 @@ Handling actions to open, create and interact with projects
 from PySide6.QtCore import Qt, QRegularExpression, QThread, Slot
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QLabel, QVBoxLayout, QLineEdit, QDialogButtonBox, QComboBox, QMessageBox, QDialog)
-from pydetecdiv.app import PyDetecDivApplication, project_list, WaitDialog
+from pydetecdiv.app import PyDetecDivApplication, project_list, WaitDialog, PyDetecDivThread
 
 
 class ProjectDialog(QDialog):
@@ -60,16 +60,18 @@ class ProjectDialog(QDialog):
         the project name is empty.
         """
         p_name = self.get_project_name()
+        open_project_thread = PyDetecDivThread()
+        open_project_thread.set_function(PyDetecDivApplication.open_project, p_name)
         if len(p_name) == 0:
             ...
         elif p_name not in project_list():
-            self.wait = WaitDialog(f'Creating {p_name}, please wait.',ProjectThread(p_name), self)
+            self.wait = WaitDialog(f'Creating {p_name}, please wait.', open_project_thread, self)
         elif self.new_project_dialog:
             error_msg = QMessageBox(self)
             error_msg.setText(f'Error: {p_name} project already exists!!!')
             error_msg.exec()
         else:
-            self.wait = WaitDialog(f'Opening {p_name}, please wait.',ProjectThread(p_name), self)
+            self.wait = WaitDialog(f'Opening {p_name}, please wait.', open_project_thread, self)
 
     @staticmethod
     def project_name_validator():
@@ -83,25 +85,6 @@ class ProjectDialog(QDialog):
         validator = QRegularExpressionValidator()
         validator.setRegularExpression(name_filter)
         return validator
-
-
-class ProjectThread(QThread):
-    """
-    Thread used to open or create a project while the user is informed of the running process. This allows to close
-    automatically the dialogs when the process is finished.
-    """
-
-    def __init__(self, p_name):
-        super().__init__()
-        self.p_name = p_name
-
-    @Slot()
-    def run(self):
-        """
-        Create or open the project
-        """
-        PyDetecDivApplication.open_project(self.p_name)
-        PyDetecDivApplication.main_window.setWindowTitle(f'pyDetecDiv: {self.p_name}')
 
 
 class NewProject(QAction):

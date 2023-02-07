@@ -4,7 +4,7 @@
 Definition of global objects and methods for easy access from all parts of the application
 """
 from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout
-from PySide6.QtCore import Qt, QSettings, Slot
+from PySide6.QtCore import Qt, QSettings, Slot, QThread
 from pydetecdiv.settings import get_config_files
 from pydetecdiv.persistence.project import list_projects
 from pydetecdiv.domain.Project import Project
@@ -29,7 +29,45 @@ class PyDetecDivApplication(QApplication):
         :param project_name: the project name
         :type project_name: str
         """
+        if cls.project is not None:
+            cls.close_project()
         cls.project = Project(project_name)
+        cls.main_window.setWindowTitle(f'pyDetecDiv: {project_name}')
+
+    @classmethod
+    def close_project(cls):
+        cls.project.repository.close()
+        cls.project = None
+
+
+class PyDetecDivThread(QThread):
+    """
+    Thread used to run a process defined by a function and its arguments
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.fn = None
+        self.args = None
+        self.kwargs = None
+
+    def set_function(self, fn, *args, **kwargs):
+        """
+        DEfine the function to run in the thread
+        :param fn: the function to run
+        :param args: arguments passed to the function
+        :param kwargs: keyword arguments passed to the function
+        """
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+
+    @Slot()
+    def run(self):
+        """
+        Run the function
+        """
+        self.fn(*self.args, **self.kwargs)
 
 
 class WaitDialog(QDialog):
@@ -42,6 +80,7 @@ class WaitDialog(QDialog):
 
     def __init__(self, msg='Please wait', thread=None, parent=None):
         super().__init__(parent)
+        print('Passed thread', thread)
         self.parent = parent
         self.setWindowModality(Qt.WindowModal)
         label = QLabel()
@@ -66,6 +105,7 @@ class WaitDialog(QDialog):
         if self.parent is not None:
             self.parent.hide()
         self.hide()
+
 
 def get_settings():
     """
