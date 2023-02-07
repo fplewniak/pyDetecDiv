@@ -64,7 +64,7 @@ class SettingsDialog(QDialog):
                                            QDialogButtonBox.Reset,
                                            Qt.Horizontal)
         self.button_box.clicked.connect(self.clicked)
-        self.grid_layout.addWidget(self.button_box, 4, 0, 1, 2)
+        grid_layout.addWidget(self.button_box, 4, 0, 1, 2)
 
         self.exec()
         self.destroy(True)
