@@ -98,6 +98,7 @@ class ProjectDialog(QDialog):
         with pydetecdiv_project(project_name) as project:
             PyDetecDivApplication.main_window.setWindowTitle(f'pyDetecDiv: {project.dbname}')
 
+
 class NewProject(QAction):
     """
     Action to open a for project creation

@@ -24,6 +24,7 @@ class PyDetecDivApplication(QApplication):
         super().__init__(*args)
         self.setApplicationName('pyDetecDiv')
 
+
 @contextmanager
 def pydetecdiv_project(project_name):
     """
@@ -38,6 +39,7 @@ def pydetecdiv_project(project_name):
     finally:
         project.commit()
         project.repository.close()
+
 
 class PyDetecDivThread(QThread):
     """

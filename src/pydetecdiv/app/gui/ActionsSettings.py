@@ -140,7 +140,7 @@ class Settings(QAction):
     Action to open a session editor window
     """
 
-    def __init__(self, parent, icon=False):
+    def __init__(self, parent):
         super().__init__(QIcon(":icons/settings"), "Settings", parent)
         self.triggered.connect(SettingsDialog)
         parent.addAction(self)

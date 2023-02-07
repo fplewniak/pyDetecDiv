@@ -10,6 +10,7 @@ class MainWindow(QMainWindow):
     """
     The principal window
     """
+
     def __init__(self):
         super().__init__()
         PyDetecDivApplication.main_window = self

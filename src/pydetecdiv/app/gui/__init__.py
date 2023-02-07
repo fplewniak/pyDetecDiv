@@ -7,7 +7,7 @@ from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QToolBar, QStatusBar, QMenu, QApplication
 
 from pydetecdiv.app import PyDetecDivApplication, pydetecdiv_project
-from  pydetecdiv.app.gui import ActionsSettings, ActionsProject
+from pydetecdiv.app.gui import ActionsSettings, ActionsProject
 import pydetecdiv.app.gui.resources
 
 
@@ -15,6 +15,7 @@ class FileMenu(QMenu):
     """
     The main window File menu
     """
+
     def __init__(self, parent, *args, **kwargs):
         super().__init__(*args, **kwargs)
         menu = parent.menuBar().addMenu("&File")
@@ -30,6 +31,7 @@ class MainToolBar(QToolBar):
     """
     The main toolbar of the main window
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setObjectName('Main toolbar')
@@ -43,6 +45,7 @@ class MainStatusBar(QStatusBar):
     """
     The status bar of the main window
     """
+
     def __init__(self):
         super().__init__()
         self.setObjectName('Main status bar')
@@ -52,6 +55,7 @@ class Quit(QAction):
     """
     Quit action, interrupting the application
     """
+
     def __init__(self, parent):
         super().__init__(QIcon(":icons/exit"), "&Quit", parent)
         self.triggered.connect(QApplication.quit)
@@ -62,6 +66,7 @@ class Help(QAction):
     """
     Action requesting global help
     """
+
     def __init__(self, parent):
         super().__init__(QIcon(":icons/help"), "&Help", parent)
         self.triggered.connect(lambda: print(len(QApplication.allWindows())))
