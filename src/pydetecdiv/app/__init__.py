@@ -8,7 +8,6 @@ from contextlib import contextmanager
 from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout
 from PySide6.QtCore import Qt, QSettings, Slot, QThread
 
-import pydetecdiv.persistence.project
 from pydetecdiv.settings import get_config_files
 from pydetecdiv.persistence.project import list_projects
 from pydetecdiv.domain.Project import Project
