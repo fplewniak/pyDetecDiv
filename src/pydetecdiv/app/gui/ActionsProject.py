@@ -43,6 +43,19 @@ class ProjectDialog(QDialog):
         self.exec()
         self.destroy()
 
+    @staticmethod
+    def project_name_validator():
+        """
+        Name validator to filter invalid character in project name
+        :return: the validator
+        :rtype: QRegularExpressionValidator
+        """
+        name_filter = QRegularExpression()
+        name_filter.setPattern('\\w[\\w-]*')
+        validator = QRegularExpressionValidator()
+        validator.setRegularExpression(name_filter)
+        return validator
+
     def get_project_name(self):
         """
         Method returning the chosen project name, either from QLineEdit (new project) or QComboBox (open project)
@@ -72,19 +85,6 @@ class ProjectDialog(QDialog):
             error_msg.exec()
         else:
             self.wait = WaitDialog(f'Opening {p_name}, please wait.', open_project_thread, self, hide_parent=True)
-
-    @staticmethod
-    def project_name_validator():
-        """
-        Name validator to filter invalid character in project name
-        :return: the validator
-        :rtype: QRegularExpressionValidator
-        """
-        name_filter = QRegularExpression()
-        name_filter.setPattern('\\w[\\w-]*')
-        validator = QRegularExpressionValidator()
-        validator.setRegularExpression(name_filter)
-        return validator
 
     def open_create_project(self, project_name):
         """
