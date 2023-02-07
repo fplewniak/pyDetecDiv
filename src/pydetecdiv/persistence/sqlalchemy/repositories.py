@@ -29,8 +29,7 @@ class ShallowSQLite3(ShallowDb):
 
     def __init__(self, dbname=None):
         self.name = dbname
-        check_same_thread = get_config_value('project.sqlite', 'check_same_thread')
-        self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}?check_same_thread={check_same_thread}')
+        self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}?check_same_thread=True')
         self.session_maker = sessionmaker(self.engine, future=True)
         self.session_ = None
 

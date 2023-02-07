@@ -16,7 +16,7 @@ def get_default_settings() -> dict:
     :return: a dictionary containing the default values
     """
     return {'project': {'dbms': 'SQLite3', 'workspace': '/data2/BioImageIT/workspace'},
-            'project.sqlite': {'database': 'pydetecdiv.db', 'check_same_thread': 'False'},
+            'project.sqlite': {'database': 'pydetecdiv'},
             'project.mysql': {'database': 'pydetecdiv', 'host': 'localhost', 'credentials': 'mysql.credentials', },
             'omero': {'host': 'localhost', 'credentials': 'omero.credentials', },
             'bioimageit': {'config_file': '/data2/BioImageIT/config.json'}
