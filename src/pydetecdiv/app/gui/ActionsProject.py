@@ -41,6 +41,8 @@ class ProjectDialog(QDialog):
         self.layout.addWidget(self.button_box)
 
         self.exec()
+        for child in self.children():
+            child.deleteLater()
         self.destroy()
 
     @staticmethod
