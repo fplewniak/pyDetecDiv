@@ -65,13 +65,13 @@ class ProjectDialog(QDialog):
         if len(p_name) == 0:
             ...
         elif p_name not in project_list():
-            self.wait = WaitDialog(f'Creating {p_name}, please wait.', open_project_thread, self)
+            self.wait = WaitDialog(f'Creating {p_name}, please wait.', open_project_thread, self, hide_parent=True)
         elif self.new_project_dialog:
             error_msg = QMessageBox(self)
             error_msg.setText(f'Error: {p_name} project already exists!!!')
             error_msg.exec()
         else:
-            self.wait = WaitDialog(f'Opening {p_name}, please wait.', open_project_thread, self)
+            self.wait = WaitDialog(f'Opening {p_name}, please wait.', open_project_thread, self, hide_parent=True)
 
     @staticmethod
     def project_name_validator():

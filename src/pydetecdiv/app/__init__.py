@@ -78,9 +78,10 @@ class WaitDialog(QDialog):
     it
     """
 
-    def __init__(self, msg='Please wait', thread=None, parent=None):
+    def __init__(self, msg='Please wait', thread=None, parent=None, hide_parent=False):
         super().__init__(parent)
         self.parent = parent
+        self.hide_parent = hide_parent and parent is not None
         self.setWindowModality(Qt.WindowModal)
         label = QLabel()
         label.setStyleSheet("""
@@ -101,7 +102,7 @@ class WaitDialog(QDialog):
         Slot reacting to the end of the thread. The dialog box is destroyed and its parent is hidden if it has been
         specified (not None)
         """
-        if self.parent is not None:
+        if self.hide_parent:
             self.parent.hide()
         self.hide()
 
