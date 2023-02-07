@@ -5,6 +5,8 @@ Definition of global objects and methods for easy access from all parts of the a
 """
 from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout
 from PySide6.QtCore import Qt, QSettings, Slot, QThread
+
+import pydetecdiv.persistence.project
 from pydetecdiv.settings import get_config_files
 from pydetecdiv.persistence.project import list_projects
 from pydetecdiv.domain.Project import Project
@@ -15,6 +17,7 @@ class PyDetecDivApplication(QApplication):
     PyDetecDiv application class extending QApplication to keep track of the current project and main window
     """
     project = None
+    project_name = None
     main_window = None
 
     def __init__(self, *args):
@@ -29,16 +32,14 @@ class PyDetecDivApplication(QApplication):
         :param project_name: the project name
         :type project_name: str
         """
-        if cls.project is not None:
-            cls.close_project()
+        cls.project_name = project_name
         cls.project = Project(project_name)
         cls.main_window.setWindowTitle(f'pyDetecDiv: {project_name}')
 
     @classmethod
     def close_project(cls):
+        cls.project.commit()
         cls.project.repository.close()
-        cls.project = None
-
 
 class PyDetecDivThread(QThread):
     """
@@ -80,7 +81,6 @@ class WaitDialog(QDialog):
 
     def __init__(self, msg='Please wait', thread=None, parent=None):
         super().__init__(parent)
-        print('Passed thread', thread)
         self.parent = parent
         self.setWindowModality(Qt.WindowModal)
         label = QLabel()

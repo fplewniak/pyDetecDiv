@@ -61,7 +61,7 @@ class ProjectDialog(QDialog):
         """
         p_name = self.get_project_name()
         open_project_thread = PyDetecDivThread()
-        open_project_thread.set_function(PyDetecDivApplication.open_project, p_name)
+        open_project_thread.set_function(self.open_create_project, p_name)
         if len(p_name) == 0:
             ...
         elif p_name not in project_list():
@@ -86,6 +86,9 @@ class ProjectDialog(QDialog):
         validator.setRegularExpression(name_filter)
         return validator
 
+    def open_create_project(self, p_name):
+        PyDetecDivApplication.open_project(p_name)
+        PyDetecDivApplication.close_project()
 
 class NewProject(QAction):
     """

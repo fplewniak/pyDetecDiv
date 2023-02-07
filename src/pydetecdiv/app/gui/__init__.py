@@ -5,6 +5,8 @@ Main widgets to use with persistent windows
 """
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QToolBar, QStatusBar, QMenu, QApplication
+
+from pydetecdiv.app import PyDetecDivApplication
 from  pydetecdiv.app.gui import ActionsSettings, ActionsProject
 import pydetecdiv.app.gui.resources
 
@@ -64,4 +66,10 @@ class Help(QAction):
         super().__init__(QIcon(":icons/help"), "&Help", parent)
         self.triggered.connect(lambda: print(len(QApplication.allWindows())))
         self.triggered.connect(lambda: print(QApplication.allWindows()))
+        self.triggered.connect(self.print_info)
         parent.addAction(self)
+
+    def print_info(self):
+        PyDetecDivApplication.open_project(PyDetecDivApplication.project_name)
+        print(PyDetecDivApplication.project.get_objects('Experiment'))
+        PyDetecDivApplication.close_project()
