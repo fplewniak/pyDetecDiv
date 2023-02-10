@@ -7,7 +7,7 @@ from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QToolBar, QStatusBar, QMenu, QApplication
 
 from pydetecdiv.app import PyDetecDivApplication, pydetecdiv_project
-from pydetecdiv.app.gui import ActionsSettings, ActionsProject
+from pydetecdiv.app.gui import ActionsSettings, ActionsProject, ActionsData
 import pydetecdiv.app.gui.resources
 
 
@@ -25,6 +25,21 @@ class FileMenu(QMenu):
         ActionsSettings.Settings(menu)
         menu.addSeparator()
         Quit(menu).setShortcut("Ctrl+Q")
+
+
+class DataMenu(QMenu):
+    """
+    The main window File menu
+    """
+
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        menu = parent.menuBar().addMenu("Data")
+        import_files = ActionsData.ImportDataFiles(menu)
+        import_files.setShortcut("Ctrl+I")
+        import_dir = ActionsData.ImportDataDir(menu)
+        import_dir.setShortcut("Ctrl+D")
+        PyDetecDivApplication.dependent_actions['project'] += [import_dir, import_files]
 
 
 class MainToolBar(QToolBar):
@@ -75,5 +90,6 @@ class Help(QAction):
         parent.addAction(self)
 
     def print_info(self):
-        with pydetecdiv_project(PyDetecDivApplication.project_name) as project:
-            print(project.get_objects('Experiment'))
+        if PyDetecDivApplication.project_name:
+            with pydetecdiv_project(PyDetecDivApplication.project_name) as project:
+                print(project.get_objects('Experiment'))

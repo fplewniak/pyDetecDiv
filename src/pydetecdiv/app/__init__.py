@@ -19,6 +19,7 @@ class PyDetecDivApplication(QApplication):
     """
     project_name = None
     main_window = None
+    dependent_actions = {'project': []}
 
     def __init__(self, *args):
         super().__init__(*args)

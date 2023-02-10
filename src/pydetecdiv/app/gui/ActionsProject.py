@@ -97,6 +97,8 @@ class ProjectDialog(QDialog):
         """
         with pydetecdiv_project(project_name) as project:
             PyDetecDivApplication.main_window.setWindowTitle(f'pyDetecDiv: {project.dbname}')
+            for a in PyDetecDivApplication.dependent_actions['project']:
+                a.setEnabled(True)
 
 
 class NewProject(QAction):

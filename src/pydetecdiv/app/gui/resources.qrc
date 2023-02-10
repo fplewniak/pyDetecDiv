@@ -9,5 +9,8 @@
 
         <file alias="new_project">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/folder--plus.png</file>
         <file alias="open_project">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/folder-horizontal-open.png</file>
+
+        <file alias="import_images">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/image-import.png</file>
+        <file alias="import_folder">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/folder-import.png</file>
     </qresource>
 </RCC>
