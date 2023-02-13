@@ -35,11 +35,9 @@ class DataMenu(QMenu):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(*args, **kwargs)
         menu = parent.menuBar().addMenu("Data")
-        import_files = ActionsData.ImportDataFiles(menu)
-        import_files.setShortcut("Ctrl+I")
-        import_dir = ActionsData.ImportDataDir(menu)
-        import_dir.setShortcut("Ctrl+D")
-        PyDetecDivApplication.dependent_actions['project'] += [import_dir, import_files]
+        import_data = ActionsData.ImportData(menu)
+        import_data.setShortcut("Ctrl+I")
+        PyDetecDivApplication.dependent_actions['project'] += [import_data]
 
 
 class MainToolBar(QToolBar):
