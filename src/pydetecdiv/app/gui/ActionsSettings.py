@@ -66,8 +66,20 @@ class SettingsDialog(QDialog):
         self.button_box.clicked.connect(self.clicked)
         grid_layout.addWidget(self.button_box, 4, 0, 1, 2)
 
+        self.workspace.textChanged.connect(self.toggle_buttons)
+        self.bioit_conf.textChanged.connect(self.toggle_buttons)
+
         self.exec()
         self.destroy(True)
+
+    def toggle_buttons(self):
+        print(self.workspace.text() and self.bioit_conf.text())
+        if self.workspace.text() and self.bioit_conf.text():
+            self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+            self.button_box.button(QDialogButtonBox.Apply).setEnabled(True)
+        else:
+            self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+            self.button_box.button(QDialogButtonBox.Apply).setEnabled(False)
 
     def select_workspace(self):
         """

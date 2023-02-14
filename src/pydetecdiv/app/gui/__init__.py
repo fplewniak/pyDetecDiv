@@ -3,6 +3,7 @@
 """
 Main widgets to use with persistent windows
 """
+import psutil
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QToolBar, QStatusBar, QMenu, QApplication
 
@@ -85,6 +86,7 @@ class Help(QAction):
         self.triggered.connect(lambda: print(len(QApplication.allWindows())))
         self.triggered.connect(lambda: print(QApplication.allWindows()))
         self.triggered.connect(self.print_info)
+        self.triggered.connect(lambda: print(psutil.Process().memory_info().rss / (1024 * 1024)))
         parent.addAction(self)
 
     def print_info(self):

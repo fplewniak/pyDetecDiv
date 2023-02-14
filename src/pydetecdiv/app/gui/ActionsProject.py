@@ -23,18 +23,21 @@ class ProjectDialog(QDialog):
             self.setWindowTitle('Create project')
             self.label = QLabel('Enter a name for your new project:')
             self.project_name = QLineEdit('MyProject')
+            self.project_name.textChanged.connect(self.project_name_changed)
         else:
             self.setWindowTitle('Open project')
             self.label = QLabel('Select a project name:')
             self.project_name = QComboBox()
             self.project_name.addItems(sorted(project_list()))
             self.project_name.setEditable(True)
+            self.project_name.editTextChanged.connect(self.project_name_changed)
 
         self.project_name.setValidator(self.project_name_validator())
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal)
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.hide)
+        self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
 
         self.layout.addWidget(self.label)
         self.layout.addWidget(self.project_name)
@@ -58,6 +61,12 @@ class ProjectDialog(QDialog):
         validator.setRegularExpression(name_filter)
         return validator
 
+    def project_name_changed(self):
+        if self.get_project_name():
+            self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+        else:
+            self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+
     def get_project_name(self):
         """
         Method returning the chosen project name, either from QLineEdit (new project) or QComboBox (open project)
@@ -77,20 +86,19 @@ class ProjectDialog(QDialog):
         p_name = self.get_project_name()
         open_project_thread = PyDetecDivThread()
         open_project_thread.set_function(self.open_create_project, p_name)
-        if len(p_name) == 0:
-            ...
-        elif p_name not in project_list():
-            self.wait = WaitDialog(f'Creating {p_name}, please wait.', open_project_thread, self, hide_parent=True)
-        elif self.new_project_dialog:
-            error_msg = QMessageBox(self)
-            error_msg.setText(f'Error: {p_name} project already exists!!!')
-            error_msg.exec()
+        if self.new_project_dialog:
+            if p_name in project_list():
+                error_msg = QMessageBox(self)
+                error_msg.setText(f'Error: {p_name} project already exists!!!')
+                error_msg.exec()
+            else:
+                self.wait = WaitDialog(f'Creating {p_name}, please wait.', open_project_thread, self, hide_parent=True)
         else:
             self.wait = WaitDialog(f'Opening {p_name}, please wait.', open_project_thread, self, hide_parent=True)
 
     def open_create_project(self, project_name):
         """
-        Open a project called project_name, reate a new project if it does not exist, and set the Window title
+        Open a project called project_name, create a new project if it does not exist, and set the Window title
         accordingly before closing the project connexion.
         :param project_name: the name of the project to open/create
         :type project_name: str
