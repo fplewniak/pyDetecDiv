@@ -197,7 +197,7 @@ class AddPathDialog(QDialog):
         self.parent().button_box.button(QDialogButtonBox.Ok).setEnabled(True)
 
     def path_specification_changed(self):
-        if self.path_text_input.text():
+        if os.path.exists(self.path_text_input.text()):
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
             self.button_box.button(QDialogButtonBox.Apply).setEnabled(True)
         else:
