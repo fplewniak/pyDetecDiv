@@ -3,7 +3,7 @@ Handling actions to open, create and interact with projects
 """
 import glob, os
 
-from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QModelIndex
+from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QModelIndex, QItemSelection
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
                                QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView, QTreeView,
@@ -37,12 +37,11 @@ class ListView(QListView):
         self.selectionModel().clear()
 
     def toggle(self):
-        for row in range(0, self.model().rowCount()):
-            idx = self.model().index(row, 0)
-            if self.selectionModel().isSelected(idx):
-                self.selectionModel().select(idx, QItemSelectionModel.Deselect)
-            else:
-                self.selectionModel().select(idx, QItemSelectionModel.Select)
+        toggle_selection = QItemSelection()
+        top_left = self.model().index(0,0)
+        bottom_right = self.model().index(self.model().rowCount() - 1, 0)
+        toggle_selection.select(top_left, bottom_right)
+        self.selectionModel().select(toggle_selection, QItemSelectionModel.Toggle)
 
     def remove_items(self):
         for idx in sorted(self.selectedIndexes(), key=lambda x: x.row(), reverse=True):
