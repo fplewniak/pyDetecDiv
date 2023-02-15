@@ -3,50 +3,37 @@ Handling actions to open, create and interact with projects
 """
 import glob, os
 
-from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QItemSelectionModel
+from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QModelIndex
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-                               QPushButton, QDialogButtonBox, QComboBox, QMenu, QListWidget, QAbstractItemView)
+                               QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView, QTreeView,
+                               QTableView)
 from pydetecdiv.app import PyDetecDivApplication, get_settings, WaitDialog, PyDetecDivThread, pydetecdiv_project
 
-class ListView(QListWidget):
+class ListView(QListView):
     def __init__(self, parent):
         super().__init__(parent)
-        self.all_items = []
-        # self.setSelectionMode(QAbstractItemView.MultiSelection)
+        self.setSelectionMode(QAbstractItemView.MultiSelection)
 
     def contextMenuEvent(self, e):
-        if self.all_items:
+        if self.model().rowCount():
             context = QMenu(self)
-            remove = QAction("Remove", self)
-            remove.triggered.connect(lambda _: self.takeItem(self.currentRow()))
+            remove = QAction("Remove selected items", self)
+            remove.triggered.connect(self.remove_items)
             context.addAction(remove)
-            edit = QAction("Clear", self)
-            edit.triggered.connect(lambda _: self.clear())
-            context.addAction(edit)
-
+            clear_list = QAction("Clear list", self)
+            context.addAction(clear_list)
+            clear_list.triggered.connect(self.clear_list)
             context.exec(e.globalPos())
 
-    # def remove_selected_items(self):
-    #     for item in self.selectedItems():
-    #         self.setCurrentItem(item)
-    #         self.takeItem(self.currentRow())
-    #     self.parent().parent().selection_is_not_empty()
+    def remove_items(self):
+        print([self.model().itemData(idx)[0] for idx in self.selectionModel().selection().indexes()])
+        for idx in self.selectionModel().selection().indexes():
+            self.model().removeRow(idx.row(), QModelIndex())
 
-    def addItems(self, labels):
-        super().addItems(labels)
-        self.all_items += labels
-        # self.parent().parent().selection_is_not_empty()
+    def clear_list(self):
+        self.model().removeRows(0, self.model().rowCount())
 
-    def takeItem(self, i):
-        super().takeItem(i)
-        del(self.all_items[i])
-        self.parent().parent().selection_is_not_empty()
-
-    def clear(self):
-        super().clear()
-        self.all_items = []
-        self.parent().parent().selection_is_not_empty()
 
 class ImportDataDialog(QDialog):
     def __init__(self):
@@ -69,6 +56,8 @@ class ImportDataDialog(QDialog):
 
         # self.list_view = QListView(self.source_group_box)
         self.list_view = ListView(self.source_group_box)
+        self.list_model = QStringListModel()
+        self.list_view.setModel(self.list_model)
 
         self.destination_widget = QGroupBox(self)
         self.destination_widget.setTitle(f'Destination: {self.project_path}/data/')
@@ -102,13 +91,15 @@ class ImportDataDialog(QDialog):
         # Widgets behaviour
         #
         self.files_button.clicked.connect(
-            lambda _: AddFilesDialog(self, selection=self.list_view, choose_dir=False))
+            lambda _: AddFilesDialog(self, selection=self.list_model, choose_dir=False))
         self.directory_button.clicked.connect(
-            lambda _: AddFilesDialog(self, selection=self.list_view, choose_dir=True))
-        self.path_button.clicked.connect(lambda _: AddPathDialog(self, selection=self.list_view))
+            lambda _: AddFilesDialog(self, selection=self.list_model, choose_dir=True))
+        self.path_button.clicked.connect(lambda _: AddPathDialog(self, selection=self.list_model))
 
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.close)
+
+        self.list_model.dataChanged.connect(self.selection_is_not_empty)
 
         self.exec()
         for child in self.children():
@@ -119,12 +110,13 @@ class ImportDataDialog(QDialog):
         return [''] + [d.name for d in os.scandir(os.path.join(self.project_path, 'data')) if d.is_dir()]
 
     def accept(self):
-        file_list = self.list_view.all_items
+        # print(self.list_model.data(self.list_model.index(0, 0, QModelIndex()), Qt.DisplayRole))
+        file_list = self.list_model.stringList()
         print(f'Importing files {file_list}')
         self.close()
 
     def selection_is_not_empty(self):
-        if self.list_view.count() > 0:
+        if self.list_model.stringList():
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
         else:
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
@@ -180,7 +172,8 @@ class AddFilesDialog(QFileDialog):
         self.destroy(True)
 
     def select_files(self):
-        self.selection.addItems(self.selectedFiles())
+        file_selection = self.selection.stringList()
+        self.selection.setStringList(file_selection + self.selectedFiles())
         self.parent().button_box.button(QDialogButtonBox.Ok).setEnabled(True)
 
 
@@ -225,7 +218,8 @@ class AddPathDialog(QDialog):
         self.close()
 
     def add_path(self):
-        self.selection.addItems([self.path_text_input.text()])
+        file_selection = self.selection.stringList()
+        self.selection.setStringList(file_selection + [self.path_text_input.text()])
         self.parent().button_box.button(QDialogButtonBox.Ok).setEnabled(True)
 
     def path_specification_changed(self):
