@@ -11,7 +11,7 @@ from pydetecdiv.app.gui.Windows import MainWindow
 if __name__ == '__main__':
     app = PyDetecDivApplication([])
 
-    window_icon = QIcon('/home/fred/Projets/pyDetecDiv/detecDiv_logo.png')
+    window_icon = QIcon(':icons/app_icon')
     app.setWindowIcon(window_icon)
     PyDetecDivApplication.main_window = MainWindow()
     PyDetecDivApplication.main_window.show()
