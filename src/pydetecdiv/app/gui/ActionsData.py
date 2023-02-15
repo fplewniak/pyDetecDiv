@@ -18,6 +18,13 @@ class ListView(QListView):
     def contextMenuEvent(self, e):
         if self.model().rowCount():
             context = QMenu(self)
+            unselect = QAction("Unselect all", self)
+            unselect.triggered.connect(self.unselect)
+            context.addAction(unselect)
+            toggle = QAction("Toggle selection", self)
+            toggle.triggered.connect(self.toggle)
+            context.addAction(toggle)
+            context.addSeparator()
             remove = QAction("Remove selected items", self)
             remove.triggered.connect(self.remove_items)
             context.addAction(remove)
@@ -26,10 +33,20 @@ class ListView(QListView):
             clear_list.triggered.connect(self.clear_list)
             context.exec(e.globalPos())
 
+    def unselect(self):
+        self.selectionModel().clear()
+
+    def toggle(self):
+        for row in range(0, self.model().rowCount()):
+            idx = self.model().index(row, 0)
+            if self.selectionModel().isSelected(idx):
+                self.selectionModel().select(idx, QItemSelectionModel.Deselect)
+            else:
+                self.selectionModel().select(idx, QItemSelectionModel.Select)
+
     def remove_items(self):
-        print([self.model().itemData(idx)[0] for idx in self.selectionModel().selection().indexes()])
-        for idx in self.selectionModel().selection().indexes():
-            self.model().removeRow(idx.row(), QModelIndex())
+        for idx in sorted(self.selectedIndexes(), key=lambda x: x.row(), reverse=True):
+            self.model().removeRow(idx.row())
 
     def clear_list(self):
         self.model().removeRows(0, self.model().rowCount())
