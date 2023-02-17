@@ -204,6 +204,7 @@ class AddPathDialog(QDialog):
         self.selection = selection
 
         self.path_widget = QWidget(self)
+        self.path_widget.setMinimumWidth(350)
         self.path_label = QLabel('Path:', self.path_widget)
         self.path_text_input = QLineEdit(self.path_widget)
 
