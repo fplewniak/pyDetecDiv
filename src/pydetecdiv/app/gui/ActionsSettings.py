@@ -3,77 +3,76 @@ Handling actions to edit and manage settings
 """
 import os.path
 
-from PySide6.QtCore import Slot, Qt, QRect
+from PySide6.QtCore import Slot, Qt
 from PySide6.QtGui import QAction, QIcon
-from PySide6.QtWidgets import (QWidget, QLabel, QLineEdit, QDialogButtonBox, QGridLayout, QPushButton, QFileDialog,
-                               QDialog)
+from PySide6.QtWidgets import (QLineEdit, QDialogButtonBox, QPushButton, QFileDialog, QDialog, QHBoxLayout, QVBoxLayout,
+                               QGroupBox)
 from pydetecdiv.app import PyDetecDivApplication, get_settings
 
 
 class SettingsDialog(QDialog):
     """
-    A dialog window to edit settings
+    A dialog window to edit applicatino settings
     """
 
     def __init__(self):
         super().__init__(PyDetecDivApplication.main_window)
-        self.settings = get_settings()
         self.setWindowModality(Qt.WindowModal)
-
-        self.setFixedSize(534, 150)
         self.setObjectName('Settings')
         self.setWindowTitle('Settings')
 
-        self.workspace = QLineEdit()
-        self.bioit_conf = QLineEdit()
-        self.reset()
+        self.settings = get_settings()
 
-        grid_layout_widget = QWidget(self)
-        grid_layout = QGridLayout()
-        grid_layout.setContentsMargins(5, 5, 5, 5)
-        grid_layout_widget.setObjectName("grid_layout_widget")
-        grid_layout_widget.setGeometry(QRect(5, 5, 524, 140))
-        grid_layout = QGridLayout(grid_layout_widget)
-
-        grid_layout.setContentsMargins(0, 0, 0, 0)
-
+        # Widgets
+        workspace_group = QGroupBox(self)
+        workspace_group.setTitle('Workspace:')
+        self.workspace = QLineEdit(workspace_group)
         icon = QIcon(":icons/file_chooser")
-        label_workspace = QLabel('Workspace:')
-        label_workspace.setAlignment(Qt.AlignBottom)
-        button_workspace = QPushButton()
+        button_workspace = QPushButton(workspace_group)
         button_workspace.setIcon(icon)
-        button_workspace.clicked.connect(self.select_workspace)
 
-        label_bioit = QLabel('BioImageIT configuration:')
-        label_bioit.setAlignment(Qt.AlignBottom)
-        button_bioit = QPushButton()
+        bioit_group = QGroupBox(self)
+        bioit_group.setTitle('BioImageIT configuration:')
+        self.bioit_conf = QLineEdit(bioit_group)
+        button_bioit = QPushButton(bioit_group)
         button_bioit.setIcon(icon)
-        button_bioit.clicked.connect(self.select_bioit)
-
-        grid_layout.addWidget(label_workspace, 0, 0, 1, 1)
-        grid_layout.addWidget(self.workspace, 1, 0, 1, 1)
-        grid_layout.addWidget(button_workspace, 1, 1, 1, 1)
-
-        grid_layout.addWidget(label_bioit, 2, 0, 1, 1)
-        grid_layout.addWidget(self.bioit_conf, 3, 0, 1, 1)
-        grid_layout.addWidget(button_bioit, 3, 1, 1, 1)
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok |
                                            QDialogButtonBox.Cancel |
                                            QDialogButtonBox.Apply |
                                            QDialogButtonBox.Reset,
                                            Qt.Horizontal)
-        self.button_box.clicked.connect(self.clicked)
-        grid_layout.addWidget(self.button_box, 4, 0, 1, 2)
 
+        # Layout
+        vertical_layout = QVBoxLayout(self)
+        workspace_layout = QHBoxLayout(workspace_group)
+
+        workspace_layout.addWidget(self.workspace)
+        workspace_layout.addWidget(button_workspace)
+
+        bioit_layout = QHBoxLayout(bioit_group)
+        bioit_layout.addWidget(self.bioit_conf)
+        bioit_layout.addWidget(button_bioit)
+
+        vertical_layout.addWidget(workspace_group)
+        vertical_layout.addWidget(bioit_group)
+        vertical_layout.addWidget(self.button_box)
+
+        # Widget behaviour
+        button_workspace.clicked.connect(self.select_workspace)
+        button_bioit.clicked.connect(self.select_bioit)
+        self.button_box.clicked.connect(self.clicked)
         self.workspace.textChanged.connect(self.toggle_buttons)
         self.bioit_conf.textChanged.connect(self.toggle_buttons)
 
+        self.reset()
         self.exec()
         self.destroy(True)
 
     def toggle_buttons(self):
-        print(self.workspace.text() and self.bioit_conf.text())
+        """
+        Enable or disable OK and Apply buttons depending upon the validity of input text
+        """
         if self.workspace.text() and self.bioit_conf.text():
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
             self.button_box.button(QDialogButtonBox.Apply).setEnabled(True)
