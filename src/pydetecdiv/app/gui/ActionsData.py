@@ -2,14 +2,13 @@
 Handling actions to open, create and interact with projects
 """
 import glob
-import itertools
 import os
 
 from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QItemSelection
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
                                QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView)
-from pydetecdiv.app import PyDetecDivApplication, get_settings, WaitDialog, PyDetecDivThread, pydetecdiv_project
+from pydetecdiv.app import PyDetecDivApplication, get_settings, WaitDialog, pydetecdiv_project
 
 
 class ListView(QListView):
@@ -114,7 +113,7 @@ class ImportDataDialog(QDialog):
         destination_directory.setEditable(True)
         destination_directory.setValidator(self.sub_directory_name_validator())
 
-        self.button_box = QDialogButtonBox(QDialogButtonBox.Cancel | QDialogButtonBox.Ok, self)
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Close | QDialogButtonBox.Cancel | QDialogButtonBox.Ok, self)
         self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
 
         # Layout
@@ -171,10 +170,16 @@ class ImportDataDialog(QDialog):
         """
         Import files whose list is defined by the sources in self.list_model
         """
-        selection_list = list(itertools.chain.from_iterable([glob.glob(p) for p in self.list_model.stringList()]))
-        file_list = [f for f in selection_list if os.path.isfile(f)]
-        print(f'Importing files {file_list}')
-        self.close()
+        WaitDialog(f'Importing data to {PyDetecDivApplication.project_name}', self.import_data, self, hide_parent=False)
+        self.list_model.removeRows(0, self.list_model.rowCount())
+
+    def import_data(self):
+        """
+        Import image data from source specified in list_model into project raw dataset
+        """
+        with pydetecdiv_project(PyDetecDivApplication.project_name) as project:
+            for source_path in self.list_model.stringList():
+                project.import_images(source_path)
 
     def source_list_is_not_empty(self):
         """
