@@ -3,11 +3,11 @@ Handling actions to open, create and interact with projects
 """
 import glob, os
 
+import numpy as np
 from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QModelIndex, QItemSelection
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-                               QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView, QTreeView,
-                               QTableView)
+                               QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView)
 from pydetecdiv.app import PyDetecDivApplication, get_settings, WaitDialog, PyDetecDivThread, pydetecdiv_project
 
 class ListView(QListView):
@@ -126,8 +126,7 @@ class ImportDataDialog(QDialog):
         return [''] + [d.name for d in os.scandir(os.path.join(self.project_path, 'data')) if d.is_dir()]
 
     def accept(self):
-        # print(self.list_model.data(self.list_model.index(0, 0, QModelIndex()), Qt.DisplayRole))
-        file_list = self.list_model.stringList()
+        file_list = np.array([glob.glob(p) for p in self.list_model.stringList()]).flatten()
         print(f'Importing files {file_list}')
         self.close()
 
@@ -172,6 +171,7 @@ class AddFilesDialog(QFileDialog):
         super().__init__(parent_window)
         self.setWindowModality(Qt.WindowModal)
         self.selection = selection
+        self.choose_dir = choose_dir
 
         if choose_dir:
             self.setFileMode(QFileDialog.Directory)
@@ -188,8 +188,9 @@ class AddFilesDialog(QFileDialog):
         self.destroy(True)
 
     def select_files(self):
+        selected_files = [f'{self.selectedFiles()[0]}/*'] if self.choose_dir else self.selectedFiles()
         file_selection = self.selection.stringList()
-        self.selection.setStringList(file_selection + self.selectedFiles())
+        self.selection.setStringList(file_selection + selected_files)
         self.parent().button_box.button(QDialogButtonBox.Ok).setEnabled(True)
 
 
