@@ -80,7 +80,7 @@ class WaitDialog(QDialog):
     it
     """
 
-    def __init__(self, msg='Please wait', thread=None, parent=None, hide_parent=False):
+    def __init__(self, msg='Please wait', func=None, parent=None, hide_parent=False, *args, **kwargs):
         super().__init__(parent)
         self.parent = parent
         self.hide_parent = hide_parent and parent is not None
@@ -93,6 +93,8 @@ class WaitDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addWidget(label)
         self.setLayout(layout)
+        thread = PyDetecDivThread()
+        thread.set_function(func, *args, **kwargs)
         thread.start()
         thread.finished.connect(self.thread_complete)
         self.exec()

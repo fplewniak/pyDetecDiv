@@ -84,17 +84,17 @@ class ProjectDialog(QDialog):
         the project name is empty.
         """
         p_name = self.get_project_name()
-        open_project_thread = PyDetecDivThread()
-        open_project_thread.set_function(self.open_create_project, p_name)
         if self.new_project_dialog:
             if p_name in project_list():
                 error_msg = QMessageBox(self)
                 error_msg.setText(f'Error: {p_name} project already exists!!!')
                 error_msg.exec()
             else:
-                self.wait = WaitDialog(f'Creating {p_name}, please wait.', open_project_thread, self, hide_parent=True)
+                self.wait = WaitDialog(f'Creating {p_name}, please wait.', self.open_create_project,
+                                       self, hide_parent=True, project_name=p_name)
         else:
-            self.wait = WaitDialog(f'Opening {p_name}, please wait.', open_project_thread, self, hide_parent=True)
+            self.wait = WaitDialog(f'Opening {p_name}, please wait.', self.open_create_project,
+                                   self, hide_parent=True, project_name=p_name)
 
     def open_create_project(self, project_name):
         """
