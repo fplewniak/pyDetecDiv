@@ -1,7 +1,9 @@
 """
 Handling actions to open, create and interact with projects
 """
-import glob, os
+import glob
+import itertools
+import os
 
 import numpy as np
 from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QItemSelection
@@ -62,16 +64,16 @@ class ImportDataDialog(QDialog):
         self.setWindowTitle('Import image data')
 
         # Widgets
-        self.source_group_box = QGroupBox(self)
-        self.source_group_box.setTitle('Source for image files to import:')
+        source_group_box = QGroupBox(self)
+        source_group_box.setTitle('Source for image files to import:')
 
-        self.buttons_widget = QWidget(self.source_group_box)
+        self.buttons_widget = QWidget(source_group_box)
         self.files_button = QPushButton('Add files', self.buttons_widget)
         self.directory_button = QPushButton('Add directory', self.buttons_widget)
         self.path_button = QPushButton('Add path', self.buttons_widget)
 
         # self.list_view = QListView(self.source_group_box)
-        self.list_view = ListView(self.source_group_box)
+        self.list_view = ListView(source_group_box)
         self.list_model = QStringListModel()
         self.list_view.setModel(self.list_model)
 
@@ -87,7 +89,7 @@ class ImportDataDialog(QDialog):
 
         # Layout
         self.vertical_layout = QVBoxLayout(self)
-        self.source_layout = QVBoxLayout(self.source_group_box)
+        self.source_layout = QVBoxLayout(source_group_box)
         self.buttons_layout = QHBoxLayout(self.buttons_widget)
         self.destination_layout = QHBoxLayout(self.destination_widget)
 
@@ -100,7 +102,7 @@ class ImportDataDialog(QDialog):
 
         self.destination_layout.addWidget(self.destination_directory)
 
-        self.vertical_layout.addWidget(self.source_group_box)
+        self.vertical_layout.addWidget(source_group_box)
         self.vertical_layout.addWidget(self.destination_widget)
         self.vertical_layout.addWidget(self.button_box)
 
@@ -126,7 +128,7 @@ class ImportDataDialog(QDialog):
         return [''] + [d.name for d in os.scandir(os.path.join(self.project_path, 'data')) if d.is_dir()]
 
     def accept(self):
-        file_list = np.array([glob.glob(p) for p in self.list_model.stringList()]).flatten()
+        file_list = list(itertools.chain.from_iterable([glob.glob(p) for p in self.list_model.stringList()]))
         print(f'Importing files {file_list}')
         self.close()
 
