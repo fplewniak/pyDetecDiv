@@ -4,7 +4,7 @@ Handling actions to open, create and interact with projects
 import glob, os
 
 import numpy as np
-from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QModelIndex, QItemSelection
+from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QItemSelection
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
                                QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView)
