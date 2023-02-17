@@ -97,6 +97,10 @@ class ImportDataDialog(QDialog):
         files_button = QPushButton('Add files', buttons_widget)
         directory_button = QPushButton('Add directory', buttons_widget)
         path_button = QPushButton('Add path', buttons_widget)
+        extension_widget = QWidget(source_group_box)
+        extension_label = QLabel('Default image file extension:', extension_widget)
+        self.default_extension = QComboBox(extension_widget)
+        self.default_extension.addItems(['*.tif', '*.tiff', '*.jpg', '*.jpeg', '*.png'])
 
         # self.list_view = QListView(self.source_group_box)
         list_view = ListView(source_group_box)
@@ -117,14 +121,19 @@ class ImportDataDialog(QDialog):
         vertical_layout = QVBoxLayout(self)
         source_layout = QVBoxLayout(source_group_box)
         buttons_layout = QHBoxLayout(buttons_widget)
+        extension_layout = QHBoxLayout(extension_widget)
         destination_layout = QHBoxLayout(destination_widget)
 
         source_layout.addWidget(list_view)
         source_layout.addWidget(buttons_widget)
+        source_layout.addWidget(extension_widget)
 
         buttons_layout.addWidget(files_button)
         buttons_layout.addWidget(directory_button)
         buttons_layout.addWidget(path_button)
+
+        extension_layout.addWidget(extension_label)
+        extension_layout.addWidget(self.default_extension)
 
         destination_layout.addWidget(destination_directory)
 
@@ -231,7 +240,10 @@ class AddFilesDialog(QFileDialog):
         """
         Add the selected files or directory to the list_model
         """
-        selected_files = [f'{self.selectedFiles()[0]}/*'] if self.choose_dir else self.selectedFiles()
+        if self.choose_dir:
+            selected_files = [f'{self.selectedFiles()[0]}/{self.parent().default_extension.currentText()}']
+        else:
+            selected_files = self.selectedFiles()
         source_list = self.model.stringList()
         self.model.setStringList(source_list + selected_files)
         self.parent().button_box.button(QDialogButtonBox.Ok).setEnabled(True)
@@ -287,7 +299,7 @@ class AddPathDialog(QDialog):
         """
         path_text = self.path_text_input.text()
         if os.path.isdir(glob.glob(path_text)[0]):
-            path_text = os.path.join(path_text, '*')
+            path_text = os.path.join(path_text, self.parent().default_extension.currentText())
         source_list = self.model.stringList()
         self.model.setStringList(source_list + [path_text])
         self.parent().button_box.button(QDialogButtonBox.Ok).setEnabled(True)
