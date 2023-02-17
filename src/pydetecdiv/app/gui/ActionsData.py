@@ -128,7 +128,8 @@ class ImportDataDialog(QDialog):
         return [''] + [d.name for d in os.scandir(os.path.join(self.project_path, 'data')) if d.is_dir()]
 
     def accept(self):
-        file_list = list(itertools.chain.from_iterable([glob.glob(p) for p in self.list_model.stringList()]))
+        selection_list = list(itertools.chain.from_iterable([glob.glob(p) for p in self.list_model.stringList()]))
+        file_list = [f for f in selection_list if os.path.isfile(f)]
         print(f'Importing files {file_list}')
         self.close()
 
@@ -238,8 +239,11 @@ class AddPathDialog(QDialog):
         self.close()
 
     def add_path(self):
+        path_text = self.path_text_input.text()
+        if os.path.isdir(glob.glob(path_text)[0]):
+            path_text = os.path.join(path_text, '*')
         file_selection = self.selection.stringList()
-        self.selection.setStringList(file_selection + [self.path_text_input.text()])
+        self.selection.setStringList(file_selection + [path_text])
         self.parent().button_box.button(QDialogButtonBox.Ok).setEnabled(True)
 
     def path_specification_changed(self):
