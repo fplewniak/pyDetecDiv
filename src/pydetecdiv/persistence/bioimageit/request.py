@@ -82,10 +82,10 @@ class Request(bioimageit_core.api.request.Request):
         :param observers: a list of observers to notify progress
         :type observers: list of Observer objects
         """
-        print(f'Please wait while importing data into {experiment.raw_dataset.name} dataset')
+        # print(f'Please wait while importing data into {experiment.raw_dataset.name} dataset')
         self.data_service.import_glob(experiment, files_glob,
                                       author=author, format_=format_, date=date, observers=None)
-        print('OK')
+        # print('OK')
 
     def run(self, job):
         """Run a BioImageIT job

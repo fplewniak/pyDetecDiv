@@ -5,7 +5,7 @@ Definition of global objects and methods for easy access from all parts of the a
 """
 from contextlib import contextmanager
 
-from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout
+from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal
 
 from pydetecdiv.settings import get_config_files
@@ -92,7 +92,7 @@ class WaitDialog(QDialog):
     it
     """
 
-    def __init__(self, msg, func, parent, *args, hide_parent=False, **kwargs):
+    def __init__(self, msg, func, parent, *args, hide_parent=False, progress_bar=False, n_max=100, **kwargs):
         super().__init__(parent)
         self.parent = parent
         self.hide_parent = hide_parent and parent is not None
@@ -104,6 +104,11 @@ class WaitDialog(QDialog):
         label.setText(msg)
         layout = QVBoxLayout(self)
         layout.addWidget(label)
+        if progress_bar:
+            progress_bar_widget = QProgressBar()
+            progress_bar_widget.setMaximum(n_max)
+            layout.addWidget(progress_bar_widget)
+            parent.progress.connect(lambda n: progress_bar_widget.setValue(n))
         self.setLayout(layout)
         thread = PyDetecDivThread()
         thread.set_function(func, *args, **kwargs)

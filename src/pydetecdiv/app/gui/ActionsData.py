@@ -4,7 +4,7 @@ Handling actions to open, create and interact with projects
 import glob
 import os
 
-from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QItemSelection
+from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QItemSelection, Signal
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
                                QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView)
@@ -79,6 +79,8 @@ class ImportDataDialog(QDialog):
     """
     A dialog window to choose sources for image data files to import into the project raw dataset
     """
+    progress = Signal(int)
+
     def __init__(self):
         super().__init__(PyDetecDiv().main_window)
         settings = get_settings()
@@ -166,20 +168,36 @@ class ImportDataDialog(QDialog):
         """
         return [''] + [d.name for d in os.scandir(os.path.join(self.project_path, 'data')) if d.is_dir()]
 
+    def file_list(self):
+        file_list = []
+        for source_path in self.list_model.stringList():
+            file_list += glob.glob(source_path)
+        return file_list
+
     def accept(self):
         """
         Import files whose list is defined by the sources in self.list_model
         """
-        WaitDialog(f'Importing data to {PyDetecDiv().project_name}', self.import_data, self, hide_parent=False)
+        WaitDialog(f'Importing data into {PyDetecDiv().project_name}', self.import_data, self, hide_parent=False,
+                   progress_bar=True, n_max=len(self.file_list()))
         self.list_model.removeRows(0, self.list_model.rowCount())
 
     def import_data(self):
         """
-        Import image data from source specified in list_model into project raw dataset
+        Import image data from source specified in list_model into project raw dataset and triggers a progress signal
+        with the number of files that have been copied so far
         """
+        destination = os.path.join(self.project_path, 'data', self.default_extension.currentText())
+        n_start = len(glob.glob(destination))
+        print(os.path.join(self.project_path, 'data'))
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             for source_path in self.list_model.stringList():
                 project.import_images(source_path)
+                n = len(glob.glob(destination)) - n_start
+                self.progress.emit(n)
+        while n < len(self.file_list()):
+            n = len(glob.glob(destination)) - n_start
+            self.progress.emit(n)
 
     def source_list_is_not_empty(self):
         """
