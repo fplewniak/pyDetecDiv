@@ -6,24 +6,36 @@ Definition of global objects and methods for easy access from all parts of the a
 from contextlib import contextmanager
 
 from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout
-from PySide6.QtCore import Qt, QSettings, Slot, QThread
+from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal
 
 from pydetecdiv.settings import get_config_files
 from pydetecdiv.persistence.project import list_projects
 from pydetecdiv.domain.Project import Project
+from pydetecdiv.utils import singleton
 
 
-class PyDetecDivApplication(QApplication):
+@singleton
+class PyDetecDiv(QApplication):
     """
     PyDetecDiv application class extending QApplication to keep track of the current project and main window
     """
-    project_name = None
-    main_window = None
-    dependent_actions = {'project': []}
+    project_selected = Signal(str)
 
     def __init__(self, *args):
         super().__init__(*args)
         self.setApplicationName('pyDetecDiv')
+        self.project_name = None
+        self.main_window = None
+
+    def select_project(self, project_name):
+        """
+        Method to select a project from its name and sending a signal so that all widgets that need to refer to a
+        project can be enabled
+        :param project_name: the name of the selected project
+        :type project_name: str
+        """
+        self.project_name = project_name
+        self.project_selected.emit(project_name)
 
 
 @contextmanager
@@ -33,7 +45,7 @@ def pydetecdiv_project(project_name):
     :param project_name: the project name
     :type project_name: str
     """
-    PyDetecDivApplication.project_name = project_name
+    PyDetecDiv().select_project(project_name)
     project = Project(project_name)
     try:
         yield project
@@ -80,7 +92,7 @@ class WaitDialog(QDialog):
     it
     """
 
-    def __init__(self, msg='Please wait', func=None, parent=None, hide_parent=False, *args, **kwargs):
+    def __init__(self, msg, func, parent, *args, hide_parent=False, **kwargs):
         super().__init__(parent)
         self.parent = parent
         self.hide_parent = hide_parent and parent is not None

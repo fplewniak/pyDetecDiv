@@ -7,16 +7,16 @@ from PySide6.QtCore import Slot, Qt
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import (QLineEdit, QDialogButtonBox, QPushButton, QFileDialog, QDialog, QHBoxLayout, QVBoxLayout,
                                QGroupBox)
-from pydetecdiv.app import PyDetecDivApplication, get_settings
+from pydetecdiv.app import PyDetecDiv, get_settings
 
 
 class SettingsDialog(QDialog):
     """
-    A dialog window to edit applicatino settings
+    A dialog window to edit application settings
     """
 
     def __init__(self):
-        super().__init__(PyDetecDivApplication.main_window)
+        super().__init__(PyDetecDiv().main_window)
         self.setWindowModality(Qt.WindowModal)
         self.setObjectName('Settings')
         self.setWindowTitle('Settings')

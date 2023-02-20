@@ -5,15 +5,15 @@
 """
 from PySide6.QtGui import QIcon
 
-from pydetecdiv.app import PyDetecDivApplication
+from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui.Windows import MainWindow
 
 if __name__ == '__main__':
-    app = PyDetecDivApplication([])
+    app = PyDetecDiv([])
 
     window_icon = QIcon(':icons/app_icon')
     app.setWindowIcon(window_icon)
-    PyDetecDivApplication.main_window = MainWindow()
-    PyDetecDivApplication.main_window.show()
+    app.main_window = MainWindow()
+    app.main_window.show()
 
     app.exec()

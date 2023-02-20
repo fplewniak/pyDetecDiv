@@ -3,7 +3,7 @@ Classes for persistent windows of the GUI
 """
 from PySide6.QtWidgets import QMainWindow
 from pydetecdiv.app.gui import MainToolBar, MainStatusBar, FileMenu, DataMenu
-from pydetecdiv.app import PyDetecDivApplication, get_settings
+from pydetecdiv.app import get_settings
 
 
 class MainWindow(QMainWindow):
@@ -13,7 +13,6 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        PyDetecDivApplication.main_window = self
         self.setObjectName('PyDetecDiv main window')
 
         self.addToolBar(MainToolBar('main toolbar'))

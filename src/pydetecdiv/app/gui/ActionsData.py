@@ -8,7 +8,7 @@ from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QItemSelect
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
                                QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView)
-from pydetecdiv.app import PyDetecDivApplication, get_settings, WaitDialog, pydetecdiv_project
+from pydetecdiv.app import PyDetecDiv, get_settings, WaitDialog, pydetecdiv_project
 
 
 class ListView(QListView):
@@ -80,9 +80,9 @@ class ImportDataDialog(QDialog):
     A dialog window to choose sources for image data files to import into the project raw dataset
     """
     def __init__(self):
-        super().__init__(PyDetecDivApplication.main_window)
+        super().__init__(PyDetecDiv().main_window)
         settings = get_settings()
-        self.project_path = os.path.join(settings.value("project/workspace"), PyDetecDivApplication.project_name)
+        self.project_path = os.path.join(settings.value("project/workspace"), PyDetecDiv().project_name)
         self.setWindowModality(Qt.WindowModal)
 
         self.setObjectName('ImportData')
@@ -170,14 +170,14 @@ class ImportDataDialog(QDialog):
         """
         Import files whose list is defined by the sources in self.list_model
         """
-        WaitDialog(f'Importing data to {PyDetecDivApplication.project_name}', self.import_data, self, hide_parent=False)
+        WaitDialog(f'Importing data to {PyDetecDiv().project_name}', self.import_data, self, hide_parent=False)
         self.list_model.removeRows(0, self.list_model.rowCount())
 
     def import_data(self):
         """
         Import image data from source specified in list_model into project raw dataset
         """
-        with pydetecdiv_project(PyDetecDivApplication.project_name) as project:
+        with pydetecdiv_project(PyDetecDiv().project_name) as project:
             for source_path in self.list_model.stringList():
                 project.import_images(source_path)
 

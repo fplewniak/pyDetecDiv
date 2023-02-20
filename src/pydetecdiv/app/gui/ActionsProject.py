@@ -1,11 +1,10 @@
 """
 Handling actions to open, create and interact with projects
 """
-from PySide6.QtCore import Qt, QRegularExpression
+from PySide6.QtCore import Qt, QRegularExpression, Slot
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QLabel, QVBoxLayout, QLineEdit, QDialogButtonBox, QComboBox, QMessageBox, QDialog)
-from pydetecdiv.app import PyDetecDivApplication, project_list, WaitDialog, PyDetecDivThread, pydetecdiv_project
-
+from pydetecdiv.app import PyDetecDiv, project_list, WaitDialog, pydetecdiv_project
 
 class ProjectDialog(QDialog):
     """
@@ -13,7 +12,7 @@ class ProjectDialog(QDialog):
     """
 
     def __init__(self, new_project_dialog=False):
-        super().__init__(PyDetecDivApplication.main_window)
+        super().__init__(PyDetecDiv().main_window)
         self.wait = None
         self.new_project_dialog = new_project_dialog
         self.setWindowModality(Qt.WindowModal)
@@ -61,7 +60,11 @@ class ProjectDialog(QDialog):
         validator.setRegularExpression(name_filter)
         return validator
 
+    @Slot()
     def project_name_changed(self):
+        """
+        Slot checking whether the project name input is empty or not and enabling or disabling Ok button accordingly
+        """
         if self.get_project_name():
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
         else:
@@ -104,9 +107,7 @@ class ProjectDialog(QDialog):
         :type project_name: str
         """
         with pydetecdiv_project(project_name) as project:
-            PyDetecDivApplication.main_window.setWindowTitle(f'pyDetecDiv: {project.dbname}')
-            for a in PyDetecDivApplication.dependent_actions['project']:
-                a.setEnabled(True)
+            PyDetecDiv().main_window.setWindowTitle(f'pyDetecDiv: {project.dbname}')
 
 
 class NewProject(QAction):
