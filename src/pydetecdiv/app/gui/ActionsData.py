@@ -3,7 +3,6 @@ Handling actions to open, create and interact with projects
 """
 import glob
 import os
-
 from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QItemSelection, Signal
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
@@ -187,16 +186,15 @@ class ImportDataDialog(QDialog):
         Import image data from source specified in list_model into project raw dataset and triggers a progress signal
         with the number of files that have been copied so far
         """
-        destination = os.path.join(self.project_path, 'data', self.default_extension.currentText())
-        n_start = len(glob.glob(destination))
-        print(os.path.join(self.project_path, 'data'))
+        destination = os.path.join(self.project_path, 'data')
+        n_start = len(os.listdir(destination))
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             for source_path in self.list_model.stringList():
                 project.import_images(source_path)
-                n = len(glob.glob(destination)) - n_start
+                n = len(os.listdir(destination)) - n_start
                 self.progress.emit(n)
         while n < len(self.file_list()):
-            n = len(glob.glob(destination)) - n_start
+            n = len(os.listdir(destination)) - n_start
             self.progress.emit(n)
 
     def source_list_is_not_empty(self):
