@@ -295,16 +295,16 @@ class SQLiteMetadataService(LocalMetadataService):
             container = Experiment()
             container.md_uri = md_uri
             container.id_, container.uuid, container.name, container.author, container.date, rds = self.session.execute(
-                'SELECT * FROM experiment').fetchone()
+                sqlalchemy.text('SELECT * FROM experiment')).fetchone()
             rds_uuid, rds_url, rds_name, = self.session.execute(
-                f'SELECT uuid, url, name FROM dataset where id_ = "{rds}"').fetchone()
+                sqlalchemy.text(f'SELECT uuid, url, name FROM dataset where id_ = "{rds}"')).fetchone()
             container.raw_dataset = DatasetInfo(rds_name, rds, rds_uuid)
 
             for pds_uuid, pds_url, pds_name in self.session.execute(
-                    'SELECT uuid, url, name FROM dataset where type_ = "processed"').fetchall():
+                    sqlalchemy.text('SELECT uuid, url, name FROM dataset where type_ = "processed"')).fetchall():
                 container.processed_datasets.append(DatasetInfo(pds_name, (pds_url, pds_uuid), pds_uuid))
             container.keys = [key[0] for key in
-                              self.session.execute('SELECT DISTINCT key FROM json_each(key_val), data').fetchall()]
+                              self.session.execute(sqlalchemy.text('SELECT DISTINCT key FROM json_each(key_val), data')).fetchall()]
             return container
         raise DataServiceError('Cannot find the experiment metadata from the given URI')
 
