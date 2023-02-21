@@ -3,6 +3,8 @@ Handling actions to open, create and interact with projects
 """
 import glob
 import os
+from pathlib import Path
+
 from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QItemSelection, Signal
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
@@ -102,7 +104,6 @@ class ImportDataDialog(QDialog):
         self.default_extension = QComboBox(extension_widget)
         self.default_extension.addItems(['*.tif', '*.tiff', '*.jpg', '*.jpeg', '*.png'])
 
-        # self.list_view = QListView(self.source_group_box)
         list_view = ListView(source_group_box)
         self.list_model = QStringListModel()
         list_view.setModel(self.list_model)
@@ -117,6 +118,7 @@ class ImportDataDialog(QDialog):
         self.button_box = QDialogButtonBox(QDialogButtonBox.Close | QDialogButtonBox.Cancel | QDialogButtonBox.Ok, self)
         self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
 
+        add_path = AddPathDialog(self)
         # Layout
         vertical_layout = QVBoxLayout(self)
         source_layout = QVBoxLayout(source_group_box)
@@ -142,12 +144,10 @@ class ImportDataDialog(QDialog):
         vertical_layout.addWidget(self.button_box)
 
         # Widgets behaviour
-        #
-        files_button.clicked.connect(
-            lambda _: AddFilesDialog(self, model=self.list_model, choose_dir=False))
-        directory_button.clicked.connect(
-            lambda _: AddFilesDialog(self, model=self.list_model, choose_dir=True))
-        path_button.clicked.connect(lambda _: AddPathDialog(self, model=self.list_model))
+        files_button.clicked.connect(self.add_files)
+        directory_button.clicked.connect(self.add_dir)
+        path_button.clicked.connect(add_path.show)
+        add_path.path_validated.connect(self.add_path)
 
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.close)
@@ -159,6 +159,41 @@ class ImportDataDialog(QDialog):
             child.deleteLater()
         self.destroy(True)
 
+    def add_files(self):
+        """
+        Open a file chooser dialog box and add selected files to the source model
+        """
+        filters = ";;".join(["TIFF (*.tif *.tiff)",
+                             "JPEG (*.jpg *.jpeg)",
+                             "PNG (*.png)",
+                             "Image files (*.tif *.tiff, *.jpg *.jpeg, *.png)"])
+        files, _ = QFileDialog.getOpenFileNames(self, caption='Choose source files',
+                                                dir=str(Path.home()),
+                                                filter=filters,
+                                                selectedFilter=filters[0])
+        if files:
+            self.list_model.setStringList(self.list_model.stringList() + files)
+            self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+
+    def add_dir(self):
+        """
+        Open a directory chooser dialog box and add selected directory to the source model
+        """
+        directory = QFileDialog.getExistingDirectory(self, caption='Choose source directory', dir=str(Path.home()),
+                                                     options=QFileDialog.ShowDirsOnly)
+        if directory:
+            self.list_model.setStringList(self.list_model.stringList()
+                                          + [os.path.join(directory, self.default_extension.currentText())])
+            self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+
+    def add_path(self, path):
+        """
+        Add the input path to the source model
+        :param path:
+        """
+        self.list_model.setStringList(self.list_model.stringList() + [path])
+        self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+
     def get_destinations(self):
         """
         Get the list of subdirectories in the destination raw dataset directory
@@ -168,6 +203,11 @@ class ImportDataDialog(QDialog):
         return [''] + [d.name for d in os.scandir(os.path.join(self.project_path, 'data')) if d.is_dir()]
 
     def file_list(self):
+        """
+        Expands all source specification to return a list of files to import
+        :return: file name list
+        :rtype: list of str
+        """
         file_list = []
         for source_path in self.list_model.stringList():
             file_list += glob.glob(source_path)
@@ -201,7 +241,7 @@ class ImportDataDialog(QDialog):
         """
         Checks the source list is not empty, enables OK button if not
         """
-        if self.list_model.stringList():
+        if self.list_model.rowCount():
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
         else:
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
@@ -232,53 +272,15 @@ class ImportData(QAction):
         parent.addAction(self)
 
 
-class AddFilesDialog(QFileDialog):
-    """
-    A dialog window to select files or directory to add to import list
-    """
-
-    def __init__(self, parent_window, model, choose_dir=False):
-        super().__init__(parent_window)
-        self.setWindowModality(Qt.WindowModal)
-        self.model = model
-        self.choose_dir = choose_dir
-
-        if choose_dir:
-            self.setFileMode(QFileDialog.Directory)
-        else:
-            self.setFileMode(QFileDialog.ExistingFiles)
-            self.setNameFilters(["TIFF (*.tif *.tiff)",
-                                 "JPEG (*.jpg *.jpeg)",
-                                 "PNG (*.png)",
-                                 "Image files (*.tif *.tiff, *.jpg *.jpeg, *.png)", ])
-
-        self.filesSelected.connect(self.select_files)
-
-        self.exec()
-        self.destroy(True)
-
-    def select_files(self):
-        """
-        Add the selected files or directory to the list_model
-        """
-        if self.choose_dir:
-            selected_files = [f'{self.selectedFiles()[0]}/{self.parent().default_extension.currentText()}']
-        else:
-            selected_files = self.selectedFiles()
-        source_list = self.model.stringList()
-        self.model.setStringList(source_list + selected_files)
-        self.parent().button_box.button(QDialogButtonBox.Ok).setEnabled(True)
-
-
 class AddPathDialog(QDialog):
     """
     A dialog window to select a path pointing to files or directories to import
     """
+    path_validated = Signal(str)
 
-    def __init__(self, parent_window, model):
+    def __init__(self, parent_window):
         super().__init__(parent_window)
         self.setWindowModality(Qt.WindowModal)
-        self.model = model
 
         self.path_widget = QWidget(self)
         self.path_widget.setMinimumWidth(350)
@@ -289,7 +291,8 @@ class AddPathDialog(QDialog):
                                            Qt.Horizontal, self.path_widget)
         self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
         self.button_box.button(QDialogButtonBox.Apply).setEnabled(False)
-        self.button_box.button(QDialogButtonBox.Apply).clicked.connect(self.add_path)
+        self.button_box.button(QDialogButtonBox.Apply).clicked.connect(
+            lambda _: self.path_validated.emit(self.path_text_input.text()))
 
         self.layout = QVBoxLayout(self)
         self.layout.addWidget(self.path_widget)
@@ -302,28 +305,12 @@ class AddPathDialog(QDialog):
         self.button_box.rejected.connect(self.close)
         self.path_text_input.textChanged.connect(self.path_specification_changed)
 
-        self.exec()
-        for child in self.children():
-            child.deleteLater()
-        self.destroy(True)
-
     def accept(self):
         """
         Accept the path input text and add it to the source list
         """
-        self.add_path()
-        self.close()
-
-    def add_path(self):
-        """
-        Add the path input text to the model as a new source. Adds a wildcard if the path points to directories
-        """
-        path_text = self.path_text_input.text()
-        if os.path.isdir(glob.glob(path_text)[0]):
-            path_text = os.path.join(path_text, self.parent().default_extension.currentText())
-        source_list = self.model.stringList()
-        self.model.setStringList(source_list + [path_text])
-        self.parent().button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+        self.path_validated.emit(self.path_text_input.text())
+        self.hide()
 
     def path_specification_changed(self):
         """
