@@ -42,6 +42,9 @@ dependencies = [
     "xmltodict",
 ]
 
+[project.gui-scripts]
+pydetecdiv = "pydetecdiv.app.pydetecdiv_app:main_gui"
+
 [project-urls]
 "Repository" = "https://github.com/fplewniak/pyDetecDiv"
 "Documentation" = "https://fplewniak.github.io/pyDetecDiv/"

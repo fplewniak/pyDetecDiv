@@ -8,7 +8,7 @@ from PySide6.QtGui import QIcon
 from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui.Windows import MainWindow
 
-if __name__ == '__main__':
+def main_gui():
     app = PyDetecDiv([])
 
     window_icon = QIcon(':icons/app_icon')
@@ -17,3 +17,6 @@ if __name__ == '__main__':
     app.main_window.show()
 
     app.exec()
+
+if __name__ == '__main__':
+    main_gui()
