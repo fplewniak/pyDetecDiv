@@ -5,6 +5,7 @@ Definition of global objects and methods for easy access from all parts of the a
 """
 from contextlib import contextmanager
 
+from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal
 
@@ -114,7 +115,9 @@ class WaitDialog(QDialog):
         thread.set_function(func, *args, **kwargs)
         thread.start()
         thread.finished.connect(self.thread_complete)
+        PyDetecDiv().setOverrideCursor(QCursor(Qt.WaitCursor))
         self.exec()
+        PyDetecDiv().setOverrideCursor(QCursor(Qt.ArrowCursor))
         self.destroy()
 
     @Slot()
