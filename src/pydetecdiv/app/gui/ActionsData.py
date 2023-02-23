@@ -163,13 +163,13 @@ class ImportDataDialog(QDialog):
         """
         Open a file chooser dialog box and add selected files to the source model
         """
-        filters = ";;".join(["TIFF (*.tif *.tiff)",
+        filters = ["TIFF (*.tif *.tiff)",
                              "JPEG (*.jpg *.jpeg)",
                              "PNG (*.png)",
-                             "Image files (*.tif *.tiff, *.jpg *.jpeg, *.png)"])
+                             "Image files (*.tif *.tiff, *.jpg *.jpeg, *.png)"]
         files, _ = QFileDialog.getOpenFileNames(self, caption='Choose source files',
-                                                dir=str(Path.home()),
-                                                filter=filters,
+                                                dir='.',
+                                                filter= ";;".join(filters),
                                                 selectedFilter=filters[0])
         if files:
             self.list_model.setStringList(self.list_model.stringList() + files)
@@ -179,7 +179,7 @@ class ImportDataDialog(QDialog):
         """
         Open a directory chooser dialog box and add selected directory to the source model
         """
-        directory = QFileDialog.getExistingDirectory(self, caption='Choose source directory', dir=str(Path.home()),
+        directory = QFileDialog.getExistingDirectory(self, caption='Choose source directory', dir='.',
                                                      options=QFileDialog.ShowDirsOnly)
         if directory:
             self.list_model.setStringList(self.list_model.stringList()
