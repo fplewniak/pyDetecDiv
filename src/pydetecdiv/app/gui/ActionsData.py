@@ -3,6 +3,7 @@ Handling actions to open, create and interact with projects
 """
 import glob
 import os
+import time
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QItemSelection, Signal
@@ -81,12 +82,14 @@ class ImportDataDialog(QDialog):
     A dialog window to choose sources for image data files to import into the project raw dataset
     """
     progress = Signal(int)
+    chosen_directory = Signal(str)
 
     def __init__(self):
         super().__init__(PyDetecDiv().main_window)
         settings = get_settings()
         self.project_path = os.path.join(settings.value("project/workspace"), PyDetecDiv().project_name)
         self.setWindowModality(Qt.WindowModal)
+        self.current_dir = '.'
 
         self.setObjectName('ImportData')
         self.setWindowTitle('Import image data')
@@ -96,13 +99,13 @@ class ImportDataDialog(QDialog):
         source_group_box.setTitle('Source for image files to import:')
 
         buttons_widget = QWidget(source_group_box)
-        files_button = QPushButton('Add files', buttons_widget)
+        # files_button = QPushButton('Add files', buttons_widget)
         directory_button = QPushButton('Add directory', buttons_widget)
         path_button = QPushButton('Add path', buttons_widget)
         extension_widget = QWidget(source_group_box)
         extension_label = QLabel('Default image file extension:', extension_widget)
         self.default_extension = QComboBox(extension_widget)
-        self.default_extension.addItems(['*.tif', '*.tiff', '*.jpg', '*.jpeg', '*.png'])
+        self.default_extension.addItems(['*', '*.tif', '*.tiff', '*.jpg', '*.jpeg', '*.png'])
 
         list_view = ListView(source_group_box)
         self.list_model = QStringListModel()
@@ -118,7 +121,7 @@ class ImportDataDialog(QDialog):
         self.button_box = QDialogButtonBox(QDialogButtonBox.Close | QDialogButtonBox.Cancel | QDialogButtonBox.Ok, self)
         self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
 
-        add_path = AddPathDialog(self)
+        add_path_dialog = AddPathDialog(self)
         # Layout
         vertical_layout = QVBoxLayout(self)
         source_layout = QVBoxLayout(source_group_box)
@@ -130,7 +133,7 @@ class ImportDataDialog(QDialog):
         source_layout.addWidget(buttons_widget)
         source_layout.addWidget(extension_widget)
 
-        buttons_layout.addWidget(files_button)
+        # buttons_layout.addWidget(files_button)
         buttons_layout.addWidget(directory_button)
         buttons_layout.addWidget(path_button)
 
@@ -144,15 +147,16 @@ class ImportDataDialog(QDialog):
         vertical_layout.addWidget(self.button_box)
 
         # Widgets behaviour
-        files_button.clicked.connect(self.add_files)
+        # files_button.clicked.connect(self.add_files)
         directory_button.clicked.connect(self.add_dir)
-        path_button.clicked.connect(add_path.show)
-        add_path.path_validated.connect(self.add_path)
+        path_button.clicked.connect(add_path_dialog.show)
+        add_path_dialog.path_validated.connect(self.add_path)
 
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.close)
 
         self.list_model.dataChanged.connect(self.source_list_is_not_empty)
+        self.chosen_directory.connect(lambda path: add_path_dialog.set_path(path))
 
         self.exec()
         for child in self.children():
@@ -168,10 +172,11 @@ class ImportDataDialog(QDialog):
                              "PNG (*.png)",
                              "Image files (*.tif *.tiff, *.jpg *.jpeg, *.png)"]
         files, _ = QFileDialog.getOpenFileNames(self, caption='Choose source files',
-                                                dir='.',
+                                                dir=self.current_dir,
                                                 filter= ";;".join(filters),
                                                 selectedFilter=filters[0])
         if files:
+            self.current_dir = os.path.dirname(files[0])
             self.list_model.setStringList(self.list_model.stringList() + files)
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
 
@@ -179,9 +184,12 @@ class ImportDataDialog(QDialog):
         """
         Open a directory chooser dialog box and add selected directory to the source model
         """
-        directory = QFileDialog.getExistingDirectory(self, caption='Choose source directory', dir='.',
+        directory = QFileDialog.getExistingDirectory(self, caption='Choose source directory', dir=self.current_dir,
                                                      options=QFileDialog.ShowDirsOnly)
         if directory:
+            self.current_dir = directory
+            self.chosen_directory.emit(directory)
+            # self.list_model.setStringList(self.list_model.stringList() + [directory])
             self.list_model.setStringList(self.list_model.stringList()
                                           + [os.path.join(directory, self.default_extension.currentText())])
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
@@ -311,6 +319,9 @@ class AddPathDialog(QDialog):
         """
         self.path_validated.emit(self.path_text_input.text())
         self.hide()
+
+    def set_path(self, path):
+        self.path_text_input.setText(path)
 
     def path_specification_changed(self):
         """
