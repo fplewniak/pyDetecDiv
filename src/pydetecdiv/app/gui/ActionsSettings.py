@@ -3,7 +3,7 @@ Handling actions to edit and manage settings
 """
 import os.path
 
-from PySide6.QtCore import Slot, Qt
+from PySide6.QtCore import Slot, Qt, QDir
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import (QLineEdit, QDialogButtonBox, QPushButton, QFileDialog, QDialog, QHBoxLayout, QVBoxLayout,
                                QGroupBox)
@@ -73,7 +73,7 @@ class SettingsDialog(QDialog):
         """
         Enable or disable OK and Apply buttons depending upon the validity of input text
         """
-        if self.workspace.text() and self.bioit_conf.text():
+        if self.workspace.text() and self.bioit_conf.text() and os.path.exists(self.bioit_conf.text()):
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
             self.button_box.button(QDialogButtonBox.Apply).setEnabled(True)
         else:
@@ -84,35 +84,30 @@ class SettingsDialog(QDialog):
         """
         Method opening a Directory chooser to select the workspace directory
         """
-        dir_name = os.path.dirname(self.settings.value("project/workspace"))
-        base_name = os.path.basename(self.settings.value("project/workspace"))
-        dir_dialog = QFileDialog(self)
-        dir_dialog.setWindowModality(Qt.WindowModal)
-        dir_dialog.setDirectory(dir_name)
-        dir_dialog.selectFile(base_name)
-        dir_dialog.setFileMode(QFileDialog.Directory)
-        dir_dialog.setOption(QFileDialog.ShowDirsOnly, True)
-        dir_dialog.fileSelected.connect(self.workspace.setText)
-        dir_dialog.exec()
-        dir_dialog.destroy()
+        dir_name = str(os.path.join(os.path.dirname(self.settings.value("project/workspace")),
+                                os.path.basename(self.settings.value("project/workspace"))))
+        if dir_name != self.workspace.text() and self.workspace.text():
+            dir_name = self.workspace.text()
+        directory = QFileDialog.getExistingDirectory(self, caption='Choose workspace directory', dir=dir_name,
+                                                     options=QFileDialog.ShowDirsOnly)
+        if directory:
+            self.workspace.setText(directory)
 
     def select_bioit(self):
         """
         A method opening a File chooser to select the BioImageIT configuration file
         """
-        dir_name = os.path.dirname(self.settings.value("bioimageit/config_file"))
-        file_name = os.path.basename(self.settings.value("bioimageit/config_file"))
-        file_dialog = QFileDialog(self)
-        file_dialog.setWindowModality(Qt.WindowModal)
-        file_dialog.setDirectory(dir_name)
-        file_dialog.selectFile(file_name)
-        file_dialog.setFileMode(QFileDialog.ExistingFile)
-        file_dialog.setOption(QFileDialog.ShowDirsOnly, False)
-        file_dialog.setNameFilters(["JSON files (*.json)"])
-        file_dialog.selectNameFilter("JSON files (*.json)")
-        file_dialog.fileSelected.connect(self.bioit_conf.setText)
-        file_dialog.exec()
-        file_dialog.destroy()
+        dir_name = os.path.dirname(self.settings.value('bioimageit/config_file'))
+        filters = 'JSON files (*.json)'
+        if dir_name != os.path.dirname(self.bioit_conf.text()) and self.bioit_conf.text():
+            dir_name = self.bioit_conf.text()
+        conf_file, _ = QFileDialog.getOpenFileName(self, caption='Choose source files',
+                                                dir=dir_name,
+                                                filter=filters,
+                                                selectedFilter=filters)
+
+        if conf_file  != self.bioit_conf.text():
+            self.bioit_conf.setText(conf_file)
 
     @Slot()
     def clicked(self, button):
@@ -135,7 +130,9 @@ class SettingsDialog(QDialog):
         """
         Save the contents of the settings editor into the settings file when the OK button has been clicked
         """
+
         self.settings.setValue("project/workspace", self.workspace.text())
+        QDir().mkpath(self.workspace.text())
         self.settings.setValue("bioimageit/config_file", self.bioit_conf.text())
 
     def reset(self):
