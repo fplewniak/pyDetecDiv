@@ -498,7 +498,7 @@ class SQLiteMetadataService(LocalMetadataService):
         :return: a DataFrame with the imported data
         :rtype: pandas DataFrame
         """
-        files = glob.glob(files_glob)
+        files = [f for f in glob.glob(files_glob) if os.path.isfile(f)]
         n = len(files)
         # Note that the code line below used to be
         # data_dir_path = os.path.join(os.path.dirname(experiment.raw_dataset.url[0]), experiment.raw_dataset.name)

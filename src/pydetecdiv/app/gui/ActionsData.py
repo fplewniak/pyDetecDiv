@@ -99,13 +99,13 @@ class ImportDataDialog(QDialog):
         source_group_box.setTitle('Source for image files to import:')
 
         buttons_widget = QWidget(source_group_box)
-        # files_button = QPushButton('Add files', buttons_widget)
         directory_button = QPushButton('Add directory', buttons_widget)
         path_button = QPushButton('Add path', buttons_widget)
+        files_button = QPushButton('Add files', buttons_widget)
         extension_widget = QWidget(source_group_box)
         extension_label = QLabel('Default image file extension:', extension_widget)
         self.default_extension = QComboBox(extension_widget)
-        self.default_extension.addItems(['*', '*.tif', '*.tiff', '*.jpg', '*.jpeg', '*.png'])
+        self.default_extension.addItems(['*.tif', '*.tiff', '*.jpg', '*.jpeg', '*.png', '*',])
 
         list_view = ListView(source_group_box)
         self.list_model = QStringListModel()
@@ -133,9 +133,9 @@ class ImportDataDialog(QDialog):
         source_layout.addWidget(buttons_widget)
         source_layout.addWidget(extension_widget)
 
-        # buttons_layout.addWidget(files_button)
-        buttons_layout.addWidget(directory_button)
         buttons_layout.addWidget(path_button)
+        buttons_layout.addWidget(directory_button)
+        buttons_layout.addWidget(files_button)
 
         extension_layout.addWidget(extension_label)
         extension_layout.addWidget(self.default_extension)
@@ -147,7 +147,7 @@ class ImportDataDialog(QDialog):
         vertical_layout.addWidget(self.button_box)
 
         # Widgets behaviour
-        # files_button.clicked.connect(self.add_files)
+        files_button.clicked.connect(self.add_files)
         directory_button.clicked.connect(self.add_dir)
         path_button.clicked.connect(add_path_dialog.show)
         add_path_dialog.path_validated.connect(self.add_path)
@@ -188,8 +188,7 @@ class ImportDataDialog(QDialog):
                                                      options=QFileDialog.ShowDirsOnly)
         if directory:
             self.current_dir = directory
-            self.chosen_directory.emit(directory)
-            # self.list_model.setStringList(self.list_model.stringList() + [directory])
+            self.chosen_directory.emit(str(os.path.join(directory, self.default_extension.currentText())))
             self.list_model.setStringList(self.list_model.stringList()
                                           + [os.path.join(directory, self.default_extension.currentText())])
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
@@ -218,7 +217,7 @@ class ImportDataDialog(QDialog):
         """
         file_list = []
         for source_path in self.list_model.stringList():
-            file_list += glob.glob(source_path)
+            file_list += [f for f in glob.glob(source_path) if os.path.isfile(f)]
         return file_list
 
     def accept(self):
@@ -228,6 +227,7 @@ class ImportDataDialog(QDialog):
         WaitDialog(f'Importing data into {PyDetecDiv().project_name}', self.import_data, self, hide_parent=False,
                    progress_bar=True, n_max=len(self.file_list()))
         self.list_model.removeRows(0, self.list_model.rowCount())
+        self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
 
     def import_data(self):
         """
