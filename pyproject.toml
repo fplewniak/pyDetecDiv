@@ -22,6 +22,7 @@ classifiers=[
 
 requires-python = ">=3.10.0"
 dependencies = [
+    "aicsimageio",
     "h5py",
     "matplotlib",
     "numpy",
@@ -31,6 +32,7 @@ dependencies = [
     "psutil",
     #"pylibjpeg",
     #"pylibjpeg-libjpeg",
+    "pyside6",
     "pyxdg",
     "scikit-image",
     #"scipy",
@@ -39,6 +41,9 @@ dependencies = [
     "vidstab",
     "xmltodict",
 ]
+
+[project.gui-scripts]
+pydetecdiv = "pydetecdiv.app.pydetecdiv_app:main_gui"
 
 [project-urls]
 "Repository" = "https://github.com/fplewniak/pyDetecDiv"

@@ -3,6 +3,8 @@
 """
  A class defining the business logic methods that can be applied to Regions Of Interest
 """
+import json
+
 from pydetecdiv.domain.dso import NamedDSO
 
 
@@ -31,7 +33,7 @@ class Data(NamedDSO):
         :return: the Dataset this Data belongs to
         :rtype: Dataset object
         """
-        return self.project.get_object('Dataset', self.dataset_)
+        return self.project.get_object('Dataset', uuid=self.dataset_)
 
     @property
     def fov(self):
@@ -66,3 +68,16 @@ class Data(NamedDSO):
         if not no_id:
             record['id_'] = self.id_
         return record
+
+    @property
+    def info(self):
+        return f"""
+Name:             {self.name}
+Dataset:          {self.dataset.name} (type: {self.dataset.type_}, run: {self.dataset.run})
+FOV:              {self.fov[0].name if len(self.fov) == 1 else len(self.fov)}
+Date:             {self.date}
+Full path:        {self.url}
+Source directory: {self.source_dir}
+metadata:         {json.dumps(self.meta_data, indent=4)}
+                  {json.dumps(self.key_val, indent=4)}
+        """

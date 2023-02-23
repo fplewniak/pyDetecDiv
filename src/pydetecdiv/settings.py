@@ -15,12 +15,20 @@ def get_default_settings() -> dict:
     Returns default values for configuration if no configuration file is found
     :return: a dictionary containing the default values
     """
-    return {'project': {'dbms': 'SQLite3'},
-            'project.sqlite': {'persistence': 'pydetecdiv.sqlite3', },
-            'project.mysql': {'persistence': 'pydetecdiv', 'host': 'localhost', 'credentials': 'mysql.credentials', },
+    return {'project': {'dbms': 'SQLite3', 'workspace': '/data2/BioImageIT/workspace'},
+            'project.sqlite': {'database': 'pydetecdiv'},
+            'project.mysql': {'database': 'pydetecdiv', 'host': 'localhost', 'credentials': 'mysql.credentials', },
             'omero': {'host': 'localhost', 'credentials': 'omero.credentials', },
             'bioimageit': {'config_file': '/data2/BioImageIT/config.json'}
             }
+
+
+def get_config_dir():
+    if 'APPDATA' in os.environ:
+        config_dir = Path(os.environ['APPDATA']).joinpath('pyDetecDiv')
+    else:
+        config_dir = [d for d in xdg.BaseDirectory.load_config_paths('pyDetecDiv')][0]
+    return config_dir
 
 
 def get_config_files():

@@ -11,22 +11,106 @@ import pandas as pd
 import skimage.io as skio
 import xmltodict
 import tifffile
+from aicsimageio import AICSImage
 # from memory_profiler import profile
 import psutil
 from tifffile import TiffFile, TiffSequence
 import cv2 as cv
 from vidstab import VidStab
 
+class ImageResource:
+    def __init__(self, path, mode='readwrite', **kwargs):
+        self.path = path
+        self._aics_image = AICSImage(path, **kwargs)
+        try:
+            self._memmap = MemMapTiff(path, mode=mode)
+        except ValueError:
+            self._memmap = None
 
-class SingleTiff:
+    def image(self, c=0, z=0, t=0, **kwargs):
+        if self._memmap is not None:
+            return self._memmap.image(c=c, z=z, t=t, **kwargs)
+        xd = self._aics_image.get_xarray_dask_stack()
+        if 'S' not in xd.dims:
+            return xd.isel(I=0, T=t, C=c, Z=z)
+        return xd.isel(I=0, S=0, T=t, C=c, Z=z)
+
+
+    @property
+    def sizeT(self):
+        return self._aics_image.dims.T
+
+    @property
+    def sizeZ(self):
+        return self._aics_image.dims.Z
+
+    @property
+    def sizeC(self):
+        return self._aics_image.dims.C
+
+    @property
+    def sizeX(self):
+        return self._aics_image.dims.X
+
+    @property
+    def sizeY(self):
+        return self._aics_image.dims.Y
+
+    def as_texture(self, c=0, z=0, t=0, **kwargs):
+        if self._memmap is not None:
+            return self._memmap.as_texture(c=c, z=z, t=t, **kwargs)
+        img = self.image(c=c, z=z, t=t).values
+        img = img / np.max(img)
+        texture = np.dstack([img, img, img, np.ones((self._aics_image.dims.Y, self._aics_image.dims.X))])
+        return self._aics_image.dims.X, self._aics_image.dims.Y, 4, texture.flatten()
+
+    @property
+    def shape(self):
+        """
+        The shape of the image data
+        :return: the 5D array shape
+        :rtype: tuple of int
+        """
+        return self._aics_image.shape
+
+    def compute_drift(self, z=0, c=0, max_mem=5000):
+        if self._memmap is not None:
+            return self._memmap.compute_drift(z=z, c=c, max_mem=max_mem)
+        stabilizer = VidStab()
+        for frame in range(0, self.sizeT):
+            _ = stabilizer.stabilize_frame(
+                input_frame=np.uint8(np.array(self.image(t=frame, z=z, c=c)) / 65535 * 255), smoothing_window=1)
+        return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)
+
+    def correct_drift(self, drift, filename=None, max_mem=5000):
+        new_memmap = MemMapTiff(filename, ome=True, metadata={'axes': 'CTZYX'},
+                                shape=(self.sizeC, self.sizeT, self.sizeZ, self.sizeY, self.sizeX), dtype=np.uint16)
+        if self._memmap is not None:
+            self._memmap.correct_drift(new_memmap, drift, max_mem=max_mem)
+        else:
+            for c in range(0, self.sizeC):
+                for z in range(0, self.sizeZ):
+                    new_memmap.data[c, 0 , z, ...] = self.image(c=c, t=0, z=z)
+                    for idx in drift.index:
+                        new_memmap.data[c, idx + 1, z, ...] = cv.warpAffine(np.array(self.image(c=c, t=idx+1, z=z)),
+                                                                            np.float32(
+                                                                                [[1, 0, -drift.iloc[idx].dx],
+                                                                                 [0, 1, -drift.iloc[idx].dy]]),
+                                                                            self.image(c=c, t=idx+1, z=z).shape)
+                        if psutil.Process().memory_info().rss / (1024 * 1024) > max_mem:
+                            self.refresh()
+
+
+class MemMapTiff:
     """
     A class to access image data stored in a multi-paged TIFF file defined by an explicit path. The file is memory
     mapped to save RAM.
     """
 
-    def __init__(self, path, **kwargs):
+    def __init__(self, path, max_mem=5000, **kwargs):
         self.path = path
         self._image_data = tifffile.memmap(path, **kwargs)
+        self.max_mem = max_mem
 
     @property
     def data(self):
@@ -57,7 +141,18 @@ class SingleTiff:
         :return: the 2D image
         :rtype: 2D memmap array
         """
+        if psutil.Process().memory_info().rss / (1024 * 1024) > self.max_mem:
+                self.refresh()
         return self.data[c, t, z, ...]
+
+    def as_texture(self, c=0, z=0, t=0):
+        img = self.image(c=c, z=z, t=t)
+        img = img / np.max(img)
+        width = img.shape[0]
+        height = img.shape[1]
+        channels = 4
+        texture = np.dstack([img, img, img, np.sign(img)])
+        return width, height, channels, texture.flatten()
 
     @property
     def shape(self):
@@ -67,15 +162,6 @@ class SingleTiff:
         :rtype: tuple of int
         """
         return self.data.shape
-
-    @property
-    def dimension_order(self):
-        """
-        Dimension order of the 5D array
-        :return: the dimension order of the 5D image data
-        :rtype: list of str
-        """
-        return xmltodict.parse(TiffFile(self.path).ome_metadata)['OME']['Image']['Pixels']['@DimensionOrder']
 
     def open(self):
         """
@@ -105,7 +191,7 @@ class SingleTiff:
         self.close()
         self.open()
 
-    def compute_drift(self, z=0, c=0, max_mem=5000):
+    def compute_drift(self, z=0, c=0, max_mem=None):
         """
         Compute x,y drift of frames along time for a channel and a layer. Return the list of dx,dy shifts to be used
         with the correct_drift method
@@ -120,6 +206,7 @@ class SingleTiff:
         :rtype: pandas DataFrame with headers dx, dy and dr, frame index is equal to the DataFrame index
         """
         stabilizer = VidStab()
+        max_mem = self.max_mem if max_mem is None else max_mem
 
         for frame in range(0, self.shape[1]):
             _ = stabilizer.stabilize_frame(
@@ -128,7 +215,7 @@ class SingleTiff:
                 self.refresh()
         return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)
 
-    def correct_drift(self, drift, max_mem=5000):
+    def correct_drift(self, new_memmap, drift, max_mem=None):
         """
         Correct x,y drift of frames along time given a list of dx,dy shifts
         :param drift: the list of dx and dy by frame
@@ -137,10 +224,13 @@ class SingleTiff:
         memmap is refreshed to clear memory
         :type max_mem: int
         """
-        for idx in drift.index:
-            for c in range(0, self.shape[0]):
-                for z in range(0, self.shape[2]):
-                    self.data[c, idx + 1, z, ...] = cv.warpAffine(np.array(self.data[c, idx + 1, z, ...]), np.float32(
+        max_mem = self.max_mem if max_mem is None else max_mem
+
+        for c in range(0, self.shape[0]):
+            for z in range(0, self.shape[2]):
+                new_memmap.data[c, 0 , z, ...] = self.data[c, 0, z, ...]
+                for idx in drift.index:
+                    new_memmap.data[c, idx + 1, z, ...] = cv.warpAffine(np.array(self.data[c, idx + 1, z, ...]), np.float32(
                         [[1, 0, -drift.iloc[idx].dx], [0, 1, -drift.iloc[idx].dy]]),
                                                                   self.data[c, idx + 1, z, ...].shape)
                     if psutil.Process().memory_info().rss / (1024 * 1024) > max_mem:
@@ -216,7 +306,7 @@ class MultipleTiff():
         """
         return self._shape
 
-    def as_single_file(self, filename, max_mem=500):
+    def as_memmap_tiff(self, filename, max_mem=500):
         """
         Convert the set of files to a single multi-paged TIFF file.
         :param filename: the name of the target multi-paged file
@@ -224,9 +314,9 @@ class MultipleTiff():
         :param max_mem: memory limit before refreshing the target multi-paged file during its creation
         :type max_mem: int
         :return: the target multi-paged TIFF file
-        :rtype: SingleTiff
+        :rtype: MemMapTiff
         """
-        single_tiff = SingleTiff(filename, ome=True, metadata={'axes': 'CTZYX'},
+        single_tiff = MemMapTiff(filename, ome=True, metadata={'axes': 'CTZYX'},
                                  shape=self._shape, dtype=np.uint16)
         for c, _ in enumerate(self._files):
             for t, _ in enumerate(self._files[c]):

@@ -17,7 +17,7 @@ class Experiment(NamedDSO):
         self.author = author
         self.date = date
         self.raw_dataset_ = raw_dataset
-        self.validate()
+        self.validate(updated=False)
 
     @property
     def raw_dataset(self):

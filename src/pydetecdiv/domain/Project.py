@@ -15,7 +15,7 @@ from pydetecdiv.domain.Data import Data
 from pydetecdiv.domain.Image import Image
 from pydetecdiv.domain.Run import Run
 from pydetecdiv.domain.Dataset import Dataset
-from pydetecdiv.domain.ImageResource import SingleTiff, MultipleTiff
+from pydetecdiv.domain.ImageResource import MemMapTiff, MultipleTiff
 
 
 class Project:
@@ -47,7 +47,7 @@ class Project:
         Property returning the uuid associated to this project
         :return:
         """
-        return self.get_objects('Experiment')[0].uuid
+        return self.get_named_object('Experiment', self.dbname).uuid
 
     @property
     def author(self):
@@ -55,7 +55,7 @@ class Project:
         Property returning the author associated to this project
         :return:
         """
-        return self.get_objects('Experiment')[0].author
+        return self.get_named_object('Experiment', self.dbname).author
 
     @property
     def date(self):
@@ -63,7 +63,7 @@ class Project:
         Property returning the date of this project
         :return:
         """
-        return self.get_objects('Experiment')[0].date
+        return self.get_named_object('Experiment', self.dbname).date
 
     @property
     def raw_dataset(self):
@@ -71,7 +71,7 @@ class Project:
         Property returning the raw dataset object associated to this project
         :return:
         """
-        return self.get_objects('Experiment')[0].raw_dataset
+        return self.get_named_object('Experiment', self.dbname).raw_dataset
 
     def commit(self):
         """
@@ -86,7 +86,7 @@ class Project:
         self.repository.rollback()
 
     def image_resource(self, path, pattern=None):
-        return SingleTiff(path) if isinstance(path, str) else MultipleTiff(path, pattern=pattern)
+        return MemMapTiff(path) if isinstance(path, str) else MultipleTiff(path, pattern=pattern)
 
     def import_images(self, source_path):
         """
@@ -180,7 +180,7 @@ class Project:
         del self.pool[dso.__class__.__name__, dso.id_]
         self.repository.delete_object(dso.__class__.__name__, dso.id_)
 
-    def get_object(self, class_name, id_=None) -> DomainSpecificObject:
+    def get_object(self, class_name, id_=None, uuid=None) -> DomainSpecificObject:
         """
         Get an object referenced by its id
         :param class_name: the class of the requested object
@@ -190,7 +190,10 @@ class Project:
         :return: the desired object
         :rtype: object (DomainSpecificObject)
         """
-        return self.build_dso(class_name, self.repository.get_record(class_name, id_))
+        return self.build_dso(class_name, self.repository.get_record(class_name, id_, uuid))
+
+    def get_named_object(self, class_name, name=None) -> DomainSpecificObject:
+        return self.build_dso(class_name, self.repository.get_record_by_name(class_name, name))
 
     def get_objects(self, class_name, id_list=None):
         """
@@ -308,3 +311,16 @@ class Project:
         obj = Project.classes[class_name](project=self, **rec)
         self.pool[(class_name, obj.id_)] = obj
         return obj
+
+    @property
+    def info(self):
+        return f"""
+Name:               {self.dbname}
+Author:             {self.author}
+Date:               {self.date}
+number of FOV:      {len(self.get_objects('FOV'))}
+number of ROI:      {len(self.get_objects('ROI'))}
+number of datasets: {len(self.get_objects('Dataset'))}
+number of files:    {len(self.get_objects('Data'))}
+number of runs:     {len(self.get_objects('Run'))}
+        """

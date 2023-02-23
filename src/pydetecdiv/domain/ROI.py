@@ -90,3 +90,14 @@ class ROI(NamedDSO, BoxedDSO, DsoWithImageData):
         if not no_id:
             record['id_'] = self.id_
         return record
+
+    @property
+    def info(self):
+        return f"""
+Name:                 {self.name}
+FOV:                  {self.fov.name}
+Position:             {self.top_left} - {self.bottom_right}
+Size:                 {self.size}
+number of datasets:   {len(self.project.get_linked_objects('Dataset', to=self))}
+number of data files: {len(self.project.get_linked_objects('Data', to=self))}
+        """

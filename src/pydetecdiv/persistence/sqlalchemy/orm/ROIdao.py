@@ -47,6 +47,20 @@ class ROIdao(DAO, Base):
                 'uuid': self.uuid
                 }
 
+    def data(self, roi_id):
+        """
+        Returns a list of DataDao objects linked to the FOVdao object with the specified id_
+        :param fov_id: the id_ of the FOV
+        :type fov_id: int
+        :return: the list of Data records linked to the FOV
+        :type: list of dict
+        """
+        return [i.record
+                for i in self.session.query(dao.DataDao)
+                .filter(ROIdata.data == dao.DataDao.id_)
+                .filter(ROIdata.roi == roi_id)
+                ]
+
     def image_data(self, roi_id):
         """
         A method returning the list of Image data object records linked to ROI with id_ == roi_id

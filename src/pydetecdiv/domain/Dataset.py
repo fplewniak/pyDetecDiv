@@ -47,3 +47,12 @@ class Dataset(NamedDSO):
         if not no_id:
             record['id_'] = self.id_
         return record
+
+    @property
+    def info(self):
+        return f"""
+Name: {self.name}
+Path: {self.url}
+Type: {self.type_}
+Run:  {self.run}
+        """
