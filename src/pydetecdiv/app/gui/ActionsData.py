@@ -235,7 +235,6 @@ class ImportDataDialog(QDialog):
         with the number of files that have been copied so far
         """
         destination = os.path.join(self.project_path, 'data', self.destination_directory.currentText())
-        print(destination)
         QDir().mkpath(str(destination))
         n_start = len(os.listdir(destination))
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
