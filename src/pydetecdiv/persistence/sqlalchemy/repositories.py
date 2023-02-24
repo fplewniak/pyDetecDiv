@@ -97,13 +97,13 @@ class ShallowSQLite3(ShallowDb):
         """
         self.engine.dispose()
 
-    def import_images(self, source_path):
+    def import_images(self, source_path, **kwargs):
         """
         Import images from a source path. All files corresponding to the path will be imported.
         :param source_path: the source path (glob pattern)
         :type source_path: str
         """
-        self.bioiit_req.import_glob(self.bioiit_exp, source_path)
+        self.bioiit_req.import_glob(self.bioiit_exp, source_path, **kwargs)
 
     def determine_fov(self, source, regex):
         """

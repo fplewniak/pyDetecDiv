@@ -66,7 +66,7 @@ class Request(bioimageit_core.api.request.Request):
         """
         self.data_service.clear_annotation(experiment, dataset, key)
 
-    def import_glob(self, experiment, files_glob, author='', format_='imagetiff', date='now'):
+    def import_glob(self, experiment, files_glob, author='', format_='imagetiff', date='now', destination=None, **kwargs):
         """
         Import into an experiment a list of raw data files specified by a glob pattern
         :param experiment: the experiment
@@ -84,7 +84,7 @@ class Request(bioimageit_core.api.request.Request):
         """
         # print(f'Please wait while importing data into {experiment.raw_dataset.name} dataset')
         self.data_service.import_glob(experiment, files_glob,
-                                      author=author, format_=format_, date=date, observers=None)
+                                      author=author, format_=format_, date=date, observers=None, destination=destination)
         # print('OK')
 
     def run(self, job):

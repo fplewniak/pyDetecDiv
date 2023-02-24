@@ -6,7 +6,7 @@ import os
 import time
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QItemSelection, Signal
+from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QItemSelection, Signal, QDir
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
                                QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView)
@@ -113,10 +113,10 @@ class ImportDataDialog(QDialog):
 
         destination_widget = QGroupBox(self)
         destination_widget.setTitle(f'Destination: {self.project_path}/data/')
-        destination_directory = QComboBox(destination_widget)
-        destination_directory.addItems(self.get_destinations())
-        destination_directory.setEditable(True)
-        destination_directory.setValidator(self.sub_directory_name_validator())
+        self.destination_directory = QComboBox(destination_widget)
+        self.destination_directory.addItems(self.get_destinations())
+        self.destination_directory.setEditable(True)
+        self.destination_directory.setValidator(self.sub_directory_name_validator())
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Close | QDialogButtonBox.Cancel | QDialogButtonBox.Ok, self)
         self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
@@ -140,7 +140,7 @@ class ImportDataDialog(QDialog):
         extension_layout.addWidget(extension_label)
         extension_layout.addWidget(self.default_extension)
 
-        destination_layout.addWidget(destination_directory)
+        destination_layout.addWidget(self.destination_directory)
 
         vertical_layout.addWidget(source_group_box)
         vertical_layout.addWidget(destination_widget)
@@ -234,11 +234,13 @@ class ImportDataDialog(QDialog):
         Import image data from source specified in list_model into project raw dataset and triggers a progress signal
         with the number of files that have been copied so far
         """
-        destination = os.path.join(self.project_path, 'data')
+        destination = os.path.join(self.project_path, 'data', self.destination_directory.currentText())
+        print(destination)
+        QDir().mkpath(str(destination))
         n_start = len(os.listdir(destination))
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             for source_path in self.list_model.stringList():
-                project.import_images(source_path)
+                project.import_images(source_path, destination=self.destination_directory.currentText())
                 n = len(os.listdir(destination)) - n_start
                 self.progress.emit(n)
         while n < len(self.file_list()):

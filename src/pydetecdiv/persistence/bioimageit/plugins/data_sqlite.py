@@ -480,7 +480,7 @@ class SQLiteMetadataService(LocalMetadataService):
                 self.update_dataset(raw_dataset)
             os.remove(tmp_file)
 
-    def import_glob(self, experiment, files_glob, author='', format_='imagetiff', date='now', observers=None):
+    def import_glob(self, experiment, files_glob, author='', format_='imagetiff', date='now', observers=None, destination=None, **kwargs):
         """
         Import into an experiment a list of raw data files specified by a glob pattern
         :param experiment: the experiment
@@ -506,6 +506,8 @@ class SQLiteMetadataService(LocalMetadataService):
         # directory only. Maybe try and find another and better way
         experiment_path = os.path.join(ConfigAccess.instance().config['workspace'], experiment.name)
         data_dir_path = os.path.join(experiment_path, experiment.raw_dataset.name)
+        if destination:
+            data_dir_path = os.path.join(data_dir_path, destination)
         date = datetime.now() if date == 'now' else datetime.fromisoformat(date),
         author = ConfigAccess.instance().config['user'] if author == '' else author
         df = pandas.DataFrame(columns=['uuid', 'name', 'dataset', 'author', 'date', 'url', 'format',

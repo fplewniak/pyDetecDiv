@@ -88,13 +88,13 @@ class Project:
     def image_resource(self, path, pattern=None):
         return MemMapTiff(path) if isinstance(path, str) else MultipleTiff(path, pattern=pattern)
 
-    def import_images(self, source_path):
+    def import_images(self, source_path, **kwargs):
         """
         Import images from a source path. All files corresponding to the path will be imported.
         :param source_path: the source path (glob pattern)
         :type source_path: str
         """
-        self.repository.import_images(source_path)
+        self.repository.import_images(source_path, **kwargs)
         self.commit()
 
     def annotate(self, dataset, source, columns, regex):
