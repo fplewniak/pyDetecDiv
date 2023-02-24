@@ -20,7 +20,10 @@ import json
 import re
 from shutil import copyfile
 import subprocess
+
+import numpy as np
 import pandas
+import psutil
 import zarr
 from skimage.io import imread
 
@@ -531,7 +534,10 @@ class SQLiteMetadataService(LocalMetadataService):
             if platform.system() == 'Windows':
                 os.popen(f'copy {files_glob} {data_dir_path}')
             else:
-                os.popen(f'cp {files_glob} {data_dir_path}')
+                for batch in np.array_split(files, int(1024 * n/psutil.Process().rlimit(psutil.RLIMIT_NOFILE)[0])+1):
+                    command = f'cp {" ".join(batch)} {data_dir_path}'
+                    os.popen(command)
+                # os.popen(f'cp {files_glob} {data_dir_path}')
         except RuntimeError as error:
             raise DataServiceError('Could not import data') from error
         return df
