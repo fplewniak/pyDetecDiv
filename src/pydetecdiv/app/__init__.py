@@ -111,14 +111,23 @@ class WaitDialog(QDialog):
             layout.addWidget(progress_bar_widget)
             parent.progress.connect(lambda n: progress_bar_widget.setValue(n))
         self.setLayout(layout)
-        thread = PyDetecDivThread()
-        thread.set_function(func, *args, **kwargs)
-        thread.start()
-        thread.finished.connect(self.thread_complete)
+        self.thread = PyDetecDivThread()
+        self.thread.set_function(func, *args, **kwargs)
+        self.thread.start()
+        self.thread.finished.connect(self.thread_complete)
         PyDetecDiv().setOverrideCursor(QCursor(Qt.WaitCursor))
         self.exec()
         PyDetecDiv().setOverrideCursor(QCursor(Qt.ArrowCursor))
         self.destroy()
+
+    def closeEvent(self, event):
+        """
+        Send a request to interrupt the thread if the window is closed.
+        :param event: close event
+        """
+        if self.thread.isRunning():
+            self.thread.requestInterruption()
+
 
     @Slot()
     def thread_complete(self):

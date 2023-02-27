@@ -5,8 +5,10 @@ import glob
 import os
 import time
 from pathlib import Path
-
-from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QItemSelection, Signal, QDir
+import psutil
+import numpy as np
+from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QItemSelection, Signal, QDir, \
+    QThread
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
                                QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView)
@@ -236,15 +238,24 @@ class ImportDataDialog(QDialog):
         """
         destination = os.path.join(self.project_path, 'data', self.destination_directory.currentText())
         QDir().mkpath(str(destination))
-        n_start = len(os.listdir(destination))
+        file_list = self.file_list()
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            for source_path in self.list_model.stringList():
-                project.import_images(source_path, destination=self.destination_directory.currentText())
-                n = len(os.listdir(destination)) - n_start
+            n = 0
+            imported = []
+            for batch in np.array_split(file_list,
+                                        int(len(file_list)/psutil.Process().rlimit(psutil.RLIMIT_NOFILE)[0])+1):
+                if len(batch):
+                    imported += project.import_images(batch, destination=self.destination_directory.currentText())
+                    n += len(batch)
+                if QThread.currentThread().isInterruptionRequested():
+                    for canceled in  imported:
+                        os.popen(f'rm {canceled}')
+                    project.cancel()
+                    QThread.currentThread().terminate()
+                    QThread.currentThread().wait()
+                    return
                 self.progress.emit(n)
-        while n < len(self.file_list()):
-            n = len(os.listdir(destination)) - n_start
-            self.progress.emit(n)
+
 
     def source_list_is_not_empty(self):
         """

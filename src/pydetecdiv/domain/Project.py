@@ -3,8 +3,10 @@
 """
 The central class for keeping track of all available objects in a project.
 """
+import os
 import itertools
 from collections import defaultdict
+from pydetecdiv.settings import get_config_value
 from pydetecdiv.persistence.project import open_project
 from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.domain.ROI import ROI
@@ -88,14 +90,29 @@ class Project:
     def image_resource(self, path, pattern=None):
         return MemMapTiff(path) if isinstance(path, str) else MultipleTiff(path, pattern=pattern)
 
-    def import_images(self, source_path, **kwargs):
+    def import_images(self, image_files, destination=None, **kwargs):
+        """
+        Import images specified in a list of files into a destination
+        :param image_files: list of image files to import
+        :type image_files:list of str
+        :param destination: destination directory to import files into
+        :type destination: str
+        :param kwargs: extra keyword arguments
+        :return: the list of imported files. This list can be used to roll the copy back if needed
+        :rtype: list of str 
+        """
+        data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
+        if destination:
+            data_dir_path = os.path.join(data_dir_path, destination)
+        return self.repository.import_images(image_files, data_dir_path, **kwargs)
+
+    def import_source_path(self, source_path, **kwargs):
         """
         Import images from a source path. All files corresponding to the path will be imported.
         :param source_path: the source path (glob pattern)
         :type source_path: str
         """
-        self.repository.import_images(source_path, **kwargs)
-        self.commit()
+        self.repository.import_source_path(source_path, **kwargs)
 
     def annotate(self, dataset, source, columns, regex):
         """

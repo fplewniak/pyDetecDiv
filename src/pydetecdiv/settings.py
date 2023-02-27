@@ -15,7 +15,7 @@ def get_default_settings() -> dict:
     Returns default values for configuration if no configuration file is found
     :return: a dictionary containing the default values
     """
-    return {'project': {'dbms': 'SQLite3', 'workspace': '/data2/BioImageIT/workspace'},
+    return {'project': {'dbms': 'SQLite3', 'workspace': '/data2/BioImageIT/workspace', 'user': ''},
             'project.sqlite': {'database': 'pydetecdiv'},
             'project.mysql': {'database': 'pydetecdiv', 'host': 'localhost', 'credentials': 'mysql.credentials', },
             'omero': {'host': 'localhost', 'credentials': 'omero.credentials', },
