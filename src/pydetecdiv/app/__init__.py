@@ -6,7 +6,7 @@ Definition of global objects and methods for easy access from all parts of the a
 from contextlib import contextmanager
 
 from PySide6.QtGui import QCursor
-from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar
+from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal
 
 from pydetecdiv.settings import get_config_files
@@ -93,10 +93,12 @@ class WaitDialog(QDialog):
     it
     """
 
-    def __init__(self, msg, func, parent, *args, hide_parent=False, progress_bar=False, n_max=100, **kwargs):
+    def __init__(self, msg, func, parent, *args, hide_parent=False, progress_bar=False, n_max=100, cancel_msg=None,
+                 **kwargs):
         super().__init__(parent)
         self.parent = parent
         self.hide_parent = hide_parent and parent is not None
+        self.cancel_msg = cancel_msg
         self.setWindowModality(Qt.WindowModal)
         self.label = QLabel()
         self.label.setStyleSheet("""
@@ -110,23 +112,31 @@ class WaitDialog(QDialog):
             progress_bar_widget.setMaximum(n_max)
             layout.addWidget(progress_bar_widget)
             parent.progress.connect(progress_bar_widget.setValue)
+        if cancel_msg:
+            button_box = QDialogButtonBox(QDialogButtonBox.Cancel, self)
+            button_box.rejected.connect(self.cancel)
+            layout.addWidget(button_box)
         self.setLayout(layout)
-        self.thread = PyDetecDivThread()
-        self.thread.set_function(func, *args, **kwargs)
-        self.thread.start()
-        self.thread.finished.connect(self.thread_complete)
+        self.pdd_thread = PyDetecDivThread()
+        self.pdd_thread.set_function(func, *args, **kwargs)
+        self.pdd_thread.start()
+        self.pdd_thread.finished.connect(self.thread_complete)
         PyDetecDiv().setOverrideCursor(QCursor(Qt.WaitCursor))
         self.exec()
         PyDetecDiv().setOverrideCursor(QCursor(Qt.ArrowCursor))
         self.destroy()
+
+    def cancel(self):
+        self.label.setText(self.cancel_msg)
+        if self.pdd_thread.isRunning():
+            self.pdd_thread.requestInterruption()
 
     def closeEvent(self, event):
         """
         Send a request to interrupt the thread if the window is closed.
         :param event: close event
         """
-        if self.thread.isRunning():
-            self.thread.requestInterruption()
+        self.cancel()
 
     @Slot()
     def thread_complete(self):
@@ -137,9 +147,6 @@ class WaitDialog(QDialog):
         if self.hide_parent:
             self.parent.hide()
         self.hide()
-
-    def set_message(self, msg):
-        self.label.setText(msg)
 
 
 def get_settings():

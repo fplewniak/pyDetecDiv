@@ -3,7 +3,7 @@ Handling actions to open, create and interact with projects
 """
 import glob
 import os
-import psutil
+
 import numpy as np
 from PySide6.QtCore import (Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QItemSelection, Signal, QDir,
                             QThread)
@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGrou
                                QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView)
 from pydetecdiv.app import PyDetecDiv, WaitDialog, pydetecdiv_project
 from pydetecdiv.settings import get_config_value
+from pydetecdiv import delete_files
 
 
 class ListView(QListView):
@@ -225,8 +226,9 @@ class ImportDataDialog(QDialog):
         """
         Import files whose list is defined by the sources in self.list_model
         """
-        self.wait_dialog = WaitDialog(f'Importing data into {PyDetecDiv().project_name}', self.import_data, self,
-                                      hide_parent=False, progress_bar=True, n_max=len(self.file_list()))
+        WaitDialog(f'Importing data into {PyDetecDiv().project_name}', self.import_data, self,
+                   cancel_msg='Canceling image import: please wait', hide_parent=False, progress_bar=True,
+                   n_max=len(self.file_list()))
         self.list_model.removeRows(0, self.list_model.rowCount())
         self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
 
@@ -239,22 +241,32 @@ class ImportDataDialog(QDialog):
         QDir().mkpath(str(destination))
         file_list = self.file_list()
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            n_start = sum(1 for item in os.listdir(destination) if os.path.isfile(os.path.join(destination, item)))
             n = 0
+            self.progress.emit(n)
             imported = []
+            processes = []
             for batch in np.array_split(file_list,
                                         int(len(file_list) / int(get_config_value('project', 'batch'))) + 1):
                 if len(batch):
-                    imported += project.import_images(batch, destination=self.destination_directory.currentText())
-                    n += len(batch)
+                    imported_batch, process = project.import_images(batch, destination=self.destination_directory.currentText())
+                    imported.append(imported_batch)
+                    processes.append(process)
+                    n = sum(1 for item in os.listdir(destination) if os.path.isfile(os.path.join(destination, item))) - n_start
+                    self.progress.emit(n)
                 if QThread.currentThread().isInterruptionRequested():
-                    self.cancel_import(imported, project)
+                    self.cancel_import(imported, project, processes)
                     return
+            while n < len(file_list):
+                n = sum(1 for item in os.listdir(destination) if os.path.isfile(os.path.join(destination, item))) - n_start
                 self.progress.emit(n)
 
-    def cancel_import(self, imported, project):
-        self.wait_dialog.set_message('Canceling image import: please wait')
+
+    def cancel_import(self, imported, project, processes):
+        for process in processes:
+            process.terminate()
         for canceled in imported:
-            os.popen(f'rm {canceled}')
+            delete_files(canceled)
         project.cancel()
         QThread.currentThread().terminate()
         QThread.currentThread().wait()

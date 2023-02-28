@@ -1,7 +1,7 @@
 '''
 Utilities that can be useful in all places of the code
 '''
-import os
+import subprocess
 import uuid
 import platform
 
@@ -22,7 +22,17 @@ def copy_files(source, destination):
     :param destination:
     """
     if platform.system() == 'Windows':
-        cp = 'copy'
+        cmd = ['copy']
     else:
-        cp = 'cp'
-    os.popen(f'{cp} {" ".join(source)} {destination}')
+        cmd = ['cp']
+    return subprocess.Popen(cmd + list(source) + [destination])
+    # os.popen(' '.join(cmd + list(source) + [destination]))
+
+def delete_files(file_list):
+    if platform.system() == 'Windows':
+        cmd = ['del']
+    else:
+        cmd = ['rm', '-f']
+    return subprocess.Popen(cmd + list(file_list))
+    # os.popen(' '.join(cmd + list(file_list)))
+

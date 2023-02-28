@@ -117,7 +117,7 @@ class ShallowSQLite3(ShallowDb):
         """
         urls = []
         try:
-            copy_files(image_files, destination)
+            process = copy_files(image_files, destination)
             for image_file in image_files:
                 record = {
                     'id_': None,
@@ -136,7 +136,7 @@ class ShallowSQLite3(ShallowDb):
                 urls.append(record['url'])
         except:
             print('Could not import batch of images: list too long')
-        return urls
+        return urls, process
 
     def import_source_path(self, source_path, **kwargs):
         """
