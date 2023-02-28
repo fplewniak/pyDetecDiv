@@ -23,6 +23,7 @@ from pydetecdiv.persistence.bioimageit.plugins.data_sqlite import SQLiteMetadata
 from pydetecdiv.settings import get_config_value
 from pydetecdiv import generate_uuid, copy_files
 
+
 class ShallowSQLite3(ShallowDb):
     """
     A concrete shallow SQLite3 persistence inheriting ShallowDb and implementing SQLite3-specific engine
@@ -98,7 +99,7 @@ class ShallowSQLite3(ShallowDb):
         """
         self.engine.dispose()
 
-    def import_images(self, image_files, destination, author=None, date='now', format='imagetiff'):
+    def import_images(self, image_files, destination, author=None, date='now', img_format='imagetiff'):
         """
         Import images specified in a list of files into a destination
         :param image_files: list of image files to import
@@ -124,11 +125,11 @@ class ShallowSQLite3(ShallowDb):
                 'author': get_config_value('project', 'user') if author == '' else author,
                 'date': datetime.now() if date == 'now' else datetime.fromisoformat(date),
                 'url': os.path.join(destination, os.path.basename(image_file)),
-                'format': format,
+                'format': img_format,
                 'source_dir': os.path.dirname(image_file),
                 'meta_data': '{}',
                 'key_val': '{}',
-                }
+            }
             self.save_object('Data', record)
             urls.append(record['url'])
         copy_files(image_files, destination)
@@ -262,8 +263,16 @@ class ShallowSQLite3(ShallowDb):
             return self.session.query(dao[class_name]).filter(dao[class_name].uuid == uuid).first().record
         return None
 
-
     def get_record_by_name(self, class_name, name=None):
+        """
+        Return a record from its name
+        :param class_name: class name of the corresponding DSO object
+        :type class_name: str
+        :param name: the name of the requested record
+        :type name: str
+        :return: the record
+        :rtype: dict
+        """
         return self.session.query(dao[class_name]).where(dao[class_name].name.in_([name])).first().record
 
     def get_records(self, class_name, id_list=None):

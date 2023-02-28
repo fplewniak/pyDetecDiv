@@ -46,6 +46,11 @@ class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
 
     @property
     def info(self):
+        """
+        Returns ready-to-print information about FOV
+        :return: FOV information
+        :rtype: str
+        """
         return f"""
 Name:                 {self.name}
 Size:                 {self.size}

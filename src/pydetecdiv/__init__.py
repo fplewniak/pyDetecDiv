@@ -1,9 +1,8 @@
 '''
-
+Utilities that can be useful in all places of the code
 '''
 import os
 import uuid
-import datetime
 import platform
 
 

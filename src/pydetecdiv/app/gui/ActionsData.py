@@ -3,12 +3,10 @@ Handling actions to open, create and interact with projects
 """
 import glob
 import os
-import time
-from pathlib import Path
 import psutil
 import numpy as np
-from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QItemSelection, Signal, QDir, \
-    QThread
+from PySide6.QtCore import (Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QItemSelection, Signal, QDir,
+                            QThread)
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
                                QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView)
@@ -107,7 +105,7 @@ class ImportDataDialog(QDialog):
         extension_widget = QWidget(source_group_box)
         extension_label = QLabel('Default image file extension:', extension_widget)
         self.default_extension = QComboBox(extension_widget)
-        self.default_extension.addItems(['*.tif', '*.tiff', '*.jpg', '*.jpeg', '*.png', '*',])
+        self.default_extension.addItems(['*.tif', '*.tiff', '*.jpg', '*.jpeg', '*.png', '*', ])
 
         list_view = ListView(source_group_box)
         self.list_model = QStringListModel()
@@ -158,7 +156,7 @@ class ImportDataDialog(QDialog):
         self.button_box.rejected.connect(self.close)
 
         self.list_model.dataChanged.connect(self.source_list_is_not_empty)
-        self.chosen_directory.connect(lambda path: add_path_dialog.set_path(path))
+        self.chosen_directory.connect(add_path_dialog.path_text_input.setText)
 
         self.exec()
         for child in self.children():
@@ -170,12 +168,12 @@ class ImportDataDialog(QDialog):
         Open a file chooser dialog box and add selected files to the source model
         """
         filters = ["TIFF (*.tif *.tiff)",
-                             "JPEG (*.jpg *.jpeg)",
-                             "PNG (*.png)",
-                             "Image files (*.tif *.tiff, *.jpg *.jpeg, *.png)"]
+                   "JPEG (*.jpg *.jpeg)",
+                   "PNG (*.png)",
+                   "Image files (*.tif *.tiff, *.jpg *.jpeg, *.png)"]
         files, _ = QFileDialog.getOpenFileNames(self, caption='Choose source files',
                                                 dir=self.current_dir,
-                                                filter= ";;".join(filters),
+                                                filter=";;".join(filters),
                                                 selectedFilter=filters[0])
         if files:
             self.current_dir = os.path.dirname(files[0])
@@ -243,19 +241,18 @@ class ImportDataDialog(QDialog):
             n = 0
             imported = []
             for batch in np.array_split(file_list,
-                                        int(len(file_list)/psutil.Process().rlimit(psutil.RLIMIT_NOFILE)[0])+1):
+                                        int(len(file_list) / psutil.Process().rlimit(psutil.RLIMIT_NOFILE)[0]) + 1):
                 if len(batch):
                     imported += project.import_images(batch, destination=self.destination_directory.currentText())
                     n += len(batch)
                 if QThread.currentThread().isInterruptionRequested():
-                    for canceled in  imported:
+                    for canceled in imported:
                         os.popen(f'rm {canceled}')
                     project.cancel()
                     QThread.currentThread().terminate()
                     QThread.currentThread().wait()
                     return
                 self.progress.emit(n)
-
 
     def source_list_is_not_empty(self):
         """
@@ -331,9 +328,6 @@ class AddPathDialog(QDialog):
         """
         self.path_validated.emit(self.path_text_input.text())
         self.hide()
-
-    def set_path(self, path):
-        self.path_text_input.setText(path)
 
     def path_specification_changed(self):
         """

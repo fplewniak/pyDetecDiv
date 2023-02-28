@@ -109,7 +109,7 @@ class WaitDialog(QDialog):
             progress_bar_widget = QProgressBar()
             progress_bar_widget.setMaximum(n_max)
             layout.addWidget(progress_bar_widget)
-            parent.progress.connect(lambda n: progress_bar_widget.setValue(n))
+            parent.progress.connect(progress_bar_widget.setValue)
         self.setLayout(layout)
         self.thread = PyDetecDivThread()
         self.thread.set_function(func, *args, **kwargs)
