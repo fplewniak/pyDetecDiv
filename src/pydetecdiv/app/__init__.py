@@ -98,13 +98,13 @@ class WaitDialog(QDialog):
         self.parent = parent
         self.hide_parent = hide_parent and parent is not None
         self.setWindowModality(Qt.WindowModal)
-        label = QLabel()
-        label.setStyleSheet("""
+        self.label = QLabel()
+        self.label.setStyleSheet("""
         font-weight: bold;
         """)
-        label.setText(msg)
+        self.label.setText(msg)
         layout = QVBoxLayout(self)
-        layout.addWidget(label)
+        layout.addWidget(self.label)
         if progress_bar:
             progress_bar_widget = QProgressBar()
             progress_bar_widget.setMaximum(n_max)
@@ -128,7 +128,6 @@ class WaitDialog(QDialog):
         if self.thread.isRunning():
             self.thread.requestInterruption()
 
-
     @Slot()
     def thread_complete(self):
         """
@@ -138,6 +137,9 @@ class WaitDialog(QDialog):
         if self.hide_parent:
             self.parent.hide()
         self.hide()
+
+    def set_message(self, msg):
+        self.label.setText(msg)
 
 
 def get_settings():

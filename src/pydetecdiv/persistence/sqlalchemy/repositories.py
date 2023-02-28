@@ -116,23 +116,26 @@ class ShallowSQLite3(ShallowDb):
         :rtype: list of str
         """
         urls = []
-        for image_file in image_files:
-            record = {
-                'id_': None,
-                'uuid': generate_uuid(),
-                'name': os.path.basename(image_file),
-                'dataset': self.bioiit_exp.raw_dataset.uuid,
-                'author': get_config_value('project', 'user') if author == '' else author,
-                'date': datetime.now() if date == 'now' else datetime.fromisoformat(date),
-                'url': os.path.join(destination, os.path.basename(image_file)),
-                'format': img_format,
-                'source_dir': os.path.dirname(image_file),
-                'meta_data': '{}',
-                'key_val': '{}',
-            }
-            self.save_object('Data', record)
-            urls.append(record['url'])
-        copy_files(image_files, destination)
+        try:
+            copy_files(image_files, destination)
+            for image_file in image_files:
+                record = {
+                    'id_': None,
+                    'uuid': generate_uuid(),
+                    'name': os.path.basename(image_file),
+                    'dataset': self.bioiit_exp.raw_dataset.uuid,
+                    'author': get_config_value('project', 'user') if author == '' else author,
+                    'date': datetime.now() if date == 'now' else datetime.fromisoformat(date),
+                    'url': os.path.join(destination, os.path.basename(image_file)),
+                    'format': img_format,
+                    'source_dir': os.path.dirname(image_file),
+                    'meta_data': '{}',
+                    'key_val': '{}',
+                }
+                self.save_object('Data', record)
+                urls.append(record['url'])
+        except:
+            print('Could not import batch of images: list too long')
         return urls
 
     def import_source_path(self, source_path, **kwargs):

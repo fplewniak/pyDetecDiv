@@ -10,7 +10,8 @@ from PySide6.QtCore import (Qt, QRegularExpression, QStringListModel, QItemSelec
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
                                QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView)
-from pydetecdiv.app import PyDetecDiv, get_settings, WaitDialog, pydetecdiv_project
+from pydetecdiv.app import PyDetecDiv, WaitDialog, pydetecdiv_project
+from pydetecdiv.settings import get_config_value
 
 
 class ListView(QListView):
@@ -86,8 +87,7 @@ class ImportDataDialog(QDialog):
 
     def __init__(self):
         super().__init__(PyDetecDiv().main_window)
-        settings = get_settings()
-        self.project_path = os.path.join(settings.value("project/workspace"), PyDetecDiv().project_name)
+        self.project_path = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv().project_name)
         self.setWindowModality(Qt.WindowModal)
         self.current_dir = '.'
 
@@ -122,6 +122,7 @@ class ImportDataDialog(QDialog):
         self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
 
         add_path_dialog = AddPathDialog(self)
+        self.wait_dialog = None
         # Layout
         vertical_layout = QVBoxLayout(self)
         source_layout = QVBoxLayout(source_group_box)
@@ -224,8 +225,8 @@ class ImportDataDialog(QDialog):
         """
         Import files whose list is defined by the sources in self.list_model
         """
-        WaitDialog(f'Importing data into {PyDetecDiv().project_name}', self.import_data, self, hide_parent=False,
-                   progress_bar=True, n_max=len(self.file_list()))
+        self.wait_dialog = WaitDialog(f'Importing data into {PyDetecDiv().project_name}', self.import_data, self,
+                                      hide_parent=False, progress_bar=True, n_max=len(self.file_list()))
         self.list_model.removeRows(0, self.list_model.rowCount())
         self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
 
@@ -241,18 +242,22 @@ class ImportDataDialog(QDialog):
             n = 0
             imported = []
             for batch in np.array_split(file_list,
-                                        int(len(file_list) / psutil.Process().rlimit(psutil.RLIMIT_NOFILE)[0]) + 1):
+                                        int(len(file_list) / int(get_config_value('project', 'batch'))) + 1):
                 if len(batch):
                     imported += project.import_images(batch, destination=self.destination_directory.currentText())
                     n += len(batch)
                 if QThread.currentThread().isInterruptionRequested():
-                    for canceled in imported:
-                        os.popen(f'rm {canceled}')
-                    project.cancel()
-                    QThread.currentThread().terminate()
-                    QThread.currentThread().wait()
+                    self.cancel_import(imported, project)
                     return
                 self.progress.emit(n)
+
+    def cancel_import(self, imported, project):
+        self.wait_dialog.set_message('Canceling image import: please wait')
+        for canceled in imported:
+            os.popen(f'rm {canceled}')
+        project.cancel()
+        QThread.currentThread().terminate()
+        QThread.currentThread().wait()
 
     def source_list_is_not_empty(self):
         """
