@@ -249,10 +249,12 @@ class ImportDataDialog(QDialog):
             for batch in np.array_split(file_list,
                                         int(len(file_list) / int(get_config_value('project', 'batch'))) + 1):
                 if len(batch):
-                    imported_batch, process = project.import_images(batch, destination=self.destination_directory.currentText())
+                    imported_batch, process = project.import_images(batch,
+                                                                    destination=self.destination_directory.currentText())
                     imported.append(imported_batch)
                     processes.append(process)
-                    n = sum(1 for item in os.listdir(destination) if os.path.isfile(os.path.join(destination, item))) - n_start
+                    n = sum(1 for item in os.listdir(destination) if
+                            os.path.isfile(os.path.join(destination, item))) - n_start
                     self.progress.emit(n)
                 if QThread.currentThread().isInterruptionRequested():
                     self.cancel_import(imported, project, processes)
@@ -261,11 +263,18 @@ class ImportDataDialog(QDialog):
                 if QThread.currentThread().isInterruptionRequested():
                     self.cancel_import(imported, project, processes)
                     return
-                n = sum(1 for item in os.listdir(destination) if os.path.isfile(os.path.join(destination, item))) - n_start
+                n = sum(
+                    1 for item in os.listdir(destination) if os.path.isfile(os.path.join(destination, item))) - n_start
                 self.progress.emit(n)
 
-
     def cancel_import(self, imported, project, processes):
+        """
+        Manage cancellation of import. Terminate all copy processes before launching deletion of files that were already
+        copied. Then cancel persistence operations on Data objects, and eventually stop the host thread.
+        :param imported:
+        :param project:
+        :param processes:
+        """
         for process in processes:
             process.terminate()
         for canceled in imported:
