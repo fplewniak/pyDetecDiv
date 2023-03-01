@@ -258,6 +258,9 @@ class ImportDataDialog(QDialog):
                     self.cancel_import(imported, project, processes)
                     return
             while n < len(file_list):
+                if QThread.currentThread().isInterruptionRequested():
+                    self.cancel_import(imported, project, processes)
+                    return
                 n = sum(1 for item in os.listdir(destination) if os.path.isfile(os.path.join(destination, item))) - n_start
                 self.progress.emit(n)
 
