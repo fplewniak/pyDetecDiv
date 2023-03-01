@@ -3,8 +3,10 @@
 """
 The central class for keeping track of all available objects in a project.
 """
+import os
 import itertools
 from collections import defaultdict
+from pydetecdiv.settings import get_config_value
 from pydetecdiv.persistence.project import open_project
 from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.domain.ROI import ROI
@@ -86,16 +88,40 @@ class Project:
         self.repository.rollback()
 
     def image_resource(self, path, pattern=None):
+        """
+        Returns an image resource from a path and a pattern defining c, z and t in the case of multiple files
+        :param path: image path
+        :type path: str or list of str
+        :param pattern: pattern defining c, z and t in the case of multiple files
+        :type pattern: str
+        :return: an image resource
+        :rtype: ImageResource
+        """
         return MemMapTiff(path) if isinstance(path, str) else MultipleTiff(path, pattern=pattern)
 
-    def import_images(self, source_path):
+    def import_images(self, image_files, destination=None, **kwargs):
+        """
+        Import images specified in a list of files into a destination
+        :param image_files: list of image files to import
+        :type image_files:list of str
+        :param destination: destination directory to import files into
+        :type destination: str
+        :param kwargs: extra keyword arguments
+        :return: the list of imported files. This list can be used to roll the copy back if needed
+        :rtype: list of str
+        """
+        data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
+        if destination:
+            data_dir_path = os.path.join(data_dir_path, destination)
+        return self.repository.import_images(image_files, data_dir_path, **kwargs)
+
+    def import_source_path(self, source_path, **kwargs):
         """
         Import images from a source path. All files corresponding to the path will be imported.
         :param source_path: the source path (glob pattern)
         :type source_path: str
         """
-        self.repository.import_images(source_path)
-        self.commit()
+        self.repository.import_source_path(source_path, **kwargs)
 
     def annotate(self, dataset, source, columns, regex):
         """
@@ -193,6 +219,15 @@ class Project:
         return self.build_dso(class_name, self.repository.get_record(class_name, id_, uuid))
 
     def get_named_object(self, class_name, name=None) -> DomainSpecificObject:
+        """
+        Return a named object by its name
+        :param class_name: class name of the requested object
+        :type class_name: str
+        :param name: the name of the requested object
+        :type name: str
+        :return: the object
+        :rtype: DomainSpecificObject
+        """
         return self.build_dso(class_name, self.repository.get_record_by_name(class_name, name))
 
     def get_objects(self, class_name, id_list=None):
@@ -314,6 +349,11 @@ class Project:
 
     @property
     def info(self):
+        """
+        Returns ready-to-print information about project
+        :return: project information
+        :rtype: str
+        """
         return f"""
 Name:               {self.dbname}
 Author:             {self.author}

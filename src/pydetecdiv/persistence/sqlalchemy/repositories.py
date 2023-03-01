@@ -6,6 +6,7 @@ Concrete Repositories using a SQL database with the sqlalchemy toolkit
 import json
 import os
 import re
+from datetime import datetime
 
 import pandas
 import sqlalchemy
@@ -20,6 +21,7 @@ from pydetecdiv.persistence.sqlalchemy.orm.associations import Linker
 from pydetecdiv.persistence.bioimageit.request import Request
 from pydetecdiv.persistence.bioimageit.plugins.data_sqlite import SQLiteMetadataServiceBuilder
 from pydetecdiv.settings import get_config_value
+from pydetecdiv import generate_uuid, copy_files
 
 
 class ShallowSQLite3(ShallowDb):
@@ -97,13 +99,52 @@ class ShallowSQLite3(ShallowDb):
         """
         self.engine.dispose()
 
-    def import_images(self, source_path):
+    def import_images(self, image_files, destination, author=None, date='now', img_format='imagetiff'):
+        """
+        Import images specified in a list of files into a destination
+        :param image_files: list of image files to import
+        :type image_files:list of str
+        :param destination: destination directory to import files into
+        :type destination: str
+        :param author: the user importing the data
+        :type author: str
+        :param date: the date of import
+        :type date: str
+        :param format: the file format
+        :type format: str
+        :return: the list of imported files. This list can be used to roll the copy back if needed
+        :rtype: list of str
+        """
+        urls = []
+        try:
+            process = copy_files(image_files, destination)
+            for image_file in image_files:
+                record = {
+                    'id_': None,
+                    'uuid': generate_uuid(),
+                    'name': os.path.basename(image_file),
+                    'dataset': self.bioiit_exp.raw_dataset.uuid,
+                    'author': get_config_value('project', 'user') if author == '' else author,
+                    'date': datetime.now() if date == 'now' else datetime.fromisoformat(date),
+                    'url': os.path.join(destination, os.path.basename(image_file)),
+                    'format': img_format,
+                    'source_dir': os.path.dirname(image_file),
+                    'meta_data': '{}',
+                    'key_val': '{}',
+                }
+                self.save_object('Data', record)
+                urls.append(record['url'])
+        except:
+            print('Could not import batch of images: list too long')
+        return urls, process
+
+    def import_source_path(self, source_path, **kwargs):
         """
         Import images from a source path. All files corresponding to the path will be imported.
         :param source_path: the source path (glob pattern)
         :type source_path: str
         """
-        self.bioiit_req.import_glob(self.bioiit_exp, source_path)
+        self.bioiit_req.import_glob(self.bioiit_exp, source_path, **kwargs)
 
     def determine_fov(self, source, regex):
         """
@@ -225,8 +266,16 @@ class ShallowSQLite3(ShallowDb):
             return self.session.query(dao[class_name]).filter(dao[class_name].uuid == uuid).first().record
         return None
 
-
     def get_record_by_name(self, class_name, name=None):
+        """
+        Return a record from its name
+        :param class_name: class name of the corresponding DSO object
+        :type class_name: str
+        :param name: the name of the requested record
+        :type name: str
+        :return: the record
+        :rtype: dict
+        """
         return self.session.query(dao[class_name]).where(dao[class_name].name.in_([name])).first().record
 
     def get_records(self, class_name, id_list=None):

@@ -20,7 +20,10 @@ import json
 import re
 from shutil import copyfile
 import subprocess
+
+import numpy as np
 import pandas
+import psutil
 import zarr
 from skimage.io import imread
 
@@ -480,7 +483,7 @@ class SQLiteMetadataService(LocalMetadataService):
                 self.update_dataset(raw_dataset)
             os.remove(tmp_file)
 
-    def import_glob(self, experiment, files_glob, author='', format_='imagetiff', date='now', observers=None):
+    def import_glob(self, experiment, files_glob, author='', format_='imagetiff', date='now', observers=None, destination=None, **kwargs):
         """
         Import into an experiment a list of raw data files specified by a glob pattern
         :param experiment: the experiment
@@ -498,7 +501,7 @@ class SQLiteMetadataService(LocalMetadataService):
         :return: a DataFrame with the imported data
         :rtype: pandas DataFrame
         """
-        files = glob.glob(files_glob)
+        files = [f for f in glob.glob(files_glob) if os.path.isfile(f)]
         n = len(files)
         # Note that the code line below used to be
         # data_dir_path = os.path.join(os.path.dirname(experiment.raw_dataset.url[0]), experiment.raw_dataset.name)
@@ -506,6 +509,8 @@ class SQLiteMetadataService(LocalMetadataService):
         # directory only. Maybe try and find another and better way
         experiment_path = os.path.join(ConfigAccess.instance().config['workspace'], experiment.name)
         data_dir_path = os.path.join(experiment_path, experiment.raw_dataset.name)
+        if destination:
+            data_dir_path = os.path.join(data_dir_path, destination)
         date = datetime.now() if date == 'now' else datetime.fromisoformat(date),
         author = ConfigAccess.instance().config['user'] if author == '' else author
         df = pandas.DataFrame(columns=['uuid', 'name', 'dataset', 'author', 'date', 'url', 'format',
@@ -529,7 +534,10 @@ class SQLiteMetadataService(LocalMetadataService):
             if platform.system() == 'Windows':
                 os.popen(f'copy {files_glob} {data_dir_path}')
             else:
-                os.popen(f'cp {files_glob} {data_dir_path}')
+                for batch in np.array_split(files, int(1024 * n/psutil.Process().rlimit(psutil.RLIMIT_NOFILE)[0])+1):
+                    command = f'cp {" ".join(batch)} {data_dir_path}'
+                    os.popen(command)
+                # os.popen(f'cp {files_glob} {data_dir_path}')
         except RuntimeError as error:
             raise DataServiceError('Could not import data') from error
         return df

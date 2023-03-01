@@ -3,13 +3,16 @@ Handling actions to open, create and interact with projects
 """
 import glob
 import os
-from pathlib import Path
 
-from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QItemSelection, Signal
+import numpy as np
+from PySide6.QtCore import (Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QItemSelection, Signal, QDir,
+                            QThread)
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
                                QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView)
-from pydetecdiv.app import PyDetecDiv, get_settings, WaitDialog, pydetecdiv_project
+from pydetecdiv.app import PyDetecDiv, WaitDialog, pydetecdiv_project
+from pydetecdiv.settings import get_config_value
+from pydetecdiv import delete_files
 
 
 class ListView(QListView):
@@ -81,12 +84,13 @@ class ImportDataDialog(QDialog):
     A dialog window to choose sources for image data files to import into the project raw dataset
     """
     progress = Signal(int)
+    chosen_directory = Signal(str)
 
     def __init__(self):
         super().__init__(PyDetecDiv().main_window)
-        settings = get_settings()
-        self.project_path = os.path.join(settings.value("project/workspace"), PyDetecDiv().project_name)
+        self.project_path = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv().project_name)
         self.setWindowModality(Qt.WindowModal)
+        self.current_dir = '.'
 
         self.setObjectName('ImportData')
         self.setWindowTitle('Import image data')
@@ -96,13 +100,13 @@ class ImportDataDialog(QDialog):
         source_group_box.setTitle('Source for image files to import:')
 
         buttons_widget = QWidget(source_group_box)
-        files_button = QPushButton('Add files', buttons_widget)
         directory_button = QPushButton('Add directory', buttons_widget)
         path_button = QPushButton('Add path', buttons_widget)
+        files_button = QPushButton('Add files', buttons_widget)
         extension_widget = QWidget(source_group_box)
         extension_label = QLabel('Default image file extension:', extension_widget)
         self.default_extension = QComboBox(extension_widget)
-        self.default_extension.addItems(['*.tif', '*.tiff', '*.jpg', '*.jpeg', '*.png'])
+        self.default_extension.addItems(['*.tif', '*.tiff', '*.jpg', '*.jpeg', '*.png', '*', ])
 
         list_view = ListView(source_group_box)
         self.list_model = QStringListModel()
@@ -110,15 +114,16 @@ class ImportDataDialog(QDialog):
 
         destination_widget = QGroupBox(self)
         destination_widget.setTitle(f'Destination: {self.project_path}/data/')
-        destination_directory = QComboBox(destination_widget)
-        destination_directory.addItems(self.get_destinations())
-        destination_directory.setEditable(True)
-        destination_directory.setValidator(self.sub_directory_name_validator())
+        self.destination_directory = QComboBox(destination_widget)
+        self.destination_directory.addItems(self.get_destinations())
+        self.destination_directory.setEditable(True)
+        self.destination_directory.setValidator(self.sub_directory_name_validator())
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Close | QDialogButtonBox.Cancel | QDialogButtonBox.Ok, self)
         self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
 
-        add_path = AddPathDialog(self)
+        add_path_dialog = AddPathDialog(self)
+        self.wait_dialog = None
         # Layout
         vertical_layout = QVBoxLayout(self)
         source_layout = QVBoxLayout(source_group_box)
@@ -130,14 +135,14 @@ class ImportDataDialog(QDialog):
         source_layout.addWidget(buttons_widget)
         source_layout.addWidget(extension_widget)
 
-        buttons_layout.addWidget(files_button)
-        buttons_layout.addWidget(directory_button)
         buttons_layout.addWidget(path_button)
+        buttons_layout.addWidget(directory_button)
+        buttons_layout.addWidget(files_button)
 
         extension_layout.addWidget(extension_label)
         extension_layout.addWidget(self.default_extension)
 
-        destination_layout.addWidget(destination_directory)
+        destination_layout.addWidget(self.destination_directory)
 
         vertical_layout.addWidget(source_group_box)
         vertical_layout.addWidget(destination_widget)
@@ -146,13 +151,14 @@ class ImportDataDialog(QDialog):
         # Widgets behaviour
         files_button.clicked.connect(self.add_files)
         directory_button.clicked.connect(self.add_dir)
-        path_button.clicked.connect(add_path.show)
-        add_path.path_validated.connect(self.add_path)
+        path_button.clicked.connect(add_path_dialog.show)
+        add_path_dialog.path_validated.connect(self.add_path)
 
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.close)
 
         self.list_model.dataChanged.connect(self.source_list_is_not_empty)
+        self.chosen_directory.connect(add_path_dialog.path_text_input.setText)
 
         self.exec()
         for child in self.children():
@@ -164,14 +170,15 @@ class ImportDataDialog(QDialog):
         Open a file chooser dialog box and add selected files to the source model
         """
         filters = ["TIFF (*.tif *.tiff)",
-                             "JPEG (*.jpg *.jpeg)",
-                             "PNG (*.png)",
-                             "Image files (*.tif *.tiff, *.jpg *.jpeg, *.png)"]
+                   "JPEG (*.jpg *.jpeg)",
+                   "PNG (*.png)",
+                   "Image files (*.tif *.tiff, *.jpg *.jpeg, *.png)"]
         files, _ = QFileDialog.getOpenFileNames(self, caption='Choose source files',
-                                                dir='.',
-                                                filter= ";;".join(filters),
+                                                dir=self.current_dir,
+                                                filter=";;".join(filters),
                                                 selectedFilter=filters[0])
         if files:
+            self.current_dir = os.path.dirname(files[0])
             self.list_model.setStringList(self.list_model.stringList() + files)
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
 
@@ -179,9 +186,11 @@ class ImportDataDialog(QDialog):
         """
         Open a directory chooser dialog box and add selected directory to the source model
         """
-        directory = QFileDialog.getExistingDirectory(self, caption='Choose source directory', dir='.',
+        directory = QFileDialog.getExistingDirectory(self, caption='Choose source directory', dir=self.current_dir,
                                                      options=QFileDialog.ShowDirsOnly)
         if directory:
+            self.current_dir = directory
+            self.chosen_directory.emit(str(os.path.join(directory, self.default_extension.currentText())))
             self.list_model.setStringList(self.list_model.stringList()
                                           + [os.path.join(directory, self.default_extension.currentText())])
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
@@ -210,32 +219,69 @@ class ImportDataDialog(QDialog):
         """
         file_list = []
         for source_path in self.list_model.stringList():
-            file_list += glob.glob(source_path)
+            file_list += [f for f in glob.glob(source_path) if os.path.isfile(f)]
         return file_list
 
     def accept(self):
         """
         Import files whose list is defined by the sources in self.list_model
         """
-        WaitDialog(f'Importing data into {PyDetecDiv().project_name}', self.import_data, self, hide_parent=False,
-                   progress_bar=True, n_max=len(self.file_list()))
+        WaitDialog(f'Importing data into {PyDetecDiv().project_name}', self.import_data, self,
+                   cancel_msg='Canceling image import: please wait', hide_parent=False, progress_bar=True,
+                   n_max=len(self.file_list()))
         self.list_model.removeRows(0, self.list_model.rowCount())
+        self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
 
     def import_data(self):
         """
         Import image data from source specified in list_model into project raw dataset and triggers a progress signal
         with the number of files that have been copied so far
         """
-        destination = os.path.join(self.project_path, 'data')
-        n_start = len(os.listdir(destination))
+        destination = os.path.join(self.project_path, 'data', self.destination_directory.currentText())
+        QDir().mkpath(str(destination))
+        file_list = self.file_list()
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            for source_path in self.list_model.stringList():
-                project.import_images(source_path)
-                n = len(os.listdir(destination)) - n_start
-                self.progress.emit(n)
-        while n < len(self.file_list()):
-            n = len(os.listdir(destination)) - n_start
+            n_start = sum(1 for item in os.listdir(destination) if os.path.isfile(os.path.join(destination, item)))
+            n = 0
             self.progress.emit(n)
+            imported = []
+            processes = []
+            for batch in np.array_split(file_list,
+                                        int(len(file_list) / int(get_config_value('project', 'batch'))) + 1):
+                if len(batch):
+                    imported_batch, process = project.import_images(batch,
+                                                                    destination=self.destination_directory.currentText())
+                    imported.append(imported_batch)
+                    processes.append(process)
+                    n = sum(1 for item in os.listdir(destination) if
+                            os.path.isfile(os.path.join(destination, item))) - n_start
+                    self.progress.emit(n)
+                if QThread.currentThread().isInterruptionRequested():
+                    self.cancel_import(imported, project, processes)
+                    return
+            while n < len(file_list):
+                if QThread.currentThread().isInterruptionRequested():
+                    self.cancel_import(imported, project, processes)
+                    return
+                n = sum(
+                    1 for item in os.listdir(destination) if os.path.isfile(os.path.join(destination, item))) - n_start
+                self.progress.emit(n)
+
+    def cancel_import(self, imported, project, processes):
+        """
+        Manage cancellation of import. Terminate all copy processes before launching deletion of files that were already
+        copied. Then cancel persistence operations on Data objects, and eventually stop the host thread.
+        :param imported:
+        :param project:
+        :param processes:
+        """
+        for process in processes:
+            process.terminate()
+        for canceled in imported:
+            delete_files(canceled)
+        project.cancel()
+        QThread.currentThread().terminate()
+        QThread.currentThread().wait()
 
     def source_list_is_not_empty(self):
         """
