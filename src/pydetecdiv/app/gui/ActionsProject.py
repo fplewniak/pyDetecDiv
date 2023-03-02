@@ -1,15 +1,16 @@
 """
 Handling actions to open, create and interact with projects
 """
-from PySide6.QtCore import Qt, QRegularExpression, Slot
+from PySide6.QtCore import Qt, QRegularExpression, Slot, Signal
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
-from PySide6.QtWidgets import (QLabel, QVBoxLayout, QLineEdit, QDialogButtonBox, QComboBox, QMessageBox, QDialog)
+from PySide6.QtWidgets import (QLabel, QVBoxLayout, QLineEdit, QDialogButtonBox, QComboBox, QMessageBox, QDialog,)
 from pydetecdiv.app import PyDetecDiv, project_list, WaitDialog, pydetecdiv_project
 
 class ProjectDialog(QDialog):
     """
     A generic dialog window to create or open a project
     """
+    finished = Signal(bool, name='projectOpen')
 
     def __init__(self, new_project_dialog=False):
         super().__init__(PyDetecDiv().main_window)
@@ -93,11 +94,12 @@ class ProjectDialog(QDialog):
                 error_msg.setText(f'Error: {p_name} project already exists!!!')
                 error_msg.exec()
             else:
-                self.wait = WaitDialog(f'Creating {p_name}, please wait.', self.open_create_project,
-                                       self, hide_parent=True, project_name=p_name)
+                self.wait = WaitDialog(f'Creating {p_name}, please wait.', self)
         else:
-            self.wait = WaitDialog(f'Opening {p_name}, please wait.', self.open_create_project,
-                                   self, hide_parent=True, project_name=p_name)
+            self.wait = WaitDialog(f'Opening {p_name}, please wait.', self)
+        self.finished.connect(self.wait.close_window)
+        self.finished.connect(self.hide)
+        self.wait.wait_for(self.open_create_project, project_name=p_name)
 
     def open_create_project(self, project_name):
         """
@@ -108,6 +110,7 @@ class ProjectDialog(QDialog):
         """
         with pydetecdiv_project(project_name) as project:
             PyDetecDiv().main_window.setWindowTitle(f'pyDetecDiv: {project.dbname}')
+        self.finished.emit(True)
 
 
 class NewProject(QAction):
