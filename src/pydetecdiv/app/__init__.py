@@ -93,12 +93,10 @@ class WaitDialog(QDialog):
     it
     """
 
-    def __init__(self, msg, func, parent, *args, hide_parent=False, progress_bar=False, n_max=100, cancel_msg=None,
-                 **kwargs):
+    def __init__(self, msg, parent, progress_bar=False, cancel_msg=None, ignore_close_event=True):
         super().__init__(parent)
-        self.parent = parent
-        self.hide_parent = hide_parent and parent is not None
         self.cancel_msg = cancel_msg
+        self._ignore_close_event = ignore_close_event
         self.setWindowModality(Qt.WindowModal)
         self.label = QLabel()
         self.label.setStyleSheet("""
@@ -108,45 +106,71 @@ class WaitDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addWidget(self.label)
         if progress_bar:
-            progress_bar_widget = QProgressBar()
-            progress_bar_widget.setMaximum(n_max)
-            layout.addWidget(progress_bar_widget)
-            parent.progress.connect(progress_bar_widget.setValue)
+            self.progress_bar_widget = QProgressBar()
+            layout.addWidget(self.progress_bar_widget)
         if cancel_msg:
             button_box = QDialogButtonBox(QDialogButtonBox.Cancel, self)
             button_box.rejected.connect(self.cancel)
+            button_box.rejected.connect(button_box.hide)
+            button_box.rejected.connect(self.set_ignore_close_event)
             layout.addWidget(button_box)
         self.setLayout(layout)
         self.pdd_thread = PyDetecDivThread()
+
+    def show_progress(self, i):
+        """
+        Convenience method to send the progress value to the progress bar widget
+        :param i: the value to pass to the progress bar
+        :type i: int
+        """
+        self.progress_bar_widget.setValue(i)
+
+    def wait_for(self, func, *args, **kwargs):
+        """
+        Run function in separate thread and launch local event loop to handle progress bar and cancellation
+        :param func: the function to run
+        :param args: positional arguments for the function
+        :param kwargs: keyword arguments for the function
+        """
+        PyDetecDiv().setOverrideCursor(QCursor(Qt.WaitCursor))
         self.pdd_thread.set_function(func, *args, **kwargs)
         self.pdd_thread.start()
-        self.pdd_thread.finished.connect(self.thread_complete)
-        PyDetecDiv().setOverrideCursor(QCursor(Qt.WaitCursor))
         self.exec()
+
+    def close_window(self):
+        """
+        Hide and destroy the Wait dialog window. The cursor is also set back to its normal aspect.
+        """
+        self.hide()
         PyDetecDiv().setOverrideCursor(QCursor(Qt.ArrowCursor))
         self.destroy()
 
     def cancel(self):
+        """
+        Set cancelling message and request for interruption of thread so that the running job can cleanly close
+        processes and roll back any modification if needed.
+        """
         self.label.setText(self.cancel_msg)
         if self.pdd_thread.isRunning():
             self.pdd_thread.requestInterruption()
 
+    def set_ignore_close_event(self, ignore_close_event=True):
+        """
+        Set the _ignore_close_event flag to prevent or allow closing the window
+        :param ignore_close_event: value to set the flag to
+        :type ignore_close_event: bool
+        """
+        self._ignore_close_event = ignore_close_event
+
     def closeEvent(self, event):
         """
-        Send a request to interrupt the thread if the window is closed.
+        Cancel the job if the window is closed unless close event is ignored by request.
         :param event: close event
         """
-        self.cancel()
-
-    @Slot()
-    def thread_complete(self):
-        """
-        Slot reacting to the end of the thread. The dialog box is destroyed and its parent is hidden if it has been
-        specified (not None)
-        """
-        if self.hide_parent:
-            self.parent.hide()
-        self.hide()
+        if self._ignore_close_event:
+            event.ignore()
+        else:
+            self.cancel()
 
 
 def get_settings():

@@ -85,6 +85,7 @@ class ImportDataDialog(QDialog):
     """
     progress = Signal(int)
     chosen_directory = Signal(str)
+    finished = Signal(bool)
 
     def __init__(self):
         super().__init__(PyDetecDiv().main_window)
@@ -123,7 +124,6 @@ class ImportDataDialog(QDialog):
         self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
 
         add_path_dialog = AddPathDialog(self)
-        self.wait_dialog = None
         # Layout
         vertical_layout = QVBoxLayout(self)
         source_layout = QVBoxLayout(source_group_box)
@@ -226,9 +226,11 @@ class ImportDataDialog(QDialog):
         """
         Import files whose list is defined by the sources in self.list_model
         """
-        WaitDialog(f'Importing data into {PyDetecDiv().project_name}', self.import_data, self,
-                   cancel_msg='Canceling image import: please wait', hide_parent=False, progress_bar=True,
-                   n_max=len(self.file_list()))
+        wait_dialog = WaitDialog(f'Importing data into {PyDetecDiv().project_name}', self,
+                                      cancel_msg='Rollback of image import: please wait', progress_bar=True, )
+        self.finished.connect(wait_dialog.close_window)
+        self.progress.connect(wait_dialog.show_progress)
+        wait_dialog.wait_for(self.import_data)
         self.list_model.removeRows(0, self.list_model.rowCount())
         self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
 
@@ -242,32 +244,42 @@ class ImportDataDialog(QDialog):
         file_list = self.file_list()
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             n_start = sum(1 for item in os.listdir(destination) if os.path.isfile(os.path.join(destination, item)))
-            n = 0
-            self.progress.emit(n)
-            imported = []
+            self.progress.emit(0)
+            imported_batches = []
             processes = []
             for batch in np.array_split(file_list,
                                         int(len(file_list) / int(get_config_value('project', 'batch'))) + 1):
                 if len(batch):
-                    imported_batch, process = project.import_images(batch,
-                                                                    destination=self.destination_directory.currentText())
-                    imported.append(imported_batch)
+                    imported, process = project.import_images(batch,
+                                                              destination=self.destination_directory.currentText())
+                    imported_batches.append(imported)
                     processes.append(process)
-                    n = sum(1 for item in os.listdir(destination) if
-                            os.path.isfile(os.path.join(destination, item))) - n_start
-                    self.progress.emit(n)
+                    n = self.count_imported_files(destination, n_start)
+                    self.progress.emit(int(100 * n / len(file_list)))
                 if QThread.currentThread().isInterruptionRequested():
-                    self.cancel_import(imported, project, processes)
+                    self.cancel_import(imported_batches, n_start, project, processes)
                     return
             while n < len(file_list):
                 if QThread.currentThread().isInterruptionRequested():
-                    self.cancel_import(imported, project, processes)
+                    self.cancel_import(imported_batches, n_start, project, processes)
                     return
-                n = sum(
-                    1 for item in os.listdir(destination) if os.path.isfile(os.path.join(destination, item))) - n_start
-                self.progress.emit(n)
+                n = self.count_imported_files(destination, n_start)
+                self.progress.emit(int(100 * n / len(file_list)))
+        self.finished.emit(True)
 
-    def cancel_import(self, imported, project, processes):
+    def count_imported_files(self, destination, n_start):
+        """
+        Count imported files in destination directory to assess progress
+        :param destination: destination directory which files are imported into
+        :type destination: str
+        :param n_start: the number of files already in the destination directory before import
+        :type n_start: int
+        :return: the number of imported files
+        :rtype: int
+        """
+        return sum(1 for item in os.listdir(destination) if os.path.isfile(os.path.join(destination, item))) - n_start
+
+    def cancel_import(self, imported, n_start, project, processes):
         """
         Manage cancellation of import. Terminate all copy processes before launching deletion of files that were already
         copied. Then cancel persistence operations on Data objects, and eventually stop the host thread.
@@ -275,13 +287,20 @@ class ImportDataDialog(QDialog):
         :param project:
         :param processes:
         """
+        self.progress.emit(0)
+        destination = os.path.join(self.project_path, 'data', self.destination_directory.currentText())
+        n_max = self.count_imported_files(destination, n_start)
         for process in processes:
             process.terminate()
-        for canceled in imported:
-            delete_files(canceled)
+        for cancelled in imported:
+            delete_files(cancelled)
+            n = self.count_imported_files(destination, n_start)
+            self.progress.emit(100 - int(100 * n / n_max))
         project.cancel()
-        QThread.currentThread().terminate()
-        QThread.currentThread().wait()
+        while n > 0:
+            n = self.count_imported_files(destination, n_start)
+            self.progress.emit(100 - int(100 * n / n_max))
+        self.finished.emit(True)
 
     def source_list_is_not_empty(self):
         """
