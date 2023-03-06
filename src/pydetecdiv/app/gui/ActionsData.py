@@ -257,6 +257,7 @@ class ImportDataDialog(QDialog):
         Import image data from source specified in list_model into project raw dataset and triggers a progress signal
         with the number of files that have been copied so far
         """
+        self.progress.emit(0)
         in_place = self.keep_copy_buttons.button(2).isChecked()
         destination = os.path.join(self.project_path, 'data', self.destination_directory.currentText())
         QDir().mkpath(str(destination))
@@ -279,11 +280,11 @@ class ImportDataDialog(QDialog):
                     n_dso = project.count_objects('Data') - n_dso0
                     self.progress.emit(int(100 * (n_files + n_dso) / (len(file_list) + n_files_to_copy)))
                 if QThread.currentThread().isInterruptionRequested():
-                    self.cancel_import(imported_batches, n_files0, n_dso0, project, processes)
+                    self.cancel_import(imported_batches, n_files0, project, processes)
                     return
             while (n_files + n_dso) < (len(file_list) + n_files_to_copy):
                 if QThread.currentThread().isInterruptionRequested():
-                    self.cancel_import(imported_batches, n_files0, n_dso0, project, processes)
+                    self.cancel_import(imported_batches, n_files0, project, processes)
                     return
                 n_files = 0 if in_place else self.count_imported_files(destination, n_files0)
                 n_dso = project.count_objects('Data') - n_dso0
@@ -302,7 +303,7 @@ class ImportDataDialog(QDialog):
         """
         return sum(1 for item in os.listdir(destination) if os.path.isfile(os.path.join(destination, item))) - n_start
 
-    def cancel_import(self, imported, n_files0, n_dso0, project, processes):
+    def cancel_import(self, imported, n_files0, project, processes):
         """
         Manage cancellation of import. Terminate all copy processes before launching deletion of files that were already
         copied. Then cancel persistence operations on Data objects, and eventually stop the host thread.
@@ -310,26 +311,22 @@ class ImportDataDialog(QDialog):
         :param project:
         :param processes:
         """
-        in_place = self.keep_copy_buttons.button(2).isChecked()
         self.progress.emit(0)
+        in_place = self.keep_copy_buttons.button(2).isChecked()
         destination = os.path.join(self.project_path, 'data', self.destination_directory.currentText())
         n_max = self.count_imported_files(destination, n_files0)
-        n_dso_max = project.count_objects('Data') - n_dso0
         n_files = 0 if in_place else self.count_imported_files(destination, n_files0)
-        n_dso = project.count_objects('Data') - n_dso0
         if self.keep_copy_buttons.button(1).isChecked():
             for process in processes:
                 process.terminate()
             for cancelled in imported:
                 delete_files(cancelled)
                 n_files = 0 if in_place else self.count_imported_files(destination, n_files0)
-                n_dso = project.count_objects('Data') - n_dso0
-                self.progress.emit(int(100 * (n_files + n_dso) / (n_dso_max + n_max)))
+                self.progress.emit(100 - int(100 * n_files/ n_max))
         project.cancel()
-        while (n_files + n_dso) > 0:
+        while n_files > 0:
             n_files = 0 if in_place else self.count_imported_files(destination, n_files0)
-            n_dso = project.count_objects('Data') - n_dso0
-            self.progress.emit(int(100 * (n_files + n_dso) / (n_dso_max + n_max)))
+            self.progress.emit(100 - int(100 * n_files / n_max))
         self.finished.emit(True)
 
     def source_list_is_not_empty(self):
