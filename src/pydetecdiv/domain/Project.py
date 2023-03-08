@@ -244,6 +244,18 @@ class Project:
             return self._get_rois(id_list)
         return [self.build_dso(class_name, rec) for rec in self.repository.get_records(class_name, id_list)]
 
+    def count_objects(self, class_name):
+        """
+        Count all objects of a given class in the current project
+        :param class_name: the class name of the domain-specific objects to count
+        :type class_name: str
+        :return: the number of objects of the requested class
+        :rtype: int
+        """
+        if class_name == 'ROI':
+            return len(self._get_rois(None))
+        return len(self.repository.get_records(class_name, None))
+
     def _get_rois(self, id_list=None):
         """
         Gets ROIs using FOV.roi_list properties for all FOVs in order to show the initial ROIs only for FOVs that have

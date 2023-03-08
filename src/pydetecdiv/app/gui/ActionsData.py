@@ -9,7 +9,8 @@ from PySide6.QtCore import (Qt, QRegularExpression, QStringListModel, QItemSelec
                             QThread)
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-                               QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView)
+                               QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView,
+                               QRadioButton, QButtonGroup)
 from pydetecdiv.app import PyDetecDiv, WaitDialog, pydetecdiv_project
 from pydetecdiv.settings import get_config_value
 from pydetecdiv import delete_files
@@ -91,6 +92,7 @@ class ImportDataDialog(QDialog):
         super().__init__(PyDetecDiv().main_window)
         self.project_path = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv().project_name)
         self.setWindowModality(Qt.WindowModal)
+        self.setMinimumWidth(450)
         self.current_dir = '.'
 
         self.setObjectName('ImportData')
@@ -114,11 +116,18 @@ class ImportDataDialog(QDialog):
         list_view.setModel(self.list_model)
 
         destination_widget = QGroupBox(self)
-        destination_widget.setTitle(f'Destination: {self.project_path}/data/')
-        self.destination_directory = QComboBox(destination_widget)
+        destination_widget.setTitle('Destination:')
+        copy_files_widget = QWidget(destination_widget)
+        copy_files_button = QRadioButton(f'{self.project_path}/data/', copy_files_widget)
+        self.destination_directory = QComboBox(copy_files_widget)
         self.destination_directory.addItems(self.get_destinations())
         self.destination_directory.setEditable(True)
         self.destination_directory.setValidator(self.sub_directory_name_validator())
+        keep_in_place_widget = QWidget(destination_widget)
+        keep_in_place_button = QRadioButton('keep files in place', keep_in_place_widget)
+        self.keep_copy_buttons = QButtonGroup(destination_widget)
+        self.keep_copy_buttons.addButton(copy_files_button, id=1)
+        self.keep_copy_buttons.addButton(keep_in_place_button, id=2)
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Close | QDialogButtonBox.Cancel | QDialogButtonBox.Ok, self)
         self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
@@ -129,7 +138,9 @@ class ImportDataDialog(QDialog):
         source_layout = QVBoxLayout(source_group_box)
         buttons_layout = QHBoxLayout(buttons_widget)
         extension_layout = QHBoxLayout(extension_widget)
-        destination_layout = QHBoxLayout(destination_widget)
+        copy_files_layout = QHBoxLayout(copy_files_widget)
+        keep_in_place_layout = QHBoxLayout(keep_in_place_widget)
+        destination_layout = QVBoxLayout(destination_widget)
 
         source_layout.addWidget(list_view)
         source_layout.addWidget(buttons_widget)
@@ -142,7 +153,11 @@ class ImportDataDialog(QDialog):
         extension_layout.addWidget(extension_label)
         extension_layout.addWidget(self.default_extension)
 
-        destination_layout.addWidget(self.destination_directory)
+        copy_files_layout.addWidget(copy_files_button)
+        copy_files_layout.addWidget(self.destination_directory)
+        keep_in_place_layout.addWidget(keep_in_place_button)
+        destination_layout.addWidget(copy_files_widget)
+        destination_layout.addWidget(keep_in_place_widget)
 
         vertical_layout.addWidget(source_group_box)
         vertical_layout.addWidget(destination_widget)
@@ -159,6 +174,9 @@ class ImportDataDialog(QDialog):
 
         self.list_model.dataChanged.connect(self.source_list_is_not_empty)
         self.chosen_directory.connect(add_path_dialog.path_text_input.setText)
+
+        copy_files_button.setChecked(True)
+        self.keep_copy_buttons.setExclusive(True)
 
         self.exec()
         for child in self.children():
@@ -227,7 +245,7 @@ class ImportDataDialog(QDialog):
         Import files whose list is defined by the sources in self.list_model
         """
         wait_dialog = WaitDialog(f'Importing data into {PyDetecDiv().project_name}', self,
-                                      cancel_msg='Rollback of image import: please wait', progress_bar=True, )
+                                 cancel_msg='Rollback of image import: please wait', progress_bar=True, )
         self.finished.connect(wait_dialog.close_window)
         self.progress.connect(wait_dialog.show_progress)
         wait_dialog.wait_for(self.import_data)
@@ -239,32 +257,38 @@ class ImportDataDialog(QDialog):
         Import image data from source specified in list_model into project raw dataset and triggers a progress signal
         with the number of files that have been copied so far
         """
+        self.progress.emit(0)
+        in_place = self.keep_copy_buttons.button(2).isChecked()
         destination = os.path.join(self.project_path, 'data', self.destination_directory.currentText())
         QDir().mkpath(str(destination))
         file_list = self.file_list()
+        n_files_to_copy = 0 if in_place else len(file_list)
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            n_start = sum(1 for item in os.listdir(destination) if os.path.isfile(os.path.join(destination, item)))
+            n_files0 = sum(1 for item in os.listdir(destination) if os.path.isfile(os.path.join(destination, item)))
+            n_dso0 = project.count_objects('Data')
             self.progress.emit(0)
             imported_batches = []
             processes = []
             for batch in np.array_split(file_list,
                                         int(len(file_list) / int(get_config_value('project', 'batch'))) + 1):
                 if len(batch):
-                    imported, process = project.import_images(batch,
+                    imported, process = project.import_images(batch, in_place=in_place,
                                                               destination=self.destination_directory.currentText())
                     imported_batches.append(imported)
                     processes.append(process)
-                    n = self.count_imported_files(destination, n_start)
-                    self.progress.emit(int(100 * n / len(file_list)))
+                    n_files = 0 if in_place else self.count_imported_files(destination, n_files0)
+                    n_dso = project.count_objects('Data') - n_dso0
+                    self.progress.emit(int(100 * (n_files + n_dso) / (len(file_list) + n_files_to_copy)))
                 if QThread.currentThread().isInterruptionRequested():
-                    self.cancel_import(imported_batches, n_start, project, processes)
+                    self.cancel_import(imported_batches, n_files0, project, processes)
                     return
-            while n < len(file_list):
+            while (n_files + n_dso) < (len(file_list) + n_files_to_copy):
                 if QThread.currentThread().isInterruptionRequested():
-                    self.cancel_import(imported_batches, n_start, project, processes)
+                    self.cancel_import(imported_batches, n_files0, project, processes)
                     return
-                n = self.count_imported_files(destination, n_start)
-                self.progress.emit(int(100 * n / len(file_list)))
+                n_files = 0 if in_place else self.count_imported_files(destination, n_files0)
+                n_dso = project.count_objects('Data') - n_dso0
+                self.progress.emit(int(100 * (n_files + n_dso) / (len(file_list) + n_files_to_copy)))
         self.finished.emit(True)
 
     def count_imported_files(self, destination, n_start):
@@ -279,7 +303,7 @@ class ImportDataDialog(QDialog):
         """
         return sum(1 for item in os.listdir(destination) if os.path.isfile(os.path.join(destination, item))) - n_start
 
-    def cancel_import(self, imported, n_start, project, processes):
+    def cancel_import(self, imported, n_files0, project, processes):
         """
         Manage cancellation of import. Terminate all copy processes before launching deletion of files that were already
         copied. Then cancel persistence operations on Data objects, and eventually stop the host thread.
@@ -288,18 +312,21 @@ class ImportDataDialog(QDialog):
         :param processes:
         """
         self.progress.emit(0)
+        in_place = self.keep_copy_buttons.button(2).isChecked()
         destination = os.path.join(self.project_path, 'data', self.destination_directory.currentText())
-        n_max = self.count_imported_files(destination, n_start)
-        for process in processes:
-            process.terminate()
-        for cancelled in imported:
-            delete_files(cancelled)
-            n = self.count_imported_files(destination, n_start)
-            self.progress.emit(100 - int(100 * n / n_max))
+        n_max = self.count_imported_files(destination, n_files0)
+        n_files = 0 if in_place else self.count_imported_files(destination, n_files0)
+        if self.keep_copy_buttons.button(1).isChecked():
+            for process in processes:
+                process.terminate()
+            for cancelled in imported:
+                delete_files(cancelled)
+                n_files = 0 if in_place else self.count_imported_files(destination, n_files0)
+                self.progress.emit(100 - int(100 * n_files/ n_max))
         project.cancel()
-        while n > 0:
-            n = self.count_imported_files(destination, n_start)
-            self.progress.emit(100 - int(100 * n / n_max))
+        while n_files > 0:
+            n_files = 0 if in_place else self.count_imported_files(destination, n_files0)
+            self.progress.emit(100 - int(100 * n_files / n_max))
         self.finished.emit(True)
 
     def source_list_is_not_empty(self):

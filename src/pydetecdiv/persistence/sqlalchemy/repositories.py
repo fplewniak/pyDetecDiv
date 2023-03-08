@@ -99,7 +99,7 @@ class ShallowSQLite3(ShallowDb):
         """
         self.engine.dispose()
 
-    def import_images(self, image_files, destination, author=None, date='now', img_format='imagetiff'):
+    def import_images(self, image_files, destination, author=None, date='now', in_place=False, img_format='imagetiff'):
         """
         Import images specified in a list of files into a destination
         :param image_files: list of image files to import
@@ -117,7 +117,7 @@ class ShallowSQLite3(ShallowDb):
         """
         urls = []
         try:
-            process = copy_files(image_files, destination)
+            process = copy_files(image_files, destination) if not in_place else None
             for image_file in image_files:
                 record = {
                     'id_': None,
@@ -126,7 +126,7 @@ class ShallowSQLite3(ShallowDb):
                     'dataset': self.bioiit_exp.raw_dataset.uuid,
                     'author': get_config_value('project', 'user') if author == '' else author,
                     'date': datetime.now() if date == 'now' else datetime.fromisoformat(date),
-                    'url': os.path.join(destination, os.path.basename(image_file)),
+                    'url': image_file if in_place else os.path.join(destination, os.path.basename(image_file)),
                     'format': img_format,
                     'source_dir': os.path.dirname(image_file),
                     'meta_data': '{}',
@@ -135,7 +135,7 @@ class ShallowSQLite3(ShallowDb):
                 self.save_object('Data', record)
                 urls.append(record['url'])
         except:
-            print('Could not import batch of images: list too long')
+            print('Could not import batch of images')
         return urls, process
 
     def import_source_path(self, source_path, **kwargs):
