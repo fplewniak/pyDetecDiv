@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGrou
 from pydetecdiv.app import PyDetecDiv, WaitDialog, pydetecdiv_project
 from pydetecdiv.settings import get_config_value
 from pydetecdiv import delete_files
+from pydetecdiv.app.gui.RawData2FOV import RawData2FOV
 
 
 class ListView(QListView):
@@ -414,3 +415,14 @@ class AddPathDialog(QDialog):
         else:
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
             self.button_box.button(QDialogButtonBox.Apply).setEnabled(False)
+
+class CreateFOV(QAction):
+    """
+    Action to import raw data images into a project
+    """
+
+    def __init__(self, parent):
+        super().__init__(QIcon(":icons/import_images"), "Create &FOV from raw data", parent)
+        self.triggered.connect(RawData2FOV)
+        self.setEnabled(False)
+        parent.addAction(self)

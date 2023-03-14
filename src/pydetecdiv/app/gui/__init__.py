@@ -38,7 +38,10 @@ class DataMenu(QMenu):
         menu = parent.menuBar().addMenu("Data")
         import_data = ActionsData.ImportData(menu)
         import_data.setShortcut("Ctrl+I")
+        create_fovs = ActionsData.CreateFOV(menu)
+        create_fovs.setShortcut("Ctrl+Alt+F")
         PyDetecDiv().project_selected.connect(lambda e: import_data.setEnabled(True))
+        PyDetecDiv().project_selected.connect(lambda e: create_fovs.setEnabled(True))
 
 
 class MainToolBar(QToolBar):
