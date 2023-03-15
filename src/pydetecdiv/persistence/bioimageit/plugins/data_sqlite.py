@@ -153,7 +153,7 @@ class SQLiteMetadataService(LocalMetadataService):
             m = re.search(pattern, call_back(df.loc[i,]))
             if m:
                 key_val = json.loads(df.loc[i, 'key_val'])
-                key_val.update(dict(zip(keys_, m.groups())))
+                key_val.update(dict(zip(keys_, [m.group(k) for k in keys_])))
                 df.loc[i, 'key_val'] = json.dumps(key_val)
         return df
 
