@@ -28,16 +28,6 @@ class PyDetecDiv(QApplication):
         self.project_name = None
         self.main_window = None
 
-    def select_project(self, project_name):
-        """
-        Method to select a project from its name and sending a signal so that all widgets that need to refer to a
-        project can be enabled
-        :param project_name: the name of the selected project
-        :type project_name: str
-        """
-        self.project_name = project_name
-        self.project_selected.emit(project_name)
-
 
 @contextmanager
 def pydetecdiv_project(project_name):
@@ -46,7 +36,7 @@ def pydetecdiv_project(project_name):
     :param project_name: the project name
     :type project_name: str
     """
-    PyDetecDiv().select_project(project_name)
+    PyDetecDiv().project_name = project_name
     project = Project(project_name)
     try:
         yield project
