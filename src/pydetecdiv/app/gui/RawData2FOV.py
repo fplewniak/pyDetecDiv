@@ -3,13 +3,17 @@ import random
 import re
 
 import pandas
+from PySide6.QtCore import Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QDialog, QColorDialog, QDialogButtonBox
 
 from pydetecdiv.app.gui.ui.RawData2FOV import Ui_RawData2FOV
-from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
+from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, WaitDialog
+
 
 class RawData2FOV(QDialog, Ui_RawData2FOV):
+
+    finished = Signal(bool)
 
     def __init__(self):
         """ Initialization
@@ -32,7 +36,8 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
             self.samples_text = random.sample(raw_data_urls, min([len(raw_data_urls), 5]))
         self.samples = []
         self.ui.setupUi(self)
-        self.samples = [self.ui.sample1, self.ui.sample2, self.ui.sample3, self.ui.sample4, self.ui.sample5][:min([len(raw_data_urls), 5])]
+        self.samples = [self.ui.sample1, self.ui.sample2, self.ui.sample3, self.ui.sample4, self.ui.sample5][
+                       :min([len(raw_data_urls), 5])]
         self.controls = {'FOV': self.ui.pos_check,
                          'C': self.ui.c_check,
                          'T': self.ui.t_check,
@@ -42,7 +47,15 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
             self.samples[i].setText(label_text)
         self.setWindowTitle('Create FOVs from raw data files')
         self.reset()
-        self.exec()
+        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            annotation_pattern = project.raw_dataset.pattern
+        if annotation_pattern:
+            wait_dialog = WaitDialog('Creating Fields of view', self,)
+            self.finished.connect(wait_dialog.close_window)
+            wait_dialog.wait_for(self.create_fov_annotate, annotation_pattern)
+            # self.create_fov_annotate(annotation_pattern)
+        else:
+            self.exec()
         for child in self.children():
             child.deleteLater()
         self.destroy(True)
@@ -222,10 +235,21 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
                 regexes = self.get_regex()
                 df = pandas.DataFrame.from_dict(self.get_match_spans(self.find_matches(regexes), 0))
                 regex = '.*'.join([regexes[col] for col in df.sort_values(0, axis=1, ascending=True).columns])
+                self.create_fov_annotate(regex)
                 with pydetecdiv_project(PyDetecDiv().project_name) as project:
-                    project.create_fov_from_raw_data('url', regexes['FOV'])
-                    project.annotate(project.raw_dataset, 'url', tuple(df.columns), regex)
+                    project.raw_dataset.pattern = regex
+                    project.save(project.raw_dataset)
+                self.close()
             case QDialogButtonBox.StandardButton.Cancel:
                 self.close()
             case QDialogButtonBox.StandardButton.Reset:
                 self.reset()
+
+    def create_fov_annotate(self, regex):
+        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            pattern = re.compile(regex)
+            fov_index = pattern.groupindex['FOV']
+            fov_pattern = ''.join(re.findall(r'\(.*?\)', regex)[fov_index - 2:fov_index + 1])
+            project.create_fov_from_raw_data('url', fov_pattern)
+            project.annotate(project.raw_dataset, 'url', tuple(pattern.groupindex.keys()), regex)
+        self.finished.emit(True)

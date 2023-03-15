@@ -11,12 +11,13 @@ class Dataset(NamedDSO):
     A business-logic class defining valid operations and attributes of data
     """
 
-    def __init__(self, uuid, url, type_, run, **kwargs):
+    def __init__(self, uuid, url, type_, run, pattern, **kwargs):
         super().__init__(**kwargs)
         self.uuid = uuid
         self.url = url
         self.type_ = type_
         self.run = run
+        self.pattern = pattern
         self.validate()
 
     @property
@@ -42,6 +43,7 @@ class Dataset(NamedDSO):
             'url': self.url,
             'type_': self.type_,
             'run': self.run,
+            'pattern': self.pattern,
             'uuid': self.uuid
         }
         if not no_id:
@@ -51,8 +53,9 @@ class Dataset(NamedDSO):
     @property
     def info(self):
         return f"""
-Name: {self.name}
-Path: {self.url}
-Type: {self.type_}
-Run:  {self.run}
+   Name: {self.name}
+   Path: {self.url}
+   Type: {self.type_}
+    Run: {self.run}
+Pattern: {self.pattern}
         """

@@ -22,6 +22,7 @@ class DatasetDao(DAO, Base):
     url = Column(String)
     type_ = Column(String)
     run = Column(String, ForeignKey('run.uuid'), nullable=True, index=True)
+    pattern = Column(String)
 
     data_list_ = relationship('DataDao')
 
@@ -56,5 +57,6 @@ class DatasetDao(DAO, Base):
                 'name': self.name,
                 'url': self.url,
                 'type_': self.type_,
-                'run': self.run
+                'run': self.run,
+                'pattern': self.pattern,
                 }
