@@ -155,6 +155,8 @@ class SQLiteMetadataService(LocalMetadataService):
                 key_val = json.loads(df.loc[i, 'key_val'])
                 key_val.update(dict(zip(keys_, [m.group(k) for k in keys_])))
                 df.loc[i, 'key_val'] = json.dumps(key_val)
+                con.execute('DELETE from data')
+                df.to_sql('data', con, if_exists='append', index=False)
         return df
 
     def annotate_using_regex(self, experiment, dataset, source, keys_, regex):

@@ -22,10 +22,10 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         # Initialize the UI widgets
         self.ui = Ui_RawData2FOV()
         self.colours = {
-            'pos': QColor.fromRgb(255, 125, 0, 255),
-            'c': QColor.fromRgb(0, 255, 0, 255),
-            't': QColor.fromRgb(0, 255, 255, 255),
-            'z': QColor.fromRgb(255, 255, 0, 255),
+            'FOV': QColor.fromRgb(255, 125, 0, 255),
+            'C': QColor.fromRgb(0, 255, 0, 255),
+            'T': QColor.fromRgb(0, 255, 255, 255),
+            'Z': QColor.fromRgb(255, 255, 0, 255),
         }
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             raw_data_urls = [d.url for d in project.get_objects('Data')]
@@ -33,10 +33,10 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         self.samples = []
         self.ui.setupUi(self)
         self.samples = [self.ui.sample1, self.ui.sample2, self.ui.sample3, self.ui.sample4, self.ui.sample5][:min([len(raw_data_urls), 5])]
-        self.controls = {'pos': self.ui.pos_check,
-                         'c': self.ui.c_check,
-                         't': self.ui.t_check,
-                         'z': self.ui.z_check
+        self.controls = {'FOV': self.ui.pos_check,
+                         'C': self.ui.c_check,
+                         'T': self.ui.t_check,
+                         'Z': self.ui.z_check
                          }
         for i, label_text in enumerate(self.samples_text):
             self.samples[i].setText(label_text)
@@ -53,10 +53,10 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         self.ui.t_check.setChecked(False)
         self.ui.z_check.setChecked(False)
         self.colours = {
-            'pos': QColor.fromRgb(255, 125, 0, 255),
-            'c': QColor.fromRgb(0, 255, 0, 255),
-            't': QColor.fromRgb(0, 255, 255, 255),
-            'z': QColor.fromRgb(255, 255, 0, 255),
+            'FOV': QColor.fromRgb(255, 125, 0, 255),
+            'C': QColor.fromRgb(0, 255, 0, 255),
+            'T': QColor.fromRgb(0, 255, 255, 255),
+            'Z': QColor.fromRgb(255, 255, 0, 255),
         }
         self.ui.pos_left.setCurrentText(u"position")
         self.ui.pos_pattern.setCurrentText(u"\\d+")
@@ -86,7 +86,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
             for i, _ in enumerate(patterns):
                 while patterns[i].endswith('\\'):
                     patterns[i] = patterns[i][:-1]
-            regex['pos'] = f'({patterns[0]})(?P<FOV>{patterns[1]})({patterns[2]})'
+            regex['FOV'] = f'({patterns[0]})(?P<FOV>{patterns[1]})({patterns[2]})'
 
         if self.ui.c_check.isChecked():
             patterns = [self.ui.c_left.currentText(),
@@ -95,7 +95,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
             for i, _ in enumerate(patterns):
                 while patterns[i].endswith('\\'):
                     patterns[i] = patterns[i][:-1]
-            regex['c'] = f'({patterns[0]})(?P<C>{patterns[1]})({patterns[2]})'
+            regex['C'] = f'({patterns[0]})(?P<C>{patterns[1]})({patterns[2]})'
 
         if self.ui.t_check.isChecked():
             patterns = [self.ui.t_left.currentText(),
@@ -104,7 +104,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
             for i, _ in enumerate(patterns):
                 while patterns[i].endswith('\\'):
                     patterns[i] = patterns[i][:-1]
-            regex['t'] = f'({patterns[0]})(?P<T>{patterns[1]})({patterns[2]})'
+            regex['T'] = f'({patterns[0]})(?P<T>{patterns[1]})({patterns[2]})'
 
         if self.ui.z_check.isChecked():
             patterns = [self.ui.z_left.currentText(),
@@ -113,7 +113,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
             for i, _ in enumerate(patterns):
                 while patterns[i].endswith('\\'):
                     patterns[i] = patterns[i][:-1]
-            regex['z'] = f'({patterns[0]})(?P<Z>{patterns[1]})({patterns[2]})'
+            regex['Z'] = f'({patterns[0]})(?P<Z>{patterns[1]})({patterns[2]})'
         return regex
 
     def change_sample_style(self):
@@ -199,16 +199,16 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
 
     def show_chosen_colours(self):
         colours = {
-            'pos': self.ui.pos_colour,
-            'c': self.ui.c_colour,
-            't': self.ui.t_colour,
-            'z': self.ui.z_colour,
+            'FOV': self.ui.pos_colour,
+            'C': self.ui.c_colour,
+            'T': self.ui.t_colour,
+            'Z': self.ui.z_colour,
         }
         borders = {
-            'pos': self.ui.pos_pattern,
-            'c': self.ui.c_pattern,
-            't': self.ui.t_pattern,
-            'z': self.ui.z_pattern,
+            'FOV': self.ui.pos_pattern,
+            'C': self.ui.c_pattern,
+            'T': self.ui.t_pattern,
+            'Z': self.ui.z_pattern,
         }
         for pattern, colour in self.colours.items():
             r, g, b, a = colour.getRgb()
@@ -222,7 +222,9 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
                 regexes = self.get_regex()
                 df = pandas.DataFrame.from_dict(self.get_match_spans(self.find_matches(regexes), 0))
                 regex = '.*'.join([regexes[col] for col in df.sort_values(0, axis=1, ascending=True).columns])
-                print(regex)
+                with pydetecdiv_project(PyDetecDiv().project_name) as project:
+                    project.create_fov_from_raw_data('url', regexes['FOV'])
+                    project.annotate(project.raw_dataset, 'url', tuple(df.columns), regex)
             case QDialogButtonBox.StandardButton.Cancel:
                 self.close()
             case QDialogButtonBox.StandardButton.Reset:
