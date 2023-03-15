@@ -28,10 +28,11 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
             'z': QColor.fromRgb(255, 255, 0, 255),
         }
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            self.samples_text = random.sample([d.url for d in project.get_objects('Data')], 5)
+            raw_data_urls = [d.url for d in project.get_objects('Data')]
+            self.samples_text = random.sample(raw_data_urls, min([len(raw_data_urls), 5]))
         self.samples = []
         self.ui.setupUi(self)
-        self.samples = [self.ui.sample1, self.ui.sample2, self.ui.sample3, self.ui.sample4, self.ui.sample5]
+        self.samples = [self.ui.sample1, self.ui.sample2, self.ui.sample3, self.ui.sample4, self.ui.sample5][:min([len(raw_data_urls), 5])]
         self.controls = {'pos': self.ui.pos_check,
                          'c': self.ui.c_check,
                          't': self.ui.t_check,

@@ -430,11 +430,7 @@ class CreateFOV(QAction):
         parent.addAction(self)
 
     def enable(self, raw_data_count):
-        print(PyDetecDiv().project_name)
         if PyDetecDiv().project_name and (raw_data_count > 0):
-            print('enable createFOVs')
+            self.setEnabled(True)
         else:
-            print('disable createFOVs')
-            #
-            #
-            #         super().setEnabled(True)
+            self.setEnabled(False)
