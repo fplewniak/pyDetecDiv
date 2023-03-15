@@ -41,7 +41,7 @@ class DataMenu(QMenu):
         create_fovs = ActionsData.CreateFOV(menu)
         create_fovs.setShortcut("Ctrl+Alt+F")
         PyDetecDiv().project_selected.connect(lambda e: import_data.setEnabled(True))
-        PyDetecDiv().project_selected.connect(lambda e: create_fovs.setEnabled(True))
+        PyDetecDiv().raw_data_counted.connect(create_fovs.enable)
 
 
 class MainToolBar(QToolBar):

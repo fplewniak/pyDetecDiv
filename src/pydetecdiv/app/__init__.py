@@ -21,6 +21,7 @@ class PyDetecDiv(QApplication):
     PyDetecDiv application class extending QApplication to keep track of the current project and main window
     """
     project_selected = Signal(str)
+    raw_data_counted = Signal(int)
 
     def __init__(self, *args):
         super().__init__(*args)

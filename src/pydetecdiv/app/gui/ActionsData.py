@@ -290,7 +290,9 @@ class ImportDataDialog(QDialog):
                 n_files = 0 if in_place else self.count_imported_files(destination, n_files0)
                 n_dso = project.count_objects('Data') - n_dso0
                 self.progress.emit(int(100 * (n_files + n_dso) / (len(file_list) + n_files_to_copy)))
+            n_raw_data_files = project.count_objects('Data')
         self.finished.emit(True)
+        PyDetecDiv().raw_data_counted.emit(n_raw_data_files)
 
     def count_imported_files(self, destination, n_start):
         """
@@ -426,3 +428,13 @@ class CreateFOV(QAction):
         self.triggered.connect(RawData2FOV)
         self.setEnabled(False)
         parent.addAction(self)
+
+    def enable(self, raw_data_count):
+        print(PyDetecDiv().project_name)
+        if PyDetecDiv().project_name and (raw_data_count > 0):
+            print('enable createFOVs')
+        else:
+            print('disable createFOVs')
+            #
+            #
+            #         super().setEnabled(True)

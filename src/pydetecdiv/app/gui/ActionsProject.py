@@ -101,6 +101,9 @@ class ProjectDialog(QDialog):
         self.finished.connect(self.hide)
         self.wait.wait_for(self.open_create_project, project_name=p_name)
         PyDetecDiv().project_selected.emit(p_name)
+        # with pydetecdiv_project(p_name) as project:
+        #     raw_data_count = project.count_objects('Data')
+        #     print(raw_data_count)
 
     def open_create_project(self, project_name):
         """
@@ -112,7 +115,6 @@ class ProjectDialog(QDialog):
         with pydetecdiv_project(project_name) as project:
             PyDetecDiv().main_window.setWindowTitle(f'pyDetecDiv: {project.dbname}')
         self.finished.emit(True)
-
 
 class NewProject(QAction):
     """
