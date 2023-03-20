@@ -151,14 +151,19 @@ class Project:
         :param regex: regular expression defining the DSOs' names
         :type regex: regular expression str
         """
+        yield 0
         df = self.annotate(self.raw_dataset, source, ('FOV',), regex).loc[:, ['id_', 'FOV']]
         fov_names = [f.name for f in self.get_objects('FOV')]
-        for fov_name in df.FOV.drop_duplicates().values:
+        new_fovs = df.FOV.drop_duplicates().values
+        total = len(new_fovs) + len(df.values)
+        for n_fov, fov_name in enumerate(new_fovs):
             if fov_name not in fov_names:
                 FOV(project=self, name=fov_name, top_left=(0, 0), bottom_right=(999, 999))
+            yield int(n_fov * 100 / total)
         df['FOV'] = df['FOV'].map(self.id_mapping('FOV'))
-        for data_id, fov_id in df.values:
+        for i, (data_id, fov_id) in enumerate(df.values):
             self.link_objects(self.get_object('FOV', int(fov_id)), self.get_object('Data', int(data_id)))
+            yield int((i + n_fov) * 100 / total)
 
     def id_mapping(self, class_name):
         """

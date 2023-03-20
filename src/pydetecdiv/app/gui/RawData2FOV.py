@@ -3,7 +3,7 @@ import random
 import re
 
 import pandas
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, QThread
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QDialog, QColorDialog, QDialogButtonBox
 
@@ -14,6 +14,7 @@ from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, WaitDialog
 class RawData2FOV(QDialog, Ui_RawData2FOV):
 
     finished = Signal(bool)
+    progress = Signal(int)
 
     def __init__(self):
         """ Initialization
@@ -50,8 +51,10 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             annotation_pattern = project.raw_dataset.pattern
         if annotation_pattern:
-            wait_dialog = WaitDialog('Creating Fields of view', self,)
+            wait_dialog = WaitDialog('Creating Fields of view', self, cancel_msg='Cancel FOV creation: please wait',
+                                         progress_bar=True, )
             self.finished.connect(wait_dialog.close_window)
+            self.progress.connect(wait_dialog.show_progress)
             wait_dialog.wait_for(self.create_fov_annotate, annotation_pattern)
             # self.create_fov_annotate(annotation_pattern)
         else:
@@ -235,7 +238,12 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
                 regexes = self.get_regex()
                 df = pandas.DataFrame.from_dict(self.get_match_spans(self.find_matches(regexes), 0))
                 regex = '.*'.join([regexes[col] for col in df.sort_values(0, axis=1, ascending=True).columns])
-                self.create_fov_annotate(regex)
+                wait_dialog = WaitDialog('Creating Fields of view', self, cancel_msg='Cancel FOV creation: please wait',
+                                         progress_bar=True, )
+                self.finished.connect(wait_dialog.close_window)
+                self.progress.connect(wait_dialog.show_progress)
+                wait_dialog.wait_for(self.create_fov_annotate, regex)
+                # self.create_fov_annotate(regex)
                 with pydetecdiv_project(PyDetecDiv().project_name) as project:
                     project.raw_dataset.pattern = regex
                     project.save(project.raw_dataset)
@@ -250,6 +258,12 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
             pattern = re.compile(regex)
             fov_index = pattern.groupindex['FOV']
             fov_pattern = ''.join(re.findall(r'\(.*?\)', regex)[fov_index - 2:fov_index + 1])
-            project.create_fov_from_raw_data('url', fov_pattern)
             project.annotate(project.raw_dataset, 'url', tuple(pattern.groupindex.keys()), regex)
+            for i in project.create_fov_from_raw_data('url', fov_pattern):
+                self.progress.emit(i)
+                if QThread.currentThread().isInterruptionRequested():
+                    project.cancel()
+                    break
         self.finished.emit(True)
+
+
