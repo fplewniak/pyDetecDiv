@@ -3,11 +3,17 @@
 """
  The Graphical User Interface to pyDetecDiv application
 """
+import importlib
+import os
+
 from PySide6.QtGui import QIcon
 
 from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui.Windows import MainWindow
 
+if '_PYIBoot_SPLASH' in os.environ and importlib.util.find_spec("pyi_splash"):
+    import pyi_splash
+    pyi_splash.close()
 
 def main_gui():
     """
