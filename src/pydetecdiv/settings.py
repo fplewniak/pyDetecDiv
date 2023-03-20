@@ -5,6 +5,7 @@ Settings management according to XDG base directory specification
 http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
 """
 import os
+import getpass
 import configparser
 from pathlib import Path
 import xdg.BaseDirectory
@@ -15,7 +16,8 @@ def get_default_settings() -> dict:
     Returns default values for configuration if no configuration file is found
     :return: a dictionary containing the default values
     """
-    return {'project': {'dbms': 'SQLite3', 'workspace': '/data2/BioImageIT/workspace', 'user': '', 'batch': 1024},
+    return {'project': {'dbms': 'SQLite3', 'workspace': '/data2/BioImageIT/workspace', 'user': getpass.getuser(),
+                        'batch': 1024},
             'project.sqlite': {'database': 'pydetecdiv'},
             'project.mysql': {'database': 'pydetecdiv', 'host': 'localhost', 'credentials': 'mysql.credentials', },
             'omero': {'host': 'localhost', 'credentials': 'omero.credentials', },
