@@ -325,7 +325,7 @@ class ImportDataDialog(QDialog):
             for cancelled in imported:
                 delete_files(cancelled)
                 n_files = 0 if in_place else self.count_imported_files(destination, n_files0)
-                self.progress.emit(100 - int(100 * n_files/ n_max))
+                self.progress.emit(100 - int(100 * n_files / n_max))
         project.cancel()
         while n_files > 0:
             n_files = 0 if in_place else self.count_imported_files(destination, n_files0)
@@ -418,6 +418,7 @@ class AddPathDialog(QDialog):
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
             self.button_box.button(QDialogButtonBox.Apply).setEnabled(False)
 
+
 class CreateFOV(QAction):
     """
     Action to import raw data images into a project
@@ -430,6 +431,10 @@ class CreateFOV(QAction):
         parent.addAction(self)
 
     def enable(self, raw_data_count):
+        """
+        Enable or disable this action in the Data menu whether there are raw data or not.
+        :param raw_data_count: the number of files in raw dataset
+        """
         if PyDetecDiv().project_name and (raw_data_count > 0):
             self.setEnabled(True)
         else:
