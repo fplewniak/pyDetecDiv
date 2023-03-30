@@ -18,60 +18,85 @@ from tifffile import TiffFile, TiffSequence
 import cv2 as cv
 from vidstab import VidStab
 
+def aics_indexer(path, pattern):
+    return pd.Series({k: int(v) for k,v in re.search(pattern, path).groupdict().items()})
+
 class ImageResource:
-    def __init__(self, path, mode='readwrite', **kwargs):
+    def __init__(self, path, pattern=None, max_mem=5000, **kwargs):
         self.path = path
-        self._aics_image = AICSImage(path, **kwargs)
-        try:
-            self._memmap = MemMapTiff(path, mode=mode)
-        except ValueError:
+        self.max_mem = max_mem
+        if pattern is None:
+            self._memmap = tifffile.memmap(path, **kwargs)
+            self.resource = AICSImage(self.path).reader
+        else:
             self._memmap = None
-
-    def image(self, c=0, z=0, t=0, **kwargs):
-        if self._memmap is not None:
-            return self._memmap.image(c=c, z=z, t=t, **kwargs)
-        xd = self._aics_image.get_xarray_dask_stack()
-        if 'S' not in xd.dims:
-            return xd.isel(I=0, T=t, C=c, Z=z)
-        return xd.isel(I=0, S=0, T=t, C=c, Z=z)
-
-
-    @property
-    def sizeT(self):
-        return self._aics_image.dims.T
-
-    @property
-    def sizeZ(self):
-        return self._aics_image.dims.Z
-
-    @property
-    def sizeC(self):
-        return self._aics_image.dims.C
-
-    @property
-    def sizeX(self):
-        return self._aics_image.dims.X
-
-    @property
-    def sizeY(self):
-        return self._aics_image.dims.Y
-
-    def as_texture(self, c=0, z=0, t=0, **kwargs):
-        if self._memmap is not None:
-            return self._memmap.as_texture(c=c, z=z, t=t, **kwargs)
-        img = self.image(c=c, z=z, t=t).values
-        img = img / np.max(img)
-        texture = np.dstack([img, img, img, np.ones((self._aics_image.dims.Y, self._aics_image.dims.X))])
-        return self._aics_image.dims.X, self._aics_image.dims.Y, 4, texture.flatten()
+            self.path = path if isinstance(path, list) else [path]
+            self.resource = AICSImage(self.path, indexer=lambda x: aics_indexer(x, pattern)).reader
 
     @property
     def shape(self):
+        return self.resource.shape
+
+    @property
+    def dims(self):
+        return self.resource.dims
+
+    @property
+    def sizeT(self):
+        return self.resource.dims.T
+
+    @property
+    def sizeC(self):
+        return self.resource.dims.C
+
+    @property
+    def sizeZ(self):
+        return self.resource.dims.Z
+
+    @property
+    def sizeY(self):
+        return self.resource.dims.Y
+
+    @property
+    def sizeX(self):
+        return self.resource.dims.X
+
+    def image(self, C=0, Z=0, T=0):
+        if self._memmap is not None:
+            s = self.resource.shape
+            data = np.expand_dims(self._memmap, axis=tuple([i for i in range(len(s)) if s[i]==1]))[T, C, Z, ...]
+        else:
+            data = self.resource.get_image_dask_data('YX', C=C, Z=Z, T=T).compute()
+            print(self.shape, data.shape, self.dims.order, self.resource)
+        return data
+
+    def open(self):
         """
-        The shape of the image data
-        :return: the 5D array shape
-        :rtype: tuple of int
+        Open the memory mapped file to access data
         """
-        return self._aics_image.shape
+        self._memmap = tifffile.memmap(self.path)
+
+    def close(self):
+        """
+        Close the memory mapped file
+        """
+        if not self._memmap._mmap.closed:
+            self._memmap._mmap.close()
+
+    def flush(self):
+        """
+        Flush the data to save changes to the meory mapped file
+        """
+        if not self._memmap._mmap.closed:
+            self._memmap._mmap.flush()
+
+    def refresh(self):
+        """
+        Close and open the memory mapped file to save memory if needed. Useful when creating a new file or making lots
+        of changes.
+        """
+        self.close()
+        self.open()
 
     def compute_drift(self, z=0, c=0, max_mem=5000):
         if self._memmap is not None:
