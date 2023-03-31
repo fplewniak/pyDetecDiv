@@ -304,7 +304,8 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
                 wait_dialog.wait_for(self.create_fov_annotate, regex)
                 # self.create_fov_annotate(regex)
                 with pydetecdiv_project(PyDetecDiv().project_name) as project:
-                    project.raw_dataset.pattern = regex
+                    project.raw_dataset.pattern = '.*'.join(
+                        [regexes[col] for col in df.sort_values(0, axis=1, ascending=True).columns if col != 'FOV'])
                     project.save(project.raw_dataset)
                 self.close()
             case QDialogButtonBox.StandardButton.Cancel:
@@ -321,7 +322,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
             pattern = re.compile(regex)
             fov_index = pattern.groupindex['FOV']
             fov_pattern = ''.join(re.findall(r'\(.*?\)', regex)[fov_index - 2:fov_index + 1])
-            project.annotate(project.raw_dataset, 'url', tuple(pattern.groupindex.keys()), regex)
+            # project.annotate(project.raw_dataset, 'url', tuple(pattern.groupindex.keys()), regex)
             for i in project.create_fov_from_raw_data('url', fov_pattern):
                 self.progress.emit(i)
                 if QThread.currentThread().isInterruptionRequested():

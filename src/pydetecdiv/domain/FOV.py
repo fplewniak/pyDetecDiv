@@ -4,6 +4,7 @@
  A class defining the business logic methods that can be applied to Fields Of View
 """
 from pydetecdiv.domain.dso import NamedDSO, BoxedDSO, DsoWithImageData
+from pydetecdiv.domain.ImageResource import ImageResource
 
 
 class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
@@ -114,7 +115,12 @@ Comments:             {self.comments}
         return self.project.get_linked_objects('ROI', to=self)[0]
 
     def image_resource(self, dataset='data'):
-        dataset_uuid = self.project.get_named_object('Dataset', dataset).uuid
-        data_list = [data for data in self.data if data.dataset_ == dataset_uuid]
-        print(data_list)
+        ds = self.project.get_named_object('Dataset', dataset)
+        data_list = [data.url for data in self.data if data.dataset_ == ds.uuid]
+        if len(data_list) > 1:
+            image_resource = ImageResource(data_list, pattern=ds.pattern)
+        else:
+            image_resource = ImageResource(data_list[0])
+        return image_resource
+
 
