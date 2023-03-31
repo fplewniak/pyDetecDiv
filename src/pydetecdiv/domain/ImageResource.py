@@ -3,27 +3,35 @@
 """
  Classes to manipulate Image resources: loading data from files, etc
 """
-import glob
 import re
-import h5py
 import numpy as np
 import pandas as pd
-import skimage.io as skio
-import xmltodict
 import tifffile
 from aicsimageio import AICSImage
 # from memory_profiler import profile
 import psutil
-from tifffile import TiffFile, TiffSequence
 import cv2 as cv
 from vidstab import VidStab
 
 
 def aics_indexer(path, pattern):
+    """
+    An indexer to determine dimensions (T, C, Z) from file names to be used with AICSImage reader when reading a list of
+    files
+    :param path: the path of the file name
+    :type path: str
+    :param pattern: the pattern defining the dimension indexes from file names
+    :type pattern: regex str
+    :return: the dimension indexes corresponding to the path
+    :rtype: pandas Series
+    """
     return pd.Series({k: int(v) for k, v in re.search(pattern, path).groupdict().items()})
 
 
 class ImageResource:
+    """
+    A generic class to access image resources (files) on disk without having to load whole time series into memory
+    """
     def __init__(self, path, pattern=None, max_mem=5000, **kwargs):
         self.path = path
         self.max_mem = max_mem
@@ -37,36 +45,70 @@ class ImageResource:
 
     @property
     def shape(self):
+        """
+        The image resource shape (should habitually be 5D with the following dimensions TCZYX)
+        :return:
+        """
         return self.resource.shape
 
     @property
     def dims(self):
+        """
+        The image resource dimensions with their size
+        :return:
+        """
         return self.resource.dims
 
     @property
     def sizeT(self):
+        """
+        The number of time frames
+        """
         return self.resource.dims.T
 
     @property
     def sizeC(self):
+        """
+        The number of channels
+        """
         return self.resource.dims.C
 
     @property
     def sizeZ(self):
+        """
+        The number of layers
+        """
         return self.resource.dims.Z
 
     @property
     def sizeY(self):
+        """
+        The image height
+        """
         return self.resource.dims.Y
 
     @property
     def sizeX(self):
+        """
+        the image width
+        """
         return self.resource.dims.X
 
     def image(self, C=0, Z=0, T=0):
+        """
+        A 2D grayscale image (on frame, one channel and one layer)
+        :param C: the channel index
+        :type C: int
+        :param Z: the layer index
+        :type Z: int
+        :param T: the frame index
+        :type T: int
+        :return: a 2D data array
+        :rtype: 2D numpy.array
+        """
         if self._memmap is not None:
             s = self.resource.shape
-            data = np.expand_dims(self._memmap, axis=tuple([i for i in range(len(s)) if s[i] == 1]))[T, C, Z, ...]
+            data = np.expand_dims(self._memmap, axis=tuple(i for i in range(len(s)) if s[i] == 1))[T, C, Z, ...]
         else:
             data = self.resource.get_image_dask_data('YX', C=C, Z=Z, T=T).compute()
         return data
@@ -103,8 +145,17 @@ class ImageResource:
             self.open()
 
     def compute_drift(self, Z=0, C=0, max_mem=5000):
-        # if self._memmap is not None:
-        #     return self._memmap.compute_drift(z=z, c=c, max_mem=max_mem)
+        """
+        Compute the cumulative transforms (dx, dy, dr) to apply in order to stabilize the time series and correct drift
+        :param Z: the layer index
+        :type Z: int
+        :param C: the channel index
+        :type C: int
+        :param max_mem: maximum memory use when using memory mapped TIFF
+        :type max_mem: int
+        :return: the cumulative drift transforms dx, dy, dr
+        :rtype: pandas DataFrame
+        """
         stabilizer = VidStab()
         for frame in range(0, self.sizeT):
             _ = stabilizer.stabilize_frame(
@@ -114,6 +165,15 @@ class ImageResource:
         return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)
 
     def correct_drift(self, drift, filename=None, max_mem=5000):
+        """
+        Apply the drift correction and save to a multipage TIF file
+        :param drift: the cumulative transforms to apply
+        :type drift: pandas DataFrame
+        :param filename: the file name to save the stabilized time series to
+        :type filename: str
+        :param max_mem: maximum memory allowed use
+        :type max_mem: int
+        """
         new_image = ImageResource(filename, max_mem=max_mem, mode='readwrite', ome=True,
                                   metadata={'axes': self.dims.order}, shape=self.shape, dtype=np.uint16)
         new_memmap = new_image._memmap
