@@ -17,7 +17,7 @@ from pydetecdiv.domain.Data import Data
 from pydetecdiv.domain.Image import Image
 from pydetecdiv.domain.Run import Run
 from pydetecdiv.domain.Dataset import Dataset
-from pydetecdiv.domain.ImageResource import MemMapTiff, MultipleTiff
+from pydetecdiv.domain.ImageResource import ImageResource
 
 
 class Project:
@@ -97,7 +97,7 @@ class Project:
         :return: an image resource
         :rtype: ImageResource
         """
-        return MemMapTiff(path) if isinstance(path, str) else MultipleTiff(path, pattern=pattern)
+        return ImageResource(path, pattern=pattern)
 
     def import_images(self, image_files, destination=None, **kwargs):
         """

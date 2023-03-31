@@ -112,3 +112,9 @@ Comments:             {self.comments}
         :rtype: ROI object
         """
         return self.project.get_linked_objects('ROI', to=self)[0]
+
+    def image_resource(self, dataset='data'):
+        dataset_uuid = self.project.get_named_object('Dataset', dataset).uuid
+        data_list = [data for data in self.data if data.dataset_ == dataset_uuid]
+        print(data_list)
+
