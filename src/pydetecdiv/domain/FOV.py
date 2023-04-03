@@ -115,6 +115,14 @@ Comments:             {self.comments}
         return self.project.get_linked_objects('ROI', to=self)[0]
 
     def image_resource(self, dataset='data'):
+        """
+        Return the image resource (single multipage file of a series of files) corresponding to the FOV in a specific
+         dataset
+        :param dataset: the dataset name
+        :type dataset: str
+        :return: the image resource
+        :rtype: ImageResource
+        """
         ds = self.project.get_named_object('Dataset', dataset)
         data_list = [data.url for data in self.data if data.dataset_ == ds.uuid]
         if len(data_list) > 1:
