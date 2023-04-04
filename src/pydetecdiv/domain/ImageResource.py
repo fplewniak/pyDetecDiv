@@ -32,6 +32,7 @@ class ImageResource:
     """
     A generic class to access image resources (files) on disk without having to load whole time series into memory
     """
+
     def __init__(self, path, pattern=None, max_mem=5000, **kwargs):
         self.path = path
         self.max_mem = max_mem
@@ -144,7 +145,44 @@ class ImageResource:
             self.close()
             self.open()
 
-    def compute_drift(self, Z=0, C=0, max_mem=5000):
+    def compute_drift(self, method='phase_correlation', **kwargs):
+        """
+        Compute drift along time using the specified method
+        :param method: the method to compute drift
+        :type method: str
+        :param kwargs: keyword arguments passed to the drift computation method
+        :return: the cumulative transforms for drift correction
+        :rtype: pandas DataFrame
+        """
+        match (method):
+            case 'phase_correlation':
+                return self.compute_drift_phase_correlation_cv2(**kwargs)
+            case 'vidstab':
+                return self.compute_drift_vidstab(**kwargs)
+            case _:
+                return pd.DataFrame([[0, 0]] * self.sizeT, columns=['dy', 'dx'])
+
+    def compute_drift_phase_correlation_cv2(self, Z=0, C=0, max_mem=5000):
+        """
+        Compute the cumulative transforms (dx, dy) to apply in order to correct the drift using phase correlation
+        :param Z: the layer index
+        :type Z: int
+        :param C: the channel index
+        :type C: int
+        :param max_mem: maximum memory use when using memory mapped TIFF
+        :type max_mem: int
+        :return: the cumulative drift transforms dx, dy, dr
+        :rtype: pandas DataFrame
+        """
+        df = pd.DataFrame(columns=['dy', 'dx'])
+        for frame in range(1, self.sizeT):
+            df.loc[len(df)], _ = cv.phaseCorrelate(np.float32(self.image(T=frame - 1, Z=Z, C=C)),
+                                                   np.float32(self.image(T=frame, Z=Z, C=C)))
+            if (self._memmap is not None) and (psutil.Process().memory_info().rss / (1024 * 1024) > max_mem):
+                self.refresh()
+        return df.cumsum(axis=0)
+
+    def compute_drift_vidstab(self, Z=0, C=0, max_mem=5000):
         """
         Compute the cumulative transforms (dx, dy, dr) to apply in order to stabilize the time series and correct drift
         :param Z: the layer index
@@ -160,7 +198,7 @@ class ImageResource:
         for frame in range(0, self.sizeT):
             _ = stabilizer.stabilize_frame(
                 input_frame=np.uint8(np.array(self.image(T=frame, Z=Z, C=C)) / 65535 * 255), smoothing_window=1)
-            if psutil.Process().memory_info().rss / (1024 * 1024) > max_mem:
+            if (self._memmap is not None) and (psutil.Process().memory_info().rss / (1024 * 1024) > max_mem):
                 self.refresh()
         return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)
 
