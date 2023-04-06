@@ -1,10 +1,11 @@
 """
 Classes for persistent windows of the GUI
 """
-from PySide6.QtWidgets import QMainWindow
+from PySide6.QtWidgets import QMainWindow, QMdiArea
 from pydetecdiv.app.gui import MainToolBar, MainStatusBar, FileMenu, DataMenu
 from pydetecdiv.app import get_settings
 
+from pydetecdiv.app.gui.ImageViewer import ImageViewer
 
 class MainWindow(QMainWindow):
     """
@@ -21,6 +22,12 @@ class MainWindow(QMainWindow):
         DataMenu(self)
 
         self.setStatusBar(MainStatusBar())
+
+        self.mdi_area = QMdiArea()
+        self.setCentralWidget(self.mdi_area)
+        self.viewer = ImageViewer()
+        self.mdi_area.addSubWindow(self.viewer)
+        self.viewer.showMaximized()
 
         settings = get_settings()
         self.restoreGeometry(settings.value("geometry"))

@@ -1,0 +1,381 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ImageViewer</class>
+ <widget class="QMainWindow" name="ImageViewer">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>946</width>
+    <height>656</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string notr="true">MainWindow</string>
+  </property>
+  <property name="dockOptions">
+   <set>QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks|QMainWindow::ForceTabbedDocks</set>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QGraphicsView" name="viewer">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::Box</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Sunken</enum>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QFrame" name="frame">
+      <property name="frameShape">
+       <enum>QFrame::Box</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Sunken</enum>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QGroupBox" name="controls">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="flat">
+          <bool>false</bool>
+         </property>
+         <property name="checkable">
+          <bool>false</bool>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <widget class="QToolButton" name="video_back">
+            <property name="text">
+             <string notr="true">...</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../resources.qrc">
+              <normaloff>:/icons/video_back</normaloff>:/icons/video_back</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="toolButton">
+            <property name="text">
+             <string notr="true">...</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../resources.qrc">
+              <normaloff>:/icons/video_pause</normaloff>:/icons/video_pause</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="video_forward">
+            <property name="text">
+             <string notr="true">...</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../resources.qrc">
+              <normaloff>:/icons/video_forward</normaloff>:/icons/video_forward</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="T">
+            <property name="text">
+             <string notr="true">T</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSlider" name="t_slider">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="tickPosition">
+             <enum>QSlider::NoTicks</enum>
+            </property>
+            <property name="tickInterval">
+             <number>10</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="sep1">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="Z">
+            <property name="text">
+             <string notr="true">Z</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSlider" name="z_slider">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="sep2">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="zoom_actual">
+            <property name="text">
+             <string notr="true">...</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../resources.qrc">
+              <normaloff>:/icons/zoom_actual</normaloff>:/icons/zoom_actual</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="zoom_fit">
+            <property name="text">
+             <string notr="true">...</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../resources.qrc">
+              <normaloff>:/icons/zoom_fit</normaloff>:/icons/zoom_fit</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSlider" name="zoom_value">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimum">
+             <number>10</number>
+            </property>
+            <property name="maximum">
+             <number>200</number>
+            </property>
+            <property name="value">
+             <number>100</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="FOV_info">
+         <property name="title">
+          <string notr="true"/>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QLabel" name="view_name">
+            <property name="text">
+             <string notr="true">View:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="current_frame">
+            <property name="text">
+             <string notr="true">Frame: 0</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="FPS">
+            <property name="text">
+             <string notr="true">FPS: 0</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="scale_value">
+            <property name="text">
+             <string notr="true">Zoom: 100%</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>video_back</sender>
+   <signal>clicked()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>video_back()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>43</x>
+     <y>576</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>470</x>
+     <y>296</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>zoom_actual</sender>
+   <signal>clicked()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>zoom_reset()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>781</x>
+     <y>576</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>473</x>
+     <y>240</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>toolButton</sender>
+   <signal>clicked()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>pause_video()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>73</x>
+     <y>576</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>392</x>
+     <y>333</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>t_slider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>change_frame(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>354</x>
+     <y>576</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>463</x>
+     <y>484</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>z_slider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>change_layer(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>712</x>
+     <y>576</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>470</x>
+     <y>407</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>zoom_value</sender>
+   <signal>sliderMoved(int)</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>zoom_set_value(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>871</x>
+     <y>576</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>495</x>
+     <y>152</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>zoom_fit</sender>
+   <signal>clicked()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>zoom_fit()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>811</x>
+     <y>576</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>460</x>
+     <y>198</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>video_forward</sender>
+   <signal>clicked()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>play_video()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>103</x>
+     <y>576</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>476</x>
+     <y>365</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>zoom_reset()</slot>
+  <slot>zoom_fit()</slot>
+  <slot>zoom_set_value(int)</slot>
+  <slot>video_back()</slot>
+  <slot>change_frame(int)</slot>
+  <slot>change_layer(int)</slot>
+  <slot>pause_video()</slot>
+  <slot>play_video()</slot>
+ </slots>
+</ui>

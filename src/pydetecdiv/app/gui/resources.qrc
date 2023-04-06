@@ -13,6 +13,14 @@
         <file alias="import_images">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/image-import.png</file>
         <file alias="import_folder">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/folder-import.png</file>
 
+        <file alias="video_forward">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/control.png</file>
+        <file alias="video_pause">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/control-pause.png</file>
+        <file alias="video_stop">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/control-stop-square.png</file>
+        <file alias="video_back">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/control-skip-180.png</file>
+
+        <file alias="zoom_actual">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/magnifier-zoom-actual.png</file>
+        <file alias="zoom_fit">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/magnifier-zoom-fit.png</file>
+
         <file alias="app_icon">/home/fred/PycharmProjects/pyDetecDiv/detecDiv_icon.png</file>
     </qresource>
 </RCC>
