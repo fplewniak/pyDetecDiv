@@ -33,9 +33,10 @@ class ImageResource:
     A generic class to access image resources (files) on disk without having to load whole time series into memory
     """
 
-    def __init__(self, path, pattern=None, max_mem=5000, **kwargs):
+    def __init__(self, path, pattern=None, max_mem=5000, fov=None, **kwargs):
         self.path = path
         self.max_mem = max_mem
+        self.fov = fov
         if pattern is None:
             self._memmap = tifffile.memmap(path, **kwargs)
             self.resource = AICSImage(self.path).reader
