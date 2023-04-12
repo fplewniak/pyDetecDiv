@@ -37,6 +37,7 @@ class ImageResource:
         self.path = path
         self.max_mem = max_mem
         self.fov = fov
+        self._dims = None
         if pattern is None:
             self._memmap = tifffile.memmap(path, **kwargs)
             self.resource = AICSImage(self.path).reader
@@ -44,6 +45,12 @@ class ImageResource:
             self._memmap = None
             self.path = path if isinstance(path, list) else [path]
             self.resource = AICSImage(self.path, indexer=lambda x: aics_indexer(x, pattern)).reader
+            dims = {'C': set(), 'Z': set(), 'T': set()}
+            for p in self.path:
+                m = re.search(pattern, p).groupdict()
+                for d in dims:
+                    dims[d].add(m[d])
+            self._dims = {d: len(dims[d]) for d in dims}
 
     @property
     def shape(self):
@@ -66,21 +73,27 @@ class ImageResource:
         """
         The number of time frames
         """
-        return self.resource.dims.T
+        if self._dims is None:
+            return self.resource.dims.T
+        return self._dims['T']
 
     @property
     def sizeC(self):
         """
         The number of channels
         """
-        return self.resource.dims.C
+        if self._dims is None:
+            return self.resource.dims.C
+        return self._dims['C']
 
     @property
     def sizeZ(self):
         """
         The number of layers
         """
-        return self.resource.dims.Z
+        if self._dims is None:
+            return self.resource.dims.Z
+        return self._dims['Z']
 
     @property
     def sizeY(self):
