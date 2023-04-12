@@ -70,34 +70,33 @@ class ImageResourceChooser(QDockWidget):
         super().__init__('Image resource selector', parent)
         self.setObjectName('Image_resource_selector')
         self.form = QFrame()
+        self.form.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
 
         self.formLayout = QFormLayout(self.form)
         self.formLayout.setObjectName(u"formLayout")
+
         self.position_label = QLabel('Position', self.form)
         self.position_label.setObjectName(u"position_label")
-
-        self.formLayout.setWidget(0, QFormLayout.LabelRole, self.position_label)
-
         self.position_choice = QComboBox(self.form)
         self.position_choice.setObjectName(u"position_choice")
-
-        self.formLayout.setWidget(0, QFormLayout.FieldRole, self.position_choice)
+        self.formLayout.addRow(self.position_label, self.position_choice)
 
         self.stage_label = QLabel('Stage', self.form)
         self.stage_label.setObjectName(u"stage_label")
-
-        self.formLayout.setWidget(1, QFormLayout.LabelRole, self.stage_label)
-
         self.stage_choice = QComboBox(self.form)
         self.stage_choice.setObjectName(u"stage_choice")
+        self.formLayout.addRow(self.stage_label, self.stage_choice)
 
-        self.formLayout.setWidget(1, QFormLayout.FieldRole, self.stage_choice)
+        self.channel_label = QLabel('Channel', self.form)
+        self.channel_label.setObjectName(u"channel_label")
+        self.channel_choice = QComboBox(self.form)
+        self.channel_choice.setObjectName(u"channel_choice")
+        self.formLayout.addRow(self.channel_label, self.channel_choice)
 
         self.OK_button = QDialogButtonBox(self.form)
         self.OK_button.setObjectName(u"OK_button")
         self.OK_button.setStandardButtons(QDialogButtonBox.Ok)
-
-        self.formLayout.setWidget(2, QFormLayout.SpanningRole, self.OK_button)
+        self.formLayout.addWidget(self.OK_button)
 
         self.setWidget(self.form)
 
@@ -112,7 +111,6 @@ class ImageResourceChooser(QDockWidget):
             self.position_choice.addItems(sorted(FOV_list))
             self.stage_choice.clear()
             self.stage_choice.addItems(dataset_list)
-
 
     def accept(self):
         PyDetecDiv().setOverrideCursor(QCursor(Qt.WaitCursor))
