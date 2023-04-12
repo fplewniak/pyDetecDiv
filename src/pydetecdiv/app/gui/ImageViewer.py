@@ -46,6 +46,9 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.ui.t_slider.setEnabled(True)
         self.display()
 
+    def set_channel(self, C):
+        self.C = C
+
     def zoom_reset(self):
         self.ui.viewer.scale(100 / self.scale, 100 / self.scale)
         self.scale = 100
