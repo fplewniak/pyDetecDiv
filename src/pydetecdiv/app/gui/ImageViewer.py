@@ -28,13 +28,14 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.Z = 0
         self.video_playing = False
         self.video_frame.emit(self.T)
-        self.video_frame.connect(lambda x: self.ui.current_frame.setText(f'Frame: {x}'))
+        self.video_frame.connect(lambda frame: self.ui.current_frame.setText(f'Frame: {frame}'))
+        self.video_frame.connect(self.ui.t_slider.setSliderPosition)
 
     def set_image_resource(self, image_resource):
         self.image_resource = image_resource
         self.T, self.C, self.Z = (0, 0, 0)
 
-        self.ui.view_name.setText('View: Pos0')
+        self.ui.view_name.setText(f'View: {image_resource.fov.name}')
 
         self.ui.z_slider.setMinimum(0)
         self.ui.z_slider.setMaximum(image_resource.sizeZ - 1)
@@ -70,7 +71,6 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
     #         pool.start(runnable)
 
     def play_video(self):
-        print(f'Playing video')
         start = time.time()
         self.video_playing = True
         first_frame = self.T
@@ -79,27 +79,26 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
             speed = np.around((frame - first_frame) / (end - start), 1)
             self.ui.FPS.setText(f'FPS: {speed}')
             QApplication.processEvents()
-            self.ui.t_slider.setSliderPosition(frame)
+            self.change_frame(frame)
             if not self.video_playing:
                 break
 
     def pause_video(self):
         self.video_playing = False
-        print('Pause')
 
     def video_back(self):
-        self.T = 0
-        self.ui.t_slider.setSliderPosition(0)
-        self.display()
+        self.change_frame(T=0)
 
     def change_layer(self, Z=0):
-        self.Z = Z
-        self.display()
+        if self.Z != Z:
+            self.Z = Z
+            self.display()
 
     def change_frame(self, T=0):
-        self.T = T
-        self.video_frame.emit(self.T)
-        self.display()
+        if self.T != T:
+            self.T = T
+            self.video_frame.emit(self.T)
+            self.display()
 
     def display(self, C=None, T=None, Z=None):
         C = self.C if C is None else C
