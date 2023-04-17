@@ -87,11 +87,11 @@ class ImageResourceChooser(QDockWidget):
         self.stage_choice.setObjectName(u"stage_choice")
         self.formLayout.addRow(self.stage_label, self.stage_choice)
 
-        # self.channel_label = QLabel('Channel', self.form)
-        # self.channel_label.setObjectName(u"channel_label")
-        # self.channel_choice = QComboBox(self.form)
-        # self.channel_choice.setObjectName(u"channel_choice")
-        # self.formLayout.addRow(self.channel_label, self.channel_choice)
+        self.channel_label = QLabel('Channel', self.form)
+        self.channel_label.setObjectName(u"channel_label")
+        self.channel_choice = QComboBox(self.form)
+        self.channel_choice.setObjectName(u"channel_choice")
+        self.formLayout.addRow(self.channel_label, self.channel_choice)
 
         self.OK_button = QDialogButtonBox(self.form)
         self.OK_button.setObjectName(u"OK_button")
@@ -102,8 +102,8 @@ class ImageResourceChooser(QDockWidget):
 
         PyDetecDiv().project_selected.connect(self.set_choice)
         self.OK_button.accepted.connect(self.accept)
-        # self.position_choice.textActivated.connect(self.update_channel_choice)
-        # self.stage_choice.textActivated.connect(self.update_channel_choice)
+        self.position_choice.currentIndexChanged.connect(self.update_channel_choice)
+        self.stage_choice.currentIndexChanged.connect(self.update_channel_choice)
 
     def set_choice(self, p_name):
         with pydetecdiv_project(p_name) as project:
@@ -113,24 +113,29 @@ class ImageResourceChooser(QDockWidget):
             self.position_choice.addItems(sorted(FOV_list))
             self.stage_choice.clear()
             self.stage_choice.addItems(dataset_list)
-        # self.update_channel_choice()
+            fov = project.get_named_object('FOV', self.position_choice.currentText())
+            dataset = self.stage_choice.currentText()
+            self.channel_choice.clear()
+            self.channel_choice.addItems([str(i) for i in range(fov.image_resource(dataset).sizeC)])
 
-    # def update_channel_choice(self):
-    #     with pydetecdiv_project(PyDetecDiv().project_name) as project:
-    #         fov = project.get_named_object('FOV', self.position_choice.currentText())
-    #         dataset = project.get_named_object('Dataset', self.stage_choice.currentText()).name
-    #         self.channel_choice.clear()
-    #         self.channel_choice.addItems([str(i) for i in range(fov.image_resource(dataset).sizeC)])
+    def update_channel_choice(self):
+        if self.stage_choice.currentText() and self.position_choice.currentText():
+            with pydetecdiv_project(PyDetecDiv().project_name) as project:
+                fov = project.get_named_object('FOV', self.position_choice.currentText())
+                dataset = self.stage_choice.currentText()
+                self.channel_choice.clear()
+                self.channel_choice.addItems([str(i) for i in range(fov.image_resource(dataset).sizeC)])
 
     def accept(self):
         PyDetecDiv().setOverrideCursor(QCursor(Qt.WaitCursor))
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             fov = project.get_named_object('FOV', self.position_choice.currentText())
-            dataset = project.get_named_object('Dataset', self.stage_choice.currentText()).name
+            dataset = self.stage_choice.currentText()
             image_resource = fov.image_resource(dataset)
         tab_key = f'{PyDetecDiv().project_name}/{fov.name}/{dataset}'
         tab = self.parent().add_tabbbed_viewer(tab_key)
         tab.setWindowTitle(tab_key)
         tab.viewer.set_image_resource(image_resource)
-        # tab.viewer.set_channel(self.channel_choice.currentIndex())
+        tab.viewer.set_channel(self.channel_choice.currentIndex())
+        tab.viewer.display()
         PyDetecDiv().setOverrideCursor(QCursor(Qt.ArrowCursor))

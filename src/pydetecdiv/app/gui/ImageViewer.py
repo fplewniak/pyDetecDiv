@@ -44,7 +44,6 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.ui.t_slider.setMinimum(0)
         self.ui.t_slider.setMaximum(image_resource.sizeT - 1)
         self.ui.t_slider.setEnabled(True)
-        self.display()
 
     def set_channel(self, C):
         self.C = C
