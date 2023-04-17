@@ -18,6 +18,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.scale = 100
         self.ui.z_slider.setEnabled(False)
         self.ui.t_slider.setEnabled(False)
+        self.ui.z_slider.setPageStep(1)
         self.image_resource = None
         self.scene = QGraphicsScene()
         self.pixmap = QPixmap()
