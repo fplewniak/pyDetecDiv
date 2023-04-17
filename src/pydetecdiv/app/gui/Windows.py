@@ -10,6 +10,7 @@ from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project
 
 from pydetecdiv.app.gui.ImageViewer import ImageViewer
 
+
 class MainWindow(QMainWindow):
     """
     The principal window
@@ -30,11 +31,9 @@ class MainWindow(QMainWindow):
 
         self.mdi_area = QMdiArea()
         self.setCentralWidget(self.mdi_area)
-        # self.mdi_area.addSubWindow(self.viewer)
-        # self.viewer.showMaximized()
-
         self.image_resource_selector = ImageResourceChooser(self, )
         self.addDockWidget(Qt.LeftDockWidgetArea, self.image_resource_selector, Qt.Vertical)
+        self.mdi_area.subWindowActivated.connect(self.subwindow_activation)
 
         settings = get_settings()
         self.restoreGeometry(settings.value("geometry"))
@@ -57,6 +56,17 @@ class MainWindow(QMainWindow):
             self.tabs[title].show()
         return self.tabs[title]
 
+    def subwindow_activation(self, subwindow):
+        if subwindow is not None:
+            for c in subwindow.children():
+                if (c in self.tabs.values()) and c.viewer.project_name:
+                    PyDetecDiv().project_selected.emit(c.viewer.project_name)
+                    self.image_resource_selector.position_choice.setCurrentText(c.viewer.fov)
+                    self.image_resource_selector.stage_choice.setCurrentText(c.viewer.stage)
+                    self.image_resource_selector.channel_choice.setCurrentText(str(c.viewer.C))
+                    PyDetecDiv().project_name = c.viewer.project_name
+
+
 class TabbedViewer(QTabWidget):
     def __init__(self, title):
         super().__init__()
@@ -64,6 +74,7 @@ class TabbedViewer(QTabWidget):
         self.setWindowTitle(title)
         self.setDocumentMode(True)
         self.addTab(self.viewer, 'Image viewer')
+
 
 class ImageResourceChooser(QDockWidget):
     def __init__(self, parent):
@@ -138,4 +149,7 @@ class ImageResourceChooser(QDockWidget):
         tab.viewer.set_image_resource(image_resource)
         tab.viewer.set_channel(self.channel_choice.currentIndex())
         tab.viewer.display()
+        tab.viewer.project_name = PyDetecDiv().project_name
+        tab.viewer.fov = fov.name
+        tab.viewer.stage = dataset
         PyDetecDiv().setOverrideCursor(QCursor(Qt.ArrowCursor))

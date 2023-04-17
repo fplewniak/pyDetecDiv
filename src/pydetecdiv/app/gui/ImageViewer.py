@@ -24,6 +24,9 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.pixmap = QPixmap()
         self.pixmapItem = self.scene.addPixmap(self.pixmap)
         self.ui.viewer.setScene(self.scene)
+        self.fov = None
+        self.stage = None
+        self.project_name = None
         self.C = 0
         self.T = 0
         self.Z = 0
