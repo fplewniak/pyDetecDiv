@@ -18,7 +18,7 @@ class Dataset(NamedDSO):
         self.type_ = type_
         self.run = run
         self.pattern = pattern
-        self.validate()
+        self.validate(updated=False)
 
     @property
     def data_list(self):
