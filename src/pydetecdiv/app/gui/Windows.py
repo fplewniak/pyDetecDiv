@@ -4,8 +4,8 @@ Classes for persistent windows of the GUI
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QMainWindow, QMdiArea, QTabWidget, QDockWidget, QFormLayout, QLabel, QComboBox, \
-    QDialogButtonBox, QWidget, QFrame
-from pydetecdiv.app.gui import MainToolBar, MainStatusBar, FileMenu, DataMenu
+    QDialogButtonBox, QWidget, QFrame, QMenuBar
+from pydetecdiv.app.gui import MainToolBar, MainStatusBar, FileMenu, DataMenu, ResourceMenu
 from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project
 
 from pydetecdiv.app.gui.ImageViewer import ImageViewer
@@ -51,7 +51,7 @@ class MainWindow(QMainWindow):
 
     def add_tabbbed_viewer(self, title):
         if title not in self.tabs:
-            self.tabs[title] = TabbedViewer(title)
+            self.tabs[title] = TabbedViewer(title, self)
             self.mdi_area.addSubWindow(self.tabs[title])
             self.tabs[title].show()
         return self.tabs[title]
@@ -68,12 +68,18 @@ class MainWindow(QMainWindow):
 
 
 class TabbedViewer(QTabWidget):
-    def __init__(self, title):
+    def __init__(self, title, parent=None):
         super().__init__()
         self.viewer = ImageViewer()
+        self.viewer.setMenuBar(QMenuBar())
+        ResourceMenu(self.viewer)
         self.setWindowTitle(title)
         self.setDocumentMode(True)
         self.addTab(self.viewer, 'Image viewer')
+        self.parent = parent
+
+    def closeEvent(self, event):
+        del(self.parent.tabs[self.windowTitle()])
 
 
 class ImageResourceChooser(QDockWidget):
