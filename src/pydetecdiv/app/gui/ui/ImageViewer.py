@@ -11,13 +11,15 @@
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
     QMetaObject, QObject, QPoint, QRect,
     QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-    QFont, QFontDatabase, QGradient, QIcon,
-    QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
+    QCursor, QFont, QFontDatabase, QGradient,
+    QIcon, QImage, QKeySequence, QLinearGradient,
+    QPainter, QPalette, QPixmap, QRadialGradient,
+    QTransform)
 from PySide6.QtWidgets import (QApplication, QFrame, QGraphicsView, QGroupBox,
-    QHBoxLayout, QLabel, QMainWindow, QSizePolicy,
-    QSlider, QToolButton, QVBoxLayout, QWidget)
+    QHBoxLayout, QLabel, QMainWindow, QMenu,
+    QMenuBar, QSizePolicy, QSlider, QToolButton,
+    QVBoxLayout, QWidget)
 
 class Ui_ImageViewer(object):
     def setupUi(self, ImageViewer):
@@ -26,6 +28,15 @@ class Ui_ImageViewer(object):
         ImageViewer.resize(946, 656)
         ImageViewer.setWindowTitle(u"MainWindow")
         ImageViewer.setDockOptions(QMainWindow.AllowTabbedDocks|QMainWindow.AnimatedDocks|QMainWindow.ForceTabbedDocks)
+        self.actionCompute_and_plot = QAction(ImageViewer)
+        self.actionCompute_and_plot.setObjectName(u"actionCompute_and_plot")
+        self.actionCompute_and_plot.setText(u"Compute and plot")
+        self.actionApply_correction = QAction(ImageViewer)
+        self.actionApply_correction.setObjectName(u"actionApply_correction")
+        self.actionApply_correction.setText(u"Apply correction")
+        self.actionClose_window = QAction(ImageViewer)
+        self.actionClose_window.setObjectName(u"actionClose_window")
+        self.actionClose_window.setText(u"Close window")
         self.centralwidget = QWidget(ImageViewer)
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout = QVBoxLayout(self.centralwidget)
@@ -120,6 +131,7 @@ class Ui_ImageViewer(object):
         sizePolicy2.setVerticalStretch(0)
         sizePolicy2.setHeightForWidth(self.z_slider.sizePolicy().hasHeightForWidth())
         self.z_slider.setSizePolicy(sizePolicy2)
+        self.z_slider.setPageStep(1)
         self.z_slider.setOrientation(Qt.Horizontal)
 
         self.horizontalLayout_2.addWidget(self.z_slider)
@@ -199,6 +211,23 @@ class Ui_ImageViewer(object):
         self.verticalLayout.addWidget(self.frame)
 
         ImageViewer.setCentralWidget(self.centralwidget)
+        self.menuBar = QMenuBar(ImageViewer)
+        self.menuBar.setObjectName(u"menuBar")
+        self.menuBar.setGeometry(QRect(0, 0, 946, 19))
+        self.menuResource = QMenu(self.menuBar)
+        self.menuResource.setObjectName(u"menuResource")
+        self.menuResource.setTitle(u"Resource")
+        self.menuDrift = QMenu(self.menuResource)
+        self.menuDrift.setObjectName(u"menuDrift")
+        self.menuDrift.setTitle(u"Drift")
+        ImageViewer.setMenuBar(self.menuBar)
+
+        self.menuBar.addAction(self.menuResource.menuAction())
+        self.menuResource.addAction(self.menuDrift.menuAction())
+        self.menuResource.addSeparator()
+        self.menuResource.addAction(self.actionClose_window)
+        self.menuDrift.addAction(self.actionCompute_and_plot)
+        self.menuDrift.addAction(self.actionApply_correction)
 
         self.retranslateUi(ImageViewer)
         self.video_back.clicked.connect(ImageViewer.video_back)
@@ -209,6 +238,9 @@ class Ui_ImageViewer(object):
         self.zoom_value.sliderMoved.connect(ImageViewer.zoom_set_value)
         self.zoom_fit.clicked.connect(ImageViewer.zoom_fit)
         self.video_forward.clicked.connect(ImageViewer.play_video)
+        self.actionClose_window.triggered.connect(ImageViewer.close_window)
+        self.actionCompute_and_plot.triggered.connect(ImageViewer.compute_drift)
+        self.actionApply_correction.triggered.connect(ImageViewer.apply_drift_correction)
 
         QMetaObject.connectSlotsByName(ImageViewer)
     # setupUi

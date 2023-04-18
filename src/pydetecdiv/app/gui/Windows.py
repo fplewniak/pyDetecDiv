@@ -2,9 +2,13 @@
 Classes for persistent windows of the GUI
 """
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QCursor
+from PySide6.QtGui import QCursor, QAction
 from PySide6.QtWidgets import QMainWindow, QMdiArea, QTabWidget, QDockWidget, QFormLayout, QLabel, QComboBox, \
-    QDialogButtonBox, QWidget, QFrame, QMenuBar
+    QDialogButtonBox, QWidget, QFrame, QMenuBar, QVBoxLayout, QPushButton, QHBoxLayout
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
+
 from pydetecdiv.app.gui import MainToolBar, MainStatusBar, FileMenu, DataMenu
 from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project
 
@@ -52,7 +56,7 @@ class MainWindow(QMainWindow):
     def add_tabbbed_viewer(self, title):
         if title not in self.tabs:
             self.tabs[title] = TabbedViewer(title, self)
-            self.mdi_area.addSubWindow(self.tabs[title])
+            self.tabs[title].window = self.mdi_area.addSubWindow(self.tabs[title])
             self.tabs[title].show()
         return self.tabs[title]
 
@@ -75,9 +79,37 @@ class TabbedViewer(QTabWidget):
         self.setDocumentMode(True)
         self.addTab(self.viewer, 'Image viewer')
         self.parent = parent
+        self.window = None
 
     def closeEvent(self, event):
         del(self.parent.tabs[self.windowTitle()])
+
+    def show_plot(self, df):
+        plot_viewer = MatplotViewer(self)
+        self.addTab(plot_viewer, 'Plot viewer')
+        plot_viewer.axes.plot(df)
+        plot_viewer.canvas.draw()
+        self.setCurrentWidget(plot_viewer)
+
+class MatplotViewer(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.dismiss_button = QPushButton('Dismiss')
+        self.dismiss_button.clicked.connect(lambda: self.parent().removeWidget(self))
+        self.canvas = FigureCanvas(Figure(figsize=(5, 3)))
+        self.axes = self.canvas.figure.subplots()
+        self.toolbar = QWidget(self)
+        self.matplot_toolbar = NavigationToolbar(self.canvas, self)
+
+        hlayout = QHBoxLayout()
+        hlayout.addWidget(self.matplot_toolbar)
+        hlayout.addWidget(self.dismiss_button)
+        self.toolbar.setLayout(hlayout)
+
+        vlayout = QVBoxLayout()
+        vlayout.addWidget(self.canvas)
+        vlayout.addWidget(self.toolbar)
+        self.setLayout(vlayout)
 
 
 class ImageResourceChooser(QDockWidget):

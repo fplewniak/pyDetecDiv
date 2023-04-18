@@ -4,11 +4,13 @@ from PySide6.QtWidgets import QMainWindow, QGraphicsScene, QApplication
 import time
 import numpy as np
 
+from pydetecdiv.app import WaitDialog
 from pydetecdiv.app.gui.ui.ImageViewer import Ui_ImageViewer
 
 
 class ImageViewer(QMainWindow, Ui_ImageViewer):
     video_frame = Signal(int)
+    finished = Signal(bool)
 
     def __init__(self, **kwargs):
         QMainWindow.__init__(self)
@@ -30,6 +32,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.C = 0
         self.T = 0
         self.Z = 0
+        self.drift = None
         self.video_playing = False
         self.video_frame.emit(self.T)
         self.video_frame.connect(lambda frame: self.ui.current_frame.setText(f'Frame: {frame}'))
@@ -115,3 +118,19 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         img = QImage(arr.data, nx, ny, QImage.Format_Grayscale16)
         self.pixmap.convertFromImage(img)
         self.pixmapItem.setPixmap(self.pixmap)
+
+    def close_window(self):
+        self.parent().parent().window.close()
+
+    def compute_drift(self):
+        self.wait = WaitDialog('Computing drift, please wait.', self, cancel_msg='Cancel drift computation please wait')
+        self.finished.connect(self.wait.close_window)
+        self.wait.wait_for(self.compute_and_plot_drift)
+        self.parent().parent().show_plot(self.drift)
+
+    def compute_and_plot_drift(self):
+        self.drift = self.image_resource.compute_drift(Z=self.Z, C=self.C)
+        self.finished.emit(True)
+
+    def apply_drift_correction(self):
+        print('Apply correction')

@@ -133,6 +133,9 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="pageStep">
+             <number>1</number>
+            </property>
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
@@ -234,6 +237,47 @@
     </item>
    </layout>
   </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>946</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuResource">
+    <property name="title">
+     <string notr="true">Resource</string>
+    </property>
+    <widget class="QMenu" name="menuDrift">
+     <property name="title">
+      <string notr="true">Drift</string>
+     </property>
+     <addaction name="actionCompute_and_plot"/>
+     <addaction name="actionApply_correction"/>
+    </widget>
+    <addaction name="menuDrift"/>
+    <addaction name="separator"/>
+    <addaction name="actionClose_window"/>
+   </widget>
+   <addaction name="menuResource"/>
+  </widget>
+  <action name="actionCompute_and_plot">
+   <property name="text">
+    <string notr="true">Compute and plot</string>
+   </property>
+  </action>
+  <action name="actionApply_correction">
+   <property name="text">
+    <string notr="true">Apply correction</string>
+   </property>
+  </action>
+  <action name="actionClose_window">
+   <property name="text">
+    <string notr="true">Close window</string>
+   </property>
+  </action>
  </widget>
  <resources>
   <include location="../resources.qrc"/>
@@ -294,8 +338,8 @@
    <slot>change_frame(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>354</x>
-     <y>576</y>
+     <x>489</x>
+     <y>572</y>
     </hint>
     <hint type="destinationlabel">
      <x>463</x>
@@ -310,8 +354,8 @@
    <slot>change_layer(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>712</x>
-     <y>576</y>
+     <x>754</x>
+     <y>572</y>
     </hint>
     <hint type="destinationlabel">
      <x>470</x>
@@ -326,8 +370,8 @@
    <slot>zoom_set_value(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>871</x>
-     <y>576</y>
+     <x>913</x>
+     <y>572</y>
     </hint>
     <hint type="destinationlabel">
      <x>495</x>
@@ -367,6 +411,54 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionClose_window</sender>
+   <signal>triggered()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>close_window()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>46</x>
+     <y>16</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>63</x>
+     <y>136</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionCompute_and_plot</sender>
+   <signal>triggered()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>compute_drift()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>472</x>
+     <y>327</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionApply_correction</sender>
+   <signal>triggered()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>apply_drift_correction()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>472</x>
+     <y>327</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>zoom_reset()</slot>
@@ -377,5 +469,8 @@
   <slot>change_layer(int)</slot>
   <slot>pause_video()</slot>
   <slot>play_video()</slot>
+  <slot>close_window()</slot>
+  <slot>compute_drift()</slot>
+  <slot>apply_drift_correction()</slot>
  </slots>
 </ui>
