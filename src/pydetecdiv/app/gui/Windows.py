@@ -71,7 +71,6 @@ class TabbedViewer(QTabWidget):
     def __init__(self, title, parent=None):
         super().__init__()
         self.viewer = ImageViewer()
-        self.viewer.setMenuBar(QMenuBar())
         self.setWindowTitle(title)
         self.setDocumentMode(True)
         self.addTab(self.viewer, 'Image viewer')
