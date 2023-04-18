@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QMainWindow, QMdiArea, QTabWidget, QDockWidget, QFormLayout, QLabel, QComboBox, \
     QDialogButtonBox, QWidget, QFrame, QMenuBar
-from pydetecdiv.app.gui import MainToolBar, MainStatusBar, FileMenu, DataMenu, ResourceMenu
+from pydetecdiv.app.gui import MainToolBar, MainStatusBar, FileMenu, DataMenu
 from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project
 
 from pydetecdiv.app.gui.ImageViewer import ImageViewer
@@ -72,7 +72,6 @@ class TabbedViewer(QTabWidget):
         super().__init__()
         self.viewer = ImageViewer()
         self.viewer.setMenuBar(QMenuBar())
-        ResourceMenu(self.viewer)
         self.setWindowTitle(title)
         self.setDocumentMode(True)
         self.addTab(self.viewer, 'Image viewer')
