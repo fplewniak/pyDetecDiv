@@ -168,7 +168,7 @@ class ImageResourceChooser(QDockWidget):
             self.position_choice.clear()
             self.stage_choice.clear()
             self.channel_choice.clear()
-            if project.count_objects('Data'):
+            if project.count_objects('FOV'):
                 FOV_list = [fov.name for fov in project.get_objects('FOV')]
                 dataset_list = [ds.name for ds in project.get_objects('Dataset')]
                 self.position_choice.addItems(sorted(FOV_list))
