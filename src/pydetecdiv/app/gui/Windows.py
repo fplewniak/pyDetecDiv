@@ -165,16 +165,17 @@ class ImageResourceChooser(QDockWidget):
 
     def set_choice(self, p_name):
         with pydetecdiv_project(p_name) as project:
-            FOV_list = [fov.name for fov in project.get_objects('FOV')]
-            dataset_list = [ds.name for ds in project.get_objects('Dataset')]
-            self.position_choice.clear()
-            self.position_choice.addItems(sorted(FOV_list))
-            self.stage_choice.clear()
-            self.stage_choice.addItems(dataset_list)
-            fov = project.get_named_object('FOV', self.position_choice.currentText())
-            dataset = self.stage_choice.currentText()
-            self.channel_choice.clear()
-            self.channel_choice.addItems([str(i) for i in range(fov.image_resource(dataset).sizeC)])
+            if project.count_objects('Data'):
+                FOV_list = [fov.name for fov in project.get_objects('FOV')]
+                dataset_list = [ds.name for ds in project.get_objects('Dataset')]
+                self.position_choice.clear()
+                self.position_choice.addItems(sorted(FOV_list))
+                self.stage_choice.clear()
+                self.stage_choice.addItems(dataset_list)
+                fov = project.get_named_object('FOV', self.position_choice.currentText())
+                dataset = self.stage_choice.currentText()
+                self.channel_choice.clear()
+                self.channel_choice.addItems([str(i) for i in range(fov.image_resource(dataset).sizeC)])
 
     def update_channel_choice(self):
         if self.stage_choice.currentText() and self.position_choice.currentText():
