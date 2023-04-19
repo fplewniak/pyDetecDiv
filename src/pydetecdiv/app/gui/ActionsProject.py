@@ -113,7 +113,7 @@ class ProjectDialog(QDialog):
         :type project_name: str
         """
         with pydetecdiv_project(project_name) as project:
-            PyDetecDiv().main_window.setWindowTitle(f'pyDetecDiv: {project.dbname}')
+            PyDetecDiv().project_selected.emit(project.dbname)
         self.finished.emit(True)
 
 class NewProject(QAction):

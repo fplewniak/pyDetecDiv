@@ -38,6 +38,7 @@ class MainWindow(QMainWindow):
         self.image_resource_selector = ImageResourceChooser(self, )
         self.addDockWidget(Qt.LeftDockWidgetArea, self.image_resource_selector, Qt.Vertical)
         self.mdi_area.subWindowActivated.connect(self.subwindow_activation)
+        PyDetecDiv().project_selected.connect(self.setWindowTitle)
 
         settings = get_settings()
         self.restoreGeometry(settings.value("geometry"))
@@ -85,7 +86,7 @@ class TabbedViewer(QTabWidget):
         self.window = None
 
     def closeEvent(self, event):
-        del(self.parent.tabs[self.windowTitle()])
+        del (self.parent.tabs[self.windowTitle()])
 
     def show_plot(self, df, title='Plot'):
         plot_viewer = MatplotViewer(self)
@@ -97,6 +98,7 @@ class TabbedViewer(QTabWidget):
     def close_tab(self, index):
         if self.widget(index) != self.viewer:
             self.removeTab(index)
+
 
 class MatplotViewer(QWidget):
     def __init__(self, parent=None):
