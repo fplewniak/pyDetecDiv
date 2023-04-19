@@ -57,6 +57,7 @@ class MainWindow(QMainWindow):
         if title not in self.tabs:
             self.tabs[title] = TabbedViewer(title, self)
             self.tabs[title].window = self.mdi_area.addSubWindow(self.tabs[title])
+            self.tabs[title].setMovable(True)
             self.tabs[title].show()
         return self.tabs[title]
 
