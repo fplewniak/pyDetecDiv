@@ -87,7 +87,7 @@ class TabbedViewer(QTabWidget):
     def show_plot(self, df):
         plot_viewer = MatplotViewer(self)
         self.addTab(plot_viewer, 'Plot viewer')
-        plot_viewer.axes.plot(df)
+        df.plot(ax=plot_viewer.axes)
         plot_viewer.canvas.draw()
         self.setCurrentWidget(plot_viewer)
 
