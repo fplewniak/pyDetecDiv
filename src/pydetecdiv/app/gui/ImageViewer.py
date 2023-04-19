@@ -126,7 +126,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.wait = WaitDialog('Computing drift, please wait.', self, cancel_msg='Cancel drift computation please wait')
         self.finished.connect(self.wait.close_window)
         self.wait.wait_for(self.compute_and_plot_drift)
-        self.parent().parent().show_plot(self.drift)
+        self.parent().parent().show_plot(self.drift, 'Drift')
 
     def compute_and_plot_drift(self):
         self.drift = self.image_resource.compute_drift(Z=self.Z, C=self.C)

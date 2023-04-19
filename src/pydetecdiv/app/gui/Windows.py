@@ -77,16 +77,16 @@ class TabbedViewer(QTabWidget):
         self.viewer = ImageViewer()
         self.setWindowTitle(title)
         self.setDocumentMode(True)
-        self.addTab(self.viewer, 'Image viewer')
+        self.addTab(self.viewer, 'FOV')
         self.parent = parent
         self.window = None
 
     def closeEvent(self, event):
         del(self.parent.tabs[self.windowTitle()])
 
-    def show_plot(self, df):
+    def show_plot(self, df, title='Plot'):
         plot_viewer = MatplotViewer(self)
-        self.addTab(plot_viewer, 'Plot viewer')
+        self.addTab(plot_viewer, title)
         df.plot(ax=plot_viewer.axes)
         plot_viewer.canvas.draw()
         self.setCurrentWidget(plot_viewer)
@@ -98,6 +98,7 @@ class MatplotViewer(QWidget):
         self.dismiss_button.clicked.connect(lambda: self.parent().removeWidget(self))
         self.canvas = FigureCanvas(Figure(figsize=(5, 3)))
         self.axes = self.canvas.figure.subplots()
+        self.canvas.figure.tight_layout(pad=0.1)
         self.toolbar = QWidget(self)
         self.matplot_toolbar = NavigationToolbar(self.canvas, self)
 
