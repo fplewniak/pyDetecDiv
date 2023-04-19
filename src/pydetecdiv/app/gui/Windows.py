@@ -58,6 +58,8 @@ class MainWindow(QMainWindow):
             self.tabs[title] = TabbedViewer(title, self)
             self.tabs[title].window = self.mdi_area.addSubWindow(self.tabs[title])
             self.tabs[title].setMovable(True)
+            self.tabs[title].setTabsClosable(True)
+            self.tabs[title].tabCloseRequested.connect(self.tabs[title].close_tab)
             self.tabs[title].show()
         return self.tabs[title]
 
@@ -92,25 +94,30 @@ class TabbedViewer(QTabWidget):
         plot_viewer.canvas.draw()
         self.setCurrentWidget(plot_viewer)
 
+    def close_tab(self, index):
+        if self.widget(index) != self.viewer:
+            self.removeTab(index)
+
 class MatplotViewer(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.dismiss_button = QPushButton('Dismiss')
-        self.dismiss_button.clicked.connect(lambda: self.parent().removeWidget(self))
+        # self.dismiss_button = QPushButton('Dismiss')
+        # self.dismiss_button.clicked.connect(lambda: self.parent().removeWidget(self))
         self.canvas = FigureCanvas(Figure(figsize=(5, 3)))
         self.axes = self.canvas.figure.subplots()
         self.canvas.figure.tight_layout(pad=0.1)
         self.toolbar = QWidget(self)
         self.matplot_toolbar = NavigationToolbar(self.canvas, self)
 
-        hlayout = QHBoxLayout()
-        hlayout.addWidget(self.matplot_toolbar)
-        hlayout.addWidget(self.dismiss_button)
-        self.toolbar.setLayout(hlayout)
+        # hlayout = QHBoxLayout()
+        # hlayout.addWidget(self.matplot_toolbar)
+        # hlayout.addWidget(self.dismiss_button)
+        # self.toolbar.setLayout(hlayout)
 
         vlayout = QVBoxLayout()
         vlayout.addWidget(self.canvas)
-        vlayout.addWidget(self.toolbar)
+        vlayout.addWidget(self.matplot_toolbar)
+        # vlayout.addWidget(self.toolbar)
         self.setLayout(vlayout)
 
 
