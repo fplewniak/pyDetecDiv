@@ -37,6 +37,10 @@ class Ui_ImageViewer(object):
         self.actionClose_window = QAction(ImageViewer)
         self.actionClose_window.setObjectName(u"actionClose_window")
         self.actionClose_window.setText(u"Close window")
+        self.actionPlot = QAction(ImageViewer)
+        self.actionPlot.setObjectName(u"actionPlot")
+        self.actionPlot.setEnabled(False)
+        self.actionPlot.setText(u"Plot")
         self.centralwidget = QWidget(ImageViewer)
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout = QVBoxLayout(self.centralwidget)
@@ -227,6 +231,7 @@ class Ui_ImageViewer(object):
         self.menuResource.addSeparator()
         self.menuResource.addAction(self.actionClose_window)
         self.menuDrift.addAction(self.actionCompute_and_plot)
+        self.menuDrift.addAction(self.actionPlot)
         self.menuDrift.addAction(self.actionApply_correction)
 
         self.retranslateUi(ImageViewer)
@@ -241,6 +246,7 @@ class Ui_ImageViewer(object):
         self.actionClose_window.triggered.connect(ImageViewer.close_window)
         self.actionCompute_and_plot.triggered.connect(ImageViewer.compute_drift)
         self.actionApply_correction.triggered.connect(ImageViewer.apply_drift_correction)
+        self.actionPlot.triggered.connect(ImageViewer.plot_drift)
 
         QMetaObject.connectSlotsByName(ImageViewer)
     # setupUi
