@@ -2,9 +2,9 @@
 Classes for persistent windows of the GUI
 """
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QCursor, QAction
+from PySide6.QtGui import QCursor, QAction, QIcon
 from PySide6.QtWidgets import QMainWindow, QMdiArea, QTabWidget, QDockWidget, QFormLayout, QLabel, QComboBox, \
-    QDialogButtonBox, QWidget, QFrame, QMenuBar, QVBoxLayout, QPushButton, QHBoxLayout
+    QDialogButtonBox, QWidget, QFrame, QMenuBar, QVBoxLayout, QPushButton, QHBoxLayout, QGridLayout, QToolButton
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
@@ -37,12 +37,16 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.mdi_area)
         self.image_resource_selector = ImageResourceChooser(self, )
         self.addDockWidget(Qt.LeftDockWidgetArea, self.image_resource_selector, Qt.Vertical)
+        self.drawing_tools = DrawingToolsPalette(self)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.drawing_tools, Qt.Vertical)
         self.mdi_area.subWindowActivated.connect(self.subwindow_activation)
         PyDetecDiv().project_selected.connect(self.setWindowTitle)
 
         settings = get_settings()
         self.restoreGeometry(settings.value("geometry"))
         self.restoreState(settings.value("windowState"))
+
+        self.current_tool = None
 
     def closeEvent(self, _):
         """
@@ -201,3 +205,88 @@ class ImageResourceChooser(QDockWidget):
         tab.viewer.fov = fov.name
         tab.viewer.stage = dataset
         PyDetecDiv().setOverrideCursor(QCursor(Qt.ArrowCursor))
+
+class DrawingToolsPalette(QDockWidget):
+    def __init__(self, parent):
+        super().__init__('Drawing tools', parent)
+        self.setObjectName('Drawing_tools_palette')
+        self.form = QFrame()
+        self.form.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
+
+        self.formLayout = QGridLayout(self.form)
+        self.formLayout.setObjectName(u"drawingToolsLayout")
+
+        self.cursor_button = Cursor(self)
+        self.draw_ROI_button = DrawROI(self)
+        self.create_ROIs_button = CreateROIs(self)
+        self.tools = [self.cursor_button, self.draw_ROI_button, self.create_ROIs_button]
+
+        self.formLayout.addWidget(self.cursor_button, 0, 0)
+        self.formLayout.addWidget(self.draw_ROI_button, 0, 1)
+        self.formLayout.addWidget(self.create_ROIs_button, 0, 2)
+
+        self.form.setLayout(self.formLayout)
+
+        self.setWidget(self.form)
+
+    def unset_tools(self):
+        for t in self.tools:
+            t.setChecked(False)
+
+    def current_tool(self):
+        for t in self.tools:
+            if t.isChecked():
+                return t
+
+class Cursor(QToolButton):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.parent = parent
+        self.setIcon(QIcon(":icons/cursor"))
+        self.setObjectName('cursor')
+        print(f'{self.objectName()}')
+        self.setCheckable(True)
+        self.clicked.connect(self.select_tool)
+        self.setChecked(True)
+        self.parent.parent().current_tool = self.objectName()
+        print(f'{self.parent.parent()}')
+        # super().__init__(QIcon(":icons/draw_ROI"), "Create ROI", parent)
+        # self.triggered.connect(ProjectDialog)
+        # parent.addAction(self)
+    def select_tool(self):
+        self.parent.unset_tools()
+        self.setChecked(True)
+        self.parent.parent().current_tool = self.objectName()
+
+class DrawROI(QToolButton):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.parent = parent
+        self.setIcon(QIcon(":icons/draw_ROI"))
+        self.setObjectName('draw_roi')
+        self.setCheckable(True)
+        self.clicked.connect(self.select_tool)
+        # super().__init__(QIcon(":icons/draw_ROI"), "Create ROI", parent)
+        # self.triggered.connect(ProjectDialog)
+        # parent.addAction(self)
+
+    def select_tool(self):
+        self.parent.unset_tools()
+        self.setChecked(True)
+        self.parent.parent().current_tool = self.objectName()
+
+class CreateROIs(QToolButton):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.parent = parent
+        self.setIcon(QIcon(":icons/create_ROIs"))
+        self.setObjectName('create_rois')
+        self.setCheckable(True)
+        self.clicked.connect(self.select_tool)
+        # super().__init__(QIcon(":icons/draw_ROI"), "Create ROI", parent)
+        # self.triggered.connect(ProjectDialog)
+        # parent.addAction(self)
+    def select_tool(self):
+        self.parent.unset_tools()
+        self.setChecked(True)
+        self.parent.parent().current_tool = self.objectName()

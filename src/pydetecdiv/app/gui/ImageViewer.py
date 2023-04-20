@@ -52,6 +52,8 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.ui.t_slider.setMaximum(image_resource.sizeT - 1)
         self.ui.t_slider.setEnabled(True)
 
+        print(f'in viewer {self.parent().parent().parent.current_tool}')
+
     def set_channel(self, C):
         self.C = C
 
@@ -137,3 +139,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
 
     def apply_drift_correction(self):
         print('Apply correction')
+
+    def mousePressEvent(self, event):
+        print(f'mouse pressed {event}')
+        print(self.parent().parent().parent)

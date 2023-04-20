@@ -255,6 +255,7 @@
       <string notr="true">Drift</string>
      </property>
      <addaction name="actionCompute_and_plot"/>
+     <addaction name="actionPlot"/>
      <addaction name="actionApply_correction"/>
     </widget>
     <addaction name="menuDrift"/>
@@ -276,6 +277,14 @@
   <action name="actionClose_window">
    <property name="text">
     <string notr="true">Close window</string>
+   </property>
+  </action>
+  <action name="actionPlot">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string notr="true">Plot</string>
    </property>
   </action>
  </widget>
@@ -418,8 +427,8 @@
    <slot>close_window()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>46</x>
-     <y>16</y>
+     <x>-1</x>
+     <y>-1</y>
     </hint>
     <hint type="destinationlabel">
      <x>63</x>
@@ -459,6 +468,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionPlot</sender>
+   <signal>triggered()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>plot_drift()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>472</x>
+     <y>327</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>zoom_reset()</slot>
@@ -472,5 +497,6 @@
   <slot>close_window()</slot>
   <slot>compute_drift()</slot>
   <slot>apply_drift_correction()</slot>
+  <slot>plot_drift()</slot>
  </slots>
 </ui>
