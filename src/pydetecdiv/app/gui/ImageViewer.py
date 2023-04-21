@@ -1,10 +1,10 @@
-from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QPixmap, QImage
-from PySide6.QtWidgets import QMainWindow, QGraphicsScene, QApplication
+from PySide6.QtCore import Signal, Qt, QRect, QPoint
+from PySide6.QtGui import QPixmap, QImage, QPen, QTransform, QKeySequence
+from PySide6.QtWidgets import QMainWindow, QGraphicsScene, QApplication, QGraphicsItem
 import time
 import numpy as np
 
-from pydetecdiv.app import WaitDialog
+from pydetecdiv.app import WaitDialog, PyDetecDiv, DrawingTools
 from pydetecdiv.app.gui.ui.ImageViewer import Ui_ImageViewer
 
 
@@ -22,7 +22,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.ui.t_slider.setEnabled(False)
         self.ui.z_slider.setPageStep(1)
         self.image_resource = None
-        self.scene = QGraphicsScene()
+        self.scene = ViewerScene()
         self.pixmap = QPixmap()
         self.pixmapItem = self.scene.addPixmap(self.pixmap)
         self.ui.viewer.setScene(self.scene)
@@ -53,6 +53,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.ui.t_slider.setEnabled(True)
 
         print(f'in viewer {self.parent().parent().parent.current_tool}')
+        print(f'in viewer {PyDetecDiv().current_drawing_tool}')
 
     def set_channel(self, C):
         self.C = C
@@ -133,6 +134,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
     def plot_drift(self):
         self.parent().parent().show_plot(self.drift, 'Drift')
         self.ui.actionPlot.setEnabled(True)
+
     def compute_and_plot_drift(self):
         self.drift = self.image_resource.compute_drift(Z=self.Z, C=self.C)
         self.finished.emit(True)
@@ -140,6 +142,78 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
     def apply_drift_correction(self):
         print('Apply correction')
 
+
+class ViewerScene(QGraphicsScene):
+    def __init__(self):
+        super().__init__()
+        self.rect_item = None
+        self.from_x = None
+        self.from_y = None
+        self.pen = QPen(Qt.GlobalColor.cyan)
+        self.pen.setWidth(2)
+
+    def keyPressEvent(self, event):
+        if event.matches(QKeySequence.Delete):
+            for r in self.selectedItems():
+                self.removeItem(r)
+
     def mousePressEvent(self, event):
-        print(f'mouse pressed {event}')
-        print(self.parent().parent().parent)
+        if event.buttonDownScenePos(Qt.LeftButton):
+            match PyDetecDiv().current_drawing_tool:
+                case DrawingTools.Cursor:
+                    self.select_ROI(event)
+                case DrawingTools.DrawROI:
+                    self.start_drawing_ROI(event)
+                case DrawingTools.DuplicateROI:
+                    self.duplicate_selected_ROI(event)
+
+    def select_ROI(self, event):
+        [r.setSelected(False) for r in self.items()]
+        r = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
+        if r:
+            r.setSelected(True)
+            self.rect_item = r
+
+    def start_drawing_ROI(self, event):
+        pos = event.scenePos()
+        self.rect_item = self.addRect(QRect(0, 0, 1, 1))
+        self.rect_item.setPen(self.pen)
+        self.rect_item.setPos(QPoint(pos.x(), pos.y()))
+        self.rect_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
+        self.rect_item.setData(0, f'Rectangle{len(self.items())}')
+        self.select_ROI(event)
+
+    def duplicate_selected_ROI(self, event):
+        pos = event.scenePos()
+        if self.selectedItems():
+            r = self.selectedItems()[-1]
+            self.rect_item = self.addRect(r.rect())
+            self.rect_item.setPen(self.pen)
+            self.rect_item.setPos(QPoint(pos.x() - r.rect().width() / 2.0, pos.y() - r.rect().height() / 2.0))
+            self.rect_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
+            self.rect_item.setData(0, f'Rectangle{len(self.items())}')
+            self.select_ROI(event)
+
+    def mouseMoveEvent(self, event):
+        if event.buttonDownScenePos(Qt.LeftButton):
+            match PyDetecDiv().current_drawing_tool, event.modifiers():
+                case DrawingTools.Cursor, Qt.NoModifier:
+                    self.move_ROI(event)
+                case DrawingTools.Cursor, Qt.ControlModifier:
+                    self.draw_ROI(event)
+                case DrawingTools.DrawROI, Qt.NoModifier:
+                    self.draw_ROI(event)
+                case DrawingTools.DuplicateROI, Qt.NoModifier:
+                    self.move_ROI(event)
+
+    def move_ROI(self, event):
+        pos = event.scenePos()
+        if self.selectedItems():
+            r = self.selectedItems()[-1]
+            r.moveBy(pos.x() - event.lastScenePos().x(), pos.y() - event.lastScenePos().y())
+
+    def draw_ROI(self, event):
+        pos = event.scenePos()
+        roi_pos = self.rect_item.scenePos()
+        rect = QRect(0, 0, pos.x() - roi_pos.x(), pos.y() - roi_pos.y())
+        self.rect_item.setRect(rect)

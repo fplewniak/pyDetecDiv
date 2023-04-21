@@ -10,7 +10,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 
 from pydetecdiv.app.gui import MainToolBar, MainStatusBar, FileMenu, DataMenu
-from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project
+from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project, DrawingTools
 
 from pydetecdiv.app.gui.ImageViewer import ImageViewer
 
@@ -206,6 +206,7 @@ class ImageResourceChooser(QDockWidget):
         tab.viewer.stage = dataset
         PyDetecDiv().setOverrideCursor(QCursor(Qt.ArrowCursor))
 
+
 class DrawingToolsPalette(QDockWidget):
     def __init__(self, parent):
         super().__init__('Drawing tools', parent)
@@ -218,7 +219,7 @@ class DrawingToolsPalette(QDockWidget):
 
         self.cursor_button = Cursor(self)
         self.draw_ROI_button = DrawROI(self)
-        self.create_ROIs_button = CreateROIs(self)
+        self.create_ROIs_button = DuplicateROI(self)
         self.tools = [self.cursor_button, self.draw_ROI_button, self.create_ROIs_button]
 
         self.formLayout.addWidget(self.cursor_button, 0, 0)
@@ -238,55 +239,49 @@ class DrawingToolsPalette(QDockWidget):
             if t.isChecked():
                 return t
 
+
 class Cursor(QToolButton):
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
         self.setIcon(QIcon(":icons/cursor"))
-        self.setObjectName('cursor')
-        print(f'{self.objectName()}')
+        self.setToolTip(DrawingTools.Cursor)
         self.setCheckable(True)
         self.clicked.connect(self.select_tool)
         self.setChecked(True)
-        self.parent.parent().current_tool = self.objectName()
-        print(f'{self.parent.parent()}')
-        # super().__init__(QIcon(":icons/draw_ROI"), "Create ROI", parent)
-        # self.triggered.connect(ProjectDialog)
-        # parent.addAction(self)
+        PyDetecDiv().current_drawing_tool = DrawingTools.Cursor
+
     def select_tool(self):
         self.parent.unset_tools()
         self.setChecked(True)
-        self.parent.parent().current_tool = self.objectName()
+        PyDetecDiv().current_drawing_tool = DrawingTools.Cursor
+
 
 class DrawROI(QToolButton):
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
         self.setIcon(QIcon(":icons/draw_ROI"))
-        self.setObjectName('draw_roi')
+        self.setToolTip(DrawingTools.DrawROI)
         self.setCheckable(True)
         self.clicked.connect(self.select_tool)
-        # super().__init__(QIcon(":icons/draw_ROI"), "Create ROI", parent)
-        # self.triggered.connect(ProjectDialog)
-        # parent.addAction(self)
 
     def select_tool(self):
         self.parent.unset_tools()
         self.setChecked(True)
-        self.parent.parent().current_tool = self.objectName()
+        PyDetecDiv().current_drawing_tool = DrawingTools.DrawROI
 
-class CreateROIs(QToolButton):
+
+class DuplicateROI(QToolButton):
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
-        self.setIcon(QIcon(":icons/create_ROIs"))
-        self.setObjectName('create_rois')
+        self.setIcon(QIcon(":icons/duplicate_ROI"))
+        self.setToolTip(DrawingTools.DuplicateROI)
         self.setCheckable(True)
         self.clicked.connect(self.select_tool)
-        # super().__init__(QIcon(":icons/draw_ROI"), "Create ROI", parent)
-        # self.triggered.connect(ProjectDialog)
-        # parent.addAction(self)
+
     def select_tool(self):
         self.parent.unset_tools()
         self.setChecked(True)
-        self.parent.parent().current_tool = self.objectName()
+        PyDetecDiv().current_drawing_tool = DrawingTools.DuplicateROI

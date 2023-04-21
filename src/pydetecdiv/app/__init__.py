@@ -4,6 +4,7 @@
 Definition of global objects and methods for easy access from all parts of the application
 """
 from contextlib import contextmanager
+from enum import StrEnum
 
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox
@@ -14,6 +15,10 @@ from pydetecdiv.persistence.project import list_projects
 from pydetecdiv.domain.Project import Project
 from pydetecdiv.utils import singleton
 
+class DrawingTools(StrEnum):
+    Cursor = 'Select/move'
+    DrawROI = 'Draw ROI'
+    DuplicateROI = 'Duplicate selected ROI'
 
 @singleton
 class PyDetecDiv(QApplication):
@@ -28,6 +33,7 @@ class PyDetecDiv(QApplication):
         self.setApplicationName('pyDetecDiv')
         self.project_name = None
         self.main_window = None
+        self.current_drawing_tool = None
 
 
 @contextmanager
