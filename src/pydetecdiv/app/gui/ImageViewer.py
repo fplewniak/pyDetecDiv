@@ -1,11 +1,14 @@
 from PySide6.QtCore import Signal, Qt, QRect, QPoint
 from PySide6.QtGui import QPixmap, QImage, QPen, QTransform, QKeySequence
-from PySide6.QtWidgets import QMainWindow, QGraphicsScene, QApplication, QGraphicsItem
+from PySide6.QtWidgets import QMainWindow, QGraphicsScene, QApplication, QGraphicsItem, QGraphicsRectItem, QFileDialog
 import time
 import numpy as np
+import cv2 as cv
+from skimage.feature import peak_local_max
 
 from pydetecdiv.app import WaitDialog, PyDetecDiv, DrawingTools
 from pydetecdiv.app.gui.ui.ImageViewer import Ui_ImageViewer
+from pydetecdiv.domain.ImageResource import ImageResource
 
 
 class ImageViewer(QMainWindow, Ui_ImageViewer):
@@ -23,6 +26,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.ui.z_slider.setPageStep(1)
         self.image_resource = None
         self.scene = ViewerScene()
+        self.scene.setParent(self)
         self.pixmap = QPixmap()
         self.pixmapItem = self.scene.addPixmap(self.pixmap)
         self.ui.viewer.setScene(self.scene)
@@ -33,6 +37,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.T = 0
         self.Z = 0
         self.drift = None
+        self.roi_template = None
         self.video_playing = False
         self.video_frame.emit(self.T)
         self.video_frame.connect(lambda frame: self.ui.current_frame.setText(f'Frame: {frame}'))
@@ -51,9 +56,6 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.ui.t_slider.setMinimum(0)
         self.ui.t_slider.setMaximum(image_resource.sizeT - 1)
         self.ui.t_slider.setEnabled(True)
-
-        print(f'in viewer {self.parent().parent().parent.current_tool}')
-        print(f'in viewer {PyDetecDiv().current_drawing_tool}')
 
     def set_channel(self, C):
         self.C = C
@@ -142,6 +144,34 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
     def apply_drift_correction(self):
         print('Apply correction')
 
+    def set_roi_template(self):
+        coords = self.scene.rect_item.rect().getCoords()
+        pos = self.scene.rect_item.pos()
+        x1, x2 = int(coords[0] + pos.x()), int(coords[2] + pos.x())
+        y1, y2 = int(coords[1] + pos.y()), int(coords[3] + pos.y())
+        self.roi_template = np.uint8(np.array(self.image_resource.image()[x1:x2, y1:y2]) / 65535 * 255)
+        self.ui.actionIdentify_ROIs.setEnabled(True)
+
+    def load_roi_template(self):
+        filename = QFileDialog.getOpenFileName(self, "Open Image", "", "Image Files (*.tif *.tiff)")[0]
+        self.roi_template = np.uint8(np.array(cv.imread(filename)))
+        self.ui.actionIdentify_ROIs.setEnabled(True)
+
+    def identify_rois(self):
+        threshold = 0.3
+        img8bits = np.uint8(np.array(self.image_resource.image(C=self.C, Z=self.Z, T=self.T) / 65535 * 255))
+        print(img8bits.shape)
+        print(self.roi_template.shape)
+        res = cv.matchTemplate(img8bits, self.roi_template, cv.TM_CCOEFF_NORMED)
+        loc = np.where(res >= threshold)
+        xy = peak_local_max(res, min_distance=self.roi_template.shape[0], threshold_abs=threshold, exclude_border=False)
+        w, h = self.roi_template.shape[::-1]
+        for pt in xy:
+            x, y = pt[1], pt[0]
+            rect_item = self.scene.addRect(QRect(0, 0, w, h))
+            rect_item.setPen(self.scene.pen)
+            rect_item.setPos(x, y)
+
 
 class ViewerScene(QGraphicsScene):
     def __init__(self):
@@ -156,6 +186,7 @@ class ViewerScene(QGraphicsScene):
         if event.matches(QKeySequence.Delete):
             for r in self.selectedItems():
                 self.removeItem(r)
+            self.rect_item = None
 
     def mousePressEvent(self, event):
         if event.buttonDownScenePos(Qt.LeftButton):
@@ -169,10 +200,15 @@ class ViewerScene(QGraphicsScene):
 
     def select_ROI(self, event):
         [r.setSelected(False) for r in self.items()]
+        self.rect_item = None
         r = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
-        if r:
+        if isinstance(r, QGraphicsRectItem):
             r.setSelected(True)
             self.rect_item = r
+        if self.selectedItems():
+            self.parent().ui.actionSet_template.setEnabled(True)
+        else:
+            self.parent().ui.actionSet_template.setEnabled(False)
 
     def start_drawing_ROI(self, event):
         pos = event.scenePos()
@@ -185,11 +221,11 @@ class ViewerScene(QGraphicsScene):
 
     def duplicate_selected_ROI(self, event):
         pos = event.scenePos()
-        if self.selectedItems():
-            r = self.selectedItems()[-1]
-            self.rect_item = self.addRect(r.rect())
+        if self.rect_item:
+            self.rect_item = self.addRect(self.rect_item.rect())
             self.rect_item.setPen(self.pen)
-            self.rect_item.setPos(QPoint(pos.x() - r.rect().width() / 2.0, pos.y() - r.rect().height() / 2.0))
+            self.rect_item.setPos(
+                QPoint(pos.x() - self.rect_item.rect().width() / 2.0, pos.y() - self.rect_item.rect().height() / 2.0))
             self.rect_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
             self.rect_item.setData(0, f'Rectangle{len(self.items())}')
             self.select_ROI(event)
@@ -207,13 +243,17 @@ class ViewerScene(QGraphicsScene):
                     self.move_ROI(event)
 
     def move_ROI(self, event):
-        pos = event.scenePos()
-        if self.selectedItems():
-            r = self.selectedItems()[-1]
-            r.moveBy(pos.x() - event.lastScenePos().x(), pos.y() - event.lastScenePos().y())
+        if self.rect_item:
+            pos = event.scenePos()
+            self.rect_item.moveBy(pos.x() - event.lastScenePos().x(), pos.y() - event.lastScenePos().y())
 
     def draw_ROI(self, event):
-        pos = event.scenePos()
-        roi_pos = self.rect_item.scenePos()
-        rect = QRect(0, 0, pos.x() - roi_pos.x(), pos.y() - roi_pos.y())
-        self.rect_item.setRect(rect)
+        if self.rect_item:
+            pos = event.scenePos()
+            roi_pos = self.rect_item.scenePos()
+            rect = QRect(0, 0, pos.x() - roi_pos.x(), pos.y() - roi_pos.y())
+            self.rect_item.setRect(rect)
+
+    def wheelEvent(self, event):
+        # event.ignore()
+        ...

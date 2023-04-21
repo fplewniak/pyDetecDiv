@@ -41,6 +41,18 @@ class Ui_ImageViewer(object):
         self.actionPlot.setObjectName(u"actionPlot")
         self.actionPlot.setEnabled(False)
         self.actionPlot.setText(u"Plot")
+        self.actionSet_template = QAction(ImageViewer)
+        self.actionSet_template.setObjectName(u"actionSet_template")
+        self.actionSet_template.setEnabled(False)
+        self.actionSet_template.setText(u"Selection as template")
+        self.actionLoad_template = QAction(ImageViewer)
+        self.actionLoad_template.setObjectName(u"actionLoad_template")
+        self.actionLoad_template.setEnabled(True)
+        self.actionLoad_template.setText(u"Load template")
+        self.actionIdentify_ROIs = QAction(ImageViewer)
+        self.actionIdentify_ROIs.setObjectName(u"actionIdentify_ROIs")
+        self.actionIdentify_ROIs.setEnabled(False)
+        self.actionIdentify_ROIs.setText(u"Detect ROIs")
         self.centralwidget = QWidget(ImageViewer)
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout = QVBoxLayout(self.centralwidget)
@@ -224,15 +236,21 @@ class Ui_ImageViewer(object):
         self.menuDrift = QMenu(self.menuResource)
         self.menuDrift.setObjectName(u"menuDrift")
         self.menuDrift.setTitle(u"Drift")
+        self.menuROI = QMenu(self.menuBar)
+        self.menuROI.setObjectName(u"menuROI")
         ImageViewer.setMenuBar(self.menuBar)
 
         self.menuBar.addAction(self.menuResource.menuAction())
+        self.menuBar.addAction(self.menuROI.menuAction())
         self.menuResource.addAction(self.menuDrift.menuAction())
         self.menuResource.addSeparator()
         self.menuResource.addAction(self.actionClose_window)
         self.menuDrift.addAction(self.actionCompute_and_plot)
         self.menuDrift.addAction(self.actionPlot)
         self.menuDrift.addAction(self.actionApply_correction)
+        self.menuROI.addAction(self.actionSet_template)
+        self.menuROI.addAction(self.actionLoad_template)
+        self.menuROI.addAction(self.actionIdentify_ROIs)
 
         self.retranslateUi(ImageViewer)
         self.video_back.clicked.connect(ImageViewer.video_back)
@@ -247,11 +265,15 @@ class Ui_ImageViewer(object):
         self.actionCompute_and_plot.triggered.connect(ImageViewer.compute_drift)
         self.actionApply_correction.triggered.connect(ImageViewer.apply_drift_correction)
         self.actionPlot.triggered.connect(ImageViewer.plot_drift)
+        self.actionSet_template.triggered.connect(ImageViewer.set_roi_template)
+        self.actionLoad_template.triggered.connect(ImageViewer.load_roi_template)
+        self.actionIdentify_ROIs.triggered.connect(ImageViewer.identify_rois)
 
         QMetaObject.connectSlotsByName(ImageViewer)
     # setupUi
 
     def retranslateUi(self, ImageViewer):
+        self.menuROI.setTitle(QCoreApplication.translate("ImageViewer", u"ROI", None))
         pass
     # retranslateUi
 
