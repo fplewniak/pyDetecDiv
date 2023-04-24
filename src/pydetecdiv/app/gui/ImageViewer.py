@@ -151,7 +151,8 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
             pos = roi.pos()
             x1, x2 = int(coords[0] + pos.x()), int(coords[2] + pos.x())
             y1, y2 = int(coords[1] + pos.y()), int(coords[3] + pos.y())
-            self.roi_template = np.uint8(np.array(self.image_resource.image()[y1:y2, x1:x2]) / 65535 * 255)
+            slice = self.image_resource.image()[y1:y2, x1:x2]
+            self.roi_template = np.uint8(np.array(slice) / np.max(slice) * 255)
             self.ui.actionIdentify_ROIs.setEnabled(True)
 
     def load_roi_template(self):
@@ -161,7 +162,8 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
 
     def identify_rois(self):
         threshold = 0.3
-        img8bits = np.uint8(np.array(self.image_resource.image(C=self.C, Z=self.Z, T=self.T) / 65535 * 255))
+        img = self.image_resource.image(C=self.C, Z=self.Z, T=self.T)
+        img8bits = np.uint8(np.array(img / np.max(img) * 255))
         res = cv.matchTemplate(img8bits, self.roi_template, cv.TM_CCOEFF_NORMED)
         # loc = np.where(res >= threshold)
         xy = peak_local_max(res, min_distance=self.roi_template.shape[0], threshold_abs=threshold, exclude_border=False)
@@ -184,6 +186,7 @@ class ViewerScene(QGraphicsScene):
         self.from_x = None
         self.from_y = None
         self.pen = QPen(Qt.GlobalColor.cyan, 2)
+        self.warning_pen = QPen(Qt.GlobalColor.red, 2)
 
     def keyPressEvent(self, event):
         if event.matches(QKeySequence.Delete):
@@ -244,6 +247,10 @@ class ViewerScene(QGraphicsScene):
         if roi:
             pos = event.scenePos()
             roi.moveBy(pos.x() - event.lastScenePos().x(), pos.y() - event.lastScenePos().y())
+            if [r for r in roi.collidingItems(Qt.IntersectsItemBoundingRect) if isinstance(r, QGraphicsRectItem)]:
+                roi.setPen(self.warning_pen)
+            else:
+                roi.setPen(self.pen)
 
     def draw_ROI(self, event):
         roi = self.get_selected_ROI()
@@ -259,3 +266,7 @@ class ViewerScene(QGraphicsScene):
             roi.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
             roi.setData(0, f'Rectangle{len(self.items())}')
             self.select_ROI(event)
+        if [r for r in roi.collidingItems(Qt.IntersectsItemBoundingRect) if isinstance(r, QGraphicsRectItem)]:
+            roi.setPen(self.warning_pen)
+        else:
+            roi.setPen(self.pen)
