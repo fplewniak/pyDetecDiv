@@ -177,7 +177,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
                 if [r for r in rect_item.collidingItems(Qt.IntersectsItemBoundingRect) if isinstance(r, QGraphicsRectItem)]:
                     self.scene.removeItem(rect_item)
                 else:
-                    rect_item.setPen(self.scene.pen)
+                    rect_item.setPen(self.scene.match_pen)
                     rect_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
 
 
@@ -187,6 +187,8 @@ class ViewerScene(QGraphicsScene):
         self.from_x = None
         self.from_y = None
         self.pen = QPen(Qt.GlobalColor.cyan, 2)
+        self.match_pen = QPen(Qt.GlobalColor.yellow, 2)
+        self.saved_pen = QPen(Qt.GlobalColor.green, 2)
         self.warning_pen = QPen(Qt.GlobalColor.red, 2)
 
     def keyPressEvent(self, event):
