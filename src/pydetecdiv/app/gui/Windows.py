@@ -1,10 +1,12 @@
 """
 Classes for persistent windows of the GUI
 """
+import numpy as np
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QCursor, QAction, QIcon
+from PySide6.QtGui import QCursor, QAction, QIcon, QPixmap, QImage
 from PySide6.QtWidgets import QMainWindow, QMdiArea, QTabWidget, QDockWidget, QFormLayout, QLabel, QComboBox, \
-    QDialogButtonBox, QWidget, QFrame, QMenuBar, QVBoxLayout, QPushButton, QHBoxLayout, QGridLayout, QToolButton
+    QDialogButtonBox, QWidget, QFrame, QMenuBar, QVBoxLayout, QPushButton, QHBoxLayout, QGridLayout, QToolButton, \
+    QGraphicsView, QGraphicsScene
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
@@ -13,7 +15,7 @@ from pydetecdiv.app.gui import MainToolBar, MainStatusBar, FileMenu, DataMenu
 from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project, DrawingTools
 
 from pydetecdiv.app.gui.ImageViewer import ImageViewer
-
+import dask.array as da
 
 class MainWindow(QMainWindow):
     """
@@ -98,6 +100,18 @@ class TabbedViewer(QTabWidget):
         df.plot(ax=plot_viewer.axes)
         plot_viewer.canvas.draw()
         self.setCurrentWidget(plot_viewer)
+
+    def show_image(self, data, title='Image'):
+        viewer = QGraphicsView(self)
+        scene = QGraphicsScene()
+        pixmap = QPixmap()
+        pixmapItem = scene.addPixmap(pixmap)
+        ny, nx = data.shape
+        img = QImage(np.ascontiguousarray(data), nx, ny, QImage.Format_Grayscale16)
+        pixmap.convertFromImage(img)
+        pixmapItem.setPixmap(pixmap)
+        viewer.setScene(scene)
+        self.addTab(viewer, title)
 
     def close_tab(self, index):
         if self.widget(index) != self.viewer:

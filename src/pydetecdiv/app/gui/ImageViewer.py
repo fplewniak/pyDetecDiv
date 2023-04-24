@@ -147,13 +147,16 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
     def set_roi_template(self):
         roi = self.scene.get_selected_ROI()
         if roi:
-            coords = roi.rect().getCoords()
-            pos = roi.pos()
-            x1, x2 = int(coords[0] + pos.x()), int(coords[2] + pos.x())
-            y1, y2 = int(coords[1] + pos.y()), int(coords[3] + pos.y())
-            slice = self.image_resource.image()[y1:y2, x1:x2]
-            self.roi_template = np.uint8(np.array(slice) / np.max(slice) * 255)
+            data = self.get_roi_data(roi)
+            self.roi_template = np.uint8(np.array(data) / np.max(data) * 255)
             self.ui.actionIdentify_ROIs.setEnabled(True)
+
+    def get_roi_data(self, roi):
+        coords = roi.rect().getCoords()
+        pos = roi.pos()
+        x1, x2 = int(coords[0] + pos.x()), int(coords[2] + pos.x())
+        y1, y2 = int(coords[1] + pos.y()), int(coords[3] + pos.y())
+        return self.image_resource.image()[y1:y2, x1:x2]
 
     def load_roi_template(self):
         filename = QFileDialog.getOpenFileName(self, "Open Image", "", "Image Files (*.tif *.tiff)")[0]
@@ -167,7 +170,8 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         img8bits = np.uint8(np.array(img / np.max(img) * 255))
         res = cv.matchTemplate(img8bits, self.roi_template, cv.TM_CCOEFF_NORMED)
         # loc = np.where(res >= threshold)
-        xy = peak_local_max(res, min_distance=self.roi_template.shape[0], threshold_abs=threshold, exclude_border=False)
+        # xy = peak_local_max(res, min_distance=self.roi_template.shape[0], threshold_abs=threshold, exclude_border=False)
+        xy = peak_local_max(res, threshold_abs=threshold, exclude_border=False)
         w, h = self.roi_template.shape[::-1]
         for pt in xy:
             x, y = pt[1], pt[0]
@@ -181,7 +185,8 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
                     rect_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
 
     def view_roi_image(self):
-        ...
+        data = self.get_roi_data(self.scene.get_selected_ROI())
+        self.parent().parent().show_image(data)
 
     def save_rois(self):
         print('Saving ROIs')
