@@ -157,7 +157,8 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
 
     def load_roi_template(self):
         filename = QFileDialog.getOpenFileName(self, "Open Image", "", "Image Files (*.tif *.tiff)")[0]
-        self.roi_template = np.uint8(np.array(cv.imread(filename)))
+        img = cv.imread(filename, cv.IMREAD_GRAYSCALE)
+        self.roi_template = np.uint8(np.array(img / np.max(img) * 255))
         self.ui.actionIdentify_ROIs.setEnabled(True)
 
     def identify_rois(self):
