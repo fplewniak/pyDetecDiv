@@ -262,7 +262,16 @@
     <addaction name="separator"/>
     <addaction name="actionClose_window"/>
    </widget>
+   <widget class="QMenu" name="menuROI">
+    <property name="title">
+     <string>ROI</string>
+    </property>
+    <addaction name="actionSet_template"/>
+    <addaction name="actionLoad_template"/>
+    <addaction name="actionIdentify_ROIs"/>
+   </widget>
    <addaction name="menuResource"/>
+   <addaction name="menuROI"/>
   </widget>
   <action name="actionCompute_and_plot">
    <property name="text">
@@ -285,6 +294,30 @@
    </property>
    <property name="text">
     <string notr="true">Plot</string>
+   </property>
+  </action>
+  <action name="actionSet_template">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string notr="true">Selection as template</string>
+   </property>
+  </action>
+  <action name="actionLoad_template">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string notr="true">Load template</string>
+   </property>
+  </action>
+  <action name="actionIdentify_ROIs">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string notr="true">Detect ROIs</string>
    </property>
   </action>
  </widget>
@@ -484,6 +517,54 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionSet_template</sender>
+   <signal>triggered()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>set_roi_template()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>472</x>
+     <y>327</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionLoad_template</sender>
+   <signal>triggered()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>load_roi_template()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>472</x>
+     <y>327</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionIdentify_ROIs</sender>
+   <signal>triggered()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>identify_rois()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>472</x>
+     <y>327</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>zoom_reset()</slot>
@@ -498,5 +579,8 @@
   <slot>compute_drift()</slot>
   <slot>apply_drift_correction()</slot>
   <slot>plot_drift()</slot>
+  <slot>set_roi_template()</slot>
+  <slot>load_roi_template()</slot>
+  <slot>identify_rois()</slot>
  </slots>
 </ui>

@@ -176,7 +176,6 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
 class ViewerScene(QGraphicsScene):
     def __init__(self):
         super().__init__()
-        self.rect_item = None
         self.from_x = None
         self.from_y = None
         self.pen = QPen(Qt.GlobalColor.cyan)
@@ -186,52 +185,44 @@ class ViewerScene(QGraphicsScene):
         if event.matches(QKeySequence.Delete):
             for r in self.selectedItems():
                 self.removeItem(r)
-            self.rect_item = None
 
     def mousePressEvent(self, event):
-        if event.buttonDownScenePos(Qt.LeftButton):
+        if event.button() == Qt.LeftButton:
             match PyDetecDiv().current_drawing_tool:
                 case DrawingTools.Cursor:
                     self.select_ROI(event)
-                case DrawingTools.DrawROI:
-                    self.start_drawing_ROI(event)
                 case DrawingTools.DuplicateROI:
                     self.duplicate_selected_ROI(event)
 
     def select_ROI(self, event):
         [r.setSelected(False) for r in self.items()]
-        self.rect_item = None
         r = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
         if isinstance(r, QGraphicsRectItem):
             r.setSelected(True)
-            self.rect_item = r
         if self.selectedItems():
             self.parent().ui.actionSet_template.setEnabled(True)
         else:
             self.parent().ui.actionSet_template.setEnabled(False)
 
-    def start_drawing_ROI(self, event):
-        pos = event.scenePos()
-        self.rect_item = self.addRect(QRect(0, 0, 1, 1))
-        self.rect_item.setPen(self.pen)
-        self.rect_item.setPos(QPoint(pos.x(), pos.y()))
-        self.rect_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
-        self.rect_item.setData(0, f'Rectangle{len(self.items())}')
-        self.select_ROI(event)
+    def get_selected_ROI(self):
+        for selection in self.selectedItems():
+            if isinstance(selection, QGraphicsRectItem):
+                return selection
 
     def duplicate_selected_ROI(self, event):
         pos = event.scenePos()
-        if self.rect_item:
-            self.rect_item = self.addRect(self.rect_item.rect())
-            self.rect_item.setPen(self.pen)
-            self.rect_item.setPos(
-                QPoint(pos.x() - self.rect_item.rect().width() / 2.0, pos.y() - self.rect_item.rect().height() / 2.0))
-            self.rect_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
-            self.rect_item.setData(0, f'Rectangle{len(self.items())}')
+        roi = self.get_selected_ROI()
+        if roi:
+            roi = self.addRect(roi.rect())
+            roi.setPen(self.pen)
+            roi.setPos(
+                QPoint(pos.x() - roi.rect().width() / 2.0, pos.y() - roi.rect().height() / 2.0))
+            roi.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
+            roi.setData(0, f'Rectangle{len(self.items())}')
             self.select_ROI(event)
 
     def mouseMoveEvent(self, event):
-        if event.buttonDownScenePos(Qt.LeftButton):
+        if event.button() == Qt.NoButton:
             match PyDetecDiv().current_drawing_tool, event.modifiers():
                 case DrawingTools.Cursor, Qt.NoModifier:
                     self.move_ROI(event)
@@ -243,17 +234,22 @@ class ViewerScene(QGraphicsScene):
                     self.move_ROI(event)
 
     def move_ROI(self, event):
-        if self.rect_item:
+        roi = self.get_selected_ROI()
+        if roi:
             pos = event.scenePos()
-            self.rect_item.moveBy(pos.x() - event.lastScenePos().x(), pos.y() - event.lastScenePos().y())
+            roi.moveBy(pos.x() - event.lastScenePos().x(), pos.y() - event.lastScenePos().y())
 
     def draw_ROI(self, event):
-        if self.rect_item:
-            pos = event.scenePos()
-            roi_pos = self.rect_item.scenePos()
+        roi = self.get_selected_ROI()
+        pos = event.scenePos()
+        if roi:
+            roi_pos = roi.scenePos()
             rect = QRect(0, 0, pos.x() - roi_pos.x(), pos.y() - roi_pos.y())
-            self.rect_item.setRect(rect)
-
-    def wheelEvent(self, event):
-        # event.ignore()
-        ...
+            roi.setRect(rect)
+        else:
+            roi = self.addRect(QRect(0, 0, 1, 1))
+            roi.setPen(self.pen)
+            roi.setPos(QPoint(pos.x(), pos.y()))
+            roi.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
+            roi.setData(0, f'Rectangle{len(self.items())}')
+            self.select_ROI(event)
