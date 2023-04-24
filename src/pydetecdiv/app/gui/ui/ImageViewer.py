@@ -53,6 +53,10 @@ class Ui_ImageViewer(object):
         self.actionIdentify_ROIs.setObjectName(u"actionIdentify_ROIs")
         self.actionIdentify_ROIs.setEnabled(False)
         self.actionIdentify_ROIs.setText(u"Detect ROIs")
+        self.actionSave_ROIs = QAction(ImageViewer)
+        self.actionSave_ROIs.setObjectName(u"actionSave_ROIs")
+        self.actionView_selection = QAction(ImageViewer)
+        self.actionView_selection.setObjectName(u"actionView_selection")
         self.centralwidget = QWidget(ImageViewer)
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout = QVBoxLayout(self.centralwidget)
@@ -248,9 +252,13 @@ class Ui_ImageViewer(object):
         self.menuDrift.addAction(self.actionCompute_and_plot)
         self.menuDrift.addAction(self.actionPlot)
         self.menuDrift.addAction(self.actionApply_correction)
+        self.menuROI.addAction(self.actionView_selection)
+        self.menuROI.addSeparator()
         self.menuROI.addAction(self.actionSet_template)
         self.menuROI.addAction(self.actionLoad_template)
+        self.menuROI.addSeparator()
         self.menuROI.addAction(self.actionIdentify_ROIs)
+        self.menuROI.addAction(self.actionSave_ROIs)
 
         self.retranslateUi(ImageViewer)
         self.video_back.clicked.connect(ImageViewer.video_back)
@@ -268,11 +276,15 @@ class Ui_ImageViewer(object):
         self.actionSet_template.triggered.connect(ImageViewer.set_roi_template)
         self.actionLoad_template.triggered.connect(ImageViewer.load_roi_template)
         self.actionIdentify_ROIs.triggered.connect(ImageViewer.identify_rois)
+        self.actionView_selection.triggered.connect(ImageViewer.view_roi_image)
+        self.actionSave_ROIs.triggered.connect(ImageViewer.save_rois)
 
         QMetaObject.connectSlotsByName(ImageViewer)
     # setupUi
 
     def retranslateUi(self, ImageViewer):
+        self.actionSave_ROIs.setText(QCoreApplication.translate("ImageViewer", u"Save ROIs", None))
+        self.actionView_selection.setText(QCoreApplication.translate("ImageViewer", u"View selection", None))
         self.menuROI.setTitle(QCoreApplication.translate("ImageViewer", u"ROI", None))
         pass
     # retranslateUi

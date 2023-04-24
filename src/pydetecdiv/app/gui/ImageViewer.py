@@ -180,6 +180,17 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
                     rect_item.setPen(self.scene.match_pen)
                     rect_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
 
+    def view_roi_image(self):
+        ...
+
+    def save_rois(self):
+        print('Saving ROIs')
+        self.fixate_saved_rois()
+
+    def fixate_saved_rois(self):
+        for r in [item for item in self.scene.items() if isinstance(item, QGraphicsRectItem)]:
+            r.setPen(self.scene.saved_pen)
+            r.setFlag(QGraphicsItem.ItemIsMovable, False)
 
 class ViewerScene(QGraphicsScene):
     def __init__(self):
@@ -232,6 +243,10 @@ class ViewerScene(QGraphicsScene):
             roi.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
             roi.setData(0, f'Rectangle{len(self.items())}')
             self.select_ROI(event)
+            if [r for r in roi.collidingItems(Qt.IntersectsItemBoundingRect) if isinstance(r, QGraphicsRectItem)]:
+                roi.setPen(self.warning_pen)
+            else:
+                roi.setPen(self.pen)
 
     def mouseMoveEvent(self, event):
         if event.button() == Qt.NoButton:
@@ -247,7 +262,7 @@ class ViewerScene(QGraphicsScene):
 
     def move_ROI(self, event):
         roi = self.get_selected_ROI()
-        if roi:
+        if roi and (roi.flags() & QGraphicsItem.ItemIsMovable):
             pos = event.scenePos()
             roi.moveBy(pos.x() - event.lastScenePos().x(), pos.y() - event.lastScenePos().y())
             if [r for r in roi.collidingItems(Qt.IntersectsItemBoundingRect) if isinstance(r, QGraphicsRectItem)]:
@@ -258,7 +273,7 @@ class ViewerScene(QGraphicsScene):
     def draw_ROI(self, event):
         roi = self.get_selected_ROI()
         pos = event.scenePos()
-        if roi:
+        if roi and (roi.flags() & QGraphicsItem.ItemIsMovable):
             roi_pos = roi.scenePos()
             rect = QRect(0, 0, pos.x() - roi_pos.x(), pos.y() - roi_pos.y())
             roi.setRect(rect)
