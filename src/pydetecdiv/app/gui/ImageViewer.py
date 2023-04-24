@@ -145,12 +145,14 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         print('Apply correction')
 
     def set_roi_template(self):
-        coords = self.scene.rect_item.rect().getCoords()
-        pos = self.scene.rect_item.pos()
-        x1, x2 = int(coords[0] + pos.x()), int(coords[2] + pos.x())
-        y1, y2 = int(coords[1] + pos.y()), int(coords[3] + pos.y())
-        self.roi_template = np.uint8(np.array(self.image_resource.image()[x1:x2, y1:y2]) / 65535 * 255)
-        self.ui.actionIdentify_ROIs.setEnabled(True)
+        roi = self.scene.get_selected_ROI()
+        if roi:
+            coords = roi.rect().getCoords()
+            pos = roi.pos()
+            x1, x2 = int(coords[0] + pos.x()), int(coords[2] + pos.x())
+            y1, y2 = int(coords[1] + pos.y()), int(coords[3] + pos.y())
+            self.roi_template = np.uint8(np.array(self.image_resource.image()[y1:y2, x1:x2]) / 65535 * 255)
+            self.ui.actionIdentify_ROIs.setEnabled(True)
 
     def load_roi_template(self):
         filename = QFileDialog.getOpenFileName(self, "Open Image", "", "Image Files (*.tif *.tiff)")[0]
@@ -160,17 +162,20 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
     def identify_rois(self):
         threshold = 0.3
         img8bits = np.uint8(np.array(self.image_resource.image(C=self.C, Z=self.Z, T=self.T) / 65535 * 255))
-        print(img8bits.shape)
-        print(self.roi_template.shape)
         res = cv.matchTemplate(img8bits, self.roi_template, cv.TM_CCOEFF_NORMED)
-        loc = np.where(res >= threshold)
+        # loc = np.where(res >= threshold)
         xy = peak_local_max(res, min_distance=self.roi_template.shape[0], threshold_abs=threshold, exclude_border=False)
         w, h = self.roi_template.shape[::-1]
         for pt in xy:
             x, y = pt[1], pt[0]
-            rect_item = self.scene.addRect(QRect(0, 0, w, h))
-            rect_item.setPen(self.scene.pen)
-            rect_item.setPos(x, y)
+            if not isinstance(self.scene.itemAt(QPoint(x,y), QTransform().scale(1, 1)), QGraphicsRectItem):
+                rect_item = self.scene.addRect(QRect(0, 0, w, h))
+                rect_item.setPos(x, y)
+                if [r for r in rect_item.collidingItems(Qt.IntersectsItemBoundingRect) if isinstance(r, QGraphicsRectItem)]:
+                    self.scene.removeItem(rect_item)
+                else:
+                    rect_item.setPen(self.scene.pen)
+                    rect_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
 
 
 class ViewerScene(QGraphicsScene):
@@ -178,8 +183,7 @@ class ViewerScene(QGraphicsScene):
         super().__init__()
         self.from_x = None
         self.from_y = None
-        self.pen = QPen(Qt.GlobalColor.cyan)
-        self.pen.setWidth(2)
+        self.pen = QPen(Qt.GlobalColor.cyan, 2)
 
     def keyPressEvent(self, event):
         if event.matches(QKeySequence.Delete):
@@ -190,6 +194,8 @@ class ViewerScene(QGraphicsScene):
         if event.button() == Qt.LeftButton:
             match PyDetecDiv().current_drawing_tool:
                 case DrawingTools.Cursor:
+                    self.select_ROI(event)
+                case DrawingTools.DrawROI:
                     self.select_ROI(event)
                 case DrawingTools.DuplicateROI:
                     self.duplicate_selected_ROI(event)
