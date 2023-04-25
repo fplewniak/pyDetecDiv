@@ -33,24 +33,27 @@ class ImageResource:
     A generic class to access image resources (files) on disk without having to load whole time series into memory
     """
 
-    def __init__(self, path, pattern=None, max_mem=5000, fov=None, **kwargs):
+    def __init__(self, path=None, data=None, pattern=None, max_mem=5000, fov=None, **kwargs):
         self.path = path
         self.max_mem = max_mem
         self.fov = fov
         self._dims = None
-        if pattern is None:
-            self._memmap = tifffile.memmap(path, **kwargs)
-            self.resource = AICSImage(self.path).reader
+        self._memmap = None
+        if path:
+            if pattern is None:
+                self._memmap = tifffile.memmap(path, **kwargs)
+                self.resource = AICSImage(self.path).reader
+            else:
+                self.path = path if isinstance(path, list) else [path]
+                self.resource = AICSImage(self.path, indexer=lambda x: aics_indexer(x, pattern)).reader
+                dims = {'C': set(), 'Z': set(), 'T': set()}
+                for p in self.path:
+                    m = re.search(pattern, p).groupdict()
+                    for d in dims:
+                        dims[d].add(m[d])
+                self._dims = {d: len(dims[d]) for d in dims}
         else:
-            self._memmap = None
-            self.path = path if isinstance(path, list) else [path]
-            self.resource = AICSImage(self.path, indexer=lambda x: aics_indexer(x, pattern)).reader
-            dims = {'C': set(), 'Z': set(), 'T': set()}
-            for p in self.path:
-                m = re.search(pattern, p).groupdict()
-                for d in dims:
-                    dims[d].add(m[d])
-            self._dims = {d: len(dims[d]) for d in dims}
+            self.resource = AICSImage(data)
 
     @property
     def shape(self):
@@ -126,6 +129,14 @@ class ImageResource:
             data = np.expand_dims(self._memmap, axis=tuple(i for i in range(len(s)) if s[i] == 1))[T, C, Z, ...]
         else:
             data = self.resource.get_image_dask_data('YX', C=C, Z=Z, T=T).compute()
+        return data
+
+    def data_sample(self, X=None, Y=None):
+        if self._memmap is not None:
+            s = self.resource.shape
+            data = np.expand_dims(self._memmap, axis=tuple(i for i in range(len(s)) if s[i] == 1))[..., Y, X]
+        else:
+            data = self.resource.get_image_dask_data('CTZYX', X=X, Y=Y).compute()
         return data
 
     def open(self):

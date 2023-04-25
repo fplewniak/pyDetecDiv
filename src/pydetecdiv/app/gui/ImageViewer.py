@@ -120,7 +120,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         Z = self.Z if Z is None else Z
         arr = self.image_resource.image(C=C, T=T, Z=Z)
         ny, nx = arr.shape
-        img = QImage(arr.data, nx, ny, QImage.Format_Grayscale16)
+        img = QImage(np.ascontiguousarray(arr.data), nx, ny, QImage.Format_Grayscale16)
         self.pixmap.convertFromImage(img)
         self.pixmapItem.setPixmap(self.pixmap)
 
@@ -147,16 +147,29 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
     def set_roi_template(self):
         roi = self.scene.get_selected_ROI()
         if roi:
-            data = self.get_roi_data(roi)
+            data = self.get_roi_image(roi)
             self.roi_template = np.uint8(np.array(data) / np.max(data) * 255)
             self.ui.actionIdentify_ROIs.setEnabled(True)
+
+    def get_roi_image(self, roi):
+        coords = roi.rect().getCoords()
+        pos = roi.pos()
+        x1, x2 = int(coords[0] + pos.x()), int(coords[2] + pos.x())
+        y1, y2 = int(coords[1] + pos.y()), int(coords[3] + pos.y())
+        # width needs to be even for proper display of the image
+        if (x2 - x1) % 2 == 1:
+            x2 += 1
+        return self.image_resource.image()[y1:y2, x1:x2]
 
     def get_roi_data(self, roi):
         coords = roi.rect().getCoords()
         pos = roi.pos()
         x1, x2 = int(coords[0] + pos.x()), int(coords[2] + pos.x())
         y1, y2 = int(coords[1] + pos.y()), int(coords[3] + pos.y())
-        return self.image_resource.image()[y1:y2, x1:x2]
+        # width needs to be even for proper display of the image
+        if (x2 - x1) % 2 == 1:
+            x2 += 1
+        return self.image_resource.data_sample(X=slice(x1, x2), Y=slice(y1, y2))
 
     def load_roi_template(self):
         filename = QFileDialog.getOpenFileName(self, "Open Image", "", "Image Files (*.tif *.tiff)")[0]
@@ -175,10 +188,11 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         w, h = self.roi_template.shape[::-1]
         for pt in xy:
             x, y = pt[1], pt[0]
-            if not isinstance(self.scene.itemAt(QPoint(x,y), QTransform().scale(1, 1)), QGraphicsRectItem):
+            if not isinstance(self.scene.itemAt(QPoint(x, y), QTransform().scale(1, 1)), QGraphicsRectItem):
                 rect_item = self.scene.addRect(QRect(0, 0, w, h))
                 rect_item.setPos(x, y)
-                if [r for r in rect_item.collidingItems(Qt.IntersectsItemBoundingRect) if isinstance(r, QGraphicsRectItem)]:
+                if [r for r in rect_item.collidingItems(Qt.IntersectsItemBoundingRect) if
+                    isinstance(r, QGraphicsRectItem)]:
                     self.scene.removeItem(rect_item)
                 else:
                     rect_item.setPen(self.scene.match_pen)
@@ -186,7 +200,12 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
 
     def view_roi_image(self):
         data = self.get_roi_data(self.scene.get_selected_ROI())
-        self.parent().parent().show_image(data)
+        viewer = ImageViewer()
+        viewer.set_image_resource(ImageResource(data=data, fov=self.image_resource.fov))
+        self.parent().parent().addTab(viewer, 'ROI viewer')
+        viewer.display()
+        print(viewer.image_resource.dims)
+        self.parent().parent().setCurrentWidget(viewer)
 
     def save_rois(self):
         print('Saving ROIs')
@@ -196,6 +215,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         for r in [item for item in self.scene.items() if isinstance(item, QGraphicsRectItem)]:
             r.setPen(self.scene.saved_pen)
             r.setFlag(QGraphicsItem.ItemIsMovable, False)
+
 
 class ViewerScene(QGraphicsScene):
     def __init__(self):
@@ -262,6 +282,8 @@ class ViewerScene(QGraphicsScene):
                     self.draw_ROI(event)
                 case DrawingTools.DrawROI, Qt.NoModifier:
                     self.draw_ROI(event)
+                case DrawingTools.DrawROI, Qt.ControlModifier:
+                    self.move_ROI(event)
                 case DrawingTools.DuplicateROI, Qt.NoModifier:
                     self.move_ROI(event)
 
