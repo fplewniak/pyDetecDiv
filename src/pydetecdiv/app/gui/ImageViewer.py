@@ -1,14 +1,16 @@
 from PySide6.QtCore import Signal, Qt, QRect, QPoint
-from PySide6.QtGui import QPixmap, QImage, QPen, QTransform, QKeySequence
-from PySide6.QtWidgets import QMainWindow, QGraphicsScene, QApplication, QGraphicsItem, QGraphicsRectItem, QFileDialog
+from PySide6.QtGui import QPixmap, QImage, QPen, QTransform, QKeySequence, QCursor, QAction
+from PySide6.QtWidgets import QMainWindow, QGraphicsScene, QApplication, QGraphicsItem, QGraphicsRectItem, QFileDialog, \
+    QGraphicsSceneContextMenuEvent, QMenu
 import time
 import numpy as np
 import cv2 as cv
 from skimage.feature import peak_local_max
 
-from pydetecdiv.app import WaitDialog, PyDetecDiv, DrawingTools
+from pydetecdiv.app import WaitDialog, PyDetecDiv, DrawingTools, pydetecdiv_project
 from pydetecdiv.app.gui.ui.ImageViewer import Ui_ImageViewer
 from pydetecdiv.domain.ImageResource import ImageResource
+from pydetecdiv.domain.ROI import ROI
 
 
 class ImageViewer(QMainWindow, Ui_ImageViewer):
@@ -207,7 +209,15 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.parent().parent().setCurrentWidget(viewer)
 
     def save_rois(self):
-        print('Saving ROIs')
+        rois = [item for item in self.scene.items() if isinstance(item, QGraphicsRectItem)]
+        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            for i, roi in enumerate(sorted(rois, key=lambda x: x.scenePos().toPoint().toTuple())):
+                x, y = roi.scenePos().toPoint().toTuple()
+                w, h = roi.rect().getCoords()[2:]
+                new_roi = ROI(project=project, name=f'{self.image_resource.fov.name}_{i}',
+                              fov=self.image_resource.fov, top_left=(x, y), bottom_right=(int(x + w),int(y + h)))
+                print(new_roi)
+
         self.fixate_saved_rois()
 
     def fixate_saved_rois(self):
@@ -314,7 +324,3 @@ class ViewerScene(QGraphicsScene):
             roi.setPen(self.warning_pen)
         else:
             roi.setPen(self.pen)
-
-    def contextMenuEvent(self, event):
-        pos = event.scenePos()
-        print(self.itemAt(pos, QTransform().scale(1, 1)))
