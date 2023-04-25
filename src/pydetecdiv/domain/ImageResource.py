@@ -136,7 +136,7 @@ class ImageResource:
             s = self.resource.shape
             data = np.expand_dims(self._memmap, axis=tuple(i for i in range(len(s)) if s[i] == 1))[..., Y, X]
         else:
-            data = self.resource.get_image_dask_data('CTZYX', X=X, Y=Y).compute()
+            data = self.resource.get_image_dask_data('TCZYX', X=X, Y=Y).compute()
         return data
 
     def open(self):

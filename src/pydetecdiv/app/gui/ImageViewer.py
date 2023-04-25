@@ -204,7 +204,6 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         viewer.set_image_resource(ImageResource(data=data, fov=self.image_resource.fov))
         self.parent().parent().addTab(viewer, 'ROI viewer')
         viewer.display()
-        print(viewer.image_resource.dims)
         self.parent().parent().setCurrentWidget(viewer)
 
     def save_rois(self):
@@ -315,3 +314,7 @@ class ViewerScene(QGraphicsScene):
             roi.setPen(self.warning_pen)
         else:
             roi.setPen(self.pen)
+
+    def contextMenuEvent(self, event):
+        pos = event.scenePos()
+        print(self.itemAt(pos, QTransform().scale(1, 1)))
