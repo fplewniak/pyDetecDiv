@@ -160,25 +160,20 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
             data = self.get_roi_image(roi)
             self.roi_template = np.uint8(np.array(data) / np.max(data) * 255)
             self.ui.actionIdentify_ROIs.setEnabled(True)
+            self.ui.actionView_template.setEnabled(True)
 
     def get_roi_image(self, roi):
-        coords = roi.rect().getCoords()
+        w, h = roi.rect().toRect().size().toTuple()
         pos = roi.pos()
-        x1, x2 = int(coords[0] + pos.x()), int(coords[2] + pos.x())
-        y1, y2 = int(coords[1] + pos.y()), int(coords[3] + pos.y())
-        # width needs to be even for proper display of the image
-        if (x2 - x1) % 2 == 1:
-            x2 += 1
-        return self.image_resource.image()[y1:y2, x1:x2]
+        x1, x2 = int(pos.x()), w + int(pos.x())
+        y1, y2 = int(pos.y()), h + int(pos.y())
+        return self.image_resource.image(C=self.C, T=self.T, Z=self.Z)[y1:y2, x1:x2]
 
     def get_roi_data(self, roi):
-        coords = roi.rect().getCoords()
+        w, h = roi.rect().toRect().size().toTuple()
         pos = roi.pos()
-        x1, x2 = int(coords[0] + pos.x()), int(coords[2] + pos.x())
-        y1, y2 = int(coords[1] + pos.y()), int(coords[3] + pos.y())
-        # width needs to be even for proper display of the image
-        if (x2 - x1) % 2 == 1:
-            x2 += 1
+        x1, x2 = int(pos.x()), w + int(pos.x())
+        y1, y2 = int(pos.y()), h + int(pos.y())
         return self.image_resource.data_sample(X=slice(x1, x2), Y=slice(y1, y2))
 
     def load_roi_template(self):
@@ -208,6 +203,9 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
                     rect_item.setPen(self.scene.match_pen)
                     rect_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
 
+    def view_template(self):
+        self.parent().parent().show_image(self.roi_template, title='ROI template', format=QImage.Format_Grayscale8)
+
     def view_roi_image(self, selected_roi=None):
         if selected_roi is None:
             selected_roi = self.scene.get_selected_ROI()
@@ -224,9 +222,9 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             for i, rect_item in enumerate(sorted(rois, key=lambda x: x.scenePos().toPoint().toTuple())):
                 x, y = rect_item.scenePos().toPoint().toTuple()
-                w, h = rect_item.rect().getCoords()[2:]
+                w, h = rect_item.rect().toRect().getCoords()[2:]
                 new_roi = ROI(project=project, name=f'{self.image_resource.fov.name}_{i}',
-                              fov=self.image_resource.fov, top_left=(x, y), bottom_right=(int(x + w),int(y + h)))
+                              fov=self.image_resource.fov, top_left=(x, y), bottom_right=(int(x) + w, int(y) + h))
                 rect_item.setData(0, new_roi.name)
         self.fixate_saved_rois()
 
@@ -290,8 +288,8 @@ class ViewerScene(QGraphicsScene):
         if roi:
             roi = self.addRect(roi.rect())
             roi.setPen(self.pen)
-            roi.setPos(
-                QPoint(pos.x() - roi.rect().width() / 2.0, pos.y() - roi.rect().height() / 2.0))
+            w, h = roi.rect().size().toTuple()
+            roi.setPos(QPoint(pos.x() - np.around(w / 2.0), pos.y() - np.around(h / 2.0)))
             roi.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
             roi.setData(0, f'Rectangle{len(self.items())}')
             self.select_ROI(event)
@@ -329,10 +327,15 @@ class ViewerScene(QGraphicsScene):
         pos = event.scenePos()
         if roi and (roi.flags() & QGraphicsItem.ItemIsMovable):
             roi_pos = roi.scenePos()
-            rect = QRect(0, 0, pos.x() - roi_pos.x(), pos.y() - roi_pos.y())
+            w, h = np.around(pos.x() - roi_pos.x()), np.around(pos.y() - roi_pos.y())
+            if w % 2 == 1:
+                w += 1
+            if h % 2 == 1:
+                h += 1
+            rect = QRect(0, 0, w, h)
             roi.setRect(rect)
         else:
-            roi = self.addRect(QRect(0, 0, 1, 1))
+            roi = self.addRect(QRect(0, 0, 2, 2))
             roi.setPen(self.pen)
             roi.setPos(QPoint(pos.x(), pos.y()))
             roi.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)

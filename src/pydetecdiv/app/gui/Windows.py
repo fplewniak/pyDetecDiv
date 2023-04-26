@@ -101,17 +101,18 @@ class TabbedViewer(QTabWidget):
         plot_viewer.canvas.draw()
         self.setCurrentWidget(plot_viewer)
 
-    def show_image(self, data, title='Image'):
+    def show_image(self, data, title='Image', format = QImage.Format_Grayscale16):
         viewer = QGraphicsView(self)
         scene = QGraphicsScene()
         pixmap = QPixmap()
         pixmapItem = scene.addPixmap(pixmap)
         ny, nx = data.shape
-        img = QImage(np.ascontiguousarray(data), nx, ny, QImage.Format_Grayscale16)
+        img = QImage(np.ascontiguousarray(data), nx, ny, format)
         pixmap.convertFromImage(img)
         pixmapItem.setPixmap(pixmap)
         viewer.setScene(scene)
         self.addTab(viewer, title)
+        self.setCurrentWidget(viewer)
 
     def close_tab(self, index):
         if self.widget(index) != self.viewer:
