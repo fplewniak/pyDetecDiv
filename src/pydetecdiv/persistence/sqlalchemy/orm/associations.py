@@ -155,8 +155,8 @@ class ROIdata(Base):
             a.data_ = obj2
             obj1.data_list.append(a)
         else:
-            a.fov_ = obj2
-            obj1.fov_list_.append(a)
+            a.roi_ = obj2
+            obj1.roi_list_.append(a)
 
     @staticmethod
     def link(obj1, obj2):
