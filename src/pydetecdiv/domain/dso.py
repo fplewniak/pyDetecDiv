@@ -132,6 +132,22 @@ class BoxedDSO(DomainSpecificObject):
         return Box(self.top_left, self.bottom_right)
 
     @property
+    def x(self):
+        return self.box.top_left[0]
+
+    @property
+    def y(self):
+        return self.box.top_left[1]
+
+    @property
+    def width(self):
+        return self.box.width
+
+    @property
+    def height(self):
+        return self.box.height
+
+    @property
     def top_left(self):
         """
         The top-left corner of the Box in the coordinate system

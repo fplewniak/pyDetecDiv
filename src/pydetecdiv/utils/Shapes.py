@@ -22,6 +22,14 @@ class Box:
         self.bottom_right = bottom_right
 
     @property
+    def x(self):
+        return self._top_left[0]
+
+    @property
+    def y(self):
+        return self._top_left[1]
+
+    @property
     def top_left(self):
         """
         top left corner of the box

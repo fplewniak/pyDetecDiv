@@ -207,6 +207,7 @@ class ImageResourceChooser(QDockWidget):
         PyDetecDiv().setOverrideCursor(QCursor(Qt.WaitCursor))
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             fov = project.get_named_object('FOV', self.position_choice.currentText())
+            roi_list = fov.roi_list
             dataset = self.stage_choice.currentText()
             image_resource = fov.image_resource(dataset)
         tab_key = f'{PyDetecDiv().project_name}/{fov.name}/{dataset}'
@@ -215,6 +216,7 @@ class ImageResourceChooser(QDockWidget):
         tab.viewer.set_image_resource(image_resource)
         tab.viewer.set_channel(self.channel_choice.currentIndex())
         tab.viewer.display()
+        tab.viewer.draw_saved_rois(roi_list)
         tab.viewer.project_name = PyDetecDiv().project_name
         tab.viewer.fov = fov.name
         tab.viewer.stage = dataset

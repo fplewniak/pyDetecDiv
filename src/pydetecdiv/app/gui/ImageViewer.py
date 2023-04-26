@@ -126,6 +126,14 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.pixmap.convertFromImage(img)
         self.pixmapItem.setPixmap(self.pixmap)
 
+    def draw_saved_rois(self, roi_list):
+        for roi in roi_list:
+            rect_item = self.scene.addRect(QRect(0, 0, roi.width, roi.height))
+            rect_item.setPen(self.scene.saved_pen)
+            rect_item.setPos(QPoint(roi.x, roi.y))
+            rect_item.setFlags(QGraphicsItem.ItemIsSelectable)
+            rect_item.setData(0, roi.name)
+
     def close_window(self):
         self.parent().parent().window.close()
 
