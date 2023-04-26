@@ -208,11 +208,14 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
                     rect_item.setPen(self.scene.match_pen)
                     rect_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
 
-    def view_roi_image(self):
-        data = self.get_roi_data(self.scene.get_selected_ROI())
+    def view_roi_image(self, selected_roi=None):
+        if selected_roi is None:
+            selected_roi = self.scene.get_selected_ROI()
+        data = self.get_roi_data(selected_roi)
         viewer = ImageViewer()
         viewer.set_image_resource(ImageResource(data=data, fov=self.image_resource.fov))
-        self.parent().parent().addTab(viewer, 'ROI viewer')
+        self.parent().parent().addTab(viewer, selected_roi.data(0))
+        viewer.ui.view_name.setText(f'View: {selected_roi.data(0)}')
         viewer.display()
         self.parent().parent().setCurrentWidget(viewer)
 
@@ -242,6 +245,14 @@ class ViewerScene(QGraphicsScene):
         self.match_pen = QPen(Qt.GlobalColor.yellow, 2)
         self.saved_pen = QPen(Qt.GlobalColor.green, 2)
         self.warning_pen = QPen(Qt.GlobalColor.red, 2)
+
+    def contextMenuEvent(self, event):
+        menu = QMenu()
+        view_in_new_tab = menu.addAction("View in new tab")
+        r = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
+        if isinstance(r, QGraphicsRectItem):
+            view_in_new_tab.triggered.connect(lambda _: self.parent().view_roi_image(r))
+        selectedAction = menu.exec(event.screenPos())
 
     def keyPressEvent(self, event):
         if event.matches(QKeySequence.Delete):
