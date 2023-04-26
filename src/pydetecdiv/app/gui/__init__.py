@@ -4,6 +4,8 @@
 Main widgets to use with persistent windows
 """
 import psutil
+import numpy as np
+from PySide6.QtCore import QTimer
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QToolBar, QStatusBar, QMenu, QApplication
 
@@ -66,6 +68,13 @@ class MainStatusBar(QStatusBar):
     def __init__(self):
         super().__init__()
         self.setObjectName('Main status bar')
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.show_memory_usage)
+        self.timer.setInterval(1000)
+        self.timer.start()
+
+    def show_memory_usage(self):
+        self.showMessage(f'{np.format_float_positional(psutil.Process().memory_info().rss / (1024 * 1024), precision=1)} MB')
 
 
 class Quit(QAction):
