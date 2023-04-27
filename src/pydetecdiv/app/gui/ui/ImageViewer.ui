@@ -266,11 +266,11 @@
     <property name="title">
      <string>ROI</string>
     </property>
-    <addaction name="actionView_selection"/>
     <addaction name="separator"/>
     <addaction name="actionSet_template"/>
     <addaction name="actionLoad_template"/>
     <addaction name="separator"/>
+    <addaction name="actionView_template"/>
     <addaction name="actionIdentify_ROIs"/>
     <addaction name="actionSave_ROIs"/>
    </widget>
@@ -329,9 +329,12 @@
     <string>Save ROIs</string>
    </property>
   </action>
-  <action name="actionView_selection">
+  <action name="actionView_template">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
-    <string>View selection</string>
+    <string>View template in new tab</string>
    </property>
   </action>
  </widget>
@@ -580,10 +583,10 @@
    </hints>
   </connection>
   <connection>
-   <sender>actionView_selection</sender>
+   <sender>actionView_template</sender>
    <signal>triggered()</signal>
    <receiver>ImageViewer</receiver>
-   <slot>view_roi_image()</slot>
+   <slot>view_template()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
@@ -630,5 +633,6 @@
   <slot>identify_rois()</slot>
   <slot>view_roi_image()</slot>
   <slot>save_rois()</slot>
+  <slot>view_template()</slot>
  </slots>
 </ui>
