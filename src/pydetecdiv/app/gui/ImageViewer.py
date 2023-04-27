@@ -1,4 +1,4 @@
-from PySide6.QtCore import Signal, Qt, QRect, QPoint
+from PySide6.QtCore import Signal, Qt, QRect, QPoint, QTimer
 from PySide6.QtGui import QPixmap, QImage, QPen, QTransform, QKeySequence, QCursor, QAction
 from PySide6.QtWidgets import QMainWindow, QGraphicsScene, QApplication, QGraphicsItem, QGraphicsRectItem, QFileDialog, \
     QGraphicsSceneContextMenuEvent, QMenu
@@ -79,25 +79,25 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.scale = value
         self.ui.scale_value.setText(f'Zoom: {self.scale}%')
 
-    # def play_video(self):
-    #     threadCount = QThreadPool.globalInstance().maxThreadCount()
-    #     pool = QThreadPool.globalInstance()
-    #     for i in range(threadCount):
-    #         runnable = Video_Player(self)
-    #         pool.start(runnable)
-
     def play_video(self):
-        start = time.time()
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.show_next_frame)
+        self.timer.setInterval(50)
+        self.start = time.time()
         self.video_playing = True
-        first_frame = self.T
-        for frame in range(first_frame, self.image_resource.sizeT):
+        self.first_frame = self.T
+        self.frame = self.T
+        self.timer.start()
+
+    def show_next_frame(self):
+        self.frame += 1
+        if self.frame >= self.image_resource.sizeT or not self.video_playing:
+            self.timer.stop()
+        else:
             end = time.time()
-            speed = np.around((frame - first_frame) / (end - start), 1)
+            speed = np.around((self.frame - self.first_frame) / (end - self.start), 1)
             self.ui.FPS.setText(f'FPS: {speed}')
-            QApplication.processEvents()
-            self.change_frame(frame)
-            if not self.video_playing:
-                break
+            self.change_frame(self.frame)
 
     def pause_video(self):
         self.video_playing = False
