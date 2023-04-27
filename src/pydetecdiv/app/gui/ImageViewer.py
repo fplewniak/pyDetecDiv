@@ -1,3 +1,6 @@
+import os
+
+import pandas as pd
 from PySide6.QtCore import Signal, Qt, QRect, QPoint, QTimer
 from PySide6.QtGui import QPixmap, QImage, QPen, QTransform, QKeySequence, QCursor, QAction
 from PySide6.QtWidgets import QMainWindow, QGraphicsScene, QApplication, QGraphicsItem, QGraphicsRectItem, QFileDialog, \
@@ -11,6 +14,7 @@ from pydetecdiv.app import WaitDialog, PyDetecDiv, DrawingTools, pydetecdiv_proj
 from pydetecdiv.app.gui.ui.ImageViewer import Ui_ImageViewer
 from pydetecdiv.domain.ImageResource import ImageResource
 from pydetecdiv.domain.ROI import ROI
+from pydetecdiv.settings import get_config_value
 
 
 class ImageViewer(QMainWindow, Ui_ImageViewer):
@@ -39,6 +43,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.T = 0
         self.Z = 0
         self.drift = None
+        self.apply_drift = False
         self.roi_template = None
         self.video_playing = False
         self.video_frame.emit(self.T)
@@ -50,6 +55,14 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.T, self.C, self.Z = (0, 0, 0)
 
         self.ui.view_name.setText(f'View: {image_resource.fov.name}')
+        drift_filename = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv().project_name,
+                                      f'{self.image_resource.fov.name}_drift.csv')
+        if os.path.isfile(drift_filename):
+            self.drift = pd.read_csv(drift_filename)
+            self.ui.actionPlot.setEnabled(True)
+            self.ui.actionApply_correction.setEnabled(True)
+        else:
+            self.drift = None
 
         self.ui.z_slider.setMinimum(0)
         self.ui.z_slider.setMaximum(image_resource.sizeZ - 1)
@@ -120,7 +133,11 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         C = self.C if C is None else C
         T = self.T if T is None else T
         Z = self.Z if Z is None else Z
-        arr = self.image_resource.image(C=C, T=T, Z=Z)
+        if self.apply_drift:
+            idx = T if T < len(self.drift) else T - 1
+            arr = self.image_resource.image(C=C, T=T, Z=Z, drift=self.drift.iloc[idx])
+        else:
+            arr = self.image_resource.image(C=C, T=T, Z=Z)
         ny, nx = arr.shape
         img = QImage(np.ascontiguousarray(arr.data), nx, ny, QImage.Format_Grayscale16)
         self.pixmap.convertFromImage(img)
@@ -149,10 +166,15 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
 
     def compute_and_plot_drift(self):
         self.drift = self.image_resource.compute_drift(Z=self.Z, C=self.C)
+        self.ui.actionApply_correction.setEnabled(True)
         self.finished.emit(True)
 
     def apply_drift_correction(self):
-        print('Apply correction')
+        if self.ui.actionApply_correction.isChecked():
+            drift_filename = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv().project_name,
+                                          f'{self.image_resource.fov.name}_drift.csv')
+            self.drift.to_csv(drift_filename, index=False)
+        self.apply_drift = self.ui.actionApply_correction.isChecked()
 
     def set_roi_template(self):
         roi = self.scene.get_selected_ROI()

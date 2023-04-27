@@ -112,7 +112,7 @@ class ImageResource:
         """
         return self.resource.dims.X
 
-    def image(self, C=0, Z=0, T=0):
+    def image(self, C=0, Z=0, T=0, drift=None):
         """
         A 2D grayscale image (on frame, one channel and one layer)
         :param C: the channel index
@@ -129,6 +129,12 @@ class ImageResource:
             data = np.expand_dims(self._memmap, axis=tuple(i for i in range(len(s)) if s[i] == 1))[T, C, Z, ...]
         else:
             data = self.resource.get_image_dask_data('YX', C=C, Z=Z, T=T).compute()
+        if drift is not None:
+            return cv.warpAffine(np.array(data),
+                          np.float32(
+                              [[1, 0, -drift.dx],
+                               [0, 1, -drift.dy]]),
+                          data.shape)
         return data
 
     def data_sample(self, X=None, Y=None):
@@ -199,7 +205,7 @@ class ImageResource:
         :return: the cumulative drift transforms dx, dy, dr
         :rtype: pandas DataFrame
         """
-        df = pd.DataFrame(columns=['dy', 'dx'])
+        df = pd.DataFrame(columns=['dx', 'dy'])
         for frame in range(1, self.sizeT):
             df.loc[len(df)], _ = cv.phaseCorrelate(np.float32(self.image(T=frame - 1, Z=Z, C=C)),
                                                    np.float32(self.image(T=frame, Z=Z, C=C)))

@@ -33,6 +33,8 @@ class Ui_ImageViewer(object):
         self.actionCompute_and_plot.setText(u"Compute and plot")
         self.actionApply_correction = QAction(ImageViewer)
         self.actionApply_correction.setObjectName(u"actionApply_correction")
+        self.actionApply_correction.setCheckable(True)
+        self.actionApply_correction.setEnabled(False)
         self.actionApply_correction.setText(u"Apply correction")
         self.actionClose_window = QAction(ImageViewer)
         self.actionClose_window.setObjectName(u"actionClose_window")
