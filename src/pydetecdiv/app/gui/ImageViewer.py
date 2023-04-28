@@ -15,6 +15,7 @@ from pydetecdiv.app.gui.ui.ImageViewer import Ui_ImageViewer
 from pydetecdiv.domain.ImageResource import ImageResource
 from pydetecdiv.domain.ROI import ROI
 from pydetecdiv.settings import get_config_value
+from pydetecdiv.utils import round_to_even
 
 
 class ImageViewer(QMainWindow, Ui_ImageViewer):
@@ -50,7 +51,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.video_frame.connect(lambda frame: self.ui.current_frame.setText(f'Frame: {frame}'))
         self.video_frame.connect(self.ui.t_slider.setSliderPosition)
 
-    def set_image_resource(self, image_resource):
+    def set_image_resource(self, image_resource, crop=None):
         self.image_resource = image_resource
         self.T, self.C, self.Z = (0, 0, 0)
 
@@ -63,6 +64,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
             self.ui.actionApply_correction.setEnabled(True)
         else:
             self.drift = None
+        self.crop = crop
 
         self.ui.z_slider.setMinimum(0)
         self.ui.z_slider.setMaximum(image_resource.sizeZ - 1)
@@ -138,7 +140,12 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
             arr = self.image_resource.image(C=C, T=T, Z=Z, drift=self.drift.iloc[idx])
         else:
             arr = self.image_resource.image(C=C, T=T, Z=Z)
+        print(self.crop)
+        if self.crop is not None:
+            arr = arr[..., self.crop[1], self.crop[0]]
+            print(f'cropping to {self.crop}')
         ny, nx = arr.shape
+        print(f'display shape: {arr.shape}')
         img = QImage(np.ascontiguousarray(arr.data), nx, ny, QImage.Format_Grayscale16)
         self.pixmap.convertFromImage(img)
         self.pixmapItem.setPixmap(self.pixmap)
@@ -165,7 +172,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.ui.actionPlot.setEnabled(True)
 
     def compute_and_plot_drift(self):
-        self.drift = self.image_resource.compute_drift(Z=self.Z, C=self.C)
+        self.drift = self.image_resource.compute_drift(Z=self.Z, C=self.C, method='vidstab')
         self.ui.actionApply_correction.setEnabled(True)
         self.finished.emit(True)
 
@@ -175,6 +182,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
                                           f'{self.image_resource.fov.name}_drift.csv')
             self.drift.to_csv(drift_filename, index=False)
         self.apply_drift = self.ui.actionApply_correction.isChecked()
+        self.display()
 
     def set_roi_template(self):
         roi = self.scene.get_selected_ROI()
@@ -196,7 +204,28 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         pos = roi.pos()
         x1, x2 = int(pos.x()), w + int(pos.x())
         y1, y2 = int(pos.y()), h + int(pos.y())
-        return self.image_resource.data_sample(X=slice(x1, x2), Y=slice(y1, y2))
+        crop = None
+        if self.drift is not None:
+            max_shift_x = np.max(np.abs(self.drift.dx))
+            max_shift_y = np.max(np.abs(self.drift.dy))
+            x1, x2 = round_to_even(x1 - max_shift_x, ceil=False), round_to_even(x2 + max_shift_x)
+            y1, y2 = round_to_even(y1 - max_shift_y, ceil=False), round_to_even(y2 + max_shift_y)
+            x, y = round_to_even(max_shift_x, ceil=False), round_to_even(max_shift_y, ceil=False)
+            crop = [slice(x, x + w), slice(y, y + h)]
+            # min_shift_x, max_shift_x = np.min(self.drift.dx), np.max(self.drift.dx)
+            # min_shift_y, max_shift_y = np.min(self.drift.dy), np.max(self.drift.dy)
+            # print(min_shift_x, max_shift_x, min_shift_y, max_shift_y)
+            # print(f'without margins: ({x1}, {y1}) - ({x2}, {y2}) [{x2 - x1}, {y2 - y1}]')
+            # x1 = round_to_even(np.min([x1 + min_shift_x, x1]), ceil=False)
+            # x2 = round_to_even(np.max([x2 + max_shift_x, x2]))
+            # y1 = round_to_even(np.min([y1 + min_shift_y, y1]), ceil=False)
+            # y2 = round_to_even(np.max([y2 + max_shift_y, y2]))
+            # print(f'   with margins: ({x1}, {y1}) - ({x2}, {y2}) [{x2 - x1}, {y2 - y1}]')
+            # x = round_to_even(max_shift_x, ceil=False) if max_shift_x > 0 else 0
+            # y = round_to_even(max_shift_y, ceil=False) if max_shift_y > 0 else 0
+            # crop = [slice(x, x+w), slice(y, y+h)]
+            # print(f'should crop to {x}, {y}, {x+w}, {y+h} - {self.crop} - {w}, {h}')
+        return self.image_resource.data_sample(X=slice(x1, x2), Y=slice(y1, y2)), crop
 
     def load_roi_template(self):
         filename = QFileDialog.getOpenFileName(self, "Open Image", "", "Image Files (*.tif *.tiff)")[0]
@@ -231,9 +260,9 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
     def view_roi_image(self, selected_roi=None):
         if selected_roi is None:
             selected_roi = self.scene.get_selected_ROI()
-        data = self.get_roi_data(selected_roi)
         viewer = ImageViewer()
-        viewer.set_image_resource(ImageResource(data=data, fov=self.image_resource.fov))
+        data, crop = self.get_roi_data(selected_roi)
+        viewer.set_image_resource(ImageResource(data=data, fov=self.image_resource.fov), crop=crop)
         self.parent().parent().addTab(viewer, selected_roi.data(0))
         viewer.ui.view_name.setText(f'View: {selected_roi.data(0)}')
         viewer.display()
@@ -349,11 +378,7 @@ class ViewerScene(QGraphicsScene):
         pos = event.scenePos()
         if roi and (roi.flags() & QGraphicsItem.ItemIsMovable):
             roi_pos = roi.scenePos()
-            w, h = np.around(pos.x() - roi_pos.x()), np.around(pos.y() - roi_pos.y())
-            if w % 2 == 1:
-                w += 1
-            if h % 2 == 1:
-                h += 1
+            w, h = round_to_even(pos.x() - roi_pos.x()), round_to_even(pos.y() - roi_pos.y())
             rect = QRect(0, 0, w, h)
             roi.setRect(rect)
         else:

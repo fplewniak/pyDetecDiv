@@ -134,7 +134,7 @@ class ImageResource:
                           np.float32(
                               [[1, 0, -drift.dx],
                                [0, 1, -drift.dy]]),
-                          data.shape)
+                          (data.shape[1], data.shape[0]))
         return data
 
     def data_sample(self, X=None, Y=None):

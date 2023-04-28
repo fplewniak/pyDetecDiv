@@ -283,6 +283,12 @@
    </property>
   </action>
   <action name="actionApply_correction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string notr="true">Apply correction</string>
    </property>
