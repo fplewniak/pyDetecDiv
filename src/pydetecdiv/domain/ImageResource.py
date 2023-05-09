@@ -138,6 +138,16 @@ class ImageResource:
         return data
 
     def data_sample(self, X=None, Y=None):
+        """
+        Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for
+        regions of interest from a field of view.
+        :param X: the X slice
+        :type X: slice
+        :param Y: the Y slice
+        :type Y: slice
+        :return: the sample data (in-memory)
+        :rtype: ndarray
+        """
         if self._memmap is not None:
             s = self.resource.shape
             data = np.expand_dims(self._memmap, axis=tuple(i for i in range(len(s)) if s[i] == 1))[..., Y, X]

@@ -1,11 +1,9 @@
 import os
-
+import time
 import pandas as pd
 from PySide6.QtCore import Signal, Qt, QRect, QPoint, QTimer
-from PySide6.QtGui import QPixmap, QImage, QPen, QTransform, QKeySequence, QCursor, QAction
-from PySide6.QtWidgets import QMainWindow, QGraphicsScene, QApplication, QGraphicsItem, QGraphicsRectItem, QFileDialog, \
-    QGraphicsSceneContextMenuEvent, QMenu
-import time
+from PySide6.QtGui import QPixmap, QImage, QPen, QTransform, QKeySequence
+from PySide6.QtWidgets import QMainWindow, QGraphicsScene, QGraphicsItem, QGraphicsRectItem, QFileDialog, QMenu
 import numpy as np
 import cv2 as cv
 from skimage.feature import peak_local_max
@@ -50,6 +48,12 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.video_frame.emit(self.T)
         self.video_frame.connect(lambda frame: self.ui.current_frame.setText(f'Frame: {frame}'))
         self.video_frame.connect(self.ui.t_slider.setSliderPosition)
+        self.crop = None
+        self.timer = None
+        self.start = None
+        self.first_frame = None
+        self.frame = None
+        self.wait = None
 
     def set_image_resource(self, image_resource, crop=None):
         self.image_resource = image_resource
@@ -240,7 +244,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         img8bits = np.uint8(np.array(img / np.max(img) * 255))
         res = cv.matchTemplate(img8bits, self.roi_template, cv.TM_CCOEFF_NORMED)
         # loc = np.where(res >= threshold)
-        # xy = peak_local_max(res, min_distance=self.roi_template.shape[0], threshold_abs=threshold, exclude_border=False)
+        # xy = peak_local_max(res,min_distance=self.roi_template.shape[0],threshold_abs=threshold,exclude_border=False)
         xy = peak_local_max(res, threshold_abs=threshold, exclude_border=False)
         w, h = self.roi_template.shape[::-1]
         for pt in xy:
@@ -256,7 +260,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
                     rect_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
 
     def view_template(self):
-        self.parent().parent().show_image(self.roi_template, title='ROI template', format=QImage.Format_Grayscale8)
+        self.parent().parent().show_image(self.roi_template, title='ROI template', format_=QImage.Format_Grayscale8)
 
     def view_roi_image(self, selected_roi=None):
         if selected_roi is None:
@@ -320,7 +324,7 @@ class ViewerScene(QGraphicsScene):
                     self.duplicate_selected_ROI(event)
 
     def select_ROI(self, event):
-        [r.setSelected(False) for r in self.items()]
+        _ = [r.setSelected(False) for r in self.items()]
         r = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
         if isinstance(r, QGraphicsRectItem):
             r.setSelected(True)
@@ -333,6 +337,7 @@ class ViewerScene(QGraphicsScene):
         for selection in self.selectedItems():
             if isinstance(selection, QGraphicsRectItem):
                 return selection
+        return None
 
     def duplicate_selected_ROI(self, event):
         pos = event.scenePos()

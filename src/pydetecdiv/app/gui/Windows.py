@@ -3,9 +3,9 @@ Classes for persistent windows of the GUI
 """
 import numpy as np
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QCursor, QAction, QIcon, QPixmap, QImage
+from PySide6.QtGui import QCursor, QIcon, QPixmap, QImage
 from PySide6.QtWidgets import QMainWindow, QMdiArea, QTabWidget, QDockWidget, QFormLayout, QLabel, QComboBox, \
-    QDialogButtonBox, QWidget, QFrame, QMenuBar, QVBoxLayout, QPushButton, QHBoxLayout, QGridLayout, QToolButton, \
+    QDialogButtonBox, QWidget, QFrame, QVBoxLayout, QGridLayout, QToolButton, \
     QGraphicsView, QGraphicsScene
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -15,7 +15,7 @@ from pydetecdiv.app.gui import MainToolBar, MainStatusBar, FileMenu, DataMenu
 from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project, DrawingTools
 
 from pydetecdiv.app.gui.ImageViewer import ImageViewer
-import dask.array as da
+
 
 class MainWindow(QMainWindow):
     """
@@ -61,6 +61,13 @@ class MainWindow(QMainWindow):
         settings.setValue("windowState", self.saveState())
 
     def add_tabbbed_viewer(self, title):
+        """
+        Add a new Tabbed viewer to visualize a FOV and its related information and analyses
+        :param title: the title for the tabbed viewer window (i.e. Project/FOV/dataset
+        :type title: str
+        :return: the new tabbed viewer widget
+        :rtype: TabbedViewer
+        """
         if title not in self.tabs:
             self.tabs[title] = TabbedViewer(title, self)
             self.tabs[title].window = self.mdi_area.addSubWindow(self.tabs[title])
@@ -71,6 +78,12 @@ class MainWindow(QMainWindow):
         return self.tabs[title]
 
     def subwindow_activation(self, subwindow):
+        """
+        When a tabbed viewer is activated (its focus is set), then the Image resource selector should be fed with the
+        corresponding image resource information(FOV name, stage dataset, channel)
+        :param subwindow: the activated sub-window
+        :type subwindow:QMdiArea
+        """
         if subwindow is not None:
             for c in subwindow.children():
                 if (c in self.tabs.values()) and c.viewer.project_name:
@@ -82,6 +95,10 @@ class MainWindow(QMainWindow):
 
 
 class TabbedViewer(QTabWidget):
+    """
+    A tabbed widget to hold the FOV main viewer and all related viewers (plots, image resources, etc.)
+    """
+
     def __init__(self, title, parent=None):
         super().__init__()
         self.viewer = ImageViewer()
@@ -93,22 +110,43 @@ class TabbedViewer(QTabWidget):
         self.drift = None
 
     def closeEvent(self, event):
-        del (self.parent.tabs[self.windowTitle()])
+        """
+        Close the current tabbed widget window
+        :param event: the close event
+        :type event: QCloseEvent
+        """
+        del self.parent.tabs[self.windowTitle()]
 
     def show_plot(self, df, title='Plot'):
+        """
+        Open a viewer tab to plot a graphic from a pandas dataframe
+        :param df: the data to plot
+        :type df: pandas DataFrame
+        :param title: the title for the plot tab
+        :type title: str
+        """
         plot_viewer = MatplotViewer(self)
         self.addTab(plot_viewer, title)
         df.plot(ax=plot_viewer.axes)
         plot_viewer.canvas.draw()
         self.setCurrentWidget(plot_viewer)
 
-    def show_image(self, data, title='Image', format = QImage.Format_Grayscale16):
+    def show_image(self, data, title='Image', format_=QImage.Format_Grayscale16):
+        """
+        Display a 2D image
+        :param data: the 2D image data
+        :type data: ndarray
+        :param title: the title of the tab
+        :type title: str
+        :param format: the image format
+        :type format: QImage.Format
+        """
         viewer = QGraphicsView(self)
         scene = QGraphicsScene()
         pixmap = QPixmap()
         pixmapItem = scene.addPixmap(pixmap)
         ny, nx = data.shape
-        img = QImage(np.ascontiguousarray(data), nx, ny, format)
+        img = QImage(np.ascontiguousarray(data), nx, ny, format_)
         pixmap.convertFromImage(img)
         pixmapItem.setPixmap(pixmap)
         viewer.setScene(scene)
@@ -116,12 +154,27 @@ class TabbedViewer(QTabWidget):
         self.setCurrentWidget(viewer)
 
     def close_tab(self, index):
+        """
+        Close the tab with the specified index
+        :param index: the index of the tab to close
+        :type index: int
+        """
         if self.widget(index) != self.viewer:
             self.removeTab(index)
 
     def get_image_viewers(self):
+        """
+        Get the list of image viewers in the current Tabbed viewer
+        :return: the list of image viewers
+        :rtype: list of ImageViewer widgets
+        """
         return [self.widget(i) for i in range(self.count()) if isinstance(self.widget(i), ImageViewer)]
+
+
 class MatplotViewer(QWidget):
+    """
+    A widget to display matplotlib plots in a tab
+    """
     def __init__(self, parent=None):
         super().__init__(parent)
         # self.dismiss_button = QPushButton('Dismiss')
@@ -145,6 +198,10 @@ class MatplotViewer(QWidget):
 
 
 class ImageResourceChooser(QDockWidget):
+    """
+    A dockable widget with a form for choosing an image resource to display in a new tabbed viewer. The image resource
+    is determined by the FOV name, the dataset (stage) and a channel
+    """
     def __init__(self, parent):
         super().__init__('Image resource selector', parent)
         self.setObjectName('Image_resource_selector')
@@ -152,28 +209,28 @@ class ImageResourceChooser(QDockWidget):
         self.form.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
 
         self.formLayout = QFormLayout(self.form)
-        self.formLayout.setObjectName(u"formLayout")
+        self.formLayout.setObjectName("formLayout")
 
         self.position_label = QLabel('Position', self.form)
-        self.position_label.setObjectName(u"position_label")
+        self.position_label.setObjectName("position_label")
         self.position_choice = QComboBox(self.form)
-        self.position_choice.setObjectName(u"position_choice")
+        self.position_choice.setObjectName("position_choice")
         self.formLayout.addRow(self.position_label, self.position_choice)
 
         self.stage_label = QLabel('Stage', self.form)
-        self.stage_label.setObjectName(u"stage_label")
+        self.stage_label.setObjectName("stage_label")
         self.stage_choice = QComboBox(self.form)
-        self.stage_choice.setObjectName(u"stage_choice")
+        self.stage_choice.setObjectName("stage_choice")
         self.formLayout.addRow(self.stage_label, self.stage_choice)
 
         self.channel_label = QLabel('Channel', self.form)
-        self.channel_label.setObjectName(u"channel_label")
+        self.channel_label.setObjectName("channel_label")
         self.channel_choice = QComboBox(self.form)
-        self.channel_choice.setObjectName(u"channel_choice")
+        self.channel_choice.setObjectName("channel_choice")
         self.formLayout.addRow(self.channel_label, self.channel_choice)
 
         self.OK_button = QDialogButtonBox(self.form)
-        self.OK_button.setObjectName(u"OK_button")
+        self.OK_button.setObjectName("OK_button")
         self.OK_button.setStandardButtons(QDialogButtonBox.Ok)
         self.formLayout.addWidget(self.OK_button)
 
@@ -185,6 +242,11 @@ class ImageResourceChooser(QDockWidget):
         self.stage_choice.currentIndexChanged.connect(self.update_channel_choice)
 
     def set_choice(self, p_name):
+        """
+        Set the available values for FOVs, datasets and channels given a project name
+        :param p_name: the project name
+        :type p_name: str
+        """
         with pydetecdiv_project(p_name) as project:
             self.position_choice.clear()
             self.stage_choice.clear()
@@ -199,6 +261,9 @@ class ImageResourceChooser(QDockWidget):
                 self.channel_choice.addItems([str(i) for i in range(fov.image_resource(dataset).sizeC)])
 
     def update_channel_choice(self):
+        """
+        Sets the available values for channel in the form, given a FOV and dataset
+        """
         if self.stage_choice.currentText() and self.position_choice.currentText():
             with pydetecdiv_project(PyDetecDiv().project_name) as project:
                 fov = project.get_named_object('FOV', self.position_choice.currentText())
@@ -207,6 +272,9 @@ class ImageResourceChooser(QDockWidget):
                 self.channel_choice.addItems([str(i) for i in range(fov.image_resource(dataset).sizeC)])
 
     def accept(self):
+        """
+        When the OK button is clicked, then open a new TabbedViewer window and display the selected Image resource
+        """
         PyDetecDiv().setOverrideCursor(QCursor(Qt.WaitCursor))
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             fov = project.get_named_object('FOV', self.position_choice.currentText())
@@ -227,6 +295,9 @@ class ImageResourceChooser(QDockWidget):
 
 
 class DrawingToolsPalette(QDockWidget):
+    """
+    A dockable window with tools for drawing ROIs and other items.
+    """
     def __init__(self, parent):
         super().__init__('Drawing tools', parent)
         self.setObjectName('Drawing_tools_palette')
@@ -234,7 +305,7 @@ class DrawingToolsPalette(QDockWidget):
         self.form.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
 
         self.formLayout = QGridLayout(self.form)
-        self.formLayout.setObjectName(u"drawingToolsLayout")
+        self.formLayout.setObjectName("drawingToolsLayout")
 
         self.cursor_button = Cursor(self)
         self.draw_ROI_button = DrawROI(self)
@@ -250,16 +321,28 @@ class DrawingToolsPalette(QDockWidget):
         self.setWidget(self.form)
 
     def unset_tools(self):
+        """
+        Unset all available tools
+        """
         for t in self.tools:
             t.setChecked(False)
 
     def current_tool(self):
+        """
+        Return the currently checked tool
+        :return: the currently checked tool
+        :rtype: QToolButton
+        """
         for t in self.tools:
             if t.isChecked():
                 return t
+        return None
 
 
 class Cursor(QToolButton):
+    """
+    QToolButton to activate the tool for selecting and dragging items in the view
+    """
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -271,12 +354,18 @@ class Cursor(QToolButton):
         PyDetecDiv().current_drawing_tool = DrawingTools.Cursor
 
     def select_tool(self):
+        """
+        Select the Cursor tool
+        """
         self.parent.unset_tools()
         self.setChecked(True)
         PyDetecDiv().current_drawing_tool = DrawingTools.Cursor
 
 
 class DrawROI(QToolButton):
+    """
+    A QToolButton to activate the tool for drawing a ROI
+    """
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -286,12 +375,18 @@ class DrawROI(QToolButton):
         self.clicked.connect(self.select_tool)
 
     def select_tool(self):
+        """
+        Select the DrawROI tool
+        """
         self.parent.unset_tools()
         self.setChecked(True)
         PyDetecDiv().current_drawing_tool = DrawingTools.DrawROI
 
 
 class DuplicateROI(QToolButton):
+    """
+    A QToolButton to activate the tool for duplicating a ROI
+    """
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -301,6 +396,9 @@ class DuplicateROI(QToolButton):
         self.clicked.connect(self.select_tool)
 
     def select_tool(self):
+        """
+        Select the DuplicateROI tool
+        """
         self.parent.unset_tools()
         self.setChecked(True)
         PyDetecDiv().current_drawing_tool = DrawingTools.DuplicateROI
