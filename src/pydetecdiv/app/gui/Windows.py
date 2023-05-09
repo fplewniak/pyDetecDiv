@@ -90,6 +90,7 @@ class TabbedViewer(QTabWidget):
         self.addTab(self.viewer, 'FOV')
         self.parent = parent
         self.window = None
+        self.drift = None
 
     def closeEvent(self, event):
         del (self.parent.tabs[self.windowTitle()])
@@ -118,7 +119,8 @@ class TabbedViewer(QTabWidget):
         if self.widget(index) != self.viewer:
             self.removeTab(index)
 
-
+    def get_image_viewers(self):
+        return [self.widget(i) for i in range(self.count()) if isinstance(self.widget(i), ImageViewer)]
 class MatplotViewer(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)

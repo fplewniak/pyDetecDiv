@@ -43,7 +43,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.C = 0
         self.T = 0
         self.Z = 0
-        self.drift = None
+        # self.drift = None
         self.apply_drift = False
         self.roi_template = None
         self.video_playing = False
@@ -59,11 +59,11 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         drift_filename = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv().project_name,
                                       f'{self.image_resource.fov.name}_drift.csv')
         if os.path.isfile(drift_filename):
-            self.drift = pd.read_csv(drift_filename)
+            self.parent().parent().drift = pd.read_csv(drift_filename)
             self.ui.actionPlot.setEnabled(True)
             self.ui.actionApply_correction.setEnabled(True)
         else:
-            self.drift = None
+            self.parent().parent().drift = None
         self.crop = crop
 
         self.ui.z_slider.setMinimum(0)
@@ -136,8 +136,8 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         T = self.T if T is None else T
         Z = self.Z if Z is None else Z
         if self.apply_drift:
-            idx = T if T < len(self.drift) else T - 1
-            arr = self.image_resource.image(C=C, T=T, Z=Z, drift=self.drift.iloc[idx])
+            idx = T if T < len(self.parent().parent().drift) else T - 1
+            arr = self.image_resource.image(C=C, T=T, Z=Z, drift=self.parent().parent().drift.iloc[idx])
         else:
             arr = self.image_resource.image(C=C, T=T, Z=Z)
         print(self.crop)
@@ -168,19 +168,20 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.plot_drift()
 
     def plot_drift(self):
-        self.parent().parent().show_plot(self.drift, 'Drift')
-        self.ui.actionPlot.setEnabled(True)
+        self.parent().parent().show_plot(self.parent().parent().drift, 'Drift')
+        for viewer in self.parent().parent().get_image_viewers():
+            viewer.ui.actionPlot.setEnabled(True)
+            viewer.ui.actionApply_correction.setEnabled(True)
 
     def compute_and_plot_drift(self):
-        self.drift = self.image_resource.compute_drift(Z=self.Z, C=self.C, method='vidstab')
-        self.ui.actionApply_correction.setEnabled(True)
+        self.parent().parent().drift = self.image_resource.compute_drift(Z=self.Z, C=self.C, method='vidstab')
         self.finished.emit(True)
 
     def apply_drift_correction(self):
         if self.ui.actionApply_correction.isChecked():
             drift_filename = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv().project_name,
                                           f'{self.image_resource.fov.name}_drift.csv')
-            self.drift.to_csv(drift_filename, index=False)
+            self.parent().parent().drift.to_csv(drift_filename, index=False)
         self.apply_drift = self.ui.actionApply_correction.isChecked()
         self.display()
 
@@ -205,9 +206,9 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         x1, x2 = int(pos.x()), w + int(pos.x())
         y1, y2 = int(pos.y()), h + int(pos.y())
         crop = None
-        if self.drift is not None:
-            max_shift_x = np.max(np.abs(self.drift.dx))
-            max_shift_y = np.max(np.abs(self.drift.dy))
+        if self.parent().parent().drift is not None:
+            max_shift_x = np.max(np.abs(self.parent().parent().drift.dx))
+            max_shift_y = np.max(np.abs(self.parent().parent().drift.dy))
             x1, x2 = round_to_even(x1 - max_shift_x, ceil=False), round_to_even(x2 + max_shift_x)
             y1, y2 = round_to_even(y1 - max_shift_y, ceil=False), round_to_even(y2 + max_shift_y)
             x, y = round_to_even(max_shift_x, ceil=False), round_to_even(max_shift_y, ceil=False)
@@ -262,8 +263,8 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
             selected_roi = self.scene.get_selected_ROI()
         viewer = ImageViewer()
         data, crop = self.get_roi_data(selected_roi)
-        viewer.set_image_resource(ImageResource(data=data, fov=self.image_resource.fov), crop=crop)
         self.parent().parent().addTab(viewer, selected_roi.data(0))
+        viewer.set_image_resource(ImageResource(data=data, fov=self.image_resource.fov), crop=crop)
         viewer.ui.view_name.setText(f'View: {selected_roi.data(0)}')
         viewer.display()
         self.parent().parent().setCurrentWidget(viewer)
@@ -342,7 +343,7 @@ class ViewerScene(QGraphicsScene):
             w, h = roi.rect().size().toTuple()
             roi.setPos(QPoint(pos.x() - np.around(w / 2.0), pos.y() - np.around(h / 2.0)))
             roi.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
-            roi.setData(0, f'Rectangle{len(self.items())}')
+            roi.setData(0, f'Region{len(self.items())}')
             self.select_ROI(event)
             if [r for r in roi.collidingItems(Qt.IntersectsItemBoundingRect) if isinstance(r, QGraphicsRectItem)]:
                 roi.setPen(self.warning_pen)
@@ -386,7 +387,7 @@ class ViewerScene(QGraphicsScene):
             roi.setPen(self.pen)
             roi.setPos(QPoint(pos.x(), pos.y()))
             roi.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
-            roi.setData(0, f'Rectangle{len(self.items())}')
+            roi.setData(0, f'Region{len(self.items())}')
             self.select_ROI(event)
         if [r for r in roi.collidingItems(Qt.IntersectsItemBoundingRect) if isinstance(r, QGraphicsRectItem)]:
             roi.setPen(self.warning_pen)
