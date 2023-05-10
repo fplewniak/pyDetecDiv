@@ -74,7 +74,11 @@ class MainStatusBar(QStatusBar):
         self.timer.start()
 
     def show_memory_usage(self):
-        self.showMessage(f'{np.format_float_positional(psutil.Process().memory_info().rss / (1024 * 1024), precision=1)} MB')
+        """
+        Show memory usage in status bar
+        """
+        self.showMessage(
+            f'{np.format_float_positional(psutil.Process().memory_info().rss / (1024 * 1024), precision=1)} MB')
 
 
 class Quit(QAction):

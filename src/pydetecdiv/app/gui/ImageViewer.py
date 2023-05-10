@@ -17,6 +17,9 @@ from pydetecdiv.utils import round_to_even
 
 
 class ImageViewer(QMainWindow, Ui_ImageViewer):
+    """
+    Class to view and manipulate an Image resource
+    """
     video_frame = Signal(int)
     finished = Signal(bool)
 
@@ -56,6 +59,13 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.wait = None
 
     def set_image_resource(self, image_resource, crop=None):
+        """
+        Associate an image resource to this viewer, possibly cropping if requested.
+        :param image_resource: the image resource to load into the viewer
+        :type image_resource: ImageResource
+        :param crop: the (X,Y) crop area
+        :type crop: list of slices [X, Y]
+        """
         self.image_resource = image_resource
         self.T, self.C, self.Z = (0, 0, 0)
 
@@ -79,26 +89,48 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.ui.t_slider.setEnabled(True)
 
     def set_channel(self, C):
+        """
+        Sets the current channel
+        TODO: allow specification of channel by name, this method should set the self.C field to the index corresponding
+        TODO: to the requested name if the C argument is a str
+        :param C: index of the current channel
+        :type C: int
+        """
         self.C = C
 
     def zoom_reset(self):
+        """
+        Reset the zoom to 1:1
+        """
         self.ui.viewer.scale(100 / self.scale, 100 / self.scale)
         self.scale = 100
         self.ui.zoom_value.setSliderPosition(100)
         self.ui.scale_value.setText(f'Zoom: {self.scale}%')
 
     def zoom_fit(self):
+        """
+        Set the zoom value to fit the image in the viewer
+        """
         self.ui.viewer.fitInView(self.pixmapItem, Qt.KeepAspectRatio)
         self.scale = int(100 * np.around(self.ui.viewer.transform().m11(), 2))
         self.ui.zoom_value.setSliderPosition(self.scale)
         self.ui.scale_value.setText(f'Zoom: {self.scale}%')
 
     def zoom_set_value(self, value):
+        """
+        Set the zoom to the specified value
+        :param value: the zoom value (as %)
+        :type value: float
+        """
         self.ui.viewer.scale(value / self.scale, value / self.scale)
         self.scale = value
         self.ui.scale_value.setText(f'Zoom: {self.scale}%')
 
     def play_video(self):
+        """
+        Play the video with a maximum of an image every 50 ms (i.e. 20 FPS). Note that if loading a frame takes longer
+        than 50 ms, then the frame rate may be lower.
+        """
         self.timer = QTimer()
         self.timer.timeout.connect(self.show_next_frame)
         self.timer.setInterval(50)
@@ -109,6 +141,9 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.timer.start()
 
     def show_next_frame(self):
+        """
+        Show next frame when playing a video
+        """
         self.frame += 1
         if self.frame >= self.image_resource.sizeT or not self.video_playing:
             self.timer.stop()
@@ -119,23 +154,47 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
             self.change_frame(self.frame)
 
     def pause_video(self):
+        """
+        Pause the video by setting the video_playing flag to False
+        """
         self.video_playing = False
 
     def video_back(self):
+        """
+        Reset the current frame to the first one
+        """
         self.change_frame(T=0)
 
     def change_layer(self, Z=0):
+        """
+        Set the layer to the specified value and refresh the display
+        :param Z: the Z layer index
+        :type Z: int
+        """
         if self.Z != Z:
             self.Z = Z
             self.display()
 
     def change_frame(self, T=0):
+        """
+        Change the current frame to the specified time index and refresh the display
+        :param T:
+        """
         if self.T != T:
             self.T = T
             self.video_frame.emit(self.T)
             self.display()
 
     def display(self, C=None, T=None, Z=None):
+        """
+        Display the frame specified by the time, channel and layer indices.
+        :param C: the channel index
+        :type C: int
+        :param T: the time index
+        :type T: int
+        :param Z: the layer index
+        :type Z: int
+        """
         C = self.C if C is None else C
         T = self.T if T is None else T
         Z = self.Z if Z is None else Z
@@ -155,6 +214,11 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.pixmapItem.setPixmap(self.pixmap)
 
     def draw_saved_rois(self, roi_list):
+        """
+        Draw saved ROIs as green rectangles that can be selected but not moved
+        :param roi_list: the list of saved ROIs
+        :type roi_list: list of ROI objects
+        """
         for roi in roi_list:
             rect_item = self.scene.addRect(QRect(0, 0, roi.width, roi.height))
             rect_item.setPen(self.scene.saved_pen)
@@ -163,25 +227,42 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
             rect_item.setData(0, roi.name)
 
     def close_window(self):
+        """
+        Close the Tabbed viewer containing this Image viewer
+        """
         self.parent().parent().window.close()
 
     def compute_drift(self):
+        """
+        Slot to compute the drift correction from the image resource displayed in this viewer, then plot the (x,y) drift
+        against frame index. This slot runs the compute_and_plot_drift() method, launches an message dialog window and
+        waits for completion before displaying the plot
+        """
         self.wait = WaitDialog('Computing drift, please wait.', self, cancel_msg='Cancel drift computation please wait')
         self.finished.connect(self.wait.close_window)
         self.wait.wait_for(self.compute_and_plot_drift)
         self.plot_drift()
 
     def plot_drift(self):
+        """
+        Open a MatplotViewer tab and plot the (x,y) drift against frame index
+        """
         self.parent().parent().show_plot(self.parent().parent().drift, 'Drift')
         for viewer in self.parent().parent().get_image_viewers():
             viewer.ui.actionPlot.setEnabled(True)
             viewer.ui.actionApply_correction.setEnabled(True)
 
     def compute_and_plot_drift(self):
+        """
+        Computation and update of the drift values. When the computation is over, this method emits a finished signal
+        """
         self.parent().parent().drift = self.image_resource.compute_drift(Z=self.Z, C=self.C, method='vidstab')
         self.finished.emit(True)
 
     def apply_drift_correction(self):
+        """
+        Apply the drift correction to the display. This method also saves the drift values to a file.
+        """
         if self.ui.actionApply_correction.isChecked():
             drift_filename = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv().project_name,
                                           f'{self.image_resource.fov.name}_drift.csv')
@@ -190,6 +271,9 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.display()
 
     def set_roi_template(self):
+        """
+        Set the currently selected area as a template to define other ROIs
+        """
         roi = self.scene.get_selected_ROI()
         if roi:
             data = self.get_roi_image(roi)
@@ -198,6 +282,13 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
             self.ui.actionView_template.setEnabled(True)
 
     def get_roi_image(self, roi):
+        """
+        Get a 2D image of the specified ROI
+        :param roi: the specified area to get image data for
+        :type roi: QRect
+        :return: the image data
+        :rtype: 2D ndarray
+        """
         w, h = roi.rect().toRect().size().toTuple()
         pos = roi.pos()
         x1, x2 = int(pos.x()), w + int(pos.x())
@@ -205,6 +296,14 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         return self.image_resource.image(C=self.C, T=self.T, Z=self.Z)[y1:y2, x1:x2]
 
     def get_roi_data(self, roi):
+        """
+        Get a 5D image resource for the specified ROI. If the drift correction is available, then the (x,y) crop is
+        larger than the actual ROI to allow drift correction.
+        :param roi: the specified area to get image resource data for
+        :type roi: QRect
+        :return: the image data
+        :rtype: 5D ndarray
+        """
         w, h = roi.rect().toRect().size().toTuple()
         pos = roi.pos()
         x1, x2 = int(pos.x()), w + int(pos.x())
@@ -233,12 +332,18 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         return self.image_resource.data_sample(X=slice(x1, x2), Y=slice(y1, y2)), crop
 
     def load_roi_template(self):
+        """
+        Load ROI template from a file.
+        """
         filename = QFileDialog.getOpenFileName(self, "Open Image", "", "Image Files (*.tif *.tiff)")[0]
         img = cv.imread(filename, cv.IMREAD_GRAYSCALE)
         self.roi_template = np.uint8(np.array(img / np.max(img) * 255))
         self.ui.actionIdentify_ROIs.setEnabled(True)
 
     def identify_rois(self):
+        """
+        Identify ROIs in an image using the ROI template as a model and the matchTemplate function from OpenCV
+        """
         threshold = 0.3
         img = self.image_resource.image(C=self.C, Z=self.Z, T=self.T)
         img8bits = np.uint8(np.array(img / np.max(img) * 255))
@@ -260,9 +365,16 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
                     rect_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
 
     def view_template(self):
+        """
+        Display the currently selected template in a new tab as a 2D image.
+        """
         self.parent().parent().show_image(self.roi_template, title='ROI template', format_=QImage.Format_Grayscale8)
 
     def view_roi_image(self, selected_roi=None):
+        """
+        Display the selected area in a new tab viewer as a 5D image resource.
+        :param selected_roi:
+        """
         if selected_roi is None:
             selected_roi = self.scene.get_selected_ROI()
         viewer = ImageViewer()
@@ -274,6 +386,9 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.parent().parent().setCurrentWidget(viewer)
 
     def save_rois(self):
+        """
+        Save the areas as ROIs
+        """
         rois = [item for item in self.scene.items() if isinstance(item, QGraphicsRectItem)]
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             for i, rect_item in enumerate(sorted(rois, key=lambda x: x.scenePos().toPoint().toTuple())):
@@ -285,12 +400,19 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.fixate_saved_rois()
 
     def fixate_saved_rois(self):
+        """
+        Disable the possibility to move ROIs once they have been saved
+        """
         for r in [item for item in self.scene.items() if isinstance(item, QGraphicsRectItem)]:
             r.setPen(self.scene.saved_pen)
             r.setFlag(QGraphicsItem.ItemIsMovable, False)
 
 
 class ViewerScene(QGraphicsScene):
+    """
+    The viewer scene where images and other items are drawn
+    """
+
     def __init__(self):
         super().__init__()
         self.from_x = None
@@ -301,6 +423,10 @@ class ViewerScene(QGraphicsScene):
         self.warning_pen = QPen(Qt.GlobalColor.red, 2)
 
     def contextMenuEvent(self, event):
+        """
+        The context menu for area manipulation
+        :param event:
+        """
         menu = QMenu()
         view_in_new_tab = menu.addAction("View in new tab")
         r = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
@@ -309,11 +435,23 @@ class ViewerScene(QGraphicsScene):
         selectedAction = menu.exec(event.screenPos())
 
     def keyPressEvent(self, event):
+        """
+        Detect when a key is pressed and perform the corresponding action:
+        * QKeySequence.Delete: delete the selected item
+        :param event: the key pressed event
+        :type event: QKeyEvent
+        """
         if event.matches(QKeySequence.Delete):
             for r in self.selectedItems():
                 self.removeItem(r)
 
     def mousePressEvent(self, event):
+        """
+        Detect when the left mouse button is pressed and perform the action corresponding to the currently checked
+        drawing tool
+        :param event: the mouse press event
+        :type event: QGraphicsSceneMouseEvent
+        """
         if event.button() == Qt.LeftButton:
             match PyDetecDiv().current_drawing_tool:
                 case DrawingTools.Cursor:
@@ -324,6 +462,11 @@ class ViewerScene(QGraphicsScene):
                     self.duplicate_selected_ROI(event)
 
     def select_ROI(self, event):
+        """
+        Select the current area/ROI
+        :param event: the mouse press event
+        :type event: QGraphicsSceneMouseEvent
+        """
         _ = [r.setSelected(False) for r in self.items()]
         r = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
         if isinstance(r, QGraphicsRectItem):
@@ -334,12 +477,22 @@ class ViewerScene(QGraphicsScene):
             self.parent().ui.actionSet_template.setEnabled(False)
 
     def get_selected_ROI(self):
+        """
+        Return the selected ROI
+        :return: the selected ROI
+        :rtype: QGraphicsRectItem
+        """
         for selection in self.selectedItems():
             if isinstance(selection, QGraphicsRectItem):
                 return selection
         return None
 
     def duplicate_selected_ROI(self, event):
+        """
+        Duplicate the currently selected ROI at the current mouse position
+        :param event: the mouse press event
+        :type event: QGraphicsSceneMouseEvent
+        """
         pos = event.scenePos()
         roi = self.get_selected_ROI()
         if roi:
@@ -356,6 +509,12 @@ class ViewerScene(QGraphicsScene):
                 roi.setPen(self.pen)
 
     def mouseMoveEvent(self, event):
+        """
+        Detect mouse movement and apply the appropriate method according to the currently cjecked drawing tool and key
+        modifier
+        :param event: the mouse move event
+        :type event: QGraphicsSceneMouseEvent
+        """
         if event.button() == Qt.NoButton:
             match PyDetecDiv().current_drawing_tool, event.modifiers():
                 case DrawingTools.Cursor, Qt.NoModifier:
@@ -370,6 +529,11 @@ class ViewerScene(QGraphicsScene):
                     self.move_ROI(event)
 
     def move_ROI(self, event):
+        """
+        Move the currently selected ROI if it is movable
+        :param event: the mouse move event
+        :type event: QGraphicsSceneMouseEvent
+        """
         roi = self.get_selected_ROI()
         if roi and (roi.flags() & QGraphicsItem.ItemIsMovable):
             pos = event.scenePos()
@@ -380,6 +544,11 @@ class ViewerScene(QGraphicsScene):
                 roi.setPen(self.pen)
 
     def draw_ROI(self, event):
+        """
+        Draw or redraw the currently selected ROI if it is movable
+        :param event: the mouse press event
+        :type event: QGraphicsSceneMouseEvent
+        """
         roi = self.get_selected_ROI()
         pos = event.scenePos()
         if roi and (roi.flags() & QGraphicsItem.ItemIsMovable):

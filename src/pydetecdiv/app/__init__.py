@@ -15,10 +15,15 @@ from pydetecdiv.persistence.project import list_projects
 from pydetecdiv.domain.Project import Project
 from pydetecdiv.utils import singleton
 
+
 class DrawingTools(StrEnum):
+    """
+    Enumeration of available drawing tools
+    """
     Cursor = 'Select/move'
     DrawROI = 'Draw ROI'
     DuplicateROI = 'Duplicate selected ROI'
+
 
 @singleton
 class PyDetecDiv(QApplication):
