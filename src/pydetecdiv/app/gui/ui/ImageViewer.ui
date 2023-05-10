@@ -59,7 +59,7 @@
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
-           <widget class="QToolButton" name="video_back">
+           <widget class="QToolButton" name="video_back_btn">
             <property name="text">
              <string notr="true">...</string>
             </property>
@@ -160,7 +160,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QToolButton" name="zoom_fit">
+           <widget class="QToolButton" name="zoom_fit_btn">
             <property name="text">
              <string notr="true">...</string>
             </property>
@@ -254,13 +254,23 @@
      <property name="title">
       <string notr="true">Drift</string>
      </property>
-     <addaction name="actionCompute_and_plot"/>
+     <widget class="QMenu" name="menuCompute_and_plot">
+      <property name="title">
+       <string>Compute and plot</string>
+      </property>
+      <addaction name="actionVidstab"/>
+      <addaction name="actionPhase_correlation"/>
+     </widget>
+     <addaction name="menuCompute_and_plot"/>
+     <addaction name="actionLoad_file"/>
+     <addaction name="separator"/>
+     <addaction name="actionSave_to_file"/>
      <addaction name="actionPlot"/>
+     <addaction name="separator"/>
      <addaction name="actionApply_correction"/>
     </widget>
     <addaction name="menuDrift"/>
     <addaction name="separator"/>
-    <addaction name="actionClose_window"/>
    </widget>
    <widget class="QMenu" name="menuROI">
     <property name="title">
@@ -277,11 +287,6 @@
    <addaction name="menuResource"/>
    <addaction name="menuROI"/>
   </widget>
-  <action name="actionCompute_and_plot">
-   <property name="text">
-    <string notr="true">Compute and plot</string>
-   </property>
-  </action>
   <action name="actionApply_correction">
    <property name="checkable">
     <bool>true</bool>
@@ -343,13 +348,36 @@
     <string>View template in new tab</string>
    </property>
   </action>
+  <action name="actionVidstab">
+   <property name="text">
+    <string notr="true">Vidstab</string>
+   </property>
+  </action>
+  <action name="actionPhase_correlation">
+   <property name="text">
+    <string notr="true">Phase correlation</string>
+   </property>
+  </action>
+  <action name="actionLoad_file">
+   <property name="text">
+    <string notr="true">Load file</string>
+   </property>
+  </action>
+  <action name="actionSave_to_file">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string notr="true">Save to file</string>
+   </property>
+  </action>
  </widget>
  <resources>
   <include location="../resources.qrc"/>
  </resources>
  <connections>
   <connection>
-   <sender>video_back</sender>
+   <sender>video_back_btn</sender>
    <signal>clicked()</signal>
    <receiver>ImageViewer</receiver>
    <slot>video_back()</slot>
@@ -445,7 +473,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>zoom_fit</sender>
+   <sender>zoom_fit_btn</sender>
    <signal>clicked()</signal>
    <receiver>ImageViewer</receiver>
    <slot>zoom_fit()</slot>
@@ -489,22 +517,6 @@
     <hint type="destinationlabel">
      <x>63</x>
      <y>136</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>actionCompute_and_plot</sender>
-   <signal>triggered()</signal>
-   <receiver>ImageViewer</receiver>
-   <slot>compute_drift()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>472</x>
-     <y>327</y>
     </hint>
    </hints>
   </connection>
@@ -620,6 +632,70 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionVidstab</sender>
+   <signal>triggered()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>compute_drift_vidstab()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>472</x>
+     <y>327</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionPhase_correlation</sender>
+   <signal>triggered()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>compute_drift_phase_correlation()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>472</x>
+     <y>327</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionSave_to_file</sender>
+   <signal>triggered()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>save_drift_file()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>472</x>
+     <y>327</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionLoad_file</sender>
+   <signal>triggered()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>load_drift_file()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>472</x>
+     <y>327</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>zoom_reset()</slot>
@@ -640,5 +716,9 @@
   <slot>view_roi_image()</slot>
   <slot>save_rois()</slot>
   <slot>view_template()</slot>
+  <slot>compute_drift_vidstab()</slot>
+  <slot>compute_drift_phase_correlation()</slot>
+  <slot>load_drift_file()</slot>
+  <slot>save_drift_file()</slot>
  </slots>
 </ui>
