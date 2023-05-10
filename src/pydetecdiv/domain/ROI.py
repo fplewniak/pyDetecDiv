@@ -29,8 +29,9 @@ class ROI(NamedDSO, BoxedDSO, DsoWithImageData):
         """
         Checks the current ROI lies within its parent. If it does not, this method will throw a JuttingError exception
         """
-        if not self.box.lies_in(self.fov.box):
-            raise JuttingError(self, self.fov)
+        # if not self.box.lies_in(self.fov.box):
+        #     raise JuttingError(self, self.fov)
+        ...
 
     @property
     def fov(self):

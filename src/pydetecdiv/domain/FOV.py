@@ -126,9 +126,9 @@ Comments:             {self.comments}
         ds = self.project.get_named_object('Dataset', dataset)
         data_list = [data.url for data in self.data if data.dataset_ == ds.uuid]
         if len(data_list) > 1:
-            image_resource = ImageResource(data_list, pattern=ds.pattern)
+            image_resource = ImageResource(data_list, fov=self, pattern=ds.pattern)
         else:
-            image_resource = ImageResource(data_list[0])
+            image_resource = ImageResource(data_list[0], fov=self)
         return image_resource
 
 

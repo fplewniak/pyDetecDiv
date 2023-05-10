@@ -1,0 +1,644 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ImageViewer</class>
+ <widget class="QMainWindow" name="ImageViewer">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>946</width>
+    <height>656</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string notr="true">MainWindow</string>
+  </property>
+  <property name="dockOptions">
+   <set>QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks|QMainWindow::ForceTabbedDocks</set>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QGraphicsView" name="viewer">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::Box</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Sunken</enum>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QFrame" name="frame">
+      <property name="frameShape">
+       <enum>QFrame::Box</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Sunken</enum>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QGroupBox" name="controls">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="flat">
+          <bool>false</bool>
+         </property>
+         <property name="checkable">
+          <bool>false</bool>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <widget class="QToolButton" name="video_back">
+            <property name="text">
+             <string notr="true">...</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../resources.qrc">
+              <normaloff>:/icons/video_back</normaloff>:/icons/video_back</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="toolButton">
+            <property name="text">
+             <string notr="true">...</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../resources.qrc">
+              <normaloff>:/icons/video_pause</normaloff>:/icons/video_pause</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="video_forward">
+            <property name="text">
+             <string notr="true">...</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../resources.qrc">
+              <normaloff>:/icons/video_forward</normaloff>:/icons/video_forward</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="T">
+            <property name="text">
+             <string notr="true">T</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSlider" name="t_slider">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="tickPosition">
+             <enum>QSlider::NoTicks</enum>
+            </property>
+            <property name="tickInterval">
+             <number>10</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="sep1">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="Z">
+            <property name="text">
+             <string notr="true">Z</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSlider" name="z_slider">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="pageStep">
+             <number>1</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="sep2">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="zoom_actual">
+            <property name="text">
+             <string notr="true">...</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../resources.qrc">
+              <normaloff>:/icons/zoom_actual</normaloff>:/icons/zoom_actual</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="zoom_fit">
+            <property name="text">
+             <string notr="true">...</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../resources.qrc">
+              <normaloff>:/icons/zoom_fit</normaloff>:/icons/zoom_fit</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSlider" name="zoom_value">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimum">
+             <number>10</number>
+            </property>
+            <property name="maximum">
+             <number>200</number>
+            </property>
+            <property name="value">
+             <number>100</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="FOV_info">
+         <property name="title">
+          <string notr="true"/>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QLabel" name="view_name">
+            <property name="text">
+             <string notr="true">View:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="current_frame">
+            <property name="text">
+             <string notr="true">Frame: 0</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="FPS">
+            <property name="text">
+             <string notr="true">FPS: 0</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="scale_value">
+            <property name="text">
+             <string notr="true">Zoom: 100%</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>946</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuResource">
+    <property name="title">
+     <string notr="true">Resource</string>
+    </property>
+    <widget class="QMenu" name="menuDrift">
+     <property name="title">
+      <string notr="true">Drift</string>
+     </property>
+     <addaction name="actionCompute_and_plot"/>
+     <addaction name="actionPlot"/>
+     <addaction name="actionApply_correction"/>
+    </widget>
+    <addaction name="menuDrift"/>
+    <addaction name="separator"/>
+    <addaction name="actionClose_window"/>
+   </widget>
+   <widget class="QMenu" name="menuROI">
+    <property name="title">
+     <string>ROI</string>
+    </property>
+    <addaction name="separator"/>
+    <addaction name="actionSet_template"/>
+    <addaction name="actionLoad_template"/>
+    <addaction name="separator"/>
+    <addaction name="actionView_template"/>
+    <addaction name="actionIdentify_ROIs"/>
+    <addaction name="actionSave_ROIs"/>
+   </widget>
+   <addaction name="menuResource"/>
+   <addaction name="menuROI"/>
+  </widget>
+  <action name="actionCompute_and_plot">
+   <property name="text">
+    <string notr="true">Compute and plot</string>
+   </property>
+  </action>
+  <action name="actionApply_correction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string notr="true">Apply correction</string>
+   </property>
+  </action>
+  <action name="actionClose_window">
+   <property name="text">
+    <string notr="true">Close window</string>
+   </property>
+  </action>
+  <action name="actionPlot">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string notr="true">Plot</string>
+   </property>
+  </action>
+  <action name="actionSet_template">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string notr="true">Selection as template</string>
+   </property>
+  </action>
+  <action name="actionLoad_template">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string notr="true">Load template</string>
+   </property>
+  </action>
+  <action name="actionIdentify_ROIs">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string notr="true">Detect ROIs</string>
+   </property>
+  </action>
+  <action name="actionSave_ROIs">
+   <property name="text">
+    <string>Save ROIs</string>
+   </property>
+  </action>
+  <action name="actionView_template">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>View template in new tab</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>video_back</sender>
+   <signal>clicked()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>video_back()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>43</x>
+     <y>576</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>470</x>
+     <y>296</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>zoom_actual</sender>
+   <signal>clicked()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>zoom_reset()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>781</x>
+     <y>576</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>473</x>
+     <y>240</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>toolButton</sender>
+   <signal>clicked()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>pause_video()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>73</x>
+     <y>576</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>392</x>
+     <y>333</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>t_slider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>change_frame(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>489</x>
+     <y>572</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>463</x>
+     <y>484</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>z_slider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>change_layer(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>754</x>
+     <y>572</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>470</x>
+     <y>407</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>zoom_value</sender>
+   <signal>sliderMoved(int)</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>zoom_set_value(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>913</x>
+     <y>572</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>495</x>
+     <y>152</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>zoom_fit</sender>
+   <signal>clicked()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>zoom_fit()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>811</x>
+     <y>576</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>460</x>
+     <y>198</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>video_forward</sender>
+   <signal>clicked()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>play_video()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>103</x>
+     <y>576</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>476</x>
+     <y>365</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionClose_window</sender>
+   <signal>triggered()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>close_window()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>63</x>
+     <y>136</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionCompute_and_plot</sender>
+   <signal>triggered()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>compute_drift()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>472</x>
+     <y>327</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionApply_correction</sender>
+   <signal>triggered()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>apply_drift_correction()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>472</x>
+     <y>327</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionPlot</sender>
+   <signal>triggered()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>plot_drift()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>472</x>
+     <y>327</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionSet_template</sender>
+   <signal>triggered()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>set_roi_template()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>472</x>
+     <y>327</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionLoad_template</sender>
+   <signal>triggered()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>load_roi_template()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>472</x>
+     <y>327</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionIdentify_ROIs</sender>
+   <signal>triggered()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>identify_rois()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>472</x>
+     <y>327</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionView_template</sender>
+   <signal>triggered()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>view_template()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>472</x>
+     <y>327</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionSave_ROIs</sender>
+   <signal>triggered()</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>save_rois()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>472</x>
+     <y>327</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>zoom_reset()</slot>
+  <slot>zoom_fit()</slot>
+  <slot>zoom_set_value(int)</slot>
+  <slot>video_back()</slot>
+  <slot>change_frame(int)</slot>
+  <slot>change_layer(int)</slot>
+  <slot>pause_video()</slot>
+  <slot>play_video()</slot>
+  <slot>close_window()</slot>
+  <slot>compute_drift()</slot>
+  <slot>apply_drift_correction()</slot>
+  <slot>plot_drift()</slot>
+  <slot>set_roi_template()</slot>
+  <slot>load_roi_template()</slot>
+  <slot>identify_rois()</slot>
+  <slot>view_roi_image()</slot>
+  <slot>save_rois()</slot>
+  <slot>view_template()</slot>
+ </slots>
+</ui>
