@@ -4,8 +4,10 @@
  A class defining the business logic methods that can be applied to Regions Of Interest
 """
 import json
+import os
 
 from pydetecdiv.domain.dso import NamedDSO
+from pydetecdiv.settings import get_config_value
 
 
 class Data(NamedDSO):
@@ -19,7 +21,7 @@ class Data(NamedDSO):
         self.dataset_ = dataset
         self.author = author
         self.date = date
-        self.url = url
+        self.url_ = url
         self.format_ = format_
         self.source_dir = source_dir
         self.meta_data = meta_data
@@ -34,6 +36,12 @@ class Data(NamedDSO):
         :rtype: Dataset object
         """
         return self.project.get_object('Dataset', uuid=self.dataset_)
+
+    @property
+    def url(self):
+        if self.url_.startswith('/'):
+            return self.url_
+        return os.path.join(get_config_value('project', 'workspace'), self.project.dbname, self.dataset.name, self.url_)
 
     @property
     def fov(self):
