@@ -99,7 +99,7 @@ class ShallowSQLite3(ShallowDb):
         """
         self.engine.dispose()
 
-    def import_images(self, image_files, destination, author='', date='now', in_place=False, img_format='imagetiff'):
+    def import_images(self, image_files, data_dir_path, destination, author='', date='now', in_place=False, img_format='imagetiff'):
         """
         Import images specified in a list of files into a destination
         :param image_files: list of image files to import
@@ -116,8 +116,10 @@ class ShallowSQLite3(ShallowDb):
         :rtype: list of str
         """
         urls = []
+        if destination:
+            data_dir_path = os.path.join(data_dir_path, destination)
         try:
-            process = copy_files(image_files, destination) if not in_place else None
+            process = copy_files(image_files, data_dir_path) if not in_place else None
             for image_file in image_files:
                 record = {
                     'id_': None,

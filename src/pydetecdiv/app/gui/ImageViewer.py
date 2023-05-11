@@ -70,14 +70,6 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.T, self.C, self.Z = (0, 0, 0)
 
         self.ui.view_name.setText(f'View: {image_resource.fov.name}')
-        drift_filename = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv().project_name,
-                                      f'{self.image_resource.fov.name}_drift.csv')
-        if os.path.isfile(drift_filename):
-            self.parent().parent().drift = pd.read_csv(drift_filename)
-            self.ui.actionPlot.setEnabled(True)
-            self.ui.actionApply_correction.setEnabled(True)
-        else:
-            self.parent().parent().drift = None
         self.crop = crop
 
         self.ui.z_slider.setMinimum(0)
@@ -232,15 +224,19 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         """
         self.parent().parent().window.close()
 
-    def compute_drift(self):
+    def compute_and_plot_drift(self, method='vidstab'):
         """
         Slot to compute the drift correction from the image resource displayed in this viewer, then plot the (x,y) drift
-        against frame index. This slot runs the compute_and_plot_drift() method, launches an message dialog window and
-        waits for completion before displaying the plot
+        against frame index. This slot runs compute_drift() with the requested method, launches a message dialog window
+        and waits for completion before displaying the plot
         """
         self.wait = WaitDialog('Computing drift, please wait.', self, cancel_msg='Cancel drift computation please wait')
         self.finished.connect(self.wait.close_window)
-        self.wait.wait_for(self.compute_and_plot_drift)
+        self.wait.wait_for(self.compute_drift, method=method)
+        for viewer in self.parent().parent().get_image_viewers():
+            viewer.ui.actionPlot.setEnabled(True)
+            viewer.ui.actionApply_correction.setEnabled(True)
+            viewer.ui.actionSave_to_file.setEnabled(True)
         self.plot_drift()
 
     def plot_drift(self):
@@ -248,27 +244,55 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         Open a MatplotViewer tab and plot the (x,y) drift against frame index
         """
         self.parent().parent().show_plot(self.parent().parent().drift, 'Drift')
-        for viewer in self.parent().parent().get_image_viewers():
-            viewer.ui.actionPlot.setEnabled(True)
-            viewer.ui.actionApply_correction.setEnabled(True)
 
-    def compute_and_plot_drift(self):
+    def compute_drift(self, method='vidstab'):
         """
         Computation and update of the drift values. When the computation is over, this method emits a finished signal
         """
-        self.parent().parent().drift = self.image_resource.compute_drift(Z=self.Z, C=self.C, method='vidstab')
+        self.parent().parent().drift = self.image_resource.compute_drift(Z=self.Z, C=self.C, method=method)
         self.finished.emit(True)
+
+    def compute_drift_vidstab(self):
+        """
+        Computation and update of the drift values using the 'Vidstab' package method
+        """
+        self.compute_and_plot_drift()
+
+    def compute_drift_phase_correlation(self):
+        """
+        Computation and update of the drift values using the 'phase correlation' method from OpenCV package
+        """
+        self.compute_and_plot_drift(method='phase_correlation')
 
     def apply_drift_correction(self):
         """
         Apply the drift correction to the display. This method also saves the drift values to a file.
         """
-        if self.ui.actionApply_correction.isChecked():
-            drift_filename = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv().project_name,
-                                          f'{self.image_resource.fov.name}_drift.csv')
-            self.parent().parent().drift.to_csv(drift_filename, index=False)
         self.apply_drift = self.ui.actionApply_correction.isChecked()
         self.display()
+
+    def load_drift_file(self):
+        """
+        Load a CSV file containing (x, y) drift values
+        """
+        drift_filename, _ = QFileDialog.getOpenFileName(
+            dir=os.path.join(get_config_value('project', 'workspace'), PyDetecDiv().project_name), filter='*.csv')
+        if os.path.isfile(drift_filename):
+            self.parent().parent().drift = pd.read_csv(drift_filename)
+            self.ui.actionPlot.setEnabled(True)
+            self.ui.actionApply_correction.setEnabled(True)
+            self.ui.actionSave_to_file.setEnabled(True)
+        else:
+            self.parent().parent().drift = None
+
+    def save_drift_file(self):
+        """
+        Save (x, y) drift values to a file
+        """
+        drift_filename, _ = QFileDialog.getSaveFileName(
+            dir=os.path.join(get_config_value('project', 'workspace'), PyDetecDiv().project_name), filter='*.csv')
+        if drift_filename:
+            self.parent().parent().drift.to_csv(drift_filename, index=False)
 
     def set_roi_template(self):
         """
@@ -432,7 +456,7 @@ class ViewerScene(QGraphicsScene):
         r = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
         if isinstance(r, QGraphicsRectItem):
             view_in_new_tab.triggered.connect(lambda _: self.parent().view_roi_image(r))
-        selectedAction = menu.exec(event.screenPos())
+        menu.exec(event.screenPos())
 
     def keyPressEvent(self, event):
         """

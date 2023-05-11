@@ -111,9 +111,7 @@ class Project:
         :rtype: list of str
         """
         data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
-        if destination:
-            data_dir_path = os.path.join(data_dir_path, destination)
-        return self.repository.import_images(image_files, data_dir_path, **kwargs)
+        return self.repository.import_images(image_files, data_dir_path, destination, **kwargs)
 
     def import_source_path(self, source_path, **kwargs):
         """
