@@ -39,7 +39,12 @@ class Data(NamedDSO):
 
     @property
     def url(self):
-        if self.url_.startswith('/'):
+        """
+        URL property of the data file, relative to the workspace directory or absolute path if file are stored in place
+        :return: relative or absolute path of the data file
+        :rtype: str
+        """
+        if os.path.isabs(self.url_):
             return self.url_
         return os.path.join(get_config_value('project', 'workspace'), self.project.dbname, self.dataset.name, self.url_)
 
