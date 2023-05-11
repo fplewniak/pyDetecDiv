@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QCursor, QIcon, QPixmap, QImage
 from PySide6.QtWidgets import QMainWindow, QMdiArea, QTabWidget, QDockWidget, QFormLayout, QLabel, QComboBox, \
     QDialogButtonBox, QWidget, QFrame, QVBoxLayout, QGridLayout, QToolButton, \
-    QGraphicsView, QGraphicsScene
+    QGraphicsView, QGraphicsScene, QTreeWidget, QTreeWidgetItem
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
@@ -15,6 +15,7 @@ from pydetecdiv.app.gui import MainToolBar, MainStatusBar, FileMenu, DataMenu
 from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project, DrawingTools
 
 from pydetecdiv.app.gui.ImageViewer import ImageViewer
+from pydetecdiv.persistence.project import list_tools
 
 
 class MainWindow(QMainWindow):
@@ -41,6 +42,8 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.LeftDockWidgetArea, self.image_resource_selector, Qt.Vertical)
         self.drawing_tools = DrawingToolsPalette(self)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.drawing_tools, Qt.Vertical)
+        self.analysis_tools = AnalysisToolsTree(self)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.analysis_tools, Qt.Vertical)
         self.mdi_area.subWindowActivated.connect(self.subwindow_activation)
         PyDetecDiv().project_selected.connect(self.setWindowTitle)
 
@@ -175,6 +178,7 @@ class MatplotViewer(QWidget):
     """
     A widget to display matplotlib plots in a tab
     """
+
     def __init__(self, parent=None):
         super().__init__(parent)
         # self.dismiss_button = QPushButton('Dismiss')
@@ -202,6 +206,7 @@ class ImageResourceChooser(QDockWidget):
     A dockable widget with a form for choosing an image resource to display in a new tabbed viewer. The image resource
     is determined by the FOV name, the dataset (stage) and a channel
     """
+
     def __init__(self, parent):
         super().__init__('Image resource selector', parent)
         self.setObjectName('Image_resource_selector')
@@ -298,6 +303,7 @@ class DrawingToolsPalette(QDockWidget):
     """
     A dockable window with tools for drawing ROIs and other items.
     """
+
     def __init__(self, parent):
         super().__init__('Drawing tools', parent)
         self.setObjectName('Drawing_tools_palette')
@@ -343,6 +349,7 @@ class Cursor(QToolButton):
     """
     QToolButton to activate the tool for selecting and dragging items in the view
     """
+
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -366,6 +373,7 @@ class DrawROI(QToolButton):
     """
     A QToolButton to activate the tool for drawing a ROI
     """
+
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -387,6 +395,7 @@ class DuplicateROI(QToolButton):
     """
     A QToolButton to activate the tool for duplicating a ROI
     """
+
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -402,3 +411,28 @@ class DuplicateROI(QToolButton):
         self.parent.unset_tools()
         self.setChecked(True)
         PyDetecDiv().current_drawing_tool = DrawingTools.DuplicateROI
+
+
+class AnalysisToolsTree(QDockWidget):
+    """
+    A dockable window with tools for image analysis.
+    """
+
+    def __init__(self, parent):
+        super().__init__('Analysis tools', parent)
+        self.setObjectName('Analysis_tools_tree')
+        # self.form = QFrame()
+        tree = QTreeWidget()
+        tree.setColumnCount(2)
+        tree.setHeaderLabels(["Tool", "version"])
+        items = []
+        for key, values in list_tools().items():
+            item = QTreeWidgetItem([key])
+            for value in values:
+                child = QTreeWidgetItem([value[0], value[1]])
+                item.addChild(child)
+            items.append(item)
+
+        tree.insertTopLevelItems(0, items)
+
+        self.setWidget(tree)
