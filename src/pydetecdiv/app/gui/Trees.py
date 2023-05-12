@@ -1,3 +1,6 @@
+"""
+Module for handling tree representations of data.
+"""
 from PySide6.QtCore import QAbstractItemModel, Qt, QModelIndex
 
 
@@ -91,9 +94,11 @@ class TreeModel(QAbstractItemModel):
 
     def columnCount(self, parent):
         """
-        Count the number of columns
-        :param parent:
-        :return:
+        Returns the number of columns for the children of the given parent
+        :param parent: the parent index
+        :type parent: QModelIndex
+        :return: the number of columns
+        :rtype: int
         """
         if parent.isValid():
             return parent.internalPointer().columnCount()
@@ -102,10 +107,13 @@ class TreeModel(QAbstractItemModel):
 
     def data(self, index, role):
         """
-
-        :param index:
-        :param role:
-        :return:
+        Returns the data stored under the given role for the item referred to by the index.
+        :param index: the node index
+        :type index: QModelIndex
+        :param role: the role
+        :type role: int (Qt.ItemDataRole)
+        :return: the data
+        :rtype: object
         """
         if not index.isValid():
             return None
@@ -119,9 +127,11 @@ class TreeModel(QAbstractItemModel):
 
     def flags(self, index):
         """
-
-        :param index:
-        :return:
+        Returns the item flags for the given index
+        :param index: the index
+        :type index: QModelIndex
+        :return: the flags
+        :rtype: Qt.ItemFlag
         """
         if not index.isValid():
             return Qt.NoItemFlags
@@ -130,11 +140,15 @@ class TreeModel(QAbstractItemModel):
 
     def headerData(self, section, orientation, role):
         """
-
-        :param section:
-        :param orientation:
-        :param role:
-        :return:
+        Returns the data for the given role and section in the header with the specified orientation
+        :param section: the section
+        :type section: int
+        :param orientation: the orientation
+        :type orientation: Qt.Orientation
+        :param role: the role
+        :type role: int (Qt.ItemDataRole)
+        :return: data
+        :rtype: object
         """
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return self.rootItem.data(section)
@@ -143,11 +157,15 @@ class TreeModel(QAbstractItemModel):
 
     def index(self, row, column, parent):
         """
-
-        :param row:
-        :param column:
-        :param parent:
-        :return:
+        Returns the index of the item in the model specified by the given row, column and parent index.
+        :param row: the row
+        :type row: int
+        :param column: the column
+        :type column: int
+        :param parent: the parent index
+        :type parent: QModelIndex
+        :return: the item index
+        :rtype: QModelIndex
         """
         if not self.hasIndex(row, column, parent):
             return QModelIndex()
@@ -165,9 +183,11 @@ class TreeModel(QAbstractItemModel):
 
     def parent(self, index):
         """
-
-        :param index:
-        :return:
+        Returns the parent of the model item with the given index.
+        :param index: the index
+        :type index: QModelIndex
+        :return: parent index
+        :rtype: QModelIndex
         """
         if not index.isValid():
             return QModelIndex()
@@ -182,10 +202,12 @@ class TreeModel(QAbstractItemModel):
 
     def rowCount(self, parent):
         """
-        Count the number of rows in the model
-        :param parent:
+        Returns the number of rows under the given parent. When the parent is valid it means that rowCount is returning
+        the number of children of parent.
+        :param parent: the parent index
         :type parent: QModelIndex
-        :return: int
+        :return: the number of rows
+        :rtype: int
         """
         if parent.column() > 0:
             return 0
@@ -197,27 +219,39 @@ class TreeModel(QAbstractItemModel):
 
         return parentItem.childCount()
 
-    def setupModelData(self, branches, parent):
+    def setupModelData(self, data, parent):
         """
-        Setup the model from the data stored in a dictionary
-        :param branches: the dictionary to load into the model
-        :type branches: dict
+        Set the model up from data
+        :param data: the data to load into the model
+        :type data: object
+        :param parent: the root of the tree
+        :type parent: TreeItem
+        """
+        ...
+
+
+class TreeDictModel(TreeModel):
+    def setupModelData(self, data, parent):
+        """
+        Set the model up from the data stored in a dictionary
+        :param data: the dictionary to load into the model
+        :type data: dict
         :param parent: the root of the tree
         :type parent: TreeItem
         """
         self.parents = [parent]
-        self.appendChildren(branches, parent)
+        self.appendChildren(data, parent)
 
-    def appendChildren(self, branches, parent):
+    def appendChildren(self, data, parent):
         """
         Append children to an arbitrary node represented by a dictionary. This method is called recursively to load the
         successive levels of nodes.
-        :param branches: the dictionary to load at this node
-        :type branches: dict
+        :param data: the dictionary to load at this node
+        :type data: dict
         :param parent: the internal node
         :type parent: TreeItem
         """
-        for key, values in branches.items():
+        for key, values in data.items():
             print(key)
             self.parents.append(TreeItem([key, ''], parent))
             parent.appendChild(self.parents[-1])
