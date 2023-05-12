@@ -2,12 +2,22 @@
 Module for handling tree representations of data.
 """
 from PySide6.QtCore import QAbstractItemModel, Qt, QModelIndex
+from PySide6.QtWidgets import QTreeView
+
+
+class TreeView(QTreeView):
+    def __init__(self):
+        super().__init__()
+
+    def keyPressEvent(self, event):
+        print(self.selectedIndexes()[0].data(), self.selectedIndexes()[1].data())
 
 
 class TreeItem:
     """
     A tree node
     """
+
     def __init__(self, data, parent=None):
         self.parent_item = parent
         self.item_data = data
@@ -86,6 +96,7 @@ class TreeModel(QAbstractItemModel):
     Internal nodes are represented as sub-dictionaries and leaves are lists of data items corresponding each to one
     column.
     """
+
     def __init__(self, data, columns, parent=None):
         super().__init__(parent)
 
@@ -231,6 +242,7 @@ class TreeDictModel(TreeModel):
     """
     A Tree model that can be created from dictionaries
     """
+
     def setup_model_data(self, data, parent):
         """
         Set the model up from the data stored in a dictionary
