@@ -252,7 +252,6 @@ class TreeDictModel(TreeModel):
         :type parent: TreeItem
         """
         for key, values in data.items():
-            print(key)
             self.parents.append(TreeItem([key, ''], parent))
             parent.append_child(self.parents[-1])
             if isinstance(values, dict):
