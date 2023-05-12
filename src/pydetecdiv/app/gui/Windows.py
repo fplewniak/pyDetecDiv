@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QCursor, QIcon, QPixmap, QImage
 from PySide6.QtWidgets import QMainWindow, QMdiArea, QTabWidget, QDockWidget, QFormLayout, QLabel, QComboBox, \
     QDialogButtonBox, QWidget, QFrame, QVBoxLayout, QGridLayout, QToolButton, \
-    QGraphicsView, QGraphicsScene, QTreeWidget, QTreeWidgetItem, QTreeView
+    QGraphicsView, QGraphicsScene, QTreeView
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
@@ -113,7 +113,7 @@ class TabbedViewer(QTabWidget):
         self.window = None
         self.drift = None
 
-    def closeEvent(self, event):
+    def closeEvent(self, _):
         """
         Close the current tabbed widget window
         :param event: the close event

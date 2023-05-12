@@ -4,22 +4,22 @@ Module for handling tree representations of data.
 from PySide6.QtCore import QAbstractItemModel, Qt, QModelIndex
 
 
-class TreeItem(object):
+class TreeItem:
     """
     A tree node
     """
     def __init__(self, data, parent=None):
-        self.parentItem = parent
-        self.itemData = data
-        self.childItems = []
+        self.parent_item = parent
+        self.item_data = data
+        self.child_items = []
 
-    def appendChild(self, item):
+    def append_child(self, item):
         """
         Add a child item to the current node
         :param item: child item
         :type item: TreeItem
         """
-        self.childItems.append(item)
+        self.child_items.append(item)
 
     def child(self, row):
         """
@@ -29,23 +29,23 @@ class TreeItem(object):
         :return: the requested child item
         :rtype: TreeItem
         """
-        return self.childItems[row]
+        return self.child_items[row]
 
-    def childCount(self):
+    def child_count(self):
         """
         Count the number of children of the node
         :return: the number of node children
         :rtype: int
         """
-        return len(self.childItems)
+        return len(self.child_items)
 
-    def columnCount(self):
+    def column_count(self):
         """
         Count the number of columns in model data
         :return: the number of columns
         :rtype: int
         """
-        return len(self.itemData)
+        return len(self.item_data)
 
     def data(self, column):
         """
@@ -56,7 +56,7 @@ class TreeItem(object):
         :rtype: whatever type is in data
         """
         try:
-            return self.itemData[column]
+            return self.item_data[column]
         except IndexError:
             return None
 
@@ -66,7 +66,7 @@ class TreeItem(object):
         :return: the parent item
         :rtype: TreeItem
         """
-        return self.parentItem
+        return self.parent_item
 
     def row(self):
         """
@@ -74,8 +74,8 @@ class TreeItem(object):
         :return: the row index
         :rtype: int
         """
-        if self.parentItem:
-            return self.parentItem.childItems.index(self)
+        if self.parent_item:
+            return self.parent_item.child_items.index(self)
 
         return 0
 
@@ -87,10 +87,10 @@ class TreeModel(QAbstractItemModel):
     column.
     """
     def __init__(self, data, columns, parent=None):
-        super(TreeModel, self).__init__(parent)
+        super().__init__(parent)
 
-        self.rootItem = TreeItem(columns)
-        self.setupModelData(data, self.rootItem)
+        self.root_item = TreeItem(columns)
+        self.setup_model_data(data, self.root_item)
 
     def columnCount(self, parent):
         """
@@ -101,9 +101,8 @@ class TreeModel(QAbstractItemModel):
         :rtype: int
         """
         if parent.isValid():
-            return parent.internalPointer().columnCount()
-        else:
-            return self.rootItem.columnCount()
+            return parent.internalPointer().column_count()
+        return self.root_item.column_count()
 
     def data(self, index, role):
         """
@@ -151,7 +150,7 @@ class TreeModel(QAbstractItemModel):
         :rtype: object
         """
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.rootItem.data(section)
+            return self.root_item.data(section)
 
         return None
 
@@ -171,15 +170,14 @@ class TreeModel(QAbstractItemModel):
             return QModelIndex()
 
         if not parent.isValid():
-            parentItem = self.rootItem
+            parent_item = self.root_item
         else:
-            parentItem = parent.internalPointer()
+            parent_item = parent.internalPointer()
 
-        childItem = parentItem.child(row)
-        if childItem:
-            return self.createIndex(row, column, childItem)
-        else:
-            return QModelIndex()
+        child_item = parent_item.child(row)
+        if child_item:
+            return self.createIndex(row, column, child_item)
+        return QModelIndex()
 
     def parent(self, index):
         """
@@ -192,13 +190,13 @@ class TreeModel(QAbstractItemModel):
         if not index.isValid():
             return QModelIndex()
 
-        childItem = index.internalPointer()
-        parentItem = childItem.parent()
+        child_item = index.internalPointer()
+        parent_item = child_item.parent()
 
-        if parentItem == self.rootItem:
+        if parent_item == self.root_item:
             return QModelIndex()
 
-        return self.createIndex(parentItem.row(), 0, parentItem)
+        return self.createIndex(parent_item.row(), 0, parent_item)
 
     def rowCount(self, parent):
         """
@@ -213,13 +211,13 @@ class TreeModel(QAbstractItemModel):
             return 0
 
         if not parent.isValid():
-            parentItem = self.rootItem
+            parent_item = self.root_item
         else:
-            parentItem = parent.internalPointer()
+            parent_item = parent.internalPointer()
 
-        return parentItem.childCount()
+        return parent_item.child_count()
 
-    def setupModelData(self, data, parent):
+    def setup_model_data(self, data, parent):
         """
         Set the model up from data
         :param data: the data to load into the model
@@ -227,11 +225,13 @@ class TreeModel(QAbstractItemModel):
         :param parent: the root of the tree
         :type parent: TreeItem
         """
-        ...
 
 
 class TreeDictModel(TreeModel):
-    def setupModelData(self, data, parent):
+    """
+    A Tree model that can be created from dictionaries
+    """
+    def setup_model_data(self, data, parent):
         """
         Set the model up from the data stored in a dictionary
         :param data: the dictionary to load into the model
@@ -240,9 +240,9 @@ class TreeDictModel(TreeModel):
         :type parent: TreeItem
         """
         self.parents = [parent]
-        self.appendChildren(data, parent)
+        self.append_children(data, parent)
 
-    def appendChildren(self, data, parent):
+    def append_children(self, data, parent):
         """
         Append children to an arbitrary node represented by a dictionary. This method is called recursively to load the
         successive levels of nodes.
@@ -254,9 +254,9 @@ class TreeDictModel(TreeModel):
         for key, values in data.items():
             print(key)
             self.parents.append(TreeItem([key, ''], parent))
-            parent.appendChild(self.parents[-1])
+            parent.append_child(self.parents[-1])
             if isinstance(values, dict):
-                self.appendChildren(values, self.parents[-1])
+                self.append_children(values, self.parents[-1])
             else:
                 for v in values:
-                    self.parents[-1].appendChild(TreeItem(v, self.parents[-1]))
+                    self.parents[-1].append_child(TreeItem(v, self.parents[-1]))
