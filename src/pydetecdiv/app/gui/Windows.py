@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QCursor, QIcon, QPixmap, QImage
 from PySide6.QtWidgets import QMainWindow, QMdiArea, QTabWidget, QDockWidget, QFormLayout, QLabel, QComboBox, \
     QDialogButtonBox, QWidget, QFrame, QVBoxLayout, QGridLayout, QToolButton, \
-    QGraphicsView, QGraphicsScene, QTreeWidget, QTreeWidgetItem
+    QGraphicsView, QGraphicsScene, QTreeWidget, QTreeWidgetItem, QTreeView
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
@@ -15,6 +15,7 @@ from pydetecdiv.app.gui import MainToolBar, MainStatusBar, FileMenu, DataMenu
 from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project, DrawingTools
 
 from pydetecdiv.app.gui.ImageViewer import ImageViewer
+from pydetecdiv.app.gui.Trees import TreeModel
 from pydetecdiv.persistence.project import list_tools
 
 
@@ -421,18 +422,7 @@ class AnalysisToolsTree(QDockWidget):
     def __init__(self, parent):
         super().__init__('Analysis tools', parent)
         self.setObjectName('Analysis_tools_tree')
-        # self.form = QFrame()
-        tree = QTreeWidget()
-        tree.setColumnCount(2)
-        tree.setHeaderLabels(["Tool", "version"])
-        items = []
-        for key, values in list_tools().items():
-            item = QTreeWidgetItem([key])
-            for value in values:
-                child = QTreeWidgetItem([value[0], value[1]])
-                item.addChild(child)
-            items.append(item)
-
-        tree.insertTopLevelItems(0, items)
-
-        self.setWidget(tree)
+        tree_model = TreeModel(list_tools(), ["Tool", "version"], self)
+        tree_view = QTreeView()
+        tree_view.setModel(tree_model)
+        self.setWidget(tree_view)
