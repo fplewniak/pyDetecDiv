@@ -16,7 +16,7 @@ from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project, Drawing
 
 from pydetecdiv.app.gui.ImageViewer import ImageViewer
 from pydetecdiv.app.gui.Trees import TreeDictModel, TreeView
-from pydetecdiv.persistence.project import list_tools
+from pydetecdiv.app import list_tools
 
 
 class MainWindow(QMainWindow):
@@ -422,7 +422,7 @@ class AnalysisToolsTree(QDockWidget):
     def __init__(self, parent):
         super().__init__('Analysis tools', parent)
         self.setObjectName('Analysis_tools_tree')
-        tree_model = TreeDictModel(list_tools(), ["Tool", "version"], self)
+        tree_model = TreeDictModel(list_tools(), ["Tool", "version"], parent=self, select_leaves_only=True)
         tree_view = TreeView()
         tree_view.setModel(tree_model)
         self.setWidget(tree_view)

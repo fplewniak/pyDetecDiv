@@ -3,14 +3,18 @@
 """
 Definition of global objects and methods for easy access from all parts of the application
 """
+import json
+import os
+import xml
 from contextlib import contextmanager
 from enum import StrEnum
 
+import yaml
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal
 
-from pydetecdiv.settings import get_config_files
+from pydetecdiv.settings import get_config_files, get_config_value
 from pydetecdiv.persistence.project import list_projects
 from pydetecdiv.domain.Project import Project
 from pydetecdiv.utils import singleton
@@ -191,3 +195,26 @@ def project_list():
     :rtype: list of str
     """
     return list_projects()
+
+
+def list_tools():
+    """
+    Provide a list of available tools arranged by categories
+    :return: the list of available tools and categories
+    :rtype: dict
+    """
+    toolbox_path = get_config_value('paths', 'toolbox')
+    json_data = json.load(open(os.path.join(toolbox_path, 'toolboxes.json')))
+    tool_list = {c['name']: [] for c in json_data['categories']}
+    for current_path, subs, files in os.walk(os.path.abspath(os.path.join(toolbox_path, 'tools'))):
+        for file in files:
+            if file.endswith('.xml'):
+                tree = xml.etree.ElementTree.parse(os.path.join(current_path, file))
+                # print(tree.getroot().attrib)
+                # print(tree.getroot().find('command').text)
+                shed_file = os.path.join(current_path, '.shed.yml')
+                with open(shed_file) as file:
+                    shed_file_content = yaml.load(file, Loader=yaml.FullLoader)
+                    for category in shed_file_content["categories"]:
+                        tool_list[category].append([tree.getroot().get('name'), tree.getroot().get('version')])
+    return tool_list

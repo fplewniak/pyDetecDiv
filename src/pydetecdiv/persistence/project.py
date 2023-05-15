@@ -45,26 +45,3 @@ def list_projects(dbms: str = None):
         case _:
             raise NotImplementedError(f'{dbms} is not implemented')
     return project_list
-
-
-def list_tools():
-    """
-    Provide a list of available tools arranged by categories
-    :return: the list of available tools and categories
-    :rtype: dict
-    """
-    toolbox_path = get_config_value('paths', 'toolbox')
-    json_data = json.load(open(os.path.join(toolbox_path, 'toolboxes.json')))
-    tool_list = {c['name']: [] for c in json_data['categories']}
-    for current_path, subs, files in os.walk(os.path.abspath(os.path.join(toolbox_path, 'tools'))):
-        for file in files:
-            if file.endswith('.xml'):
-                tree = xml.etree.ElementTree.parse(os.path.join(current_path, file))
-                # print(tree.getroot().attrib)
-                # print(tree.getroot().find('command').text)
-                shed_file = os.path.join(current_path, '.shed.yml')
-                with open(shed_file) as file:
-                    shed_file_content = yaml.load(file, Loader=yaml.FullLoader)
-                    for category in shed_file_content["categories"]:
-                        tool_list[category].append([tree.getroot().get('name'), tree.getroot().get('version')])
-    return tool_list
