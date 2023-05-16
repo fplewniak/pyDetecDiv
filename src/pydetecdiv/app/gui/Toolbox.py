@@ -38,6 +38,9 @@ class ToolboxTreeModel(TreeDictModel):
             return True
         return False
 
+    def is_tool(self, index):
+        return not self.is_category(index)
+
     def flags(self, index):
         """
         Returns the item flags for the given index
@@ -49,10 +52,9 @@ class ToolboxTreeModel(TreeDictModel):
         if not index.isValid():
             return Qt.NoItemFlags
 
-        if self.is_category(index) and self.hasChildren(index):
-            return Qt.ItemIsEnabled
-
-        if not self.is_category(index):
+        if self.is_tool(index):
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        elif self.hasChildren(index):
+            return Qt.ItemIsEnabled
 
         return Qt.NoItemFlags
