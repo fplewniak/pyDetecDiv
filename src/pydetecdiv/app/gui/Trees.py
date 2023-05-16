@@ -13,10 +13,6 @@ class TreeItem:
         self.parent_item = parent
         self.item_data = data
         self.child_items = []
-        self.is_selectable = True
-
-    def set_selectable(self, selectable=True):
-        self.is_selectable = selectable
 
     def append_child(self, item):
         """

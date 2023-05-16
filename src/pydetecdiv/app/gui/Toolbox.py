@@ -1,7 +1,7 @@
 """
 Module for handling tree representations of data.
 """
-from PySide6.QtCore import QAbstractItemModel, Qt, QModelIndex
+from PySide6.QtCore import Qt, QModelIndex
 from PySide6.QtWidgets import QTreeView, QMenu
 
 from pydetecdiv.app.gui.Trees import TreeDictModel
@@ -11,24 +11,22 @@ class ToolboxTreeView(QTreeView):
     def __init__(self):
         super().__init__()
 
-    def keyPressEvent(self, event):
-        print(self.selectedIndexes()[0].data(), self.selectedIndexes()[1].data())
-
     def contextMenuEvent(self, event):
         """
         The context menu for area manipulation
         :param event:
         """
-        if self.selectedIndexes():
+        index = self.currentIndex()
+        rect = self.visualRect(index)
+        if index and not self.model().is_category(index) and rect.top() <= event.pos().y() <= rect.bottom():
             menu = QMenu()
             launch_tool = menu.addAction("Launch tool")
-            launch_tool.triggered.connect(self.show_selection)
+            launch_tool.triggered.connect(self.launch_tool)
             menu.exec(self.viewport().mapToGlobal(event.pos()))
 
-    def show_selection(self):
-        selection = self.selectedIndexes()
-        print([s.data() for s in selection])
-        print([s.sibling(s.row(), c).data() for c, s in enumerate(selection)])
+    def launch_tool(self):
+        selection = self.currentIndex()
+        print(selection.internalPointer().item_data)
 
 
 class ToolboxTreeModel(TreeDictModel):
