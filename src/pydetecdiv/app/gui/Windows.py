@@ -423,7 +423,6 @@ class AnalysisToolsTree(QDockWidget):
     def __init__(self, parent):
         super().__init__('Analysis tools', parent)
         self.setObjectName('Analysis_tools_tree')
-        tree_model = ToolboxTreeModel(list_tools(), ["Tool", "version"], parent=self)
         tree_view = ToolboxTreeView()
-        tree_view.setModel(tree_model)
+        tree_view.setModel(ToolboxTreeModel(parent=self))
         self.setWidget(tree_view)
