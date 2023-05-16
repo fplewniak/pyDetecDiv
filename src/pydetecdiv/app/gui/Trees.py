@@ -2,32 +2,6 @@
 Module for handling tree representations of data.
 """
 from PySide6.QtCore import QAbstractItemModel, Qt, QModelIndex
-from PySide6.QtWidgets import QTreeView, QMenu
-
-
-class TreeView(QTreeView):
-    def __init__(self):
-        super().__init__()
-
-    def keyPressEvent(self, event):
-        print(self.selectedIndexes()[0].data(), self.selectedIndexes()[1].data())
-
-    def contextMenuEvent(self, event):
-        """
-        The context menu for area manipulation
-        :param event:
-        """
-        menu = QMenu()
-        launch_tool = menu.addAction("Launch tool")
-        launch_tool.triggered.connect(self.show_selection)
-        # launch_tool.triggered.connect(
-        #     lambda _: print(self.selectedIndexes()[0].data(), self.selectedIndexes()[1].data()))
-        menu.exec(self.viewport().mapToGlobal(event.pos()))
-
-    def show_selection(self):
-        selection = self.selectedIndexes()
-        print([s.data() for s in selection])
-        print([s.sibling(s.row(), c).data() for c, s in enumerate(selection)])
 
 
 class TreeItem:
@@ -118,10 +92,9 @@ class TreeModel(QAbstractItemModel):
     column.
     """
 
-    def __init__(self, data, columns, parent=None, select_leaves_only=False):
+    def __init__(self, data, columns, parent=None):
         super().__init__(parent)
         self.root_item = TreeItem(columns)
-        self.select_leaves_only = select_leaves_only
         self.setup_model_data(data, self.root_item)
 
     def columnCount(self, parent):
@@ -166,9 +139,6 @@ class TreeModel(QAbstractItemModel):
         """
         if not index.isValid():
             return Qt.NoItemFlags
-
-        if self.hasChildren(index) and self.select_leaves_only:
-            return Qt.ItemIsEnabled
 
         return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
@@ -267,8 +237,8 @@ class TreeDictModel(TreeModel):
     A Tree model that can be created from dictionaries
     """
 
-    def __init__(self, data, columns, parent=None, select_leaves_only=False):
-        super().__init__(data, columns, parent=parent, select_leaves_only=select_leaves_only)
+    def __init__(self, data, columns, parent=None):
+        super().__init__(data, columns, parent=parent)
 
     def setup_model_data(self, data, parent):
         """
@@ -280,11 +250,6 @@ class TreeDictModel(TreeModel):
         """
         self.parents = [parent]
         self.append_children(data, parent)
-        # if self.select_leaves_only:
-        #     for r in range(0, self.rowCount(parent)):
-        #         for c in range(0, self.columnCount(parent)):
-        #             if self.hasChildren(self.index(r, c)):
-        #                 self.sibling(r, c, self.index(r, c)).set_selectable(False)
 
     def append_children(self, data, parent):
         """
@@ -296,11 +261,10 @@ class TreeDictModel(TreeModel):
         :type parent: TreeItem
         """
         for key, values in data.items():
-            if values:
-                self.parents.append(TreeItem([key, ''], parent))
-                parent.append_child(self.parents[-1])
-                if isinstance(values, dict):
-                    self.append_children(values, self.parents[-1])
-                else:
-                    for v in values:
-                        self.parents[-1].append_child(TreeItem(v, self.parents[-1]))
+            self.parents.append(TreeItem([key, ''], parent))
+            parent.append_child(self.parents[-1])
+            if isinstance(values, dict):
+                self.append_children(values, self.parents[-1])
+            else:
+                for v in values:
+                    self.parents[-1].append_child(TreeItem(v, self.parents[-1]))
