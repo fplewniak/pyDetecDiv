@@ -14,6 +14,7 @@ from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal
 
+from pydetecdiv.domain.Tool import Tool
 from pydetecdiv.settings import get_config_files, get_config_value
 from pydetecdiv.persistence.project import list_projects
 from pydetecdiv.domain.Project import Project
@@ -209,12 +210,7 @@ def list_tools():
     for current_path, subs, files in os.walk(os.path.abspath(os.path.join(toolbox_path, 'tools'))):
         for file in files:
             if file.endswith('.xml'):
-                tree = xml.etree.ElementTree.parse(os.path.join(current_path, file))
-                # print(tree.getroot().attrib)
-                # print(tree.getroot().find('command').text)
-                shed_file = os.path.join(current_path, '.shed.yml')
-                with open(shed_file) as file:
-                    shed_file_content = yaml.load(file, Loader=yaml.FullLoader)
-                    for category in shed_file_content["categories"]:
-                        tool_list[category].append([tree.getroot().get('name'), tree.getroot().get('version')])
+                tool = Tool(os.path.join(current_path, file))
+                for category in tool.categories:
+                    tool_list[category].append(tool)
     return tool_list

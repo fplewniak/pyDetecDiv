@@ -5,8 +5,14 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QTreeView, QMenu
 
 from pydetecdiv.app import list_tools
-from pydetecdiv.app.gui.Trees import TreeDictModel
+from pydetecdiv.app.gui.Trees import TreeDictModel, TreeItem
 
+
+class ToolItem(TreeItem):
+    def __init__(self, data, parent=None):
+        super().__init__(data, parent=parent)
+        self.tool = data
+        self.item_data = [data.name, data.version]
 
 class ToolboxTreeView(QTreeView):
     """
@@ -32,6 +38,11 @@ class ToolboxTreeView(QTreeView):
         """
         selection = self.currentIndex()
         print(selection.internalPointer().item_data)
+        print(selection.internalPointer().tool.categories)
+        print(selection.internalPointer().tool.attributes)
+        print(selection.internalPointer().tool.command)
+        selection.internalPointer().tool.requirements.install()
+        selection.internalPointer().tool.run()
 
 
 class ToolboxTreeModel(TreeDictModel):
@@ -84,3 +95,21 @@ class ToolboxTreeModel(TreeDictModel):
             return Qt.ItemIsEnabled
 
         return Qt.NoItemFlags
+
+    def append_children(self, data, parent):
+        """
+        Append children to an arbitrary node represented by a dictionary. This method is called recursively to load the
+        successive levels of nodes.
+        :param data: the dictionary to load at this node
+        :type data: dict
+        :param parent: the internal node
+        :type parent: TreeItem
+        """
+        for key, values in data.items():
+            self.parents.append(TreeItem([key, ''], parent))
+            parent.append_child(self.parents[-1])
+            if isinstance(values, dict):
+                self.append_children(values, self.parents[-1])
+            else:
+                for v in values:
+                    self.parents[-1].append_child(ToolItem(v, self.parents[-1]))
