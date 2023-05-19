@@ -34,7 +34,7 @@ class Requirements:
         """
         return self.element.attrib
 
-    def check_env(self, env):
+    def check_env(self):
         """
         Check the environment for this tool already exists
         :param env: the environment to check for existence
@@ -42,25 +42,23 @@ class Requirements:
         :return: True if environment exists, False otherwise
         :rtype: bool
         """
-        match env['type']:
+        match self.environment['type']:
             case 'conda':
                 print('conda env list --json')
                 return False
         return True
 
-    def check_packages(self, env, packages):
+    def check_package(self, package):
         """
-        Check the required packages are already installed in the environment
-        :param env: the environment
-        :type env: dict
-        :param packages: the packages to check installation for
-        :type packages: list of str
-        :return: True if all packages are installed, False otherwise
+        Check the package are already installed in the environment
+        :param package: the package to check installation for
+        :type package: str
+        :return: True if the package is installed, False otherwise
         :rtype: bool
         """
-        match env['type']:
+        match self.environment['type']:
             case 'conda':
-                print(f'conda list -n {env["env"]}')
+                print(f'conda list -n {self.environment["env"]} {package}')
                 return False
         return True
 
@@ -68,34 +66,27 @@ class Requirements:
         """
         Install the requirements if needed
         """
-        packages = ' '.join(self.packages)
-        if not self.check_env(self.environment):
-            self.install_env(self.environment)
-        if not self.check_packages(self.environment, packages):
-            self.install_packages(self.environment, packages)
+        if not self.check_env():
+            self.install_env()
+        self.install_packages()
 
-    def install_env(self, env):
+    def install_env(self):
         """
         Install the environment
-        :param env: the environment
-        :type env: dict
         """
-        match env['type']:
+        match self.environment['type']:
             case 'conda':
-                print(f'conda create --name {env["env"]}')
+                print(f'conda create --name {self.environment["env"]}')
 
-    def install_packages(self, env, packages):
+    def install_packages(self):
         """
         Install packages in environment
-        :param env: the environment
-        :type env: dict
-        :param packages: the packages to install
-        :type packages: list of str
         """
-        match env['type']:
+        match self.environment['type']:
             case 'conda':
-                print(f'conda activate {env["env"]}')
-                print(f'conda install {packages}')
+                print(f'conda activate {self.environment["env"]}')
+                packages = [package for package in self.packages if not self.check_package(package)]
+                print(f'conda install {" ".join(packages)}')
 
 
 class Inputs:
