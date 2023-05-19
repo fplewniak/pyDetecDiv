@@ -8,29 +8,54 @@ import xml
 import numpy as np
 import yaml
 
+
 class Requirements:
+    """
+    Class to handle tool requirements, install an environment and the required packages.
+    """
+
     def __init__(self, element):
         self.element = element
 
     @property
     def packages(self):
-        return set(np.array([str.split(e.text, ' ') for e in self.element]).flatten())
+        """
+        Return a list of required packages for the tool
+        :return: the list of required packages
+        :rtype: list of str
+        """
+        return set(str.split(self.element.text, ' '))
 
     @property
-    def environments(self):
-        return [e.attrib for e in self.element]
-
-    def install(self):
-        for env, packages in [(e.attrib, e.text) for e in self.element]:
-            if not self.check_env(env):
-                self.install_env(env)
-            self.install_packages(env, packages)
+    def environment(self):
+        """
+        Return the environment for the current tool, specifying the type of environment ('conda' or docker')
+        and its name
+        :return: definition for the tool environment
+        :rtype: dict
+        """
+        return self.element.attrib
 
     def check_env(self, env):
         match env['type']:
             case 'conda':
                 print(f'conda env list --json')
+                return False
         return True
+
+    def check_packages(self, env, packages):
+        match env['type']:
+            case 'conda':
+                print(f'conda list -n {env["env"]}')
+                return False
+        return True
+
+    def install(self):
+        packages = ' '.join(self.packages)
+        if not self.check_env(self.environment):
+            self.install_env(self.environment)
+        if not self.check_packages(self.environment, packages):
+            self.install_packages(self.environment, packages)
 
     def install_env(self, env):
         match env['type']:
@@ -43,6 +68,7 @@ class Requirements:
                 print(f'conda activate {env["env"]}')
                 print(f'conda install {packages}')
 
+
 class Inputs:
     def __init__(self, element):
         self.element = element
@@ -50,6 +76,7 @@ class Inputs:
     @property
     def parameters(self):
         return [p.attrib for p in self.element.findall('param')]
+
 
 class Tool:
     def __init__(self, path):
@@ -77,7 +104,7 @@ class Tool:
 
     @property
     def requirements(self):
-        return Requirements(self.root.findall('./requirements/package'))
+        return Requirements(self.root.find('./requirements/package'))
 
     @property
     def command(self):
@@ -96,4 +123,3 @@ class Tool:
         for command in str.splitlines(self.command):
             print(command.strip())
         print(self.inputs.parameters)
-

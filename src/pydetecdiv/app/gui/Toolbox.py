@@ -37,11 +37,11 @@ class ToolboxTreeView(QTreeView):
         Launch the currently selected tool 
         """
         selection = self.currentIndex()
-        print(selection.internalPointer().item_data)
-        print(selection.internalPointer().tool.categories)
-        print(selection.internalPointer().tool.attributes)
-        print(selection.internalPointer().tool.command)
-        selection.internalPointer().tool.requirements.install()
+        # print(selection.internalPointer().item_data)
+        # print(selection.internalPointer().tool.categories)
+        # print(selection.internalPointer().tool.attributes)
+        # print(selection.internalPointer().tool.command)
+        # selection.internalPointer().tool.requirements.install()
         selection.internalPointer().tool.run()
 
 
