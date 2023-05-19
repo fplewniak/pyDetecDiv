@@ -27,8 +27,10 @@ class Requirements:
             self.install_packages(env, packages)
 
     def check_env(self, env):
-        print(f'check {env["type"]} environment {env["env"]}')
-        return False
+        match env['type']:
+            case 'conda':
+                print(f'conda env list --json')
+        return True
 
     def install_env(self, env):
         match env['type']:
