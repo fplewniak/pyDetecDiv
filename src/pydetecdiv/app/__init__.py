@@ -205,9 +205,9 @@ def list_tools():
     :rtype: dict
     """
     toolbox_path = get_config_value('paths', 'toolbox')
-    json_data = json.load(open(os.path.join(toolbox_path, 'toolboxes.json')))
+    json_data = json.load(open(os.path.join(toolbox_path, 'toolboxes.json'), encoding='utf-8'))
     tool_list = {c['name']: [] for c in json_data['categories']}
-    for current_path, subs, files in os.walk(os.path.abspath(os.path.join(toolbox_path, 'tools'))):
+    for current_path, _, files in os.walk(os.path.abspath(os.path.join(toolbox_path, 'tools'))):
         for file in files:
             if file.endswith('.xml'):
                 tool = Tool(os.path.join(current_path, file))
