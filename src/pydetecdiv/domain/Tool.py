@@ -198,11 +198,12 @@ class Tool:
         """
         return Inputs(self.root.find('./inputs'))
 
-    def run(self):
+    def run(self, job, project=None):
         """
         Install the requirements if needed and run the tool
         """
-        self.requirements.install()
-        for command in str.splitlines(self.command):
-            print(command.strip())
-        print(self.inputs.parameters)
+        # self.requirements.install()
+        # for command in str.splitlines(self.command):
+        #     print(command.strip())
+        # print(self.inputs.parameters)
+        print()
