@@ -4,11 +4,15 @@ Module for handling tree representations of data.
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QTreeView, QMenu, QDialogButtonBox, QDialog
 
-from pydetecdiv.app import list_tools
+from pydetecdiv.app import list_tools, PyDetecDiv, pydetecdiv_project
 from pydetecdiv.app.gui.Trees import TreeDictModel, TreeItem
+from pydetecdiv.domain.Run import Run
 
 
 class ToolItem(TreeItem):
+    """
+    A tool-specific tree item
+    """
     def __init__(self, data, parent=None):
         super().__init__(data, parent=parent)
         self.tool = data
@@ -47,6 +51,9 @@ class ToolboxTreeView(QTreeView):
 
 
 class ToolForm(QDialog):
+    """
+    A form to define input and parameters for running a tool job
+    """
     def __init__(self, tool, parent=None):
         super().__init__(parent)
         self.tool = tool
@@ -54,13 +61,14 @@ class ToolForm(QDialog):
         self.OK_button.setObjectName("OK_button")
         self.OK_button.setStandardButtons(QDialogButtonBox.Ok)
         self.OK_button.accepted.connect(self.accept)
-        # self.addWidget(self.OK_button)
 
     def accept(self):
-        print('running job')
-        # job = Run(...)
-        # self.tool.requirements.install()
-        # job.run()
+        """
+        Accept the form and run the job
+        """
+        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            job = Run(self.tool, project=project)
+            job.execute()
 
 
 class ToolboxTreeModel(TreeDictModel):

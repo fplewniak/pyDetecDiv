@@ -17,9 +17,9 @@ class RunDao(DAO, Base):
 
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
     uuid = Column(String(36),)
-    process_name = Column(String, nullable=False,)
-    process_url = Column(String, nullable=False,)
-    inputs = Column(String)
+    tool_name = Column(String, nullable=False,)
+    tool_version = Column(String, nullable=False,)
+    command = Column(String)
     parameters = Column(String)
 
     @property
@@ -32,8 +32,8 @@ class RunDao(DAO, Base):
         """
         return {'id_': self.id_,
                 'uuid': self.uuid,
-                'process_name': self.process_name,
-                'process_url': self.process_url,
-                'inputs': self.inputs,
+                'tool_name': self.tool_name,
+                'tool_version': self.tool_version,
+                'command': self.command,
                 'parameters': self.parameters
                 }

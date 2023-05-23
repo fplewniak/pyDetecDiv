@@ -3,6 +3,8 @@
 """
  A class defining the business logic methods that can be applied to Regions Of Interest
 """
+import json
+
 from pydetecdiv.domain.dso import DomainSpecificObject
 
 
@@ -11,13 +13,9 @@ class Run(DomainSpecificObject):
     A business-logic class defining valid operations and attributes of data
     """
 
-    def __init__(self, uuid, process_name, process_url, inputs, parameters, **kwargs):
+    def __init__(self, tool, **kwargs):
         super().__init__(**kwargs)
-        self.uuid = uuid
-        self.process_name = process_name
-        self.process_url = process_url
-        self.inputs = inputs
-        self.parameters = parameters
+        self.tool = tool
         self.validate()
 
     def record(self, no_id=False):
@@ -30,12 +28,20 @@ class Run(DomainSpecificObject):
         :rtype: dict
         """
         record = {
-            'process_name': self.process_name,
-            'process_url': self.process_url,
-            'inputs': self.inputs,
-            'parameters': self.parameters,
+            'tool_name': self.tool.name,
+            'tool_version': self.tool.version,
+            'command': self.tool.command,
+            'parameters': json.dumps(self.tool.inputs.parameters),
             'uuid': self.uuid
         }
         if not no_id:
             record['id_'] = self.id_
         return record
+
+    def execute(self):
+        """
+        Execute the job after having installed requirements if necessary
+        """
+        print(f'Run {self.uuid} for {self.tool.name}')
+        self.tool.requirements.install()
+        print(f'execute {self.tool.command}')

@@ -2,9 +2,13 @@
 Tool module to handle tool definition, requirements and running them in an appropriate environment.
 """
 import os
+import platform
 import re
+import subprocess
 import xml
 import yaml
+
+from pydetecdiv.settings import get_config_value
 
 
 class Requirements:
@@ -22,7 +26,8 @@ class Requirements:
         :return: the list of required packages
         :rtype: list of str
         """
-        return set(str.split(self.element.text, ' '))
+        return self.element.text
+        # return set(str.split(self.element.text, ' '))
 
     @property
     def environment(self):
@@ -44,23 +49,29 @@ class Requirements:
         """
         match self.environment['type']:
             case 'conda':
-                print('conda env list --json')
-                return False
-        return True
+                return self._check_conda_env()
+            case _:
+                print('Unknown environment type')
+        return False
 
-    def check_package(self, package):
+    def _check_conda_env(self):
         """
-        Check the package are already installed in the environment
-        :param package: the package to check installation for
-        :type package: str
-        :return: True if the package is installed, False otherwise
+        Check whether the required conda environment exists or not
+        :return: True if the conda environment exists, False otherwise
         :rtype: bool
         """
-        match self.environment['type']:
-            case 'conda':
-                print(f'conda list -n {self.environment["env"]} {package}')
-                return False
-        return True
+        conda_dir = get_config_value('project.conda', 'dir')
+        if platform.system() == 'Windows':
+            conda_exe = os.path.join(conda_dir, 'condabin', 'conda.bat')
+            cmd = f'{conda_exe} env list'
+        else:
+            conda_exe = os.path.join(conda_dir, 'etc', 'profile.d', 'conda.sh')
+            cmd = f'/bin/bash {conda_exe} && conda env list'
+        output = subprocess.run(cmd, shell=True, check=True, capture_output=True).stdout.decode('utf-8')
+        pattern = re.compile(self.environment['env'], re.MULTILINE)
+        if pattern.search(output):
+            return True
+        return False
 
     def install(self):
         """
@@ -68,7 +79,6 @@ class Requirements:
         """
         if not self.check_env():
             self.install_env()
-        self.install_packages()
 
     def install_env(self):
         """
@@ -76,17 +86,23 @@ class Requirements:
         """
         match self.environment['type']:
             case 'conda':
-                print(f'conda create --name {self.environment["env"]}')
+                self._create_conda_env()
+            case _:
+                print('Unknown environment type')
 
-    def install_packages(self):
+    def _create_conda_env(self):
         """
-        Install packages in environment
+        Create the required conda environment with the necessary packages
         """
-        match self.environment['type']:
-            case 'conda':
-                print(f'conda activate {self.environment["env"]}')
-                packages = [package for package in self.packages if not self.check_package(package)]
-                print(f'conda install {" ".join(packages)}')
+        conda_dir = get_config_value('project.conda', 'dir')
+        env_name = self.environment["env"]
+        if platform.system() == 'Windows':
+            conda_exe = os.path.join(conda_dir, 'condabin', 'conda.bat')
+            cmd = f'{conda_exe} create -y -n {env_name} {self.packages}'
+        else:
+            conda_exe = os.path.join(conda_dir, 'etc', 'profile.d', 'conda.sh')
+            cmd = f'/bin/bash {conda_exe} && conda create -y -n {env_name} {self.packages}'
+        subprocess.run(cmd, shell=True, check=True, )
 
 
 class Inputs:
@@ -178,7 +194,8 @@ class Tool:
         Property returning the command line
         :return:
         """
-        return re.sub(r'\$__tool_directory__', os.path.join(self.path, ''), self.root.find('command').text)
+        return self.root.find('command').text
+        # return re.sub(r'\$__tool_directory__', os.path.join(self.path, ''), self.root.find('command').text)
 
     @property
     def attributes(self):
@@ -197,13 +214,3 @@ class Tool:
         :rtype: Inputs object
         """
         return Inputs(self.root.find('./inputs'))
-
-    def run(self, job, project=None):
-        """
-        Install the requirements if needed and run the tool
-        """
-        # self.requirements.install()
-        # for command in str.splitlines(self.command):
-        #     print(command.strip())
-        # print(self.inputs.parameters)
-        print()
