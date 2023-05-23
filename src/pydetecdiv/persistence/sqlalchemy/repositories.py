@@ -99,7 +99,8 @@ class ShallowSQLite3(ShallowDb):
         """
         self.engine.dispose()
 
-    def import_images(self, image_files, data_dir_path, destination, author='', date='now', in_place=False, img_format='imagetiff'):
+    def import_images(self, image_files, data_dir_path, destination, author='', date='now', in_place=False,
+                      img_format='imagetiff'):
         """
         Import images specified in a list of files into a destination
         :param image_files: list of image files to import

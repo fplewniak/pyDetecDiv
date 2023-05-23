@@ -4,11 +4,6 @@
 Project persistence management for persistence layer
 """
 import glob
-import json
-import os
-import xml
-
-import yaml
 
 from pydetecdiv.utils.path import stem
 from pydetecdiv.settings import get_config_value
@@ -36,6 +31,13 @@ def open_project(dbname: str = None, dbms: str = None) -> ShallowDb:
 
 
 def list_projects(dbms: str = None):
+    """
+    Return a list of projects corresponding to a given database manager system
+    :param dbms: the dbms
+    :type dbms: str
+    :return: the list of projects
+    :rtype: list of str
+    """
     dbms = get_config_value('project', 'dbms') if dbms is None else dbms
     project_list = []
     match dbms:
