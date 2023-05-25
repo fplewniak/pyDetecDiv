@@ -4,6 +4,8 @@
  A class defining the business logic methods that can be applied to Regions Of Interest
 """
 import json
+import os
+import subprocess
 
 from pydetecdiv.domain.dso import DomainSpecificObject
 
@@ -43,4 +45,11 @@ class Run(DomainSpecificObject):
         Execute the job after having installed requirements if necessary
         """
         self.tool.requirements.install()
-        print(f'Execute:\n{self.record()}')
+        for t in self.tool.tests():
+            command = self.tool.command.replace('$__tool_directory__', os.path.join(self.tool.path, ''))
+            for name, value in t.items():
+                command = command.replace('${' + name + '}', value)
+            command = f'cd {self.tool.path}/test-data\n{self.tool.requirements.set_env_command()}\n{command}'
+            output = subprocess.run(command, shell=True, check=True, capture_output=True)
+            print(output.stdout.decode('utf-8'))
+            print(output.stderr.decode('utf-8'))

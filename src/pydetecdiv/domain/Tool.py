@@ -90,6 +90,7 @@ class Requirements:
             case _:
                 print('Unknown environment type')
 
+
     def _create_conda_env(self):
         """
         Create the required conda environment with the necessary packages
@@ -104,6 +105,24 @@ class Requirements:
             cmd = f'/bin/bash {conda_exe} && conda create -y -n {env_name} {self.packages}'
         subprocess.run(cmd, shell=True, check=True, )
 
+    def set_env_command(self):
+        match self.environment['type']:
+            case 'conda':
+                return self._set_conda_env_command()
+            case _:
+                print('Unknown environment type')
+                return None
+
+    def _set_conda_env_command(self):
+        conda_dir = get_config_value('project.conda', 'dir')
+        env_name = self.environment["env"]
+        if platform.system() == 'Windows':
+            conda_exe = os.path.join(conda_dir, 'condabin', 'conda.bat')
+            cmd = f'{conda_exe} activate {env_name}'
+        else:
+            conda_exe = os.path.join(conda_dir, 'etc', 'profile.d', 'conda.sh')
+            cmd = f'/bin/bash {conda_exe} && conda activate {env_name}'
+        return cmd
 
 class Inputs:
     """
@@ -112,6 +131,8 @@ class Inputs:
 
     def __init__(self, element):
         self.element = element
+        self.list = {p['name']: Input(p['name'], p['type'], p['format'], label=p['label'] if p['label'] else None)
+                     for p in self.parameters}
 
     @property
     def parameters(self):
@@ -120,15 +141,45 @@ class Inputs:
         :return: list of parameters
         :rtype: list
         """
-        # for e in self.element.findall('.//param/..'):
-        #     if 'name' in e.attrib:
-        #         print(e.attrib['name'])
-        #         space = '    '
-        #     else:
-        #         space = ''
-        #     for p in e.findall('./param'):
-        #         print(space, p.attrib)
         return [p.attrib for p in self.element.findall('.//param')]
+
+
+class Input:
+    def __init__(self, name, type_, format_, label=None):
+        self.name = name
+        self.type = type_
+        self.format = format_
+        self.label = label
+        self.value = None
+
+    def is_image(self):
+        return self.type == 'data' and self.format in ['imagetiff']
+
+
+class Outputs:
+    """
+    A class to handle Tool's input as defined in the configuration file
+    """
+
+    def __init__(self, element):
+        self.element = element
+        self.list = {p['name']: Output(p['name'], p['format'], label=p['label'] if p['label'] else None)
+                     for p in self.data}
+
+    @property
+    def data(self):
+        return [p.attrib for p in self.element.findall('.//data')]
+
+
+class Output:
+    def __init__(self, name, format_, label=None):
+        self.name = name
+        self.format = format_
+        self.label = label
+        self.value = None
+
+    def is_image(self):
+        return self.format in ['imagetiff']
 
 
 class Tool:
@@ -142,6 +193,9 @@ class Tool:
         shed_file = os.path.join(os.path.dirname(path), '.shed.yml')
         with open(shed_file, encoding='utf-8') as file:
             self.shed_content = yaml.load(file, Loader=yaml.FullLoader)
+        self.inputs = Inputs(self.root.find('./inputs'))
+        self.outputs = Outputs(self.root.find('./outputs'))
+        self.requirements = Requirements(self.root.find('./requirements/package'))
 
     @property
     def root(self):
@@ -180,22 +234,12 @@ class Tool:
         return self.shed_content["categories"]
 
     @property
-    def requirements(self):
-        """
-        Property returning the requirements for this tool
-        :return: the environment and packages requirement to run the tool
-        :rtype: Requirements object
-        """
-        return Requirements(self.root.find('./requirements/package'))
-
-    @property
     def command(self):
         """
         Property returning the command line
         :return:
         """
         return self.root.find('command').text
-        # return re.sub(r'\$__tool_directory__', os.path.join(self.path, ''), self.root.find('command').text)
 
     @property
     def attributes(self):
@@ -206,11 +250,9 @@ class Tool:
         """
         return self.root.attrib
 
-    @property
-    def inputs(self):
-        """
-        Property providing the defined inputs for the tool
-        :return: input parameters to run the tool
-        :rtype: Inputs object
-        """
-        return Inputs(self.root.find('./inputs'))
+    def tests(self):
+        for test in self.root.findall('.//test'):
+            params = {i.attrib['name']: i.attrib['value'] for i in test.findall('.//param')}
+            params.update({o.attrib['name']: o.attrib['file'] for o in test.findall('.//output')})
+            yield (params)
+
