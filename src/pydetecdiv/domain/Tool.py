@@ -120,14 +120,14 @@ class Inputs:
         :return: list of parameters
         :rtype: list
         """
-        for e in self.element.findall('.//param/..'):
-            if 'name' in e.attrib:
-                print(e.attrib['name'])
-                space = '    '
-            else:
-                space = ''
-            for p in e.findall('./param'):
-                print(space, p.attrib)
+        # for e in self.element.findall('.//param/..'):
+        #     if 'name' in e.attrib:
+        #         print(e.attrib['name'])
+        #         space = '    '
+        #     else:
+        #         space = ''
+        #     for p in e.findall('./param'):
+        #         print(space, p.attrib)
         return [p.attrib for p in self.element.findall('.//param')]
 
 

@@ -42,6 +42,5 @@ class Run(DomainSpecificObject):
         """
         Execute the job after having installed requirements if necessary
         """
-        print(f'Run {self.uuid} for {self.tool.name}')
         self.tool.requirements.install()
-        print(f'execute {self.tool.command}')
+        print(f'Execute:\n{self.record()}')

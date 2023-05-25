@@ -1,10 +1,10 @@
 """
 Module for handling tree representations of data.
 """
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QTreeView, QMenu, QDialogButtonBox, QDialog
 
-from pydetecdiv.app import list_tools, PyDetecDiv, pydetecdiv_project
+from pydetecdiv.app import list_tools, PyDetecDiv, pydetecdiv_project, WaitDialog
 from pydetecdiv.app.gui.Trees import TreeDictModel, TreeItem
 from pydetecdiv.domain.Run import Run
 
@@ -54,6 +54,8 @@ class ToolForm(QDialog):
     """
     A form to define input and parameters for running a tool job
     """
+    finished = Signal(bool)
+
     def __init__(self, tool, parent=None):
         super().__init__(parent)
         self.tool = tool
@@ -64,11 +66,21 @@ class ToolForm(QDialog):
 
     def accept(self):
         """
-        Accept the form and run the job
+        Accept the form, run the job and open a dialog waiting for the job to finish
+        """
+        wait_dialog = WaitDialog(f'Running {self.tool.name}. Please wait, this may take a long time.', self, )
+        self.finished.connect(wait_dialog.close_window)
+        wait_dialog.wait_for(self.run)
+        self.close()
+
+    def run(self):
+        """
+        Run the job within the context of the currently open project
         """
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             job = Run(self.tool, project=project)
             job.execute()
+            self.finished.emit(True)
 
 
 class ToolboxTreeModel(TreeDictModel):
