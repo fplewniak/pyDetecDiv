@@ -33,7 +33,7 @@ class Run(DomainSpecificObject):
             'tool_name': self.tool.name,
             'tool_version': self.tool.version,
             'command': self.tool.command,
-            'parameters': json.dumps(self.tool.inputs.parameters),
+            'parameters': json.dumps({name: param.value for name, param in self.tool.parameters.items()}),
             'uuid': self.uuid
         }
         if not no_id:
@@ -61,6 +61,9 @@ class Run(DomainSpecificObject):
         print(output.stderr.decode('utf-8'))
 
     def test(self):
+        """
+        Run the tests
+        """
         for t in self.tool.tests():
             for name, value in t.items():
                 if name in self.tool.parameters:

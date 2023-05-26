@@ -105,6 +105,11 @@ class Requirements:
         subprocess.run(cmd, shell=True, check=True, )
 
     def set_env_command(self):
+        """
+        Return the command to set up the environment required to run the tool
+        :return: command to set the environment up
+        :rtype: str
+        """
         match self.environment['type']:
             case 'conda':
                 return self._set_conda_env_command()
@@ -113,6 +118,11 @@ class Requirements:
                 return None
 
     def _set_conda_env_command(self):
+        """
+        Return the command to set up the conda environment required to run the tool
+        :return: command to set the conda environment up
+        :rtype: str
+        """
         conda_dir = get_config_value('project.conda', 'dir')
         env_name = self.environment["env"]
         if platform.system() == 'Windows':
@@ -123,27 +133,11 @@ class Requirements:
         return cmd
 
 
-class Inputs:
+class Parameter:
     """
-    A class to handle Tool's input as defined in the configuration file
+    A generic parameter class to represent both inputs and outputs parameters
     """
 
-    def __init__(self, element):
-        self.element = element
-        self.list = {p['name']: Input(p['name'], p['type'], p['format'], label=p['label'] if p['label'] else None)
-                     for p in self.parameters}
-
-    @property
-    def parameters(self):
-        """
-        All the parameters that should be passed to the command line
-        :return: list of parameters
-        :rtype: list
-        """
-        return [p.attrib for p in self.element.findall('.//param')]
-
-
-class Input:
     def __init__(self, name, type_, format_, label=None):
         self.name = name
         self.type = type_
@@ -152,7 +146,30 @@ class Input:
         self.value = None
 
     def is_image(self):
+        """
+        Check the parameter represents image data
+        :return: True if the parameter represents image data, False otherwise
+        :rtype: bool
+        """
         return self.type == 'data' and self.format in ['imagetiff']
+
+
+class Inputs:
+    """
+    A class to handle Tool's input as defined in the configuration file
+    """
+
+    def __init__(self, element):
+        self.element = element
+        self.list = {p['name']: Input(p['name'], p['type'], p['format'], label=p['label'] if p['label'] else None)
+                     for p in [p.attrib for p in self.element.findall('.//param')]}
+
+
+class Input(Parameter):
+    """
+    A class representing an input parameter
+    """
+    ...
 
 
 class Outputs:
@@ -163,21 +180,23 @@ class Outputs:
     def __init__(self, element):
         self.element = element
         self.list = {p['name']: Output(p['name'], p['format'], label=p['label'] if p['label'] else None)
-                     for p in self.data}
-
-    @property
-    def data(self):
-        return [p.attrib for p in self.element.findall('.//data')]
+                     for p in [p.attrib for p in self.element.findall('.//data')]}
 
 
-class Output:
+class Output(Parameter):
+    """
+    A class representing an output parameter
+    """
+
     def __init__(self, name, format_, label=None):
-        self.name = name
-        self.format = format_
-        self.label = label
-        self.value = None
+        super().__init__(name, 'data', format_, label)
 
     def is_image(self):
+        """
+        Check the output parameter represents image data
+        :return: True if the output parameter represents image data, False otherwise
+        :rtype: bool
+        """
         return self.format in ['imagetiff']
 
 
@@ -250,13 +269,21 @@ class Tool:
         return self.root.attrib
 
     def tests(self):
+        """
+        Return the parameters for running the tests
+        """
         for test in self.root.findall('.//test'):
             params = {i.attrib['name']: i.attrib['value'] for i in test.findall('.//param')}
             params.update({o.attrib['name']: o.attrib['file'] for o in test.findall('.//output')})
-            yield (params)
+            yield params
 
     @property
     def parameters(self):
-        params = {name: value for name, value in self.inputs.list.items()}
-        params.update({name: value for name, value in self.outputs.list.items()})
+        """
+        Return the all the input and output parameters for running the tool
+        :return: input and ouput parameters
+        :rtype: dict of Parameter objects (Input and Output)
+        """
+        params = self.inputs.list.copy()
+        params.update(self.outputs.list)
         return params

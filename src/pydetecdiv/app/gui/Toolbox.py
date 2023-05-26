@@ -13,10 +13,12 @@ class ToolItem(TreeItem):
     """
     A tool-specific tree item
     """
+
     def __init__(self, data, parent=None):
         super().__init__(data, parent=parent)
         self.tool = data
         self.item_data = [data.name, data.version]
+
 
 class ToolboxTreeView(QTreeView):
     """
@@ -71,7 +73,6 @@ class ToolForm(QDialog):
         self.button_box.addButton(self.test_button, QDialogButtonBox.AcceptRole)
         self.button_box.addButton(self.run_button, QDialogButtonBox.AcceptRole)
 
-
     def run(self, testing=False):
         """
         Accept the form, run the job and open a dialog waiting for the job to finish
@@ -90,8 +91,16 @@ class ToolForm(QDialog):
             job = Run(self.tool, project=project)
             if testing:
                 job.test()
+                project.cancel()
             else:
                 job.execute()
+                project.save(job)
+                # try:
+                #     job.execute()
+                # except CalledProcessError:
+                #     project.cancel()
+                # else:
+                #     project.save(job)
             self.finished.emit(True)
 
 
