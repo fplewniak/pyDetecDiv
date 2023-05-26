@@ -90,7 +90,6 @@ class Requirements:
             case _:
                 print('Unknown environment type')
 
-
     def _create_conda_env(self):
         """
         Create the required conda environment with the necessary packages
@@ -120,9 +119,9 @@ class Requirements:
             conda_exe = os.path.join(conda_dir, 'condabin', 'conda.bat')
             cmd = f'{conda_exe} activate {env_name}'
         else:
-            conda_exe = os.path.join(conda_dir, 'etc', 'profile.d', 'conda.sh')
-            cmd = f'/bin/bash {conda_exe} && conda activate {env_name}'
+            cmd = f'conda run -n {env_name} --cwd $__working_directory__'
         return cmd
+
 
 class Inputs:
     """
@@ -239,7 +238,7 @@ class Tool:
         Property returning the command line
         :return:
         """
-        return self.root.find('command').text
+        return f'{self.requirements.set_env_command()} \'{self.root.find("command").text}\''
 
     @property
     def attributes(self):
@@ -256,3 +255,8 @@ class Tool:
             params.update({o.attrib['name']: o.attrib['file'] for o in test.findall('.//output')})
             yield (params)
 
+    @property
+    def parameters(self):
+        params = {name: value for name, value in self.inputs.list.items()}
+        params.update({name: value for name, value in self.outputs.list.items()})
+        return params

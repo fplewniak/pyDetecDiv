@@ -44,6 +44,10 @@ class Project:
         self.pool = defaultdict(DomainSpecificObject)
 
     @property
+    def path(self):
+        return os.path.join(get_config_value('project', 'workspace'), self.dbname)
+
+    @property
     def uuid(self):
         """
         Property returning the uuid associated to this project

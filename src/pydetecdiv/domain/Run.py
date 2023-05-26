@@ -40,16 +40,29 @@ class Run(DomainSpecificObject):
             record['id_'] = self.id_
         return record
 
-    def execute(self):
+    def execute(self, testing=False):
         """
         Execute the job after having installed requirements if necessary
         """
         self.tool.requirements.install()
+        if testing:
+            working_dir = os.path.join(self.tool.path, 'test-data')
+        else:
+            working_dir = os.path.join(self.project.path, self.tool.name)
+            if not os.path.exists(working_dir):
+                os.mkdir(working_dir)
+        command = self.tool.command.replace('$__tool_directory__', os.path.join(self.tool.path, ''))
+        command = command.replace('$__working_directory__', working_dir)
+        for name, param in self.tool.parameters.items():
+            command = command.replace('${' + name + '}', param.value)
+        print(command)
+        output = subprocess.run(command, shell=True, check=True, capture_output=True)
+        print(output.stdout.decode('utf-8'))
+        print(output.stderr.decode('utf-8'))
+
+    def test(self):
         for t in self.tool.tests():
-            command = self.tool.command.replace('$__tool_directory__', os.path.join(self.tool.path, ''))
             for name, value in t.items():
-                command = command.replace('${' + name + '}', value)
-            command = f'cd {self.tool.path}/test-data\n{self.tool.requirements.set_env_command()}\n{command}'
-            output = subprocess.run(command, shell=True, check=True, capture_output=True)
-            print(output.stdout.decode('utf-8'))
-            print(output.stderr.decode('utf-8'))
+                if name in self.tool.parameters:
+                    self.tool.parameters[name].value = value
+            self.execute(testing=True)

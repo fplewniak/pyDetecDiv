@@ -237,7 +237,7 @@ class ImageResourceChooser(QDockWidget):
         self.formLayout.addRow(self.channel_label, self.channel_choice)
 
         self.OK_button = QDialogButtonBox(self.form)
-        self.OK_button.setObjectName("OK_button")
+        self.OK_button.setObjectName("run_button")
         self.OK_button.setStandardButtons(QDialogButtonBox.Ok)
         self.formLayout.addWidget(self.OK_button)
 

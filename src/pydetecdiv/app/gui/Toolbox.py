@@ -2,7 +2,7 @@
 Module for handling tree representations of data.
 """
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QTreeView, QMenu, QDialogButtonBox, QDialog
+from PySide6.QtWidgets import QTreeView, QMenu, QDialogButtonBox, QDialog, QPushButton
 
 from pydetecdiv.app import list_tools, PyDetecDiv, pydetecdiv_project, WaitDialog
 from pydetecdiv.app.gui.Trees import TreeDictModel, TreeItem
@@ -59,27 +59,39 @@ class ToolForm(QDialog):
     def __init__(self, tool, parent=None):
         super().__init__(parent)
         self.tool = tool
-        self.OK_button = QDialogButtonBox(self)
-        self.OK_button.setObjectName("OK_button")
-        self.OK_button.setStandardButtons(QDialogButtonBox.Ok)
-        self.OK_button.accepted.connect(self.accept)
+        self.button_box = QDialogButtonBox(self)
+        self.run_button = QPushButton(self.button_box)
+        self.run_button.setObjectName("run_button")
+        self.run_button.setText('Run')
+        self.run_button.clicked.connect(self.run)
+        self.test_button = QPushButton(self.button_box)
+        self.test_button.setObjectName("test_button")
+        self.test_button.setText('Test')
+        self.test_button.clicked.connect(lambda _: self.run(testing=True))
+        self.button_box.addButton(self.test_button, QDialogButtonBox.AcceptRole)
+        self.button_box.addButton(self.run_button, QDialogButtonBox.AcceptRole)
 
-    def accept(self):
+
+    def run(self, testing=False):
         """
         Accept the form, run the job and open a dialog waiting for the job to finish
         """
+        print(testing)
         wait_dialog = WaitDialog(f'Running {self.tool.name}. Please wait, this may take a long time.', self, )
         self.finished.connect(wait_dialog.close_window)
-        wait_dialog.wait_for(self.run)
+        wait_dialog.wait_for(self.run_job, testing=testing)
         self.close()
 
-    def run(self):
+    def run_job(self, testing=False):
         """
         Run the job within the context of the currently open project
         """
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             job = Run(self.tool, project=project)
-            job.execute()
+            if testing:
+                job.test()
+            else:
+                job.execute()
             self.finished.emit(True)
 
 
