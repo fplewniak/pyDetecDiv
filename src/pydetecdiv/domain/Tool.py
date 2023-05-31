@@ -105,33 +105,7 @@ class Requirements:
             cmd = f'/bin/bash {conda_exe} && conda create -y -n {env_name} {self.packages}'
         subprocess.run(cmd, shell=True, check=True, )
 
-    def set_env_command(self):
-        """
-        Return the command to set up the environment required to run the tool
-        :return: command to set the environment up
-        :rtype: str
-        """
-        match self.environment['type']:
-            case 'conda':
-                return self._set_conda_env_command()
-            case _:
-                print('Unknown environment type')
-                return None
 
-    def _set_conda_env_command(self):
-        """
-        Return the command to set up the conda environment required to run the tool
-        :return: command to set the conda environment up
-        :rtype: str
-        """
-        conda_dir = get_config_value('project.conda', 'dir')
-        env_name = self.environment["env"]
-        if platform.system() == 'Windows':
-            conda_exe = os.path.join(conda_dir, 'condabin', 'conda.bat')
-            cmd = f'{conda_exe} activate {env_name}'
-        else:
-            cmd = f'conda run -n {env_name} --cwd $__working_directory__'
-        return cmd
 
 
 class Parameter:
@@ -201,13 +175,67 @@ class Output(Parameter):
         return self.format in ['imagetiff']
 
 
+class Command:
+    def __init__(self, command, env, tool_path):
+        self.code = command
+        if tool_path:
+            self.code = self.code.replace('$__tool_directory__', os.path.join(tool_path, ''))
+        self.environment = env
+        self.working_dir = '.'
+
+    def set_env_command(self):
+        """
+        Return the command to set up the environment required to run the tool
+        :return: command to set the environment up
+        :rtype: str
+        """
+        match self.environment['type']:
+            case 'conda':
+                return self._set_conda_env_command()
+            case 'internal':
+                return self.go_to_working_dir
+            case _:
+                print('Unknown environment type')
+                return None
+
+    def _set_conda_env_command(self):
+        """
+        Return the command to set up the conda environment required to run the tool
+        :return: command to set the conda environment up
+        :rtype: str
+        """
+        conda_dir = get_config_value('project.conda', 'dir')
+        env_name = self.environment["env"]
+        if platform.system() == 'Windows':
+            conda_exe = os.path.join(conda_dir, 'condabin', 'conda.bat')
+            cmd = f'{conda_exe} activate {env_name}'
+        else:
+            cmd = f'conda run -n {env_name} --cwd {self.working_dir}'
+        return cmd
+
+    def set_working_dir(self, working_dir):
+        self.working_dir = working_dir
+        return self
+
+    def go_to_working_dir(self):
+        os.chdir(self.working_dir)
+
+    def set_parameters(self, parameters):
+        for name, param in parameters.items():
+            self.code = self.code.replace('${' + name + '}', param.value)
+        return self
+
+    def execute(self):
+        command = f'{self.set_env_command()} \'{self.code}\''
+        return subprocess.run(command, shell=True, check=True, capture_output=True)
+
 class Tool:
     """
     A class for handling and running tools specified by XML files
     """
 
     def __init__(self, path):
-        self.path = os.path.dirname(path)
+        self.path = os.path.dirname(path) if path else None
         self.xml_tree = xml.etree.ElementTree.parse(path)
         shed_file = os.path.join(os.path.dirname(path), '.shed.yml')
         with open(shed_file, encoding='utf-8') as file:
@@ -215,6 +243,7 @@ class Tool:
         self.inputs = Inputs(self.root.find('./inputs'))
         self.outputs = Outputs(self.root.find('./outputs'))
         self.requirements = Requirements(self.root.find('./requirements/package'))
+        self.command = Command(self.root.find("command").text, self.requirements.environment, self.path)
 
     @property
     def root(self):
@@ -253,12 +282,12 @@ class Tool:
         return self.shed_content["categories"]
 
     @property
-    def command(self):
+    def command_line(self):
         """
         Property returning the command line
         :return:
         """
-        return f'{self.requirements.set_env_command()} \'{self.root.find("command").text}\''
+        return f'{self.command.set_env_command()} \'{self.command.code}\''
 
     @property
     def attributes(self):

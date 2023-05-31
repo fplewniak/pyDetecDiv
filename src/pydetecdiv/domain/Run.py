@@ -32,7 +32,7 @@ class Run(DomainSpecificObject):
         record = {
             'tool_name': self.tool.name,
             'tool_version': self.tool.version,
-            'command': self.tool.command,
+            'command': self.tool.command_line,
             'parameters': json.dumps({name: param.value for name, param in self.tool.parameters.items()}),
             'uuid': self.uuid
         }
@@ -51,12 +51,7 @@ class Run(DomainSpecificObject):
             working_dir = os.path.join(self.project.path, self.tool.name)
             if not os.path.exists(working_dir):
                 os.mkdir(working_dir)
-        command = self.tool.command.replace('$__tool_directory__', os.path.join(self.tool.path, ''))
-        command = command.replace('$__working_directory__', working_dir)
-        for name, param in self.tool.parameters.items():
-            command = command.replace('${' + name + '}', param.value)
-        print(command)
-        output = subprocess.run(command, shell=True, check=True, capture_output=True)
+        output = self.tool.command.set_working_dir(working_dir).set_parameters(self.tool.parameters).execute()
         print(output.stdout.decode('utf-8'))
         print(output.stderr.decode('utf-8'))
 
