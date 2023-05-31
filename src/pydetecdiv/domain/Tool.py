@@ -144,7 +144,6 @@ class Input(Parameter):
     """
     A class representing an input parameter
     """
-    ...
 
 
 class Outputs:
@@ -176,6 +175,10 @@ class Output(Parameter):
 
 
 class Command:
+    """
+    A class handling commands for running tools. A command can be a command-line or a call to the execute method of a
+    class inheriting from Tool (i.e. generic tool) and representing a particular tool
+    """
     def __init__(self, command, env, tool_path):
         self.code = command
         if tool_path:
@@ -214,24 +217,47 @@ class Command:
         return cmd
 
     def set_working_dir(self, working_dir):
+        """
+        Set the working directory
+        :param working_dir: the working directory path
+        :type: os.Path
+        :return: the command object
+        :rtype: Command
+        """
         self.working_dir = working_dir
         return self
 
     def go_to_working_dir(self):
+        """
+        Go to the working directory.
+        """
         os.chdir(self.working_dir)
 
     def set_parameters(self, parameters):
+        """
+        Set the parameters for running the command
+        :param parameters: the parameters
+        :type parameters: dict
+        :return: the command object
+        :rtype: Command
+        """
         for name, param in parameters.items():
             self.code = self.code.replace('${' + name + '}', param.value)
         return self
 
     def execute(self):
+        """
+        Execute the command
+        :return: the output of the job
+        :rtype: subprocess.CompletedProcess
+        """
         command = f'{self.set_env_command()} \'{self.code}\''
         return subprocess.run(command, shell=True, check=True, capture_output=True)
 
 class Tool:
     """
-    A class for handling and running tools specified by XML files
+    A class for handling tools specified by XML files. A Tool object represents a generic tool in the toolbox. Internal
+    tools must inherit from this class with the addition of a supplementary method implementing the tool's algorithm.
     """
 
     def __init__(self, path):

@@ -5,7 +5,6 @@
 """
 import json
 import os
-import subprocess
 
 from pydetecdiv.domain.dso import DomainSpecificObject
 
