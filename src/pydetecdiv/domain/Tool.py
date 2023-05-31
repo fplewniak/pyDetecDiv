@@ -8,6 +8,7 @@ import subprocess
 import xml
 import yaml
 
+from pydetecdiv.utils import remove_keys_from_dict
 from pydetecdiv.settings import get_config_value
 
 
@@ -138,11 +139,11 @@ class Parameter:
     A generic parameter class to represent both inputs and outputs parameters
     """
 
-    def __init__(self, name, type_, format_, label=None):
+    def __init__(self, name, type_, **kwargs):
         self.name = name
         self.type = type_
-        self.format = format_
-        self.label = label
+        self.format = kwargs['format'] if type_ == 'data' and 'format' in kwargs else None
+        self.label = kwargs['label'] if 'label' in kwargs else None
         self.value = None
 
     def is_image(self):
@@ -161,7 +162,7 @@ class Inputs:
 
     def __init__(self, element):
         self.element = element
-        self.list = {p['name']: Input(p['name'], p['type'], p['format'], label=p['label'] if p['label'] else None)
+        self.list = {p['name']: Input(p['name'], p['type'], **remove_keys_from_dict(p, ['name', 'type']))
                      for p in [p.attrib for p in self.element.findall('.//param')]}
 
 
@@ -179,7 +180,7 @@ class Outputs:
 
     def __init__(self, element):
         self.element = element
-        self.list = {p['name']: Output(p['name'], p['format'], label=p['label'] if p['label'] else None)
+        self.list = {p['name']: Output(p['name'], p['format'], **remove_keys_from_dict(p, ['name', 'format']))
                      for p in [p.attrib for p in self.element.findall('.//data')]}
 
 
@@ -188,8 +189,8 @@ class Output(Parameter):
     A class representing an output parameter
     """
 
-    def __init__(self, name, format_, label=None):
-        super().__init__(name, 'data', format_, label)
+    def __init__(self, name, format_, **kwargs):
+        super().__init__(name, 'data', format=format_, **kwargs)
 
     def is_image(self):
         """

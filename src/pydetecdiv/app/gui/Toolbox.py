@@ -79,7 +79,6 @@ class ToolForm(QDialog):
         """
         Accept the form, run the job and open a dialog waiting for the job to finish
         """
-        print(testing)
         wait_dialog = WaitDialog(f'Running {self.tool.name}. Please wait, this may take a long time.', self, )
         self.finished.connect(wait_dialog.close_window)
         wait_dialog.wait_for(self.run_job, testing=testing)

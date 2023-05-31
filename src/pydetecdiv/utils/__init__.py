@@ -41,3 +41,6 @@ def round_to_even(value, ceil=True):
         else:
             rounded -= 1
     return rounded
+
+def remove_keys_from_dict(dictionary, keys):
+    return dict(filter(lambda item: item[0] not in keys, dictionary.items()))
