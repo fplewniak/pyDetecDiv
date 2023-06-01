@@ -1,13 +1,18 @@
 """
 Tool module to handle tool definition, requirements and running them in an appropriate environment.
 """
+import importlib
+import inspect
 import os
+import pkgutil
 import platform
 import re
 import subprocess
 import xml
 import yaml
 
+import pydetecdiv
+from pydetecdiv.domain.tools import Plugins
 from pydetecdiv.utils import remove_keys_from_dict
 from pydetecdiv.settings import get_config_value
 
@@ -188,6 +193,7 @@ class Command:
             self.code = self.code.replace('$__tool_directory__', os.path.join(tool_path, ''))
         self.environment = env
         self.working_dir = '.'
+        self.parameters = {}
 
     def set_env_command(self):
         """
@@ -244,8 +250,7 @@ class Command:
         :return: the command object
         :rtype: Command
         """
-        for name, param in parameters.items():
-            self.code = self.code.replace('${' + name + '}', param.value)
+        self.parameters = {name: param.value for name, param in parameters.items()}
         return self
 
     def execute(self):
@@ -254,8 +259,15 @@ class Command:
         :return: the output of the job
         :rtype: subprocess.CompletedProcess
         """
-        command = f'{self.set_env_command()} \'{self.code}\''
-        return subprocess.run(command, shell=True, check=True, capture_output=True)
+        if self.environment['type'] == 'plugin':
+            plugin = Plugins(self.environment["env"]).list[self.code.strip()]
+            return plugin(self.parameters).run()
+        else:
+            for name, param in self.parameters.items():
+                self.code = self.code.replace('${' + name + '}', param)
+            command = f'{self.set_env_command()} \'{self.code}\''
+            output = subprocess.run(command, shell=True, check=True, capture_output=True)
+            return {'stdout': output.stdout.decode('utf-8'), 'stderr': output.stderr.decode('utf-8')}
 
 
 class Tool:
@@ -330,7 +342,7 @@ class Tool:
 
     def tests(self):
         """
-        Return the parameters for running the tests
+        Return the parameters for running the testing
         """
         for test in self.root.findall('.//test'):
             params = {i.attrib['name']: i.attrib['value'] for i in test.findall('.//param')}

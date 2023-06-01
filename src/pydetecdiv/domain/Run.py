@@ -51,12 +51,12 @@ class Run(DomainSpecificObject):
             if not os.path.exists(working_dir):
                 os.mkdir(working_dir)
         output = self.tool.command.set_working_dir(working_dir).set_parameters(self.tool.parameters).execute()
-        print(output.stdout.decode('utf-8'))
-        print(output.stderr.decode('utf-8'))
+        print(output['stdout'])
+        print(output['stderr'])
 
     def test(self):
         """
-        Run the tests
+        Run the testing
         """
         for t in self.tool.tests():
             for name, value in t.items():
