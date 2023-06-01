@@ -51,6 +51,8 @@ class Requirements:
         match self.environment['type']:
             case 'conda':
                 return self._check_conda_env()
+            case 'plugin':
+                return True
             case _:
                 print('Unknown environment type')
         return False
@@ -88,6 +90,8 @@ class Requirements:
         match self.environment['type']:
             case 'conda':
                 self._create_conda_env()
+            case 'plugin':
+                ...
             case _:
                 print('Unknown environment type')
 
@@ -104,8 +108,6 @@ class Requirements:
             conda_exe = os.path.join(conda_dir, 'etc', 'profile.d', 'conda.sh')
             cmd = f'/bin/bash {conda_exe} && conda create -y -n {env_name} {self.packages}'
         subprocess.run(cmd, shell=True, check=True, )
-
-
 
 
 class Parameter:
@@ -179,6 +181,7 @@ class Command:
     A class handling commands for running tools. A command can be a command-line or a call to the execute method of a
     class inheriting from Tool (i.e. generic tool) and representing a particular tool
     """
+
     def __init__(self, command, env, tool_path):
         self.code = command
         if tool_path:
@@ -195,7 +198,7 @@ class Command:
         match self.environment['type']:
             case 'conda':
                 return self._set_conda_env_command()
-            case 'internal':
+            case 'plugin':
                 return self.go_to_working_dir
             case _:
                 print('Unknown environment type')
@@ -253,6 +256,7 @@ class Command:
         """
         command = f'{self.set_env_command()} \'{self.code}\''
         return subprocess.run(command, shell=True, check=True, capture_output=True)
+
 
 class Tool:
     """
