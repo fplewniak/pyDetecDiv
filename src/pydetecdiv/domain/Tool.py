@@ -297,8 +297,8 @@ class Tool:
 
     def init_dso_inputs(self, project=None):
         for i in self.inputs.values:
-            if i.format in ['FOV', 'ROI', 'Data', 'Dataset']:
-                i.obj = project.get_named_object(i.format, i.value)
+            if i.type in ['FOV', 'ROI', 'Data', 'Dataset']:
+                i.obj = project.get_named_object(i.type, i.value)
 
     def init_test(self, test_param, project=None):
         for name, value in test_param.items():
