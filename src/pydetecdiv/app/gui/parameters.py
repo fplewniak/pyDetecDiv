@@ -1,7 +1,7 @@
 """
 Parameter widget classes to automatically create forms for launching tools and plugins
 """
-from PySide6.QtWidgets import QFrame
+from PySide6.QtWidgets import QFrame, QFormLayout, QLabel, QLineEdit
 
 from pydetecdiv.utils import singleton
 
@@ -36,11 +36,18 @@ class ParameterWidget(QFrame):
     def __init__(self, parameter, parent=None, **kwargs):
         super().__init__(parent)
         self.parameter = parameter
+        self.layout = QFormLayout(self)
+        self.value = None
+
+    def set_value(self):
+        self.parameter.value = self.value
 
 
 class TextParameterWidget(ParameterWidget):
-    ...
-
+    def __init__(self, parameter, parent=None, **kwargs):
+        super().__init__(parameter, parent=parent, **kwargs)
+        self.value = QLineEdit(parent=self)
+        self.layout.addRow(QLabel(self.parameter.label), self.value)
 
 class IntegerParameterWidget(ParameterWidget):
     ...
