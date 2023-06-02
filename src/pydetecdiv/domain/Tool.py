@@ -1,20 +1,17 @@
 """
 Tool module to handle tool definition, requirements and running them in an appropriate environment.
 """
-import importlib
-import inspect
 import os
-import pkgutil
 import platform
 import re
 import subprocess
 import xml
 import yaml
 
-import pydetecdiv
 from pydetecdiv.domain.tools import Plugins
 from pydetecdiv.utils import remove_keys_from_dict
 from pydetecdiv.settings import get_config_value
+from pydetecdiv.domain.parameters import ParameterFactory
 
 
 class Requirements:
@@ -33,7 +30,6 @@ class Requirements:
         :rtype: list of str
         """
         return self.element.text
-        # return set(str.split(self.element.text, ' '))
 
     @property
     def environment(self):
@@ -115,28 +111,6 @@ class Requirements:
         subprocess.run(cmd, shell=True, check=True, )
 
 
-class Parameter:
-    """
-    A generic parameter class to represent both inputs and outputs parameters
-    """
-
-    def __init__(self, name, type_, **kwargs):
-        self.name = name
-        self.type = type_
-        self.format = kwargs['format'] if type_ == 'data' and 'format' in kwargs else None
-        self.label = kwargs['label'] if 'label' in kwargs else None
-        self.value = None
-        self.obj = None
-
-    def is_image(self):
-        """
-        Check the parameter represents image data
-        :return: True if the parameter represents image data, False otherwise
-        :rtype: bool
-        """
-        return self.type == 'data' and self.format in ['imagetiff']
-
-
 class Inputs:
     """
     A class to handle Tool's input as defined in the configuration file
@@ -144,18 +118,18 @@ class Inputs:
 
     def __init__(self, element):
         self.element = element
-        self.list = {p['name']: Input(p['name'], p['type'], **remove_keys_from_dict(p, ['name', 'type']))
-                     for p in [p.attrib for p in self.element.findall('.//param')]}
+        self.list = {p['name']: ParameterFactory().create(p['name'], p['type'],
+                                                          **remove_keys_from_dict(p, ['name', 'type'])) for p in
+                     [p.attrib for p in self.element.findall('.//param')]}
 
     @property
     def values(self):
+        """
+        Convenience property returning the values of all input parameters in the self.list
+        :return: the values of all input parameters in the self.list
+        :rtype: list
+        """
         return self.list.values()
-
-
-class Input(Parameter):
-    """
-    A class representing an input parameter
-    """
 
 
 class Outputs:
@@ -165,25 +139,9 @@ class Outputs:
 
     def __init__(self, element):
         self.element = element
-        self.list = {p['name']: Output(p['name'], p['format'], **remove_keys_from_dict(p, ['name', 'format']))
-                     for p in [p.attrib for p in self.element.findall('.//data')]}
-
-
-class Output(Parameter):
-    """
-    A class representing an output parameter
-    """
-
-    def __init__(self, name, format_, **kwargs):
-        super().__init__(name, 'data', format=format_, **kwargs)
-
-    def is_image(self):
-        """
-        Check the output parameter represents image data
-        :return: True if the output parameter represents image data, False otherwise
-        :rtype: bool
-        """
-        return self.format in ['imagetiff']
+        self.list = {p['name']: ParameterFactory().create(p['name'], 'data',
+                                                          **remove_keys_from_dict(p, ['name', 'type'])) for p in
+                     [p.attrib for p in self.element.findall('.//data')]}
 
 
 class Command:
@@ -255,10 +213,7 @@ class Command:
         :return: the command object
         :rtype: Command
         """
-        # self.parameters = {name: param.value for name, param in parameters.items()}
-        self.parameters = {}
-        for name, param in parameters.items():
-            self.parameters[name] = param.value if param.obj is None else param.obj
+        self.parameters = parameters
         return self
 
     def execute(self):
@@ -269,14 +224,14 @@ class Command:
         """
         if self.requirements.environment['type'] == 'plugin':
             plugin = Plugins(self.requirements.packages).list[self.code.strip()]
-            return plugin(self.parameters).run()
+            output = plugin(self.parameters).run()
         else:
             for name, param in self.parameters.items():
-                self.code = self.code.replace('${' + name + '}', param)
+                self.code = self.code.replace('${' + name + '}', param.value)
             command = f'{self.set_env_command()} \'{self.code}\''
             output = subprocess.run(command, shell=True, check=True, capture_output=True)
-            return {'stdout': output.stdout.decode('utf-8'), 'stderr': output.stderr.decode('utf-8')}
-
+            output = {'stdout': output.stdout.decode('utf-8'), 'stderr': output.stderr.decode('utf-8')}
+        return output
 
 class Tool:
     """
@@ -296,14 +251,26 @@ class Tool:
         self.command = Command(self.root.find("command").text, self.requirements, self.path)
 
     def init_dso_inputs(self, project=None):
+        """
+        Initialize the DSOs for input parameters and place them in the obj field.
+        :param project:
+        """
         for i in self.inputs.values:
-            if i.type in ['FOV', 'ROI', 'Data', 'Dataset']:
+            if i.is_dso():
                 i.obj = project.get_named_object(i.type, i.value)
 
     def init_test(self, test_param, project=None):
+        """
+        Initialize values of parameters for testing purposes. If an input defines a DSO then its obj field is set to the
+        corresponding DSO or list thereof.
+        :param test_param: the parameters for the test
+        :type test_param: dict
+        :param project: the pyDetecDiv project the test must be run on
+        :type project: Project
+        """
         for name, value in test_param.items():
-                if name in self.parameters:
-                    self.parameters[name].value = value
+            if name in self.parameters:
+                self.parameters[name].value = value
         self.init_dso_inputs(project=project)
 
     @property

@@ -1,12 +1,31 @@
+"""
+Plugins for testing parameters
+"""
 from pydetecdiv.domain.tools import Plugin
 
-class Plugin_param(Plugin):
+
+class PluginParam(Plugin):
+    """
+    Test of parameters as passed to plugin
+    """
     def run(self):
+        """
+        run the plugin
+        :return: output
+        """
         return {'stdout': self.parameters, 'stderr': ''}
 
-class DSO_initializer(Plugin):
+
+class DSOinitializer(Plugin):
+    """
+    Test initialization of DSOs
+    """
     def run(self):
-        fov = self.parameters['fov']
+        """
+        run the plugin
+        :return: output
+        """
+        fov = self.parameters['fov'].obj
         for roi in fov.roi_list:
             print(f'name: {roi.name}, top_left: {roi.top_left}, bottom_right: {roi.bottom_right}')
-        return {'stdout':len(fov.roi_list), 'stderr': ''}
+        return {'stdout': len(fov.roi_list), 'stderr': ''}
