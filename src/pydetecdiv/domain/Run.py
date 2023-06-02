@@ -59,7 +59,5 @@ class Run(DomainSpecificObject):
         Run the testing
         """
         for t in self.tool.tests():
-            for name, value in t.items():
-                if name in self.tool.parameters:
-                    self.tool.parameters[name].value = value
+            self.tool.init_test(t, project=self.project)
             self.execute(testing=True)

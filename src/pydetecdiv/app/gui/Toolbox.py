@@ -95,6 +95,7 @@ class ToolForm(QDialog):
                 project.cancel()
             else:
                 try:
+                    self.tool.init_dso_inputs(project=project)
                     job.execute()
                 except CalledProcessError:
                     project.cancel()

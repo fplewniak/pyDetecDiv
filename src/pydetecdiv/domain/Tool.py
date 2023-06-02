@@ -126,6 +126,7 @@ class Parameter:
         self.format = kwargs['format'] if type_ == 'data' and 'format' in kwargs else None
         self.label = kwargs['label'] if 'label' in kwargs else None
         self.value = None
+        self.obj = None
 
     def is_image(self):
         """
@@ -145,6 +146,10 @@ class Inputs:
         self.element = element
         self.list = {p['name']: Input(p['name'], p['type'], **remove_keys_from_dict(p, ['name', 'type']))
                      for p in [p.attrib for p in self.element.findall('.//param')]}
+
+    @property
+    def values(self):
+        return self.list.values()
 
 
 class Input(Parameter):
@@ -187,11 +192,11 @@ class Command:
     class inheriting from Tool (i.e. generic tool) and representing a particular tool
     """
 
-    def __init__(self, command, env, tool_path):
+    def __init__(self, command, requirements, tool_path):
         self.code = command
         if tool_path:
             self.code = self.code.replace('$__tool_directory__', os.path.join(tool_path, ''))
-        self.environment = env
+        self.requirements = requirements
         self.working_dir = '.'
         self.parameters = {}
 
@@ -201,7 +206,7 @@ class Command:
         :return: command to set the environment up
         :rtype: str
         """
-        match self.environment['type']:
+        match self.requirements.environment['type']:
             case 'conda':
                 return self._set_conda_env_command()
             case 'plugin':
@@ -217,7 +222,7 @@ class Command:
         :rtype: str
         """
         conda_dir = get_config_value('project.conda', 'dir')
-        env_name = self.environment["env"]
+        env_name = self.requirements.environment["env"]
         if platform.system() == 'Windows':
             conda_exe = os.path.join(conda_dir, 'condabin', 'conda.bat')
             cmd = f'{conda_exe} activate {env_name}'
@@ -250,7 +255,10 @@ class Command:
         :return: the command object
         :rtype: Command
         """
-        self.parameters = {name: param.value for name, param in parameters.items()}
+        # self.parameters = {name: param.value for name, param in parameters.items()}
+        self.parameters = {}
+        for name, param in parameters.items():
+            self.parameters[name] = param.value if param.obj is None else param.obj
         return self
 
     def execute(self):
@@ -259,8 +267,8 @@ class Command:
         :return: the output of the job
         :rtype: subprocess.CompletedProcess
         """
-        if self.environment['type'] == 'plugin':
-            plugin = Plugins(self.environment["env"]).list[self.code.strip()]
+        if self.requirements.environment['type'] == 'plugin':
+            plugin = Plugins(self.requirements.packages).list[self.code.strip()]
             return plugin(self.parameters).run()
         else:
             for name, param in self.parameters.items():
@@ -285,7 +293,18 @@ class Tool:
         self.inputs = Inputs(self.root.find('./inputs'))
         self.outputs = Outputs(self.root.find('./outputs'))
         self.requirements = Requirements(self.root.find('./requirements/package'))
-        self.command = Command(self.root.find("command").text, self.requirements.environment, self.path)
+        self.command = Command(self.root.find("command").text, self.requirements, self.path)
+
+    def init_dso_inputs(self, project=None):
+        for i in self.inputs.values:
+            if i.format in ['FOV', 'ROI', 'Data', 'Dataset']:
+                i.obj = project.get_named_object(i.format, i.value)
+
+    def init_test(self, test_param, project=None):
+        for name, value in test_param.items():
+                if name in self.parameters:
+                    self.parameters[name].value = value
+        self.init_dso_inputs(project=project)
 
     @property
     def root(self):
