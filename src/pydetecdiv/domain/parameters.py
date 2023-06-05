@@ -1,6 +1,7 @@
 """
 Parameter types classes for validation, pre and post processing of parameters
 """
+from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
 from pydetecdiv.utils import singleton
 
 
@@ -22,13 +23,12 @@ class ParameterFactory:
             'Dataset': DatasetParameter
         }
 
-    def create(self, name, type_, **kwargs):
+    def create_from_dict(self, name, type_, **kwargs):
         return self.mapping[type_](name, type_, **kwargs)
 
-    def create_from_xml(self, element, **kwargs):
+    def create(self, element, **kwargs):
         parameter_type = element.attrib['type'] if 'type' in element.attrib else 'data'
         return self.mapping[parameter_type](element, **kwargs)
-
 
     def is_dso(self, type_):
         return self.mapping[type_].is_dso()
@@ -40,12 +40,32 @@ class Parameter:
     """
 
     def __init__(self, element, **kwargs):
-        self.name = element.attrib['name']
-        self.type = element.attrib['type'] if 'type' in element.attrib else 'data'
-        self.format = element.attrib['format'] if self.type == 'data' and 'format' in element.attrib else None
-        self.label = element.attrib['label'] if 'label' in element.attrib else None
         self.value = None
         self.obj = None
+        self.element = element
+
+    def set_value(self, value):
+        self.value = value
+
+    @property
+    def options(self):
+        return {o.text: o.attrib['value'] for o in self.element.findall('.//option')}
+
+    @property
+    def name(self):
+        return self.element.attrib['name']
+
+    @property
+    def type(self):
+        return self.element.attrib['type'] if 'type' in self.element.attrib else 'data'
+
+    @property
+    def format(self):
+        return self.element.attrib['format'] if self.type == 'data' and 'format' in self.element.attrib else None
+
+    @property
+    def label(self):
+        return self.element.attrib['label'] if 'label' in self.element.attrib else None
 
     def is_image(self):
         """
@@ -111,6 +131,11 @@ class DirectoryUriParameter(Parameter):
 class FovParameter(Parameter):
     def __init__(self, element, **kwargs):
         super().__init__(element, **kwargs)
+
+    def set_value(self, value):
+        self.value = value
+        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            self.obj = project.get_named_object('FOV', self.value)
 
     @staticmethod
     def is_dso():

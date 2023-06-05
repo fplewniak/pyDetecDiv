@@ -3,19 +3,14 @@
 """
 Definition of global objects and methods for easy access from all parts of the application
 """
-import json
-import os
-import xml
 from contextlib import contextmanager
 from enum import StrEnum
 
-import yaml
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal
 
-from pydetecdiv.domain.Tool import Tool
-from pydetecdiv.settings import get_config_files, get_config_value
+from pydetecdiv.settings import get_config_files
 from pydetecdiv.persistence.project import list_projects
 from pydetecdiv.domain.Project import Project
 from pydetecdiv.utils import singleton
@@ -198,19 +193,4 @@ def project_list():
     return list_projects()
 
 
-def list_tools():
-    """
-    Provide a list of available tools arranged by categories
-    :return: the list of available tools and categories
-    :rtype: dict
-    """
-    toolbox_path = get_config_value('paths', 'toolbox')
-    json_data = json.load(open(os.path.join(toolbox_path, 'toolboxes.json'), encoding='utf-8'))
-    tool_list = {c['name']: [] for c in json_data['categories']}
-    for current_path, _, files in os.walk(os.path.abspath(os.path.join(toolbox_path, 'tools'))):
-        for file in files:
-            if file.endswith('.xml'):
-                tool = Tool(os.path.join(current_path, file))
-                for category in tool.categories:
-                    tool_list[category].append(tool)
-    return tool_list
+

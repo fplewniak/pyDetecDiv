@@ -1,6 +1,7 @@
 """
 Tool module to handle tool definition, requirements and running them in an appropriate environment.
 """
+import json
 import os
 import platform
 import re
@@ -12,6 +13,24 @@ from pydetecdiv.domain.tools import Plugins
 from pydetecdiv.utils import remove_keys_from_dict
 from pydetecdiv.settings import get_config_value
 from pydetecdiv.domain.parameters import ParameterFactory
+
+
+def list_tools():
+    """
+    Provide a list of available tools arranged by categories
+    :return: the list of available tools and categories
+    :rtype: dict
+    """
+    toolbox_path = get_config_value('paths', 'toolbox')
+    json_data = json.load(open(os.path.join(toolbox_path, 'toolboxes.json'), encoding='utf-8'))
+    tool_list = {c['name']: [] for c in json_data['categories']}
+    for current_path, _, files in os.walk(os.path.abspath(os.path.join(toolbox_path, 'tools'))):
+        for file in files:
+            if file.endswith('.xml'):
+                tool = Tool(os.path.join(current_path, file))
+                for category in tool.categories:
+                    tool_list[category].append(tool)
+    return tool_list
 
 
 class Requirements:
@@ -118,7 +137,7 @@ class Inputs:
 
     def __init__(self, element):
         self.element = element
-        self.list = {p.attrib['name']: ParameterFactory().create_from_xml(p) for p in self.element.findall('.//param')}
+        self.list = {p.attrib['name']: ParameterFactory().create(p) for p in self.element.findall('.//param')}
 
     @property
     def values(self):
@@ -137,7 +156,7 @@ class Outputs:
 
     def __init__(self, element):
         self.element = element
-        self.list = {p.attrib['name']: ParameterFactory().create_from_xml(p) for p in self.element.findall('.//data')}
+        self.list = {p.attrib['name']: ParameterFactory().create(p) for p in self.element.findall('.//data')}
 
 
 class Command:
@@ -228,6 +247,7 @@ class Command:
             output = subprocess.run(command, shell=True, check=True, capture_output=True)
             output = {'stdout': output.stdout.decode('utf-8'), 'stderr': output.stderr.decode('utf-8')}
         return output
+
 
 class Tool:
     """

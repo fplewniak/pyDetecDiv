@@ -17,7 +17,6 @@ from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project, Drawing
 from pydetecdiv.app.gui.ImageViewer import ImageViewer
 from pydetecdiv.app.gui.Trees import TreeDictModel
 from pydetecdiv.app.gui.Toolbox import ToolboxTreeView, ToolboxTreeModel
-from pydetecdiv.app import list_tools
 
 
 class MainWindow(QMainWindow):

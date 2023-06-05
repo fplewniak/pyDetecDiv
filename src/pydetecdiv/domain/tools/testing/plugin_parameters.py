@@ -14,7 +14,7 @@ class PluginParam(Plugin):
         :return: output
         """
         for _, p in self.parameters.items():
-            print(f'{p.name}: {p.value}')
+            print(f'{p.name}: {p.value} {p.obj}')
         return {'stdout': self.parameters, 'stderr': ''}
 
 

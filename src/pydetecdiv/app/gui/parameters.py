@@ -1,8 +1,9 @@
 """
 Parameter widget classes to automatically create forms for launching tools and plugins
 """
-from PySide6.QtWidgets import QFrame, QFormLayout, QLabel, QLineEdit, QSpinBox, QDoubleSpinBox, QCheckBox
+from PySide6.QtWidgets import QFrame, QFormLayout, QLabel, QLineEdit, QSpinBox, QDoubleSpinBox, QCheckBox, QComboBox
 
+from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
 from pydetecdiv.utils import singleton
 
 
@@ -39,10 +40,11 @@ class ParameterWidget(QFrame):
         self.layout = layout
 
     def set_value(self):
-        self.parameter.value = self.get_value()
+        self.parameter.set_value(self.get_value())
 
     def get_value(self):
         ...
+
 
 class TextParameterWidget(ParameterWidget):
     def __init__(self, parameter, parent=None, layout=None, **kwargs):
@@ -52,6 +54,7 @@ class TextParameterWidget(ParameterWidget):
 
     def get_value(self):
         return self.value.text()
+
 
 class IntegerParameterWidget(ParameterWidget):
     def __init__(self, parameter, parent=None, layout=None, **kwargs):
@@ -86,7 +89,13 @@ class BooleanParameterWidget(ParameterWidget):
 class SelectParameterWidget(ParameterWidget):
     def __init__(self, parameter, parent=None, layout=None, **kwargs):
         super().__init__(parameter, parent=parent, layout=layout, **kwargs)
-        print(self.parameter)
+        self.combo = QComboBox(parent=self)
+        for text, value in self.parameter.options.items():
+            self.combo.addItem(text)
+        self.layout.addRow(QLabel(self.parameter.label), self.combo)
+
+    def get_value(self):
+        return self.parameter.options[self.combo.currentText()]
 
 
 class ColumnListParameterWidget(ParameterWidget):
@@ -106,7 +115,17 @@ class DirectoryUriParameterWidget(ParameterWidget):
 
 
 class FovParameterWidget(ParameterWidget):
-    ...
+    def __init__(self, parameter, parent=None, layout=None, **kwargs):
+        super().__init__(parameter, parent=parent, layout=layout, **kwargs)
+        self.combo = QComboBox(parent=self)
+        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            if project.count_objects('FOV'):
+                FOV_list = [fov.name for fov in project.get_objects('FOV')]
+                self.combo.addItems(sorted(FOV_list))
+        self.layout.addRow(QLabel(self.parameter.label), self.combo)
+
+    def get_value(self):
+        return self.combo.currentText()
 
 
 class RoiParameterWidget(ParameterWidget):
