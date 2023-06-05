@@ -118,9 +118,7 @@ class Inputs:
 
     def __init__(self, element):
         self.element = element
-        self.list = {p['name']: ParameterFactory().create(p['name'], p['type'],
-                                                          **remove_keys_from_dict(p, ['name', 'type'])) for p in
-                     [p.attrib for p in self.element.findall('.//param')]}
+        self.list = {p.attrib['name']: ParameterFactory().create_from_xml(p) for p in self.element.findall('.//param')}
 
     @property
     def values(self):
@@ -139,9 +137,7 @@ class Outputs:
 
     def __init__(self, element):
         self.element = element
-        self.list = {p['name']: ParameterFactory().create(p['name'], 'data',
-                                                          **remove_keys_from_dict(p, ['name', 'type'])) for p in
-                     [p.attrib for p in self.element.findall('.//data')]}
+        self.list = {p.attrib['name']: ParameterFactory().create_from_xml(p) for p in self.element.findall('.//data')}
 
 
 class Command:
