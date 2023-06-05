@@ -1,7 +1,7 @@
 """
 Parameter widget classes to automatically create forms for launching tools and plugins
 """
-from PySide6.QtWidgets import QFrame, QFormLayout, QLabel, QLineEdit
+from PySide6.QtWidgets import QFrame, QFormLayout, QLabel, QLineEdit, QSpinBox, QDoubleSpinBox, QCheckBox
 
 from pydetecdiv.utils import singleton
 
@@ -33,36 +33,60 @@ class ParameterWidget(QFrame):
     A generic parameter class to represent both inputs and outputs parameters
     """
 
-    def __init__(self, parameter, parent=None, **kwargs):
+    def __init__(self, parameter, parent=None, layout=None, **kwargs):
         super().__init__(parent)
         self.parameter = parameter
-        self.layout = QFormLayout(self)
-        self.value = None
+        self.layout = layout
 
     def set_value(self):
-        self.parameter.value = self.value
+        self.parameter.value = self.get_value()
 
+    def get_value(self):
+        ...
 
 class TextParameterWidget(ParameterWidget):
-    def __init__(self, parameter, parent=None, **kwargs):
-        super().__init__(parameter, parent=parent, **kwargs)
+    def __init__(self, parameter, parent=None, layout=None, **kwargs):
+        super().__init__(parameter, parent=parent, layout=layout, **kwargs)
         self.value = QLineEdit(parent=self)
         self.layout.addRow(QLabel(self.parameter.label), self.value)
 
+    def get_value(self):
+        return self.value.text()
+
 class IntegerParameterWidget(ParameterWidget):
-    ...
+    def __init__(self, parameter, parent=None, layout=None, **kwargs):
+        super().__init__(parameter, parent=parent, layout=layout, **kwargs)
+        self.spin_box = QSpinBox(parent=self)
+        self.layout.addRow(QLabel(self.parameter.label), self.spin_box)
+
+    def get_value(self):
+        return self.spin_box.value()
 
 
 class FloatParameterWidget(ParameterWidget):
-    ...
+    def __init__(self, parameter, parent=None, layout=None, **kwargs):
+        super().__init__(parameter, parent=parent, layout=layout, **kwargs)
+        self.spin_box = QDoubleSpinBox(parent=self)
+        self.layout.addRow(QLabel(self.parameter.label), self.spin_box)
+
+    def get_value(self):
+        return self.spin_box.value()
 
 
 class BooleanParameterWidget(ParameterWidget):
-    ...
+    def __init__(self, parameter, parent=None, layout=None, **kwargs):
+        super().__init__(parameter, parent=parent, layout=layout, **kwargs)
+        self.check_box = QCheckBox(parent=self)
+        self.layout.addRow(QLabel(self.parameter.label), self.check_box)
+
+    def get_value(self):
+        return self.check_box.isChecked()
 
 
 class SelectParameterWidget(ParameterWidget):
-    ...
+    def __init__(self, parameter, parent=None, layout=None, **kwargs):
+        super().__init__(parameter, parent=parent, layout=layout, **kwargs)
+        print(self.parameter)
 
 
 class ColumnListParameterWidget(ParameterWidget):

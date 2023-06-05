@@ -76,8 +76,9 @@ class BooleanParameter(Parameter):
 
 
 class SelectParameter(Parameter):
-    def __init__(self, name, type_, **kwargs):
+    def __init__(self, name, type_, multiple=False, **kwargs):
         super().__init__(name, type_, **kwargs)
+        print(f'{kwargs}')
 
 
 class ColumnListParameter(Parameter):

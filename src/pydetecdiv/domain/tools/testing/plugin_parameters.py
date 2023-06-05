@@ -13,6 +13,8 @@ class PluginParam(Plugin):
         run the plugin
         :return: output
         """
+        for _, p in self.parameters.items():
+            print(f'{p.name}: {p.value}')
         return {'stdout': self.parameters, 'stderr': ''}
 
 

@@ -4,7 +4,7 @@ Module for handling tree representations of data.
 from subprocess import CalledProcessError
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QTreeView, QMenu, QDialogButtonBox, QDialog, QPushButton, QVBoxLayout
+from PySide6.QtWidgets import QTreeView, QMenu, QDialogButtonBox, QDialog, QPushButton, QVBoxLayout, QFormLayout
 
 from pydetecdiv.app.gui.parameters import ParameterWidgetFactory
 
@@ -65,11 +65,9 @@ class ToolForm(QDialog):
     def __init__(self, tool, parent=None):
         super().__init__(parent)
         self.tool = tool
-        self.param_widgets = {name: ParameterWidgetFactory().create(p, parent=self) for name, p in
+        self.layout = QFormLayout(self)
+        self.param_widgets = {name: ParameterWidgetFactory().create(p, parent=self, layout=self.layout) for name, p in
                               self.tool.parameters.items()}
-        self.layout = QVBoxLayout(self)
-        for w in self.param_widgets.values():
-            self.layout.addWidget(w)
 
         self.button_box = QDialogButtonBox(self)
         self.run_button = QPushButton(self.button_box)
@@ -90,9 +88,8 @@ class ToolForm(QDialog):
         """
         Accept the form, run the job and open a dialog waiting for the job to finish
         """
-        # Here, the values should be extracted from the ToolForm and placed into the parameters before running the tool
-        # for w in self.param_widgets.values():
-        #     w.set_value()
+        for w in self.param_widgets.values():
+            w.set_value()
         wait_dialog = WaitDialog(f'Running {self.tool.name}. Please wait, this may take a long time.', self, )
         self.finished.connect(wait_dialog.close_window)
         wait_dialog.wait_for(self.run_job, testing=testing)
