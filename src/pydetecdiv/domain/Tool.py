@@ -273,7 +273,7 @@ class Tool:
         """
         for i in self.inputs.values:
             if i.is_dso():
-                i.obj = project.get_named_object(i.type, i.value)
+                i.set_value(i.value) #project.get_named_object(i.type, i.value)
 
     def init_test(self, test_param, project=None):
         """

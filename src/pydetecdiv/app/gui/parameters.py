@@ -1,7 +1,8 @@
 """
 Parameter widget classes to automatically create forms for launching tools and plugins
 """
-from PySide6.QtWidgets import QFrame, QFormLayout, QLabel, QLineEdit, QSpinBox, QDoubleSpinBox, QCheckBox, QComboBox
+from PySide6.QtWidgets import QFrame, QLabel, QLineEdit, QSpinBox, QDoubleSpinBox, QCheckBox, QComboBox, \
+    QListWidget, QAbstractItemView
 
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
 from pydetecdiv.utils import singleton
@@ -103,7 +104,8 @@ class ColumnListParameterWidget(ParameterWidget):
 
 
 class DataParameterWidget(ParameterWidget):
-    ...
+    def __init__(self, parameter, parent=None, layout=None, **kwargs):
+        super().__init__(parameter, parent=parent, layout=layout, **kwargs)
 
 
 class DataCollectionParameterWidget(ParameterWidget):
@@ -117,15 +119,22 @@ class DirectoryUriParameterWidget(ParameterWidget):
 class FovParameterWidget(ParameterWidget):
     def __init__(self, parameter, parent=None, layout=None, **kwargs):
         super().__init__(parameter, parent=parent, layout=layout, **kwargs)
-        self.combo = QComboBox(parent=self)
+        if self.parameter.is_multiple():
+            self.fov_list = QListWidget(parent=self)
+            print(self.fov_list.selectionMode())
+            self.fov_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        else:
+            self.fov_list = QComboBox(parent=self)
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             if project.count_objects('FOV'):
                 FOV_list = [fov.name for fov in project.get_objects('FOV')]
-                self.combo.addItems(sorted(FOV_list))
-        self.layout.addRow(QLabel(self.parameter.label), self.combo)
+                self.fov_list.addItems(sorted(FOV_list))
+        self.layout.addRow(QLabel(self.parameter.label), self.fov_list)
 
     def get_value(self):
-        return self.combo.currentText()
+        if self.parameter.is_multiple():
+            return [item.text() for item in self.fov_list.selectedItems()]
+        return self.fov_list.currentText()
 
 
 class RoiParameterWidget(ParameterWidget):

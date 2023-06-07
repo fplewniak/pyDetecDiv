@@ -67,6 +67,16 @@ class Parameter:
     def label(self):
         return self.element.attrib['label'] if 'label' in self.element.attrib else None
 
+    def is_input(self):
+        return self.element.tag == 'param'
+
+    def is_output(self):
+        return self.element.tag == 'data'
+
+    def is_multiple(self):
+        print(self.element.attrib)
+        return self.element.attrib['multiple'] in ['True', 'true'] if 'multiple' in self.element.attrib else False
+
     def is_image(self):
         """
         Check the parameter represents image data
@@ -135,7 +145,10 @@ class FovParameter(Parameter):
     def set_value(self, value):
         self.value = value
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            self.obj = project.get_named_object('FOV', self.value)
+            if self.is_multiple():
+                self.obj = [project.get_named_object('FOV', name) for name in self.value]
+            else:
+                self.obj = project.get_named_object('FOV', self.value)
 
     @staticmethod
     def is_dso():
