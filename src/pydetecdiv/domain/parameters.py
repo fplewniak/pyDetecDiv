@@ -59,6 +59,10 @@ class Parameter:
         return {o.text: o.attrib['value'] for o in self.element.findall('.//option')}
 
     @property
+    def filter(self):
+        return [o.attrib for o in self.element.findall('.//options/filter')]
+
+    @property
     def name(self):
         return self.element.attrib['name']
 

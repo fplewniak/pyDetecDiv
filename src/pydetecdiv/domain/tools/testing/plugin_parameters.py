@@ -13,6 +13,7 @@ class PluginParam(Plugin):
         run the plugin
         :return: output
         """
+        print(self.parameters['roi'].filter)
         for _, p in self.parameters.items():
             print(f'{p.name}: {p.value} {p.dso}')
         return {'stdout': self.parameters, 'stderr': ''}
@@ -28,6 +29,6 @@ class DSOinitializer(Plugin):
         :return: output
         """
         fov = self.parameters['fov'].dso
-        for roi in fov.roi_list:
-            print(f'name: {roi.name}, top_left: {roi.top_left}, bottom_right: {roi.bottom_right}')
+        # for roi in fov.roi_list:
+        #     print(f'name: {roi.name}, top_left: {roi.top_left}, bottom_right: {roi.bottom_right}')
         return {'stdout': len(fov.roi_list), 'stderr': ''}
