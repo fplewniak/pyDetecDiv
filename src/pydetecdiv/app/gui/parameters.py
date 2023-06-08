@@ -121,7 +121,6 @@ class FovParameterWidget(ParameterWidget):
         super().__init__(parameter, parent=parent, layout=layout, **kwargs)
         if self.parameter.is_multiple():
             self.fov_list = QListWidget(parent=self)
-            print(self.fov_list.selectionMode())
             self.fov_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         else:
             self.fov_list = QComboBox(parent=self)

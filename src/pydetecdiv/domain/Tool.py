@@ -268,16 +268,15 @@ class Tool:
 
     def init_dso_inputs(self, project=None):
         """
-        Initialize the DSOs for input parameters and place them in the obj field.
+        Initialize the DSOs for input parameters and place them in the dso field.
         :param project:
         """
         for i in self.inputs.values:
-            if i.is_dso():
-                i.set_value(i.value) #project.get_named_object(i.type, i.value)
+            i.set_dso(project)
 
     def init_test(self, test_param, project=None):
         """
-        Initialize values of parameters for testing purposes. If an input defines a DSO then its obj field is set to the
+        Initialize values of parameters for testing purposes. If an input defines a DSO then its dso field is set to the
         corresponding DSO or list thereof.
         :param test_param: the parameters for the test
         :type test_param: dict
@@ -286,7 +285,10 @@ class Tool:
         """
         for name, value in test_param.items():
             if name in self.parameters:
-                self.parameters[name].value = value
+                if self.parameters[name].is_multiple():
+                    self.parameters[name].value = value.split(',')
+                else:
+                    self.parameters[name].value = value
         self.init_dso_inputs(project=project)
 
     @property

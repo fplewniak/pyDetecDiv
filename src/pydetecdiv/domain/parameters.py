@@ -41,11 +41,18 @@ class Parameter:
 
     def __init__(self, element, **kwargs):
         self.value = None
-        self.obj = None
+        self.dso = None
         self.element = element
 
     def set_value(self, value):
         self.value = value
+
+    def set_dso(self, project):
+        if self.is_dso():
+            if self.is_multiple():
+                self.dso = [project.get_named_object(self.type, name) for name in self.value]
+            else:
+                self.dso = project.get_named_object(self.type, self.value)
 
     @property
     def options(self):
@@ -74,7 +81,6 @@ class Parameter:
         return self.element.tag == 'data'
 
     def is_multiple(self):
-        print(self.element.attrib)
         return self.element.attrib['multiple'] in ['True', 'true'] if 'multiple' in self.element.attrib else False
 
     def is_image(self):
@@ -141,14 +147,6 @@ class DirectoryUriParameter(Parameter):
 class FovParameter(Parameter):
     def __init__(self, element, **kwargs):
         super().__init__(element, **kwargs)
-
-    def set_value(self, value):
-        self.value = value
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            if self.is_multiple():
-                self.obj = [project.get_named_object('FOV', name) for name in self.value]
-            else:
-                self.obj = project.get_named_object('FOV', self.value)
 
     @staticmethod
     def is_dso():

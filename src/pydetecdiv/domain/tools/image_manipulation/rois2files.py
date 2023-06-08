@@ -14,7 +14,7 @@ class SaveROIsToFiles(Plugin):
         :return: output
         """
         roi_list = []
-        for fov in self.parameters['fov'].obj:
+        for fov in self.parameters['fov'].dso:
             for roi in fov.roi_list:
                 roi_list.append(roi)
                 print(f'name: {roi.name}, top_left: {roi.top_left}, bottom_right: {roi.bottom_right}')
