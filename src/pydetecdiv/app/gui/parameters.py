@@ -81,6 +81,7 @@ class BooleanParameterWidget(ParameterWidget):
     def __init__(self, parameter, parent=None, layout=None, **kwargs):
         super().__init__(parameter, parent=parent, layout=layout, **kwargs)
         self.check_box = QCheckBox(parent=self)
+        self.check_box.setChecked(self.parameter.default_value)
         self.layout.addRow(QLabel(self.parameter.label), self.check_box)
 
     def get_value(self):

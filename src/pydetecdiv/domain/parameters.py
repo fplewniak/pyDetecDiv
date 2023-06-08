@@ -74,6 +74,10 @@ class Parameter:
     def label(self):
         return self.element.attrib['label'] if 'label' in self.element.attrib else None
 
+    @property
+    def default_value(self):
+        return self.element.attrib['value'] if 'value' in self.element.attrib else None
+
     def is_input(self):
         return self.element.tag == 'param'
 
@@ -114,6 +118,10 @@ class FloatParameter(Parameter):
 class BooleanParameter(Parameter):
     def __init__(self, element, **kwargs):
         super().__init__(element, **kwargs)
+
+    @property
+    def default_value(self):
+        return self.element.attrib['checked'] in ['True', 'true'] if 'checked' in self.element.attrib else False
 
 
 class SelectParameter(Parameter):
