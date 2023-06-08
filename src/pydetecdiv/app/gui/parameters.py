@@ -138,7 +138,23 @@ class FovParameterWidget(ParameterWidget):
 
 
 class RoiParameterWidget(ParameterWidget):
-    ...
+    def __init__(self, parameter, parent=None, layout=None, **kwargs):
+        super().__init__(parameter, parent=parent, layout=layout, **kwargs)
+        if self.parameter.is_multiple():
+            self.roi_list = QListWidget(parent=self)
+            self.roi_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        else:
+            self.roi_list = QComboBox(parent=self)
+        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            if project.count_objects('ROI'):
+                ROI_list = [roi.name for roi in project.get_objects('ROI')]
+                self.roi_list.addItems(sorted(ROI_list))
+        self.layout.addRow(QLabel(self.parameter.label), self.roi_list)
+
+    def get_value(self):
+        if self.parameter.is_multiple():
+            return [item.text() for item in self.roi_list.selectedItems()]
+        return self.roi_list.currentText()
 
 
 class DatasetParameterWidget(ParameterWidget):
