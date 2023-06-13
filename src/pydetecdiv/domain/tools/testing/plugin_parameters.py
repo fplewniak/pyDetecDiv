@@ -15,7 +15,7 @@ class PluginParam(Plugin):
         """
         print(self.parameters['roi'].filter)
         for _, p in self.parameters.items():
-            print(f'{p.name}: {p.value} {p.dso}')
+            print(f'{p.name}: {p.type} {p.value} {p.dso}')
         return {'stdout': self.parameters, 'stderr': ''}
 
 

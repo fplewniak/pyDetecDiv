@@ -43,6 +43,8 @@ class Parameter:
         self.value = None
         self.dso = None
         self.element = element
+        self.type = self.element.attrib['type'] if 'type' in self.element.attrib else 'data'
+        self.options = {o.text: o.attrib['value'] for o in self.element.findall('.//option')}
 
     def set_value(self, value):
         self.value = value
@@ -55,20 +57,12 @@ class Parameter:
                 self.dso = project.get_named_object(self.type, self.value)
 
     @property
-    def options(self):
-        return {o.text: o.attrib['value'] for o in self.element.findall('.//option')}
-
-    @property
     def filter(self):
         return [o.attrib for o in self.element.findall('.//options/filter')]
 
     @property
     def name(self):
         return self.element.attrib['name']
-
-    @property
-    def type(self):
-        return self.element.attrib['type'] if 'type' in self.element.attrib else 'data'
 
     @property
     def format(self):
