@@ -30,6 +30,43 @@ class ParameterWidgetFactory:
         return self.mapping[parameter.type](parameter, **kwargs)
 
 
+class Options:
+    def __init__(self, parent_element):
+        self.element = parent_element
+        self.data_type = 'select'
+
+    @property
+    def list(self):
+        option_list = self.element.findall('.//option')
+        options = self.element.find('.//options')
+        if option_list:
+            return {o.text: Option(o.text) for o in option_list}
+        elif options:
+            return self.get_option_list(options)
+        return None
+
+    def get_option_list(self, options):
+        if 'from_data_table' in options.attrib:
+            self.data_type = options.attrib['from_data_table']
+            print(self.data_type)
+            columns = self.get_columns(options)
+            if columns:
+                with pydetecdiv_project(PyDetecDiv().project_name) as project:
+                    dso_list = project.get_objects(self.data_type)
+                    return {dso.record()[columns['value']]: Option(dso.record()[columns['value']]) for dso in dso_list}
+        return {}
+
+    def get_columns(self, options):
+        columns = options.findall('.//column')
+        return {c.attrib['name']: c.attrib['index'] for c in columns} if columns else None
+
+
+class Option:
+    def __init__(self, value, **kwargs):
+        self.value = value
+        self.attrib = kwargs
+
+
 class ParameterWidget(QFrame):
     """
     A generic parameter class to represent both inputs and outputs parameters
