@@ -13,7 +13,6 @@ class PluginParam(Plugin):
         run the plugin
         :return: output
         """
-        print(self.parameters['roi'].filter)
         for _, p in self.parameters.items():
             print(f'{p.name}: {p.type} {p.value} {p.dso}')
         return {'stdout': self.parameters, 'stderr': ''}

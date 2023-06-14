@@ -31,16 +31,17 @@ class ParameterWidgetFactory:
 
 
 class Options:
-    def __init__(self, parent_element):
-        self.element = parent_element
+    def __init__(self, parameter):
+        self.parameter = parameter
         self.data_type = 'select'
+        self.filters = []
 
     @property
     def list(self):
-        option_list = self.element.findall('.//option')
-        options = self.element.find('.//options')
+        option_list = self.parameter.element.findall('.//option')
+        options = self.parameter.element.find('.//options')
         if option_list:
-            return {o.text: Option(o.text) for o in option_list}
+            return {o.text: Option(o.text, **o.attrib) for o in option_list}
         elif options:
             return self.get_option_list(options)
         return None
@@ -48,23 +49,44 @@ class Options:
     def get_option_list(self, options):
         if 'from_data_table' in options.attrib:
             self.data_type = options.attrib['from_data_table']
-            print(self.data_type)
             columns = self.get_columns(options)
             if columns:
                 with pydetecdiv_project(PyDetecDiv().project_name) as project:
                     dso_list = project.get_objects(self.data_type)
                     return {dso.record()[columns['value']]: Option(dso.record()[columns['value']]) for dso in dso_list}
+        else:
+            for filter in self.get_filters(options):
+                match filter.element.attrib['type']:
+                    case 'data_meta':
+                        ref_obj = self.parameter.tool.parameters[filter.element.attrib['ref']].dso
+                        if ref_obj:
+                            return eval(f'{ref_obj}.{filter.element.attrib["key"]}')
+                        return {}
+                        # return {filter.element.attrib['ref']: filter.element.attrib['key']}
         return {}
 
     def get_columns(self, options):
         columns = options.findall('.//column')
-        return {c.attrib['name']: c.attrib['index'] for c in columns} if columns else None
+        return {c.attrib['name']: c.attrib['index'] for c in columns} if columns else {}
+
+    def get_filters(self, options):
+        filters = options.findall('.//filter')
+        return [Filter(f) for f in filters] if filters else []
 
 
 class Option:
-    def __init__(self, value, **kwargs):
-        self.value = value
+    def __init__(self, text_value, **kwargs):
+        self.value = kwargs['value'] if 'value' in kwargs else text_value
+        self.text_value = text_value
         self.attrib = kwargs
+
+    def __dict__(self):
+        return {'text': self.text_value}.update(self.attrib)
+
+
+class Filter:
+    def __init__(self, element):
+        self.element = element
 
 
 class ParameterWidget(QFrame):
@@ -76,6 +98,7 @@ class ParameterWidget(QFrame):
         super().__init__(parent)
         self.parameter = parameter
         self.layout = layout
+        self.options = Options(self.parameter).list
 
     def set_value(self):
         self.parameter.set_value(self.get_value())
@@ -129,12 +152,12 @@ class SelectParameterWidget(ParameterWidget):
     def __init__(self, parameter, parent=None, layout=None, **kwargs):
         super().__init__(parameter, parent=parent, layout=layout, **kwargs)
         self.combo = QComboBox(parent=self)
-        for text, value in self.parameter.options.items():
+        for text, value in self.options.items():
             self.combo.addItem(text)
         self.layout.addRow(QLabel(self.parameter.label), self.combo)
 
     def get_value(self):
-        return self.parameter.options[self.combo.currentText()]
+        return self.options[self.combo.currentText()].value
 
 
 class ColumnListParameterWidget(ParameterWidget):
@@ -177,6 +200,8 @@ class FovParameterWidget(ParameterWidget):
 class RoiParameterWidget(ParameterWidget):
     def __init__(self, parameter, parent=None, layout=None, **kwargs):
         super().__init__(parameter, parent=parent, layout=layout, **kwargs)
+        self.options = Options(self.parameter).list
+        print(self.options)
         if self.parameter.is_multiple():
             self.roi_list = QListWidget(parent=self)
             self.roi_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
