@@ -26,9 +26,9 @@ class ParameterFactory:
     def create_from_dict(self, name, type_, **kwargs):
         return self.mapping[type_](name, type_, **kwargs)
 
-    def create(self, element, **kwargs):
+    def create(self, element, tool, **kwargs):
         parameter_type = element.attrib['type'] if 'type' in element.attrib else 'data'
-        return self.mapping[parameter_type](element, **kwargs)
+        return self.mapping[parameter_type](element, tool, **kwargs)
 
     def is_dso(self, type_):
         return self.mapping[type_].is_dso()
@@ -39,12 +39,12 @@ class Parameter:
     A generic parameter class to represent both inputs and outputs parameters
     """
 
-    def __init__(self, element, **kwargs):
+    def __init__(self, element, tool, **kwargs):
         self.value = None
         self.dso = None
         self.element = element
+        self.tool = tool
         self.type = self.element.attrib['type'] if 'type' in self.element.attrib else 'data'
-        self.options = {o.text: o.attrib['value'] for o in self.element.findall('.//option')}
 
     def set_value(self, value):
         self.value = value
@@ -56,9 +56,9 @@ class Parameter:
             else:
                 self.dso = project.get_named_object(self.type, self.value)
 
-    @property
-    def filter(self):
-        return [o.attrib for o in self.element.findall('.//options/filter')]
+    # @property
+    # def filter(self):
+    #     return [o.attrib for o in self.element.findall('.//options/filter')]
 
     @property
     def name(self):
@@ -99,23 +99,23 @@ class Parameter:
 
 
 class TextParameter(Parameter):
-    def __init__(self, element, **kwargs):
-        super().__init__(element, **kwargs)
+    def __init__(self, element, tool, **kwargs):
+        super().__init__(element, tool, **kwargs)
 
 
 class IntegerParameter(Parameter):
-    def __init__(self, element, **kwargs):
-        super().__init__(element, **kwargs)
+    def __init__(self, element, tool, **kwargs):
+        super().__init__(element, tool, **kwargs)
 
 
 class FloatParameter(Parameter):
-    def __init__(self, element, **kwargs):
-        super().__init__(element, **kwargs)
+    def __init__(self, element, tool, **kwargs):
+        super().__init__(element, tool, **kwargs)
 
 
 class BooleanParameter(Parameter):
-    def __init__(self, element, **kwargs):
-        super().__init__(element, **kwargs)
+    def __init__(self, element, tool, **kwargs):
+        super().__init__(element, tool, **kwargs)
 
     @property
     def default_value(self):
@@ -123,36 +123,36 @@ class BooleanParameter(Parameter):
 
 
 class SelectParameter(Parameter):
-    def __init__(self, element, **kwargs):
-        super().__init__(element, **kwargs)
+    def __init__(self, element, tool, **kwargs):
+        super().__init__(element, tool, **kwargs)
 
 
 class ColumnListParameter(Parameter):
-    def __init__(self, element, **kwargs):
-        super().__init__(element, **kwargs)
+    def __init__(self, element, tool, **kwargs):
+        super().__init__(element, tool, **kwargs)
 
 
 class DataParameter(Parameter):
-    def __init__(self, element, **kwargs):
-        super().__init__(element, **kwargs)
+    def __init__(self, element, tool, **kwargs):
+        super().__init__(element, tool, **kwargs)
 
     def is_image(self):
         return self.format in ['imagetiff']
 
 
 class DataCollectionParameter(Parameter):
-    def __init__(self, element, **kwargs):
-        super().__init__(element, **kwargs)
+    def __init__(self, element, tool, **kwargs):
+        super().__init__(element, tool, **kwargs)
 
 
 class DirectoryUriParameter(Parameter):
-    def __init__(self, element, **kwargs):
-        super().__init__(element, **kwargs)
+    def __init__(self, element, tool, **kwargs):
+        super().__init__(element, tool, **kwargs)
 
 
 class FovParameter(Parameter):
-    def __init__(self, element, **kwargs):
-        super().__init__(element, **kwargs)
+    def __init__(self, element, tool, **kwargs):
+        super().__init__(element, tool, **kwargs)
 
     @staticmethod
     def is_dso():
@@ -160,8 +160,8 @@ class FovParameter(Parameter):
 
 
 class RoiParameter(Parameter):
-    def __init__(self, element, **kwargs):
-        super().__init__(element, **kwargs)
+    def __init__(self, element, tool, **kwargs):
+        super().__init__(element, tool, **kwargs)
 
     @staticmethod
     def is_dso():
@@ -169,8 +169,8 @@ class RoiParameter(Parameter):
 
 
 class DatasetParameter(Parameter):
-    def __init__(self, element, **kwargs):
-        super().__init__(element, **kwargs)
+    def __init__(self, element, tool, **kwargs):
+        super().__init__(element, tool, **kwargs)
 
     @staticmethod
     def is_dso():

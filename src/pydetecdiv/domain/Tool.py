@@ -135,9 +135,9 @@ class Inputs:
     A class to handle Tool's input as defined in the configuration file
     """
 
-    def __init__(self, element):
-        self.element = element
-        self.list = {p.attrib['name']: ParameterFactory().create(p) for p in self.element.findall('.//param')}
+    def __init__(self, tool):
+        self.element = tool.root.find('./inputs')
+        self.list = {p.attrib['name']: ParameterFactory().create(p, tool) for p in self.element.findall('.//param')}
 
     @property
     def values(self):
@@ -154,9 +154,9 @@ class Outputs:
     A class to handle Tool's input as defined in the configuration file
     """
 
-    def __init__(self, element):
-        self.element = element
-        self.list = {p.attrib['name']: ParameterFactory().create(p) for p in self.element.findall('.//data')}
+    def __init__(self, tool):
+        self.element = tool.root.find('./outputs')
+        self.list = {p.attrib['name']: ParameterFactory().create(p, tool) for p in self.element.findall('.//data')}
 
 
 class Command:
@@ -261,8 +261,8 @@ class Tool:
         shed_file = os.path.join(os.path.dirname(path), '.shed.yml')
         with open(shed_file, encoding='utf-8') as file:
             self.shed_content = yaml.load(file, Loader=yaml.FullLoader)
-        self.inputs = Inputs(self.root.find('./inputs'))
-        self.outputs = Outputs(self.root.find('./outputs'))
+        self.inputs = Inputs(self)
+        self.outputs = Outputs(self)
         self.requirements = Requirements(self.root.find('./requirements/package'))
         self.command = Command(self.root.find("command").text, self.requirements, self.path)
 
