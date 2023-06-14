@@ -7,7 +7,7 @@ import inspect
 
 class Plugins:
     """
-    The list of plugins available in a module define by its path
+    The list of plugins available in a module defined by its path
     """
     def __init__(self, path):
         self.list = dict(inspect.getmembers(importlib.import_module(path)))
