@@ -1,7 +1,12 @@
 """
 Plugins for testing parameters
 """
+import os
+
+from aicsimageio import AICSImage
+from pathlib import Path
 from pydetecdiv.domain.tools import Plugin
+from pydetecdiv.settings import get_config_value
 
 
 class SaveROIsToFiles(Plugin):
@@ -17,5 +22,18 @@ class SaveROIsToFiles(Plugin):
         for fov in self.parameters['fov'].dso:
             for roi in fov.roi_list:
                 roi_list.append(roi)
-                # print(f'name: {roi.name}, top_left: {roi.top_left}, bottom_right: {roi.bottom_right}')
-        return {'stdout': len(roi_list), 'stderr': ''}
+                x_slice = slice(roi.top_left[0], roi.bottom_right[0])
+                y_slice = slice(roi.top_left[1], roi.bottom_right[1])
+                roi_image = AICSImage(fov.image_resource().data_sample(X=x_slice, Y=y_slice))
+                print(f'{roi_image} {roi_image.shape}')
+                dir_name = os.path.join(get_config_value('project', 'workspace'), fov.project.dbname,
+                                         self.parameters['dataset'].value)
+                Path('dir_name').mkdir(parents=True, exist_ok=True)
+                file_name = os.path.join(dir_name, f'{roi.name}.tiff')
+                roi_image.save(file_name)
+                print(file_name)
+                # TODO if do not apply drift then return slice directly, otherwise, determine slice one image after the
+                # TODO other, applying drift correction each time and stack all images. This will also allow to create
+                # TODO subsets of videos, using only some channels, layers and for a shorter period of time
+                # TODO those informations (T, C, Z span should appear in the run options and maybe the file names)
+        return {'stdout': [r.name for r in roi_list], 'stderr': ''}
