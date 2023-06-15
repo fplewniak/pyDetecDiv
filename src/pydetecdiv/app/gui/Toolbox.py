@@ -4,7 +4,7 @@ Module for handling tree representations of data.
 from subprocess import CalledProcessError
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QTreeView, QMenu, QDialogButtonBox, QDialog, QPushButton, QVBoxLayout, QFormLayout
+from PySide6.QtWidgets import QTreeView, QMenu, QDialogButtonBox, QDialog, QPushButton, QFormLayout
 
 from pydetecdiv.app.gui.parameters import ParameterWidgetFactory
 

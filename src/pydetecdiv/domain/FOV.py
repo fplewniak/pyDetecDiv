@@ -130,5 +130,3 @@ Comments:             {self.comments}
         else:
             image_resource = ImageResource(data_list[0], fov=self)
         return image_resource
-
-

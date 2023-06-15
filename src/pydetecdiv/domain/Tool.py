@@ -10,7 +10,6 @@ import xml
 import yaml
 
 from pydetecdiv.domain.tools import Plugins
-from pydetecdiv.utils import remove_keys_from_dict
 from pydetecdiv.settings import get_config_value
 from pydetecdiv.domain.parameters import ParameterFactory
 
