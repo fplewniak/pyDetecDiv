@@ -169,6 +169,7 @@ class TextParameterWidget(ParameterWidget):
     def __init__(self, parameter, parent=None, layout=None, **kwargs):
         super().__init__(parameter, parent=parent, layout=layout, **kwargs)
         self.value = QLineEdit(parent=self)
+        self.value.setText(self.parameter.default_value)
         self.layout.addRow(QLabel(self.parameter.label), self.value)
 
     def get_value(self):
@@ -188,6 +189,7 @@ class IntegerParameterWidget(ParameterWidget):
     def __init__(self, parameter, parent=None, layout=None, **kwargs):
         super().__init__(parameter, parent=parent, layout=layout, **kwargs)
         self.spin_box = QSpinBox(parent=self)
+        self.spin_box.setValue(self.parameter.default_value)
         self.layout.addRow(QLabel(self.parameter.label), self.spin_box)
 
     def get_value(self):
@@ -207,6 +209,7 @@ class FloatParameterWidget(ParameterWidget):
     def __init__(self, parameter, parent=None, layout=None, **kwargs):
         super().__init__(parameter, parent=parent, layout=layout, **kwargs)
         self.spin_box = QDoubleSpinBox(parent=self)
+        self.spin_box.setValue(self.parameter.default_value)
         self.layout.addRow(QLabel(self.parameter.label), self.spin_box)
 
     def get_value(self):
