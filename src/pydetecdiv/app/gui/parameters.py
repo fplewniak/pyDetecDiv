@@ -329,7 +329,6 @@ class RoiParameterWidget(ParameterWidget):
     def __init__(self, parameter, parent=None, layout=None, **kwargs):
         super().__init__(parameter, parent=parent, layout=layout, **kwargs)
         self.options = Options(self.parameter).list
-        print(self.options)
         if self.parameter.is_multiple():
             self.roi_list = QListWidget(parent=self)
             self.roi_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
