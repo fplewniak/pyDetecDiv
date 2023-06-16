@@ -23,6 +23,8 @@ class Linker:
         association_list = {
             ('FOVdao', 'DataDao'): FovData,
             ('DataDao', 'FOVdao'): FovData,
+            ('ROIdao', 'DataDao'): ROIdata,
+            ('DataDao', 'ROIdao'): ROIdata,
         }
         return association_list[(class1_name, class2_name)]
 

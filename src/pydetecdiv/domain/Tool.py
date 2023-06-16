@@ -243,7 +243,7 @@ class Command:
         """
         if self.requirements.environment['type'] == 'plugin':
             plugin = Plugins(self.requirements.packages).list[self.code.strip()]
-            output = plugin(self.parameters, self.dataset).run()
+            output = plugin(self.parameters, self.dataset, self.working_dir).run()
         else:
             for name, param in self.parameters.items():
                 self.code = self.code.replace('${' + name + '}', param.value)

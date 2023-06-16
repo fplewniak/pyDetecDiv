@@ -3,7 +3,10 @@
 """
  A class defining the business logic methods that can be applied to Regions Of Interest
 """
+import os
+
 from pydetecdiv.domain.dso import NamedDSO
+from pydetecdiv.settings import get_config_value
 
 
 class Dataset(NamedDSO):
@@ -14,11 +17,22 @@ class Dataset(NamedDSO):
     def __init__(self, uuid, url, type_, run, pattern, **kwargs):
         super().__init__(**kwargs)
         self.uuid = uuid
-        self.url = url
+        self.url_ = url
         self.type_ = type_
         self.run = run
         self.pattern = pattern
         self.validate(updated=False)
+
+    @property
+    def url(self):
+        """
+        URL property of the data file, relative to the workspace directory or absolute path if file are stored in place
+        :return: relative or absolute path of the data file
+        :rtype: str
+        """
+        if os.path.isabs(self.url_):
+            return self.url_
+        return os.path.join(get_config_value('project', 'workspace'), self.project.dbname, self.name)
 
     @property
     def data_list(self):

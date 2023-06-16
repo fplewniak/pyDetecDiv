@@ -17,9 +17,10 @@ class Plugin:
     """
     Generic plugin class that must be inherited by concrete plugins implementing the run() method
     """
-    def __init__(self, parameters, dataset):
+    def __init__(self, parameters, dataset, working_dir):
         self.parameters = parameters
         self.dataset = dataset
+        self.working_dir = working_dir
 
     def run(self):
         """

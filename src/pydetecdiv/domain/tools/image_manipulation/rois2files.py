@@ -2,9 +2,11 @@
 Plugins for testing parameters
 """
 import os
+from datetime import datetime
 
 from aicsimageio import AICSImage
-from pathlib import Path
+
+from pydetecdiv import generate_uuid
 from pydetecdiv.domain.tools import Plugin
 from pydetecdiv.settings import get_config_value
 
@@ -18,6 +20,7 @@ class SaveROIsToFiles(Plugin):
         run the plugin
         :return: output
         """
+        project = self.parameters['fov'].dso[0].project
         roi_list = []
         for fov in self.parameters['fov'].dso:
             for roi in fov.roi_list:
@@ -26,9 +29,23 @@ class SaveROIsToFiles(Plugin):
                 y_slice = slice(roi.top_left[1], roi.bottom_right[1])
                 roi_image = AICSImage(fov.image_resource().data_sample(X=x_slice, Y=y_slice))
                 print(f'{roi_image} {roi_image.shape}')
-                dir_name = os.path.join(get_config_value('project', 'workspace'), fov.project.dbname, self.dataset)
-                Path('dir_name').mkdir(parents=True, exist_ok=True)
-                file_name = os.path.join(dir_name, f'{roi.name}.tiff')
+                file_name = os.path.join(self.working_dir, f'{roi.name}.tiff')
+                dataset = project.get_named_object('Dataset', self.dataset)
+                record = {
+                    'id_': None,
+                    'uuid': generate_uuid(),
+                    'name': f'{roi.name}.tiff',
+                    'dataset': dataset.uuid,
+                    'author': get_config_value('project', 'user'),
+                    'date': datetime.now(),
+                    'url': f'{roi.name}.tiff',
+                    'format': self.parameters['roifiles'].format,
+                    'source_dir': '',
+                    'meta_data': '{}',
+                    'key_val': '{}',
+                }
+                data = project.get_object('Data', project.save_record('Data', record))
+                project.link_objects(data, roi)
                 roi_image.save(file_name)
                 print(file_name)
                 # TODO if do not apply drift then return slice directly, otherwise, determine slice one image after the

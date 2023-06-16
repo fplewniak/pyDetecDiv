@@ -6,6 +6,7 @@
 import json
 import os
 
+from pydetecdiv import generate_uuid
 from pydetecdiv.domain.dso import DomainSpecificObject
 
 
@@ -50,6 +51,16 @@ class Run(DomainSpecificObject):
             working_dir = os.path.join(self.project.path, self.tool.dataset)
             if not os.path.exists(working_dir):
                 os.mkdir(working_dir)
+
+        self.project.save_record('Dataset', {
+            'id_': None,
+            'uuid': generate_uuid(),
+            'name': self.tool.dataset,
+            'url': self.tool.dataset,
+            'type_': 'run',
+            'run': self.uuid,
+            'pattern': None,
+        })
         self.tool.command.set_dataset(self.tool.dataset)
         output = self.tool.command.set_working_dir(working_dir).set_parameters(self.tool.parameters).execute()
         print(output['stdout'])
