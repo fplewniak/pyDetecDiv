@@ -5,9 +5,11 @@
 """
 import json
 import os
+from datetime import datetime
 
 from pydetecdiv import generate_uuid
 from pydetecdiv.domain.dso import DomainSpecificObject
+from pydetecdiv.settings import get_config_value
 
 
 class Run(DomainSpecificObject):
@@ -52,7 +54,7 @@ class Run(DomainSpecificObject):
             if not os.path.exists(working_dir):
                 os.mkdir(working_dir)
 
-        self.project.save_record('Dataset', {
+        dataset = self.project.get_object('Dataset', self.project.save_record('Dataset', {
             'id_': None,
             'uuid': generate_uuid(),
             'name': self.tool.dataset,
@@ -60,9 +62,28 @@ class Run(DomainSpecificObject):
             'type_': 'run',
             'run': self.uuid,
             'pattern': None,
-        })
+        }))
         self.tool.command.set_dataset(self.tool.dataset)
         output = self.tool.command.set_working_dir(working_dir).set_parameters(self.tool.parameters).execute()
+        print(self.project.get_linked_objects('Data', dataset))
+        if self.project.count_links('Data', dataset) == 0:
+            for dirpath, dirnames, filenames in os.walk(working_dir):
+                for filename in filenames:
+                    print(filename)
+                    record = {
+                        'id_': None,
+                        'uuid': generate_uuid(),
+                        'name': filename,
+                        'dataset': dataset.uuid,
+                        'author': get_config_value('project', 'user'),
+                        'date': datetime.now(),
+                        'url': filename,
+                        'format': self.format_sniffer(filename),
+                        'source_dir': '',
+                        'meta_data': '{}',
+                        'key_val': '{}',
+                    }
+                    self.project.get_object('Data', self.project.save_record('Data', record))
         print(output['stdout'])
         print(output['stderr'])
 
@@ -73,3 +94,12 @@ class Run(DomainSpecificObject):
         for t in self.tool.tests():
             self.tool.init_test(t, project=self.project)
             self.execute(testing=True)
+
+    def format_sniffer(self, filename):
+        formats = {
+            'tiff': 'imagetiff',
+            'tif': 'imagetiff',
+            'txt': 'text',
+            'csv': 'tabular',
+        }
+        return os.path.splitext(filename)[1]
