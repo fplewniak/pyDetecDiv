@@ -17,8 +17,9 @@ class Plugin:
     """
     Generic plugin class that must be inherited by concrete plugins implementing the run() method
     """
-    def __init__(self, parameters):
+    def __init__(self, parameters, dataset):
         self.parameters = parameters
+        self.dataset = dataset
 
     def run(self):
         """

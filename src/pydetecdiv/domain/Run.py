@@ -47,9 +47,10 @@ class Run(DomainSpecificObject):
         if testing:
             working_dir = os.path.join(self.tool.path, 'test-data')
         else:
-            working_dir = os.path.join(self.project.path, self.tool.name)
+            working_dir = os.path.join(self.project.path, self.tool.dataset)
             if not os.path.exists(working_dir):
                 os.mkdir(working_dir)
+        self.tool.command.set_dataset(self.tool.dataset)
         output = self.tool.command.set_working_dir(working_dir).set_parameters(self.tool.parameters).execute()
         print(output['stdout'])
         print(output['stderr'])

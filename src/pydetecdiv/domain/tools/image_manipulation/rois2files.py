@@ -26,8 +26,7 @@ class SaveROIsToFiles(Plugin):
                 y_slice = slice(roi.top_left[1], roi.bottom_right[1])
                 roi_image = AICSImage(fov.image_resource().data_sample(X=x_slice, Y=y_slice))
                 print(f'{roi_image} {roi_image.shape}')
-                dir_name = os.path.join(get_config_value('project', 'workspace'), fov.project.dbname,
-                                         self.parameters['dataset'].value)
+                dir_name = os.path.join(get_config_value('project', 'workspace'), fov.project.dbname, self.dataset)
                 Path('dir_name').mkdir(parents=True, exist_ok=True)
                 file_name = os.path.join(dir_name, f'{roi.name}.tiff')
                 roi_image.save(file_name)

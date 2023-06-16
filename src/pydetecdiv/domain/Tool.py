@@ -171,6 +171,7 @@ class Command:
         self.requirements = requirements
         self.working_dir = '.'
         self.parameters = {}
+        self.dataset = None
 
     def set_env_command(self):
         """
@@ -201,6 +202,10 @@ class Command:
         else:
             cmd = f'conda run -n {env_name} --cwd {self.working_dir}'
         return cmd
+
+    def set_dataset(self, dataset):
+        self.dataset = dataset
+        return self
 
     def set_working_dir(self, working_dir):
         """
@@ -238,7 +243,7 @@ class Command:
         """
         if self.requirements.environment['type'] == 'plugin':
             plugin = Plugins(self.requirements.packages).list[self.code.strip()]
-            output = plugin(self.parameters).run()
+            output = plugin(self.parameters, self.dataset).run()
         else:
             for name, param in self.parameters.items():
                 self.code = self.code.replace('${' + name + '}', param.value)
@@ -362,3 +367,9 @@ class Tool:
         params = self.inputs.list.copy()
         params.update(self.outputs.list)
         return params
+
+    @property
+    def dataset(self):
+        if 'dataset' in self.parameters:
+            return self.parameters['dataset'].value
+        return self.name.replace(' ', '_')
