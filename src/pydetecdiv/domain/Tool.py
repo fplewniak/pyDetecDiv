@@ -7,6 +7,8 @@ import platform
 import re
 import subprocess
 import xml
+from datetime import datetime
+
 import yaml
 
 from pydetecdiv.domain.tools import Plugins
@@ -372,4 +374,5 @@ class Tool:
     def dataset(self):
         if 'dataset' in self.parameters:
             return self.parameters['dataset'].value
-        return self.name.replace(' ', '_')
+        dataset_name = f'{self.name}_{datetime.now()}'
+        return dataset_name.replace(' ', '_')
