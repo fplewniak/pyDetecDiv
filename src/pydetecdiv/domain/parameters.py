@@ -169,14 +169,30 @@ class IntegerParameter(Parameter):
     """
     Integer parameter
     """
-    ...
+
+    @property
+    def default_value(self):
+        """
+        The default value for this parameter
+        :return:The default value
+        :rtype: str
+        """
+        return int(self.element.attrib['value']) if 'value' in self.element.attrib else 0
 
 
 class FloatParameter(Parameter):
     """
     Float parameter
     """
-    ...
+
+    @property
+    def default_value(self):
+        """
+        The default value for this parameter
+        :return:The default value
+        :rtype: str
+        """
+        return float(self.element.attrib['value']) if 'value' in self.element.attrib else 0.0
 
 
 class BooleanParameter(Parameter):
