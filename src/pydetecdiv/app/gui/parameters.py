@@ -87,7 +87,7 @@ class Options:
                     case 'data_meta':
                         ref_obj = self.parameter.tool.parameters[filter_.element.attrib['ref']].dso
                         if ref_obj:
-                            return eval(f'{ref_obj}.{filter_.element.attrib["key"]}')
+                            return getattr(ref_obj, filter_.element.attrib["key"])
                         return {}
                         # return {filter_.element.attrib['ref']: filter_.element.attrib['key']}
         return {}
