@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pydetecdiv"
+version = "0.1.0"
+description = "Python tools for DetecDiv (https://github.com/gcharvin/DetecDiv/)"
+license = {text = "CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21"}
+authors = [{name = "Frédéric PLEWNIAK", email = "f.plewniak@unistra.fr"}]
+readme = "README.md"
+keywords = ["cell division", "light microscopy", "deep learning", "neural network", "computer vision"]
+classifiers=[
+        "Programming Language :: Python :: 3",
+        "Operating System :: OS Independent",
+        "Intended Audience :: End Users/Desktop",
+        "Intended Audience :: Science/Research",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: CEA CNRS Inria Logiciel Libre License, version 2.1 (CeCILL-2.1)",
+        "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+
+requires-python = ">=3.10.0"
+dependencies = [
+    "aicsimageio",
+    "h5py",
+    "matplotlib",
+    "numpy",
+    #"omero-py",
+    "opencv-python",
+    "pandas",
+    "psutil",
+    #"pylibjpeg",
+    #"pylibjpeg-libjpeg",
+    "pyside6",
+    "pyxdg",
+    "scikit-image",
+    #"scipy",
+    "sqlalchemy<2.0",
+    "tifffile",
+    "vidstab",
+    "xmltodict",
+]
+
+[project.gui-scripts]
+pydetecdiv = "pydetecdiv.app.pydetecdiv_app:main_gui"
+
+[project-urls]
+"Repository" = "https://github.com/fplewniak/pyDetecDiv"
+"Documentation" = "https://fplewniak.github.io/pyDetecDiv/"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+python_functions = "*_test"
