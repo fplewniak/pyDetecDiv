@@ -27,7 +27,7 @@ class ROIdao(DAO, Base):
     y1_ = Column(Integer, nullable=False, server_default=text('-1'))
     uuid = Column(String(36))
 
-    image_data_list = relationship('ImageDataDao')
+    # image_data_list = relationship('ImageDataDao')
     data_list = ROIdata.roi_to_data()
 
     @property
@@ -61,32 +61,32 @@ class ROIdao(DAO, Base):
                 .filter(ROIdata.roi == roi_id)
                 ]
 
-    def image_data(self, roi_id):
-        """
-        A method returning the list of Image data object records linked to ROI with id_ == roi_id
-        :param roi_id: the id of the ROI
-        :type roi_id: int
-        :return: a list of ImageData records linked to ROI with id_ == roi_id
-        :rtype: list
-        """
-        image_data = [image_data.record
-                      for image_data in self.session.query(ROIdao)
-                      .options(joinedload(ROIdao.image_data_list))
-                      .filter(ROIdao.id_ == roi_id)
-                      .first().image_data_list]
-        return image_data
-
-    def image_list(self, roi_id):
-        """
-        A method returning the Image records linked to ImageData with id_ == roi_id
-        :param roi_id: the id of the ROI
-        :type roi_id: int
-        :return: a list containing the Image records linked to ROI with id_ == roi_id
-        :rtype: list
-        """
-        image_list = [image.record for image in
-                      self.session.query(dao.ImageDao)
-                      .filter(dao.ImageDataDao.id_ == dao.ImageDao.image_data)
-                      .filter(roi_id == dao.ImageDataDao.roi)
-                      .all()]
-        return image_list
+    # def image_data(self, roi_id):
+    #     """
+    #     A method returning the list of Image data object records linked to ROI with id_ == roi_id
+    #     :param roi_id: the id of the ROI
+    #     :type roi_id: int
+    #     :return: a list of ImageData records linked to ROI with id_ == roi_id
+    #     :rtype: list
+    #     """
+    #     image_data = [image_data.record
+    #                   for image_data in self.session.query(ROIdao)
+    #                   .options(joinedload(ROIdao.image_data_list))
+    #                   .filter(ROIdao.id_ == roi_id)
+    #                   .first().image_data_list]
+    #     return image_data
+    #
+    # def image_list(self, roi_id):
+    #     """
+    #     A method returning the Image records linked to ImageData with id_ == roi_id
+    #     :param roi_id: the id of the ROI
+    #     :type roi_id: int
+    #     :return: a list containing the Image records linked to ROI with id_ == roi_id
+    #     :rtype: list
+    #     """
+    #     image_list = [image.record for image in
+    #                   self.session.query(dao.ImageDao)
+    #                   .filter(dao.ImageDataDao.id_ == dao.ImageDao.image_data)
+    #                   .filter(roi_id == dao.ImageDataDao.roi)
+    #                   .all()]
+    #     return image_list

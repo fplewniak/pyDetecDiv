@@ -15,6 +15,7 @@ from pydetecdiv.app.gui import MainToolBar, MainStatusBar, FileMenu, DataMenu
 from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project, DrawingTools
 
 from pydetecdiv.app.gui.ImageViewer import ImageViewer
+from pydetecdiv.app.gui.Toolbox import ToolboxTreeView, ToolboxTreeModel
 
 
 class MainWindow(QMainWindow):
@@ -41,6 +42,8 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.LeftDockWidgetArea, self.image_resource_selector, Qt.Vertical)
         self.drawing_tools = DrawingToolsPalette(self)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.drawing_tools, Qt.Vertical)
+        self.analysis_tools = AnalysisToolsTree(self)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.analysis_tools, Qt.Vertical)
         self.mdi_area.subWindowActivated.connect(self.subwindow_activation)
         PyDetecDiv().project_selected.connect(self.setWindowTitle)
 
@@ -109,7 +112,7 @@ class TabbedViewer(QTabWidget):
         self.window = None
         self.drift = None
 
-    def closeEvent(self, event):
+    def closeEvent(self, _):
         """
         Close the current tabbed widget window
         :param event: the close event
@@ -175,6 +178,7 @@ class MatplotViewer(QWidget):
     """
     A widget to display matplotlib plots in a tab
     """
+
     def __init__(self, parent=None):
         super().__init__(parent)
         # self.dismiss_button = QPushButton('Dismiss')
@@ -202,6 +206,7 @@ class ImageResourceChooser(QDockWidget):
     A dockable widget with a form for choosing an image resource to display in a new tabbed viewer. The image resource
     is determined by the FOV name, the dataset (stage) and a channel
     """
+
     def __init__(self, parent):
         super().__init__('Image resource selector', parent)
         self.setObjectName('Image_resource_selector')
@@ -230,7 +235,7 @@ class ImageResourceChooser(QDockWidget):
         self.formLayout.addRow(self.channel_label, self.channel_choice)
 
         self.OK_button = QDialogButtonBox(self.form)
-        self.OK_button.setObjectName("OK_button")
+        self.OK_button.setObjectName("run_button")
         self.OK_button.setStandardButtons(QDialogButtonBox.Ok)
         self.formLayout.addWidget(self.OK_button)
 
@@ -298,6 +303,7 @@ class DrawingToolsPalette(QDockWidget):
     """
     A dockable window with tools for drawing ROIs and other items.
     """
+
     def __init__(self, parent):
         super().__init__('Drawing tools', parent)
         self.setObjectName('Drawing_tools_palette')
@@ -343,6 +349,7 @@ class Cursor(QToolButton):
     """
     QToolButton to activate the tool for selecting and dragging items in the view
     """
+
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -366,6 +373,7 @@ class DrawROI(QToolButton):
     """
     A QToolButton to activate the tool for drawing a ROI
     """
+
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -387,6 +395,7 @@ class DuplicateROI(QToolButton):
     """
     A QToolButton to activate the tool for duplicating a ROI
     """
+
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -402,3 +411,16 @@ class DuplicateROI(QToolButton):
         self.parent.unset_tools()
         self.setChecked(True)
         PyDetecDiv().current_drawing_tool = DrawingTools.DuplicateROI
+
+
+class AnalysisToolsTree(QDockWidget):
+    """
+    A dockable window with tools for image analysis.
+    """
+
+    def __init__(self, parent):
+        super().__init__('Analysis tools', parent)
+        self.setObjectName('Analysis_tools_tree')
+        tree_view = ToolboxTreeView()
+        tree_view.setModel(ToolboxTreeModel(parent=self))
+        self.setWidget(tree_view)

@@ -5,9 +5,9 @@ Main widgets to use with persistent windows
 """
 import psutil
 import numpy as np
-from PySide6.QtCore import QTimer
-from PySide6.QtGui import QAction, QIcon
-from PySide6.QtWidgets import QToolBar, QStatusBar, QMenu, QApplication
+from PySide6.QtCore import QTimer, QRect
+from PySide6.QtGui import QAction, QIcon, QFont
+from PySide6.QtWidgets import QToolBar, QStatusBar, QMenu, QApplication, QDialog, QDialogButtonBox, QSizePolicy, QLabel
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 from pydetecdiv.app.gui import ActionsSettings, ActionsProject, ActionsData
@@ -99,13 +99,52 @@ class Help(QAction):
 
     def __init__(self, parent):
         super().__init__(QIcon(":icons/help"), "&Help", parent)
-        self.triggered.connect(lambda: print(len(QApplication.allWindows())))
-        self.triggered.connect(lambda: print(QApplication.allWindows()))
-        self.triggered.connect(self.print_info)
-        self.triggered.connect(lambda: print(psutil.Process().memory_info().rss / (1024 * 1024)))
+        self.triggered.connect(self.show_info)
         parent.addAction(self)
 
-    def print_info(self):
-        if PyDetecDiv().project_name:
-            with pydetecdiv_project(PyDetecDiv().project_name) as project:
-                print(project.get_objects('Experiment'))
+    def show_info(self):
+        about_dialog = QDialog(self.parent())
+        about_dialog.resize(402, 268)
+        sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        about_dialog.setSizePolicy(sizePolicy)
+
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok, about_dialog)
+        button_box.setGeometry(QRect(10, 220, 371, 32))
+        button_box.setCenterButtons(True)
+        button_box.accepted.connect(about_dialog.close)
+        about_dialog.show()
+
+        label = QLabel(about_dialog)
+        label.setGeometry(QRect(70, 20, 271, 71))
+        font = QFont()
+        font.setFamilies(["Arial"])
+        font.setPointSize(36)
+        font.setBold(True)
+        label.setFont(font)
+        label_2 = QLabel(about_dialog)
+        label_2.setGeometry(QRect(130, 100, 131, 16))
+        font1 = QFont()
+        font1.setFamilies(["Arial"])
+        font1.setPointSize(16)
+        label_2.setFont(font1)
+        label_3 = QLabel(about_dialog)
+        label_3.setObjectName(u"label_3")
+        label_3.setGeometry(QRect(20, 130, 361, 20))
+        font2 = QFont()
+        font2.setFamilies(["Arial"])
+        font2.setPointSize(8)
+        label_3.setFont(font2)
+        label_4 = QLabel(about_dialog)
+        label_4.setGeometry(QRect(80, 160, 231, 20))
+        label_5 = QLabel(about_dialog)
+        label_5.setGeometry(QRect(130, 190, 131, 16))
+        label.setText('pyDetecDiv')
+        label_2.setText('version 0.1.0')
+        label_3.setText('CeCILL FREE SOFTWARE LICENSE AGREEMENT v2.1 (2013-06-21)')
+        label_4.setText('https://github.com/fplewniak/pyDetecDiv')
+        label_5.setText('f.plewniak@unistra.fr')
+        label.show()
+        label_2.show()
+        label_3.show()
+        label_4.show()
+        label_5.show()

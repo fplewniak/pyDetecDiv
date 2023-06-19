@@ -61,20 +61,20 @@ class FOVdao(DAO, Base):
                 .filter(FovData.fov == fov_id)
         ]
 
-    def image_data(self, fov_id):
-        """
-        A method returning the list of Image data object records linked to FOV with id_ == fov_id
-        :param fov_id: the id of the FOV
-        :type fov_id: int
-        :return: a list of ImageData records linked to FOV with id_ == fov_id
-        :rtype: list
-        """
-        image_data = [i.record
-                      for i in itertools.chain(*[roi.image_data_list
-                                                 for roi in self.session.query(dao.ROIdao)
-                                               .filter(dao.ROIdao.fov == fov_id)
-                                               .all()])]
-        return image_data
+    # def image_data(self, fov_id):
+    #     """
+    #     A method returning the list of Image data object records linked to FOV with id_ == fov_id
+    #     :param fov_id: the id of the FOV
+    #     :type fov_id: int
+    #     :return: a list of ImageData records linked to FOV with id_ == fov_id
+    #     :rtype: list
+    #     """
+    #     image_data = [i.record
+    #                   for i in itertools.chain(*[roi.image_data_list
+    #                                              for roi in self.session.query(dao.ROIdao)
+    #                                            .filter(dao.ROIdao.fov == fov_id)
+    #                                            .all()])]
+    #     return image_data
 
     def roi_list(self, fov_id):
         """
@@ -94,19 +94,19 @@ class FOVdao(DAO, Base):
             roi_list = []
         return roi_list
 
-    def image_list(self, fov_id):
-        """
-        A method returning the Image records linked to FOV with id_ == fov_id
-        :param fov_id: the id of the Image data
-        :type fov_id: int
-        :return: a list containing the Image records linked to FOV with id_ == fov_id
-        :rtype: list
-        """
-        image_list = [image.record for image in
-                      self.session.scalars(
-                          select(dao.ImageDao)
-                          .where(dao.ImageDataDao.id_ == dao.ImageDao.image_data)
-                          .where(dao.ROIdao.id_ == dao.ImageDataDao.roi)
-                          .where(fov_id == dao.ROIdao.fov)
-                      )]
-        return image_list
+    # def image_list(self, fov_id):
+    #     """
+    #     A method returning the Image records linked to FOV with id_ == fov_id
+    #     :param fov_id: the id of the Image data
+    #     :type fov_id: int
+    #     :return: a list containing the Image records linked to FOV with id_ == fov_id
+    #     :rtype: list
+    #     """
+    #     image_list = [image.record for image in
+    #                   self.session.scalars(
+    #                       select(dao.ImageDao)
+    #                       .where(dao.ImageDataDao.id_ == dao.ImageDao.image_data)
+    #                       .where(dao.ROIdao.id_ == dao.ImageDataDao.roi)
+    #                       .where(fov_id == dao.ROIdao.fov)
+    #                   )]
+    #     return image_list

@@ -12,6 +12,9 @@ Request
 import os.path
 
 import bioimageit_core.api.request
+from bioimageit_core import ConfigAccess
+from bioimageit_core.core.exceptions import DataServiceError
+from bioimageit_core.core.utils import format_date
 
 
 class Request(bioimageit_core.api.request.Request):
@@ -19,6 +22,36 @@ class Request(bioimageit_core.api.request.Request):
     A class extending the BioIMageIT Request class in order to add some features without having to modify the original
     code.
     """
+    def create_experiment(self, name, author='', date='now', keys=None, destination=''):
+        """Create a new experiment
+
+        Parameters
+        ----------
+        name: str
+            Name of the experiment
+        author: str
+            username of the experiment author
+        date: str
+            Creation date of the experiment
+        keys: list
+            List of keys used for the experiment vocabulary
+        destination: str
+            Destination where the experiment is created. It is a the path of the
+            directory where the experiment will be created for local use case
+        Returns
+        -------
+        Experiment container with the experiment metadata
+
+        """
+        if keys is None:
+            keys = []
+        try:
+            if author == '':
+                author = ConfigAccess.instance().config['user']['name']
+            return self.data_service.create_experiment(name, author, format_date(date),
+                                                       keys, destination)
+        except DataServiceError as err:
+            self.notify_error(str(err))
 
     def annotate_raw_data_using_regex(self, experiment, keys_, regex):
         """

@@ -41,3 +41,15 @@ def round_to_even(value, ceil=True):
         else:
             rounded -= 1
     return rounded
+
+def remove_keys_from_dict(dictionary, keys):
+    """
+    Remove the dictionary entries whose keys are in the key list
+    :param dictionary: the dictionary to remove items from
+    :type dictionary: dict
+    :param keys: the key list
+    :type keys: list of str or any object that can be used a dictionary key
+    :return: the filtered dictionary
+    :rtype:dict
+    """
+    return dict(filter(lambda item: item[0] not in keys, dictionary.items()))
