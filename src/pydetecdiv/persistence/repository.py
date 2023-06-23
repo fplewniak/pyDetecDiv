@@ -42,6 +42,7 @@ class ShallowDb(abc.ABC):
     def save_object(self, class_name, record):
         """
         Abstract method enforcing the implementation of a save_object() method in all shallow persistence connectors
+
         :param class_name: the class name of the object to save
         :type class_name: str
         :param record: the record representing the object
@@ -52,6 +53,7 @@ class ShallowDb(abc.ABC):
     def delete_object(self, class_name, id_):
         """
         Abstract method enforcing the implementation of a delete_object() method in all shallow persistence connectors
+
         :param class_name: the class name of the object to delete
         :type class_name: str
         :param id_: the id of the object to delete
@@ -63,6 +65,7 @@ class ShallowDb(abc.ABC):
         """
         Abstract method enforcing the implementation of a method returning a pandas DataFrame containing the list of
         objects of a given class in the current project whose id is in id_list
+
         :param class_name: the class name of the objects whose list will be returned
         :type class_name: str
         :param id_list: the list of ids of objects to retrieve
@@ -76,6 +79,7 @@ class ShallowDb(abc.ABC):
         """
         Abstract method enforcing the implementation of a method returning an object record of a given
         class whose id is id_
+
         :param class_name: the class of the requested object
         :type class_name: str
         :param id_: the id of the reaquested object
@@ -89,6 +93,7 @@ class ShallowDb(abc.ABC):
         """
         Abstract method enforcing the implementation of a method returning the list of all object records of a given
         class specified by its name or a list of objects whose id is in id_list
+
         :param class_name: the class name of the requested objects
         :type class_name: str
         :param id_list: the list of ids for objects
@@ -102,6 +107,7 @@ class ShallowDb(abc.ABC):
         """
         Abstract method enforcing the implementation of a method returning the list of records for all objects of class
          defined by class_name that are linked to object of class parent_class_name with id_ = parent_id
+
         :param cls_name: the class name of the objects to retrieve records for
         :type cls_name: str
         :param parent_cls_name: the class nae of the parent object
@@ -117,6 +123,7 @@ class ShallowDb(abc.ABC):
         """
         Create a link between two domain-specific objects. There must be a direct link defined in Linker class,
         otherwise, the link cannot be created.
+
         :param class1_name: the class name of the first object to link
         :type class1_name: str
         :param id_1: the id of the first object to link
@@ -132,6 +139,7 @@ class ShallowDb(abc.ABC):
         """
         Remove the link between two domain-specific objects. There must be a direct link defined in Linker class,
         otherwise, the link cannot be removed.
+
         :param class1_name: the class name of the first object to unlink
         :type class1_name: str
         :param id_1: the id of the first object to unlink

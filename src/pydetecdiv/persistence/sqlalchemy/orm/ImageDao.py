@@ -37,6 +37,7 @@ class ImageDao(DAO, Base):
     def roi(self, image_id):
         """
         Return the ROI dao corresponding to the current image. The object is returned in a list for consistency.
+
         :param image_id: the id of the Image
         :return: the related ROI dao in a list
         :rtype: list of one ROIdao object
@@ -49,6 +50,7 @@ class ImageDao(DAO, Base):
     def fov(self, image_id):
         """
         Return the FOV dao corresponding to the current image. The object is returned in a list for consistency.
+
         :param image_id: the id of the Image
         :return: the related FOV dao in a list
         :rtype: list of one FOVdao object
@@ -67,6 +69,7 @@ class ImageDao(DAO, Base):
         """
         A method creating a record dictionary from an Image row dictionary. This method is used to convert the SQL
         table columns into the Image record fields expected by the domain layer
+
         :return an Image record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """

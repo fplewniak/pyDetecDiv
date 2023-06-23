@@ -45,6 +45,7 @@ class PyDetecDiv(QApplication):
 def pydetecdiv_project(project_name):
     """
     Context manager for projects.
+
     :param project_name: the project name
     :type project_name: str
     """
@@ -70,7 +71,8 @@ class PyDetecDivThread(QThread):
 
     def set_function(self, func, *args, **kwargs):
         """
-        DEfine the function to run in the thread
+        Define the function to run in the thread
+
         :param fn: the function to run
         :param args: arguments passed to the function
         :param kwargs: keyword arguments passed to the function
@@ -122,6 +124,7 @@ class WaitDialog(QDialog):
     def show_progress(self, i):
         """
         Convenience method to send the progress value to the progress bar widget
+
         :param i: the value to pass to the progress bar
         :type i: int
         """
@@ -130,6 +133,7 @@ class WaitDialog(QDialog):
     def wait_for(self, func, *args, **kwargs):
         """
         Run function in separate thread and launch local event loop to handle progress bar and cancellation
+
         :param func: the function to run
         :param args: positional arguments for the function
         :param kwargs: keyword arguments for the function
@@ -159,6 +163,7 @@ class WaitDialog(QDialog):
     def set_ignore_close_event(self, ignore_close_event=True):
         """
         Set the _ignore_close_event flag to prevent or allow closing the window
+
         :param ignore_close_event: value to set the flag to
         :type ignore_close_event: bool
         """
@@ -167,6 +172,7 @@ class WaitDialog(QDialog):
     def closeEvent(self, event):
         """
         Cancel the job if the window is closed unless close event is ignored by request.
+
         :param event: close event
         """
         if self._ignore_close_event:
@@ -178,6 +184,7 @@ class WaitDialog(QDialog):
 def get_settings():
     """
     Get settings in pydetecdiv.ini file
+
     :return: the settings
     :rtype: QSetting instance
     """
@@ -187,6 +194,7 @@ def get_settings():
 def project_list():
     """
     Get the list of available projects. This method hides its persistence layer equivalent from other widgets.
+
     :return: the list of available projects
     :rtype: list of str
     """

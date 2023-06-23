@@ -47,6 +47,7 @@ class ShallowSQLite3(ShallowDb):
     def session(self):
         """
         Property returning the sqlalchemy Session object attached to the repository
+
         :return:
         """
         if self.session_ is None:
@@ -70,6 +71,7 @@ class ShallowSQLite3(ShallowDb):
     def executescript(self, script):
         """
         Reads a string containing several SQL statements in a free format
+
         :param script: the string representing the SQL script to be executed
         :type script: str
         """
@@ -103,6 +105,7 @@ class ShallowSQLite3(ShallowDb):
                       img_format='imagetiff'):
         """
         Import images specified in a list of files into a destination
+
         :param image_files: list of image files to import
         :type image_files:list of str
         :param destination: destination directory to import files into
@@ -144,6 +147,7 @@ class ShallowSQLite3(ShallowDb):
     def import_source_path(self, source_path, **kwargs):
         """
         Import images from a source path. All files corresponding to the path will be imported.
+
         :param source_path: the source path (glob pattern)
         :type source_path: str
         """
@@ -152,6 +156,7 @@ class ShallowSQLite3(ShallowDb):
     def determine_fov(self, source, regex):
         """
         Uses metadata from raw data to name corresponding FOVs
+
         :param source: the metadata source used to define FOV names
         :type source: str or callable
         :param regex: regular expression providing the source pattern defining FOV names
@@ -164,6 +169,7 @@ class ShallowSQLite3(ShallowDb):
     def determine_links_using_regex(self, dataset_name, source, keys_, regex):
         """
         Uses metadata from data in a given dataset to name corresponding objects (FOV, ROIs, etc.)
+
         :param dataset_name: the name of the dataset
         :type dataset_name: str
         :param source: the metadata source used to define object names
@@ -183,6 +189,7 @@ class ShallowSQLite3(ShallowDb):
         """
         Returns a DataFrame containing all the metadata associated to raw data, including annotations created using a
         regular expression applied to a field or a combination thereof.
+
         :param dataset_name: name of dataset to annotate
         :type dataset_name: str
         :param source: the database field or combination of fields to apply the regular expression to
@@ -201,6 +208,7 @@ class ShallowSQLite3(ShallowDb):
     def save_object(self, class_name, record):
         """
         Save the object represented by the record
+
         :param class_name: the class name of the object to save into SQL database
         :type class_name: str
         :param record: the record representing the object
@@ -215,6 +223,7 @@ class ShallowSQLite3(ShallowDb):
     def delete_object(self, class_name, id_):
         """
         Delete an object of class name = class_name with id = id_
+
         :param class_name: the class name of the object to delete
         :type class_name: str
         :param id_: the id of the object to delete
@@ -227,6 +236,7 @@ class ShallowSQLite3(ShallowDb):
         """
         A private method returning the list of all object records of a given class specified by its name and verifying a
         query built from a list of where clauses
+
         :param class_name: the name of the class of objects to get records of
         :param query: a list of sqlalchemy where clauses defining the selection SQL query
         :type class_name: str
@@ -244,6 +254,7 @@ class ShallowSQLite3(ShallowDb):
     def get_dataframe(self, class_name, id_list=None):
         """
         Get a DataFrame containing the list of all domain objects of a given class in the current project
+
         :param class_name: the class name of the objects whose list will be returned
         :type class_name: str
         :param id_list: the list of ids of objects to retrieve
@@ -256,6 +267,7 @@ class ShallowSQLite3(ShallowDb):
     def get_record(self, class_name, id_=None, uuid=None):
         """
         A method returning an object record of a given class from its id
+
         :param class_name: the class name of object to get the record of
         :type class_name: str
         :param id_: the id of the requested object
@@ -272,6 +284,7 @@ class ShallowSQLite3(ShallowDb):
     def get_record_by_name(self, class_name, name=None):
         """
         Return a record from its name
+
         :param class_name: class name of the corresponding DSO object
         :type class_name: str
         :param name: the name of the requested record
@@ -284,6 +297,7 @@ class ShallowSQLite3(ShallowDb):
     def get_records(self, class_name, id_list=None):
         """
         A method returning the list of all object records of a given class or select those whose id is in id_list
+
         :param class_name: the class name of objects to get records of
         :type class_name: str
         :param id_list: the list of ids of objects to retrieve
@@ -301,6 +315,7 @@ class ShallowSQLite3(ShallowDb):
         """
         A method returning the list of records for all objects of class defined by cls_name that are linked to object
         of class parent_cls_name with id_ = parent_id
+
         :param cls_name: the class name of the objects to retrieve records for
         :type cls_name: str
         :param parent_cls_name: the class nae of the parent object
@@ -342,6 +357,7 @@ class ShallowSQLite3(ShallowDb):
     def _get_dao(self, class_name, id_=None):
         """
         A method returning a DAO of a given class from its id
+
         :param class_name: the class name of object to get the record of
         :type class_name: str
         :param id_: the id of the requested object
@@ -357,6 +373,7 @@ class ShallowSQLite3(ShallowDb):
         """
         Create a link between two domain-specific objects. There must be a direct link defined in Linker class,
         otherwise, the link cannot be created.
+
         :param class1_name: the class name of the first object to link
         :type class1_name: str
         :param id_1: the id of the first object to link
@@ -374,6 +391,7 @@ class ShallowSQLite3(ShallowDb):
         """
         Remove the link between two domain-specific objects. There must be a direct link defined in Linker class,
         otherwise, the link cannot be removed.
+
         :param class1_name: the class name of the first object to unlink
         :type class1_name: str
         :param id_1: the id of the first object to unlink

@@ -35,7 +35,8 @@ class FOVdao(DAO, Base):
         """
         A method creating a DAO record dictionary from a fov row dictionary. This method is used to convert the SQL
         table columns into the FOV record fields expected by the domain layer
-        :return a FOV record as a dictionary with keys() appropriate for handling by the domain layer
+
+        :return: a FOV record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """
         return {'id_': self.id_,
@@ -50,6 +51,7 @@ class FOVdao(DAO, Base):
     def data(self, fov_id):
         """
         Returns a list of DataDao objects linked to the FOVdao object with the specified id_
+
         :param fov_id: the id_ of the FOV
         :type fov_id: int
         :return: the list of Data records linked to the FOV
@@ -79,6 +81,7 @@ class FOVdao(DAO, Base):
     def roi_list(self, fov_id):
         """
         A method returning the list of ROI records whose parent FOV has id == fov_id
+
         :param fov_id: the id of the FOV
         :type fov_id: int
         :return: a list of ROI records with parent FOV id == fov_id

@@ -14,6 +14,7 @@ import xdg.BaseDirectory
 def get_default_settings() -> dict:
     """
     Returns default values for configuration if no configuration file is found
+
     :return: a dictionary containing the default values
     """
     return {'project': {'dbms': 'SQLite3', 'workspace': '/data2/BioImageIT/workspace', 'user': getpass.getuser(),
@@ -38,6 +39,7 @@ def get_config_files():
     Get a list configuration files conforming to the XDG Base directory specification for Linux and Mac OS or located
     in APPDATA folder for Microsoft Windows. This function does not check whether files exist as this is done anyway
     while trying to read configuration.
+
     :return: a list of configuration files
     """
     if 'APPDATA' in os.environ:
@@ -52,6 +54,7 @@ def get_config():
     Get configuration parser from configuration files. If no file exists, then one is created in the favourite
     location with default values. Note that if the favourite directory does not exist either, it is created prior to
     saving the configuration.
+
     :return: a configuration parser
     """
     config_files = list(get_config_files())
@@ -68,6 +71,7 @@ def get_config():
 def get_config_value(section: str, key: str):
     """
     Get value for a key in a section of the configuration file.
+
     :param section: the configuration section
     :param key: the configuration key
     :return: the corresponding value

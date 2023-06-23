@@ -1,7 +1,7 @@
 #  CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21
 #  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
 """
-Access to ROI data
+Access to data relative to Data file (images, tables, etc.)
 """
 from sqlalchemy import Column, Integer, String, ForeignKey, Date
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
@@ -37,7 +37,8 @@ class DataDao(DAO, Base):
         """
         A method creating a record dictionary from a data row dictionary. This method is used to convert the SQL
         table columns into the data record fields expected by the domain layer
-        :return a data record as a dictionary with keys() appropriate for handling by the domain layer
+
+        :return: a data record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """
         return {'id_': self.id_,
@@ -57,6 +58,7 @@ class DataDao(DAO, Base):
     def fov_list(self, data_id):
         """
         A method returning the list of FOV records whose parent Data has id_ == data_id
+
         :param data_id: the id of the Data
         :type data_id: str
         :return: a list of FOV records with parent Data has id_ == data_id
@@ -80,6 +82,7 @@ class DataDao(DAO, Base):
     def roi_list(self, data_id):
         """
         A method returning the list of FOV records whose parent Data has id_ == data_id
+
         :param data_id: the id of the Data
         :type data_id: str
         :return: a list of FOV records with parent Data has id_ == data_id

@@ -56,6 +56,7 @@ class MainWindow(QMainWindow):
     def closeEvent(self, _):
         """
         Response to close event signal. Settings are saved in order to save the current window geometry and state.
+
         :param event: the event object
         :type event: QCloseEvent
         """
@@ -66,6 +67,7 @@ class MainWindow(QMainWindow):
     def add_tabbbed_viewer(self, title):
         """
         Add a new Tabbed viewer to visualize a FOV and its related information and analyses
+
         :param title: the title for the tabbed viewer window (i.e. Project/FOV/dataset
         :type title: str
         :return: the new tabbed viewer widget
@@ -84,6 +86,7 @@ class MainWindow(QMainWindow):
         """
         When a tabbed viewer is activated (its focus is set), then the Image resource selector should be fed with the
         corresponding image resource information(FOV name, stage dataset, channel)
+
         :param subwindow: the activated sub-window
         :type subwindow:QMdiArea
         """
@@ -115,6 +118,7 @@ class TabbedViewer(QTabWidget):
     def closeEvent(self, _):
         """
         Close the current tabbed widget window
+
         :param event: the close event
         :type event: QCloseEvent
         """
@@ -123,6 +127,7 @@ class TabbedViewer(QTabWidget):
     def show_plot(self, df, title='Plot'):
         """
         Open a viewer tab to plot a graphic from a pandas dataframe
+
         :param df: the data to plot
         :type df: pandas DataFrame
         :param title: the title for the plot tab
@@ -137,6 +142,7 @@ class TabbedViewer(QTabWidget):
     def show_image(self, data, title='Image', format_=QImage.Format_Grayscale16):
         """
         Display a 2D image
+
         :param data: the 2D image data
         :type data: ndarray
         :param title: the title of the tab
@@ -159,6 +165,7 @@ class TabbedViewer(QTabWidget):
     def close_tab(self, index):
         """
         Close the tab with the specified index
+
         :param index: the index of the tab to close
         :type index: int
         """
@@ -168,6 +175,7 @@ class TabbedViewer(QTabWidget):
     def get_image_viewers(self):
         """
         Get the list of image viewers in the current Tabbed viewer
+
         :return: the list of image viewers
         :rtype: list of ImageViewer widgets
         """
@@ -249,6 +257,7 @@ class ImageResourceChooser(QDockWidget):
     def set_choice(self, p_name):
         """
         Set the available values for FOVs, datasets and channels given a project name
+
         :param p_name: the project name
         :type p_name: str
         """
@@ -336,6 +345,7 @@ class DrawingToolsPalette(QDockWidget):
     def current_tool(self):
         """
         Return the currently checked tool
+
         :return: the currently checked tool
         :rtype: QToolButton
         """

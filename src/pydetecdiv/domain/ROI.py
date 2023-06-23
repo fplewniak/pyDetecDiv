@@ -37,6 +37,7 @@ class ROI(NamedDSO, BoxedDSO, DsoWithImageData):
     def fov(self):
         """
         property returning the FOV object this ROI is a region of
+
         :return: the parent FOV object
         :rtype: FOV
         """
@@ -51,6 +52,7 @@ class ROI(NamedDSO, BoxedDSO, DsoWithImageData):
     def image_list(self):
         """
         Return a list of images related to this ROI
+
         :return: list of images
         :rtype: list of Image objects
         """
@@ -60,6 +62,7 @@ class ROI(NamedDSO, BoxedDSO, DsoWithImageData):
     def bottom_right(self):
         """
         The bottom-right corner of the ROI in the FOV
+
         :return: the coordinates of the bottom-right corner
         :rtype: a tuple of two int
         """
@@ -74,6 +77,7 @@ class ROI(NamedDSO, BoxedDSO, DsoWithImageData):
     def record(self, no_id=False):
         """
         Returns a record dictionary of the current ROI
+
         :param no_id: if True, the id_ is not passed included in the record to allow transfer from one project to
         another
         :type no_id: bool

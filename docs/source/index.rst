@@ -8,9 +8,15 @@ Welcome to pyDetecDiv's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: User's manual
 
    getting_started.rst
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Developers' documentation
+
+   api/index.rst
 
 Indices and tables
 ==================

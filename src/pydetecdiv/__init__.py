@@ -10,6 +10,7 @@ import platform
 def generate_uuid():
     """
     Generate a universal id
+
     :return: uuid
     :rtype: str
     """
@@ -19,6 +20,7 @@ def generate_uuid():
 def copy_files(source, destination):
     """
     Copy files from source to destination with OS-specific command
+
     :param source: the list of files to copy
     :type source: list of str
     :param destination: the destination directory
@@ -39,6 +41,7 @@ def copy_files(source, destination):
 def delete_files(file_list):
     """
     Delete files with OS-specific command
+
     :param file_list: the list of files to delete
     :type file_list: list of str
     :return: the subprocess deleting the files

@@ -1,8 +1,8 @@
 #  CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21
 #  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
 """
-Domain specific generic attributes and methods shared by all domain objects. Other domain classes (except Project)
-should inherit from this class
+Domain specific generic attributes and methods shared by domain objects. Other domain classes (except Project)
+should inherit from these classes according to their type.
 """
 import uuid
 from pydetecdiv.exceptions import MissingNameError
@@ -17,6 +17,7 @@ class DomainSpecificObject:
     def __init__(self, project=None, **kwargs):
         """
         Initialization of the object with a link to the Project it belongs to and associated _data as a dictionary
+
         :param project: the project object this object belongs to
         :param **kwargs: a dictionary containing the record used to create the domain-specific object.
         :type project: Project object
@@ -37,6 +38,7 @@ class DomainSpecificObject:
     def __eq__(self, o):
         """
         Defines equality of domain-specific objects as having the same id and same class
+
         :param o: the other dso to compare with the current one
         :type o: DomainSpecificObject
         :return: True if both objects are the same
@@ -64,7 +66,7 @@ class DomainSpecificObject:
         Validate the current object and pass newly created and updated object to project for saving modifications. Sets
         the id of the object for new objects.
         This method should be called at the creation or at each modification of an object (i.e. in the __init__ and all
-        setter methods
+        setter methods)
         """
         self.check_validity()
         if updated or self.id_ is None:
@@ -73,6 +75,7 @@ class DomainSpecificObject:
     def record(self, no_id=False):
         """
         Returns a record dictionary of the current DSO
+
         :return: record dictionary
         :rtype: dict
         """
@@ -95,6 +98,7 @@ class NamedDSO(DomainSpecificObject):
     def name(self):
         """
         Returns the name of this object
+
         :return: the name of the current object
         :rtype: str
         """
@@ -104,6 +108,7 @@ class NamedDSO(DomainSpecificObject):
     def name(self, name):
         """
         Returns the name of this object
+
         :return: the name of the current object
         :rtype: str
         """
@@ -126,6 +131,7 @@ class BoxedDSO(DomainSpecificObject):
     def box(self):
         """
         Returns a Box object that can represent the current object
+
         :return: a box with the same coordinates
         :rtype: Box
         """
@@ -151,6 +157,7 @@ class BoxedDSO(DomainSpecificObject):
     def top_left(self):
         """
         The top-left corner of the Box in the coordinate system
+
         :return: the coordinates of the top-left corner
         :rtype: a tuple of two int
         """
@@ -165,6 +172,7 @@ class BoxedDSO(DomainSpecificObject):
     def bottom_right(self):
         """
         The bottom-right corner of the Box in the coordinate system
+
         :return: the coordinates of the bottom-right corner
         :rtype: a tuple of two int
         """
@@ -179,6 +187,7 @@ class BoxedDSO(DomainSpecificObject):
     def size(self):
         """
         The size (dimension) of the object obtained from its associated box
+
         :return: the dimension of the boxed object
         :rtype: a tuple of two int
         """
@@ -194,6 +203,7 @@ class DsoWithImageData(DomainSpecificObject):
     def image_data(self):
         """
         Returns the list of ImageData objects whose parent if the current DSO
+
         :return: the list of associated ImageData objects
         :rtype: list of ImageData objects
         """

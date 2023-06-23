@@ -15,6 +15,7 @@ def open_project(dbname: str = None, dbms: str = None) -> ShallowDb:
     """
     A function to open a shallow persistence from its name. The default type of persistence is defined in the [project]
     sections of the configuration file settings.ini
+
     :param dbname: the persistence name
     :param dbms: A str specifying the database management system to use with the project
     :return: a shallowDb abstract connector encapsulating the concrete connectors
@@ -33,6 +34,7 @@ def open_project(dbname: str = None, dbms: str = None) -> ShallowDb:
 def list_projects(dbms: str = None):
     """
     Return a list of projects corresponding to a given database manager system
+
     :param dbms: the dbms
     :type dbms: str
     :return: the list of projects

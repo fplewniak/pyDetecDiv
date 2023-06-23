@@ -25,8 +25,8 @@ class Run(DomainSpecificObject):
     def record(self, no_id=False):
         """
         Returns a record dictionary of the current Data
-        :param no_id: if True, the id_ is not passed included in the record to allow transfer from one project to
-        another
+
+        :param no_id: if True, the id_ is not passed included in the record to allow transfer from one project to another
         :type no_id: bool
         :return: record dictionary
         :rtype: dict

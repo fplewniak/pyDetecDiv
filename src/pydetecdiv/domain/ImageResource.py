@@ -18,6 +18,7 @@ def aics_indexer(path, pattern):
     """
     An indexer to determine dimensions (T, C, Z) from file names to be used with AICSImage reader when reading a list of
     files
+
     :param path: the path of the file name
     :type path: str
     :param pattern: the pattern defining the dimension indexes from file names
@@ -59,7 +60,6 @@ class ImageResource:
     def shape(self):
         """
         The image resource shape (should habitually be 5D with the following dimensions TCZYX)
-        :return:
         """
         return self.resource.shape
 
@@ -67,7 +67,6 @@ class ImageResource:
     def dims(self):
         """
         The image resource dimensions with their size
-        :return:
         """
         return self.resource.dims
 
@@ -115,6 +114,7 @@ class ImageResource:
     def image(self, C=0, Z=0, T=0, drift=None):
         """
         A 2D grayscale image (on frame, one channel and one layer)
+
         :param C: the channel index
         :type C: int
         :param Z: the layer index
@@ -141,6 +141,7 @@ class ImageResource:
         """
         Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for
         regions of interest from a field of view.
+
         :param X: the X slice
         :type X: slice
         :param Y: the Y slice
@@ -189,6 +190,7 @@ class ImageResource:
     def compute_drift(self, method='phase_correlation', **kwargs):
         """
         Compute drift along time using the specified method
+
         :param method: the method to compute drift
         :type method: str
         :param kwargs: keyword arguments passed to the drift computation method
@@ -206,6 +208,7 @@ class ImageResource:
     def compute_drift_phase_correlation_cv2(self, Z=0, C=0, max_mem=5000):
         """
         Compute the cumulative transforms (dx, dy) to apply in order to correct the drift using phase correlation
+
         :param Z: the layer index
         :type Z: int
         :param C: the channel index
@@ -226,6 +229,7 @@ class ImageResource:
     def compute_drift_vidstab(self, Z=0, C=0, max_mem=5000):
         """
         Compute the cumulative transforms (dx, dy, dr) to apply in order to stabilize the time series and correct drift
+
         :param Z: the layer index
         :type Z: int
         :param C: the channel index
@@ -246,6 +250,7 @@ class ImageResource:
     def correct_drift(self, drift, filename=None, max_mem=5000):
         """
         Apply the drift correction and save to a multipage TIF file
+
         :param drift: the cumulative transforms to apply
         :type drift: pandas DataFrame
         :param filename: the file name to save the stabilized time series to

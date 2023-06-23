@@ -9,6 +9,7 @@ import os
 def stem(path):
     """
     Return the basename of a file without extension
+
     :param path: the file path
     :type path: str
     :return: the file basename without extension

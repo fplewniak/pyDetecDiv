@@ -113,6 +113,7 @@ class SettingsDialog(QDialog):
     def clicked(self, button):
         """
         Slot responding to a click on one of the buttons in the button box.
+
         :param button: the clicked button
         """
         match self.button_box.buttonRole(button):

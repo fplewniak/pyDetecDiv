@@ -17,6 +17,7 @@ class TreeItem:
     def append_child(self, item):
         """
         Add a child item to the current node
+
         :param item: child item
         :type item: TreeItem
         """
@@ -25,6 +26,7 @@ class TreeItem:
     def child(self, row):
         """
         Return the child at index row
+
         :param row: the row model index
         :type row: int
         :return: the requested child item
@@ -35,6 +37,7 @@ class TreeItem:
     def child_count(self):
         """
         Count the number of children of the node
+
         :return: the number of node children
         :rtype: int
         """
@@ -43,6 +46,7 @@ class TreeItem:
     def column_count(self):
         """
         Count the number of columns in model data
+
         :return: the number of columns
         :rtype: int
         """
@@ -51,6 +55,7 @@ class TreeItem:
     def data(self, column):
         """
         The data for a given column index
+
         :param column: the column index
         :type column: int
         :return: the node's data in the column index
@@ -64,6 +69,7 @@ class TreeItem:
     def parent(self):
         """
         Return the parent item of the node
+
         :return: the parent item
         :rtype: TreeItem
         """
@@ -72,6 +78,7 @@ class TreeItem:
     def row(self):
         """
         Return the row index of the node
+
         :return: the row index
         :rtype: int
         """
@@ -96,6 +103,7 @@ class TreeModel(QAbstractItemModel):
     def columnCount(self, parent):
         """
         Returns the number of columns for the children of the given parent
+
         :param parent: the parent index
         :type parent: QModelIndex
         :return: the number of columns
@@ -108,6 +116,7 @@ class TreeModel(QAbstractItemModel):
     def data(self, index, role):
         """
         Returns the data stored under the given role for the item referred to by the index.
+
         :param index: the node index
         :type index: QModelIndex
         :param role: the role
@@ -128,6 +137,7 @@ class TreeModel(QAbstractItemModel):
     def flags(self, index):
         """
         Returns the item flags for the given index
+
         :param index: the index
         :type index: QModelIndex
         :return: the flags
@@ -141,6 +151,7 @@ class TreeModel(QAbstractItemModel):
     def headerData(self, section, orientation, role):
         """
         Returns the data for the given role and section in the header with the specified orientation
+
         :param section: the section
         :type section: int
         :param orientation: the orientation
@@ -158,6 +169,7 @@ class TreeModel(QAbstractItemModel):
     def index(self, row, column, parent):
         """
         Returns the index of the item in the model specified by the given row, column and parent index.
+
         :param row: the row
         :type row: int
         :param column: the column
@@ -183,6 +195,7 @@ class TreeModel(QAbstractItemModel):
     def parent(self, index):
         """
         Returns the parent of the model item with the given index.
+
         :param index: the index
         :type index: QModelIndex
         :return: parent index
@@ -203,6 +216,7 @@ class TreeModel(QAbstractItemModel):
         """
         Returns the number of rows under the given parent. When the parent is valid it means that rowCount is returning
         the number of children of parent.
+
         :param parent: the parent index
         :type parent: QModelIndex
         :return: the number of rows
@@ -221,6 +235,7 @@ class TreeModel(QAbstractItemModel):
     def setup_model_data(self, data, parent):
         """
         Set the model up from data
+
         :param data: the data to load into the model
         :type data: object
         :param parent: the root of the tree
@@ -239,6 +254,7 @@ class TreeDictModel(TreeModel):
     def setup_model_data(self, data, parent):
         """
         Set the model up from the data stored in a dictionary
+
         :param data: the dictionary to load into the model
         :type data: dict
         :param parent: the root of the tree
@@ -251,6 +267,7 @@ class TreeDictModel(TreeModel):
         """
         Append children to an arbitrary node represented by a dictionary. This method is called recursively to load the
         successive levels of nodes.
+
         :param data: the dictionary to load at this node
         :type data: dict
         :param parent: the internal node
