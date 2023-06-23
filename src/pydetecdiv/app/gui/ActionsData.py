@@ -31,6 +31,7 @@ class ListView(QListView):
         """
         Definition of a context menu to clear or toggle selection of sources in list model, remove selected sources from
         the list model, clear the source list model
+
         :param e: mouse event providing the position of the context menu
         :type e: PySide6.QtGui.QContextMenuEvent
         """
@@ -217,6 +218,7 @@ class ImportDataDialog(QDialog):
     def add_path(self, path):
         """
         Add the input path to the source model
+
         :param path:
         """
         self.list_model.setStringList(self.list_model.stringList() + [path])
@@ -225,6 +227,7 @@ class ImportDataDialog(QDialog):
     def get_destinations(self):
         """
         Get the list of subdirectories in the destination raw dataset directory
+
         :return: list of subdirectories in the destination raw dataset directory
         :rtype: list of str
         """
@@ -233,6 +236,7 @@ class ImportDataDialog(QDialog):
     def file_list(self):
         """
         Expands all source specification to return a list of files to import
+
         :return: file name list
         :rtype: list of str
         """
@@ -297,6 +301,7 @@ class ImportDataDialog(QDialog):
     def count_imported_files(self, destination, n_start):
         """
         Count imported files in destination directory to assess progress
+
         :param destination: destination directory which files are imported into
         :type destination: str
         :param n_start: the number of files already in the destination directory before import
@@ -310,6 +315,7 @@ class ImportDataDialog(QDialog):
         """
         Manage cancellation of import. Terminate all copy processes before launching deletion of files that were already
         copied. Then cancel persistence operations on Data objects, and eventually stop the host thread.
+
         :param imported:
         :param project:
         :param processes:
@@ -345,6 +351,7 @@ class ImportDataDialog(QDialog):
     def sub_directory_name_validator():
         """
         Name validator to filter invalid character in directory name
+
         :return: the validator
         :rtype: QRegularExpressionValidator
         """
@@ -433,6 +440,7 @@ class CreateFOV(QAction):
     def enable(self, raw_data_count):
         """
         Enable or disable this action in the Data menu whether there are raw data or not.
+
         :param raw_data_count: the number of files in raw dataset
         """
         if PyDetecDiv().project_name and (raw_data_count > 0):

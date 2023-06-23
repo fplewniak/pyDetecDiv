@@ -4,12 +4,6 @@
 This module implements the SQLite3 service for metadata
 (Data, DataSet and Experiment) management.
 This service read/write and query metadata from a SQLite3 database
-
-Classes
--------
-SQLiteMetadataServiceBuilder
-SQLiteMetadataService
-
 """
 import glob
 import platform
@@ -69,6 +63,7 @@ class SQLiteMetadataService(LocalMetadataService):
     def connect_to_session(self, session, repository):
         """
         Associate an open SQLite session to the data service
+
         :param session: A SQLite session
         :type session: sqlalchemy.orm.session.Session
         """
@@ -79,10 +74,10 @@ class SQLiteMetadataService(LocalMetadataService):
         """
         Determines links between data in dataset and other objects in database. The returned DataFrame can be used to
         populate a table in SQLite database
+
         :param dataset: the dataset
         :type dataset: Dataset Container or DatasetInfo Container
-        :param source: a string (column name) or callable returning a string that the regular expression will be
-        applied to
+        :param source: a string (column name) or callable returning a string that the regular expression will be applied to
         :type source: callable or str
         :param keys_: the column names (one object class per column)
         :type keys_: tuple of str
@@ -110,6 +105,7 @@ class SQLiteMetadataService(LocalMetadataService):
     def clear_annotation(self, dataset, key):
         """
         Clear annotations with the specified key in a dataset
+
         :param experiment: the experiment containing the dataset to update
         :type experiment: Experiment Container
         :param dataset: the dataset
@@ -128,12 +124,12 @@ class SQLiteMetadataService(LocalMetadataService):
           lambda x: os.path.join(x['source_dir'],x['name']) ,
           ('group', 'ROI', 'FOV', 'position', 'frame'),
           r'.*\/([^\/]+)\/(Pos(\d+)_(\d+_\d+))_frame_(\d\d\d\d).tif')
+
         :param experiment: the experiment containing the dataset to annotate
         :type experiment: Experiment Container
         :param dataset: the dataset to annotate
         :type dataset: Dataset Container or DatasetInfo Container
-        :param source: a string (column name) or callable returning a string that the regular expression will be
-        applied to
+        :param source: a string (column name) or callable returning a string that the regular expression will be applied to
         :type source: callable or str
         :param keys_: the annotation keys
         :type keys_: tuple of str
@@ -162,12 +158,12 @@ class SQLiteMetadataService(LocalMetadataService):
     def annotate_using_regex(self, experiment, dataset, source, keys_, regex):
         """
         Use DataFrame returned by create_annotations_using_regex method to annotate data in dataset
+
         :param experiment: the experiment containing the dataset to annotate
         :type experiment: Experiment Container
         :param dataset: the dataset to annotate
         :type dataset: Dataset Container or DatasetInfo Container
-        :param source: a string (column name) or callable returning a string that the regular expression will be
-        applied to
+        :param source: a string (column name) or callable returning a string that the regular expression will be applied to
         :type source: callable or str
         :param keys_: the annotation keys
         :type keys_: tuple of str
@@ -184,8 +180,7 @@ class SQLiteMetadataService(LocalMetadataService):
     def create_experiment(self, name, author='', date='now', keys=None, destination=''):
         """Create a new experiment
 
-        Parameters
-        ----------
+        **Parameters**
         name: str
             Name of the experiment
         author: str
@@ -198,8 +193,7 @@ class SQLiteMetadataService(LocalMetadataService):
             Destination where the experiment is created. It is a the path of the
             directory where the experiment will be created for local use case
 
-        Returns
-        -------
+        **Returns**
         Experiment container with the experiment metadata
 
         """
@@ -260,13 +254,11 @@ class SQLiteMetadataService(LocalMetadataService):
     def get_workspace_experiments(self, workspace_uri):
         """Read the experiments in the user workspace
 
-        Parameters
-        ----------
+        **Parameters**
         workspace_uri: str
             URI of the workspace
 
-        Returns
-        -------
+        **Returns**
         list of experiment containers
         """
         if os.path.exists(workspace_uri):
@@ -282,15 +274,13 @@ class SQLiteMetadataService(LocalMetadataService):
     def get_experiment(self, md_uri):
         """Read an experiment from the database
 
-        Parameters
-        ----------
-        md_uri: str
+        **Parameters**
+            md_uri: str
             URI of the experiment. For local use case, the URI is either the
             path of the experiment directory, or the path of the
             experiment.md.json file
 
-        Returns
-        -------
+        **Returns**
         Experiment container with the experiment metadata
 
         """
@@ -316,8 +306,7 @@ class SQLiteMetadataService(LocalMetadataService):
     def update_experiment(self, experiment):
         """Write an experiment to the database
 
-        Parameters
-        ----------
+        **Parameters**
         experiment: Experiment
             Container of the experiment metadata
 
@@ -337,8 +326,7 @@ class SQLiteMetadataService(LocalMetadataService):
 
         The data is imported to the raw dataset
 
-        Parameters
-        ----------
+        **Parameters**
         experiment: Experiment
             Container of the experiment metadata
         data_path: str
@@ -354,8 +342,7 @@ class SQLiteMetadataService(LocalMetadataService):
         key_value_pairs: dict
             Dictionary {key:value, key:value} to annotate files
 
-        Returns
-        -------
+        **Returns**
         class RawData containing the metadata
 
         """
@@ -488,6 +475,7 @@ class SQLiteMetadataService(LocalMetadataService):
     def import_glob(self, experiment, files_glob, author='', format_='imagetiff', date='now', observers=None, destination=None, **kwargs):
         """
         Import into an experiment a list of raw data files specified by a glob pattern
+
         :param experiment: the experiment
         :type experiment: Experiment Container
         :param files_glob: the file path specification
@@ -552,8 +540,7 @@ class SQLiteMetadataService(LocalMetadataService):
         in a local folder into an experiment. Imported data are
         considered as RawData for the experiment
 
-        Parameters
-        ----------
+        **Parameters**
         experiment: Experiment
             Container of the experiment metadata
         dir_uri: str
@@ -601,12 +588,10 @@ class SQLiteMetadataService(LocalMetadataService):
     def _get_data(self, md_uri, cls=RawData):
         """Read data from the database
 
-        Parameters
-        ----------
+        **Parameters**
         md_uri: str
             URI if the data
-        Returns
-        -------
+        **Returns**
         RawData object containing the data metadata
 
         """
@@ -644,8 +629,7 @@ class SQLiteMetadataService(LocalMetadataService):
     def update_raw_data(self, raw_data):
         """Read a raw data from the database
 
-        Parameters
-        ----------
+        **Parameters**
         raw_data: RawData
             Container with the raw data metadata
 
@@ -692,13 +676,11 @@ WHERE uuid = :uuid
     def get_processed_data(self, md_uri):
         """Read a processed data from the database
 
-        Parameters
-        ----------
+        **Parameters**
         md_uri: str
             URI if the processed data
 
-        Returns
-        -------
+        **Returns**
         ProcessedData object containing the raw data metadata
 
         """
@@ -721,8 +703,7 @@ WHERE uuid = :uuid
     def update_processed_data(self, processed_data):
         """Read a processed data from the database
 
-        Parameters
-        ----------
+        **Parameters**
         processed_data: ProcessedData
             Container with the processed data metadata
 
@@ -789,13 +770,11 @@ WHERE uuid = :uuid
     def get_dataset(self, md_uri):
         """Read a dataset from the database using it URI
 
-        Parameters
-        ----------
+        **Parameters**
         md_uri: str
             URI if the dataset
 
-        Returns
-        -------
+        **Returns**
         Dataset object containing the dataset metadata
 
         """
@@ -818,8 +797,7 @@ WHERE uuid = :uuid
     def update_dataset(self, dataset):
         """Read a processed data from the database
 
-        Parameters
-        ----------
+        **Parameters**
         dataset: Dataset
             Container with the dataset metadata
 
@@ -837,15 +815,13 @@ WHERE uuid = :uuid
     def create_dataset(self, experiment, dataset_name):
         """Create a processed dataset in an experiment
 
-        Parameters
-        ----------
+        **Parameters**
         experiment: Experiment
             Object containing the experiment metadata
         dataset_name: str
             Name of the dataset
 
-        Returns
-        -------
+        **Returns**
         Dataset object containing the new dataset metadata
 
         """
@@ -874,16 +850,14 @@ WHERE uuid = :uuid
     def create_run(self, dataset, run_info):
         """Create a new run metadata
 
-        Parameters
-        ----------
+        **Parameters**
         dataset: Dataset
             Object of the dataset metadata
         run_info: Run
             Object containing the metadata of the run. md_uri is ignored and
             created automatically by this method
 
-        Returns
-        -------
+        **Returns**
         Run object with the metadata and the new created md_uri
 
         """
@@ -908,12 +882,10 @@ WHERE uuid = :uuid
     def get_dataset_runs(self, dataset):
         """Read the run metadata from a dataset
 
-        Parameters
-        ----------
+        **Parameters**
         dataset: Dataset
 
-        Returns
-        -------
+        **Returns**
         List of Runs
 
         """
@@ -923,13 +895,11 @@ WHERE uuid = :uuid
     def get_run(self, md_uri):
         """Read a run metadata from the data base
 
-        Parameters
-        ----------
+        **Parameters**
         md_uri
             URI of the run entry in the database
 
-        Returns
-        -------
+        **Returns**
         Run: object containing the run metadata
 
         """
@@ -960,8 +930,7 @@ WHERE uuid = :uuid
     def _write_run(self, run):
         """Write a run metadata to the data base
 
-        Parameters
-        ----------
+        **Parameters**
         run
             Object containing the run metadata
 
@@ -1039,8 +1008,7 @@ WHERE uuid = :uuid
     def create_data_uri(self, dataset, run, processed_data):
         """Create the URI of the new data
 
-        Parameters
-        ----------
+        **Parameters**
         dataset: Dataset
             Object of the dataset metadata
         run: Run
@@ -1049,8 +1017,7 @@ WHERE uuid = :uuid
             Object containing the new processed data. md_uri is ignored and
             created automatically by this method
 
-        Returns
-        -------
+        **Returns**
         ProcessedData object with the metadata and the new created md_uri
 
         """
@@ -1064,8 +1031,7 @@ WHERE uuid = :uuid
     def create_data(self, dataset, run, processed_data):
         """Create a new processed data for a given dataset
 
-        Parameters
-        ----------
+        **Parameters**
         dataset: Dataset
             Object of the dataset metadata
         run: Run
@@ -1074,8 +1040,7 @@ WHERE uuid = :uuid
             Object containing the new processed data. md_uri is ignored and
             created automatically by this method
 
-        Returns
-        -------
+        **Returns**
         ProcessedData object with the metadata and the new created md_uri
 
         """

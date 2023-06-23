@@ -27,7 +27,8 @@ class RunDao(DAO, Base):
         """
         A method creating a record dictionary from a dataset row dictionary. This method is used to convert the SQL
         table columns into the dataset record fields expected by the domain layer
-        :return a dataset record as a dictionary with keys() appropriate for handling by the domain layer
+
+        :return: a Run record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """
         return {'id_': self.id_,

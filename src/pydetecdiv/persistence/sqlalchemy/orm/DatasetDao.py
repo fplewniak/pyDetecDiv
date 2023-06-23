@@ -1,7 +1,7 @@
 #  CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21
 #  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
 """
-Access to ROI data
+Access to Dataset data
 """
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship, joinedload
@@ -29,6 +29,7 @@ class DatasetDao(DAO, Base):
     def data_list(self, dataset_id):
         """
         A method returning the list of Data records whose parent Dataset has id_ == dataset_id
+
         :param dataset_id: the id of the Dataset
         :type dataset_id: str
         :return: a list of Data records whose parent Dataset has id_ == dataset_id
@@ -49,7 +50,8 @@ class DatasetDao(DAO, Base):
         """
         A method creating a record dictionary from a dataset row dictionary. This method is used to convert the SQL
         table columns into the dataset record fields expected by the domain layer
-        :return a dataset record as a dictionary with keys() appropriate for handling by the domain layer
+
+        :return: a dataset record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """
         return {'id_': self.id_,

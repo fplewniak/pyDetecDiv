@@ -29,6 +29,7 @@ class ParameterFactory:
     def create(self, element, tool, **kwargs):
         """
         Create the parameter object corresponding to the type specified in the tool configuration file
+
         :param element: the parameter element in XML configuration file
         :type element: xml.etree.ElementTree.Element
         :param tool: the tool object
@@ -42,6 +43,7 @@ class ParameterFactory:
     def is_dso(self, type_):
         """
         Return True if this parameter's type corresponds to a Domain-Specific Object
+
         :param type_: the parameter's type
         :type type_: str
         :return: True if this is a dso, False otherwise
@@ -65,6 +67,7 @@ class Parameter:
     def set_value(self, value):
         """
         Set the parameter's value
+
         :param value: the value
         """
         self.value = value
@@ -72,6 +75,7 @@ class Parameter:
     def set_dso(self, project):
         """
         Get the DSO or the DSO list corresponding to the parameter's value representing the name of that DSO
+
         :param project:
         """
         if self.is_dso():
@@ -84,6 +88,7 @@ class Parameter:
     def name(self):
         """
         The parameter's name
+
         :return: The parameter's name
         :rtype: str
         """
@@ -93,6 +98,7 @@ class Parameter:
     def format(self):
         """
         The data format
+
         :return: The data format
         :rtype: str
         """
@@ -102,6 +108,7 @@ class Parameter:
     def label(self):
         """
         The label explaining the parameter for user interaction (GUI, text interface, etc.)
+
         :return: The label
         :rtype: str
         """
@@ -111,6 +118,7 @@ class Parameter:
     def default_value(self):
         """
         The default value for this parameter
+
         :return:The default value
         :rtype: str
         """
@@ -119,6 +127,7 @@ class Parameter:
     def is_input(self):
         """
         Return True if this parameter defines an input
+
         :return: True if this is an input parameter, False otherwise
         :rtype: bool
         """
@@ -127,6 +136,7 @@ class Parameter:
     def is_output(self):
         """
         Return True if this parameter defines an output
+
         :return: True if this is an output parameter, False otherwise
         :rtype: bool
         """
@@ -135,6 +145,7 @@ class Parameter:
     def is_multiple(self):
         """
         Return True if this parameter can take multiple values
+
         :return: True if this parameter can take multiple values, False otherwise
         :rtype: bool
         """
@@ -143,6 +154,7 @@ class Parameter:
     def is_image(self):
         """
         Check the parameter represents image data
+
         :return: True if the parameter represents image data, False otherwise
         :rtype: bool
         """
@@ -152,6 +164,7 @@ class Parameter:
     def is_dso():
         """
         Check the parameter represents a DSO
+
         :return: True if the parameter represents a DSO, False otherwise
         :rtype: bool
         """
@@ -174,6 +187,7 @@ class IntegerParameter(Parameter):
     def default_value(self):
         """
         The default value for this parameter
+
         :return:The default value
         :rtype: str
         """
@@ -189,6 +203,7 @@ class FloatParameter(Parameter):
     def default_value(self):
         """
         The default value for this parameter
+
         :return:The default value
         :rtype: str
         """
@@ -204,6 +219,7 @@ class BooleanParameter(Parameter):
     def default_value(self):
         """
         The checked value if specified in the configuration file or False if it was not
+
         :return:The default value
         :rtype: bool
         """
@@ -256,6 +272,7 @@ class FovParameter(Parameter):
     def is_dso():
         """
         Returns True since this is a DSO
+
         :return: True
         """
         return True
@@ -270,6 +287,7 @@ class RoiParameter(Parameter):
     def is_dso():
         """
         Returns True since this is a DSO
+
         :return: True
         """
         return True
@@ -284,6 +302,7 @@ class DatasetParameter(Parameter):
     def is_dso():
         """
         Returns True since this is a DSO
+
         :return: True
         """
         return True

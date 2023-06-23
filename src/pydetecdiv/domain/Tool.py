@@ -46,6 +46,7 @@ class Requirements:
     def packages(self):
         """
         Return a list of required packages for the tool
+
         :return: the list of required packages
         :rtype: list of str
         """
@@ -56,6 +57,7 @@ class Requirements:
         """
         Return the environment for the current tool, specifying the type of environment ('conda' or docker')
         and its name
+
         :return: definition for the tool environment
         :rtype: dict
         """
@@ -64,6 +66,7 @@ class Requirements:
     def check_env(self):
         """
         Check the environment for this tool already exists
+
         :param env: the environment to check for existence
         :type env: dict
         :return: True if environment exists, False otherwise
@@ -81,6 +84,7 @@ class Requirements:
     def _check_conda_env(self):
         """
         Check whether the required conda environment exists or not
+
         :return: True if the conda environment exists, False otherwise
         :rtype: bool
         """
@@ -144,6 +148,7 @@ class Inputs:
     def values(self):
         """
         Convenience property returning the values of all input parameters in the self.list
+
         :return: the values of all input parameters in the self.list
         :rtype: list
         """
@@ -178,6 +183,7 @@ class Command:
     def set_env_command(self):
         """
         Return the command to set up the environment required to run the tool
+
         :return: command to set the environment up
         :rtype: str
         """
@@ -193,6 +199,7 @@ class Command:
     def _set_conda_env_command(self):
         """
         Return the command to set up the conda environment required to run the tool
+
         :return: command to set the conda environment up
         :rtype: str
         """
@@ -212,6 +219,7 @@ class Command:
     def set_working_dir(self, working_dir):
         """
         Set the working directory
+
         :param working_dir: the working directory path
         :type: os.Path
         :return: the command object
@@ -229,6 +237,7 @@ class Command:
     def set_parameters(self, parameters):
         """
         Set the parameters for running the command
+
         :param parameters: the parameters
         :type parameters: dict
         :return: the command object
@@ -240,6 +249,7 @@ class Command:
     def execute(self):
         """
         Execute the command
+
         :return: the output of the job
         :rtype: subprocess.CompletedProcess
         """
@@ -275,6 +285,7 @@ class Tool:
     def init_dso_inputs(self, project=None):
         """
         Initialize the DSOs for input parameters and place them in the dso field.
+
         :param project:
         """
         for i in self.inputs.values:
@@ -284,6 +295,7 @@ class Tool:
         """
         Initialize values of parameters for testing purposes. If an input defines a DSO then its dso field is set to the
         corresponding DSO or list thereof.
+
         :param test_param: the parameters for the test
         :type test_param: dict
         :param project: the pyDetecDiv project the test must be run on
@@ -301,6 +313,7 @@ class Tool:
     def root(self):
         """
         Convenience property returning the root of the Tool's XML configuration
+
         :return: the root of the XML tool definition
         :rtype: xml.etree.Element 'tool'
         """
@@ -310,6 +323,7 @@ class Tool:
     def name(self):
         """
         Property returning the name of the tool
+
         :return: tool name
         :rtype: str
         """
@@ -319,6 +333,7 @@ class Tool:
     def version(self):
         """
         Property returning the version of the tool
+
         :return: tool version
         :rtype: str
         """
@@ -328,6 +343,7 @@ class Tool:
     def categories(self):
         """
         Property returning the categories the tool belongs to
+
         :return: tool categories
         :rtype: list of str
         """
@@ -337,6 +353,7 @@ class Tool:
     def command_line(self):
         """
         Property returning the command line
+
         :return:
         """
         return f'{self.command.set_env_command()} \'{self.command.code}\''
@@ -345,6 +362,7 @@ class Tool:
     def attributes(self):
         """
         Convenience property returning the tool's attributes as defined in the root node
+
         :return: attributes
         :rtype: dict
         """
@@ -363,6 +381,7 @@ class Tool:
     def parameters(self):
         """
         Return the all the input and output parameters for running the tool
+
         :return: input and ouput parameters
         :rtype: dict of Parameter objects (Input and Output)
         """

@@ -27,6 +27,7 @@ class Dataset(NamedDSO):
     def url(self):
         """
         URL property of the data file, relative to the workspace directory or absolute path if file are stored in place
+
         :return: relative or absolute path of the data file
         :rtype: str
         """
@@ -38,6 +39,7 @@ class Dataset(NamedDSO):
     def data_list(self):
         """
         returns the list of data files in dataset
+
         :return: list of Data objects
         :rtype: list of Data objects
         """
@@ -45,9 +47,9 @@ class Dataset(NamedDSO):
 
     def record(self, no_id=False):
         """
-        Returns a record dictionary of the current Data
-        :param no_id: if True, the id_ is not passed included in the record to allow transfer from one project to
-        another
+        Returns a record dictionary of the current Dataset
+
+        :param no_id: if True, the id_ is not passed included in the record to allow transfer from one project to another
         :type no_id: bool
         :return: record dictionary
         :rtype: dict

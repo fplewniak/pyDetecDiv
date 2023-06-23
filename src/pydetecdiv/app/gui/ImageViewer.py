@@ -61,6 +61,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
     def set_image_resource(self, image_resource, crop=None):
         """
         Associate an image resource to this viewer, possibly cropping if requested.
+
         :param image_resource: the image resource to load into the viewer
         :type image_resource: ImageResource
         :param crop: the (X,Y) crop area
@@ -85,6 +86,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         Sets the current channel
         TODO: allow specification of channel by name, this method should set the self.C field to the index corresponding
         TODO: to the requested name if the C argument is a str
+
         :param C: index of the current channel
         :type C: int
         """
@@ -111,6 +113,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
     def zoom_set_value(self, value):
         """
         Set the zoom to the specified value
+
         :param value: the zoom value (as %)
         :type value: float
         """
@@ -160,6 +163,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
     def change_layer(self, Z=0):
         """
         Set the layer to the specified value and refresh the display
+
         :param Z: the Z layer index
         :type Z: int
         """
@@ -170,6 +174,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
     def change_frame(self, T=0):
         """
         Change the current frame to the specified time index and refresh the display
+
         :param T:
         """
         if self.T != T:
@@ -180,6 +185,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
     def display(self, C=None, T=None, Z=None):
         """
         Display the frame specified by the time, channel and layer indices.
+
         :param C: the channel index
         :type C: int
         :param T: the time index
@@ -208,6 +214,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
     def draw_saved_rois(self, roi_list):
         """
         Draw saved ROIs as green rectangles that can be selected but not moved
+
         :param roi_list: the list of saved ROIs
         :type roi_list: list of ROI objects
         """
@@ -308,6 +315,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
     def get_roi_image(self, roi):
         """
         Get a 2D image of the specified ROI
+
         :param roi: the specified area to get image data for
         :type roi: QRect
         :return: the image data
@@ -323,6 +331,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         """
         Get a 5D image resource for the specified ROI. If the drift correction is available, then the (x,y) crop is
         larger than the actual ROI to allow drift correction.
+
         :param roi: the specified area to get image resource data for
         :type roi: QRect
         :return: the image data
@@ -397,6 +406,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
     def view_roi_image(self, selected_roi=None):
         """
         Display the selected area in a new tab viewer as a 5D image resource.
+
         :param selected_roi:
         """
         if selected_roi is None:
@@ -449,6 +459,7 @@ class ViewerScene(QGraphicsScene):
     def contextMenuEvent(self, event):
         """
         The context menu for area manipulation
+
         :param event:
         """
         menu = QMenu()
@@ -462,6 +473,7 @@ class ViewerScene(QGraphicsScene):
         """
         Detect when a key is pressed and perform the corresponding action:
         * QKeySequence.Delete: delete the selected item
+
         :param event: the key pressed event
         :type event: QKeyEvent
         """
@@ -473,6 +485,7 @@ class ViewerScene(QGraphicsScene):
         """
         Detect when the left mouse button is pressed and perform the action corresponding to the currently checked
         drawing tool
+
         :param event: the mouse press event
         :type event: QGraphicsSceneMouseEvent
         """
@@ -488,6 +501,7 @@ class ViewerScene(QGraphicsScene):
     def select_ROI(self, event):
         """
         Select the current area/ROI
+
         :param event: the mouse press event
         :type event: QGraphicsSceneMouseEvent
         """
@@ -503,6 +517,7 @@ class ViewerScene(QGraphicsScene):
     def get_selected_ROI(self):
         """
         Return the selected ROI
+
         :return: the selected ROI
         :rtype: QGraphicsRectItem
         """
@@ -514,6 +529,7 @@ class ViewerScene(QGraphicsScene):
     def duplicate_selected_ROI(self, event):
         """
         Duplicate the currently selected ROI at the current mouse position
+
         :param event: the mouse press event
         :type event: QGraphicsSceneMouseEvent
         """
@@ -536,6 +552,7 @@ class ViewerScene(QGraphicsScene):
         """
         Detect mouse movement and apply the appropriate method according to the currently cjecked drawing tool and key
         modifier
+
         :param event: the mouse move event
         :type event: QGraphicsSceneMouseEvent
         """
@@ -555,6 +572,7 @@ class ViewerScene(QGraphicsScene):
     def move_ROI(self, event):
         """
         Move the currently selected ROI if it is movable
+
         :param event: the mouse move event
         :type event: QGraphicsSceneMouseEvent
         """
@@ -570,6 +588,7 @@ class ViewerScene(QGraphicsScene):
     def draw_ROI(self, event):
         """
         Draw or redraw the currently selected ROI if it is movable
+
         :param event: the mouse press event
         :type event: QGraphicsSceneMouseEvent
         """

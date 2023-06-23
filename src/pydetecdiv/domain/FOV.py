@@ -28,6 +28,7 @@ class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
     def record(self, no_id=False):
         """
         Returns a record dictionary of the current FOV
+
         :param no_id: if True, does not return id_ (useful for transferring from one project to another)
         :type no_id: bool
         :return: record dictionary
@@ -49,6 +50,7 @@ class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
     def info(self):
         """
         Returns ready-to-print information about FOV
+
         :return: FOV information
         :rtype: str
         """
@@ -65,6 +67,7 @@ Comments:             {self.comments}
     def comments(self):
         """
         comments property of FOV
+
         :return: the comments
         :rtype: str
         """
@@ -79,6 +82,7 @@ Comments:             {self.comments}
     def data(self):
         """
         Property returning the Data objects associated to this FOV
+
         :return: the data associated to this FOV
         :rtype: list of Data objects
         """
@@ -89,6 +93,7 @@ Comments:             {self.comments}
     def roi_list(self):
         """
         Returns the list of ROI objects whose parent if the current FOV
+
         :return: the list of associated ROIs
         :rtype: list of ROI objects
         """
@@ -100,6 +105,7 @@ Comments:             {self.comments}
     def image_list(self):
         """
         Return a list of images related to this FOV
+
         :return: list of images
         :rtype: list of Image objects
         """
@@ -109,6 +115,7 @@ Comments:             {self.comments}
     def initial_roi(self):
         """
         Return the initial ROI, created at the creation of this FOV and representing the full FOV
+
         :return: the initial ROI
         :rtype: ROI object
         """
@@ -118,6 +125,7 @@ Comments:             {self.comments}
         """
         Return the image resource (single multipage file of a series of files) corresponding to the FOV in a specific
          dataset
+
         :param dataset: the dataset name
         :type dataset: str
         :return: the image resource

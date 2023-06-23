@@ -35,6 +35,7 @@ class ImageDataDao(DAO, Base):
     def fov(self, image_data_id):
         """
         A method returning the FOV object record linked to ImageData with id_ == image_data_id
+
         :param image_data_id: the id of the Image data
         :type image_data_id: int
         :return: a list containing the FOV record linked to ImageData with id_ == image_data_id
@@ -47,6 +48,7 @@ class ImageDataDao(DAO, Base):
     def image_list(self, image_data_id):
         """
         A method returning the list of ROI records whose parent FOV has id == fov_id
+
         :param fov_id: the id of the FOV
         :type fov_id: int
         :return: a list of ROI records with parent FOV id == fov_id
@@ -64,6 +66,7 @@ class ImageDataDao(DAO, Base):
         """
         A method creating a record dictionary from a image data row dictionary. This method is used to convert the SQL
         table columns into the image data record fields expected by the domain layer
+
         :return an image data record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """

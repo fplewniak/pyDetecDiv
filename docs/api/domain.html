@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Domain layer &mdash; pyDetecDiv 0.1.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Persistence layer" href="persistence.html" />
+    <link rel="prev" title="Utilities and global classes" href="utilities.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            pyDetecDiv
+          </a>
+              <div class="version">
+                0.1.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User's manual</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting started</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developers' documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">The pyDetecDiv API reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="utilities.html">Utilities and global classes</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Domain layer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-pydetecdiv.domain.dso">pydetecdiv.domain.dso</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.dso.DomainSpecificObject"><code class="docutils literal notranslate"><span class="pre">DomainSpecificObject</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.dso.NamedDSO"><code class="docutils literal notranslate"><span class="pre">NamedDSO</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.dso.BoxedDSO"><code class="docutils literal notranslate"><span class="pre">BoxedDSO</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.dso.DsoWithImageData"><code class="docutils literal notranslate"><span class="pre">DsoWithImageData</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#domain-specific-classes">Domain-specific classes</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.Project.Project"><code class="docutils literal notranslate"><span class="pre">Project</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.FOV.FOV"><code class="docutils literal notranslate"><span class="pre">FOV</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.ROI.ROI"><code class="docutils literal notranslate"><span class="pre">ROI</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.Data.Data"><code class="docutils literal notranslate"><span class="pre">Data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.Dataset.Dataset"><code class="docutils literal notranslate"><span class="pre">Dataset</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.ImageResource.ImageResource"><code class="docutils literal notranslate"><span class="pre">ImageResource</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.Tool.Tool"><code class="docutils literal notranslate"><span class="pre">Tool</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.Run.Run"><code class="docutils literal notranslate"><span class="pre">Run</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.Experiment.Experiment"><code class="docutils literal notranslate"><span class="pre">Experiment</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pydetecdiv.domain.parameters">Parameters classes</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.parameters.Parameter"><code class="docutils literal notranslate"><span class="pre">Parameter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.parameters.TextParameter"><code class="docutils literal notranslate"><span class="pre">TextParameter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.parameters.IntegerParameter"><code class="docutils literal notranslate"><span class="pre">IntegerParameter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.parameters.FloatParameter"><code class="docutils literal notranslate"><span class="pre">FloatParameter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.parameters.BooleanParameter"><code class="docutils literal notranslate"><span class="pre">BooleanParameter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.parameters.SelectParameter"><code class="docutils literal notranslate"><span class="pre">SelectParameter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.parameters.ColumnListParameter"><code class="docutils literal notranslate"><span class="pre">ColumnListParameter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.parameters.DataParameter"><code class="docutils literal notranslate"><span class="pre">DataParameter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.parameters.DataCollectionParameter"><code class="docutils literal notranslate"><span class="pre">DataCollectionParameter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.parameters.DirectoryUriParameter"><code class="docutils literal notranslate"><span class="pre">DirectoryUriParameter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.parameters.FovParameter"><code class="docutils literal notranslate"><span class="pre">FovParameter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.parameters.RoiParameter"><code class="docutils literal notranslate"><span class="pre">RoiParameter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.parameters.DatasetParameter"><code class="docutils literal notranslate"><span class="pre">DatasetParameter</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="persistence.html">Persistence layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui.html">Graphical user interface</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">pyDetecDiv</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">The pyDetecDiv API reference</a></li>
+      <li class="breadcrumb-item active">Domain layer</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/domain.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="domain-layer">
+<h1>Domain layer<a class="headerlink" href="#domain-layer" title="Permalink to this heading"></a></h1>
+<section id="module-pydetecdiv.domain.dso">
+<span id="pydetecdiv-domain-dso"></span><h2>pydetecdiv.domain.dso<a class="headerlink" href="#module-pydetecdiv.domain.dso" title="Permalink to this heading"></a></h2>
+<p>Domain specific generic attributes and methods shared by domain objects. Other domain classes (except Project)
+should inherit from these classes according to their type.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.dso.DomainSpecificObject">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.dso.</span></span><span class="sig-name descname"><span class="pre">DomainSpecificObject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A business-logic class defining valid operations and attributes common to all domain-specific classes</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.dso.DomainSpecificObject.delete">
+<span class="sig-name descname"><span class="pre">delete</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.dso.DomainSpecificObject.delete" title="Permalink to this definition"></a></dt>
+<dd><p>Delete the current object</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.dso.DomainSpecificObject.check_validity">
+<span class="sig-name descname"><span class="pre">check_validity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.dso.DomainSpecificObject.check_validity" title="Permalink to this definition"></a></dt>
+<dd><p>Checks the validity of the current object</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.dso.DomainSpecificObject.validate">
+<span class="sig-name descname"><span class="pre">validate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">updated</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.dso.DomainSpecificObject.validate" title="Permalink to this definition"></a></dt>
+<dd><p>Validate the current object and pass newly created and updated object to project for saving modifications. Sets
+the id of the object for new objects.
+This method should be called at the creation or at each modification of an object (i.e. in the __init__ and all
+setter methods)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.dso.DomainSpecificObject.record">
+<span class="sig-name descname"><span class="pre">record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">no_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.dso.DomainSpecificObject.record" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a record dictionary of the current DSO</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>record dictionary</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.dso.NamedDSO">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.dso.</span></span><span class="sig-name descname"><span class="pre">NamedDSO</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.dso.NamedDSO" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="pydetecdiv.domain.dso.DomainSpecificObject"><code class="xref py py-class docutils literal notranslate"><span class="pre">DomainSpecificObject</span></code></a></p>
+<p>A domain-specific class for objects with a name.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.dso.NamedDSO.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#pydetecdiv.domain.dso.NamedDSO.name" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the name of this object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the name of the current object</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.dso.BoxedDSO">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.dso.</span></span><span class="sig-name descname"><span class="pre">BoxedDSO</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">top_left</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bottom_right</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.dso.BoxedDSO" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="pydetecdiv.domain.dso.DomainSpecificObject"><code class="xref py py-class docutils literal notranslate"><span class="pre">DomainSpecificObject</span></code></a></p>
+<p>A domain-specific class for objects that can be represented as a rectangular box (i.e. having top left and bottom
+right corners).</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.dso.BoxedDSO.box">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">box</span></span><a class="headerlink" href="#pydetecdiv.domain.dso.BoxedDSO.box" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a Box object that can represent the current object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>a box with the same coordinates</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="utilities.html#pydetecdiv.utils.Shapes.Box" title="pydetecdiv.utils.Shapes.Box">Box</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.dso.BoxedDSO.top_left">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">top_left</span></span><a class="headerlink" href="#pydetecdiv.domain.dso.BoxedDSO.top_left" title="Permalink to this definition"></a></dt>
+<dd><p>The top-left corner of the Box in the coordinate system</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the coordinates of the top-left corner</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>a tuple of two int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.dso.BoxedDSO.bottom_right">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bottom_right</span></span><a class="headerlink" href="#pydetecdiv.domain.dso.BoxedDSO.bottom_right" title="Permalink to this definition"></a></dt>
+<dd><p>The bottom-right corner of the Box in the coordinate system</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the coordinates of the bottom-right corner</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>a tuple of two int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.dso.BoxedDSO.size">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">size</span></span><a class="headerlink" href="#pydetecdiv.domain.dso.BoxedDSO.size" title="Permalink to this definition"></a></dt>
+<dd><p>The size (dimension) of the object obtained from its associated box</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the dimension of the boxed object</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>a tuple of two int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.dso.DsoWithImageData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.dso.</span></span><span class="sig-name descname"><span class="pre">DsoWithImageData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.dso.DsoWithImageData" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="pydetecdiv.domain.dso.DomainSpecificObject"><code class="xref py py-class docutils literal notranslate"><span class="pre">DomainSpecificObject</span></code></a></p>
+<p>A domain-specific class for objects that are associated with Image _data</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.dso.DsoWithImageData.image_data">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">image_data</span></span><a class="headerlink" href="#pydetecdiv.domain.dso.DsoWithImageData.image_data" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the list of ImageData objects whose parent if the current DSO</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the list of associated ImageData objects</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of ImageData objects</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="domain-specific-classes">
+<h2>Domain-specific classes<a class="headerlink" href="#domain-specific-classes" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.Project.</span></span><span class="sig-name descname"><span class="pre">Project</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dbname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Project class to keep track of the database connection and providing basic methods to retrieve objects. Actually
+hides repository from other domain classes. This class handles actual records and domain-specific objects while the
+repository deals with records and data-access objects. Data exchange between Repository and Project objects is
+achieved through the use of dict representing standardized records.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.uuid">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">uuid</span></span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.uuid" title="Permalink to this definition"></a></dt>
+<dd><p>Property returning the uuid associated to this project</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.author">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">author</span></span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.author" title="Permalink to this definition"></a></dt>
+<dd><p>Property returning the author associated to this project</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.date">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">date</span></span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.date" title="Permalink to this definition"></a></dt>
+<dd><p>Property returning the date of this project</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.raw_dataset">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">raw_dataset</span></span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.raw_dataset" title="Permalink to this definition"></a></dt>
+<dd><p>Property returning the raw dataset object associated to this project</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.commit">
+<span class="sig-name descname"><span class="pre">commit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.commit" title="Permalink to this definition"></a></dt>
+<dd><p>Commit operations performed on objects (creation and update) to save them into the repository.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.cancel">
+<span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.cancel" title="Permalink to this definition"></a></dt>
+<dd><p>Cancel operations performed on objects since last commit</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.image_resource">
+<span class="sig-name descname"><span class="pre">image_resource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.image_resource" title="Permalink to this definition"></a></dt>
+<dd><p>Returns an image resource from a path and a pattern defining c, z and t in the case of multiple files</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>str</em><em> or </em><em>list</em><em> of </em><em>str</em>) – image path</p></li>
+<li><p><strong>pattern</strong> (<em>str</em>) – pattern defining c, z and t in the case of multiple files</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>an image resource</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pydetecdiv.domain.ImageResource.ImageResource" title="pydetecdiv.domain.ImageResource.ImageResource">ImageResource</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.import_images">
+<span class="sig-name descname"><span class="pre">import_images</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.import_images" title="Permalink to this definition"></a></dt>
+<dd><p>Import images specified in a list of files into a destination</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>image_files</strong> – list of image files to import</p>
+</dd>
+</dl>
+<p>:type image_files:list of str
+:param destination: destination directory to import files into
+:type destination: str
+:param kwargs: extra keyword arguments
+:return: the list of imported files. This list can be used to roll the copy back if needed
+:rtype: list of str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.import_source_path">
+<span class="sig-name descname"><span class="pre">import_source_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_path</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.import_source_path" title="Permalink to this definition"></a></dt>
+<dd><p>Import images from a source path. All files corresponding to the path will be imported.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>source_path</strong> (<em>str</em>) – the source path (glob pattern)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.annotate">
+<span class="sig-name descname"><span class="pre">annotate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.annotate" title="Permalink to this definition"></a></dt>
+<dd><p>Annotate data in a dataset using a regular expression applied to columns specified by source (column name or
+callable returning a str built from column names)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> (<em>Dataset object</em>) – the dataset DSO whose data should be annotated</p></li>
+<li><p><strong>source</strong> (<em>str</em><em> or </em><em>callable</em>) – source column(s) used to determine the annotations</p></li>
+<li><p><strong>columns</strong> (<em>tuple</em><em> of </em><em>str</em>) – annotation columns to add to the dataframe representing Data objects</p></li>
+<li><p><strong>regex</strong> (<em>str</em>) – the regular expression defining columns</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a table representing annotated Data objects</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.create_fov_from_raw_data">
+<span class="sig-name descname"><span class="pre">create_fov_from_raw_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.create_fov_from_raw_data" title="Permalink to this definition"></a></dt>
+<dd><p>Create domain-specific objects from raw data using a regular expression applied to a bioimageit database field
+or a combination thereof specified by source. DSOs to create are specified by the values in keys.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source</strong> (<em>str</em><em> or </em><em>callable returning a str</em>) – the database field or combination of fields to apply the regular expression to</p></li>
+<li><p><strong>keys</strong> (<em>tuple</em><em> of </em><em>str</em>) – the list of classes created objects belong to</p></li>
+<li><p><strong>regex</strong> (<em>regular expression str</em>) – regular expression defining the DSOs’ names</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.id_mapping">
+<span class="sig-name descname"><span class="pre">id_mapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.id_mapping" title="Permalink to this definition"></a></dt>
+<dd><p>Return name to <a href="#id1"><span class="problematic" id="id2">id_</span></a> mapping for objects of a given class</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>class_name</strong> (<em>str</em>) – the class name</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the name to <a href="#id3"><span class="problematic" id="id4">id_</span></a> mapping</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.save_record">
+<span class="sig-name descname"><span class="pre">save_record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">record</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.save_record" title="Permalink to this definition"></a></dt>
+<dd><p>Creates and saves an object of class named class_name from its record without requiring the creation of a DSO.
+This method can be useful for creating associated objects with mutual dependency.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>class_name</strong> (<em>str</em>) – the class name of the object to create</p></li>
+<li><p><strong>record</strong> (<em>dict</em>) – the record representing the object to create</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the id of the created object</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dso</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.save" title="Permalink to this definition"></a></dt>
+<dd><p>Save an object to the repository if it is new or has been modified</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dso</strong> (<a class="reference internal" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="pydetecdiv.domain.dso.DomainSpecificObject"><em>DomainSpecificObject</em></a>) – the domain-specific object to save</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the id of the saved object if it was created</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.delete">
+<span class="sig-name descname"><span class="pre">delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dso</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.delete" title="Permalink to this definition"></a></dt>
+<dd><p>Delete a domain-specific object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dso</strong> (<em>object</em><em> (</em><a class="reference internal" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="pydetecdiv.domain.dso.DomainSpecificObject"><em>DomainSpecificObject</em></a><em>)</em>) – the object to delete</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.get_object">
+<span class="sig-name descname"><span class="pre">get_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uuid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="pydetecdiv.domain.dso.DomainSpecificObject"><span class="pre">DomainSpecificObject</span></a></span></span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.get_object" title="Permalink to this definition"></a></dt>
+<dd><p>Get an object referenced by its id</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>class_name</strong> (<em>class inheriting DomainSpecificObject</em>) – the class of the requested object</p></li>
+<li><p><strong>id</strong> (<em>int</em>) – the id reference of the object</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the desired object</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>object (<a class="reference internal" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="pydetecdiv.domain.dso.DomainSpecificObject">DomainSpecificObject</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.get_named_object">
+<span class="sig-name descname"><span class="pre">get_named_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="pydetecdiv.domain.dso.DomainSpecificObject"><span class="pre">DomainSpecificObject</span></a></span></span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.get_named_object" title="Permalink to this definition"></a></dt>
+<dd><p>Return a named object by its name</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>class_name</strong> (<em>str</em>) – class name of the requested object</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – the name of the requested object</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the object</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="pydetecdiv.domain.dso.DomainSpecificObject">DomainSpecificObject</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.get_objects">
+<span class="sig-name descname"><span class="pre">get_objects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.get_objects" title="Permalink to this definition"></a></dt>
+<dd><p>Get a list of all domain objects of a given class in the current project retrieved from the repository</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>class_name</strong> (<em>str</em>) – the class name of the domain-specific objects to be returned</p></li>
+<li><p><strong>id_list</strong> (<em>list</em><em> of </em><em>int</em>) – the list of ids for the objects to be retrieved</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a list of all the objects of that class in the project with all their associated metadata</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of the requested domain-specific objects</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.count_objects">
+<span class="sig-name descname"><span class="pre">count_objects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.count_objects" title="Permalink to this definition"></a></dt>
+<dd><p>Count all objects of a given class in the current project</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>class_name</strong> (<em>str</em>) – the class name of the domain-specific objects to count</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the number of objects of the requested class</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.has_links">
+<span class="sig-name descname"><span class="pre">has_links</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.has_links" title="Permalink to this definition"></a></dt>
+<dd><p>Checks whether there are links to a given object from objects of a given class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>class_name</strong> (<em>str</em>) – the name of the class from which the existence of links is tested</p></li>
+<li><p><strong>to</strong> (<em>DomainSpecificObject object</em>) – the object which is tested for existence of links from class_name class</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if links exist, False otherwise</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.count_links">
+<span class="sig-name descname"><span class="pre">count_links</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.count_links" title="Permalink to this definition"></a></dt>
+<dd><p>Counts the number of objects of a given class having a link to an object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>class_name</strong> (<em>str</em>) – the name of the class whose links to the specified object are counted</p></li>
+<li><p><strong>to</strong> (<em>DomainSpecificObject object</em>) – the object to which links are counted</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the number of objects of class class_name that are linked to the specified object</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.get_linked_objects">
+<span class="sig-name descname"><span class="pre">get_linked_objects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.get_linked_objects" title="Permalink to this definition"></a></dt>
+<dd><p>A method returning the list of all objects of class defined by class_name that are linked to an object specified
+by argument to=
+Note that for ROIs linked to a FOV, this method also returns the initial ROI (full-FOV) even if other ROIs have
+been created. If initial ROIs are not desired, then the FOV.roi_list property should be used instead.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>class_name</strong> (<em>str</em>) – the class name of the objects to retrieve</p></li>
+<li><p><strong>to</strong> (<a class="reference internal" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="pydetecdiv.domain.dso.DomainSpecificObject"><em>DomainSpecificObject</em></a>) – the object the retrieve objects should be linked to</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the list of objects linked to linked_to object</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of objects</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.link_objects">
+<span class="sig-name descname"><span class="pre">link_objects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dso1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="pydetecdiv.domain.dso.DomainSpecificObject"><span class="pre">DomainSpecificObject</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">dso2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="pydetecdiv.domain.dso.DomainSpecificObject"><span class="pre">DomainSpecificObject</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.link_objects" title="Permalink to this definition"></a></dt>
+<dd><p>Create a direct link between two objects. This method only works for objects that have a direct logical
+connection defined in an association table. It does not work to create transitive links with intermediate
+objects</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dso1</strong> (<em>object</em>) – first domain-specific object to link</p></li>
+<li><p><strong>dso2</strong> (<em>object</em>) – second domain-specific object to link</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.unlink_objects">
+<span class="sig-name descname"><span class="pre">unlink_objects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dso1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="pydetecdiv.domain.dso.DomainSpecificObject"><span class="pre">DomainSpecificObject</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">dso2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="pydetecdiv.domain.dso.DomainSpecificObject"><span class="pre">DomainSpecificObject</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.unlink_objects" title="Permalink to this definition"></a></dt>
+<dd><p>Delete a direct link between two objects. This method only works for objects that have a direct logical
+connection defined in an association table. It does not work to delete transitive links with intermediate
+objects</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dso1</strong> (<em>object</em>) – first domain-specific object to unlink</p></li>
+<li><p><strong>dso2</strong> (<em>object</em>) – second domain-specific object to unlink</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.build_dso">
+<span class="sig-name descname"><span class="pre">build_dso</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rec</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.build_dso" title="Permalink to this definition"></a></dt>
+<dd><p>factory method to build a dso of class <a href="#id5"><span class="problematic" id="id6">class_</span></a> from record rec or return the pooled object if it was already
+created. Note that if the object was already in the pool, values in the record are not used to update the
+object. To make any change to the object’s attribute, the object’s class methods and setter should be used
+instead as they ensure that values are checked for validity and new attributes are saved to the persistence
+back-end</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>class_name</strong> (<em>str</em>) – the class name of the dso to build</p></li>
+<li><p><strong>rec</strong> – the record representing the object to build (if <a href="#id7"><span class="problematic" id="id8">id_</span></a> is not in the record, the object is a new</p></li>
+</ul>
+</dd>
+</dl>
+<p>creation
+:type rec: dict
+:return: the requested object
+:rtype: DomainSpecificObject</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.info">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">info</span></span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.info" title="Permalink to this definition"></a></dt>
+<dd><p>Returns ready-to-print information about project</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>project information</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.FOV.FOV">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.FOV.</span></span><span class="sig-name descname"><span class="pre">FOV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.FOV.FOV" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.dso.NamedDSO" title="pydetecdiv.domain.dso.NamedDSO"><code class="xref py py-class docutils literal notranslate"><span class="pre">NamedDSO</span></code></a>, <a class="reference internal" href="#pydetecdiv.domain.dso.BoxedDSO" title="pydetecdiv.domain.dso.BoxedDSO"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoxedDSO</span></code></a>, <a class="reference internal" href="#pydetecdiv.domain.dso.DsoWithImageData" title="pydetecdiv.domain.dso.DsoWithImageData"><code class="xref py py-class docutils literal notranslate"><span class="pre">DsoWithImageData</span></code></a></p>
+<p>A business-logic class defining valid operations and attributes of Fields of view (FOV)</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.FOV.FOV.delete">
+<span class="sig-name descname"><span class="pre">delete</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.FOV.FOV.delete" title="Permalink to this definition"></a></dt>
+<dd><p>Delete the current FOV, first deleting all linked ROIs that would be consequently left orphaned</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.FOV.FOV.record">
+<span class="sig-name descname"><span class="pre">record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">no_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.FOV.FOV.record" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a record dictionary of the current FOV</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>no_id</strong> (<em>bool</em>) – if True, does not return <a href="#id9"><span class="problematic" id="id10">id_</span></a> (useful for transferring from one project to another)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>record dictionary</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.FOV.FOV.info">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">info</span></span><a class="headerlink" href="#pydetecdiv.domain.FOV.FOV.info" title="Permalink to this definition"></a></dt>
+<dd><p>Returns ready-to-print information about FOV</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>FOV information</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.FOV.FOV.comments">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">comments</span></span><a class="headerlink" href="#pydetecdiv.domain.FOV.FOV.comments" title="Permalink to this definition"></a></dt>
+<dd><p>comments property of FOV</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the comments</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.FOV.FOV.data">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#pydetecdiv.domain.FOV.FOV.data" title="Permalink to this definition"></a></dt>
+<dd><p>Property returning the Data objects associated to this FOV</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the data associated to this FOV</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of Data objects</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.FOV.FOV.roi_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">roi_list</span></span><a class="headerlink" href="#pydetecdiv.domain.FOV.FOV.roi_list" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the list of ROI objects whose parent if the current FOV</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the list of associated ROIs</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of ROI objects</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.FOV.FOV.image_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">image_list</span></span><a class="headerlink" href="#pydetecdiv.domain.FOV.FOV.image_list" title="Permalink to this definition"></a></dt>
+<dd><p>Return a list of images related to this FOV</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of images</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of Image objects</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.FOV.FOV.initial_roi">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">initial_roi</span></span><a class="headerlink" href="#pydetecdiv.domain.FOV.FOV.initial_roi" title="Permalink to this definition"></a></dt>
+<dd><p>Return the initial ROI, created at the creation of this FOV and representing the full FOV</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the initial ROI</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>ROI object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.FOV.FOV.image_resource">
+<span class="sig-name descname"><span class="pre">image_resource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'data'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.FOV.FOV.image_resource" title="Permalink to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Return the image resource (single multipage file of a series of files) corresponding to the FOV in a specific</dt><dd><p>dataset</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> (<em>str</em>) – the dataset name</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the image resource</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pydetecdiv.domain.ImageResource.ImageResource" title="pydetecdiv.domain.ImageResource.ImageResource">ImageResource</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ROI.ROI">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.ROI.</span></span><span class="sig-name descname"><span class="pre">ROI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ROI.ROI" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.dso.NamedDSO" title="pydetecdiv.domain.dso.NamedDSO"><code class="xref py py-class docutils literal notranslate"><span class="pre">NamedDSO</span></code></a>, <a class="reference internal" href="#pydetecdiv.domain.dso.BoxedDSO" title="pydetecdiv.domain.dso.BoxedDSO"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoxedDSO</span></code></a>, <a class="reference internal" href="#pydetecdiv.domain.dso.DsoWithImageData" title="pydetecdiv.domain.dso.DsoWithImageData"><code class="xref py py-class docutils literal notranslate"><span class="pre">DsoWithImageData</span></code></a></p>
+<p>A business-logic class defining valid operations and attributes of Regions of interest (ROI)</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ROI.ROI.delete">
+<span class="sig-name descname"><span class="pre">delete</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ROI.ROI.delete" title="Permalink to this definition"></a></dt>
+<dd><p>Deletes this ROI if and only if it is not the full-FOV one which should serve to keep track of original data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ROI.ROI.check_validity">
+<span class="sig-name descname"><span class="pre">check_validity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ROI.ROI.check_validity" title="Permalink to this definition"></a></dt>
+<dd><p>Checks the current ROI lies within its parent. If it does not, this method will throw a JuttingError exception</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ROI.ROI.fov">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fov</span></span><a class="headerlink" href="#pydetecdiv.domain.ROI.ROI.fov" title="Permalink to this definition"></a></dt>
+<dd><p>property returning the FOV object this ROI is a region of</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the parent FOV object</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#pydetecdiv.domain.FOV.FOV" title="pydetecdiv.domain.FOV.FOV">FOV</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ROI.ROI.image_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">image_list</span></span><a class="headerlink" href="#pydetecdiv.domain.ROI.ROI.image_list" title="Permalink to this definition"></a></dt>
+<dd><p>Return a list of images related to this ROI</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of images</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of Image objects</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ROI.ROI.bottom_right">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bottom_right</span></span><a class="headerlink" href="#pydetecdiv.domain.ROI.ROI.bottom_right" title="Permalink to this definition"></a></dt>
+<dd><p>The bottom-right corner of the ROI in the FOV</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the coordinates of the bottom-right corner</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>a tuple of two int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ROI.ROI.record">
+<span class="sig-name descname"><span class="pre">record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">no_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ROI.ROI.record" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a record dictionary of the current ROI</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>no_id</strong> – if True, the <a href="#id11"><span class="problematic" id="id12">id_</span></a> is not passed included in the record to allow transfer from one project to</p>
+</dd>
+</dl>
+<p>another
+:type no_id: bool
+:return: record dictionary
+:rtype: dict</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Data.Data">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.Data.</span></span><span class="sig-name descname"><span class="pre">Data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">author</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meta_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_val</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Data.Data" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.dso.NamedDSO" title="pydetecdiv.domain.dso.NamedDSO"><code class="xref py py-class docutils literal notranslate"><span class="pre">NamedDSO</span></code></a></p>
+<p>A business-logic class defining valid operations and attributes of data</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Data.Data.dataset">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dataset</span></span><a class="headerlink" href="#pydetecdiv.domain.Data.Data.dataset" title="Permalink to this definition"></a></dt>
+<dd><p>Property returning the Dataset object this data belongs to</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the Dataset this Data belongs to</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dataset object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Data.Data.url">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">url</span></span><a class="headerlink" href="#pydetecdiv.domain.Data.Data.url" title="Permalink to this definition"></a></dt>
+<dd><p>URL property of the data file, relative to the workspace directory or absolute path if file are stored in place</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>relative or absolute path of the data file</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Data.Data.fov">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fov</span></span><a class="headerlink" href="#pydetecdiv.domain.Data.Data.fov" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the list of FOV objects associated to the current data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the list of associated FOVs</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of FOV objects</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Data.Data.record">
+<span class="sig-name descname"><span class="pre">record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">no_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Data.Data.record" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a record dictionary of the current Data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>no_id</strong> – if True, the <a href="#id13"><span class="problematic" id="id14">id_</span></a> is not passed included in the record to allow transfer from one project to</p>
+</dd>
+</dl>
+<p>another
+:type no_id: bool
+:return: record dictionary
+:rtype: dict</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Dataset.Dataset">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.Dataset.</span></span><span class="sig-name descname"><span class="pre">Dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Dataset.Dataset" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.dso.NamedDSO" title="pydetecdiv.domain.dso.NamedDSO"><code class="xref py py-class docutils literal notranslate"><span class="pre">NamedDSO</span></code></a></p>
+<p>A business-logic class defining valid operations and attributes of data</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Dataset.Dataset.url">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">url</span></span><a class="headerlink" href="#pydetecdiv.domain.Dataset.Dataset.url" title="Permalink to this definition"></a></dt>
+<dd><p>URL property of the data file, relative to the workspace directory or absolute path if file are stored in place</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>relative or absolute path of the data file</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Dataset.Dataset.data_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data_list</span></span><a class="headerlink" href="#pydetecdiv.domain.Dataset.Dataset.data_list" title="Permalink to this definition"></a></dt>
+<dd><p>returns the list of data files in dataset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of Data objects</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of Data objects</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Dataset.Dataset.record">
+<span class="sig-name descname"><span class="pre">record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">no_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Dataset.Dataset.record" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a record dictionary of the current Dataset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>no_id</strong> (<em>bool</em>) – if True, the <a href="#id15"><span class="problematic" id="id16">id_</span></a> is not passed included in the record to allow transfer from one project to another</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>record dictionary</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.ImageResource.</span></span><span class="sig-name descname"><span class="pre">ImageResource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_mem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A generic class to access image resources (files) on disk without having to load whole time series into memory</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.shape">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.shape" title="Permalink to this definition"></a></dt>
+<dd><p>The image resource shape (should habitually be 5D with the following dimensions TCZYX)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.dims">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dims</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.dims" title="Permalink to this definition"></a></dt>
+<dd><p>The image resource dimensions with their size</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.sizeT">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeT</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.sizeT" title="Permalink to this definition"></a></dt>
+<dd><p>The number of time frames</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.sizeC">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeC</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.sizeC" title="Permalink to this definition"></a></dt>
+<dd><p>The number of channels</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.sizeZ">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeZ</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.sizeZ" title="Permalink to this definition"></a></dt>
+<dd><p>The number of layers</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.sizeY">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeY</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.sizeY" title="Permalink to this definition"></a></dt>
+<dd><p>The image height</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.sizeX">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeX</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.sizeX" title="Permalink to this definition"></a></dt>
+<dd><p>the image width</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.image">
+<span class="sig-name descname"><span class="pre">image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drift</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.image" title="Permalink to this definition"></a></dt>
+<dd><p>A 2D grayscale image (on frame, one channel and one layer)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>C</strong> (<em>int</em>) – the channel index</p></li>
+<li><p><strong>Z</strong> (<em>int</em>) – the layer index</p></li>
+<li><p><strong>T</strong> (<em>int</em>) – the frame index</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a 2D data array</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.data_sample">
+<span class="sig-name descname"><span class="pre">data_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.data_sample" title="Permalink to this definition"></a></dt>
+<dd><p>Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for
+regions of interest from a field of view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>slice</em>) – the X slice</p></li>
+<li><p><strong>Y</strong> (<em>slice</em>) – the Y slice</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the sample data (in-memory)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.open">
+<span class="sig-name descname"><span class="pre">open</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.open" title="Permalink to this definition"></a></dt>
+<dd><p>Open the memory mapped file to access data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.close" title="Permalink to this definition"></a></dt>
+<dd><p>Close the memory mapped file</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.flush">
+<span class="sig-name descname"><span class="pre">flush</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.flush" title="Permalink to this definition"></a></dt>
+<dd><p>Flush the data to save changes to the meory mapped file</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.refresh">
+<span class="sig-name descname"><span class="pre">refresh</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.refresh" title="Permalink to this definition"></a></dt>
+<dd><p>Close and open the memory mapped file to save memory if needed. Useful when creating a new file or making lots
+of changes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.compute_drift">
+<span class="sig-name descname"><span class="pre">compute_drift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'phase_correlation'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.compute_drift" title="Permalink to this definition"></a></dt>
+<dd><p>Compute drift along time using the specified method</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>method</strong> (<em>str</em>) – the method to compute drift</p></li>
+<li><p><strong>kwargs</strong> – keyword arguments passed to the drift computation method</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the cumulative transforms for drift correction</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.compute_drift_phase_correlation_cv2">
+<span class="sig-name descname"><span class="pre">compute_drift_phase_correlation_cv2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_mem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.compute_drift_phase_correlation_cv2" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the cumulative transforms (dx, dy) to apply in order to correct the drift using phase correlation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Z</strong> (<em>int</em>) – the layer index</p></li>
+<li><p><strong>C</strong> (<em>int</em>) – the channel index</p></li>
+<li><p><strong>max_mem</strong> (<em>int</em>) – maximum memory use when using memory mapped TIFF</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the cumulative drift transforms dx, dy, dr</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.compute_drift_vidstab">
+<span class="sig-name descname"><span class="pre">compute_drift_vidstab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_mem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.compute_drift_vidstab" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the cumulative transforms (dx, dy, dr) to apply in order to stabilize the time series and correct drift</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Z</strong> (<em>int</em>) – the layer index</p></li>
+<li><p><strong>C</strong> (<em>int</em>) – the channel index</p></li>
+<li><p><strong>max_mem</strong> (<em>int</em>) – maximum memory use when using memory mapped TIFF</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the cumulative drift transforms dx, dy, dr</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.correct_drift">
+<span class="sig-name descname"><span class="pre">correct_drift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">drift</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_mem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.correct_drift" title="Permalink to this definition"></a></dt>
+<dd><p>Apply the drift correction and save to a multipage TIF file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>drift</strong> (<em>pandas DataFrame</em>) – the cumulative transforms to apply</p></li>
+<li><p><strong>filename</strong> (<em>str</em>) – the file name to save the stabilized time series to</p></li>
+<li><p><strong>max_mem</strong> (<em>int</em>) – maximum memory allowed use</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.Tool.</span></span><span class="sig-name descname"><span class="pre">Tool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A class for handling tools specified by XML files. A Tool object represents a generic tool in the toolbox. Internal
+tools must inherit from this class with the addition of a supplementary method implementing the tool’s algorithm.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool.init_dso_inputs">
+<span class="sig-name descname"><span class="pre">init_dso_inputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool.init_dso_inputs" title="Permalink to this definition"></a></dt>
+<dd><p>Initialize the DSOs for input parameters and place them in the dso field.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>project</strong> – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool.init_test">
+<span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_param</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool.init_test" title="Permalink to this definition"></a></dt>
+<dd><p>Initialize values of parameters for testing purposes. If an input defines a DSO then its dso field is set to the
+corresponding DSO or list thereof.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>test_param</strong> (<em>dict</em>) – the parameters for the test</p></li>
+<li><p><strong>project</strong> (<a class="reference internal" href="#pydetecdiv.domain.Project.Project" title="pydetecdiv.domain.Project.Project"><em>Project</em></a>) – the pyDetecDiv project the test must be run on</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool.root">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">root</span></span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool.root" title="Permalink to this definition"></a></dt>
+<dd><p>Convenience property returning the root of the Tool’s XML configuration</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the root of the XML tool definition</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>xml.etree.Element ‘tool’</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool.name" title="Permalink to this definition"></a></dt>
+<dd><p>Property returning the name of the tool</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tool name</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool.version">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">version</span></span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool.version" title="Permalink to this definition"></a></dt>
+<dd><p>Property returning the version of the tool</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tool version</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool.categories">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">categories</span></span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool.categories" title="Permalink to this definition"></a></dt>
+<dd><p>Property returning the categories the tool belongs to</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tool categories</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool.command_line">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">command_line</span></span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool.command_line" title="Permalink to this definition"></a></dt>
+<dd><p>Property returning the command line</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool.attributes">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">attributes</span></span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool.attributes" title="Permalink to this definition"></a></dt>
+<dd><p>Convenience property returning the tool’s attributes as defined in the root node</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>attributes</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool.tests">
+<span class="sig-name descname"><span class="pre">tests</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool.tests" title="Permalink to this definition"></a></dt>
+<dd><p>Return the parameters for running the testing</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool.parameters">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">parameters</span></span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool.parameters" title="Permalink to this definition"></a></dt>
+<dd><p>Return the all the input and output parameters for running the tool</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>input and ouput parameters</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict of Parameter objects (Input and Output)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Run.Run">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.Run.</span></span><span class="sig-name descname"><span class="pre">Run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tool</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Run.Run" title="Permalink to this definition"></a></dt>
+<dd><p>A business-logic class defining valid operations and attributes of data</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Run.Run.record">
+<span class="sig-name descname"><span class="pre">record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">no_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Run.Run.record" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a record dictionary of the current Data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>no_id</strong> (<em>bool</em>) – if True, the <a href="#id17"><span class="problematic" id="id18">id_</span></a> is not passed included in the record to allow transfer from one project to another</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>record dictionary</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Run.Run.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">testing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Run.Run.execute" title="Permalink to this definition"></a></dt>
+<dd><p>Execute the job after having installed requirements if necessary</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Run.Run.test">
+<span class="sig-name descname"><span class="pre">test</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Run.Run.test" title="Permalink to this definition"></a></dt>
+<dd><p>Run the testing</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Experiment.Experiment">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.Experiment.</span></span><span class="sig-name descname"><span class="pre">Experiment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">author</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_dataset</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Experiment.Experiment" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.dso.NamedDSO" title="pydetecdiv.domain.dso.NamedDSO"><code class="xref py py-class docutils literal notranslate"><span class="pre">NamedDSO</span></code></a></p>
+<p>A business-logic class defining valid operations and attributes of data</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Experiment.Experiment.raw_dataset">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">raw_dataset</span></span><a class="headerlink" href="#pydetecdiv.domain.Experiment.Experiment.raw_dataset" title="Permalink to this definition"></a></dt>
+<dd><p>property returning the raw dataset object for this experiment</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>raw dataset</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dataset object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Experiment.Experiment.record">
+<span class="sig-name descname"><span class="pre">record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">no_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Experiment.Experiment.record" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a record dictionary of the current Experiment object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>no_id</strong> (<em>bool</em>) – if True, the <a href="#id19"><span class="problematic" id="id20">id_</span></a> is not passed included in the record to allow transfer from one project to another</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>record dictionary</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-pydetecdiv.domain.parameters">
+<span id="parameters-classes"></span><h2>Parameters classes<a class="headerlink" href="#module-pydetecdiv.domain.parameters" title="Permalink to this heading"></a></h2>
+<p>Parameter types classes for validation, pre and post-processing of parameters</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.Parameter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.parameters.</span></span><span class="sig-name descname"><span class="pre">Parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tool</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.Parameter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A generic parameter class to represent both inputs and outputs parameters</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.Parameter.set_value">
+<span class="sig-name descname"><span class="pre">set_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.Parameter.set_value" title="Permalink to this definition"></a></dt>
+<dd><p>Set the parameter’s value</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> – the value</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.Parameter.set_dso">
+<span class="sig-name descname"><span class="pre">set_dso</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.Parameter.set_dso" title="Permalink to this definition"></a></dt>
+<dd><p>Get the DSO or the DSO list corresponding to the parameter’s value representing the name of that DSO</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>project</strong> – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.Parameter.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#pydetecdiv.domain.parameters.Parameter.name" title="Permalink to this definition"></a></dt>
+<dd><p>The parameter’s name</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The parameter’s name</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.Parameter.format">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">format</span></span><a class="headerlink" href="#pydetecdiv.domain.parameters.Parameter.format" title="Permalink to this definition"></a></dt>
+<dd><p>The data format</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The data format</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.Parameter.label">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">label</span></span><a class="headerlink" href="#pydetecdiv.domain.parameters.Parameter.label" title="Permalink to this definition"></a></dt>
+<dd><p>The label explaining the parameter for user interaction (GUI, text interface, etc.)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The label</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.Parameter.default_value">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">default_value</span></span><a class="headerlink" href="#pydetecdiv.domain.parameters.Parameter.default_value" title="Permalink to this definition"></a></dt>
+<dd><p>The default value for this parameter</p>
+<p>:return:The default value
+:rtype: str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.Parameter.is_input">
+<span class="sig-name descname"><span class="pre">is_input</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.Parameter.is_input" title="Permalink to this definition"></a></dt>
+<dd><p>Return True if this parameter defines an input</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if this is an input parameter, False otherwise</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.Parameter.is_output">
+<span class="sig-name descname"><span class="pre">is_output</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.Parameter.is_output" title="Permalink to this definition"></a></dt>
+<dd><p>Return True if this parameter defines an output</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if this is an output parameter, False otherwise</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.Parameter.is_multiple">
+<span class="sig-name descname"><span class="pre">is_multiple</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.Parameter.is_multiple" title="Permalink to this definition"></a></dt>
+<dd><p>Return True if this parameter can take multiple values</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if this parameter can take multiple values, False otherwise</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.Parameter.is_image">
+<span class="sig-name descname"><span class="pre">is_image</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.Parameter.is_image" title="Permalink to this definition"></a></dt>
+<dd><p>Check the parameter represents image data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if the parameter represents image data, False otherwise</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.Parameter.is_dso">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_dso</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.Parameter.is_dso" title="Permalink to this definition"></a></dt>
+<dd><p>Check the parameter represents a DSO</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if the parameter represents a DSO, False otherwise</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.TextParameter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.parameters.</span></span><span class="sig-name descname"><span class="pre">TextParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tool</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.TextParameter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.parameters.Parameter" title="pydetecdiv.domain.parameters.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a></p>
+<p>Text parameter</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.IntegerParameter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.parameters.</span></span><span class="sig-name descname"><span class="pre">IntegerParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tool</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.IntegerParameter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.parameters.Parameter" title="pydetecdiv.domain.parameters.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a></p>
+<p>Integer parameter</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.IntegerParameter.default_value">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">default_value</span></span><a class="headerlink" href="#pydetecdiv.domain.parameters.IntegerParameter.default_value" title="Permalink to this definition"></a></dt>
+<dd><p>The default value for this parameter</p>
+<p>:return:The default value
+:rtype: str</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.FloatParameter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.parameters.</span></span><span class="sig-name descname"><span class="pre">FloatParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tool</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.FloatParameter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.parameters.Parameter" title="pydetecdiv.domain.parameters.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a></p>
+<p>Float parameter</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.FloatParameter.default_value">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">default_value</span></span><a class="headerlink" href="#pydetecdiv.domain.parameters.FloatParameter.default_value" title="Permalink to this definition"></a></dt>
+<dd><p>The default value for this parameter</p>
+<p>:return:The default value
+:rtype: str</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.BooleanParameter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.parameters.</span></span><span class="sig-name descname"><span class="pre">BooleanParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tool</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.BooleanParameter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.parameters.Parameter" title="pydetecdiv.domain.parameters.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a></p>
+<p>Boolean parameter</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.BooleanParameter.default_value">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">default_value</span></span><a class="headerlink" href="#pydetecdiv.domain.parameters.BooleanParameter.default_value" title="Permalink to this definition"></a></dt>
+<dd><p>The checked value if specified in the configuration file or False if it was not</p>
+<p>:return:The default value
+:rtype: bool</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.SelectParameter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.parameters.</span></span><span class="sig-name descname"><span class="pre">SelectParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tool</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.SelectParameter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.parameters.Parameter" title="pydetecdiv.domain.parameters.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a></p>
+<p>Selection parameter</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.ColumnListParameter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.parameters.</span></span><span class="sig-name descname"><span class="pre">ColumnListParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tool</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.ColumnListParameter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.parameters.Parameter" title="pydetecdiv.domain.parameters.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a></p>
+<p>Column list paramter</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.DataParameter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.parameters.</span></span><span class="sig-name descname"><span class="pre">DataParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tool</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.DataParameter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.parameters.Parameter" title="pydetecdiv.domain.parameters.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a></p>
+<p>Data parameter</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.DataParameter.is_image">
+<span class="sig-name descname"><span class="pre">is_image</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.DataParameter.is_image" title="Permalink to this definition"></a></dt>
+<dd><p>Check the parameter represents image data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if the parameter represents image data, False otherwise</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.DataCollectionParameter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.parameters.</span></span><span class="sig-name descname"><span class="pre">DataCollectionParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tool</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.DataCollectionParameter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.parameters.Parameter" title="pydetecdiv.domain.parameters.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a></p>
+<p>Data collection parameter</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.DirectoryUriParameter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.parameters.</span></span><span class="sig-name descname"><span class="pre">DirectoryUriParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tool</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.DirectoryUriParameter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.parameters.Parameter" title="pydetecdiv.domain.parameters.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a></p>
+<p>Directory parameter</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.FovParameter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.parameters.</span></span><span class="sig-name descname"><span class="pre">FovParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tool</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.FovParameter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.parameters.Parameter" title="pydetecdiv.domain.parameters.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a></p>
+<p>Parameter representing one or several FOVs</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.FovParameter.is_dso">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_dso</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.FovParameter.is_dso" title="Permalink to this definition"></a></dt>
+<dd><p>Returns True since this is a DSO</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.RoiParameter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.parameters.</span></span><span class="sig-name descname"><span class="pre">RoiParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tool</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.RoiParameter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.parameters.Parameter" title="pydetecdiv.domain.parameters.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a></p>
+<p>Parameter representing one or several ROIs</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.RoiParameter.is_dso">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_dso</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.RoiParameter.is_dso" title="Permalink to this definition"></a></dt>
+<dd><p>Returns True since this is a DSO</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.DatasetParameter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.parameters.</span></span><span class="sig-name descname"><span class="pre">DatasetParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tool</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.DatasetParameter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.parameters.Parameter" title="pydetecdiv.domain.parameters.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a></p>
+<p>Parameter representing a Dataset</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.parameters.DatasetParameter.is_dso">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_dso</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.parameters.DatasetParameter.is_dso" title="Permalink to this definition"></a></dt>
+<dd><p>Returns True since this is a DSO</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="utilities.html" class="btn btn-neutral float-left" title="Utilities and global classes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="persistence.html" class="btn btn-neutral float-right" title="Persistence layer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Frédéric PLEWNIAK.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

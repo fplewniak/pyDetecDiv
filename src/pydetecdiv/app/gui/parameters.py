@@ -33,6 +33,7 @@ class ParameterWidgetFactory:
     def create(self, parameter, **kwargs):
         """
         Create the widget suitable for the parameter according to its type
+
         :param parameter: the parameter object
         :type parameter: Parameter
         :param kwargs: any extra keywords argument passed to the parameter widget object
@@ -56,6 +57,7 @@ class Options:
     def list(self):
         """
         The list of options to select from
+
         :return: dictionary of options
         """
         option_list = self.parameter.element.findall('.//option')
@@ -70,6 +72,7 @@ class Options:
         """
         Determine the list of options when they are defined by OPTIONS tag, i.e. dynamic options as opposed to the
         static options defined by OPTION tag
+
         :param options: the OPTIONS element
         :type: xml.etree.ElementTree.Element
         :return: dictionary of options
@@ -95,6 +98,7 @@ class Options:
     def get_columns(self, options):
         """
         Get the columns defined in options
+
         :param options: the OPTIONS element
         :type: xml.etree.ElementTree.Element
         :return: dictionary of columns
@@ -105,6 +109,7 @@ class Options:
     def get_filters(self, options):
         """
         Get the filters defined in options
+
         :param options: the OPTIONS element
         :type: xml.etree.ElementTree.Element
         :return: list of filters
@@ -175,6 +180,7 @@ class TextParameterWidget(ParameterWidget):
     def get_value(self):
         """
         Return the text value in the text parameter widget
+
         :return: text value
         :rtype: str
         """
@@ -195,6 +201,7 @@ class IntegerParameterWidget(ParameterWidget):
     def get_value(self):
         """
         Return the integer value specified by the spin box
+
         :return: integer value
         :rtype: int
         """
@@ -215,6 +222,7 @@ class FloatParameterWidget(ParameterWidget):
     def get_value(self):
         """
         Return the float value specified by the spin box
+
         :return: float value
         :rtype: float
         """
@@ -235,6 +243,7 @@ class BooleanParameterWidget(ParameterWidget):
     def get_value(self):
         """
         Return the checked status of the check box
+
         :return: boolean value
         :rtype: bool
         """
@@ -256,6 +265,7 @@ class SelectParameterWidget(ParameterWidget):
     def get_value(self):
         """
         Return the selection
+
         :return: selected value
         :rtype: object
         """
@@ -316,6 +326,7 @@ class FovParameterWidget(ParameterWidget):
     def get_value(self):
         """
         Return the FOV selection
+
         :return: selected FOV(s)
         :rtype: list of FOVs or FOV
         """
@@ -346,6 +357,7 @@ class RoiParameterWidget(ParameterWidget):
     def get_value(self):
         """
         Return the ROI selection
+
         :return: selected ROI(s)
         :rtype: list of ROIs or ROI
         """

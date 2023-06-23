@@ -99,6 +99,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
     def get_regex(self):
         """
         Build the complete regular expression from the individual patterns
+
         :return: the regular expression string
         """
         regex = {}
@@ -151,6 +152,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
     def find_matches(self, regexes):
         """
         Find a list of matches with the defined regular expressions
+
         :param regexes: the list of regular expressions to match
         :return: a list of matches
         """
@@ -164,6 +166,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
     def get_match_spans(matches, group):
         """
         Get the list of group positions for matches
+
         :param matches: the list of matches
         :param group: the group index to retrieve the spans for
         :return: a dictionary of spans for the patterns (FOV, C, T, Z)
@@ -174,6 +177,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
     def get_match_span(match, group=2):
         """
         Get the span of a given group in a match
+
         :param match: the match
         :param group: the group index
         :return: the group match span
@@ -186,6 +190,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         """
         Find matches in file name samples and colourize them accordingly. Non-matching pattern check boxes' background
         is set to orange. Conflicting patterns (having overlapping matches) are shown in red.
+
         :param matches: the list of matches to colourize
         """
         df = pandas.DataFrame.from_dict(self.get_match_spans(matches, 0))
@@ -225,6 +230,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
     def overlap(self, start1, end1, start2, end2):
         """
         Checks whether positions overlap
+
         :param start1: start of first span
         :param end1: end of first span
         :param start2: start of second span
@@ -237,6 +243,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
     def colourize_labels(self, pattern, colour):
         """
         Colourize the file name samples matching the pattern with the specified colour
+
         :param pattern: the pattern
         :param colour: the colour
         """
@@ -255,6 +262,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
     def choose_colour(self, object_name):
         """
         Choose colour for a given pattern specified by its object name
+
         :param object_name: the object name
         """
         target, _ = str.split(object_name, '_')
@@ -289,6 +297,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
     def button_clicked(self, button):
         """
         React to clicked button
+
         :param button: the button that was clicked
         """
         clicked_button = button.parent().standardButton(button)
@@ -316,6 +325,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
     def create_fov_annotate(self, regex):
         """
         The actual FOV creation and data annotation method
+
         :param regex: the regular expression to use for data annotation
         """
         with pydetecdiv_project(PyDetecDiv().project_name) as project:

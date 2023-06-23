@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Getting started &mdash; pyDetecDiv 0.1.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="The pyDetecDiv API reference" href="api/index.html" />
+    <link rel="prev" title="Welcome to pyDetecDiv’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            pyDetecDiv
+          </a>
+              <div class="version">
+                0.1.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User's manual</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#easy-installation-linux">Easy installation (Linux)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#installation-from-source-distribution">Installation from source distribution</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#installing-in-a-miniconda-environment">Installing in a miniconda environment</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developers' documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/index.html">The pyDetecDiv API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pyDetecDiv</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Getting started</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/getting_started.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="getting-started">
+<h1>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this heading"></a></h1>
+<section id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading"></a></h2>
+<p>The pyDetecDiv package requires at least Python 3.10</p>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading"></a></h2>
+<section id="easy-installation-linux">
+<h3>Easy installation (Linux)<a class="headerlink" href="#easy-installation-linux" title="Permalink to this heading"></a></h3>
+<p>The easiest way to install pyDetecDiv on a Linux box is to download the [pydetecdiv-0.1.0-linux64.tar.gz](<a class="reference external" href="https://github.com/fplewniak/pyDetecDiv/releases/download/v0.1.0/pydetecdiv-0.1.0-linux64.tar.gz">https://github.com/fplewniak/pyDetecDiv/releases/download/v0.1.0/pydetecdiv-0.1.0-linux64.tar.gz</a>).
+Then unpack it in a place of your choice and run the pydetecdiv executable you will find in the pydetecdiv directory.
+For a more convenient usage, you may place a link or a copy of the executable in your favourite PATH directory.</p>
+<p>Support for easy installation on other operating systems will also be available in the future.</p>
+</section>
+<section id="installation-from-source-distribution">
+<h3>Installation from source distribution<a class="headerlink" href="#installation-from-source-distribution" title="Permalink to this heading"></a></h3>
+<p>It is recommended to install pyDetecDiv in a conda environment (miniconda) to avoid conflicts.
+You will need miniconda anyway to manage and run external tools from within the pyDetecDiv interface.
+The minimum compatible Python version is 3.10.</p>
+<p>At the moment, pyDetecDiv still requires BioImageIT to be installed but this requirement should not make it into next versions.</p>
+<section id="installing-in-a-miniconda-environment">
+<h4>Installing in a miniconda environment<a class="headerlink" href="#installing-in-a-miniconda-environment" title="Permalink to this heading"></a></h4>
+<p><strong>Create a conda environment with python:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">create</span> <span class="o">-</span><span class="n">n</span> <span class="n">pyDetecDiv</span> <span class="n">python</span><span class="o">=</span><span class="mf">3.11</span>
+</pre></div>
+</div>
+<p>Then, you may activate the newly created environment before proceeding with the installation:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">activate</span> <span class="n">pyDetecDiv</span>
+</pre></div>
+</div>
+<p><strong>Install BioImageIT:</strong>
+BioImageIT needs to be installed manually as there is no pip package available.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">bioimageit</span><span class="o">/</span><span class="n">bioimageit_formats</span><span class="o">.</span><span class="n">git</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">./</span><span class="n">bioimageit_formats</span>
+<span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">bioimageit</span><span class="o">/</span><span class="n">bioimageit_core</span><span class="o">.</span><span class="n">git</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">./</span><span class="n">bioimageit_core</span>
+<span class="n">python</span> <span class="n">bioimageit_core</span><span class="o">/</span><span class="n">config</span><span class="o">.</span><span class="n">py</span> <span class="s2">&quot;$USER&quot;</span> <span class="s2">&quot;CONDA&quot;</span>
+</pre></div>
+</div>
+<p>Complete the BioImageIT configuration according to [BioImageIT documentation](<a class="reference external" href="https://bioimageit.github.io/bioimageit_core/install.html#configure-bioimageit-core">https://bioimageit.github.io/bioimageit_core/install.html#configure-bioimageit-core</a>).</p>
+<p><strong>Install pyDetecDiv:</strong>
+PyDetecDiv requires the <cite>h5py</cite> package which itself requires <cite>hdf5</cite> libraries which must be installed  before installing the python bindings as it seems that pip cannot install them:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">install</span> <span class="n">hdf5</span>
+</pre></div>
+</div>
+<p>Then, download the code and install the application:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">fplewniak</span><span class="o">/</span><span class="n">pyDetecDiv</span><span class="o">.</span><span class="n">git</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">./</span><span class="n">pyDetecDiv</span>
+</pre></div>
+</div>
+<p>That’s it. All requirements should be automatically installed in your miniconda environment.</p>
+<p><strong>To run the application, you may use:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="o">./</span><span class="n">pyDetecDiv</span><span class="o">/</span><span class="n">src</span>
+<span class="n">python</span> <span class="n">pydetecdiv</span><span class="o">/</span><span class="n">app</span><span class="o">/</span><span class="n">pydetecdiv_app</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+<p>To avoid the necessity to start the application from the <cite>pyDetecDiv/src</cite> directory, you may want to add it to your <cite>PYTHONPATH</cite> environment variable.</p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to pyDetecDiv’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api/index.html" class="btn btn-neutral float-right" title="The pyDetecDiv API reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Frédéric PLEWNIAK.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

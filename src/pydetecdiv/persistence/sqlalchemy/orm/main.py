@@ -28,6 +28,7 @@ class DAO:
     def insert(self, rec):
         """
         Inserts data in SQL database for a newly created object
+
         :param rec: the record representing the object
         :type rec: dict
         :return: the primary key of the newly created object
@@ -44,6 +45,7 @@ class DAO:
         """
         Updates data in SQL database for the object corresponding to the record, which should contain the id of the
         modified object
+
         :param rec: the record representing the object
         :type rec: dict
         :return: the primary key of the updated object
@@ -75,6 +77,7 @@ class DAO:
         """
         The actual translation engine reading the record fields and translating or excluding them if they occur in the
         translate or exclude variables
+
         :param record: the record to be translated
         :type record: dict
         :param exclude: a list of fields that must not be passed to the SQL engine
@@ -104,6 +107,7 @@ class DAO:
     def record(self):
         """
         Template for method converting a DAO row dictionary into a DSO record
+
         :return: a DSO record
         :rtype: dict
         """

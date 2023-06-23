@@ -52,6 +52,7 @@ class ProjectDialog(QDialog):
     def project_name_validator():
         """
         Name validator to filter invalid character in project name
+
         :return: the validator
         :rtype: QRegularExpressionValidator
         """
@@ -74,6 +75,7 @@ class ProjectDialog(QDialog):
     def get_project_name(self):
         """
         Method returning the chosen project name, either from QLineEdit (new project) or QComboBox (open project)
+
         :return: the project name
         :rtype: str
         """
@@ -105,6 +107,7 @@ class ProjectDialog(QDialog):
         """
         Open a project called project_name, create a new project if it does not exist, and set the Window title
         accordingly before closing the project connexion.
+
         :param project_name: the name of the project to open/create
         :type project_name: str
         """

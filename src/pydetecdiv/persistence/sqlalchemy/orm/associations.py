@@ -17,7 +17,8 @@ class Linker:
     def association(class1_name, class2_name):
         """
         Defines the possible associations between DAO classes and returns the one corresponding to the classes passed
-         as arguments.
+        as arguments.
+
         :return:
         """
         association_list = {
@@ -33,6 +34,7 @@ class Linker:
         """
         Creates a link between the specified objects, calling the appropriate association object link method, as
         provided by the associations() method above.
+
         :param obj1: the first object to link
         :type obj1: DAO
         :param obj2: the second object to link
@@ -55,6 +57,7 @@ class FovData(Base):
     def fov_to_data():
         """
         Defines and returns the relationship from FOV to ImageData tables
+
         :return: the relationship between FOV and ImageData
         :rtype: sqlalchemy.orm.RelationshipProperty object
         """
@@ -64,6 +67,7 @@ class FovData(Base):
     def data_to_fov():
         """
         Defines and returns the relationship from ImageData to FOV tables
+
         :return: the relationship between ImageData and FOV
         :rtype: sqlalchemy.orm.RelationshipProperty object
         """
@@ -73,6 +77,7 @@ class FovData(Base):
     def _link(obj1, obj2):
         """
         Creates a link between the specified FOVdao and DataDao objects.
+
         :param obj1: the first object to link
         :type obj1: FOVdao or DataDao
         :param obj2: the second object to link
@@ -91,6 +96,7 @@ class FovData(Base):
         """
         Checks there the existence of a link between the specified FOVdao and DataDao objects and creates a link
         (calling the _link method) only if there is no preexisting link.
+
         :param obj1: the first object to link
         :type obj1: FOVdao or DataDao
         :param obj2: the second object to link
@@ -107,7 +113,8 @@ class FovData(Base):
     def record(self):
         """
         A method creating a record dictionary from a FovData row dictionary.
-        :return a FovData record as a dictionary with keys() appropriate for handling by the domain layer
+
+        :return: a FovData record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """
         return {
@@ -129,6 +136,7 @@ class ROIdata(Base):
     def roi_to_data():
         """
         Defines and returns the relationship from ROI to ImageData tables
+
         :return: the relationship between ROI and ImageData
         :rtype: sqlalchemy.orm.RelationshipProperty object
         """
@@ -138,6 +146,7 @@ class ROIdata(Base):
     def data_to_roi():
         """
         Defines and returns the relationship from ImageData to ROI tables
+
         :return: the relationship between ImageData and ROI
         :rtype: sqlalchemy.orm.RelationshipProperty object
         """
@@ -147,6 +156,7 @@ class ROIdata(Base):
     def _link(obj1, obj2):
         """
         Creates a link between the specified ROIdao and DataDao objects.
+
         :param obj1: the first object to link
         :type obj1: ROIdao or DataDao
         :param obj2: the second object to link
@@ -165,6 +175,7 @@ class ROIdata(Base):
         """
         Checks there the existence of a link between the specified ROIdao and DataDao objects and creates a link
         (calling the _link method) only if there is no preexisting link.
+
         :param obj1: the first object to link
         :type obj1: ROIdao or DataDao
         :param obj2: the second object to link
@@ -181,7 +192,8 @@ class ROIdata(Base):
     def record(self):
         """
         A method creating a record dictionary from a ROIdata row dictionary.
-        :return a ROIdata record as a dictionary with keys() appropriate for handling by the domain layer
+
+        :return: a ROIdata record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """
         return {

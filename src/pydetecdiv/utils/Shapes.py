@@ -13,6 +13,7 @@ class Box:
     def __init__(self, top_left=None, bottom_right=None):
         """
         Create a box from the coordinates of top left and bottom right corners
+
         :param top_left: top left corner of the box
         :param bottom_right: bottom right corner of the box
         :type top_left: tuple of two int
@@ -33,6 +34,7 @@ class Box:
     def top_left(self):
         """
         top left corner of the box
+
         :return: coordinates of the top left corner of the box
         :rtype: tuple of two int
         """
@@ -49,6 +51,7 @@ class Box:
     def bottom_right(self):
         """
         bottom right corner of the box
+
         :return: coordinates of the bottom right corner of the box
         :rtype: tuple of two int
         """
@@ -62,6 +65,7 @@ class Box:
     def width(self):
         """
         width of the box
+
         :return: width of the box
         :rtype: int
         """
@@ -71,6 +75,7 @@ class Box:
     def height(self):
         """
         height of the box
+
         :return: height of the box
         :rtype: int
         """
@@ -80,6 +85,7 @@ class Box:
     def size(self):
         """
         size dimensions of the box, i.e. width and height
+
         :return: size dimensions of the box
         :rtype: tuple of two int
         """
@@ -87,7 +93,8 @@ class Box:
 
     def lies_in(self, other):
         """
-        Checks whether the current object lies with the boundaries of another box
+        Checks whether the current object lies within the boundaries of another box
+
         :param other: the other box
         :type other: Box
         :return: True if the current box is totally comprised in the other one

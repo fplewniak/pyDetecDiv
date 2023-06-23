@@ -23,6 +23,7 @@ class Experiment(NamedDSO):
     def raw_dataset(self):
         """
         property returning the raw dataset object for this experiment
+
         :return: raw dataset
         :rtype: Dataset object
         """
@@ -30,9 +31,9 @@ class Experiment(NamedDSO):
 
     def record(self, no_id=False):
         """
-        Returns a record dictionary of the current Data
-        :param no_id: if True, the id_ is not passed included in the record to allow transfer from one project to
-        another
+        Returns a record dictionary of the current Experiment object
+
+        :param no_id: if True, the id_ is not passed included in the record to allow transfer from one project to another
         :type no_id: bool
         :return: record dictionary
         :rtype: dict

@@ -2,11 +2,6 @@
 """Main REST like API extension of the BioImageIT original to add pyDetecDiv-specific methods
 
 This file implements the main BioImageIT API with using stateless operation like for a REST API
-
-Classes
--------
-Request
-
 """
 
 import os.path
@@ -25,8 +20,7 @@ class Request(bioimageit_core.api.request.Request):
     def create_experiment(self, name, author='', date='now', keys=None, destination=''):
         """Create a new experiment
 
-        Parameters
-        ----------
+        **Parameters**
         name: str
             Name of the experiment
         author: str
@@ -38,8 +32,7 @@ class Request(bioimageit_core.api.request.Request):
         destination: str
             Destination where the experiment is created. It is a the path of the
             directory where the experiment will be created for local use case
-        Returns
-        -------
+        **Returns**
         Experiment container with the experiment metadata
 
         """
@@ -56,6 +49,7 @@ class Request(bioimageit_core.api.request.Request):
     def annotate_raw_data_using_regex(self, experiment, keys_, regex):
         """
         Annotate raw dataset of an experiment using the source path name
+
         :param experiment: the experiment
         :type experiment: Experiment Container
         :param keys_: the annotation keys
@@ -71,6 +65,7 @@ class Request(bioimageit_core.api.request.Request):
     def annotate_using_regex(self, experiment, dataset, source, keys_, regex):
         """
         Annotate a dataset of an experiment using a regular expression
+
         :param experiment: the experiment containing the dataset to annotate
         :type experiment: Experiment Container
         :param dataset: the dataset to annotate
@@ -90,6 +85,7 @@ class Request(bioimageit_core.api.request.Request):
     def clear_annotation(self, experiment, dataset, key):
         """
         Clear annotations with the specified key in a dataset
+
         :param experiment: the experiment containing the dataset to update
         :type experiment: Experiment Container
         :param dataset: the dataset
@@ -103,6 +99,7 @@ class Request(bioimageit_core.api.request.Request):
                     format_='imagetiff', date='now', destination=None, **kwargs):
         """
         Import into an experiment a list of raw data files specified by a glob pattern
+
         :param experiment: the experiment
         :type experiment: Experiment Container
         :param files_glob: the file path specification
@@ -129,12 +126,6 @@ class Request(bioimageit_core.api.request.Request):
         selected in the database using a specified request, and the results are automatically
         saved in a new dataset of the database. All the metadata of the job (tool, request,
         parameters) are also saved in the database.
-
-        Parameters
-        ----------
-        job: Job
-            Container of the job information
-
         """
         if job.tool.type == "merge":
             self._run_job_merged(job)

@@ -35,7 +35,8 @@ class ROIdao(DAO, Base):
         """
         A method creating a record dictionary from a roi row dictionary. This method is used to convert the SQL
         table columns into the ROI record fields expected by the domain layer
-        :return a ROI record as a dictionary with keys() appropriate for handling by the domain layer
+
+        :return: a ROI record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """
         return {'id_': self.id_,
@@ -49,10 +50,11 @@ class ROIdao(DAO, Base):
 
     def data(self, roi_id):
         """
-        Returns a list of DataDao objects linked to the FOVdao object with the specified id_
-        :param fov_id: the id_ of the FOV
-        :type fov_id: int
-        :return: the list of Data records linked to the FOV
+        Returns a list of DataDao objects linked to the ROIdao object with the specified id_
+
+        :param roi_id: the id_ of the ROI
+        :type roi_id: int
+        :return: the list of Data records linked to the ROI
         :type: list of dict
         """
         return [i.record

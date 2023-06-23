@@ -33,6 +33,7 @@ class ToolboxTreeView(QTreeView):
     def contextMenuEvent(self, event):
         """
         The context menu for area manipulation
+
         :param event:
         """
         index = self.currentIndex()
@@ -129,6 +130,7 @@ class ToolboxTreeModel(TreeDictModel):
     def is_category(self, index):
         """
         Check whether the item with this index is a category
+
         :param index: index of the item to be tested
         :type index: QModelIndex
         :return: True if it is a category, False otherwise
@@ -141,6 +143,7 @@ class ToolboxTreeModel(TreeDictModel):
     def is_tool(self, index):
         """
         Check whether the item with this index is a tool
+
         :param index: index of the item to be tested
         :type index: QModelIndex
         :return: True if it is a tool, False otherwise
@@ -151,6 +154,7 @@ class ToolboxTreeModel(TreeDictModel):
     def flags(self, index):
         """
         Returns the item flags for the given index
+
         :param index: the index
         :type index: QModelIndex
         :return: the flags
@@ -171,6 +175,7 @@ class ToolboxTreeModel(TreeDictModel):
         """
         Append children to an arbitrary node represented by a dictionary. This method is called recursively to load the
         successive levels of nodes.
+
         :param data: the dictionary to load at this node
         :type data: dict
         :param parent: the internal node
