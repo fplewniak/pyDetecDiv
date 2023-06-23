@@ -1,12 +1,14 @@
 # pyDetecDiv
 Porting DetecDiv to Python
 <!-- TOC -->
-* [pyDetecDiv](#pydetecdiv)
-  * [Getting started](#getting-started)
-    * [Easy installation (Linux)](#easy-installation-linux)
+* [Getting started](#getting-started)
+  * [Easy installation (Linux)](#easy-installation-linux)
     * [Installation from source distribution](#installation-from-source-distribution)
       * [Installing in a miniconda environment](#installing-in-a-miniconda-environment)
 <!-- TOC -->
+
+Documentation (user's manual and API documentation) is available at: https://fplewniak.github.io/pyDetecDiv/
+
 ## Getting started
 ### Easy installation (Linux)
 The easiest way to install pyDetecDiv on a Linux box is to download the [pydetecdiv-0.1.0-linux64.tar.gz](https://github.com/fplewniak/pyDetecDiv/releases/download/v0.1.0/pydetecdiv-0.1.0-linux64.tar.gz). 
