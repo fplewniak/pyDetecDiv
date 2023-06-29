@@ -20,7 +20,7 @@ class DataDao(DAO, Base):
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
     uuid = Column(String(36))
     name = Column(String, unique=True, nullable=False)
-    dataset = Column(String, ForeignKey('dataset.uuid'), nullable=False, index=True)
+    dataset = Column(String, ForeignKey('dataset.id_'), nullable=False, index=True)
     author = Column(String)
     date = Column(Date)
     url = Column(String)
