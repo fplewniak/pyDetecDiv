@@ -129,7 +129,7 @@ class ShallowSQLite3(ShallowDb):
                     'id_': None,
                     'uuid': generate_uuid(),
                     'name': os.path.basename(image_file),
-                    'dataset': self.bioiit_exp.raw_dataset.uuid,
+                    'dataset': self.get_record_by_name('Dataset', 'data')['uuid'],
                     'author': get_config_value('project', 'user') if author == '' else author,
                     'date': datetime.now() if date == 'now' else datetime.fromisoformat(date),
                     'url': image_file if in_place else os.path.join(destination, os.path.basename(image_file)),
@@ -153,37 +153,37 @@ class ShallowSQLite3(ShallowDb):
         """
         self.bioiit_req.import_glob(self.bioiit_exp, source_path, **kwargs)
 
-    def determine_fov(self, source, regex):
-        """
-        Uses metadata from raw data to name corresponding FOVs
-
-        :param source: the metadata source used to define FOV names
-        :type source: str or callable
-        :param regex: regular expression providing the source pattern defining FOV names
-        :type regex: regular expression str
-        :return: a DataFrame with the data id_ and FOV names
-        :rtype: pandas DataFrame
-        """
-        return self.determine_links_using_regex('data', source, ('FOV',), regex)
-
-    def determine_links_using_regex(self, dataset_name, source, keys_, regex):
-        """
-        Uses metadata from data in a given dataset to name corresponding objects (FOV, ROIs, etc.)
-
-        :param dataset_name: the name of the dataset
-        :type dataset_name: str
-        :param source: the metadata source used to define object names
-        :type source: str or callable
-        :param keys_: the designation of objects
-        :type keys_: a tuple of str
-        :param regex: regular expression providing the source pattern defining FOV names
-        :type regex: regular expression str
-        :return: a DataFrame with the data id_ and FOV names
-        :rtype: pandas DataFrame
-        """
-        dataset = self.bioiit_req.get_dataset(self.bioiit_exp, dataset_name)
-        df = self.bioiit_req.data_service.determine_links_using_regex(dataset, source, keys_, regex)
-        return df
+    # def determine_fov(self, source, regex):
+    #     """
+    #     Uses metadata from raw data to name corresponding FOVs
+    #
+    #     :param source: the metadata source used to define FOV names
+    #     :type source: str or callable
+    #     :param regex: regular expression providing the source pattern defining FOV names
+    #     :type regex: regular expression str
+    #     :return: a DataFrame with the data id_ and FOV names
+    #     :rtype: pandas DataFrame
+    #     """
+    #     return self.determine_links_using_regex('data', source, ('FOV',), regex)
+    #
+    # def determine_links_using_regex(self, dataset_name, source, keys_, regex):
+    #     """
+    #     Uses metadata from data in a given dataset to name corresponding objects (FOV, ROIs, etc.)
+    #
+    #     :param dataset_name: the name of the dataset
+    #     :type dataset_name: str
+    #     :param source: the metadata source used to define object names
+    #     :type source: str or callable
+    #     :param keys_: the designation of objects
+    #     :type keys_: a tuple of str
+    #     :param regex: regular expression providing the source pattern defining FOV names
+    #     :type regex: regular expression str
+    #     :return: a DataFrame with the data id_ and FOV names
+    #     :rtype: pandas DataFrame
+    #     """
+    #     dataset = self.bioiit_req.get_dataset(self.bioiit_exp, dataset_name)
+    #     df = self.bioiit_req.data_service.determine_links_using_regex(dataset, source, keys_, regex)
+    #     return df
 
     def annotate_data(self, dataset_name, source, keys_, regex):
         """
