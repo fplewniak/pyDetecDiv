@@ -41,7 +41,7 @@ class ImageResource:
         self._dims = None
         self._memmap = None
         if path:
-            if pattern is None:
+            if pattern is None or len(pattern) == 0:
                 self._memmap = tifffile.memmap(path, **kwargs)
                 self.resource = AICSImage(self.path).reader
             else:
