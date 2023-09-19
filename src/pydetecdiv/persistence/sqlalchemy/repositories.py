@@ -10,7 +10,7 @@ from datetime import datetime
 
 import pandas
 import sqlalchemy
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, joinedload
 from sqlalchemy.sql.expression import Delete
 from pandas import DataFrame
 from bioimageit_core.plugins.data_factory import metadataServices
@@ -129,7 +129,7 @@ class ShallowSQLite3(ShallowDb):
                     'id_': None,
                     'uuid': generate_uuid(),
                     'name': os.path.basename(image_file),
-                    'dataset': self.get_record_by_name('Dataset', 'data')['uuid'],
+                    'dataset': self.get_record_by_name('Dataset', 'data')['id_'],
                     'author': get_config_value('project', 'user') if author == '' else author,
                     'date': datetime.now() if date == 'now' else datetime.fromisoformat(date),
                     'url': image_file if in_place else os.path.join(destination, os.path.basename(image_file)),
@@ -185,25 +185,40 @@ class ShallowSQLite3(ShallowDb):
     #     df = self.bioiit_req.data_service.determine_links_using_regex(dataset, source, keys_, regex)
     #     return df
 
-    def annotate_data(self, dataset_name, source, keys_, regex):
-        """
-        Returns a DataFrame containing all the metadata associated to raw data, including annotations created using a
-        regular expression applied to a field or a combination thereof.
+    def annotate_data(self, dataset, source, keys_, regex):
+        data_list = self.session.query(dao['Dataset']).filter(dao['Dataset'].id_ == dataset.id_).first().data_list_
 
-        :param dataset_name: name of dataset to annotate
-        :type dataset_name: str
-        :param source: the database field or combination of fields to apply the regular expression to
-        :type source: str or callable returning a str
-        :param keys_: the list of classes created objects belong to
-        :type keys_: tuple of str
-        :param regex: regular expression defining the DSOs' names
-        :type regex: regular expression str
-        :return: a table of all the metadata associated to raw data
-        :rtype: pandas DataFrame
-        """
-        dataset = self.bioiit_req.get_dataset(self.bioiit_exp, dataset_name)
-        df = self.bioiit_req.data_service.create_annotations_using_regex(dataset, source, keys_, regex)
-        return pandas.DataFrame([json.loads(k) for k in df.key_val]).join(df.drop(labels='key_val', axis=1))
+        pattern = re.compile(regex)
+
+        call_back = source if callable(source) else lambda x: x.record[source]
+
+        for data in data_list:
+            m = re.search(pattern, call_back(data))
+            if m:
+                key_val = json.loads(data.key_val)
+                key_val.update(dict(zip(keys_, [m.group(k) for k in keys_])))
+                data.key_val = json.dumps(key_val)
+        return pandas.DataFrame([d.record for d in data_list])
+
+    # def annotate_data(self, dataset_name, source, keys_, regex):
+    #     """
+    #     Returns a DataFrame containing all the metadata associated to raw data, including annotations created using a
+    #     regular expression applied to a field or a combination thereof.
+    #
+    #     :param dataset_name: name of dataset to annotate
+    #     :type dataset_name: str
+    #     :param source: the database field or combination of fields to apply the regular expression to
+    #     :type source: str or callable returning a str
+    #     :param keys_: the list of classes created objects belong to
+    #     :type keys_: tuple of str
+    #     :param regex: regular expression defining the DSOs' names
+    #     :type regex: regular expression str
+    #     :return: a table of all the metadata associated to raw data
+    #     :rtype: pandas DataFrame
+    #     """
+    #     dataset = self.bioiit_req.get_dataset(self.bioiit_exp, dataset_name)
+    #     df = self.bioiit_req.data_service.create_annotations_using_regex(dataset, source, keys_, regex)
+    #     return pandas.DataFrame([json.loads(k) for k in df.key_val]).join(df.drop(labels='key_val', axis=1))
 
     def save_object(self, class_name, record):
         """

@@ -148,7 +148,7 @@ class Project:
         :return: a table representing annotated Data objects
         :rtype: pandas DataFrame
         """
-        return self.repository.annotate_data(dataset.name, source, columns, regex)
+        return self.repository.annotate_data(dataset, source, columns, regex)
 
     def create_fov_from_raw_data(self, source, regex):
         """
