@@ -9,7 +9,7 @@ from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 
 class ExperimentDao(DAO, Base):
     """
-    DAO class for access to BioImageIT data records from the SQL database
+    DAO class for access to Experiment records from the SQL database
     """
     __tablename__ = 'experiment'
     exclude = ['id_']

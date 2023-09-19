@@ -152,7 +152,7 @@ class Project:
 
     def create_fov_from_raw_data(self, source, regex):
         """
-        Create domain-specific objects from raw data using a regular expression applied to a bioimageit database field
+        Create domain-specific objects from raw data using a regular expression applied to a database field
         or a combination thereof specified by source. DSOs to create are specified by the values in keys.
 
         :param source: the database field or combination of fields to apply the regular expression to

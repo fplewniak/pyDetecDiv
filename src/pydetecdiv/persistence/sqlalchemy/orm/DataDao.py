@@ -11,7 +11,7 @@ from pydetecdiv.persistence.sqlalchemy.orm import dao
 
 class DataDao(DAO, Base):
     """
-    DAO class for access to BioImageIT data records from the SQL database
+    DAO class for access to data records from the SQL database
     """
     __tablename__ = 'data'
     exclude = ['id_']
@@ -20,7 +20,7 @@ class DataDao(DAO, Base):
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
     uuid = Column(String(36))
     name = Column(String, unique=True, nullable=False)
-    dataset = Column(String, ForeignKey('dataset.id_'), nullable=False, index=True)
+    dataset = Column(Integer, ForeignKey('dataset.id_'), nullable=False, index=True)
     author = Column(String)
     date = Column(Date)
     url = Column(String)
@@ -94,11 +94,6 @@ class DataDao(DAO, Base):
                         .filter(ROIdata.data == data_id)
                         .filter(ROIdata.roi == dao.ROIdao.id_)
                         ]
-            # Alternative method to retrieve the fov_list:
-            # fov_list = [fov_data.fov_.record for fov_data in self.session.query(DataDao)
-            #             .options(joinedload(DataDao.fov_list_))
-            #             .filter(DataDao.id_ == data_id)
-            #             .first().fov_list_]
         else:
             roi_list = []
         return roi_list

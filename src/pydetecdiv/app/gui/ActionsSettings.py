@@ -31,11 +31,11 @@ class SettingsDialog(QDialog):
         button_workspace = QPushButton(workspace_group)
         button_workspace.setIcon(icon)
 
-        bioit_group = QGroupBox(self)
-        bioit_group.setTitle('BioImageIT configuration:')
-        self.bioit_conf = QLineEdit(bioit_group)
-        button_bioit = QPushButton(bioit_group)
-        button_bioit.setIcon(icon)
+        # bioit_group = QGroupBox(self)
+        # bioit_group.setTitle('BioImageIT configuration:')
+        # self.bioit_conf = QLineEdit(bioit_group)
+        # button_bioit = QPushButton(bioit_group)
+        # button_bioit.setIcon(icon)
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok |
                                            QDialogButtonBox.Cancel |
@@ -50,17 +50,17 @@ class SettingsDialog(QDialog):
         workspace_layout.addWidget(self.workspace)
         workspace_layout.addWidget(button_workspace)
 
-        bioit_layout = QHBoxLayout(bioit_group)
-        bioit_layout.addWidget(self.bioit_conf)
-        bioit_layout.addWidget(button_bioit)
+        # bioit_layout = QHBoxLayout(bioit_group)
+        # bioit_layout.addWidget(self.bioit_conf)
+        # bioit_layout.addWidget(button_bioit)
 
         vertical_layout.addWidget(workspace_group)
-        vertical_layout.addWidget(bioit_group)
+        # vertical_layout.addWidget(bioit_group)
         vertical_layout.addWidget(self.button_box)
 
         # Widget behaviour
         button_workspace.clicked.connect(self.select_workspace)
-        button_bioit.clicked.connect(self.select_bioit)
+        # button_bioit.clicked.connect(self.select_bioit)
         self.button_box.clicked.connect(self.clicked)
         self.workspace.textChanged.connect(self.toggle_buttons)
         self.bioit_conf.textChanged.connect(self.toggle_buttons)
@@ -93,21 +93,21 @@ class SettingsDialog(QDialog):
         if directory:
             self.workspace.setText(directory)
 
-    def select_bioit(self):
-        """
-        A method opening a File chooser to select the BioImageIT configuration file
-        """
-        dir_name = os.path.dirname(self.settings.value('bioimageit/config_file'))
-        filters = 'JSON files (*.json)'
-        if dir_name != os.path.dirname(self.bioit_conf.text()) and self.bioit_conf.text():
-            dir_name = self.bioit_conf.text()
-        conf_file, _ = QFileDialog.getOpenFileName(self, caption='Choose source files',
-                                                dir=dir_name,
-                                                filter=filters,
-                                                selectedFilter=filters)
-
-        if conf_file  != self.bioit_conf.text():
-            self.bioit_conf.setText(conf_file)
+    # def select_bioit(self):
+    #     """
+    #     A method opening a File chooser to select the BioImageIT configuration file
+    #     """
+    #     dir_name = os.path.dirname(self.settings.value('bioimageit/config_file'))
+    #     filters = 'JSON files (*.json)'
+    #     if dir_name != os.path.dirname(self.bioit_conf.text()) and self.bioit_conf.text():
+    #         dir_name = self.bioit_conf.text()
+    #     conf_file, _ = QFileDialog.getOpenFileName(self, caption='Choose source files',
+    #                                             dir=dir_name,
+    #                                             filter=filters,
+    #                                             selectedFilter=filters)
+    #
+    #     if conf_file  != self.bioit_conf.text():
+    #         self.bioit_conf.setText(conf_file)
 
     @Slot()
     def clicked(self, button):
@@ -134,14 +134,14 @@ class SettingsDialog(QDialog):
 
         self.settings.setValue("project/workspace", self.workspace.text())
         QDir().mkpath(self.workspace.text())
-        self.settings.setValue("bioimageit/config_file", self.bioit_conf.text())
+        # self.settings.setValue("bioimageit/config_file", self.bioit_conf.text())
 
     def reset(self):
         """
         Reset the contents of the settings editor to the values currently in the settings file
         """
         self.workspace.setText(self.settings.value("project/workspace"))
-        self.bioit_conf.setText(self.settings.value("bioimageit/config_file"))
+        # self.bioit_conf.setText(self.settings.value("bioimageit/config_file"))
 
 
 class Settings(QAction):

@@ -3,6 +3,7 @@
 """
 Concrete Repositories using a SQL database with the sqlalchemy toolkit
 """
+import glob
 import json
 import os
 import re
@@ -10,16 +11,16 @@ from datetime import datetime
 
 import pandas
 import sqlalchemy
-from sqlalchemy.orm import sessionmaker, joinedload
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.expression import Delete
 from pandas import DataFrame
-from bioimageit_core.plugins.data_factory import metadataServices
+# from bioimageit_core.plugins.data_factory import metadataServices
 from pydetecdiv.persistence.repository import ShallowDb
 from pydetecdiv.persistence.sqlalchemy.orm.main import mapper_registry
 from pydetecdiv.persistence.sqlalchemy.orm.dao import dso_dao_mapping as dao
 from pydetecdiv.persistence.sqlalchemy.orm.associations import Linker
-from pydetecdiv.persistence.bioimageit.request import Request
-from pydetecdiv.persistence.bioimageit.plugins.data_sqlite import SQLiteMetadataServiceBuilder
+# from pydetecdiv.persistence.bioimageit.request import Request
+# from pydetecdiv.persistence.bioimageit.plugins.data_sqlite import SQLiteMetadataServiceBuilder
 from pydetecdiv.settings import get_config_value
 from pydetecdiv import generate_uuid, copy_files
 
@@ -35,11 +36,11 @@ class ShallowSQLite3(ShallowDb):
         self.session_maker = sessionmaker(self.engine, future=True)
         self.session_ = None
 
-        self.bioiit_req = Request(get_config_value('bioimageit', 'config_file'), debug=False)
-        metadataServices.register_builder('SQLITE', SQLiteMetadataServiceBuilder())
-        self.bioiit_req.connect()
-        self.bioiit_req.data_service.connect_to_session(self.session, self)
-        self.bioiit_exp = None
+        # self.bioiit_req = Request(get_config_value('bioimageit', 'config_file'), debug=False)
+        # metadataServices.register_builder('SQLITE', SQLiteMetadataServiceBuilder())
+        # self.bioiit_req.connect()
+        # self.bioiit_req.data_service.connect_to_session(self.session, self)
+        # self.bioiit_exp = None
 
         self.create()
 
@@ -90,10 +91,30 @@ class ShallowSQLite3(ShallowDb):
         exp_name = str(os.path.splitext(os.path.basename(self.name))[0])
         if not sqlalchemy.inspect(self.engine).get_table_names():
             mapper_registry.metadata.create_all(self.engine)
-            self.bioiit_exp = self.bioiit_req.create_experiment(exp_name)
+            experiment_path = os.path.join(get_config_value('project', 'workspace'), exp_name)
+            os.mkdir(experiment_path)
+            dataset_record = {'id_': None,
+                              'uuid': generate_uuid(),
+                              'name': 'data',
+                              'url': experiment_path,
+                              'type_': 'raw',
+                              'run': None,
+                              'pattern': None,
+                              }
+            self.save_object('Dataset', dataset_record)
+            os.mkdir(os.path.join(experiment_path, dataset_record['name']))
+            experiment_record = {'id_': None,
+                                 'uuid': generate_uuid(),
+                                 'name': exp_name,
+                                 'author': get_config_value('project', 'user'),
+                                 'date': datetime.now(),
+                                 'raw_dataset': self.get_record_by_name('Dataset', dataset_record['name'])['id_'],
+                                 }
+            self.save_object('Experiment', experiment_record)
+            # self.bioiit_exp = self.bioiit_req.create_experiment(exp_name)
             self.commit()
-        else:
-            self.bioiit_exp = self.bioiit_req.get_experiment(exp_name)
+        # else:
+        #     self.bioiit_exp = self.bioiit_req.get_experiment(exp_name)
 
     def close(self):
         """
@@ -144,14 +165,14 @@ class ShallowSQLite3(ShallowDb):
             print('Could not import batch of images')
         return urls, process
 
-    def import_source_path(self, source_path, **kwargs):
-        """
-        Import images from a source path. All files corresponding to the path will be imported.
-
-        :param source_path: the source path (glob pattern)
-        :type source_path: str
-        """
-        self.bioiit_req.import_glob(self.bioiit_exp, source_path, **kwargs)
+    # def import_source_path(self, source_path, **kwargs):
+    #     """
+    #     Import images from a source path. All files corresponding to the path will be imported.
+    #
+    #     :param source_path: the source path (glob pattern)
+    #     :type source_path: str
+    #     """
+    #     self.bioiit_req.import_glob(self.bioiit_exp, source_path, **kwargs)
 
     # def determine_fov(self, source, regex):
     #     """
@@ -192,13 +213,17 @@ class ShallowSQLite3(ShallowDb):
 
         call_back = source if callable(source) else lambda x: x.record[source]
 
-        for data in data_list:
+        df = pandas.DataFrame([d.record for d in data_list])
+        print(df)
+        for i, data in enumerate(data_list):
             m = re.search(pattern, call_back(data))
             if m:
                 key_val = json.loads(data.key_val)
                 key_val.update(dict(zip(keys_, [m.group(k) for k in keys_])))
                 data.key_val = json.dumps(key_val)
-        return pandas.DataFrame([d.record for d in data_list])
+                for k in keys_:
+                    df.loc[i, k] = m.group(k)
+        return df
 
     # def annotate_data(self, dataset_name, source, keys_, regex):
     #     """
