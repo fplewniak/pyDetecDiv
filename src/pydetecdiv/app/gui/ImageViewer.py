@@ -201,12 +201,12 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
             arr = self.image_resource.image(C=C, T=T, Z=Z, drift=self.parent().parent().drift.iloc[idx])
         else:
             arr = self.image_resource.image(C=C, T=T, Z=Z)
-        print(self.crop)
+        # print(self.crop)
         if self.crop is not None:
             arr = arr[..., self.crop[1], self.crop[0]]
-            print(f'cropping to {self.crop}')
+            # print(f'cropping to {self.crop}')
         ny, nx = arr.shape
-        print(f'display shape: {arr.shape}')
+        # print(f'display shape: {arr.shape}')
         img = QImage(np.ascontiguousarray(arr.data), nx, ny, QImage.Format_Grayscale16)
         self.pixmap.convertFromImage(img)
         self.pixmapItem.setPixmap(self.pixmap)

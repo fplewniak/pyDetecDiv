@@ -214,7 +214,7 @@ class ShallowSQLite3(ShallowDb):
         call_back = source if callable(source) else lambda x: x.record[source]
 
         df = pandas.DataFrame([d.record for d in data_list])
-        print(df)
+        # print(df)
         for i, data in enumerate(data_list):
             m = re.search(pattern, call_back(data))
             if m:
