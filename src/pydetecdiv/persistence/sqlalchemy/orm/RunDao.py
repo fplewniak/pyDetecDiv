@@ -9,7 +9,7 @@ from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 
 class RunDao(DAO, Base):
     """
-    DAO class for access to BioImageIT dataset records from the SQL database
+    DAO class for access to Run records from the SQL database
     """
     __tablename__ = 'run'
     exclude = ['id_']

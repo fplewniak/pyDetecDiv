@@ -132,7 +132,7 @@ Comments:             {self.comments}
         :rtype: ImageResource
         """
         ds = self.project.get_named_object('Dataset', dataset)
-        data_list = [data.url for data in self.data if data.dataset_ == ds.uuid]
+        data_list = [data.url for data in self.data if data.dataset_ == ds.id_]
         if ds.pattern:
             image_resource = ImageResource(data_list, fov=self, pattern=ds.pattern)
         else:
