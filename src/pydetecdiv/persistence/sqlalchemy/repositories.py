@@ -14,15 +14,13 @@ import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.expression import Delete
 from pandas import DataFrame
-# from bioimageit_core.plugins.data_factory import metadataServices
 from pydetecdiv.persistence.repository import ShallowDb
 from pydetecdiv.persistence.sqlalchemy.orm.main import mapper_registry
 from pydetecdiv.persistence.sqlalchemy.orm.dao import dso_dao_mapping as dao
 from pydetecdiv.persistence.sqlalchemy.orm.associations import Linker
-# from pydetecdiv.persistence.bioimageit.request import Request
-# from pydetecdiv.persistence.bioimageit.plugins.data_sqlite import SQLiteMetadataServiceBuilder
 from pydetecdiv.settings import get_config_value
 from pydetecdiv import generate_uuid, copy_files
+from pydetecdiv.exceptions import OpenProjectError
 
 
 class ShallowSQLite3(ShallowDb):
@@ -32,17 +30,15 @@ class ShallowSQLite3(ShallowDb):
 
     def __init__(self, dbname=None):
         self.name = dbname
-        self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}?check_same_thread=True')
-        self.session_maker = sessionmaker(self.engine, future=True)
-        self.session_ = None
-
-        # self.bioiit_req = Request(get_config_value('bioimageit', 'config_file'), debug=False)
-        # metadataServices.register_builder('SQLITE', SQLiteMetadataServiceBuilder())
-        # self.bioiit_req.connect()
-        # self.bioiit_req.data_service.connect_to_session(self.session, self)
-        # self.bioiit_exp = None
-
-        self.create()
+        raise OpenProjectError('Could not open project')
+        # try:
+        #     self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}?check_same_thread=True')
+        # except:
+        #     raise OpenProjectError('Could not open project')
+        # else:
+        #     self.session_maker = sessionmaker(self.engine, future=True)
+        #     self.session_ = None
+        #     self.create()
 
     @property
     def session(self):

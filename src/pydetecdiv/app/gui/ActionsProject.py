@@ -6,6 +6,8 @@ from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QLabel, QVBoxLayout, QLineEdit, QDialogButtonBox, QComboBox, QMessageBox, QDialog,)
 from pydetecdiv.app import PyDetecDiv, project_list, WaitDialog, pydetecdiv_project
 
+from pydetecdiv.exceptions import OpenProjectError
+
 class ProjectDialog(QDialog):
     """
     A generic dialog window to create or open a project
@@ -111,10 +113,19 @@ class ProjectDialog(QDialog):
         :param project_name: the name of the project to open/create
         :type project_name: str
         """
-        with pydetecdiv_project(project_name) as project:
-            PyDetecDiv().project_selected.emit(project.dbname)
-            PyDetecDiv().raw_data_counted.emit(project.count_objects('Data'))
-        self.finished.emit(True)
+
+        try:
+            with pydetecdiv_project(project_name) as project:
+                PyDetecDiv().project_selected.emit(project.dbname)
+                PyDetecDiv().raw_data_counted.emit(project.count_objects('Data'))
+            self.finished.emit(True)
+        except OpenProjectError as e:
+            self.finished.emit(True)
+            print(e.message)
+            error_dialog = QDialog()
+            error_dialog.setModal(True)
+            error_dialog.exec()
+        # self.finished.emit(True)
 
 class NewProject(QAction):
     """

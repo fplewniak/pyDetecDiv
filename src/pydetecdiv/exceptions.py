@@ -32,3 +32,15 @@ class JuttingError(Warning):
 
     def __str__(self):
         return self.message
+
+class OpenProjectError(Exception):
+    """
+    Exception raised when a project cannot be opened
+    """
+
+    def __init__(self, msg):
+        self.message = msg
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
