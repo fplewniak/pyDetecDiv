@@ -10,11 +10,9 @@ from pydetecdiv.settings import get_config_value
 from pydetecdiv.persistence.project import open_project
 from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.domain.ROI import ROI
-from pydetecdiv.domain.ImageData import ImageData
 from pydetecdiv.domain.FOV import FOV
 from pydetecdiv.domain.Experiment import Experiment
 from pydetecdiv.domain.Data import Data
-from pydetecdiv.domain.Image import Image
 from pydetecdiv.domain.Run import Run
 from pydetecdiv.domain.Dataset import Dataset
 from pydetecdiv.domain.ImageResource import ImageResource
@@ -34,8 +32,6 @@ class Project:
         'Data': Data,
         'Dataset': Dataset,
         'Run': Run,
-        'ImageData': ImageData,
-        'Image': Image,
     }
 
     def __init__(self, dbname=None, dbms=None):
