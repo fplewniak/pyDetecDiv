@@ -36,7 +36,7 @@ class Data(NamedDSO):
         :return: the Dataset this Data belongs to
         :rtype: Dataset object
         """
-        return self.project.get_object('Dataset', uuid=self.dataset_)
+        return self.project.get_object('Dataset', id_=self.dataset_)
 
     @property
     def url(self):
