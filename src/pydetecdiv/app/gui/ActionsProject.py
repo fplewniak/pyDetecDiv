@@ -5,6 +5,7 @@ from PySide6.QtCore import Qt, QRegularExpression, Slot, Signal
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QLabel, QVBoxLayout, QLineEdit, QDialogButtonBox, QComboBox, QMessageBox, QDialog,)
 from pydetecdiv.app import PyDetecDiv, project_list, WaitDialog, pydetecdiv_project
+from pydetecdiv.app import MessageDialog
 
 from pydetecdiv.exceptions import OpenProjectError
 
@@ -121,11 +122,8 @@ class ProjectDialog(QDialog):
             self.finished.emit(True)
         except OpenProjectError as e:
             self.finished.emit(True)
-            print(e.message)
-            error_dialog = QDialog()
-            error_dialog.setModal(True)
+            error_dialog = MessageDialog(e.message)
             error_dialog.exec()
-        # self.finished.emit(True)
 
 class NewProject(QAction):
     """

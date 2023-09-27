@@ -41,6 +41,11 @@ class Project:
 
     @property
     def path(self):
+        """
+        Property returning the path of the project
+
+        :return:
+        """
         return os.path.join(get_config_value('project', 'workspace'), self.dbname)
 
     @property
@@ -119,15 +124,6 @@ class Project:
         data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
         return self.repository.import_images(image_files, data_dir_path, destination, **kwargs)
 
-    def import_source_path(self, source_path, **kwargs):
-        """
-        Import images from a source path. All files corresponding to the path will be imported.
-
-        :param source_path: the source path (glob pattern)
-        :type source_path: str
-        """
-        self.repository.import_source_path(source_path, **kwargs)
-
     def annotate(self, dataset, source, columns, regex):
         """
         Annotate data in a dataset using a regular expression applied to columns specified by source (column name or
@@ -153,9 +149,7 @@ class Project:
 
         :param source: the database field or combination of fields to apply the regular expression to
         :type source: str or callable returning a str
-        :param keys_: the list of classes created objects belong to
-        :type keys_: tuple of str
-        :param regex: regular expression defining the DSOs' names
+        :param regex: regular expression defining the annotations
         :type regex: regular expression str
         """
         yield 0
@@ -163,6 +157,7 @@ class Project:
         fov_names = [f.name for f in self.get_objects('FOV')]
         new_fovs = df.FOV.drop_duplicates().values
         total = len(new_fovs) + len(df.values)
+        n_fov = 0
         for n_fov, fov_name in enumerate(new_fovs):
             if fov_name not in fov_names:
                 FOV(project=self, name=fov_name, top_left=(0, 0), bottom_right=(999, 999))

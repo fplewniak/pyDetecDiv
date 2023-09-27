@@ -3,10 +3,10 @@
 """
 Concrete Repositories using a SQL database with the sqlalchemy toolkit
 """
-import glob
 import json
 import os
 import re
+import sqlite3
 from datetime import datetime
 
 import pandas
@@ -30,15 +30,13 @@ class ShallowSQLite3(ShallowDb):
 
     def __init__(self, dbname=None):
         self.name = dbname
-        raise OpenProjectError('Could not open project')
-        # try:
-        #     self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}?check_same_thread=True')
-        # except:
-        #     raise OpenProjectError('Could not open project')
-        # else:
-        #     self.session_maker = sessionmaker(self.engine, future=True)
-        #     self.session_ = None
-        #     self.create()
+        try:
+            self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}?check_same_thread=True')
+        except sqlite3.OperationalError as e:
+            raise OpenProjectError(f'Could not open project\n{e.message}') from e
+        self.session_maker = sessionmaker(self.engine, future=True)
+        self.session_ = None
+        self.create()
 
     @property
     def session(self):
@@ -107,10 +105,7 @@ class ShallowSQLite3(ShallowDb):
                                  'raw_dataset': self.get_record_by_name('Dataset', dataset_record['name'])['id_'],
                                  }
             self.save_object('Experiment', experiment_record)
-            # self.bioiit_exp = self.bioiit_req.create_experiment(exp_name)
             self.commit()
-        # else:
-        #     self.bioiit_exp = self.bioiit_req.get_experiment(exp_name)
 
     def close(self):
         """
@@ -161,48 +156,21 @@ class ShallowSQLite3(ShallowDb):
             print('Could not import batch of images')
         return urls, process
 
-    # def import_source_path(self, source_path, **kwargs):
-    #     """
-    #     Import images from a source path. All files corresponding to the path will be imported.
-    #
-    #     :param source_path: the source path (glob pattern)
-    #     :type source_path: str
-    #     """
-    #     self.bioiit_req.import_glob(self.bioiit_exp, source_path, **kwargs)
-
-    # def determine_fov(self, source, regex):
-    #     """
-    #     Uses metadata from raw data to name corresponding FOVs
-    #
-    #     :param source: the metadata source used to define FOV names
-    #     :type source: str or callable
-    #     :param regex: regular expression providing the source pattern defining FOV names
-    #     :type regex: regular expression str
-    #     :return: a DataFrame with the data id_ and FOV names
-    #     :rtype: pandas DataFrame
-    #     """
-    #     return self.determine_links_using_regex('data', source, ('FOV',), regex)
-    #
-    # def determine_links_using_regex(self, dataset_name, source, keys_, regex):
-    #     """
-    #     Uses metadata from data in a given dataset to name corresponding objects (FOV, ROIs, etc.)
-    #
-    #     :param dataset_name: the name of the dataset
-    #     :type dataset_name: str
-    #     :param source: the metadata source used to define object names
-    #     :type source: str or callable
-    #     :param keys_: the designation of objects
-    #     :type keys_: a tuple of str
-    #     :param regex: regular expression providing the source pattern defining FOV names
-    #     :type regex: regular expression str
-    #     :return: a DataFrame with the data id_ and FOV names
-    #     :rtype: pandas DataFrame
-    #     """
-    #     dataset = self.bioiit_req.get_dataset(self.bioiit_exp, dataset_name)
-    #     df = self.bioiit_req.data_service.determine_links_using_regex(dataset, source, keys_, regex)
-    #     return df
-
     def annotate_data(self, dataset, source, keys_, regex):
+        """
+        Method to annotate data files in a dataset according to a regular expression applied to a source. The resulting
+        key-value pairs are placed in a key_val column.
+        :param dataset: the dataset whose data should be annotated
+        :type dataset: Dataset object
+        :param source: the database field or combination of fields to apply the regular expression to
+        :type source: str or callable returning a str
+        :param keys_: the list of classes created objects belong to
+        :type keys_: tuple of str
+        :param regex: regular expression defining the annotations
+        :type regex: regular expression str
+        :return: list of annotated Data records in a dataframe
+        :rtype: pandas.DataFrame
+        """
         data_list = self.session.query(dao['Dataset']).filter(dao['Dataset'].id_ == dataset.id_).first().data_list_
 
         pattern = re.compile(regex)
@@ -220,26 +188,6 @@ class ShallowSQLite3(ShallowDb):
                 for k in keys_:
                     df.loc[i, k] = m.group(k)
         return df
-
-    # def annotate_data(self, dataset_name, source, keys_, regex):
-    #     """
-    #     Returns a DataFrame containing all the metadata associated to raw data, including annotations created using a
-    #     regular expression applied to a field or a combination thereof.
-    #
-    #     :param dataset_name: name of dataset to annotate
-    #     :type dataset_name: str
-    #     :param source: the database field or combination of fields to apply the regular expression to
-    #     :type source: str or callable returning a str
-    #     :param keys_: the list of classes created objects belong to
-    #     :type keys_: tuple of str
-    #     :param regex: regular expression defining the DSOs' names
-    #     :type regex: regular expression str
-    #     :return: a table of all the metadata associated to raw data
-    #     :rtype: pandas DataFrame
-    #     """
-    #     dataset = self.bioiit_req.get_dataset(self.bioiit_exp, dataset_name)
-    #     df = self.bioiit_req.data_service.create_annotations_using_regex(dataset, source, keys_, regex)
-    #     return pandas.DataFrame([json.loads(k) for k in df.key_val]).join(df.drop(labels='key_val', axis=1))
 
     def save_object(self, class_name, record):
         """

@@ -39,6 +39,26 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
+    def import_images(self, image_files, data_dir_path, destination, author='', date='now', in_place=False,
+                      img_format='imagetiff'):
+        """
+        Import images specified in a list of files into a destination
+
+        :param image_files: list of image files to import
+        :type image_files:list of str
+        :param destination: destination directory to import files into
+        :type destination: str
+        :param author: the user importing the data
+        :type author: str
+        :param date: the date of import
+        :type date: str
+        :param format: the file format
+        :type format: str
+        :return: the list of imported files. This list can be used to roll the copy back if needed
+        :rtype: list of str
+        """
+
+    @abc.abstractmethod
     def save_object(self, class_name, record):
         """
         Abstract method enforcing the implementation of a save_object() method in all shallow persistence connectors
