@@ -56,3 +56,15 @@ class ImportImagesError(Exception):
 
     def __str__(self):
         return self.message
+
+class UnknownRepositoryTypeError(Exception):
+    """
+    Exception raised when images cannot be imported
+    """
+
+    def __init__(self, msg):
+        self.message = f'Unknown repository type.\n {msg}'
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
