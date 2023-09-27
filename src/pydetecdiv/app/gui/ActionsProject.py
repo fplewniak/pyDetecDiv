@@ -120,10 +120,9 @@ class ProjectDialog(QDialog):
                 PyDetecDiv().project_selected.emit(project.dbname)
                 PyDetecDiv().raw_data_counted.emit(project.count_objects('Data'))
             self.finished.emit(True)
-        except OpenProjectError as e:
+        except (OpenProjectError, NotImplementedError) as e:
             self.finished.emit(True)
-            error_dialog = MessageDialog(e.message)
-            error_dialog.exec()
+            MessageDialog(e.message)
 
 class NewProject(QAction):
     """

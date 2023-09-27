@@ -20,7 +20,7 @@ from pydetecdiv.persistence.sqlalchemy.orm.dao import dso_dao_mapping as dao
 from pydetecdiv.persistence.sqlalchemy.orm.associations import Linker
 from pydetecdiv.settings import get_config_value
 from pydetecdiv import generate_uuid, copy_files
-from pydetecdiv.exceptions import OpenProjectError
+from pydetecdiv.exceptions import OpenProjectError, ImportImagesError
 
 
 class ShallowSQLite3(ShallowDb):
@@ -153,7 +153,7 @@ class ShallowSQLite3(ShallowDb):
                 self.save_object('Data', record)
                 urls.append(record['url'])
         except:
-            print('Could not import batch of images')
+            raise ImportImagesError
         return urls, process
 
     def annotate_data(self, dataset, source, keys_, regex):

@@ -199,6 +199,7 @@ class MessageDialog(QDialog):
         button_box.rejected.connect(self.close)
         layout.addWidget(button_box)
         self.setLayout(layout)
+        self.exec()
 
 
 def get_settings():

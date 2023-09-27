@@ -11,7 +11,7 @@ from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
                                QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView,
                                QRadioButton, QButtonGroup)
-from pydetecdiv.app import PyDetecDiv, WaitDialog, pydetecdiv_project
+from pydetecdiv.app import PyDetecDiv, WaitDialog, pydetecdiv_project, MessageDialog
 from pydetecdiv.settings import get_config_value
 from pydetecdiv import delete_files
 from pydetecdiv.app.gui.RawData2FOV import RawData2FOV
@@ -267,36 +267,40 @@ class ImportDataDialog(QDialog):
         destination = os.path.join(self.project_path, 'data', self.destination_directory.currentText())
         QDir().mkpath(str(destination))
         file_list = self.file_list()
-        n_files_to_copy = 0 if in_place else len(file_list)
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            n_files0 = sum(1 for item in os.listdir(destination) if os.path.isfile(os.path.join(destination, item)))
-            n_dso0 = project.count_objects('Data')
-            self.progress.emit(0)
-            imported_batches = []
-            processes = []
-            for batch in np.array_split(file_list,
-                                        int(len(file_list) / int(get_config_value('project', 'batch'))) + 1):
-                if len(batch):
-                    imported, process = project.import_images(batch, in_place=in_place,
-                                                              destination=self.destination_directory.currentText())
-                    imported_batches.append(imported)
-                    processes.append(process)
+        if len(file_list) == 0:
+            self.finished.emit(True)
+            MessageDialog('No data file to import in specified directories')
+        else:
+            n_files_to_copy = 0 if in_place else len(file_list)
+            with pydetecdiv_project(PyDetecDiv().project_name) as project:
+                n_files0 = sum(1 for item in os.listdir(destination) if os.path.isfile(os.path.join(destination, item)))
+                n_dso0 = project.count_objects('Data')
+                self.progress.emit(0)
+                imported_batches = []
+                processes = []
+                for batch in np.array_split(file_list,
+                                            int(len(file_list) / int(get_config_value('project', 'batch'))) + 1):
+                    if len(batch):
+                        imported, process = project.import_images(batch, in_place=in_place,
+                                                                  destination=self.destination_directory.currentText())
+                        imported_batches.append(imported)
+                        processes.append(process)
+                        n_files = 0 if in_place else self.count_imported_files(destination, n_files0)
+                        n_dso = project.count_objects('Data') - n_dso0
+                        self.progress.emit(int(100 * (n_files + n_dso) / (len(file_list) + n_files_to_copy)))
+                    if QThread.currentThread().isInterruptionRequested():
+                        self.cancel_import(imported_batches, n_files0, project, processes)
+                        return
+                while (n_files + n_dso) < (len(file_list) + n_files_to_copy):
+                    if QThread.currentThread().isInterruptionRequested():
+                        self.cancel_import(imported_batches, n_files0, project, processes)
+                        return
                     n_files = 0 if in_place else self.count_imported_files(destination, n_files0)
                     n_dso = project.count_objects('Data') - n_dso0
                     self.progress.emit(int(100 * (n_files + n_dso) / (len(file_list) + n_files_to_copy)))
-                if QThread.currentThread().isInterruptionRequested():
-                    self.cancel_import(imported_batches, n_files0, project, processes)
-                    return
-            while (n_files + n_dso) < (len(file_list) + n_files_to_copy):
-                if QThread.currentThread().isInterruptionRequested():
-                    self.cancel_import(imported_batches, n_files0, project, processes)
-                    return
-                n_files = 0 if in_place else self.count_imported_files(destination, n_files0)
-                n_dso = project.count_objects('Data') - n_dso0
-                self.progress.emit(int(100 * (n_files + n_dso) / (len(file_list) + n_files_to_copy)))
-            n_raw_data_files = project.count_objects('Data')
-        self.finished.emit(True)
-        PyDetecDiv().raw_data_counted.emit(n_raw_data_files)
+                n_raw_data_files = project.count_objects('Data')
+            self.finished.emit(True)
+            PyDetecDiv().raw_data_counted.emit(n_raw_data_files)
 
     def count_imported_files(self, destination, n_start):
         """

@@ -39,7 +39,19 @@ class OpenProjectError(Exception):
     """
 
     def __init__(self, msg):
-        self.message = msg
+        self.message = f'Cannot open project.\n {msg}'
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
+
+class ImportImagesError(Exception):
+    """
+    Exception raised when images cannot be imported
+    """
+
+    def __init__(self, msg):
+        self.message = f'Cannot import images.\n {msg}'
         super().__init__(self.message)
 
     def __str__(self):
