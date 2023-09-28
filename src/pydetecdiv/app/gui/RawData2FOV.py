@@ -310,12 +310,12 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
                                          progress_bar=True, )
                 self.finished.connect(wait_dialog.close_window)
                 self.progress.connect(wait_dialog.show_progress)
-                wait_dialog.wait_for(self.create_fov_annotate, regex)
-                # self.create_fov_annotate(regex)
                 with pydetecdiv_project(PyDetecDiv().project_name) as project:
                     project.raw_dataset.pattern = '.*'.join(
                         [regexes[col] for col in df.sort_values(0, axis=1, ascending=True).columns if col != 'FOV'])
                     project.save(project.raw_dataset)
+                wait_dialog.wait_for(self.create_fov_annotate, regex)
+                PyDetecDiv().project_selected.emit(project.dbname)
                 self.close()
             case QDialogButtonBox.StandardButton.Cancel:
                 self.close()
