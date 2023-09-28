@@ -26,6 +26,13 @@ class SettingsDialog(QDialog):
         self.settings = get_settings()
 
         # Widgets
+        conda_group = QGroupBox(self)
+        conda_group.setTitle('Conda path')
+        self.conda_path = QLineEdit(conda_group)
+        icon = QIcon(":icons/file_chooser")
+        button_conda = QPushButton(conda_group)
+        button_conda.setIcon(icon)
+
         batch_group = QGroupBox(self)
         batch_group.setTitle('Batch size')
         self.batch_size = QSpinBox(self)
@@ -35,7 +42,6 @@ class SettingsDialog(QDialog):
         tools_group = QGroupBox(self)
         tools_group.setTitle('Toolbox:')
         self.toolbox = QLineEdit(tools_group)
-        icon = QIcon(":icons/file_chooser")
         button_toolbox = QPushButton(tools_group)
         button_toolbox.setIcon(icon)
 
@@ -66,6 +72,7 @@ class SettingsDialog(QDialog):
         dbms_layout = QHBoxLayout(dbms_group)
         user_layout = QHBoxLayout(user_group)
         tools_layout = QHBoxLayout(tools_group)
+        conda_layout = QHBoxLayout(conda_group)
         batch_layout = QHBoxLayout(batch_group)
 
         workspace_layout.addWidget(self.workspace)
@@ -73,6 +80,9 @@ class SettingsDialog(QDialog):
 
         tools_layout.addWidget(self.toolbox)
         tools_layout.addWidget(button_toolbox)
+
+        conda_layout.addWidget(self.conda_path)
+        conda_layout.addWidget(button_conda)
 
         batch_layout.addWidget(self.batch_size)
 
@@ -82,6 +92,7 @@ class SettingsDialog(QDialog):
 
         vertical_layout.addWidget(workspace_group)
         vertical_layout.addWidget(tools_group)
+        vertical_layout.addWidget(conda_group)
         vertical_layout.addWidget(user_group)
         vertical_layout.addWidget(batch_group)
         vertical_layout.addWidget(dbms_group)
@@ -163,6 +174,7 @@ class SettingsDialog(QDialog):
         self.settings.setValue("project/workspace", self.workspace.text())
         QDir().mkpath(self.workspace.text())
         self.settings.setValue("paths/toolbox", self.toolbox.text())
+        self.settings.setValue("project.conda/dir", self.conda_path.text())
         self.settings.setValue("project/user", self.user.text())
         self.settings.setValue("project/dbms", implemented_dbms()[self.dbms.currentIndex()])
         self.settings.setValue("project/batch", self.batch_size.value())
@@ -173,6 +185,7 @@ class SettingsDialog(QDialog):
         """
         self.workspace.setText(self.settings.value("project/workspace"))
         self.toolbox.setText(self.settings.value("paths/toolbox"))
+        self.conda_path.setText(self.settings.value("project.conda/dir"))
         self.user.setText(self.settings.value("project/user"))
         self.dbms.setCurrentIndex(implemented_dbms().index(self.settings.value("project/dbms")))
         self.batch_size.setValue(int(self.settings.value("project/batch")))
