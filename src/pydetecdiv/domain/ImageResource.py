@@ -187,7 +187,7 @@ class ImageResource:
             self.close()
             self.open()
 
-    def compute_drift(self, method='phase_correlation', **kwargs):
+    def compute_drift(self, method='phase correlation', **kwargs):
         """
         Compute drift along time using the specified method
 
@@ -198,7 +198,7 @@ class ImageResource:
         :rtype: pandas DataFrame
         """
         match (method):
-            case 'phase_correlation':
+            case 'phase correlation':
                 return self.compute_drift_phase_correlation_cv2(**kwargs)
             case 'vidstab':
                 return self.compute_drift_vidstab(**kwargs)

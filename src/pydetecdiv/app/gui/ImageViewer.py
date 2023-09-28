@@ -244,13 +244,13 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
             viewer.ui.actionPlot.setEnabled(True)
             viewer.ui.actionApply_correction.setEnabled(True)
             viewer.ui.actionSave_to_file.setEnabled(True)
-        self.plot_drift()
+        self.plot_drift(method)
 
-    def plot_drift(self):
+    def plot_drift(self, method):
         """
         Open a MatplotViewer tab and plot the (x,y) drift against frame index
         """
-        self.parent().parent().show_plot(self.parent().parent().drift, 'Drift')
+        self.parent().parent().show_plot(self.parent().parent().drift, f'Drift - {method}')
 
     def compute_drift(self, method='vidstab'):
         """
@@ -269,7 +269,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         """
         Computation and update of the drift values using the 'phase correlation' method from OpenCV package
         """
-        self.compute_and_plot_drift(method='phase_correlation')
+        self.compute_and_plot_drift(method='phase correlation')
 
     def apply_drift_correction(self):
         """

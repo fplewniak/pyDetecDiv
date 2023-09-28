@@ -54,9 +54,11 @@ class Ui_ImageViewer(object):
         self.actionIdentify_ROIs.setText(u"Detect ROIs")
         self.actionSave_ROIs = QAction(ImageViewer)
         self.actionSave_ROIs.setObjectName(u"actionSave_ROIs")
+        self.actionSave_ROIs.setText(u"Save ROIs")
         self.actionView_template = QAction(ImageViewer)
         self.actionView_template.setObjectName(u"actionView_template")
         self.actionView_template.setEnabled(False)
+        self.actionView_template.setText(u"View template in new tab")
         self.actionVidstab = QAction(ImageViewer)
         self.actionVidstab.setObjectName(u"actionVidstab")
         self.actionVidstab.setText(u"Vidstab")
@@ -255,8 +257,10 @@ class Ui_ImageViewer(object):
         self.menuDrift.setTitle(u"Drift")
         self.menuCompute_and_plot = QMenu(self.menuDrift)
         self.menuCompute_and_plot.setObjectName(u"menuCompute_and_plot")
+        self.menuCompute_and_plot.setTitle(u"Compute and plot")
         self.menuROI = QMenu(self.menuBar)
         self.menuROI.setObjectName(u"menuROI")
+        self.menuROI.setTitle(u"ROI")
         ImageViewer.setMenuBar(self.menuBar)
 
         self.menuBar.addAction(self.menuResource.menuAction())
@@ -306,10 +310,6 @@ class Ui_ImageViewer(object):
     # setupUi
 
     def retranslateUi(self, ImageViewer):
-        self.actionSave_ROIs.setText(QCoreApplication.translate("ImageViewer", u"Save ROIs", None))
-        self.actionView_template.setText(QCoreApplication.translate("ImageViewer", u"View template in new tab", None))
-        self.menuCompute_and_plot.setTitle(QCoreApplication.translate("ImageViewer", u"Compute and plot", None))
-        self.menuROI.setTitle(QCoreApplication.translate("ImageViewer", u"ROI", None))
         pass
     # retranslateUi
 

@@ -256,7 +256,7 @@
      </property>
      <widget class="QMenu" name="menuCompute_and_plot">
       <property name="title">
-       <string>Compute and plot</string>
+       <string notr="true">Compute and plot</string>
       </property>
       <addaction name="actionVidstab"/>
       <addaction name="actionPhase_correlation"/>
@@ -274,7 +274,7 @@
    </widget>
    <widget class="QMenu" name="menuROI">
     <property name="title">
-     <string>ROI</string>
+     <string notr="true">ROI</string>
     </property>
     <addaction name="separator"/>
     <addaction name="actionSet_template"/>
@@ -337,7 +337,7 @@
   </action>
   <action name="actionSave_ROIs">
    <property name="text">
-    <string>Save ROIs</string>
+    <string notr="true">Save ROIs</string>
    </property>
   </action>
   <action name="actionView_template">
@@ -345,7 +345,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>View template in new tab</string>
+    <string notr="true">View template in new tab</string>
    </property>
   </action>
   <action name="actionVidstab">
