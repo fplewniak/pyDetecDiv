@@ -44,6 +44,8 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.C = 0
         self.T = 0
         self.Z = 0
+        self.parent_viewer = None
+        self.image_source_ref = None
         # self.drift = None
         self.apply_drift = False
         self.roi_template = None
@@ -273,9 +275,13 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
 
     def apply_drift_correction(self):
         """
-        Apply the drift correction to the display. This method also saves the drift values to a file.
+        Apply the drift correction to the display and reload the image data with extra margins according to the drift
+        values
         """
         self.apply_drift = self.ui.actionApply_correction.isChecked()
+        if self.image_source_ref and self.parent_viewer:
+            data, crop = self.parent_viewer.get_roi_data(self.image_source_ref)
+            self.set_image_resource(ImageResource(data=data, fov=self.image_resource.fov), crop=crop)
         self.display()
 
     def load_drift_file(self):
@@ -409,13 +415,13 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
 
         :param selected_roi:
         """
-        if selected_roi is None:
-            selected_roi = self.scene.get_selected_ROI()
         viewer = ImageViewer()
-        data, crop = self.get_roi_data(selected_roi)
-        self.parent().parent().addTab(viewer, selected_roi.data(0))
+        viewer.image_source_ref = selected_roi if selected_roi else self.scene.get_selected_ROI()
+        viewer.parent_viewer = self
+        data, crop = self.get_roi_data(viewer.image_source_ref)
+        self.parent().parent().addTab(viewer, viewer.image_source_ref.data(0))
         viewer.set_image_resource(ImageResource(data=data, fov=self.image_resource.fov), crop=crop)
-        viewer.ui.view_name.setText(f'View: {selected_roi.data(0)}')
+        viewer.ui.view_name.setText(f'View: {viewer.image_source_ref.data(0)}')
         viewer.display()
         self.parent().parent().setCurrentWidget(viewer)
 
