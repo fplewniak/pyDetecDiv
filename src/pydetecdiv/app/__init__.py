@@ -148,7 +148,7 @@ class WaitDialog(QDialog):
         Hide and destroy the Wait dialog window. The cursor is also set back to its normal aspect.
         """
         self.hide()
-        PyDetecDiv().setOverrideCursor(QCursor(Qt.ArrowCursor))
+        PyDetecDiv().restoreOverrideCursor()
         self.destroy()
 
     def cancel(self):

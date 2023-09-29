@@ -305,7 +305,7 @@ class ImageResourceChooser(QDockWidget):
         tab.viewer.project_name = PyDetecDiv().project_name
         tab.viewer.fov = fov.name
         tab.viewer.stage = dataset
-        PyDetecDiv().setOverrideCursor(QCursor(Qt.ArrowCursor))
+        PyDetecDiv().restoreOverrideCursor()
 
 
 class DrawingToolsPalette(QDockWidget):
