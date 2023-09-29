@@ -8,9 +8,16 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import (QCoreApplication, QMetaObject, QSize, Qt)
-from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialogButtonBox, QFrame, QHBoxLayout,
-                               QLabel, QSizePolicy, QVBoxLayout, QWidget)
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
+from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
+    QFont, QFontDatabase, QGradient, QIcon,
+    QImage, QKeySequence, QLinearGradient, QPainter,
+    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtWidgets import (QAbstractButton, QApplication, QComboBox, QDialog,
+    QDialogButtonBox, QFrame, QHBoxLayout, QLabel,
+    QRadioButton, QSizePolicy, QVBoxLayout, QWidget)
 
 from pydetecdiv.app.gui.ui.QLabelClickable import QLabelClickable
 
@@ -18,7 +25,7 @@ class Ui_RawData2FOV(object):
     def setupUi(self, RawData2FOV):
         if not RawData2FOV.objectName():
             RawData2FOV.setObjectName(u"RawData2FOV")
-        RawData2FOV.resize(599, 361)
+        RawData2FOV.resize(599, 408)
         self.horizontalLayout = QHBoxLayout(RawData2FOV)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.container = QWidget(RawData2FOV)
@@ -43,6 +50,23 @@ class Ui_RawData2FOV(object):
 
         self.verticalLayout.addWidget(self.label)
 
+        self.horizontalLayout_2 = QHBoxLayout()
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.multiple_files = QRadioButton(self.control_widgets)
+        self.multiple_files.setObjectName(u"multiple_files")
+        self.multiple_files.setText(u"Multiple files per FOV")
+        self.multiple_files.setChecked(True)
+
+        self.horizontalLayout_2.addWidget(self.multiple_files)
+
+        self.single_file = QRadioButton(self.control_widgets)
+        self.single_file.setObjectName(u"single_file")
+
+        self.horizontalLayout_2.addWidget(self.single_file)
+
+
+        self.verticalLayout.addLayout(self.horizontalLayout_2)
+
         self.patterns_widget = QWidget(self.control_widgets)
         self.patterns_widget.setObjectName(u"patterns_widget")
         self.patterns_layout = QVBoxLayout(self.patterns_widget)
@@ -57,15 +81,17 @@ class Ui_RawData2FOV(object):
         self.pos_layout = QHBoxLayout(self.pos_widget)
         self.pos_layout.setObjectName(u"pos_layout")
         self.pos_layout.setContentsMargins(0, 0, 0, 0)
-        self.pos_check = QCheckBox(self.pos_widget)
-        self.pos_check.setObjectName(u"pos_check")
+        self.position = QLabel(self.pos_widget)
+        self.position.setObjectName(u"position")
         sizePolicy2 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         sizePolicy2.setHorizontalStretch(0)
         sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.pos_check.sizePolicy().hasHeightForWidth())
-        self.pos_check.setSizePolicy(sizePolicy2)
+        sizePolicy2.setHeightForWidth(self.position.sizePolicy().hasHeightForWidth())
+        self.position.setSizePolicy(sizePolicy2)
+        self.position.setMinimumSize(QSize(45, 0))
+        self.position.setText(u"Position")
 
-        self.pos_layout.addWidget(self.pos_check)
+        self.pos_layout.addWidget(self.position)
 
         self.pos_left = QComboBox(self.pos_widget)
         self.pos_left.setObjectName(u"pos_left")
@@ -123,12 +149,14 @@ class Ui_RawData2FOV(object):
         self.c_layout.setSpacing(6)
         self.c_layout.setObjectName(u"c_layout")
         self.c_layout.setContentsMargins(0, 0, 0, 0)
-        self.c_check = QCheckBox(self.c_widget)
-        self.c_check.setObjectName(u"c_check")
-        sizePolicy2.setHeightForWidth(self.c_check.sizePolicy().hasHeightForWidth())
-        self.c_check.setSizePolicy(sizePolicy2)
+        self.Channel = QLabel(self.c_widget)
+        self.Channel.setObjectName(u"Channel")
+        sizePolicy2.setHeightForWidth(self.Channel.sizePolicy().hasHeightForWidth())
+        self.Channel.setSizePolicy(sizePolicy2)
+        self.Channel.setMinimumSize(QSize(45, 0))
+        self.Channel.setText(u"Channel")
 
-        self.c_layout.addWidget(self.c_check)
+        self.c_layout.addWidget(self.Channel)
 
         self.c_left = QComboBox(self.c_widget)
         self.c_left.setObjectName(u"c_left")
@@ -179,13 +207,14 @@ class Ui_RawData2FOV(object):
         self.t_layout = QHBoxLayout(self.t_widget)
         self.t_layout.setObjectName(u"t_layout")
         self.t_layout.setContentsMargins(0, 0, 0, 0)
-        self.t_check = QCheckBox(self.t_widget)
-        self.t_check.setObjectName(u"t_check")
-        sizePolicy2.setHeightForWidth(self.t_check.sizePolicy().hasHeightForWidth())
-        self.t_check.setSizePolicy(sizePolicy2)
-        self.t_check.setMinimumSize(QSize(70, 20))
+        self.Frame = QLabel(self.t_widget)
+        self.Frame.setObjectName(u"Frame")
+        sizePolicy2.setHeightForWidth(self.Frame.sizePolicy().hasHeightForWidth())
+        self.Frame.setSizePolicy(sizePolicy2)
+        self.Frame.setMinimumSize(QSize(45, 0))
+        self.Frame.setText(u"Frame")
 
-        self.t_layout.addWidget(self.t_check)
+        self.t_layout.addWidget(self.Frame)
 
         self.t_left = QComboBox(self.t_widget)
         self.t_left.setObjectName(u"t_left")
@@ -236,13 +265,14 @@ class Ui_RawData2FOV(object):
         self.z_layout = QHBoxLayout(self.z_widget)
         self.z_layout.setObjectName(u"z_layout")
         self.z_layout.setContentsMargins(0, 0, 0, 0)
-        self.z_check = QCheckBox(self.z_widget)
-        self.z_check.setObjectName(u"z_check")
-        sizePolicy2.setHeightForWidth(self.z_check.sizePolicy().hasHeightForWidth())
-        self.z_check.setSizePolicy(sizePolicy2)
-        self.z_check.setMinimumSize(QSize(70, 20))
+        self.Layer = QLabel(self.z_widget)
+        self.Layer.setObjectName(u"Layer")
+        sizePolicy2.setHeightForWidth(self.Layer.sizePolicy().hasHeightForWidth())
+        self.Layer.setSizePolicy(sizePolicy2)
+        self.Layer.setMinimumSize(QSize(45, 0))
+        self.Layer.setText(u"Layer")
 
-        self.z_layout.addWidget(self.z_check)
+        self.z_layout.addWidget(self.Layer)
 
         self.z_left = QComboBox(self.z_widget)
         self.z_left.setObjectName(u"z_left")
@@ -381,10 +411,6 @@ class Ui_RawData2FOV(object):
 
 
         self.retranslateUi(RawData2FOV)
-        self.pos_check.stateChanged.connect(RawData2FOV.change_sample_style)
-        self.c_check.stateChanged.connect(RawData2FOV.change_sample_style)
-        self.t_check.stateChanged.connect(RawData2FOV.change_sample_style)
-        self.z_check.stateChanged.connect(RawData2FOV.change_sample_style)
         self.pos_left.currentTextChanged.connect(RawData2FOV.change_sample_style)
         self.c_left.currentTextChanged.connect(RawData2FOV.change_sample_style)
         self.t_left.currentTextChanged.connect(RawData2FOV.change_sample_style)
@@ -402,6 +428,8 @@ class Ui_RawData2FOV(object):
         self.t_colour.clicked.connect(RawData2FOV.choose_colour)
         self.z_colour.clicked.connect(RawData2FOV.choose_colour)
         self.buttonBox.clicked.connect(RawData2FOV.button_clicked)
+        self.multiple_files.released.connect(RawData2FOV.change_sample_style)
+        self.single_file.released.connect(RawData2FOV.change_sample_style)
 
         QMetaObject.connectSlotsByName(RawData2FOV)
     # setupUi
@@ -409,13 +437,10 @@ class Ui_RawData2FOV(object):
     def retranslateUi(self, RawData2FOV):
         RawData2FOV.setWindowTitle(QCoreApplication.translate("RawData2FOV", u"Dialog", None))
         self.label.setText(QCoreApplication.translate("RawData2FOV", u"File name patterns", None))
-        self.pos_check.setText(QCoreApplication.translate("RawData2FOV", u"Position", None))
+        self.single_file.setText(QCoreApplication.translate("RawData2FOV", u"Single file", None))
         self.pos_colour.setText("")
-        self.c_check.setText(QCoreApplication.translate("RawData2FOV", u"Channel", None))
         self.c_colour.setText("")
-        self.t_check.setText(QCoreApplication.translate("RawData2FOV", u"Frame", None))
         self.t_colour.setText("")
-        self.z_check.setText(QCoreApplication.translate("RawData2FOV", u"Layer", None))
         self.z_colour.setText("")
         self.samples_box_title.setText(QCoreApplication.translate("RawData2FOV", u"Sample file names", None))
     # retranslateUi

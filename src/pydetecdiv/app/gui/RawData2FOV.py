@@ -39,14 +39,18 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         self.ui.setupUi(self)
         self.samples = [self.ui.sample1, self.ui.sample2, self.ui.sample3, self.ui.sample4, self.ui.sample5][
                        :min([len(raw_data_urls), 5])]
-        self.controls = {'FOV': self.ui.pos_check,
-                         'C': self.ui.c_check,
-                         'T': self.ui.t_check,
-                         'Z': self.ui.z_check
+        self.controls = {'FOV': self.ui.position,
+                         'C': self.ui.Channel,
+                         'T': self.ui.Frame,
+                         'Z': self.ui.Layer
                          }
         for i, label_text in enumerate(self.samples_text):
             self.samples[i].setText(label_text)
         self.setWindowTitle('Create FOVs from raw data files')
+        self.ui.pos_left.addItems(['position', 'Pos'])
+        self.ui.c_left.addItems(['channel', 'c', 'C'])
+        self.ui.t_left.addItems(['time', 'frame', 't', 'T'])
+        self.ui.z_left.addItems(['_z', 'z', 'Z', 'layer'])
         self.reset()
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             annotation_pattern = project.raw_dataset.pattern
@@ -67,29 +71,29 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         """
         Reset the form with default patterns and colours
         """
-        self.ui.pos_check.setChecked(True)
-        self.ui.c_check.setChecked(False)
-        self.ui.t_check.setChecked(False)
-        self.ui.z_check.setChecked(False)
+        self.ui.multiple_files.setChecked(True)
+        # self.ui.c_check.setChecked(False)
+        # self.ui.t_check.setChecked(False)
+        # self.ui.z_check.setChecked(False)
         self.colours = {
             'FOV': QColor.fromRgb(255, 125, 0, 255),
             'C': QColor.fromRgb(0, 255, 0, 255),
             'T': QColor.fromRgb(0, 255, 255, 255),
             'Z': QColor.fromRgb(255, 255, 0, 255),
         }
-        self.ui.pos_left.setCurrentText("position")
+        self.ui.pos_left.setCurrentIndex(0)
         self.ui.pos_pattern.setCurrentText("\\d+")
         self.ui.pos_right.setCurrentText('')
 
-        self.ui.c_left.setCurrentText("channel")
+        self.ui.c_left.setCurrentIndex(0)
         self.ui.c_pattern.setCurrentText("\\d+")
         self.ui.c_right.setCurrentText('')
 
-        self.ui.t_left.setCurrentText("time")
+        self.ui.t_left.setCurrentIndex(0)
         self.ui.t_pattern.setCurrentText("\\d+")
         self.ui.t_right.setCurrentText('')
 
-        self.ui.z_left.setCurrentText("_z")
+        self.ui.z_left.setCurrentIndex(0)
         self.ui.z_pattern.setCurrentText("\\d+")
         self.ui.z_right.setCurrentText('')
 
@@ -103,16 +107,15 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         :return: the regular expression string
         """
         regex = {}
-        if self.ui.pos_check.isChecked():
-            patterns = [self.ui.pos_left.currentText(),
-                        self.ui.pos_pattern.currentText(),
-                        self.ui.pos_right.currentText()]
-            for i, _ in enumerate(patterns):
-                while patterns[i].endswith('\\'):
-                    patterns[i] = patterns[i][:-1]
-            regex['FOV'] = f'({patterns[0]})(?P<FOV>{patterns[1]})({patterns[2]})'
+        patterns = [self.ui.pos_left.currentText(),
+                    self.ui.pos_pattern.currentText(),
+                    self.ui.pos_right.currentText()]
+        for i, _ in enumerate(patterns):
+            while patterns[i].endswith('\\'):
+                patterns[i] = patterns[i][:-1]
+        regex['FOV'] = f'({patterns[0]})(?P<FOV>{patterns[1]})({patterns[2]})'
 
-        if self.ui.c_check.isChecked():
+        if self.ui.multiple_files.isChecked():
             patterns = [self.ui.c_left.currentText(),
                         self.ui.c_pattern.currentText(),
                         self.ui.c_right.currentText()]
@@ -121,7 +124,6 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
                     patterns[i] = patterns[i][:-1]
             regex['C'] = f'({patterns[0]})(?P<C>{patterns[1]})({patterns[2]})'
 
-        if self.ui.t_check.isChecked():
             patterns = [self.ui.t_left.currentText(),
                         self.ui.t_pattern.currentText(),
                         self.ui.t_right.currentText()]
@@ -130,7 +132,6 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
                     patterns[i] = patterns[i][:-1]
             regex['T'] = f'({patterns[0]})(?P<T>{patterns[1]})({patterns[2]})'
 
-        if self.ui.z_check.isChecked():
             patterns = [self.ui.z_left.currentText(),
                         self.ui.z_pattern.currentText(),
                         self.ui.z_right.currentText()]
