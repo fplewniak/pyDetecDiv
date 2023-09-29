@@ -60,7 +60,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.frame = None
         self.wait = None
 
-    def set_image_resource(self, image_resource, crop=None):
+    def set_image_resource(self, image_resource, crop=None, T=0, C=0, Z=0):
         """
         Associate an image resource to this viewer, possibly cropping if requested.
 
@@ -70,7 +70,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         :type crop: list of slices [X, Y]
         """
         self.image_resource = image_resource
-        self.T, self.C, self.Z = (0, 0, 0)
+        self.T, self.C, self.Z = (T, C, Z)
 
         self.ui.view_name.setText(f'View: {image_resource.fov.name}')
         self.crop = crop
@@ -281,7 +281,8 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.apply_drift = self.ui.actionApply_correction.isChecked()
         if self.image_source_ref and self.parent_viewer:
             data, crop = self.parent_viewer.get_roi_data(self.image_source_ref)
-            self.set_image_resource(ImageResource(data=data, fov=self.image_resource.fov), crop=crop)
+            self.set_image_resource(ImageResource(data=data, fov=self.image_resource.fov), crop=crop,
+                                    T=self.T, C=self.C, Z=self.Z)
         self.display()
 
     def load_drift_file(self):
