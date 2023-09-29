@@ -2,7 +2,7 @@ import os
 import time
 import pandas as pd
 from PySide6.QtCore import Signal, Qt, QRect, QPoint, QTimer
-from PySide6.QtGui import QPixmap, QImage, QPen, QTransform, QKeySequence
+from PySide6.QtGui import QPixmap, QImage, QPen, QTransform, QKeySequence, QCursor
 from PySide6.QtWidgets import QMainWindow, QGraphicsScene, QGraphicsItem, QGraphicsRectItem, QFileDialog, QMenu
 import numpy as np
 import cv2 as cv
@@ -279,11 +279,13 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         values
         """
         self.apply_drift = self.ui.actionApply_correction.isChecked()
+        PyDetecDiv().setOverrideCursor(QCursor(Qt.WaitCursor))
         if self.image_source_ref and self.parent_viewer:
             data, crop = self.parent_viewer.get_roi_data(self.image_source_ref)
             self.set_image_resource(ImageResource(data=data, fov=self.image_resource.fov), crop=crop,
                                     T=self.T, C=self.C, Z=self.Z)
         self.display()
+        PyDetecDiv().restoreOverrideCursor()
 
     def load_drift_file(self):
         """
@@ -417,6 +419,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         :param selected_roi:
         """
         viewer = ImageViewer()
+        PyDetecDiv().setOverrideCursor(QCursor(Qt.WaitCursor))
         viewer.image_source_ref = selected_roi if selected_roi else self.scene.get_selected_ROI()
         viewer.parent_viewer = self
         data, crop = self.get_roi_data(viewer.image_source_ref)
@@ -425,6 +428,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         viewer.ui.view_name.setText(f'View: {viewer.image_source_ref.data(0)}')
         viewer.display()
         self.parent().parent().setCurrentWidget(viewer)
+        PyDetecDiv().restoreOverrideCursor()
 
     def save_rois(self):
         """
