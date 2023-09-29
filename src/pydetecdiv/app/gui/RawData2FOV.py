@@ -145,6 +145,14 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         """
         Change the colours of file name samples showing the pattern matches.
         """
+        if self.ui.single_file.isChecked():
+            self.ui.t_widget.hide()
+            self.ui.z_widget.hide()
+            self.ui.c_widget.hide()
+        else:
+            self.ui.t_widget.show()
+            self.ui.z_widget.show()
+            self.ui.c_widget.show()
         self.clear_colours()
         regex = self.get_regex()
         if regex:
