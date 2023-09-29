@@ -196,6 +196,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         df = pandas.DataFrame.from_dict(self.get_match_spans(matches, 0))
         columns = set(df.columns)
         conflicting_columns = set()
+        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(True)
         for col in columns:
             self.controls[col].setStyleSheet("")
         for i, file_name in enumerate(self.samples_text):
@@ -211,7 +212,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
                                 self.controls[col2].setStyleSheet("background-color: red")
                                 conflicting_columns.add(col1)
                                 conflicting_columns.add(col2)
-
+                                self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
             df = pandas.DataFrame.from_dict(self.get_match_spans(matches, 2))
             for col in df.sort_values(0, axis=1, ascending=False):
                 if col not in conflicting_columns:
@@ -221,6 +222,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
                         file_name = f'{file_name[:start]}<span style="background-color: rgb({r}, {g}, {b})">{file_name[start:end]}</span>{file_name[end:]}'
                     else:
                         self.controls[col].setStyleSheet("background-color: orange")
+                        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
             try:
                 self.samples[i].setText(file_name)
             finally:
