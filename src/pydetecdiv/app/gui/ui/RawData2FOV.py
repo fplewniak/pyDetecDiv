@@ -402,7 +402,7 @@ class Ui_RawData2FOV(object):
         self.buttonBox = QDialogButtonBox(self.container)
         self.buttonBox.setObjectName(u"buttonBox")
         self.buttonBox.setOrientation(Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel|QDialogButtonBox.Ok|QDialogButtonBox.Reset)
+        self.buttonBox.setStandardButtons(QDialogButtonBox.Close|QDialogButtonBox.Ok|QDialogButtonBox.Reset)
 
         self.container_layout.addWidget(self.buttonBox)
 

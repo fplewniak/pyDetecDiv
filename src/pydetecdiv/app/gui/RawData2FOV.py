@@ -52,17 +52,18 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         self.ui.t_left.addItems(['time', 'frame', 't', 'T'])
         self.ui.z_left.addItems(['_z', 'z', 'Z', 'layer'])
         self.reset()
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            annotation_pattern = project.raw_dataset.pattern
-        if annotation_pattern:
-            wait_dialog = WaitDialog('Creating Fields of view', self, cancel_msg='Cancel FOV creation: please wait',
-                                     progress_bar=True, )
-            self.finished.connect(wait_dialog.close_window)
-            self.progress.connect(wait_dialog.show_progress)
-            wait_dialog.wait_for(self.create_fov_annotate, annotation_pattern)
-            # self.create_fov_annotate(annotation_pattern)
-        else:
-            self.exec()
+        # with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        #     annotation_pattern = project.raw_dataset.pattern
+        # if annotation_pattern:
+        #     wait_dialog = WaitDialog('Creating Fields of view', self, cancel_msg='Cancel FOV creation: please wait',
+        #                              progress_bar=True, )
+        #     self.finished.connect(wait_dialog.close_window)
+        #     self.progress.connect(wait_dialog.show_progress)
+        #     wait_dialog.wait_for(self.create_fov_annotate, annotation_pattern)
+        #     # self.create_fov_annotate(annotation_pattern)
+        # else:
+        #     self.exec()
+        self.exec()
         for child in self.children():
             child.deleteLater()
         self.destroy(True)
@@ -327,8 +328,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
                     project.save(project.raw_dataset)
                 wait_dialog.wait_for(self.create_fov_annotate, regex)
                 PyDetecDiv().project_selected.emit(project.dbname)
-                self.close()
-            case QDialogButtonBox.StandardButton.Cancel:
+            case QDialogButtonBox.StandardButton.Close:
                 self.close()
             case QDialogButtonBox.StandardButton.Reset:
                 self.reset()
