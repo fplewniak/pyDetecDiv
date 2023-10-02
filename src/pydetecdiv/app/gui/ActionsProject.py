@@ -99,6 +99,7 @@ class ProjectDialog(QDialog):
                 error_msg = QMessageBox(self)
                 error_msg.setText(f'Error: {p_name} project already exists!!!')
                 error_msg.exec()
+                return
             else:
                 self.wait = WaitDialog(f'Creating {p_name}, please wait.', self)
         else:
