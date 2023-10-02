@@ -252,13 +252,15 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         """
         Open a MatplotViewer tab and plot the (x,y) drift against frame index
         """
-        self.parent().parent().show_plot(self.parent().parent().drift, f'Drift - {method}')
+        if self.drift is not None:
+            self.parent().parent().show_plot(self.parent().parent().drift, f'Drift - {method}')
 
     def compute_drift(self, method='vidstab'):
         """
         Computation and update of the drift values. When the computation is over, this method emits a finished signal
         """
-        self.parent().parent().drift = self.image_resource.compute_drift(Z=self.Z, C=self.C, method=method)
+        self.drift = self.image_resource.compute_drift(Z=self.Z, C=self.C, method=method, thread=self.wait.pdd_thread)
+        self.parent().parent().drift = self.drift if self.drift is not None else self.parent().parent().drift
         self.finished.emit(True)
 
     def compute_drift_vidstab(self):

@@ -205,7 +205,7 @@ class ImageResource:
             case _:
                 return pd.DataFrame([[0, 0]] * self.sizeT, columns=['dy', 'dx'])
 
-    def compute_drift_phase_correlation_cv2(self, Z=0, C=0, max_mem=5000):
+    def compute_drift_phase_correlation_cv2(self, Z=0, C=0, max_mem=5000, thread=None):
         """
         Compute the cumulative transforms (dx, dy) to apply in order to correct the drift using phase correlation
 
@@ -226,7 +226,7 @@ class ImageResource:
                 self.refresh()
         return df.cumsum(axis=0)
 
-    def compute_drift_vidstab(self, Z=0, C=0, max_mem=5000):
+    def compute_drift_vidstab(self, Z=0, C=0, max_mem=5000, thread=None):
         """
         Compute the cumulative transforms (dx, dy, dr) to apply in order to stabilize the time series and correct drift
 
@@ -245,6 +245,9 @@ class ImageResource:
                 input_frame=np.uint8(np.array(self.image(T=frame, Z=Z, C=C)) / 65535 * 255), smoothing_window=1)
             if (self._memmap is not None) and (psutil.Process().memory_info().rss / (1024 * 1024) > max_mem):
                 self.refresh()
+            if thread and thread.isInterruptionRequested():
+                return None
+                # return pd.DataFrame([[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]], columns=('dx', 'dy', 'dr'))
         return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)
 
     def correct_drift(self, drift, filename=None, max_mem=5000):
