@@ -158,8 +158,8 @@ class ImportDataDialog(QDialog):
         copy_files_layout.addWidget(copy_files_button)
         copy_files_layout.addWidget(self.destination_directory)
         keep_in_place_layout.addWidget(keep_in_place_button)
-        destination_layout.addWidget(copy_files_widget)
         destination_layout.addWidget(keep_in_place_widget)
+        destination_layout.addWidget(copy_files_widget)
 
         vertical_layout.addWidget(source_group_box)
         vertical_layout.addWidget(destination_widget)
@@ -177,7 +177,7 @@ class ImportDataDialog(QDialog):
         self.list_model.dataChanged.connect(self.source_list_is_not_empty)
         self.chosen_directory.connect(add_path_dialog.path_text_input.setText)
 
-        copy_files_button.setChecked(True)
+        keep_in_place_button.setChecked(True)
         self.keep_copy_buttons.setExclusive(True)
 
         self.exec()
