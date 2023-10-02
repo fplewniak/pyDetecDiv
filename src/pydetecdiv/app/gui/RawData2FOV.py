@@ -47,10 +47,14 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         for i, label_text in enumerate(self.samples_text):
             self.samples[i].setText(label_text)
         self.setWindowTitle('Create FOVs from raw data files')
-        self.ui.pos_left.addItems(['position', 'Pos'])
-        self.ui.c_left.addItems(['channel', 'c', 'C'])
-        self.ui.t_left.addItems(['time', 'frame', 't', 'T'])
-        self.ui.z_left.addItems(['_z', 'z', 'Z', 'layer'])
+        self.ui.pos_left.addItems(['position', 'Pos', ''])
+        self.ui.c_left.addItems(['channel', 'c', 'C', ''])
+        self.ui.t_left.addItems(['time', 'frame', 't', 'T', ''])
+        self.ui.z_left.addItems(['_z', 'z', 'Z', 'layer', ''])
+        self.ui.pos_pattern.addItems(['\d+', 'position\d+', 'Pos\d+'])
+        self.ui.c_pattern.addItems(['\d+', 'c\d+', 'channel\d+'])
+        self.ui.t_pattern.addItems(['\d+', 'frame\d+', 'frame_\d+'])
+        self.ui.z_pattern.addItems(['\d+', 'z\d+', 'z_\d+', 'layer\d+', 'layer_\d+'])
         self.reset()
         # with pydetecdiv_project(PyDetecDiv().project_name) as project:
         #     annotation_pattern = project.raw_dataset.pattern
@@ -83,19 +87,19 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
             'Z': QColor.fromRgb(255, 255, 0, 255),
         }
         self.ui.pos_left.setCurrentIndex(0)
-        self.ui.pos_pattern.setCurrentText("\\d+")
+        self.ui.pos_pattern.setCurrentIndex(0)
         self.ui.pos_right.setCurrentText('')
 
         self.ui.c_left.setCurrentIndex(0)
-        self.ui.c_pattern.setCurrentText("\\d+")
+        self.ui.c_pattern.setCurrentIndex(0)
         self.ui.c_right.setCurrentText('')
 
         self.ui.t_left.setCurrentIndex(0)
-        self.ui.t_pattern.setCurrentText("\\d+")
+        self.ui.t_pattern.setCurrentIndex(0)
         self.ui.t_right.setCurrentText('')
 
         self.ui.z_left.setCurrentIndex(0)
-        self.ui.z_pattern.setCurrentText("\\d+")
+        self.ui.z_pattern.setCurrentIndex(0)
         self.ui.z_right.setCurrentText('')
 
         self.show_chosen_colours()
