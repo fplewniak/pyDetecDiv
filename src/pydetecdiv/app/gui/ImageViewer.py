@@ -242,18 +242,18 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.wait = WaitDialog('Computing drift, please wait.', self, cancel_msg='Cancel drift computation please wait')
         self.finished.connect(self.wait.close_window)
         self.wait.wait_for(self.compute_drift, method=method)
-        for viewer in self.parent().parent().get_image_viewers():
-            viewer.ui.actionPlot.setEnabled(True)
-            viewer.ui.actionApply_correction.setEnabled(True)
-            viewer.ui.actionSave_to_file.setEnabled(True)
-        self.plot_drift(method)
+        if self.drift is not None:
+            for viewer in self.parent().parent().get_image_viewers():
+                viewer.ui.actionPlot.setEnabled(True)
+                viewer.ui.actionApply_correction.setEnabled(True)
+                viewer.ui.actionSave_to_file.setEnabled(True)
+            self.plot_drift(method)
 
     def plot_drift(self, method):
         """
         Open a MatplotViewer tab and plot the (x,y) drift against frame index
         """
-        if self.drift is not None:
-            self.parent().parent().show_plot(self.parent().parent().drift, f'Drift - {method}')
+        self.parent().parent().show_plot(self.parent().parent().drift, f'Drift - {method}')
 
     def compute_drift(self, method='vidstab'):
         """
