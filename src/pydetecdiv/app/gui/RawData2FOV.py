@@ -161,9 +161,9 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         self.clear_colours()
         regex = self.get_regex()
         if regex:
-            self.colourize_matches(self.find_matches(regex))
+            self.colourize_matches(self.find_matches(self.samples_text, regex))
 
-    def find_matches(self, regexes):
+    def find_matches(self, urls, regexes):
         """
         Find a list of matches with the defined regular expressions
 
@@ -173,7 +173,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         matches = {}
         for what in regexes:
             pattern = re.compile(regexes[what])
-            matches[what] = [re.search(pattern, label_text) for label_text in self.samples_text]
+            matches[what] = [re.search(pattern, label_text) for label_text in urls]
         return matches
 
     @staticmethod
