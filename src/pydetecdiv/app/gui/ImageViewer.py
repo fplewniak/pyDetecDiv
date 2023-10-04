@@ -1,3 +1,7 @@
+"""
+Image viewer to display and interact with an Image resource (5D image data)
+"""
+
 import os
 import time
 import pandas as pd
@@ -46,6 +50,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.C = 0
         self.T = 0
         self.Z = 0
+        self.drift = None
         self.parent_viewer = None
         self.image_source_ref = None
         # self.drift = None
