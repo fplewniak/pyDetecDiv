@@ -112,6 +112,33 @@
            </widget>
           </item>
           <item>
+           <widget class="Line" name="sep3">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="C">
+            <property name="text">
+             <string>C</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSlider" name="c_slider">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="Line" name="sep1">
             <property name="orientation">
              <enum>Qt::Vertical</enum>
@@ -696,6 +723,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>c_slider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>ImageViewer</receiver>
+   <slot>change_channel(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>600</x>
+     <y>565</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>631</x>
+     <y>335</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>zoom_reset()</slot>
@@ -720,5 +763,6 @@
   <slot>compute_drift_phase_correlation()</slot>
   <slot>load_drift_file()</slot>
   <slot>save_drift_file()</slot>
+  <slot>change_channel(int)</slot>
  </slots>
 </ui>

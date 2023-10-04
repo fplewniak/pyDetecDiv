@@ -146,6 +146,29 @@ class Ui_ImageViewer(object):
 
         self.horizontalLayout_2.addWidget(self.t_slider)
 
+        self.sep3 = QFrame(self.controls)
+        self.sep3.setObjectName(u"sep3")
+        self.sep3.setFrameShape(QFrame.VLine)
+        self.sep3.setFrameShadow(QFrame.Sunken)
+
+        self.horizontalLayout_2.addWidget(self.sep3)
+
+        self.C = QLabel(self.controls)
+        self.C.setObjectName(u"C")
+
+        self.horizontalLayout_2.addWidget(self.C)
+
+        self.c_slider = QSlider(self.controls)
+        self.c_slider.setObjectName(u"c_slider")
+        sizePolicy2 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.c_slider.sizePolicy().hasHeightForWidth())
+        self.c_slider.setSizePolicy(sizePolicy2)
+        self.c_slider.setOrientation(Qt.Horizontal)
+
+        self.horizontalLayout_2.addWidget(self.c_slider)
+
         self.sep1 = QFrame(self.controls)
         self.sep1.setObjectName(u"sep1")
         self.sep1.setFrameShape(QFrame.VLine)
@@ -161,9 +184,6 @@ class Ui_ImageViewer(object):
 
         self.z_slider = QSlider(self.controls)
         self.z_slider.setObjectName(u"z_slider")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
         sizePolicy2.setHeightForWidth(self.z_slider.sizePolicy().hasHeightForWidth())
         self.z_slider.setSizePolicy(sizePolicy2)
         self.z_slider.setPageStep(1)
@@ -305,11 +325,13 @@ class Ui_ImageViewer(object):
         self.actionPhase_correlation.triggered.connect(ImageViewer.compute_drift_phase_correlation)
         self.actionSave_to_file.triggered.connect(ImageViewer.save_drift_file)
         self.actionLoad_file.triggered.connect(ImageViewer.load_drift_file)
+        self.c_slider.valueChanged.connect(ImageViewer.change_channel)
 
         QMetaObject.connectSlotsByName(ImageViewer)
     # setupUi
 
     def retranslateUi(self, ImageViewer):
+        self.C.setText(QCoreApplication.translate("ImageViewer", u"C", None))
         pass
     # retranslateUi
 

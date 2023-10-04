@@ -31,7 +31,9 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.scale = 100
         self.ui.z_slider.setEnabled(False)
         self.ui.t_slider.setEnabled(False)
+        self.ui.c_slider.setEnabled(False)
         self.ui.z_slider.setPageStep(1)
+        self.ui.c_slider.setPageStep(1)
         self.image_resource = None
         self.scene = ViewerScene()
         self.scene.setParent(self)
@@ -74,6 +76,10 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
 
         self.ui.view_name.setText(f'View: {image_resource.fov.name}')
         self.crop = crop
+
+        self.ui.c_slider.setMinimum(0)
+        self.ui.c_slider.setMaximum(image_resource.sizeC - 1)
+        self.ui.c_slider.setEnabled(True)
 
         self.ui.z_slider.setMinimum(0)
         self.ui.z_slider.setMaximum(image_resource.sizeZ - 1)
@@ -182,6 +188,16 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         if self.T != T:
             self.T = T
             self.video_frame.emit(self.T)
+            self.display()
+
+    def change_channel(self, C=0):
+        """
+        Change the current frame to the specified time index and refresh the display
+
+        :param T:
+        """
+        if self.C != C:
+            self.C = C
             self.display()
 
     def display(self, C=None, T=None, Z=None):
