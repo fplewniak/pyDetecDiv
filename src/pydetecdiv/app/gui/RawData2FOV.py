@@ -320,7 +320,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         match clicked_button:
             case QDialogButtonBox.StandardButton.Ok:
                 regexes = self.get_regex()
-                df = pandas.DataFrame.from_dict(self.get_match_spans(self.find_matches(regexes), 0))
+                df = pandas.DataFrame.from_dict(self.get_match_spans(self.find_matches(self.samples_text, regexes), 0))
                 regex = '.*'.join([regexes[col] for col in df.sort_values(0, axis=1, ascending=True).columns])
                 wait_dialog = WaitDialog('Creating Fields of view', self, cancel_msg='Cancel FOV creation: please wait',
                                          progress_bar=True, )
