@@ -192,19 +192,3 @@ class BoxedDSO(DomainSpecificObject):
         :rtype: a tuple of two int
         """
         return self.box.size
-
-
-class DsoWithImageData(DomainSpecificObject):
-    """
-    A domain-specific class for objects that are associated with Image _data
-    """
-
-    @property
-    def image_data(self):
-        """
-        Returns the list of ImageData objects whose parent if the current DSO
-
-        :return: the list of associated ImageData objects
-        :rtype: list of ImageData objects
-        """
-        return self.project.get_linked_objects('ImageData', to=self)

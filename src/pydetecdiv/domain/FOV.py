@@ -3,11 +3,11 @@
 """
  A class defining the business logic methods that can be applied to Fields Of View
 """
-from pydetecdiv.domain.dso import NamedDSO, BoxedDSO, DsoWithImageData
+from pydetecdiv.domain.dso import NamedDSO, BoxedDSO
 from pydetecdiv.domain.ImageResource import ImageResource
 
 
-class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
+class FOV(NamedDSO, BoxedDSO):
     """
     A business-logic class defining valid operations and attributes of Fields of view (FOV)
     """
@@ -100,16 +100,6 @@ Comments:             {self.comments}
         return self.project.get_linked_objects('ROI', to=self)
         # roi_list = self.project.get_linked_objects('ROI', to=self)
         # return roi_list if len(roi_list) == 1 else roi_list[1:]
-
-    @property
-    def image_list(self):
-        """
-        Return a list of images related to this FOV
-
-        :return: list of images
-        :rtype: list of Image objects
-        """
-        return self.project.get_linked_objects('Image', to=self)
 
     @property
     def initial_roi(self):
