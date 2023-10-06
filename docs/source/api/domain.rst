@@ -29,7 +29,7 @@ Domain-specific classes
    :members:
    :show-inheritance:
 
-.. autoclass:: pydetecdiv.domain.ImageResource.ImageResource
+.. autoclass:: pydetecdiv.domain.ImageResourceData.ImageResourceData
    :members:
    :show-inheritance:
 

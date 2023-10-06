@@ -10,6 +10,7 @@ from pydetecdiv.persistence.sqlalchemy.orm.ROIdao import ROIdao
 from pydetecdiv.persistence.sqlalchemy.orm.ExperimentDao import ExperimentDao
 from pydetecdiv.persistence.sqlalchemy.orm.DataDao import DataDao
 from pydetecdiv.persistence.sqlalchemy.orm.DatasetDao import DatasetDao
+from pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao import ImageResourceDao
 from pydetecdiv.persistence.sqlalchemy.orm.RunDao import RunDao
 
 dso_dao_mapping = {
@@ -18,5 +19,6 @@ dso_dao_mapping = {
     'Experiment': ExperimentDao,
     'Dataset': DatasetDao,
     'Data': DataDao,
+    'ImageResource': ImageResourceDao,
     'Run': RunDao,
 }

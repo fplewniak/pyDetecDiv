@@ -4,7 +4,7 @@
  A class defining the business logic methods that can be applied to Fields Of View
 """
 from pydetecdiv.domain.dso import NamedDSO, BoxedDSO
-from pydetecdiv.domain.ImageResource import ImageResource
+from pydetecdiv.domain.ImageResourceData import ImageResourceData
 
 
 class FOV(NamedDSO, BoxedDSO):
@@ -119,12 +119,12 @@ Comments:             {self.comments}
         :param dataset: the dataset name
         :type dataset: str
         :return: the image resource
-        :rtype: ImageResource
+        :rtype: ImageResourceData
         """
         ds = self.project.get_named_object('Dataset', dataset)
         data_list = [data.url for data in self.data if data.dataset_ == ds.id_]
         if ds.pattern:
-            image_resource = ImageResource(data_list, fov=self, pattern=ds.pattern)
+            image_resource = ImageResourceData(data_list, fov=self, pattern=ds.pattern)
         else:
-            image_resource = ImageResource(data_list[0], fov=self)
+            image_resource = ImageResourceData(data_list[0], fov=self)
         return image_resource

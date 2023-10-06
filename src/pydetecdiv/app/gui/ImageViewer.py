@@ -14,7 +14,7 @@ from skimage.feature import peak_local_max
 
 from pydetecdiv.app import WaitDialog, PyDetecDiv, DrawingTools, pydetecdiv_project
 from pydetecdiv.app.gui.ui.ImageViewer import Ui_ImageViewer
-from pydetecdiv.domain.ImageResource import ImageResource
+from pydetecdiv.domain.ImageResourceData import ImageResourceData
 from pydetecdiv.domain.ROI import ROI
 from pydetecdiv.settings import get_config_value
 from pydetecdiv.utils import round_to_even
@@ -72,7 +72,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         Associate an image resource to this viewer, possibly cropping if requested.
 
         :param image_resource: the image resource to load into the viewer
-        :type image_resource: ImageResource
+        :type image_resource: ImageResourceData
         :param crop: the (X,Y) crop area
         :type crop: list of slices [X, Y]
         """
@@ -305,7 +305,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         PyDetecDiv().setOverrideCursor(QCursor(Qt.WaitCursor))
         if self.image_source_ref and self.parent_viewer:
             data, crop = self.parent_viewer.get_roi_data(self.image_source_ref)
-            self.set_image_resource(ImageResource(data=data, fov=self.image_resource.fov), crop=crop,
+            self.set_image_resource(ImageResourceData(data=data, fov=self.image_resource.fov), crop=crop,
                                     T=self.T, C=self.C, Z=self.Z)
         self.display()
         PyDetecDiv().restoreOverrideCursor()
@@ -447,7 +447,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         viewer.parent_viewer = self
         data, crop = self.get_roi_data(viewer.image_source_ref)
         self.parent().parent().addTab(viewer, viewer.image_source_ref.data(0))
-        viewer.set_image_resource(ImageResource(data=data, fov=self.image_resource.fov), crop=crop)
+        viewer.set_image_resource(ImageResourceData(data=data, fov=self.image_resource.fov), crop=crop)
         viewer.ui.view_name.setText(f'View: {viewer.image_source_ref.data(0)}')
         viewer.display()
         self.parent().parent().setCurrentWidget(viewer)

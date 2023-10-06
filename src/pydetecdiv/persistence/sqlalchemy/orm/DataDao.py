@@ -3,11 +3,12 @@
 """
 Access to data relative to Data file (images, tables, etc.)
 """
-from sqlalchemy import Column, Integer, String, ForeignKey, Date
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, text
+from sqlalchemy.orm import composite
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 from pydetecdiv.persistence.sqlalchemy.orm.associations import FovData, ROIdata
 from pydetecdiv.persistence.sqlalchemy.orm import dao
-
+import pydetecdiv.utils.ImageResource as ImageResource
 
 class DataDao(DAO, Base):
     """
@@ -32,6 +33,16 @@ class DataDao(DAO, Base):
     fov_list_ = FovData.data_to_fov()
     roi_list_ = ROIdata.data_to_roi()
 
+    image_resource = Column(Integer, ForeignKey('ImageResource.id_'), index=True)
+    xdim = Column(Integer, nullable=False, server_default=text('2048'))
+    ydim = Column(Integer, nullable=False, server_default=text('2048'))
+    z = Column(Integer, nullable=True,)
+    c = Column(Integer, nullable=True,)
+    t = Column(Integer, nullable=True,)
+
+    shape = composite(ImageResource.Shape, xdim, ydim)
+    image = composite(ImageResource.Image, z, c, t)
+
     @property
     def record(self):
         """
@@ -52,6 +63,14 @@ class DataDao(DAO, Base):
                 'source_dir': self.source_dir,
                 'meta_data': self.meta_data,
                 'key_val': self.key_val,
+                'shape': self.shape,
+                'image': self.image,
+                'image_resource': self.image_resource,
+                'xdim': self.xdim,
+                'ydim': self.ydim,
+                'z': self.z,
+                'c': self.c,
+                't': self.t,
                 # 'fov': self.fov
                 }
 

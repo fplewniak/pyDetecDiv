@@ -8,6 +8,7 @@ import os
 
 from pydetecdiv.domain.dso import NamedDSO
 from pydetecdiv.settings import get_config_value
+from pydetecdiv.domain.ImageResource import ImageResource
 
 
 class Data(NamedDSO):
@@ -15,7 +16,8 @@ class Data(NamedDSO):
     A business-logic class defining valid operations and attributes of data
     """
 
-    def __init__(self, uuid, dataset, author, date, url, format_, source_dir, meta_data, key_val, **kwargs):
+    def __init__(self, uuid, dataset, author, date, url, format_, source_dir, meta_data, key_val, image_resource, c, t,
+                 z, xdim=2048, ydim=2048, **kwargs):
         super().__init__(**kwargs)
         self.uuid = uuid
         self.dataset_ = dataset
@@ -26,7 +28,28 @@ class Data(NamedDSO):
         self.source_dir = source_dir
         self.meta_data = meta_data
         self.key_val = key_val
+        self._image_resource = image_resource
+        self.xdim = xdim
+        self.ydim = ydim
+        self.c = c
+        self.t = t
+        self.z = z
         self.validate(updated=False)
+
+    @property
+    def image_resource(self):
+        """
+        property returning the Image resource object this Data file is part of
+
+        :return: the parent Image resource object
+        :rtype: ImageResource
+        """
+        return self.project.get_object('ImageResource', self._image_resource)
+
+    @image_resource.setter
+    def image_resource(self, image_resource):
+        self._image_resource = image_resource.id_ if isinstance(image_resource, ImageResource) else image_resource
+        self.validate()
 
     @property
     def dataset(self):
@@ -76,11 +99,17 @@ class Data(NamedDSO):
             'author': self.author,
             'date': self.date,
             'url': self.url,
-            'format_': self.format_,
+            'format': self.format_,
             'source_dir': self.source_dir,
             'meta_data': self.meta_data,
             'key_val': self.key_val,
-            'uuid': self.uuid
+            'uuid': self.uuid,
+            'image_resource': self._image_resource,
+            'xdim': self.xdim,
+            'ydim': self.ydim,
+            'z': self.z,
+            'c': self.c,
+            't': self.t,
         }
         if not no_id:
             record['id_'] = self.id_

@@ -344,11 +344,12 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         :param regex: the regular expression to use for data annotation
         """
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            pattern = re.compile(regex)
-            fov_index = pattern.groupindex['FOV']
-            fov_pattern = ''.join(re.findall(r'\(.*?\)', regex)[fov_index - 2:fov_index + 1])
+            columns = tuple(re.compile(regex).groupindex.keys())
+            # fov_index = pattern.groupindex['FOV']
+            # fov_pattern = ''.join(re.findall(r'\(.*?\)', regex)[fov_index - 2:fov_index + 1])
             # project.annotate(project.raw_dataset, 'url', tuple(pattern.groupindex.keys()), regex)
-            for i in project.create_fov_from_raw_data('url', fov_pattern):
+            # for i in project.create_fov_from_raw_data('url', fov_pattern):
+            for i in project.create_fov_from_raw_data(project.annotate(project.raw_dataset, 'url', columns, regex)):
                 self.progress.emit(i)
                 if QThread.currentThread().isInterruptionRequested():
                     project.cancel()

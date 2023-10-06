@@ -6,6 +6,8 @@ The central class for keeping track of all available objects in a project.
 import os
 import itertools
 from collections import defaultdict
+
+from pydetecdiv.domain.ImageResource import ImageResource
 from pydetecdiv.settings import get_config_value
 from pydetecdiv.persistence.project import open_project
 from pydetecdiv.domain.dso import DomainSpecificObject
@@ -15,7 +17,7 @@ from pydetecdiv.domain.Experiment import Experiment
 from pydetecdiv.domain.Data import Data
 from pydetecdiv.domain.Run import Run
 from pydetecdiv.domain.Dataset import Dataset
-from pydetecdiv.domain.ImageResource import ImageResource
+from pydetecdiv.domain.ImageResourceData import ImageResourceData
 
 
 class Project:
@@ -31,6 +33,7 @@ class Project:
         'Experiment': Experiment,
         'Data': Data,
         'Dataset': Dataset,
+        'ImageResource': ImageResource,
         'Run': Run,
     }
 
@@ -105,9 +108,9 @@ class Project:
         :param pattern: pattern defining c, z and t in the case of multiple files
         :type pattern: str
         :return: an image resource
-        :rtype: ImageResource
+        :rtype: ImageResourceData
         """
-        return ImageResource(path, pattern=pattern)
+        return ImageResourceData(path, pattern=pattern)
 
     def import_images(self, image_files, destination=None, **kwargs):
         """
@@ -142,7 +145,7 @@ class Project:
         """
         return self.repository.annotate_data(dataset, source, columns, regex)
 
-    def create_fov_from_raw_data(self, source, regex):
+    def create_fov_from_raw_data(self, df):
         """
         Create domain-specific objects from raw data using a regular expression applied to a database field
         or a combination thereof specified by source. DSOs to create are specified by the values in keys.
@@ -153,19 +156,31 @@ class Project:
         :type regex: regular expression str
         """
         yield 0
-        df = self.annotate(self.raw_dataset, source, ('FOV',), regex).loc[:, ['id_', 'FOV']]
         fov_names = [f.name for f in self.get_objects('FOV')]
-        new_fovs = df.FOV.drop_duplicates().values
-        total = len(new_fovs) + len(df.values)
-        n_fov = 0
-        for n_fov, fov_name in enumerate(new_fovs):
-            if fov_name not in fov_names:
-                FOV(project=self, name=fov_name, top_left=(0, 0), bottom_right=(999, 999))
-            yield int(n_fov * 100 / total)
+        new_fov_names = df.FOV.drop_duplicates().values
+        total = len(new_fov_names) + len(df.values)
+        new_fovs = [FOV(project=self, name=fov_name, top_left=(0, 0), bottom_right=(999, 999)) for fov_name in
+                    new_fov_names if fov_name not in fov_names]
+        image_resources = {fov.id_: ImageResource(project=self, dataset=self.raw_dataset, fov=fov) for fov in new_fovs}
+
+        yield int(len(new_fov_names) * 100 / total)
         df['FOV'] = df['FOV'].map(self.id_mapping('FOV'))
-        for i, (data_id, fov_id) in enumerate(df.values):
-            self.link_objects(self.get_object('FOV', int(fov_id)), self.get_object('Data', int(data_id)))
-            yield int((i + n_fov) * 100 / total)
+        if 'C' in df.columns:
+            for fov_id, image_res in image_resources.items():
+                (image_res.zdim, image_res.cdim, image_res.tdim) = df.loc[df['FOV'] == fov_id, ['Z', 'C', 'T']].astype(
+                    int).max(axis=0).add(1)
+                self.save(image_res)
+        for i, (data_id, fov_id) in enumerate(df.loc[:, ['id_', 'FOV']].values):
+            data_file = self.get_object('Data', int(data_id))
+            fov = self.get_object('FOV', int(fov_id))
+            self.link_objects(fov, data_file)
+            data_file.image_resource = image_resources[fov_id].id_
+            if 'C' in df.columns:
+                data_file.c = df.loc[i, 'C']
+                data_file.t = df.loc[i, 'T']
+                data_file.z = df.loc[i, 'Z']
+            self.save(data_file)
+            yield int((i + len(new_fov_names)) * 100 / total)
 
     def id_mapping(self, class_name):
         """

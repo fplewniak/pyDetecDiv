@@ -178,7 +178,6 @@ class ShallowSQLite3(ShallowDb):
         call_back = source if callable(source) else lambda x: x.record[source]
 
         df = pandas.DataFrame([d.record for d in data_list])
-        # print(df)
         for i, data in enumerate(data_list):
             m = re.search(pattern, call_back(data))
             if m:
@@ -314,7 +313,7 @@ class ShallowSQLite3(ShallowDb):
             #     linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['image_data'])]
             # case ['ImageData', ('FOV' | 'ROI')]:
             #     linked_rec = dao[parent_cls_name](self.session).image_data(parent_id)
-            case ['FOV', 'ROI']:
+            case ['FOV', ('ROI'|'ImageResource')]:
                 linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['fov'])]
             # case ['FOV', ('Image' | 'ImageData')]:
             #     linked_rec = dao[parent_cls_name](self.session).fov(parent_id)
@@ -330,10 +329,14 @@ class ShallowSQLite3(ShallowDb):
             #     linked_rec = dao[parent_cls_name](self.session).image_list(parent_id)
             case ['Data', ('FOV' | 'ROI')]:
                 linked_rec = dao[parent_cls_name](self.session).data(parent_id)
-            case ['Data', 'Dataset']:
+            case ['Data', ('Dataset'|'ImageResource')]:
                 linked_rec = dao[parent_cls_name](self.session).data_list(parent_id)
             case ['Dataset', 'Data']:
                 linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['dataset'])]
+            case ['ImageResource', 'Data']:
+                linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['image_resource'])]
+            case ['ImageResource', 'FOV']:
+                linked_rec = dao[parent_cls_name](self.session).image_resources(parent_id)
             case _:
                 linked_rec = []
         return linked_rec
