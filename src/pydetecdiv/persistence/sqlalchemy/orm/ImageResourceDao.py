@@ -6,7 +6,6 @@ Access to ImageResourceData data
 from sqlalchemy import Column, Integer, Float, String, text, ForeignKey
 from sqlalchemy.orm import relationship, joinedload, composite
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
-from pydetecdiv.persistence.sqlalchemy.orm import dao
 import pydetecdiv.utils.ImageResource as ImageResource
 
 
