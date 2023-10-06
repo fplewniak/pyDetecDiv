@@ -161,7 +161,7 @@ class Project:
         total = len(new_fov_names) + len(df.values)
         new_fovs = [FOV(project=self, name=fov_name, top_left=(0, 0), bottom_right=(999, 999)) for fov_name in
                     new_fov_names if fov_name not in fov_names]
-        image_resources = {fov.id_: ImageResource(project=self, dataset=self.raw_dataset, fov=fov) for fov in new_fovs}
+        image_resources = {fov.id_: ImageResource(project=self, dataset=self.raw_dataset, fov=fov, ) for fov in new_fovs}
 
         yield int(len(new_fov_names) * 100 / total)
         df['FOV'] = df['FOV'].map(self.id_mapping('FOV'))

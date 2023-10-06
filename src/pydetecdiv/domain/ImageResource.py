@@ -13,8 +13,10 @@ class ImageResource(DomainSpecificObject):
     A business-logic class defining valid operations and attributes of Image resources
     """
 
-    def __init__(self, dataset, fov=None, xdim=1024, ydim=1024, zdim=1, cdim=1, tdim=1,
-                 xyscale=1, tscale=1, zscale=1, xyunit=1e-6, zunit=1e-6, tunit=60, **kwargs):
+    def __init__(self, dataset, fov, xdim=1024, ydim=1024,zdim=1, cdim=1, tdim=1,
+                 xyscale=1, tscale=1, zscale=1,
+                 xyunit=1e-6, zunit=1e-6, tunit=60,
+                 **kwargs):
         super().__init__(**kwargs)
         self._dataset = dataset.id_ if isinstance(dataset, Dataset) else dataset
         self._fov = fov.id_ if isinstance(fov, FOV) else fov
@@ -42,11 +44,7 @@ class ImageResource(DomainSpecificObject):
         """
         record = {
             'dataset': self._dataset,
-            'xdim': self.xdim,
-            'ydim': self.ydim,
-            'zdim': self.zdim,
-            'cdim': self.cdim,
-            'tdim': self.tdim,
+            'shape': (self.tdim, self.cdim, self.zdim, self.ydim, self.xdim),
             'xyscale': self.xyscale,
             'xyunit': self.xyunit,
             'zscale': self.zscale,

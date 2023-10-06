@@ -16,7 +16,7 @@ class ImageResourceDao(DAO, Base):
     """
     __tablename__ = 'ImageResource'
     exclude = ['id_',]
-    translate = {}
+    translate = {'shape': ('tdim', 'cdim', 'zdim', 'ydim', 'xdim'), }
 
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
     uuid = Column(String(36))
@@ -35,7 +35,7 @@ class ImageResourceDao(DAO, Base):
 
     cdim = Column(Integer, nullable=False, server_default=text('1'))
 
-    dims = composite(ImageResource.Dimension, xdim, ydim, zdim, cdim, tdim)
+    dims = composite(ImageResource.Dimension, tdim, cdim, zdim, ydim, xdim)
 
     fov = Column(Integer, ForeignKey('FOV.id_'), nullable=False, index=True)
     dataset = Column(Integer, ForeignKey('dataset.id_'), nullable=False, index=True)
@@ -71,7 +71,12 @@ class ImageResourceDao(DAO, Base):
         :rtype: dict
         """
         return {'id_': self.id_,
-                'dims': self.dims,
+                # 'dims': self.dims,
+                'xdim': self.xdim,
+                'ydim': self.ydim,
+                'zdim': self.zdim,
+                'cdim': self.cdim,
+                'tdim': self.tdim,
                 'xyscale': self.xyscale,
                 'xyunit': self.xyunit,
                 'zscale': self.zscale,
