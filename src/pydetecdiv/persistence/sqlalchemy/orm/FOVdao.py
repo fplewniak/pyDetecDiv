@@ -8,7 +8,7 @@ from sqlalchemy import Column, Integer, String, text, select
 from sqlalchemy.orm import relationship, joinedload
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 from pydetecdiv.persistence.sqlalchemy.orm import dao
-from pydetecdiv.persistence.sqlalchemy.orm.associations import FovData
+# from pydetecdiv.persistence.sqlalchemy.orm.associations import FovData
 
 
 class FOVdao(DAO, Base):
@@ -28,7 +28,7 @@ class FOVdao(DAO, Base):
 
     roi_list_ = relationship('ROIdao')
 
-    data_list = FovData.fov_to_data()
+    # data_list = FovData.fov_to_data()
 
     image_resources_ = relationship('ImageResourceDao')
 

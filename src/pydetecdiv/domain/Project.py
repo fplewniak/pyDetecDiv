@@ -173,8 +173,8 @@ class Project:
                 self.save(image_res)
         for i, (data_id, fov_id) in enumerate(df.loc[:, ['id_', 'FOV']].values):
             data_file = self.get_object('Data', int(data_id))
-            fov = self.get_object('FOV', int(fov_id))
-            self.link_objects(fov, data_file)
+            # fov = self.get_object('FOV', int(fov_id))
+            # self.link_objects(fov, data_file)
             data_file.image_resource = image_resources[fov_id].id_
             if 'C' in df.columns:
                 data_file.c = df.loc[i, 'C']

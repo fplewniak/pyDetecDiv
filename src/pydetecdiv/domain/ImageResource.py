@@ -46,6 +46,17 @@ class ImageResource(DomainSpecificObject):
         return self.project.get_object('FOV', self._fov)
 
     @property
+    def data_list(self):
+        """
+        Property returning the Data objects associated to this FOV
+
+        :return: the data associated to this FOV
+        :rtype: list of Data objects
+        """
+        data = self.project.get_linked_objects('Data', to=self)
+        return data
+
+    @property
     def shape(self):
         """
         The image resource shape (should habitually be 5D with the following dimensions TCZYX)

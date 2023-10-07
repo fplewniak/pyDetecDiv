@@ -4,9 +4,9 @@
 Access to data relative to Data file (images, tables, etc.)
 """
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, text
-from sqlalchemy.orm import composite
+from sqlalchemy.orm import composite, joinedload
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
-from pydetecdiv.persistence.sqlalchemy.orm.associations import FovData, ROIdata
+from pydetecdiv.persistence.sqlalchemy.orm.associations import ROIdata
 from pydetecdiv.persistence.sqlalchemy.orm import dao
 import pydetecdiv.utils.ImageResource as ImageResource
 
@@ -30,7 +30,7 @@ class DataDao(DAO, Base):
     meta_data = Column(String)
     key_val = Column(String)
 
-    fov_list_ = FovData.data_to_fov()
+    # fov_list_ = FovData.data_to_fov()
     roi_list_ = ROIdata.data_to_roi()
 
     image_resource = Column(Integer, ForeignKey('ImageResource.id_'), index=True)
@@ -86,9 +86,17 @@ class DataDao(DAO, Base):
         if self.session.query(DataDao).filter(DataDao.id_ == data_id).first() is not None:
             fov_list = [i.record
                         for i in self.session.query(dao.FOVdao)
-                        .filter(FovData.data == data_id)
-                        .filter(FovData.fov == dao.FOVdao.id_)
+                        .options(joinedload(dao.FOVdao.image_resources_))
+                        .options(joinedload(dao.ImageResourceDao.fov))
+                        .filter(DataDao.image_resource == dao.ImageResourceDao.id_)
                         ]
+
+        # if self.session.query(DataDao).filter(DataDao.id_ == data_id).first() is not None:
+        #     fov_list = [i.record
+        #                 for i in self.session.query(dao.FOVdao)
+        #                 .filter(FovData.data == data_id)
+        #                 .filter(FovData.fov == dao.FOVdao.id_)
+        #                 ]
             # Alternative method to retrieve the fov_list:
             # fov_list = [fov_data.fov_.record for fov_data in self.session.query(DataDao)
             #             .options(joinedload(DataDao.fov_list_))
