@@ -165,6 +165,7 @@ class Project:
 
         yield int(len(new_fov_names) * 100 / total)
         df['FOV'] = df['FOV'].map(self.id_mapping('FOV'))
+        print(df)
         if 'C' in df.columns:
             for fov_id, image_res in image_resources.items():
                 (image_res.zdim, image_res.cdim, image_res.tdim) = df.loc[df['FOV'] == fov_id, ['Z', 'C', 'T']].astype(

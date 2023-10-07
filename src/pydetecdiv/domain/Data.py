@@ -5,6 +5,9 @@
 """
 import json
 import os
+import tifffile
+import numpy as np
+from aicsimageio import AICSImage
 
 from pydetecdiv.domain.dso import NamedDSO
 from pydetecdiv.settings import get_config_value
@@ -16,8 +19,8 @@ class Data(NamedDSO):
     A business-logic class defining valid operations and attributes of data
     """
 
-    def __init__(self, uuid, dataset, author, date, url, format_, source_dir, meta_data, key_val, image_resource, c, t,
-                 z, xdim=2048, ydim=2048, **kwargs):
+    def __init__(self, uuid, dataset, author, date, url, format_, source_dir, meta_data, key_val, image_resource,
+                 c=None, t=None, z=None, xdim=2048, ydim=2048, **kwargs):
         super().__init__(**kwargs)
         self.uuid = uuid
         self.dataset_ = dataset
@@ -35,6 +38,11 @@ class Data(NamedDSO):
         self.t = t
         self.z = z
         self.validate(updated=False)
+
+    # def image_data(self, T=0, Z=0, C=0):
+    #     if self._memmap:
+    #         return self._memmap[T, C, Z, ...]
+    #     return AICSImage(self.url_).reader.get_image_dask_data('YX').compute()
 
     @property
     def image_resource(self):

@@ -34,12 +34,13 @@ class ImageResourceData:
     A generic class to access image resources (files) on disk without having to load whole time series into memory
     """
 
-    def __init__(self, path=None, data=None, pattern=None, max_mem=5000, fov=None, **kwargs):
+    def __init__(self, path=None, data=None, pattern=None, max_mem=5000, fov=None, image_resource=None, **kwargs):
         self.path = path
         self.max_mem = max_mem
         self.fov = fov
         self._dims = None
         self._memmap = None
+        # self.image_resource = image_resource
         if path:
             if pattern is None or len(pattern) == 0:
                 self._memmap = tifffile.memmap(path, **kwargs)
@@ -68,6 +69,8 @@ class ImageResourceData:
         """
         The image resource dimensions with their size
         """
+        # if self.image_resource:
+        #     return self.image_resource.dims
         return self.resource.dims
 
     @property
@@ -75,6 +78,8 @@ class ImageResourceData:
         """
         The number of time frames
         """
+        # if self.image_resource:
+        #     return self.image_resource.sizeT
         if self._dims is None:
             return self.resource.dims.T
         return self._dims['T']
@@ -84,6 +89,8 @@ class ImageResourceData:
         """
         The number of channels
         """
+        # if self.image_resource:
+        #     return self.image_resource.sizeC
         if self._dims is None:
             return self.resource.dims.C
         return self._dims['C']
@@ -93,6 +100,8 @@ class ImageResourceData:
         """
         The number of layers
         """
+        # if self.image_resource:
+        #     return self.image_resource.sizeZ
         if self._dims is None:
             return self.resource.dims.Z
         return self._dims['Z']
@@ -102,6 +111,8 @@ class ImageResourceData:
         """
         The image height
         """
+        # if self.image_resource:
+        #     return self.image_resource.sizeY
         return self.resource.dims.Y
 
     @property
@@ -109,6 +120,8 @@ class ImageResourceData:
         """
         the image width
         """
+        # if self.image_resource:
+        #     return self.image_resource.sizeX
         return self.resource.dims.X
 
     def image(self, C=0, Z=0, T=0, drift=None):
