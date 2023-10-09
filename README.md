@@ -10,6 +10,17 @@ Porting DetecDiv to Python
 Documentation (user's manual and API documentation) is available at: https://fplewniak.github.io/pyDetecDiv/
 
 ## Getting started
+### Known issue
+On Ubuntu distribution with PySide6 version 6.5, you may get the following error:
+`qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found.
+This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.`
+
+This may be due to a missing xcb library that can be identified by issuing the following command:
+`ldd <...>/lib/python3.11/site-packages/PySide6/Qt/plugins/platforms/libqxcb.so`
+
+Then install the missing library (for example, libxcb-cursor0 on a Ubuntu 22.04 installation):
+`sudo apt install libxcb-cursor0`
+
 ### Easy installation (Linux)
 The easiest way to install pyDetecDiv on a Linux box is to download the [pydetecdiv-0.2.0-linux64.tar.gz](https://github.com/fplewniak/pyDetecDiv/releases/download/v0.2.0/pydetecdiv-0.2.0-linux64.tar.gz). 
 Then unpack it in a place of your choice and run the pydetecdiv executable you will find in the pydetecdiv directory.

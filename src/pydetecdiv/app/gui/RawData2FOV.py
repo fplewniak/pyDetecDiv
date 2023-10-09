@@ -39,26 +39,35 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         self.ui.setupUi(self)
         self.samples = [self.ui.sample1, self.ui.sample2, self.ui.sample3, self.ui.sample4, self.ui.sample5][
                        :min([len(raw_data_urls), 5])]
-        self.controls = {'FOV': self.ui.pos_check,
-                         'C': self.ui.c_check,
-                         'T': self.ui.t_check,
-                         'Z': self.ui.z_check
+        self.controls = {'FOV': self.ui.position,
+                         'C': self.ui.Channel,
+                         'T': self.ui.Frame,
+                         'Z': self.ui.Layer
                          }
         for i, label_text in enumerate(self.samples_text):
             self.samples[i].setText(label_text)
         self.setWindowTitle('Create FOVs from raw data files')
+        self.ui.pos_left.addItems(['position', 'Pos', ''])
+        self.ui.c_left.addItems(['channel', 'c', 'C', ''])
+        self.ui.t_left.addItems(['time', 'frame', 't', 'T', ''])
+        self.ui.z_left.addItems(['_z', 'z', 'Z', 'layer', ''])
+        self.ui.pos_pattern.addItems(['\d+', 'position\d+', 'Pos\d+'])
+        self.ui.c_pattern.addItems(['\d+', 'c\d+', 'channel\d+'])
+        self.ui.t_pattern.addItems(['\d+', 'frame\d+', 'frame_\d+'])
+        self.ui.z_pattern.addItems(['\d+', 'z\d+', 'z_\d+', 'layer\d+', 'layer_\d+'])
         self.reset()
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            annotation_pattern = project.raw_dataset.pattern
-        if annotation_pattern:
-            wait_dialog = WaitDialog('Creating Fields of view', self, cancel_msg='Cancel FOV creation: please wait',
-                                     progress_bar=True, )
-            self.finished.connect(wait_dialog.close_window)
-            self.progress.connect(wait_dialog.show_progress)
-            wait_dialog.wait_for(self.create_fov_annotate, annotation_pattern)
-            # self.create_fov_annotate(annotation_pattern)
-        else:
-            self.exec()
+        # with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        #     annotation_pattern = project.raw_dataset.pattern
+        # if annotation_pattern:
+        #     wait_dialog = WaitDialog('Creating Fields of view', self, cancel_msg='Cancel FOV creation: please wait',
+        #                              progress_bar=True, )
+        #     self.finished.connect(wait_dialog.close_window)
+        #     self.progress.connect(wait_dialog.show_progress)
+        #     wait_dialog.wait_for(self.create_fov_annotate, annotation_pattern)
+        #     # self.create_fov_annotate(annotation_pattern)
+        # else:
+        #     self.exec()
+        self.exec()
         for child in self.children():
             child.deleteLater()
         self.destroy(True)
@@ -67,30 +76,30 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         """
         Reset the form with default patterns and colours
         """
-        self.ui.pos_check.setChecked(True)
-        self.ui.c_check.setChecked(False)
-        self.ui.t_check.setChecked(False)
-        self.ui.z_check.setChecked(False)
+        self.ui.multiple_files.setChecked(True)
+        # self.ui.c_check.setChecked(False)
+        # self.ui.t_check.setChecked(False)
+        # self.ui.z_check.setChecked(False)
         self.colours = {
             'FOV': QColor.fromRgb(255, 125, 0, 255),
             'C': QColor.fromRgb(0, 255, 0, 255),
             'T': QColor.fromRgb(0, 255, 255, 255),
             'Z': QColor.fromRgb(255, 255, 0, 255),
         }
-        self.ui.pos_left.setCurrentText("position")
-        self.ui.pos_pattern.setCurrentText("\\d+")
+        self.ui.pos_left.setCurrentIndex(0)
+        self.ui.pos_pattern.setCurrentIndex(0)
         self.ui.pos_right.setCurrentText('')
 
-        self.ui.c_left.setCurrentText("channel")
-        self.ui.c_pattern.setCurrentText("\\d+")
+        self.ui.c_left.setCurrentIndex(0)
+        self.ui.c_pattern.setCurrentIndex(0)
         self.ui.c_right.setCurrentText('')
 
-        self.ui.t_left.setCurrentText("time")
-        self.ui.t_pattern.setCurrentText("\\d+")
+        self.ui.t_left.setCurrentIndex(0)
+        self.ui.t_pattern.setCurrentIndex(0)
         self.ui.t_right.setCurrentText('')
 
-        self.ui.z_left.setCurrentText("_z")
-        self.ui.z_pattern.setCurrentText("\\d+")
+        self.ui.z_left.setCurrentIndex(0)
+        self.ui.z_pattern.setCurrentIndex(0)
         self.ui.z_right.setCurrentText('')
 
         self.show_chosen_colours()
@@ -103,16 +112,15 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         :return: the regular expression string
         """
         regex = {}
-        if self.ui.pos_check.isChecked():
-            patterns = [self.ui.pos_left.currentText(),
-                        self.ui.pos_pattern.currentText(),
-                        self.ui.pos_right.currentText()]
-            for i, _ in enumerate(patterns):
-                while patterns[i].endswith('\\'):
-                    patterns[i] = patterns[i][:-1]
-            regex['FOV'] = f'({patterns[0]})(?P<FOV>{patterns[1]})({patterns[2]})'
+        patterns = [self.ui.pos_left.currentText(),
+                    self.ui.pos_pattern.currentText(),
+                    self.ui.pos_right.currentText()]
+        for i, _ in enumerate(patterns):
+            while patterns[i].endswith('\\'):
+                patterns[i] = patterns[i][:-1]
+        regex['FOV'] = f'({patterns[0]})(?P<FOV>{patterns[1]})({patterns[2]})'
 
-        if self.ui.c_check.isChecked():
+        if self.ui.multiple_files.isChecked():
             patterns = [self.ui.c_left.currentText(),
                         self.ui.c_pattern.currentText(),
                         self.ui.c_right.currentText()]
@@ -121,7 +129,6 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
                     patterns[i] = patterns[i][:-1]
             regex['C'] = f'({patterns[0]})(?P<C>{patterns[1]})({patterns[2]})'
 
-        if self.ui.t_check.isChecked():
             patterns = [self.ui.t_left.currentText(),
                         self.ui.t_pattern.currentText(),
                         self.ui.t_right.currentText()]
@@ -130,7 +137,6 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
                     patterns[i] = patterns[i][:-1]
             regex['T'] = f'({patterns[0]})(?P<T>{patterns[1]})({patterns[2]})'
 
-        if self.ui.z_check.isChecked():
             patterns = [self.ui.z_left.currentText(),
                         self.ui.z_pattern.currentText(),
                         self.ui.z_right.currentText()]
@@ -144,12 +150,20 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         """
         Change the colours of file name samples showing the pattern matches.
         """
+        if self.ui.single_file.isChecked():
+            self.ui.t_widget.hide()
+            self.ui.z_widget.hide()
+            self.ui.c_widget.hide()
+        else:
+            self.ui.t_widget.show()
+            self.ui.z_widget.show()
+            self.ui.c_widget.show()
         self.clear_colours()
         regex = self.get_regex()
         if regex:
-            self.colourize_matches(self.find_matches(regex))
+            self.colourize_matches(self.find_matches(self.samples_text, regex))
 
-    def find_matches(self, regexes):
+    def find_matches(self, urls, regexes):
         """
         Find a list of matches with the defined regular expressions
 
@@ -159,7 +173,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         matches = {}
         for what in regexes:
             pattern = re.compile(regexes[what])
-            matches[what] = [re.search(pattern, label_text) for label_text in self.samples_text]
+            matches[what] = [re.search(pattern, label_text) for label_text in urls]
         return matches
 
     @staticmethod
@@ -196,6 +210,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         df = pandas.DataFrame.from_dict(self.get_match_spans(matches, 0))
         columns = set(df.columns)
         conflicting_columns = set()
+        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(True)
         for col in columns:
             self.controls[col].setStyleSheet("")
         for i, file_name in enumerate(self.samples_text):
@@ -211,7 +226,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
                                 self.controls[col2].setStyleSheet("background-color: red")
                                 conflicting_columns.add(col1)
                                 conflicting_columns.add(col2)
-
+                                self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
             df = pandas.DataFrame.from_dict(self.get_match_spans(matches, 2))
             for col in df.sort_values(0, axis=1, ascending=False):
                 if col not in conflicting_columns:
@@ -221,6 +236,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
                         file_name = f'{file_name[:start]}<span style="background-color: rgb({r}, {g}, {b})">{file_name[start:end]}</span>{file_name[end:]}'
                     else:
                         self.controls[col].setStyleSheet("background-color: orange")
+                        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
             try:
                 self.samples[i].setText(file_name)
             finally:
@@ -304,20 +320,19 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         match clicked_button:
             case QDialogButtonBox.StandardButton.Ok:
                 regexes = self.get_regex()
-                df = pandas.DataFrame.from_dict(self.get_match_spans(self.find_matches(regexes), 0))
+                df = pandas.DataFrame.from_dict(self.get_match_spans(self.find_matches(self.samples_text, regexes), 0))
                 regex = '.*'.join([regexes[col] for col in df.sort_values(0, axis=1, ascending=True).columns])
                 wait_dialog = WaitDialog('Creating Fields of view', self, cancel_msg='Cancel FOV creation: please wait',
                                          progress_bar=True, )
                 self.finished.connect(wait_dialog.close_window)
                 self.progress.connect(wait_dialog.show_progress)
-                wait_dialog.wait_for(self.create_fov_annotate, regex)
-                # self.create_fov_annotate(regex)
                 with pydetecdiv_project(PyDetecDiv().project_name) as project:
                     project.raw_dataset.pattern = '.*'.join(
                         [regexes[col] for col in df.sort_values(0, axis=1, ascending=True).columns if col != 'FOV'])
                     project.save(project.raw_dataset)
-                self.close()
-            case QDialogButtonBox.StandardButton.Cancel:
+                wait_dialog.wait_for(self.create_fov_annotate, regex)
+                PyDetecDiv().project_selected.emit(project.dbname)
+            case QDialogButtonBox.StandardButton.Close:
                 self.close()
             case QDialogButtonBox.StandardButton.Reset:
                 self.reset()
@@ -329,11 +344,12 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         :param regex: the regular expression to use for data annotation
         """
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            pattern = re.compile(regex)
-            fov_index = pattern.groupindex['FOV']
-            fov_pattern = ''.join(re.findall(r'\(.*?\)', regex)[fov_index - 2:fov_index + 1])
+            columns = tuple(re.compile(regex).groupindex.keys())
+            # fov_index = pattern.groupindex['FOV']
+            # fov_pattern = ''.join(re.findall(r'\(.*?\)', regex)[fov_index - 2:fov_index + 1])
             # project.annotate(project.raw_dataset, 'url', tuple(pattern.groupindex.keys()), regex)
-            for i in project.create_fov_from_raw_data('url', fov_pattern):
+            # for i in project.create_fov_from_raw_data('url', fov_pattern):
+            for i in project.create_fov_from_raw_data(project.annotate(project.raw_dataset, 'url', columns, regex)):
                 self.progress.emit(i)
                 if QThread.currentThread().isInterruptionRequested():
                     project.cancel()

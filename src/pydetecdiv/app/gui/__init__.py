@@ -70,7 +70,7 @@ class MainStatusBar(QStatusBar):
         self.setObjectName('Main status bar')
         self.timer = QTimer()
         self.timer.timeout.connect(self.show_memory_usage)
-        self.timer.setInterval(1000)
+        self.timer.setInterval(10000)
         self.timer.start()
 
     def show_memory_usage(self):

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>599</width>
-    <height>361</height>
+    <height>408</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -55,6 +55,27 @@
           </widget>
          </item>
          <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <item>
+            <widget class="QRadioButton" name="multiple_files">
+             <property name="text">
+              <string notr="true">Multiple files per FOV</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="single_file">
+             <property name="text">
+              <string>Single file</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
           <widget class="QWidget" name="patterns_widget" native="true">
            <layout class="QVBoxLayout" name="patterns_layout">
             <item>
@@ -79,15 +100,21 @@
                 <number>0</number>
                </property>
                <item>
-                <widget class="QCheckBox" name="pos_check">
+                <widget class="QLabel" name="position">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                    <horstretch>0</horstretch>
                    <verstretch>0</verstretch>
                   </sizepolicy>
                  </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>45</width>
+                   <height>0</height>
+                  </size>
+                 </property>
                  <property name="text">
-                  <string>Position</string>
+                  <string notr="true">Position</string>
                  </property>
                 </widget>
                </item>
@@ -198,15 +225,21 @@
                 <number>0</number>
                </property>
                <item>
-                <widget class="QCheckBox" name="c_check">
+                <widget class="QLabel" name="Channel">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                    <horstretch>0</horstretch>
                    <verstretch>0</verstretch>
                   </sizepolicy>
                  </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>45</width>
+                   <height>0</height>
+                  </size>
+                 </property>
                  <property name="text">
-                  <string>Channel</string>
+                  <string notr="true">Channel</string>
                  </property>
                 </widget>
                </item>
@@ -314,7 +347,7 @@
                 <number>0</number>
                </property>
                <item>
-                <widget class="QCheckBox" name="t_check">
+                <widget class="QLabel" name="Frame">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                    <horstretch>0</horstretch>
@@ -323,12 +356,12 @@
                  </property>
                  <property name="minimumSize">
                   <size>
-                   <width>70</width>
-                   <height>20</height>
+                   <width>45</width>
+                   <height>0</height>
                   </size>
                  </property>
                  <property name="text">
-                  <string>Frame</string>
+                  <string notr="true">Frame</string>
                  </property>
                 </widget>
                </item>
@@ -436,7 +469,7 @@
                 <number>0</number>
                </property>
                <item>
-                <widget class="QCheckBox" name="z_check">
+                <widget class="QLabel" name="Layer">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                    <horstretch>0</horstretch>
@@ -445,12 +478,12 @@
                  </property>
                  <property name="minimumSize">
                   <size>
-                   <width>70</width>
-                   <height>20</height>
+                   <width>45</width>
+                   <height>0</height>
                   </size>
                  </property>
                  <property name="text">
-                  <string>Layer</string>
+                  <string notr="true">Layer</string>
                  </property>
                 </widget>
                </item>
@@ -650,7 +683,7 @@
          <enum>Qt::Horizontal</enum>
         </property>
         <property name="standardButtons">
-         <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok|QDialogButtonBox::Reset</set>
+         <set>QDialogButtonBox::Close|QDialogButtonBox::Ok|QDialogButtonBox::Reset</set>
         </property>
        </widget>
       </item>
@@ -671,70 +704,6 @@
  </customwidgets>
  <resources/>
  <connections>
-  <connection>
-   <sender>pos_check</sender>
-   <signal>stateChanged(int)</signal>
-   <receiver>RawData2FOV</receiver>
-   <slot>change_sample_style()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>35</x>
-     <y>67</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>23</x>
-     <y>11</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>c_check</sender>
-   <signal>stateChanged(int)</signal>
-   <receiver>RawData2FOV</receiver>
-   <slot>change_sample_style()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>57</x>
-     <y>95</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>31</x>
-     <y>15</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>t_check</sender>
-   <signal>stateChanged(int)</signal>
-   <receiver>RawData2FOV</receiver>
-   <slot>change_sample_style()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>75</x>
-     <y>123</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>41</x>
-     <y>7</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>z_check</sender>
-   <signal>stateChanged(int)</signal>
-   <receiver>RawData2FOV</receiver>
-   <slot>change_sample_style()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>92</x>
-     <y>151</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>32</x>
-     <y>9</y>
-    </hint>
-   </hints>
-  </connection>
   <connection>
    <sender>pos_left</sender>
    <signal>currentTextChanged(QString)</signal>
@@ -1004,6 +973,38 @@
     <hint type="destinationlabel">
      <x>4</x>
      <y>166</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>multiple_files</sender>
+   <signal>released()</signal>
+   <receiver>RawData2FOV</receiver>
+   <slot>change_sample_style()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>157</x>
+     <y>48</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>299</x>
+     <y>203</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>single_file</sender>
+   <signal>released()</signal>
+   <receiver>RawData2FOV</receiver>
+   <slot>change_sample_style()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>441</x>
+     <y>48</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>299</x>
+     <y>203</y>
     </hint>
    </hints>
   </connection>

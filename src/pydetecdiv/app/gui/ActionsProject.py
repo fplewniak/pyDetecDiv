@@ -5,6 +5,10 @@ from PySide6.QtCore import Qt, QRegularExpression, Slot, Signal
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QLabel, QVBoxLayout, QLineEdit, QDialogButtonBox, QComboBox, QMessageBox, QDialog,)
 from pydetecdiv.app import PyDetecDiv, project_list, WaitDialog, pydetecdiv_project
+from pydetecdiv.app import MessageDialog
+
+from pydetecdiv.exceptions import OpenProjectError, UnknownRepositoryTypeError
+
 
 class ProjectDialog(QDialog):
     """
@@ -12,7 +16,7 @@ class ProjectDialog(QDialog):
     """
     finished = Signal(bool, name='projectOpen')
 
-    def __init__(self, new_project_dialog=False):
+    def __init__(self, project_list, new_project_dialog=False):
         super().__init__(PyDetecDiv().main_window)
         self.wait = None
         self.new_project_dialog = new_project_dialog
@@ -28,7 +32,7 @@ class ProjectDialog(QDialog):
             self.setWindowTitle('Open project')
             self.label = QLabel('Select a project name:')
             self.project_name = QComboBox()
-            self.project_name.addItems(sorted(project_list()))
+            self.project_name.addItems(sorted(project_list))
             self.project_name.setEditable(True)
             self.project_name.editTextChanged.connect(self.project_name_changed)
 
@@ -95,6 +99,7 @@ class ProjectDialog(QDialog):
                 error_msg = QMessageBox(self)
                 error_msg.setText(f'Error: {p_name} project already exists!!!')
                 error_msg.exec()
+                return
             else:
                 self.wait = WaitDialog(f'Creating {p_name}, please wait.', self)
         else:
@@ -111,10 +116,15 @@ class ProjectDialog(QDialog):
         :param project_name: the name of the project to open/create
         :type project_name: str
         """
-        with pydetecdiv_project(project_name) as project:
-            PyDetecDiv().project_selected.emit(project.dbname)
-            PyDetecDiv().raw_data_counted.emit(project.count_objects('Data'))
-        self.finished.emit(True)
+
+        try:
+            with pydetecdiv_project(project_name) as project:
+                PyDetecDiv().project_selected.emit(project.dbname)
+                PyDetecDiv().raw_data_counted.emit(project.count_objects('Data'))
+            self.finished.emit(True)
+        except OpenProjectError as e:
+            self.finished.emit(True)
+            MessageDialog(e.message)
 
 class NewProject(QAction):
     """
@@ -123,8 +133,15 @@ class NewProject(QAction):
 
     def __init__(self, parent):
         super().__init__(QIcon(":icons/new_project"), "&New project", parent)
-        self.triggered.connect(lambda _: ProjectDialog(new_project_dialog=True))
+        # self.triggered.connect(lambda _: ProjectDialog(new_project_dialog=True))
+        self.triggered.connect(self.create_project)
         parent.addAction(self)
+
+    def create_project(self):
+        try:
+            ProjectDialog(project_list(), new_project_dialog=True)
+        except UnknownRepositoryTypeError as e:
+            MessageDialog(e.message)
 
 
 class OpenProject(QAction):
@@ -134,5 +151,12 @@ class OpenProject(QAction):
 
     def __init__(self, parent):
         super().__init__(QIcon(":icons/open_project"), "&Open project", parent)
-        self.triggered.connect(ProjectDialog)
+        self.triggered.connect(self.open_project)
         parent.addAction(self)
+
+    def open_project(self):
+        try:
+            ProjectDialog(project_list())
+        except UnknownRepositoryTypeError as e:
+            MessageDialog(e.message)
+

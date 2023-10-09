@@ -4,11 +4,11 @@
  A class defining the business logic methods that can be applied to Regions Of Interest
 """
 from pydetecdiv.exceptions import JuttingError
-from pydetecdiv.domain.dso import NamedDSO, BoxedDSO, DsoWithImageData
+from pydetecdiv.domain.dso import NamedDSO, BoxedDSO
 from pydetecdiv.domain.FOV import FOV
 
 
-class ROI(NamedDSO, BoxedDSO, DsoWithImageData):
+class ROI(NamedDSO, BoxedDSO):
     """
     A business-logic class defining valid operations and attributes of Regions of interest (ROI)
     """
@@ -47,16 +47,6 @@ class ROI(NamedDSO, BoxedDSO, DsoWithImageData):
     def fov(self, fov):
         self._fov = fov.id_ if isinstance(fov, FOV) else fov
         self.validate()
-
-    @property
-    def image_list(self):
-        """
-        Return a list of images related to this ROI
-
-        :return: list of images
-        :rtype: list of Image objects
-        """
-        return self.project.get_linked_objects('Image', to=self)
 
     @property
     def bottom_right(self):

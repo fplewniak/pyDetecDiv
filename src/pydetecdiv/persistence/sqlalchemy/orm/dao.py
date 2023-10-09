@@ -7,11 +7,10 @@ The dso_dao_mapping dictionary maps the correspondence between domain-specific c
 """
 from pydetecdiv.persistence.sqlalchemy.orm.FOVdao import FOVdao
 from pydetecdiv.persistence.sqlalchemy.orm.ROIdao import ROIdao
-# from pydetecdiv.persistence.sqlalchemy.orm.ImageDataDao import ImageDataDao
-# from pydetecdiv.persistence.sqlalchemy.orm.ImageDao import ImageDao
 from pydetecdiv.persistence.sqlalchemy.orm.ExperimentDao import ExperimentDao
 from pydetecdiv.persistence.sqlalchemy.orm.DataDao import DataDao
 from pydetecdiv.persistence.sqlalchemy.orm.DatasetDao import DatasetDao
+from pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao import ImageResourceDao
 from pydetecdiv.persistence.sqlalchemy.orm.RunDao import RunDao
 
 dso_dao_mapping = {
@@ -20,7 +19,6 @@ dso_dao_mapping = {
     'Experiment': ExperimentDao,
     'Dataset': DatasetDao,
     'Data': DataDao,
+    'ImageResource': ImageResourceDao,
     'Run': RunDao,
-    # 'ImageData': ImageDataDao,
-    # 'Image': ImageDao,
 }

@@ -67,7 +67,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.ROI.ROI"><code class="docutils literal notranslate"><span class="pre">ROI</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.Data.Data"><code class="docutils literal notranslate"><span class="pre">Data</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.Dataset.Dataset"><code class="docutils literal notranslate"><span class="pre">Dataset</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.ImageResource.ImageResource"><code class="docutils literal notranslate"><span class="pre">ImageResource</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData"><code class="docutils literal notranslate"><span class="pre">ImageResourceData</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.Tool.Tool"><code class="docutils literal notranslate"><span class="pre">Tool</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.Run.Run"><code class="docutils literal notranslate"><span class="pre">Run</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.Experiment.Experiment"><code class="docutils literal notranslate"><span class="pre">Experiment</span></code></a></li>
@@ -358,7 +358,7 @@ achieved through the use of dict representing standardized records.</p>
 <dd class="field-even"><p>an image resource</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#pydetecdiv.domain.ImageResource.ImageResource" title="pydetecdiv.domain.ImageResource.ImageResource">ImageResource</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData" title="pydetecdiv.domain.ImageResourceData.ImageResourceData">ImageResourceData</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -833,7 +833,7 @@ back-end</p>
 <dd class="field-even"><p>the image resource</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#pydetecdiv.domain.ImageResource.ImageResource" title="pydetecdiv.domain.ImageResource.ImageResource">ImageResource</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData" title="pydetecdiv.domain.ImageResourceData.ImageResourceData">ImageResourceData</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1033,13 +1033,13 @@ back-end</p>
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.ImageResource.</span></span><span class="sig-name descname"><span class="pre">ImageResource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_mem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.ImageResourceData.</span></span><span class="sig-name descname"><span class="pre">ImageResourceData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_mem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A generic class to access image resources (files) on disk without having to load whole time series into memory</p>
 <dl class="py property">
-<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.shape">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.shape" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData.shape">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.shape" title="Permalink to this definition"></a></dt>
 <dd><p>The image resource shape (should habitually be 5D with the following dimensions TCZYX)</p>
 </dd></dl>
 
@@ -1050,38 +1050,38 @@ back-end</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.sizeT">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeT</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.sizeT" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData.sizeT">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeT</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.sizeT" title="Permalink to this definition"></a></dt>
 <dd><p>The number of time frames</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.sizeC">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeC</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.sizeC" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData.sizeC">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeC</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.sizeC" title="Permalink to this definition"></a></dt>
 <dd><p>The number of channels</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.sizeZ">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeZ</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.sizeZ" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData.sizeZ">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeZ</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.sizeZ" title="Permalink to this definition"></a></dt>
 <dd><p>The number of layers</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.sizeY">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeY</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.sizeY" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData.sizeY">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeY</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.sizeY" title="Permalink to this definition"></a></dt>
 <dd><p>The image height</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.sizeX">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeX</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.sizeX" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData.sizeX">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeX</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.sizeX" title="Permalink to this definition"></a></dt>
 <dd><p>the image width</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.image">
-<span class="sig-name descname"><span class="pre">image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drift</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.image" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData.image">
+<span class="sig-name descname"><span class="pre">image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drift</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.image" title="Permalink to this definition"></a></dt>
 <dd><p>A 2D grayscale image (on frame, one channel and one layer)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1101,8 +1101,8 @@ back-end</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.data_sample">
-<span class="sig-name descname"><span class="pre">data_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.data_sample" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData.data_sample">
+<span class="sig-name descname"><span class="pre">data_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.data_sample" title="Permalink to this definition"></a></dt>
 <dd><p>Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for
 regions of interest from a field of view.</p>
 <dl class="field-list simple">
@@ -1122,33 +1122,33 @@ regions of interest from a field of view.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.open">
-<span class="sig-name descname"><span class="pre">open</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.open" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData.open">
+<span class="sig-name descname"><span class="pre">open</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.open" title="Permalink to this definition"></a></dt>
 <dd><p>Open the memory mapped file to access data</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.close">
-<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.close" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.close" title="Permalink to this definition"></a></dt>
 <dd><p>Close the memory mapped file</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.flush">
-<span class="sig-name descname"><span class="pre">flush</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.flush" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData.flush">
+<span class="sig-name descname"><span class="pre">flush</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.flush" title="Permalink to this definition"></a></dt>
 <dd><p>Flush the data to save changes to the meory mapped file</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.refresh">
-<span class="sig-name descname"><span class="pre">refresh</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.refresh" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData.refresh">
+<span class="sig-name descname"><span class="pre">refresh</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.refresh" title="Permalink to this definition"></a></dt>
 <dd><p>Close and open the memory mapped file to save memory if needed. Useful when creating a new file or making lots
 of changes.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.compute_drift">
-<span class="sig-name descname"><span class="pre">compute_drift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'phase_correlation'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.compute_drift" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData.compute_drift">
+<span class="sig-name descname"><span class="pre">compute_drift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'phase_correlation'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.compute_drift" title="Permalink to this definition"></a></dt>
 <dd><p>Compute drift along time using the specified method</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1167,8 +1167,8 @@ of changes.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.compute_drift_phase_correlation_cv2">
-<span class="sig-name descname"><span class="pre">compute_drift_phase_correlation_cv2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_mem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.compute_drift_phase_correlation_cv2" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData.compute_drift_phase_correlation_cv2">
+<span class="sig-name descname"><span class="pre">compute_drift_phase_correlation_cv2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_mem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.compute_drift_phase_correlation_cv2" title="Permalink to this definition"></a></dt>
 <dd><p>Compute the cumulative transforms (dx, dy) to apply in order to correct the drift using phase correlation</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1188,8 +1188,8 @@ of changes.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.compute_drift_vidstab">
-<span class="sig-name descname"><span class="pre">compute_drift_vidstab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_mem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.compute_drift_vidstab" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData.compute_drift_vidstab">
+<span class="sig-name descname"><span class="pre">compute_drift_vidstab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_mem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.compute_drift_vidstab" title="Permalink to this definition"></a></dt>
 <dd><p>Compute the cumulative transforms (dx, dy, dr) to apply in order to stabilize the time series and correct drift</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1209,8 +1209,8 @@ of changes.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.correct_drift">
-<span class="sig-name descname"><span class="pre">correct_drift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">drift</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_mem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.correct_drift" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData.correct_drift">
+<span class="sig-name descname"><span class="pre">correct_drift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">drift</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_mem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.correct_drift" title="Permalink to this definition"></a></dt>
 <dd><p>Apply the drift correction and save to a multipage TIF file</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
