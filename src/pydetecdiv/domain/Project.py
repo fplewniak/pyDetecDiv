@@ -6,6 +6,7 @@ The central class for keeping track of all available objects in a project.
 import os
 import itertools
 from collections import defaultdict
+import cv2 as cv
 
 from pydetecdiv.domain.ImageResource import ImageResource
 from pydetecdiv.settings import get_config_value
@@ -182,6 +183,7 @@ class Project:
                 data_file.z = df.loc[i, 'Z']
             self.save(data_file)
             yield int((i + len(new_fov_names)) * 100 / total)
+        [image_res.set_image_shape_from_file() for image_res in image_resources.values()]
 
     def id_mapping(self, class_name):
         """

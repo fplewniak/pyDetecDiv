@@ -8,6 +8,8 @@ import os
 import re
 import sqlite3
 from datetime import datetime
+import cv2 as cv
+from PIL import Image
 
 import pandas
 import sqlalchemy
@@ -150,6 +152,9 @@ class ShallowSQLite3(ShallowDb):
                     'meta_data': '{}',
                     'key_val': '{}',
                 }
+                # record['ydim'], record['xdim'] = cv.imread(record['url'], cv.IMREAD_UNCHANGED).shape
+                with Image.open(record['url']) as img:
+                    record['xdim'], record['ydim'] = img.size
                 self.save_object('Data', record)
                 urls.append(record['url'])
         except:

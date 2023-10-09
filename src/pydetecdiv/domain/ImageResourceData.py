@@ -40,7 +40,7 @@ class ImageResourceData:
         self.fov = fov
         self._dims = None
         self._memmap = None
-        # self.image_resource = image_resource
+        self.image_resource = image_resource
         if path:
             if pattern is None or len(pattern) == 0:
                 self._memmap = tifffile.memmap(path, **kwargs)
@@ -62,6 +62,7 @@ class ImageResourceData:
         """
         The image resource shape (should habitually be 5D with the following dimensions TCZYX)
         """
+        # return self.image_resource.shape
         return self.resource.shape
 
     @property
@@ -69,8 +70,7 @@ class ImageResourceData:
         """
         The image resource dimensions with their size
         """
-        # if self.image_resource:
-        #     return self.image_resource.dims
+        # return self.image_resource.dims
         return self.resource.dims
 
     @property
@@ -78,8 +78,7 @@ class ImageResourceData:
         """
         The number of time frames
         """
-        # if self.image_resource:
-        #     return self.image_resource.sizeT
+        # return self.image_resource.sizeT
         if self._dims is None:
             return self.resource.dims.T
         return self._dims['T']
@@ -89,8 +88,7 @@ class ImageResourceData:
         """
         The number of channels
         """
-        # if self.image_resource:
-        #     return self.image_resource.sizeC
+        # return self.image_resource.sizeC
         if self._dims is None:
             return self.resource.dims.C
         return self._dims['C']
@@ -100,8 +98,7 @@ class ImageResourceData:
         """
         The number of layers
         """
-        # if self.image_resource:
-        #     return self.image_resource.sizeZ
+        # return self.image_resource.sizeZ
         if self._dims is None:
             return self.resource.dims.Z
         return self._dims['Z']
@@ -111,8 +108,7 @@ class ImageResourceData:
         """
         The image height
         """
-        # if self.image_resource:
-        #     return self.image_resource.sizeY
+        # return self.image_resource.sizeY
         return self.resource.dims.Y
 
     @property
@@ -120,8 +116,7 @@ class ImageResourceData:
         """
         the image width
         """
-        # if self.image_resource:
-        #     return self.image_resource.sizeX
+        # return self.image_resource.sizeX
         return self.resource.dims.X
 
     def image(self, C=0, Z=0, T=0, drift=None):
@@ -142,6 +137,7 @@ class ImageResourceData:
             data = np.expand_dims(self._memmap, axis=tuple(i for i in range(len(s)) if s[i] == 1))[T, C, Z, ...]
         else:
             data = self.resource.get_image_dask_data('YX', C=C, Z=Z, T=T).compute()
+            # data = cv.imread(self.image_resource.image_files[T, C, Z].url, cv.IMREAD_UNCHANGED)
         if drift is not None:
             return cv.warpAffine(np.array(data),
                           np.float32(

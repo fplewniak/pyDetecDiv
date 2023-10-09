@@ -20,7 +20,7 @@ class Data(NamedDSO):
     """
 
     def __init__(self, uuid, dataset, author, date, url, format_, source_dir, meta_data, key_val, image_resource,
-                 c=None, t=None, z=None, xdim=2048, ydim=2048, **kwargs):
+                 c=None, t=None, z=None, xdim=-1, ydim=-1, **kwargs):
         super().__init__(**kwargs)
         self.uuid = uuid
         self.dataset_ = dataset

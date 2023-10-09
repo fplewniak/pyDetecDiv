@@ -305,7 +305,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         PyDetecDiv().setOverrideCursor(QCursor(Qt.WaitCursor))
         if self.image_source_ref and self.parent_viewer:
             data, crop = self.parent_viewer.get_roi_data(self.image_source_ref)
-            self.set_image_resource(ImageResourceData(data=data, fov=self.image_resource.fov), crop=crop,
+            self.set_image_resource(ImageResourceData(data=data, fov=self.image_resource.fov, image_resource=self.image_resource), crop=crop,
                                     T=self.T, C=self.C, Z=self.Z)
         self.display()
         PyDetecDiv().restoreOverrideCursor()

@@ -34,8 +34,8 @@ class DataDao(DAO, Base):
     roi_list_ = ROIdata.data_to_roi()
 
     image_resource = Column(Integer, ForeignKey('ImageResource.id_'), index=True)
-    xdim = Column(Integer, nullable=False, server_default=text('2048'))
-    ydim = Column(Integer, nullable=False, server_default=text('2048'))
+    xdim = Column(Integer, nullable=False, server_default=text('-1'))
+    ydim = Column(Integer, nullable=False, server_default=text('-1'))
     z = Column(Integer, nullable=True,)
     c = Column(Integer, nullable=True,)
     t = Column(Integer, nullable=True,)

@@ -4,6 +4,8 @@
  A class defining the business logic methods that can be applied to Fields Of View
 """
 import numpy as np
+import cv2 as cv
+from PIL import Image
 
 from pydetecdiv.domain.ImageResourceData import ImageResourceData
 from pydetecdiv.domain.dso import DomainSpecificObject
@@ -17,15 +19,15 @@ class ImageResource(DomainSpecificObject):
     A business-logic class defining valid operations and attributes of Image resources
     """
 
-    def __init__(self, dataset, fov, xdim=1024, ydim=1024,zdim=1, cdim=1, tdim=1,
+    def __init__(self, dataset, fov, xdim=-1, ydim=-1, zdim=1, cdim=1, tdim=1,
                  xyscale=1, tscale=1, zscale=1,
                  xyunit=1e-6, zunit=1e-6, tunit=60,
                  **kwargs):
         super().__init__(**kwargs)
         self._dataset = dataset.id_ if isinstance(dataset, Dataset) else dataset
         self._fov = fov.id_ if isinstance(fov, FOV) else fov
-        self.xdim = xdim
-        self.ydim = ydim
+        self._xdim = xdim
+        self._ydim = ydim
         self.zdim = zdim
         self.cdim = cdim
         self.tdim = tdim
@@ -66,6 +68,25 @@ class ImageResource(DomainSpecificObject):
     @property
     def dims(self):
         return Dimensions("TCZYX", (self.tdim, self.cdim, self.zdim, self.ydim, self.xdim))
+
+    @property
+    def xdim(self):
+        if self._xdim is None and len(self.project.get_linked_objects('Data', self)):
+           self._ydim, self._xdim = self.set_image_shape_from_file()
+        return self._xdim
+
+    @property
+    def ydim(self):
+        if self._ydim is None and len(self.project.get_linked_objects('Data', self)):
+           self._ydim, self._xdim = self.set_image_shape_from_file()
+        return self._ydim
+
+    def set_image_shape_from_file(self):
+        # self._ydim, self._xdim = cv.imread(self.project.get_linked_objects('Data', self)[0].url, cv.IMREAD_UNCHANGED).shape
+        with Image.open(self.project.get_linked_objects('Data', self)[0].url) as img:
+                    self._xdim, self._ydim = img.size
+        self.project.save(self)
+        return (self._ydim, self._xdim)
 
     @property
     def sizeT(self):
@@ -124,8 +145,8 @@ class ImageResource(DomainSpecificObject):
         data_list = self.project.get_linked_objects('Data', self)
         if len(data_list) > 1:
             image_files = np.empty((self.sizeT, self.sizeC, self.sizeZ), dtype=object)
-            for data in sorted(data_list, key=lambda x: (x.T, x.C, x.Z)):
-                image_files[data.T, data.C, data.Z] = data
+            for data in sorted(data_list, key=lambda x: (x.t, x.c, x.z)):
+                image_files[data.t, data.c, data.z] = data
         else:
             image_files = data_list
         return image_files
