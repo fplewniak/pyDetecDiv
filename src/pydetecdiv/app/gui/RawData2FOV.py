@@ -349,7 +349,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
             # fov_pattern = ''.join(re.findall(r'\(.*?\)', regex)[fov_index - 2:fov_index + 1])
             # project.annotate(project.raw_dataset, 'url', tuple(pattern.groupindex.keys()), regex)
             # for i in project.create_fov_from_raw_data('url', fov_pattern):
-            for i in project.create_fov_from_raw_data(project.annotate(project.raw_dataset, 'url', columns, regex)):
+            for i in project.create_fov_from_raw_data(project.annotate(project.raw_dataset, 'url', columns, regex), multi=self.ui.multiple_files.isChecked()):
                 self.progress.emit(i)
                 if QThread.currentThread().isInterruptionRequested():
                     project.cancel()

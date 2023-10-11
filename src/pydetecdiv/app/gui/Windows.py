@@ -264,7 +264,7 @@ class ImageResourceChooser(QDockWidget):
         tab_key = f'{PyDetecDiv().project_name}/{fov.name}'
         tab = self.parent().add_tabbbed_viewer(tab_key)
         tab.setWindowTitle(tab_key)
-        tab.viewer.set_image_resource(image_resource)
+        tab.viewer.set_image_resource_data(image_resource)
         tab.viewer.set_channel(0)
         tab.viewer.display()
         tab.viewer.draw_saved_rois(roi_list)

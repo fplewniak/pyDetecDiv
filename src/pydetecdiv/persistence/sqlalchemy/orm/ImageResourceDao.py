@@ -3,7 +3,7 @@
 """
 Access to ImageResourceData data
 """
-from sqlalchemy import Column, Integer, Float, String, text, ForeignKey
+from sqlalchemy import Column, Integer, Float, Boolean, String, text, ForeignKey
 from sqlalchemy.orm import relationship, joinedload, composite
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 import pydetecdiv.utils.ImageResource as ImageResource
@@ -11,7 +11,7 @@ import pydetecdiv.utils.ImageResource as ImageResource
 
 class ImageResourceDao(DAO, Base):
     """
-    DAO class for access to ImageResourceData records from the SQL database
+    DAO class for access to ImageResource records from the SQL database
     """
     __tablename__ = 'ImageResource'
     exclude = ['id_',]
@@ -38,6 +38,8 @@ class ImageResourceDao(DAO, Base):
 
     fov = Column(Integer, ForeignKey('FOV.id_'), nullable=False, index=True)
     dataset = Column(Integer, ForeignKey('dataset.id_'), nullable=False, index=True)
+
+    multi = Column(Boolean, nullable=False)
 
     data_list_ = relationship('DataDao')
 
@@ -85,4 +87,5 @@ class ImageResourceDao(DAO, Base):
                 'uuid': self.uuid,
                 'fov': self.fov,
                 'dataset': self.dataset,
+                'multi': self.multi,
                 }
