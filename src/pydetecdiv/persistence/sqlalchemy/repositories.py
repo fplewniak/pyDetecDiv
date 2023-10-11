@@ -3,12 +3,10 @@
 """
 Concrete Repositories using a SQL database with the sqlalchemy toolkit
 """
-import json
 import os
 import re
 import sqlite3
 from datetime import datetime
-import cv2 as cv
 from PIL import Image
 
 import pandas
@@ -152,13 +150,12 @@ class ShallowSQLite3(ShallowDb):
                     'meta_data': '{}',
                     'key_val': '{}',
                 }
-                # record['ydim'], record['xdim'] = cv.imread(record['url'], cv.IMREAD_UNCHANGED).shape
                 with Image.open(record['url']) as img:
                     record['xdim'], record['ydim'] = img.size
                 self.save_object('Data', record)
                 urls.append(record['url'])
         except:
-            raise ImportImagesError
+            raise ImportImagesError('Could not import images')
         return urls, process
 
     def annotate_data(self, dataset, source, keys_, regex):
@@ -186,9 +183,9 @@ class ShallowSQLite3(ShallowDb):
         for i, data in enumerate(data_list):
             m = re.search(pattern, call_back(data))
             if m:
-                key_val = json.loads(data.key_val)
-                key_val.update(dict(zip(keys_, [m.group(k) for k in keys_])))
-                data.key_val = json.dumps(key_val)
+                # key_val = json.loads(data.key_val)
+                # key_val.update(dict(zip(keys_, [m.group(k) for k in keys_])))
+                # data.key_val = json.dumps(key_val)
                 for k in keys_:
                     df.loc[i, k] = m.group(k)
         return df
