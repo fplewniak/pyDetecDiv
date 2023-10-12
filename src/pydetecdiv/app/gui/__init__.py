@@ -122,7 +122,7 @@ class Help(QAction):
         font.setBold(True)
         label.setFont(font)
         label_2 = QLabel(about_dialog)
-        label_2.setGeometry(QRect(130, 100, 131, 16))
+        label_2.setGeometry(QRect(110, 100, 161, 16))
         font1 = QFont()
         font1.setFamilies(["Arial"])
         font1.setPointSize(16)
