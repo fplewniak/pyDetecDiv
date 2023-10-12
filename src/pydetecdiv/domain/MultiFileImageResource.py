@@ -110,7 +110,8 @@ class MultiFileImageResource(ImageResourceData):
                                            [0, 1, -drift.dy]]),
                                       (data.shape[1], data.shape[0]))
             return data
-        return np.empty((self.sizeX, self.sizeY))
+        return np.zeros((self.sizeX, self.sizeY), np.float16)
+        # return None
 
     def data_sample(self, X=None, Y=None):
         """
