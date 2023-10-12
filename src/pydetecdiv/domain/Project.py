@@ -161,35 +161,35 @@ class Project:
         total = len(new_fov_names) + len(df.values)
         new_fovs = [FOV(project=self, name=fov_name, top_left=(0, 0), bottom_right=(999, 999)) for fov_name in
                     new_fov_names if fov_name not in fov_names]
-        image_resources = {fov.id_: ImageResource(project=self, dataset=self.raw_dataset, fov=fov, multi=multi) for fov
-                           in new_fovs}
+        new_image_resources = {fov.id_: ImageResource(project=self, dataset=self.raw_dataset, fov=fov, multi=multi)
+                               for fov in new_fovs}
+        image_resources = {fov.id_: fov.image_resource('data') for fov in self.get_objects('FOV')}
 
         yield int(len(new_fov_names) * 100 / total)
         df['FOV'] = df['FOV'].map(self.id_mapping('FOV'))
         # if 'C' in df.columns:
         if multi:
+            # for fov_id, image_res in new_image_resources.items():
             for fov_id, image_res in image_resources.items():
                 (image_res.zdim, image_res.cdim, image_res.tdim) = df.loc[df['FOV'] == fov_id, ['Z', 'C', 'T']].astype(
                     int).max(axis=0).add(1)
                 self.save(image_res)
         else:
+            # for fov_id, image_res in new_image_resources.items():
             for fov_id, image_res in image_resources.items():
                 (image_res.tdim, image_res.cdim, image_res.zdim, image_res._ydim, image_res._xdim,) = image_res.shape
                 self.save(image_res)
 
         for i, (data_id, fov_id) in enumerate(df.loc[:, ['id_', 'FOV']].values):
             data_file = self.get_object('Data', int(data_id))
-            # fov = self.get_object('FOV', int(fov_id))
-            # self.link_objects(fov, data_file)
-            data_file.image_resource = image_resources[fov_id].id_
-            # if 'C' in df.columns:
+            data_file.image_resource = self.get_object('FOV', int(fov_id)).image_resource('data').id_
             if multi:
                 data_file.c = df.loc[i, 'C']
                 data_file.t = df.loc[i, 'T']
                 data_file.z = df.loc[i, 'Z']
             self.save(data_file)
             yield int((i + len(new_fov_names)) * 100 / total)
-        _ = [image_res.set_image_shape_from_file() for image_res in image_resources.values()]
+        _ = [image_res.set_image_shape_from_file() for image_res in new_image_resources.values()]
 
     def id_mapping(self, class_name):
         """

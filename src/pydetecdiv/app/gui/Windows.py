@@ -260,7 +260,7 @@ class ImageResourceChooser(QDockWidget):
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             fov = project.get_named_object('FOV', self.position_choice.currentText())
             roi_list = fov.roi_list
-            image_resource = fov.image_resource('data')
+            image_resource = fov.image_resource('data').image_resource_data()
         tab_key = f'{PyDetecDiv().project_name}/{fov.name}'
         tab = self.parent().add_tabbbed_viewer(tab_key)
         tab.setWindowTitle(tab_key)

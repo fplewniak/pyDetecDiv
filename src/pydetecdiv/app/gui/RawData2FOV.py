@@ -332,6 +332,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
                     project.save(project.raw_dataset)
                 wait_dialog.wait_for(self.create_fov_annotate, regex)
                 PyDetecDiv().project_selected.emit(project.dbname)
+                self.close()
             case QDialogButtonBox.StandardButton.Close:
                 self.close()
             case QDialogButtonBox.StandardButton.Reset:

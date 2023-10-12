@@ -101,14 +101,16 @@ class MultiFileImageResource(ImageResourceData):
         :return: a 2D data array
         :rtype: 2D numpy.array
         """
-        data = tifffile.imread(self.image_files[T, C, Z])
-        if drift is not None:
-            return cv2.warpAffine(np.array(data),
-                                  np.float32(
-                                      [[1, 0, -drift.dx],
-                                       [0, 1, -drift.dy]]),
-                                  (data.shape[1], data.shape[0]))
-        return data
+        if self.image_files[T, C, Z]:
+            data = tifffile.imread(self.image_files[T, C, Z])
+            if drift is not None:
+                return cv2.warpAffine(np.array(data),
+                                      np.float32(
+                                          [[1, 0, -drift.dx],
+                                           [0, 1, -drift.dy]]),
+                                      (data.shape[1], data.shape[0]))
+            return data
+        return np.empty((self.sizeX, self.sizeY))
 
     def data_sample(self, X=None, Y=None):
         """

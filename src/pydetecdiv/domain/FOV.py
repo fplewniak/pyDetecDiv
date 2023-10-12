@@ -122,4 +122,4 @@ Comments:             {self.comments}
         """
         image_resource = \
         [ir for ir in self.project.get_linked_objects('ImageResource', self) if ir.dataset.name == dataset][0]
-        return image_resource.image_resource_data()
+        return image_resource
