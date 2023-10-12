@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Persistence layer &mdash; pyDetecDiv 0.1.0 documentation</title>
+  <title>Persistence layer &mdash; pyDetecDiv 0.2.0 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -35,7 +35,7 @@
             pyDetecDiv
           </a>
               <div class="version">
-                0.1.0
+                0.2.0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -74,20 +74,11 @@
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.ROIdao.ROIdao"><code class="docutils literal notranslate"><span class="pre">ROIdao</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao"><code class="docutils literal notranslate"><span class="pre">DataDao</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.DatasetDao.DatasetDao"><code class="docutils literal notranslate"><span class="pre">DatasetDao</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao.ImageResourceDao"><code class="docutils literal notranslate"><span class="pre">ImageResourceDao</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.RunDao.RunDao"><code class="docutils literal notranslate"><span class="pre">RunDao</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.ExperimentDao.ExperimentDao"><code class="docutils literal notranslate"><span class="pre">ExperimentDao</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.Linker"><code class="docutils literal notranslate"><span class="pre">Linker</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.FovData"><code class="docutils literal notranslate"><span class="pre">FovData</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.ROIdata"><code class="docutils literal notranslate"><span class="pre">ROIdata</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#module-pydetecdiv.persistence.bioimageit.request">pydetecdiv.persistence.bioimageit</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.persistence.bioimageit.request.Request"><code class="docutils literal notranslate"><span class="pre">Request</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#module-pydetecdiv.persistence.bioimageit.plugins.data_sqlite">pydetecdiv.persistence.bioimageit.plugins.data_sqlite</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataServiceBuilder"><code class="docutils literal notranslate"><span class="pre">SQLiteMetadataServiceBuilder</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService"><code class="docutils literal notranslate"><span class="pre">SQLiteMetadataService</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -196,6 +187,28 @@ on disk</p>
 <dt class="sig sig-object py" id="pydetecdiv.persistence.repository.ShallowDb.close">
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.close" title="Permalink to this definition"></a></dt>
 <dd><p>Abstract method enforcing the implementation of a close() method in all shallow persistence connectors</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.persistence.repository.ShallowDb.import_images">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">import_images</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">author</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'now'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_place</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'imagetiff'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.import_images" title="Permalink to this definition"></a></dt>
+<dd><p>Import images specified in a list of files into a destination</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>image_files</strong> – list of image files to import</p>
+</dd>
+</dl>
+<p>:type image_files:list of str
+:param destination: destination directory to import files into
+:type destination: str
+:param author: the user importing the data
+:type author: str
+:param date: the date of import
+:type date: str
+:param format: the file format
+:type format: str
+:return: the list of imported files. This list can be used to roll the copy back if needed
+:rtype: list of str</p>
 </dd></dl>
 
 <dl class="py method">
@@ -427,79 +440,20 @@ otherwise, the link cannot be removed.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.import_source_path">
-<span class="sig-name descname"><span class="pre">import_source_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_path</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.import_source_path" title="Permalink to this definition"></a></dt>
-<dd><p>Import images from a source path. All files corresponding to the path will be imported.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>source_path</strong> (<em>str</em>) – the source path (glob pattern)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.determine_fov">
-<span class="sig-name descname"><span class="pre">determine_fov</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.determine_fov" title="Permalink to this definition"></a></dt>
-<dd><p>Uses metadata from raw data to name corresponding FOVs</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>source</strong> (<em>str</em><em> or </em><em>callable</em>) – the metadata source used to define FOV names</p></li>
-<li><p><strong>regex</strong> (<em>regular expression str</em>) – regular expression providing the source pattern defining FOV names</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>a DataFrame with the data <a href="#id5"><span class="problematic" id="id6">id_</span></a> and FOV names</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pandas DataFrame</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.determine_links_using_regex">
-<span class="sig-name descname"><span class="pre">determine_links_using_regex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.determine_links_using_regex" title="Permalink to this definition"></a></dt>
-<dd><p>Uses metadata from data in a given dataset to name corresponding objects (FOV, ROIs, etc.)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dataset_name</strong> (<em>str</em>) – the name of the dataset</p></li>
-<li><p><strong>source</strong> (<em>str</em><em> or </em><em>callable</em>) – the metadata source used to define object names</p></li>
-<li><p><strong>keys</strong> (<em>a tuple</em><em> of </em><em>str</em>) – the designation of objects</p></li>
-<li><p><strong>regex</strong> (<em>regular expression str</em>) – regular expression providing the source pattern defining FOV names</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>a DataFrame with the data <a href="#id7"><span class="problematic" id="id8">id_</span></a> and FOV names</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pandas DataFrame</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.annotate_data">
-<span class="sig-name descname"><span class="pre">annotate_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.annotate_data" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a DataFrame containing all the metadata associated to raw data, including annotations created using a
-regular expression applied to a field or a combination thereof.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dataset_name</strong> (<em>str</em>) – name of dataset to annotate</p></li>
-<li><p><strong>source</strong> (<em>str</em><em> or </em><em>callable returning a str</em>) – the database field or combination of fields to apply the regular expression to</p></li>
-<li><p><strong>keys</strong> (<em>tuple</em><em> of </em><em>str</em>) – the list of classes created objects belong to</p></li>
-<li><p><strong>regex</strong> (<em>regular expression str</em>) – regular expression defining the DSOs’ names</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>a table of all the metadata associated to raw data</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pandas DataFrame</p>
-</dd>
-</dl>
+<span class="sig-name descname"><span class="pre">annotate_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.annotate_data" title="Permalink to this definition"></a></dt>
+<dd><p>Method to annotate data files in a dataset according to a regular expression applied to a source. The resulting
+key-value pairs are placed in a key_val column.
+:param dataset: the dataset whose data should be annotated
+:type dataset: Dataset object
+:param source: the database field or combination of fields to apply the regular expression to
+:type source: str or callable returning a str
+:param <a href="#id5"><span class="problematic" id="id6">keys_</span></a>: the list of classes created objects belong to
+:type <a href="#id7"><span class="problematic" id="id8">keys_</span></a>: tuple of str
+:param regex: regular expression defining the annotations
+:type regex: regular expression str
+:return: list of annotated Data records in a dataframe
+:rtype: pandas.DataFrame</p>
 </dd></dl>
 
 <dl class="py method">
@@ -785,6 +739,23 @@ translate or exclude variables</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.FOVdao.</span></span><span class="sig-name descname"><span class="pre">FOVdao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO" title="pydetecdiv.persistence.sqlalchemy.orm.main.DAO"><code class="xref py py-class docutils literal notranslate"><span class="pre">DAO</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></p>
 <p>DAO class for access to FOV records from the SQL database</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao.image_resources">
+<span class="sig-name descname"><span class="pre">image_resources</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fov_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao.image_resources" title="Permalink to this definition"></a></dt>
+<dd><p>A method returning the list of Data records whose parent Dataset has <a href="#id15"><span class="problematic" id="id16">id_</span></a> == dataset_id</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset_id</strong> (<em>str</em>) – the id of the Dataset</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a list of Data records whose parent Dataset has <a href="#id17"><span class="problematic" id="id18">id_</span></a> == dataset_id</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of dict</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao.record">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao.record" title="Permalink to this definition"></a></dt>
@@ -803,10 +774,10 @@ table columns into the FOV record fields expected by the domain layer</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao.data">
 <span class="sig-name descname"><span class="pre">data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fov_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao.data" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a list of DataDao objects linked to the FOVdao object with the specified <a href="#id15"><span class="problematic" id="id16">id_</span></a></p>
+<dd><p>Returns a list of DataDao objects linked to the FOVdao object with the specified <a href="#id19"><span class="problematic" id="id20">id_</span></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>fov_id</strong> (<em>int</em>) – the <a href="#id17"><span class="problematic" id="id18">id_</span></a> of the FOV</p>
+<dd class="field-odd"><p><strong>fov_id</strong> (<em>int</em>) – the <a href="#id21"><span class="problematic" id="id22">id_</span></a> of the FOV</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>the list of Data records linked to the FOV</p>
@@ -860,10 +831,10 @@ table columns into the ROI record fields expected by the domain layer</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.ROIdao.ROIdao.data">
 <span class="sig-name descname"><span class="pre">data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">roi_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ROIdao.ROIdao.data" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a list of DataDao objects linked to the ROIdao object with the specified <a href="#id19"><span class="problematic" id="id20">id_</span></a></p>
+<dd><p>Returns a list of DataDao objects linked to the ROIdao object with the specified <a href="#id23"><span class="problematic" id="id24">id_</span></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>roi_id</strong> (<em>int</em>) – the <a href="#id21"><span class="problematic" id="id22">id_</span></a> of the ROI</p>
+<dd class="field-odd"><p><strong>roi_id</strong> (<em>int</em>) – the <a href="#id25"><span class="problematic" id="id26">id_</span></a> of the ROI</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>the list of Data records linked to the ROI</p>
@@ -881,7 +852,7 @@ table columns into the ROI record fields expected by the domain layer</p>
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.DataDao.</span></span><span class="sig-name descname"><span class="pre">DataDao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO" title="pydetecdiv.persistence.sqlalchemy.orm.main.DAO"><code class="xref py py-class docutils literal notranslate"><span class="pre">DAO</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></p>
-<p>DAO class for access to BioImageIT data records from the SQL database</p>
+<p>DAO class for access to data records from the SQL database</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao.record">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao.record" title="Permalink to this definition"></a></dt>
@@ -900,23 +871,6 @@ table columns into the data record fields expected by the domain layer</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao.fov_list">
 <span class="sig-name descname"><span class="pre">fov_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao.fov_list" title="Permalink to this definition"></a></dt>
-<dd><p>A method returning the list of FOV records whose parent Data has <a href="#id23"><span class="problematic" id="id24">id_</span></a> == data_id</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>data_id</strong> (<em>str</em>) – the id of the Data</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>a list of FOV records with parent Data has <a href="#id25"><span class="problematic" id="id26">id_</span></a> == data_id</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list of dict</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao.roi_list">
-<span class="sig-name descname"><span class="pre">roi_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao.roi_list" title="Permalink to this definition"></a></dt>
 <dd><p>A method returning the list of FOV records whose parent Data has <a href="#id27"><span class="problematic" id="id28">id_</span></a> == data_id</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -931,6 +885,23 @@ table columns into the data record fields expected by the domain layer</p>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao.roi_list">
+<span class="sig-name descname"><span class="pre">roi_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao.roi_list" title="Permalink to this definition"></a></dt>
+<dd><p>A method returning the list of FOV records whose parent Data has <a href="#id31"><span class="problematic" id="id32">id_</span></a> == data_id</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data_id</strong> (<em>str</em>) – the id of the Data</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a list of FOV records with parent Data has <a href="#id33"><span class="problematic" id="id34">id_</span></a> == data_id</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of dict</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <span class="target" id="module-pydetecdiv.persistence.sqlalchemy.orm.DatasetDao"></span><p>Access to Dataset data</p>
@@ -938,17 +909,17 @@ table columns into the data record fields expected by the domain layer</p>
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.DatasetDao.DatasetDao">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.DatasetDao.</span></span><span class="sig-name descname"><span class="pre">DatasetDao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.DatasetDao.DatasetDao" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO" title="pydetecdiv.persistence.sqlalchemy.orm.main.DAO"><code class="xref py py-class docutils literal notranslate"><span class="pre">DAO</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></p>
-<p>DAO class for access to BioImageIT dataset records from the SQL database</p>
+<p>DAO class for access to dataset records from the SQL database</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.DatasetDao.DatasetDao.data_list">
 <span class="sig-name descname"><span class="pre">data_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.DatasetDao.DatasetDao.data_list" title="Permalink to this definition"></a></dt>
-<dd><p>A method returning the list of Data records whose parent Dataset has <a href="#id31"><span class="problematic" id="id32">id_</span></a> == dataset_id</p>
+<dd><p>A method returning the list of Data records whose parent Dataset has <a href="#id35"><span class="problematic" id="id36">id_</span></a> == dataset_id</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>dataset_id</strong> (<em>str</em>) – the id of the Dataset</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>a list of Data records whose parent Dataset has <a href="#id33"><span class="problematic" id="id34">id_</span></a> == dataset_id</p>
+<dd class="field-even"><p>a list of Data records whose parent Dataset has <a href="#id37"><span class="problematic" id="id38">id_</span></a> == dataset_id</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>list of dict</p>
@@ -973,12 +944,52 @@ table columns into the dataset record fields expected by the domain layer</p>
 
 </dd></dl>
 
+<span class="target" id="module-pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao"></span><p>Access to ImageResourceData data</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao.ImageResourceDao">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao.</span></span><span class="sig-name descname"><span class="pre">ImageResourceDao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao.ImageResourceDao" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO" title="pydetecdiv.persistence.sqlalchemy.orm.main.DAO"><code class="xref py py-class docutils literal notranslate"><span class="pre">DAO</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></p>
+<p>DAO class for access to ImageResource records from the SQL database</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao.ImageResourceDao.data_list">
+<span class="sig-name descname"><span class="pre">data_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_res_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao.ImageResourceDao.data_list" title="Permalink to this definition"></a></dt>
+<dd><p>A method returning the list of Data records whose parent Dataset has <a href="#id39"><span class="problematic" id="id40">id_</span></a> == dataset_id</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset_id</strong> (<em>str</em>) – the id of the Dataset</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a list of Data records whose parent Dataset has <a href="#id41"><span class="problematic" id="id42">id_</span></a> == dataset_id</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao.ImageResourceDao.record">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao.ImageResourceDao.record" title="Permalink to this definition"></a></dt>
+<dd><p>A method creating a DAO record dictionary from a fov row dictionary. This method is used to convert the SQL
+table columns into the FOV record fields expected by the domain layer</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>a FOV record as a dictionary with keys() appropriate for handling by the domain layer</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 <span class="target" id="module-pydetecdiv.persistence.sqlalchemy.orm.RunDao"></span><p>Access to ROI data</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.RunDao.RunDao">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.RunDao.</span></span><span class="sig-name descname"><span class="pre">RunDao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.RunDao.RunDao" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO" title="pydetecdiv.persistence.sqlalchemy.orm.main.DAO"><code class="xref py py-class docutils literal notranslate"><span class="pre">DAO</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></p>
-<p>DAO class for access to BioImageIT dataset records from the SQL database</p>
+<p>DAO class for access to Run records from the SQL database</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.RunDao.RunDao.record">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.RunDao.RunDao.record" title="Permalink to this definition"></a></dt>
@@ -1001,7 +1012,7 @@ table columns into the dataset record fields expected by the domain layer</p>
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.ExperimentDao.ExperimentDao">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.ExperimentDao.</span></span><span class="sig-name descname"><span class="pre">ExperimentDao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ExperimentDao.ExperimentDao" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO" title="pydetecdiv.persistence.sqlalchemy.orm.main.DAO"><code class="xref py py-class docutils literal notranslate"><span class="pre">DAO</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></p>
-<p>DAO class for access to BioImageIT data records from the SQL database</p>
+<p>DAO class for access to Experiment records from the SQL database</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.ExperimentDao.ExperimentDao.record">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ExperimentDao.ExperimentDao.record" title="Permalink to this definition"></a></dt>
@@ -1048,70 +1059,6 @@ provided by the associations() method above.</p>
 <li><p><strong>obj1</strong> (<a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO" title="pydetecdiv.persistence.sqlalchemy.orm.main.DAO"><em>DAO</em></a>) – the first object to link</p></li>
 <li><p><strong>obj2</strong> (<a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO" title="pydetecdiv.persistence.sqlalchemy.orm.main.DAO"><em>DAO</em></a>) – the second object to link</p></li>
 </ul>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.associations.FovData">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.associations.</span></span><span class="sig-name descname"><span class="pre">FovData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.FovData" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></p>
-<p>Association many to many between FOV and Image data</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.associations.FovData.fov_to_data">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fov_to_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.FovData.fov_to_data" title="Permalink to this definition"></a></dt>
-<dd><p>Defines and returns the relationship from FOV to ImageData tables</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>the relationship between FOV and ImageData</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>sqlalchemy.orm.RelationshipProperty object</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.associations.FovData.data_to_fov">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data_to_fov</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.FovData.data_to_fov" title="Permalink to this definition"></a></dt>
-<dd><p>Defines and returns the relationship from ImageData to FOV tables</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>the relationship between ImageData and FOV</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>sqlalchemy.orm.RelationshipProperty object</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.associations.FovData.link">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obj2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.FovData.link" title="Permalink to this definition"></a></dt>
-<dd><p>Checks there the existence of a link between the specified FOVdao and DataDao objects and creates a link
-(calling the _link method) only if there is no preexisting link.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>obj1</strong> (<a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao" title="pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao"><em>FOVdao</em></a><em> or </em><a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao" title="pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao"><em>DataDao</em></a>) – the first object to link</p></li>
-<li><p><strong>obj2</strong> (<a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao" title="pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao"><em>DataDao</em></a><em> or </em><a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao" title="pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao"><em>FOVdao</em></a>) – the second object to link</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.associations.FovData.record">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.FovData.record" title="Permalink to this definition"></a></dt>
-<dd><p>A method creating a record dictionary from a FovData row dictionary.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>a FovData record as a dictionary with keys() appropriate for handling by the domain layer</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>dict</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1178,560 +1125,6 @@ provided by the associations() method above.</p>
 <dd class="field-even"><p>dict</p>
 </dd>
 </dl>
-</dd></dl>
-
-</dd></dl>
-
-</section>
-<section id="module-pydetecdiv.persistence.bioimageit.request">
-<span id="pydetecdiv-persistence-bioimageit"></span><h2>pydetecdiv.persistence.bioimageit<a class="headerlink" href="#module-pydetecdiv.persistence.bioimageit.request" title="Permalink to this heading"></a></h2>
-<p>Main REST like API extension of the BioImageIT original to add pyDetecDiv-specific methods</p>
-<p>This file implements the main BioImageIT API with using stateless operation like for a REST API</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.request.Request">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.bioimageit.request.</span></span><span class="sig-name descname"><span class="pre">Request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.request.Request" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Request</span></code></p>
-<p>A class extending the BioIMageIT Request class in order to add some features without having to modify the original
-code.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.request.Request.create_experiment">
-<span class="sig-name descname"><span class="pre">create_experiment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">author</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'now'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.request.Request.create_experiment" title="Permalink to this definition"></a></dt>
-<dd><p>Create a new experiment</p>
-<p><strong>Parameters</strong>
-name: str</p>
-<blockquote>
-<div><p>Name of the experiment</p>
-</div></blockquote>
-<dl class="simple">
-<dt>author: str</dt><dd><p>username of the experiment author</p>
-</dd>
-<dt>date: str</dt><dd><p>Creation date of the experiment</p>
-</dd>
-<dt>keys: list</dt><dd><p>List of keys used for the experiment vocabulary</p>
-</dd>
-<dt>destination: str</dt><dd><p>Destination where the experiment is created. It is a the path of the
-directory where the experiment will be created for local use case</p>
-</dd>
-</dl>
-<p><strong>Returns</strong>
-Experiment container with the experiment metadata</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.request.Request.annotate_raw_data_using_regex">
-<span class="sig-name descname"><span class="pre">annotate_raw_data_using_regex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.request.Request.annotate_raw_data_using_regex" title="Permalink to this definition"></a></dt>
-<dd><p>Annotate raw dataset of an experiment using the source path name</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>experiment</strong> (<em>Experiment Container</em>) – the experiment</p></li>
-<li><p><strong>keys</strong> (<em>tuple</em><em> of </em><em>str</em>) – the annotation keys</p></li>
-<li><p><strong>regex</strong> (<em>regular expression str</em>) – the regular expression defining how to extract the values corresponding to the specified keys</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.request.Request.annotate_using_regex">
-<span class="sig-name descname"><span class="pre">annotate_using_regex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.request.Request.annotate_using_regex" title="Permalink to this definition"></a></dt>
-<dd><p>Annotate a dataset of an experiment using a regular expression</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>experiment</strong> (<em>Experiment Container</em>) – the experiment containing the dataset to annotate</p></li>
-<li><p><strong>dataset</strong> (<em>Dataset Container</em><em> or </em><em>DatasetInfo Container</em>) – the dataset to annotate</p></li>
-<li><p><strong>source</strong> – a string (column name) or callable returning a string that the regular expression will be</p></li>
-</ul>
-</dd>
-</dl>
-<p>applied to
-:type source: callable or str
-:param <a href="#id35"><span class="problematic" id="id36">keys_</span></a>: the annotation keys
-:type <a href="#id37"><span class="problematic" id="id38">keys_</span></a>: tuple of str
-:param regex: the regular expression defining how to extract the values corresponding to the specified keys
-:type regex: regular expression str</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.request.Request.clear_annotation">
-<span class="sig-name descname"><span class="pre">clear_annotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.request.Request.clear_annotation" title="Permalink to this definition"></a></dt>
-<dd><p>Clear annotations with the specified key in a dataset</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>experiment</strong> (<em>Experiment Container</em>) – the experiment containing the dataset to update</p></li>
-<li><p><strong>dataset</strong> (<em>Dataset Container</em><em> or </em><em>DatasetInfo Container</em>) – the dataset</p></li>
-<li><p><strong>key</strong> (<em>str</em>) – the key to remove from the dataset annotations</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.request.Request.import_glob">
-<span class="sig-name descname"><span class="pre">import_glob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files_glob</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">author</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'imagetiff'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'now'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.request.Request.import_glob" title="Permalink to this definition"></a></dt>
-<dd><p>Import into an experiment a list of raw data files specified by a glob pattern</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>experiment</strong> (<em>Experiment Container</em>) – the experiment</p></li>
-<li><p><strong>files_glob</strong> (<em>str</em>) – the file path specification</p></li>
-<li><p><strong>author</strong> (<em>str</em>) – the author’s name</p></li>
-<li><p><strong>format</strong> (<em>str</em>) – the file format</p></li>
-<li><p><strong>date</strong> (<em>str</em>) – the date</p></li>
-<li><p><strong>observers</strong> (<em>list</em><em> of </em><em>Observer objects</em>) – a list of observers to notify progress</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.request.Request.run">
-<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.request.Request.run" title="Permalink to this definition"></a></dt>
-<dd><p>Run a BioImageIT job</p>
-<p>A BioImageIT job is a run of a processing tool in a database. The data to process are
-selected in the database using a specified request, and the results are automatically
-saved in a new dataset of the database. All the metadata of the job (tool, request,
-parameters) are also saved in the database.</p>
-</dd></dl>
-
-</dd></dl>
-
-</section>
-<section id="module-pydetecdiv.persistence.bioimageit.plugins.data_sqlite">
-<span id="pydetecdiv-persistence-bioimageit-plugins-data-sqlite"></span><h2>pydetecdiv.persistence.bioimageit.plugins.data_sqlite<a class="headerlink" href="#module-pydetecdiv.persistence.bioimageit.plugins.data_sqlite" title="Permalink to this heading"></a></h2>
-<p>SQLite3 metadata service.</p>
-<p>This module implements the SQLite3 service for metadata
-(Data, DataSet and Experiment) management.
-This service read/write and query metadata from a SQLite3 database</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataServiceBuilder">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.bioimageit.plugins.data_sqlite.</span></span><span class="sig-name descname"><span class="pre">SQLiteMetadataServiceBuilder</span></span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataServiceBuilder" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Service builder for the metadata service</p>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.bioimageit.plugins.data_sqlite.</span></span><span class="sig-name descname"><span class="pre">SQLiteMetadataService</span></span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">LocalMetadataService</span></code></p>
-<p>Service for SQLite3-based metadata management</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.connect_to_session">
-<span class="sig-name descname"><span class="pre">connect_to_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repository</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.connect_to_session" title="Permalink to this definition"></a></dt>
-<dd><p>Associate an open SQLite session to the data service</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>session</strong> (<em>sqlalchemy.orm.session.Session</em>) – A SQLite session</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.determine_links_using_regex">
-<span class="sig-name descname"><span class="pre">determine_links_using_regex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.determine_links_using_regex" title="Permalink to this definition"></a></dt>
-<dd><p>Determines links between data in dataset and other objects in database. The returned DataFrame can be used to
-populate a table in SQLite database</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dataset</strong> (<em>Dataset Container</em><em> or </em><em>DatasetInfo Container</em>) – the dataset</p></li>
-<li><p><strong>source</strong> (<em>callable</em><em> or </em><em>str</em>) – a string (column name) or callable returning a string that the regular expression will be applied to</p></li>
-<li><p><strong>keys</strong> (<em>tuple</em><em> of </em><em>str</em>) – the column names (one object class per column)</p></li>
-<li><p><strong>regex</strong> (<em>regular expression str</em>) – the regular expression defining how to extract the values corresponding to the specified keys</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>a DataFrame representing the links between data and objects (one object per column)</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pandas DataFrame</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.clear_annotation">
-<span class="sig-name descname"><span class="pre">clear_annotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.clear_annotation" title="Permalink to this definition"></a></dt>
-<dd><p>Clear annotations with the specified key in a dataset</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>experiment</strong> (<em>Experiment Container</em>) – the experiment containing the dataset to update</p></li>
-<li><p><strong>dataset</strong> (<em>Dataset Container</em><em> or </em><em>DatasetInfo Container</em>) – the dataset</p></li>
-<li><p><strong>key</strong> (<em>str</em>) – the key to remove from the dataset annotations</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.create_annotations_using_regex">
-<span class="sig-name descname"><span class="pre">create_annotations_using_regex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.create_annotations_using_regex" title="Permalink to this definition"></a></dt>
-<dd><p>Use regular expression to create a DataFrame containing annotations of data in a dataset. Basic usage is as
-follows:
-create_annotations_using_regex(experiment, experiment.raw_dataset,</p>
-<blockquote>
-<div><p>lambda x: os.path.join(x[‘source_dir’],x[‘name’]) ,
-(‘group’, ‘ROI’, ‘FOV’, ‘position’, ‘frame’),
-r’.*/([^/]+)/(Pos(d+)_(d+_d+))_frame_(dddd).tif’)</p>
-</div></blockquote>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>experiment</strong> (<em>Experiment Container</em>) – the experiment containing the dataset to annotate</p></li>
-<li><p><strong>dataset</strong> (<em>Dataset Container</em><em> or </em><em>DatasetInfo Container</em>) – the dataset to annotate</p></li>
-<li><p><strong>source</strong> (<em>callable</em><em> or </em><em>str</em>) – a string (column name) or callable returning a string that the regular expression will be applied to</p></li>
-<li><p><strong>keys</strong> (<em>tuple</em><em> of </em><em>str</em>) – the annotation keys</p></li>
-<li><p><strong>regex</strong> (<em>regular expression str</em>) – the regular expression defining how to extract the values corresponding to the specified keys</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>a DataFrame representing the data table with updated annotations</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pandas DataFrame</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.annotate_using_regex">
-<span class="sig-name descname"><span class="pre">annotate_using_regex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.annotate_using_regex" title="Permalink to this definition"></a></dt>
-<dd><p>Use DataFrame returned by create_annotations_using_regex method to annotate data in dataset</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>experiment</strong> (<em>Experiment Container</em>) – the experiment containing the dataset to annotate</p></li>
-<li><p><strong>dataset</strong> (<em>Dataset Container</em><em> or </em><em>DatasetInfo Container</em>) – the dataset to annotate</p></li>
-<li><p><strong>source</strong> (<em>callable</em><em> or </em><em>str</em>) – a string (column name) or callable returning a string that the regular expression will be applied to</p></li>
-<li><p><strong>keys</strong> (<em>tuple</em><em> of </em><em>str</em>) – the annotation keys</p></li>
-<li><p><strong>regex</strong> (<em>regular expression str</em>) – the regular expression defining how to extract the values corresponding to the specified keys</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.create_experiment">
-<span class="sig-name descname"><span class="pre">create_experiment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">author</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'now'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.create_experiment" title="Permalink to this definition"></a></dt>
-<dd><p>Create a new experiment</p>
-<p><strong>Parameters</strong>
-name: str</p>
-<blockquote>
-<div><p>Name of the experiment</p>
-</div></blockquote>
-<dl class="simple">
-<dt>author: str</dt><dd><p>username of the experiment author</p>
-</dd>
-<dt>date: str</dt><dd><p>Creation date of the experiment</p>
-</dd>
-<dt>keys: list</dt><dd><p>List of keys used for the experiment vocabulary</p>
-</dd>
-<dt>destination: str</dt><dd><p>Destination where the experiment is created. It is a the path of the
-directory where the experiment will be created for local use case</p>
-</dd>
-</dl>
-<p><strong>Returns</strong>
-Experiment container with the experiment metadata</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.get_workspace_experiments">
-<span class="sig-name descname"><span class="pre">get_workspace_experiments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workspace_uri</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.get_workspace_experiments" title="Permalink to this definition"></a></dt>
-<dd><p>Read the experiments in the user workspace</p>
-<p><strong>Parameters</strong>
-workspace_uri: str</p>
-<blockquote>
-<div><p>URI of the workspace</p>
-</div></blockquote>
-<p><strong>Returns</strong>
-list of experiment containers</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.get_experiment">
-<span class="sig-name descname"><span class="pre">get_experiment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">md_uri</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.get_experiment" title="Permalink to this definition"></a></dt>
-<dd><p>Read an experiment from the database</p>
-<dl class="simple">
-<dt><strong>Parameters</strong></dt><dd><p>md_uri: str
-URI of the experiment. For local use case, the URI is either the
-path of the experiment directory, or the path of the
-experiment.md.json file</p>
-</dd>
-</dl>
-<p><strong>Returns</strong>
-Experiment container with the experiment metadata</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.update_experiment">
-<span class="sig-name descname"><span class="pre">update_experiment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.update_experiment" title="Permalink to this definition"></a></dt>
-<dd><p>Write an experiment to the database</p>
-<p><strong>Parameters</strong>
-experiment: Experiment</p>
-<blockquote>
-<div><p>Container of the experiment metadata</p>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.import_data">
-<span class="sig-name descname"><span class="pre">import_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">author</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date='now'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_value_pairs=&lt;class</span> <span class="pre">'dict'&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.import_data" title="Permalink to this definition"></a></dt>
-<dd><p>import one data to the experiment</p>
-<p>The data is imported to the raw dataset</p>
-<p><strong>Parameters</strong>
-experiment: Experiment</p>
-<blockquote>
-<div><p>Container of the experiment metadata</p>
-</div></blockquote>
-<dl class="simple">
-<dt>data_path: str</dt><dd><p>Path of the accessible data on your local computer</p>
-</dd>
-<dt>name: str</dt><dd><p>Name of the data</p>
-</dd>
-<dt>author: str</dt><dd><p>Person who created the data</p>
-</dd>
-<dt><a href="#id39"><span class="problematic" id="id40">format_</span></a>: str</dt><dd><p>Format of the data (ex: tif)</p>
-</dd>
-<dt>date: str</dt><dd><p>Date when the data where created</p>
-</dd>
-<dt>key_value_pairs: dict</dt><dd><p>Dictionary {key:value, key:value} to annotate files</p>
-</dd>
-</dl>
-<p><strong>Returns</strong>
-class RawData containing the metadata</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.import_glob">
-<span class="sig-name descname"><span class="pre">import_glob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files_glob</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">author</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'imagetiff'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'now'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.import_glob" title="Permalink to this definition"></a></dt>
-<dd><p>Import into an experiment a list of raw data files specified by a glob pattern</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>experiment</strong> (<em>Experiment Container</em>) – the experiment</p></li>
-<li><p><strong>files_glob</strong> (<em>str</em>) – the file path specification</p></li>
-<li><p><strong>author</strong> (<em>str</em>) – the author’s name</p></li>
-<li><p><strong>format</strong> (<em>str</em>) – the file format</p></li>
-<li><p><strong>date</strong> (<em>str</em>) – the date</p></li>
-<li><p><strong>observers</strong> (<em>list</em><em> of </em><em>Observer objects</em>) – a list of observers to notify progress</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>a DataFrame with the imported data</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pandas DataFrame</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.import_dir">
-<span class="sig-name descname"><span class="pre">import_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dir_uri</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">author</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory_tag_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.import_dir" title="Permalink to this definition"></a></dt>
-<dd><p>Import data from a directory to the experiment</p>
-<p>This method import with or without copy data contained
-in a local folder into an experiment. Imported data are
-considered as RawData for the experiment</p>
-<p><strong>Parameters</strong>
-experiment: Experiment</p>
-<blockquote>
-<div><p>Container of the experiment metadata</p>
-</div></blockquote>
-<dl class="simple">
-<dt>dir_uri: str</dt><dd><p>URI of the directory containing the data to be imported</p>
-</dd>
-<dt><a href="#id41"><span class="problematic" id="id42">filter_</span></a>: str</dt><dd><p>Regular expression to filter which files in the folder
-to import</p>
-</dd>
-<dt>author: str</dt><dd><p>Name of the person who created the data</p>
-</dd>
-<dt><a href="#id43"><span class="problematic" id="id44">format_</span></a>: str</dt><dd><p>Format of the image (ex: tif)</p>
-</dd>
-<dt>date: str</dt><dd><p>Date when the data where created</p>
-</dd>
-<dt>directory_tag_key</dt><dd><p>If the string directory_tag_key is not empty, a new tag key entry with the
-key={directory_tag_key} and the value={the directory name}.</p>
-</dd>
-<dt>observers: list</dt><dd><p>List of observers to notify the progress</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.get_raw_data">
-<span class="sig-name descname"><span class="pre">get_raw_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">md_uri</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.get_raw_data" title="Permalink to this definition"></a></dt>
-<dd><p>Read a raw data from the database</p>
-<section id="parameters">
-<h3>Parameters<a class="headerlink" href="#parameters" title="Permalink to this heading"></a></h3>
-<dl class="simple">
-<dt>md_uri: str</dt><dd><p>URI if the raw data</p>
-</dd>
-</dl>
-</section>
-<section id="returns">
-<h3>Returns<a class="headerlink" href="#returns" title="Permalink to this heading"></a></h3>
-<p>RawData object containing the raw data metadata</p>
-</section>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.update_raw_data">
-<span class="sig-name descname"><span class="pre">update_raw_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.update_raw_data" title="Permalink to this definition"></a></dt>
-<dd><p>Read a raw data from the database</p>
-<p><strong>Parameters</strong>
-raw_data: RawData</p>
-<blockquote>
-<div><p>Container with the raw data metadata</p>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.get_processed_data">
-<span class="sig-name descname"><span class="pre">get_processed_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">md_uri</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.get_processed_data" title="Permalink to this definition"></a></dt>
-<dd><p>Read a processed data from the database</p>
-<p><strong>Parameters</strong>
-md_uri: str</p>
-<blockquote>
-<div><p>URI if the processed data</p>
-</div></blockquote>
-<p><strong>Returns</strong>
-ProcessedData object containing the raw data metadata</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.update_processed_data">
-<span class="sig-name descname"><span class="pre">update_processed_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">processed_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.update_processed_data" title="Permalink to this definition"></a></dt>
-<dd><p>Read a processed data from the database</p>
-<p><strong>Parameters</strong>
-processed_data: ProcessedData</p>
-<blockquote>
-<div><p>Container with the processed data metadata</p>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.get_dataset">
-<span class="sig-name descname"><span class="pre">get_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">md_uri</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.get_dataset" title="Permalink to this definition"></a></dt>
-<dd><p>Read a dataset from the database using it URI</p>
-<p><strong>Parameters</strong>
-md_uri: str</p>
-<blockquote>
-<div><p>URI if the dataset</p>
-</div></blockquote>
-<p><strong>Returns</strong>
-Dataset object containing the dataset metadata</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.update_dataset">
-<span class="sig-name descname"><span class="pre">update_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.update_dataset" title="Permalink to this definition"></a></dt>
-<dd><p>Read a processed data from the database</p>
-<p><strong>Parameters</strong>
-dataset: Dataset</p>
-<blockquote>
-<div><p>Container with the dataset metadata</p>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.create_dataset">
-<span class="sig-name descname"><span class="pre">create_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.create_dataset" title="Permalink to this definition"></a></dt>
-<dd><p>Create a processed dataset in an experiment</p>
-<p><strong>Parameters</strong>
-experiment: Experiment</p>
-<blockquote>
-<div><p>Object containing the experiment metadata</p>
-</div></blockquote>
-<dl class="simple">
-<dt>dataset_name: str</dt><dd><p>Name of the dataset</p>
-</dd>
-</dl>
-<p><strong>Returns</strong>
-Dataset object containing the new dataset metadata</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.create_run">
-<span class="sig-name descname"><span class="pre">create_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_info</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.create_run" title="Permalink to this definition"></a></dt>
-<dd><p>Create a new run metadata</p>
-<p><strong>Parameters</strong>
-dataset: Dataset</p>
-<blockquote>
-<div><p>Object of the dataset metadata</p>
-</div></blockquote>
-<dl class="simple">
-<dt>run_info: Run</dt><dd><p>Object containing the metadata of the run. md_uri is ignored and
-created automatically by this method</p>
-</dd>
-</dl>
-<p><strong>Returns</strong>
-Run object with the metadata and the new created md_uri</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.get_dataset_runs">
-<span class="sig-name descname"><span class="pre">get_dataset_runs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.get_dataset_runs" title="Permalink to this definition"></a></dt>
-<dd><p>Read the run metadata from a dataset</p>
-<p><strong>Parameters</strong>
-dataset: Dataset</p>
-<p><strong>Returns</strong>
-List of Runs</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.get_run">
-<span class="sig-name descname"><span class="pre">get_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">md_uri</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.get_run" title="Permalink to this definition"></a></dt>
-<dd><p>Read a run metadata from the data base</p>
-<p><strong>Parameters</strong>
-md_uri</p>
-<blockquote>
-<div><p>URI of the run entry in the database</p>
-</div></blockquote>
-<p><strong>Returns</strong>
-Run: object containing the run metadata</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.create_data_uri">
-<span class="sig-name descname"><span class="pre">create_data_uri</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processed_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.create_data_uri" title="Permalink to this definition"></a></dt>
-<dd><p>Create the URI of the new data</p>
-<p><strong>Parameters</strong>
-dataset: Dataset</p>
-<blockquote>
-<div><p>Object of the dataset metadata</p>
-</div></blockquote>
-<dl class="simple">
-<dt>run: Run</dt><dd><p>Metadata of the run</p>
-</dd>
-<dt>processed_data: ProcessedData</dt><dd><p>Object containing the new processed data. md_uri is ignored and
-created automatically by this method</p>
-</dd>
-</dl>
-<p><strong>Returns</strong>
-ProcessedData object with the metadata and the new created md_uri</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.create_data">
-<span class="sig-name descname"><span class="pre">create_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processed_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.bioimageit.plugins.data_sqlite.SQLiteMetadataService.create_data" title="Permalink to this definition"></a></dt>
-<dd><p>Create a new processed data for a given dataset</p>
-<p><strong>Parameters</strong>
-dataset: Dataset</p>
-<blockquote>
-<div><p>Object of the dataset metadata</p>
-</div></blockquote>
-<dl class="simple">
-<dt>run: Run</dt><dd><p>Metadata of the run</p>
-</dd>
-<dt>processed_data: ProcessedData</dt><dd><p>Object containing the new processed data. md_uri is ignored and
-created automatically by this method</p>
-</dd>
-</dl>
-<p><strong>Returns</strong>
-ProcessedData object with the metadata and the new created md_uri</p>
 </dd></dl>
 
 </dd></dl>

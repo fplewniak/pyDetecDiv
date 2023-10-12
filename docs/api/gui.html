@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Graphical user interface &mdash; pyDetecDiv 0.1.0 documentation</title>
+  <title>Graphical user interface &mdash; pyDetecDiv 0.2.0 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -34,7 +34,7 @@
             pyDetecDiv
           </a>
               <div class="version">
-                0.1.0
+                0.2.0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -358,12 +358,6 @@ corresponding image resource information(FOV name, stage dataset, channel)</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.app.gui.Windows.ImageResourceChooser.update_channel_choice">
-<span class="sig-name descname"><span class="pre">update_channel_choice</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.Windows.ImageResourceChooser.update_channel_choice" title="Permalink to this definition"></a></dt>
-<dd><p>Sets the available values for channel in the form, given a FOV and dataset</p>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.Windows.ImageResourceChooser.accept">
 <span class="sig-name descname"><span class="pre">accept</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.Windows.ImageResourceChooser.accept" title="Permalink to this definition"></a></dt>
 <dd><p>When the OK button is clicked, then open a new TabbedViewer window and display the selected Image resource</p>
@@ -442,13 +436,14 @@ corresponding image resource information(FOV name, stage dataset, channel)</p>
 </section>
 <section id="module-pydetecdiv.app.gui.ImageViewer">
 <span id="pydetecdiv-app-gui-imageviewer"></span><h2>pydetecdiv.app.gui.ImageViewer<a class="headerlink" href="#module-pydetecdiv.app.gui.ImageViewer" title="Permalink to this heading"></a></h2>
+<p>Image viewer to display and interact with an Image resource (5D image data)</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.ImageViewer.ImageViewer">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.gui.ImageViewer.</span></span><span class="sig-name descname"><span class="pre">ImageViewer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.ImageViewer.ImageViewer" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QMainWindow</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Ui_ImageViewer</span></code></p>
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.app.gui.ImageViewer.ImageViewer.set_image_resource">
-<span class="sig-name descname"><span class="pre">set_image_resource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_resource</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.ImageViewer.ImageViewer.set_image_resource" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.app.gui.ImageViewer.ImageViewer.set_image_resource_data">
+<span class="sig-name descname"><span class="pre">set_image_resource_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_resource</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.ImageViewer.ImageViewer.set_image_resource_data" title="Permalink to this definition"></a></dt>
 <dd><p>Associate an image resource to this viewer, possibly cropping if requested.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -544,6 +539,25 @@ than 50 ms, then the frame rate may be lower.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.gui.ImageViewer.ImageViewer.change_channel">
+<span class="sig-name descname"><span class="pre">change_channel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.ImageViewer.ImageViewer.change_channel" title="Permalink to this definition"></a></dt>
+<dd><p>Change the current frame to the specified time index and refresh the display</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>T</strong> – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.gui.ImageViewer.ImageViewer.synchronize_with">
+<span class="sig-name descname"><span class="pre">synchronize_with</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.ImageViewer.ImageViewer.synchronize_with" title="Permalink to this definition"></a></dt>
+<dd><p>Synchronize the current viewer with another one. This is used to view a portion of an image in a new viewer
+with the same T, C, Z coordinates as the original.
+:param other: the other viewer to synchronize with</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.ImageViewer.ImageViewer.display">
 <span class="sig-name descname"><span class="pre">display</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.ImageViewer.ImageViewer.display" title="Permalink to this definition"></a></dt>
 <dd><p>Display the frame specified by the time, channel and layer indices.</p>
@@ -585,7 +599,7 @@ and waits for completion before displaying the plot</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.ImageViewer.ImageViewer.plot_drift">
-<span class="sig-name descname"><span class="pre">plot_drift</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.ImageViewer.ImageViewer.plot_drift" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">plot_drift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.ImageViewer.ImageViewer.plot_drift" title="Permalink to this definition"></a></dt>
 <dd><p>Open a MatplotViewer tab and plot the (x,y) drift against frame index</p>
 </dd></dl>
 
@@ -610,7 +624,8 @@ and waits for completion before displaying the plot</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.ImageViewer.ImageViewer.apply_drift_correction">
 <span class="sig-name descname"><span class="pre">apply_drift_correction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.ImageViewer.ImageViewer.apply_drift_correction" title="Permalink to this definition"></a></dt>
-<dd><p>Apply the drift correction to the display. This method also saves the drift values to a file.</p>
+<dd><p>Apply the drift correction to the display and reload the image data with extra margins according to the drift
+values</p>
 </dd></dl>
 
 <dl class="py method">
@@ -687,7 +702,7 @@ larger than the actual ROI to allow drift correction.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.ImageViewer.ImageViewer.view_roi_image">
 <span class="sig-name descname"><span class="pre">view_roi_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">selected_roi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.ImageViewer.ImageViewer.view_roi_image" title="Permalink to this definition"></a></dt>
-<dd><p>Display the selected area in a new tab viewer as a 5D image resource.</p>
+<dd><p>Display the selected area in a new tab viewer</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>selected_roi</strong> – </p>
@@ -1263,9 +1278,9 @@ successive levels of nodes.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.app.gui.ActionsSettings.SettingsDialog.select_bioit">
-<span class="sig-name descname"><span class="pre">select_bioit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.ActionsSettings.SettingsDialog.select_bioit" title="Permalink to this definition"></a></dt>
-<dd><p>A method opening a File chooser to select the BioImageIT configuration file</p>
+<dt class="sig sig-object py" id="pydetecdiv.app.gui.ActionsSettings.SettingsDialog.select_toolbox_path">
+<span class="sig-name descname"><span class="pre">select_toolbox_path</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.ActionsSettings.SettingsDialog.select_toolbox_path" title="Permalink to this definition"></a></dt>
+<dd><p>Method opening a Directory chooser to select the toolbox directory</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1305,7 +1320,7 @@ successive levels of nodes.</p>
 <p>Handling actions to open, create and interact with projects</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.ActionsProject.ProjectDialog">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.gui.ActionsProject.</span></span><span class="sig-name descname"><span class="pre">ProjectDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_project_dialog</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.ActionsProject.ProjectDialog" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.gui.ActionsProject.</span></span><span class="sig-name descname"><span class="pre">ProjectDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_project_dialog</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.ActionsProject.ProjectDialog" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QDialog</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.ActionsProject.ProjectDialog.project_name_validator">
@@ -1511,7 +1526,7 @@ with the number of files that have been copied so far</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.ActionsData.ImportDataDialog.cancel_import">
-<span class="sig-name descname"><span class="pre">cancel_import</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">imported</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_files0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.ActionsData.ImportDataDialog.cancel_import" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">cancel_import</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_files0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.ActionsData.ImportDataDialog.cancel_import" title="Permalink to this definition"></a></dt>
 <dd><p>Manage cancellation of import. Terminate all copy processes before launching deletion of files that were already
 copied. Then cancel persistence operations on Data objects, and eventually stop the host thread.</p>
 <dl class="field-list simple">
@@ -1621,7 +1636,7 @@ copied. Then cancel persistence operations on Data objects, and eventually stop 
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.RawData2FOV.RawData2FOV.find_matches">
-<span class="sig-name descname"><span class="pre">find_matches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">regexes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.RawData2FOV.RawData2FOV.find_matches" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">find_matches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">urls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regexes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.RawData2FOV.RawData2FOV.find_matches" title="Permalink to this definition"></a></dt>
 <dd><p>Find a list of matches with the defined regular expressions</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>

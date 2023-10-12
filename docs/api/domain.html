@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Domain layer &mdash; pyDetecDiv 0.1.0 documentation</title>
+  <title>Domain layer &mdash; pyDetecDiv 0.2.0 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -35,7 +35,7 @@
             pyDetecDiv
           </a>
               <div class="version">
-                0.1.0
+                0.2.0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -58,7 +58,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.dso.DomainSpecificObject"><code class="docutils literal notranslate"><span class="pre">DomainSpecificObject</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.dso.NamedDSO"><code class="docutils literal notranslate"><span class="pre">NamedDSO</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.dso.BoxedDSO"><code class="docutils literal notranslate"><span class="pre">BoxedDSO</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.dso.DsoWithImageData"><code class="docutils literal notranslate"><span class="pre">DsoWithImageData</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#domain-specific-classes">Domain-specific classes</a><ul>
@@ -67,7 +66,11 @@
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.ROI.ROI"><code class="docutils literal notranslate"><span class="pre">ROI</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.Data.Data"><code class="docutils literal notranslate"><span class="pre">Data</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.Dataset.Dataset"><code class="docutils literal notranslate"><span class="pre">Dataset</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.ImageResource.ImageResource"><code class="docutils literal notranslate"><span class="pre">ImageResource</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData"><code class="docutils literal notranslate"><span class="pre">ImageResourceData</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource"><code class="docutils literal notranslate"><span class="pre">MultiFileImageResource</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource"><code class="docutils literal notranslate"><span class="pre">SingleFileImageResource</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.ArrayImageResource.ArrayImageResource"><code class="docutils literal notranslate"><span class="pre">ArrayImageResource</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.Tool.Tool"><code class="docutils literal notranslate"><span class="pre">Tool</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.Run.Run"><code class="docutils literal notranslate"><span class="pre">Run</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.Experiment.Experiment"><code class="docutils literal notranslate"><span class="pre">Experiment</span></code></a></li>
@@ -255,27 +258,6 @@ right corners).</p>
 
 </dd></dl>
 
-<dl class="py class">
-<dt class="sig sig-object py" id="pydetecdiv.domain.dso.DsoWithImageData">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.dso.</span></span><span class="sig-name descname"><span class="pre">DsoWithImageData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.dso.DsoWithImageData" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="pydetecdiv.domain.dso.DomainSpecificObject"><code class="xref py py-class docutils literal notranslate"><span class="pre">DomainSpecificObject</span></code></a></p>
-<p>A domain-specific class for objects that are associated with Image _data</p>
-<dl class="py property">
-<dt class="sig sig-object py" id="pydetecdiv.domain.dso.DsoWithImageData.image_data">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">image_data</span></span><a class="headerlink" href="#pydetecdiv.domain.dso.DsoWithImageData.image_data" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the list of ImageData objects whose parent if the current DSO</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>the list of associated ImageData objects</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>list of ImageData objects</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
 </section>
 <section id="domain-specific-classes">
 <h2>Domain-specific classes<a class="headerlink" href="#domain-specific-classes" title="Permalink to this heading"></a></h2>
@@ -287,6 +269,17 @@ right corners).</p>
 hides repository from other domain classes. This class handles actual records and domain-specific objects while the
 repository deals with records and data-access objects. Data exchange between Repository and Project objects is
 achieved through the use of dict representing standardized records.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.path">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">path</span></span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.path" title="Permalink to this definition"></a></dt>
+<dd><p>Property returning the path of the project</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.uuid">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">uuid</span></span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.uuid" title="Permalink to this definition"></a></dt>
@@ -381,17 +374,6 @@ achieved through the use of dict representing standardized records.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.import_source_path">
-<span class="sig-name descname"><span class="pre">import_source_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_path</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.import_source_path" title="Permalink to this definition"></a></dt>
-<dd><p>Import images from a source path. All files corresponding to the path will be imported.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>source_path</strong> (<em>str</em>) – the source path (glob pattern)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.annotate">
 <span class="sig-name descname"><span class="pre">annotate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.annotate" title="Permalink to this definition"></a></dt>
 <dd><p>Annotate data in a dataset using a regular expression applied to columns specified by source (column name or
@@ -416,15 +398,14 @@ callable returning a str built from column names)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.create_fov_from_raw_data">
-<span class="sig-name descname"><span class="pre">create_fov_from_raw_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.create_fov_from_raw_data" title="Permalink to this definition"></a></dt>
-<dd><p>Create domain-specific objects from raw data using a regular expression applied to a bioimageit database field
+<span class="sig-name descname"><span class="pre">create_fov_from_raw_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.create_fov_from_raw_data" title="Permalink to this definition"></a></dt>
+<dd><p>Create domain-specific objects from raw data using a regular expression applied to a database field
 or a combination thereof specified by source. DSOs to create are specified by the values in keys.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>source</strong> (<em>str</em><em> or </em><em>callable returning a str</em>) – the database field or combination of fields to apply the regular expression to</p></li>
-<li><p><strong>keys</strong> (<em>tuple</em><em> of </em><em>str</em>) – the list of classes created objects belong to</p></li>
-<li><p><strong>regex</strong> (<em>regular expression str</em>) – regular expression defining the DSOs’ names</p></li>
+<li><p><strong>regex</strong> (<em>regular expression str</em>) – regular expression defining the annotations</p></li>
 </ul>
 </dd>
 </dl>
@@ -709,7 +690,7 @@ back-end</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.domain.FOV.FOV">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.FOV.</span></span><span class="sig-name descname"><span class="pre">FOV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.FOV.FOV" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.dso.NamedDSO" title="pydetecdiv.domain.dso.NamedDSO"><code class="xref py py-class docutils literal notranslate"><span class="pre">NamedDSO</span></code></a>, <a class="reference internal" href="#pydetecdiv.domain.dso.BoxedDSO" title="pydetecdiv.domain.dso.BoxedDSO"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoxedDSO</span></code></a>, <a class="reference internal" href="#pydetecdiv.domain.dso.DsoWithImageData" title="pydetecdiv.domain.dso.DsoWithImageData"><code class="xref py py-class docutils literal notranslate"><span class="pre">DsoWithImageData</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.dso.NamedDSO" title="pydetecdiv.domain.dso.NamedDSO"><code class="xref py py-class docutils literal notranslate"><span class="pre">NamedDSO</span></code></a>, <a class="reference internal" href="#pydetecdiv.domain.dso.BoxedDSO" title="pydetecdiv.domain.dso.BoxedDSO"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoxedDSO</span></code></a></p>
 <p>A business-logic class defining valid operations and attributes of Fields of view (FOV)</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.domain.FOV.FOV.delete">
@@ -791,20 +772,6 @@ back-end</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="pydetecdiv.domain.FOV.FOV.image_list">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">image_list</span></span><a class="headerlink" href="#pydetecdiv.domain.FOV.FOV.image_list" title="Permalink to this definition"></a></dt>
-<dd><p>Return a list of images related to this FOV</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list of images</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>list of Image objects</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.domain.FOV.FOV.initial_roi">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">initial_roi</span></span><a class="headerlink" href="#pydetecdiv.domain.FOV.FOV.initial_roi" title="Permalink to this definition"></a></dt>
 <dd><p>Return the initial ROI, created at the creation of this FOV and representing the full FOV</p>
@@ -843,7 +810,7 @@ back-end</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.domain.ROI.ROI">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.ROI.</span></span><span class="sig-name descname"><span class="pre">ROI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ROI.ROI" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.dso.NamedDSO" title="pydetecdiv.domain.dso.NamedDSO"><code class="xref py py-class docutils literal notranslate"><span class="pre">NamedDSO</span></code></a>, <a class="reference internal" href="#pydetecdiv.domain.dso.BoxedDSO" title="pydetecdiv.domain.dso.BoxedDSO"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoxedDSO</span></code></a>, <a class="reference internal" href="#pydetecdiv.domain.dso.DsoWithImageData" title="pydetecdiv.domain.dso.DsoWithImageData"><code class="xref py py-class docutils literal notranslate"><span class="pre">DsoWithImageData</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.dso.NamedDSO" title="pydetecdiv.domain.dso.NamedDSO"><code class="xref py py-class docutils literal notranslate"><span class="pre">NamedDSO</span></code></a>, <a class="reference internal" href="#pydetecdiv.domain.dso.BoxedDSO" title="pydetecdiv.domain.dso.BoxedDSO"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoxedDSO</span></code></a></p>
 <p>A business-logic class defining valid operations and attributes of Regions of interest (ROI)</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.domain.ROI.ROI.delete">
@@ -867,20 +834,6 @@ back-end</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#pydetecdiv.domain.FOV.FOV" title="pydetecdiv.domain.FOV.FOV">FOV</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="pydetecdiv.domain.ROI.ROI.image_list">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">image_list</span></span><a class="headerlink" href="#pydetecdiv.domain.ROI.ROI.image_list" title="Permalink to this definition"></a></dt>
-<dd><p>Return a list of images related to this ROI</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list of images</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>list of Image objects</p>
 </dd>
 </dl>
 </dd></dl>
@@ -918,9 +871,23 @@ back-end</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.domain.Data.Data">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.Data.</span></span><span class="sig-name descname"><span class="pre">Data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">author</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meta_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_val</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Data.Data" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.Data.</span></span><span class="sig-name descname"><span class="pre">Data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">author</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meta_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_resource</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xdim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ydim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Data.Data" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.dso.NamedDSO" title="pydetecdiv.domain.dso.NamedDSO"><code class="xref py py-class docutils literal notranslate"><span class="pre">NamedDSO</span></code></a></p>
 <p>A business-logic class defining valid operations and attributes of data</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.Data.Data.image_resource">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">image_resource</span></span><a class="headerlink" href="#pydetecdiv.domain.Data.Data.image_resource" title="Permalink to this definition"></a></dt>
+<dd><p>property returning the Image resource object this Data file is part of</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the parent Image resource object</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#pydetecdiv.domain.ImageResource.ImageResource" title="pydetecdiv.domain.ImageResource.ImageResource">ImageResource</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.domain.Data.Data.dataset">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dataset</span></span><a class="headerlink" href="#pydetecdiv.domain.Data.Data.dataset" title="Permalink to this definition"></a></dt>
@@ -1033,8 +1000,153 @@ back-end</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.ImageResource.</span></span><span class="sig-name descname"><span class="pre">ImageResource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fov</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xdim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ydim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zdim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cdim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tdim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xyscale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tscale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zscale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xyunit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-06</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zunit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-06</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tunit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">60</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="pydetecdiv.domain.dso.DomainSpecificObject"><code class="xref py py-class docutils literal notranslate"><span class="pre">DomainSpecificObject</span></code></a></p>
+<p>A business-logic class defining valid operations and attributes of Image resources</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.dataset">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dataset</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.dataset" title="Permalink to this definition"></a></dt>
+<dd><p>the dataset corresponding to this image resource</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.fov">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fov</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.fov" title="Permalink to this definition"></a></dt>
+<dd><p>the FOV corresponding to this image resource</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.data_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data_list</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.data_list" title="Permalink to this definition"></a></dt>
+<dd><p>Property returning the Data objects associated to this FOV</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the data associated to this FOV</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of Data objects</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.shape">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.shape" title="Permalink to this definition"></a></dt>
+<dd><p>The image resource shape (should habitually be 5D with the following dimensions TCZYX)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.dims">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dims</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.dims" title="Permalink to this definition"></a></dt>
+<dd><p>The image resource dimensions with their size</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.xdim">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">xdim</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.xdim" title="Permalink to this definition"></a></dt>
+<dd><p>The image resource X dimension size determined from file</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.ydim">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ydim</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.ydim" title="Permalink to this definition"></a></dt>
+<dd><p>The image resource Y dimension size determined from file</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.set_image_shape_from_file">
+<span class="sig-name descname"><span class="pre">set_image_shape_from_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.set_image_shape_from_file" title="Permalink to this definition"></a></dt>
+<dd><p>The image shape determined from first file</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.sizeT">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeT</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.sizeT" title="Permalink to this definition"></a></dt>
+<dd><p>The number of frames</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.sizeC">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeC</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.sizeC" title="Permalink to this definition"></a></dt>
+<dd><p>the number of channels
+:return:</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.sizeZ">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeZ</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.sizeZ" title="Permalink to this definition"></a></dt>
+<dd><p>the number of layers
+:return:</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.sizeY">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeY</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.sizeY" title="Permalink to this definition"></a></dt>
+<dd><p>the height of the images</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.sizeX">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeX</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.sizeX" title="Permalink to this definition"></a></dt>
+<dd><p>the width of the images</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.image_resource_data">
+<span class="sig-name descname"><span class="pre">image_resource_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.image_resource_data" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a ImageResourceData object with the appropriate sub-class according to the multi parameter
+:return: the ImageResourceData object
+:rtype: ImageResourceData (SingleFileImageResource or MultiFileImageResource)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.image_files_5d">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">image_files_5d</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.image_files_5d" title="Permalink to this definition"></a></dt>
+<dd><p>property returning the list of file paths as a 3D array. Each file contains a XY 2D image, and there is one
+file for each T, C,Z combination of coordinates
+:return: 3D array of file paths
+:rtype: array of str</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.image_files">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">image_files</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.image_files" title="Permalink to this definition"></a></dt>
+<dd><p>property returning the list of all files associated with this image resource
+:return: list of image files
+:rtype: list of str (file paths)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.pattern">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pattern</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.pattern" title="Permalink to this definition"></a></dt>
+<dd><p>property returning the pattern defining the dimensions for the dataset associated with this image resource
+:return: pattern
+:rtype: regex str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.record">
+<span class="sig-name descname"><span class="pre">record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">no_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.record" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a record dictionary of the current Image resource</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>no_id</strong> (<em>bool</em>) – if True, does not return <a href="#id17"><span class="problematic" id="id18">id_</span></a> (useful for transferring from one project to another)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>record dictionary</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.ImageResourceData.</span></span><span class="sig-name descname"><span class="pre">ImageResourceData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_mem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.ImageResourceData.</span></span><span class="sig-name descname"><span class="pre">ImageResourceData</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A generic class to access image resources (files) on disk without having to load whole time series into memory</p>
 <dl class="py property">
@@ -1044,8 +1156,8 @@ back-end</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResource.ImageResource.dims">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dims</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResource.ImageResource.dims" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData.dims">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dims</span></span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.dims" title="Permalink to this definition"></a></dt>
 <dd><p>The image resource dimensions with their size</p>
 </dd></dl>
 
@@ -1148,7 +1260,7 @@ of changes.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData.compute_drift">
-<span class="sig-name descname"><span class="pre">compute_drift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'phase_correlation'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.compute_drift" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">compute_drift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'phase</span> <span class="pre">correlation'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.compute_drift" title="Permalink to this definition"></a></dt>
 <dd><p>Compute drift along time using the specified method</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1168,7 +1280,7 @@ of changes.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData.compute_drift_phase_correlation_cv2">
-<span class="sig-name descname"><span class="pre">compute_drift_phase_correlation_cv2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_mem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.compute_drift_phase_correlation_cv2" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">compute_drift_phase_correlation_cv2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.compute_drift_phase_correlation_cv2" title="Permalink to this definition"></a></dt>
 <dd><p>Compute the cumulative transforms (dx, dy) to apply in order to correct the drift using phase correlation</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1189,7 +1301,7 @@ of changes.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData.compute_drift_vidstab">
-<span class="sig-name descname"><span class="pre">compute_drift_vidstab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_mem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.compute_drift_vidstab" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">compute_drift_vidstab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.compute_drift_vidstab" title="Permalink to this definition"></a></dt>
 <dd><p>Compute the cumulative transforms (dx, dy, dr) to apply in order to stabilize the time series and correct drift</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1208,17 +1320,302 @@ of changes.</p>
 </dl>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.MultiFileImageResource.</span></span><span class="sig-name descname"><span class="pre">MultiFileImageResource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_mem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_resource</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData" title="pydetecdiv.domain.ImageResourceData.ImageResourceData"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImageResourceData</span></code></a></p>
+<p>A business-logic class defining valid operations and attributes of Image resources stored in multiple files</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource.shape">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource.shape" title="Permalink to this definition"></a></dt>
+<dd><p>The image resource shape (should be 5D with the following dimensions TCZYX)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource.dims">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dims</span></span><a class="headerlink" href="#pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource.dims" title="Permalink to this definition"></a></dt>
+<dd><p>the dimensions of the image resource
+:return:</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource.sizeT">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeT</span></span><a class="headerlink" href="#pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource.sizeT" title="Permalink to this definition"></a></dt>
+<dd><p>The number of frames</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource.sizeC">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeC</span></span><a class="headerlink" href="#pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource.sizeC" title="Permalink to this definition"></a></dt>
+<dd><p>The number of channels</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource.sizeZ">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeZ</span></span><a class="headerlink" href="#pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource.sizeZ" title="Permalink to this definition"></a></dt>
+<dd><p>The number of layers</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource.sizeY">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeY</span></span><a class="headerlink" href="#pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource.sizeY" title="Permalink to this definition"></a></dt>
+<dd><p>The height of image</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource.sizeX">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeX</span></span><a class="headerlink" href="#pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource.sizeX" title="Permalink to this definition"></a></dt>
+<dd><p>The width of image</p>
+</dd></dl>
+
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.domain.ImageResourceData.ImageResourceData.correct_drift">
-<span class="sig-name descname"><span class="pre">correct_drift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">drift</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_mem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData.correct_drift" title="Permalink to this definition"></a></dt>
-<dd><p>Apply the drift correction and save to a multipage TIF file</p>
+<dt class="sig sig-object py" id="pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource.image">
+<span class="sig-name descname"><span class="pre">image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drift</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource.image" title="Permalink to this definition"></a></dt>
+<dd><p>A 2D grayscale image (on frame, one channel and one layer)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>drift</strong> (<em>pandas DataFrame</em>) – the cumulative transforms to apply</p></li>
-<li><p><strong>filename</strong> (<em>str</em>) – the file name to save the stabilized time series to</p></li>
-<li><p><strong>max_mem</strong> (<em>int</em>) – maximum memory allowed use</p></li>
+<li><p><strong>C</strong> (<em>int</em>) – the channel index</p></li>
+<li><p><strong>Z</strong> (<em>int</em>) – the layer index</p></li>
+<li><p><strong>T</strong> (<em>int</em>) – the frame index</p></li>
 </ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a 2D data array</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource.data_sample">
+<span class="sig-name descname"><span class="pre">data_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource.data_sample" title="Permalink to this definition"></a></dt>
+<dd><p>Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for
+regions of interest from a field of view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>slice</em>) – the X slice</p></li>
+<li><p><strong>Y</strong> (<em>slice</em>) – the Y slice</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the sample data (in-memory)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.SingleFileImageResource.</span></span><span class="sig-name descname"><span class="pre">SingleFileImageResource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_resource</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_mem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData" title="pydetecdiv.domain.ImageResourceData.ImageResourceData"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImageResourceData</span></code></a></p>
+<p>A business-logic class defining valid operations and attributes of Image resources stored in a single 5D file</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.shape">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.shape" title="Permalink to this definition"></a></dt>
+<dd><p>The image resource shape (should be 5D with the following dimensions TCZYX)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.dims">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dims</span></span><a class="headerlink" href="#pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.dims" title="Permalink to this definition"></a></dt>
+<dd><p>the image dimensions
+:return:</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.sizeT">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeT</span></span><a class="headerlink" href="#pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.sizeT" title="Permalink to this definition"></a></dt>
+<dd><p>The number of frames</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.sizeC">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeC</span></span><a class="headerlink" href="#pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.sizeC" title="Permalink to this definition"></a></dt>
+<dd><p>The number of channels</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.sizeZ">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeZ</span></span><a class="headerlink" href="#pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.sizeZ" title="Permalink to this definition"></a></dt>
+<dd><p>The number of layers</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.sizeY">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeY</span></span><a class="headerlink" href="#pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.sizeY" title="Permalink to this definition"></a></dt>
+<dd><p>The height of image</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.sizeX">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeX</span></span><a class="headerlink" href="#pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.sizeX" title="Permalink to this definition"></a></dt>
+<dd><p>The width of image</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.image">
+<span class="sig-name descname"><span class="pre">image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drift</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.image" title="Permalink to this definition"></a></dt>
+<dd><p>A 2D grayscale image (on frame, one channel and one layer)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>C</strong> (<em>int</em>) – the channel index</p></li>
+<li><p><strong>Z</strong> (<em>int</em>) – the layer index</p></li>
+<li><p><strong>T</strong> (<em>int</em>) – the frame index</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a 2D data array</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.data_sample">
+<span class="sig-name descname"><span class="pre">data_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.data_sample" title="Permalink to this definition"></a></dt>
+<dd><p>Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for
+regions of interest from a field of view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>slice</em>) – the X slice</p></li>
+<li><p><strong>Y</strong> (<em>slice</em>) – the Y slice</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the sample data (in-memory)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.open">
+<span class="sig-name descname"><span class="pre">open</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.open" title="Permalink to this definition"></a></dt>
+<dd><p>Open the memory mapped file to access data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.close" title="Permalink to this definition"></a></dt>
+<dd><p>Close the memory mapped file</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.flush">
+<span class="sig-name descname"><span class="pre">flush</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.flush" title="Permalink to this definition"></a></dt>
+<dd><p>Flush the data to save changes to the meory mapped file</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.refresh">
+<span class="sig-name descname"><span class="pre">refresh</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource.refresh" title="Permalink to this definition"></a></dt>
+<dd><p>Close and open the memory mapped file to save memory if needed. Useful when creating a new file or making lots
+of changes.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ArrayImageResource.ArrayImageResource">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.ArrayImageResource.</span></span><span class="sig-name descname"><span class="pre">ArrayImageResource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_resource</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_mem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ArrayImageResource.ArrayImageResource" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.ImageResourceData.ImageResourceData" title="pydetecdiv.domain.ImageResourceData.ImageResourceData"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImageResourceData</span></code></a></p>
+<p>A business-logic class defining valid operations and attributes of Image resources stored in a data array</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ArrayImageResource.ArrayImageResource.shape">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#pydetecdiv.domain.ArrayImageResource.ArrayImageResource.shape" title="Permalink to this definition"></a></dt>
+<dd><p>The image resource shape (should be 5D with the following dimensions TCZYX)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ArrayImageResource.ArrayImageResource.dims">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dims</span></span><a class="headerlink" href="#pydetecdiv.domain.ArrayImageResource.ArrayImageResource.dims" title="Permalink to this definition"></a></dt>
+<dd><p>the dimensions of the image resource</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ArrayImageResource.ArrayImageResource.sizeT">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeT</span></span><a class="headerlink" href="#pydetecdiv.domain.ArrayImageResource.ArrayImageResource.sizeT" title="Permalink to this definition"></a></dt>
+<dd><p>The number of frames</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ArrayImageResource.ArrayImageResource.sizeC">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeC</span></span><a class="headerlink" href="#pydetecdiv.domain.ArrayImageResource.ArrayImageResource.sizeC" title="Permalink to this definition"></a></dt>
+<dd><p>The number of channels</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ArrayImageResource.ArrayImageResource.sizeZ">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeZ</span></span><a class="headerlink" href="#pydetecdiv.domain.ArrayImageResource.ArrayImageResource.sizeZ" title="Permalink to this definition"></a></dt>
+<dd><p>The number of layers</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ArrayImageResource.ArrayImageResource.sizeY">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeY</span></span><a class="headerlink" href="#pydetecdiv.domain.ArrayImageResource.ArrayImageResource.sizeY" title="Permalink to this definition"></a></dt>
+<dd><p>The height of image</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ArrayImageResource.ArrayImageResource.sizeX">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sizeX</span></span><a class="headerlink" href="#pydetecdiv.domain.ArrayImageResource.ArrayImageResource.sizeX" title="Permalink to this definition"></a></dt>
+<dd><p>The width of image</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ArrayImageResource.ArrayImageResource.image">
+<span class="sig-name descname"><span class="pre">image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drift</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ArrayImageResource.ArrayImageResource.image" title="Permalink to this definition"></a></dt>
+<dd><p>A 2D grayscale image (on frame, one channel and one layer)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>C</strong> (<em>int</em>) – the channel index</p></li>
+<li><p><strong>Z</strong> (<em>int</em>) – the layer index</p></li>
+<li><p><strong>T</strong> (<em>int</em>) – the frame index</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a 2D data array</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2D numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.domain.ArrayImageResource.ArrayImageResource.data_sample">
+<span class="sig-name descname"><span class="pre">data_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.ArrayImageResource.ArrayImageResource.data_sample" title="Permalink to this definition"></a></dt>
+<dd><p>Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for
+regions of interest from a field of view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>slice</em>) – the X slice</p></li>
+<li><p><strong>Y</strong> (<em>slice</em>) – the Y slice</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the sample data (in-memory)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1370,7 +1767,7 @@ corresponding DSO or list thereof.</p>
 <dd><p>Returns a record dictionary of the current Data</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>no_id</strong> (<em>bool</em>) – if True, the <a href="#id17"><span class="problematic" id="id18">id_</span></a> is not passed included in the record to allow transfer from one project to another</p>
+<dd class="field-odd"><p><strong>no_id</strong> (<em>bool</em>) – if True, the <a href="#id19"><span class="problematic" id="id20">id_</span></a> is not passed included in the record to allow transfer from one project to another</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>record dictionary</p>
@@ -1420,7 +1817,7 @@ corresponding DSO or list thereof.</p>
 <dd><p>Returns a record dictionary of the current Experiment object</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>no_id</strong> (<em>bool</em>) – if True, the <a href="#id19"><span class="problematic" id="id20">id_</span></a> is not passed included in the record to allow transfer from one project to another</p>
+<dd class="field-odd"><p><strong>no_id</strong> (<em>bool</em>) – if True, the <a href="#id21"><span class="problematic" id="id22">id_</span></a> is not passed included in the record to allow transfer from one project to another</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>record dictionary</p>
