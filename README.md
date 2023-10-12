@@ -1,8 +1,10 @@
 # pyDetecDiv
 Porting DetecDiv to Python
 <!-- TOC -->
-* [Getting started](#getting-started)
-  * [Easy installation (Linux)](#easy-installation-linux)
+* [pyDetecDiv](#pydetecdiv)
+  * [Getting started](#getting-started)
+    * [Known issue](#known-issue)
+    * [Easy installation (Linux)](#easy-installation-linux)
     * [Installation from source distribution](#installation-from-source-distribution)
       * [Installing in a miniconda environment](#installing-in-a-miniconda-environment)
 <!-- TOC -->

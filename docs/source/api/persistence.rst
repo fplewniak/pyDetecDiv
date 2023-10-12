@@ -41,6 +41,10 @@ pydetecdiv.persistence.sqlalchemy.orm
    :members:
    :show-inheritance:
 
+.. automodule:: pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao
+   :members:
+   :show-inheritance:
+
 .. automodule:: pydetecdiv.persistence.sqlalchemy.orm.RunDao
    :members:
    :show-inheritance:
@@ -50,17 +54,5 @@ pydetecdiv.persistence.sqlalchemy.orm
    :show-inheritance:
 
 .. automodule:: pydetecdiv.persistence.sqlalchemy.orm.associations
-   :members:
-   :show-inheritance:
-
-pydetecdiv.persistence.bioimageit
-'''''''''''''''''''''''''''''''''
-.. automodule:: pydetecdiv.persistence.bioimageit.request
-   :members:
-   :show-inheritance:
-
-pydetecdiv.persistence.bioimageit.plugins.data_sqlite
-'''''''''''''''''''''''''''''''''''''''''''''''''''''
-.. automodule:: pydetecdiv.persistence.bioimageit.plugins.data_sqlite
    :members:
    :show-inheritance:

@@ -51,12 +51,16 @@ class MultiFileImageResource(ImageResourceData):
 
     @property
     def dims(self):
+        """
+        the dimensions of the image resource
+        :return:
+        """
         return self._dims
 
     @property
     def sizeT(self):
         """
-        The number of channels
+        The number of frames
         """
         return self._dims.T
 
@@ -70,21 +74,21 @@ class MultiFileImageResource(ImageResourceData):
     @property
     def sizeZ(self):
         """
-        The number of channels
+        The number of layers
         """
         return self._dims.Z
 
     @property
     def sizeY(self):
         """
-        The number of channels
+        The height of image
         """
         return self._dims.Y
 
     @property
     def sizeX(self):
         """
-        The number of channels
+        The width of image
         """
         return self._dims.X
 

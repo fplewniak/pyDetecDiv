@@ -29,7 +29,23 @@ Domain-specific classes
    :members:
    :show-inheritance:
 
+.. autoclass:: pydetecdiv.domain.ImageResource.ImageResource
+   :members:
+   :show-inheritance:
+
 .. autoclass:: pydetecdiv.domain.ImageResourceData.ImageResourceData
+   :members:
+   :show-inheritance:
+
+.. autoclass:: pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource
+   :members:
+   :show-inheritance:
+
+.. autoclass:: pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource
+   :members:
+   :show-inheritance:
+
+.. autoclass:: pydetecdiv.domain.ArrayImageResource.ArrayImageResource
    :members:
    :show-inheritance:
 

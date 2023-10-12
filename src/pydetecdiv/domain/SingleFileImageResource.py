@@ -33,12 +33,16 @@ class SingleFileImageResource(ImageResourceData):
 
     @property
     def dims(self):
+        """
+        the image dimensions
+        :return:
+        """
         return self.img_reader.dims
 
     @property
     def sizeT(self):
         """
-        The number of channels
+        The number of frames
         """
         return self.img_reader.dims.T
 
@@ -52,21 +56,21 @@ class SingleFileImageResource(ImageResourceData):
     @property
     def sizeZ(self):
         """
-        The number of channels
+        The number of layers
         """
         return self.img_reader.dims.Z
 
     @property
     def sizeY(self):
         """
-        The number of channels
+        The height of image
         """
         return self.img_reader.dims.Y
 
     @property
     def sizeX(self):
         """
-        The number of channels
+        The width of image
         """
         return self.img_reader.dims.X
 

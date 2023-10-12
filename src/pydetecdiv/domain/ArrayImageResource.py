@@ -29,12 +29,15 @@ class ArrayImageResource(ImageResourceData):
 
     @property
     def dims(self):
+        """
+        the dimensions of the image resource
+        """
         return self.img_data.dims
 
     @property
     def sizeT(self):
         """
-        The number of channels
+        The number of frames
         """
         return self.img_data.dims.T
 
@@ -48,21 +51,21 @@ class ArrayImageResource(ImageResourceData):
     @property
     def sizeZ(self):
         """
-        The number of channels
+        The number of layers
         """
         return self.img_data.dims.Z
 
     @property
     def sizeY(self):
         """
-        The number of channels
+        The height of image
         """
         return self.img_data.dims.Y
 
     @property
     def sizeX(self):
         """
-        The number of channels
+        The width of image
         """
         return self.img_data.dims.X
 
