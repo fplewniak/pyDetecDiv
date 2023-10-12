@@ -10,7 +10,7 @@ from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 
 class DatasetDao(DAO, Base):
     """
-    DAO class for access to BioImageIT dataset records from the SQL database
+    DAO class for access to dataset records from the SQL database
     """
     __tablename__ = 'dataset'
     exclude = ['id_']
@@ -21,7 +21,7 @@ class DatasetDao(DAO, Base):
     name = Column(String, unique=True, nullable=False)
     url = Column(String)
     type_ = Column(String)
-    run = Column(String, ForeignKey('run.uuid'), nullable=True, index=True)
+    run = Column(String, ForeignKey('run.id_'), nullable=True, index=True)
     pattern = Column(String)
 
     data_list_ = relationship('DataDao')

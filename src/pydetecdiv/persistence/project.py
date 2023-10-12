@@ -5,6 +5,7 @@ Project persistence management for persistence layer
 """
 import glob
 
+from pydetecdiv.exceptions import UnknownRepositoryTypeError
 from pydetecdiv.utils.path import stem
 from pydetecdiv.settings import get_config_value
 from pydetecdiv.persistence.repository import ShallowDb
@@ -47,5 +48,5 @@ def list_projects(dbms: str = None):
             workspace = get_config_value('project', 'workspace')
             project_list = [stem(db_file) for db_file in glob.glob(f'{workspace}/*.db')]
         case _:
-            raise NotImplementedError(f'{dbms} is not implemented')
+            raise UnknownRepositoryTypeError(f'{dbms} is not implemented')
     return project_list

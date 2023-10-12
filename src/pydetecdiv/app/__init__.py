@@ -148,7 +148,7 @@ class WaitDialog(QDialog):
         Hide and destroy the Wait dialog window. The cursor is also set back to its normal aspect.
         """
         self.hide()
-        PyDetecDiv().setOverrideCursor(QCursor(Qt.ArrowCursor))
+        PyDetecDiv().restoreOverrideCursor()
         self.destroy()
 
     def cancel(self):
@@ -180,6 +180,27 @@ class WaitDialog(QDialog):
         else:
             self.cancel()
 
+class MessageDialog(QDialog):
+    """
+    Generic dialog to communicate a message to the user (error, warning or any other information)
+    """
+
+    def __init__(self, msg):
+        super().__init__()
+        self.setWindowModality(Qt.WindowModal)
+        label = QLabel()
+        label.setStyleSheet("""
+        font-weight: bold;
+        """)
+        label.setText(msg)
+        layout = QVBoxLayout(self)
+        layout.addWidget(label)
+        button_box = QDialogButtonBox(QDialogButtonBox.Close, self)
+        button_box.rejected.connect(self.close)
+        layout.addWidget(button_box)
+        self.setLayout(layout)
+        self.exec()
+
 
 def get_settings():
     """
@@ -199,6 +220,3 @@ def project_list():
     :rtype: list of str
     """
     return list_projects()
-
-
-

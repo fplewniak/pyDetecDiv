@@ -1,13 +1,15 @@
 """
 Handling actions to edit and manage settings
 """
+import getpass
 import os.path
 
 from PySide6.QtCore import Slot, Qt, QDir
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import (QLineEdit, QDialogButtonBox, QPushButton, QFileDialog, QDialog, QHBoxLayout, QVBoxLayout,
-                               QGroupBox)
+                               QGroupBox, QComboBox, QSpinBox)
 from pydetecdiv.app import PyDetecDiv, get_settings
+from pydetecdiv.persistence import implemented_dbms
 
 
 class SettingsDialog(QDialog):
@@ -24,18 +26,39 @@ class SettingsDialog(QDialog):
         self.settings = get_settings()
 
         # Widgets
+        conda_group = QGroupBox(self)
+        conda_group.setTitle('Conda path')
+        self.conda_path = QLineEdit(conda_group)
+        icon = QIcon(":icons/file_chooser")
+        button_conda = QPushButton(conda_group)
+        button_conda.setIcon(icon)
+
+        batch_group = QGroupBox(self)
+        batch_group.setTitle('Batch size')
+        self.batch_size = QSpinBox(self)
+        self.batch_size.setRange(256, 16384)
+        self.batch_size.setSingleStep(256)
+
+        tools_group = QGroupBox(self)
+        tools_group.setTitle('Toolbox:')
+        self.toolbox = QLineEdit(tools_group)
+        button_toolbox = QPushButton(tools_group)
+        button_toolbox.setIcon(icon)
+
+        user_group = QGroupBox(self)
+        user_group.setTitle('User:')
+        self.user = QLineEdit(user_group)
+
+        dbms_group = QGroupBox(self)
+        dbms_group.setTitle('DBMS:')
+        self.dbms = QComboBox()
+        self.dbms.addItems(implemented_dbms())
+
         workspace_group = QGroupBox(self)
         workspace_group.setTitle('Workspace:')
         self.workspace = QLineEdit(workspace_group)
-        icon = QIcon(":icons/file_chooser")
         button_workspace = QPushButton(workspace_group)
         button_workspace.setIcon(icon)
-
-        bioit_group = QGroupBox(self)
-        bioit_group.setTitle('BioImageIT configuration:')
-        self.bioit_conf = QLineEdit(bioit_group)
-        button_bioit = QPushButton(bioit_group)
-        button_bioit.setIcon(icon)
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok |
                                            QDialogButtonBox.Cancel |
@@ -46,24 +69,43 @@ class SettingsDialog(QDialog):
         # Layout
         vertical_layout = QVBoxLayout(self)
         workspace_layout = QHBoxLayout(workspace_group)
+        dbms_layout = QHBoxLayout(dbms_group)
+        user_layout = QHBoxLayout(user_group)
+        tools_layout = QHBoxLayout(tools_group)
+        conda_layout = QHBoxLayout(conda_group)
+        batch_layout = QHBoxLayout(batch_group)
 
         workspace_layout.addWidget(self.workspace)
         workspace_layout.addWidget(button_workspace)
 
-        bioit_layout = QHBoxLayout(bioit_group)
-        bioit_layout.addWidget(self.bioit_conf)
-        bioit_layout.addWidget(button_bioit)
+        tools_layout.addWidget(self.toolbox)
+        tools_layout.addWidget(button_toolbox)
+
+        conda_layout.addWidget(self.conda_path)
+        conda_layout.addWidget(button_conda)
+
+        batch_layout.addWidget(self.batch_size)
+
+        dbms_layout.addWidget(self.dbms)
+
+        user_layout.addWidget(self.user)
 
         vertical_layout.addWidget(workspace_group)
-        vertical_layout.addWidget(bioit_group)
+        vertical_layout.addWidget(tools_group)
+        vertical_layout.addWidget(conda_group)
+        vertical_layout.addWidget(user_group)
+        vertical_layout.addWidget(batch_group)
+        vertical_layout.addWidget(dbms_group)
+
         vertical_layout.addWidget(self.button_box)
 
         # Widget behaviour
         button_workspace.clicked.connect(self.select_workspace)
-        button_bioit.clicked.connect(self.select_bioit)
+        button_toolbox.clicked.connect(self.select_toolbox_path)
         self.button_box.clicked.connect(self.clicked)
         self.workspace.textChanged.connect(self.toggle_buttons)
-        self.bioit_conf.textChanged.connect(self.toggle_buttons)
+        self.user.textChanged.connect(self.toggle_buttons)
+        self.toolbox.textChanged.connect(self.toggle_buttons)
 
         self.reset()
         self.exec()
@@ -73,7 +115,7 @@ class SettingsDialog(QDialog):
         """
         Enable or disable OK and Apply buttons depending upon the validity of input text
         """
-        if self.workspace.text() and self.bioit_conf.text() and os.path.exists(self.bioit_conf.text()):
+        if self.workspace.text() and self.user.text() and self.toolbox.text():
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
             self.button_box.button(QDialogButtonBox.Apply).setEnabled(True)
         else:
@@ -93,21 +135,18 @@ class SettingsDialog(QDialog):
         if directory:
             self.workspace.setText(directory)
 
-    def select_bioit(self):
+    def select_toolbox_path(self):
         """
-        A method opening a File chooser to select the BioImageIT configuration file
+        Method opening a Directory chooser to select the toolbox directory
         """
-        dir_name = os.path.dirname(self.settings.value('bioimageit/config_file'))
-        filters = 'JSON files (*.json)'
-        if dir_name != os.path.dirname(self.bioit_conf.text()) and self.bioit_conf.text():
-            dir_name = self.bioit_conf.text()
-        conf_file, _ = QFileDialog.getOpenFileName(self, caption='Choose source files',
-                                                dir=dir_name,
-                                                filter=filters,
-                                                selectedFilter=filters)
-
-        if conf_file  != self.bioit_conf.text():
-            self.bioit_conf.setText(conf_file)
+        dir_name = str(os.path.join(os.path.dirname(self.settings.value("paths/toolbox")),
+                                os.path.basename(self.settings.value("paths/toolbox"))))
+        if dir_name != self.toolbox.text() and self.toolbox.text():
+            dir_name = self.toolbox.text()
+        directory = QFileDialog.getExistingDirectory(self, caption='Choose toolbox directory', dir=dir_name,
+                                                     options=QFileDialog.ShowDirsOnly)
+        if directory:
+            self.toolbox.setText(directory)
 
     @Slot()
     def clicked(self, button):
@@ -134,14 +173,22 @@ class SettingsDialog(QDialog):
 
         self.settings.setValue("project/workspace", self.workspace.text())
         QDir().mkpath(self.workspace.text())
-        self.settings.setValue("bioimageit/config_file", self.bioit_conf.text())
+        self.settings.setValue("paths/toolbox", self.toolbox.text())
+        self.settings.setValue("project.conda/dir", self.conda_path.text())
+        self.settings.setValue("project/user", self.user.text())
+        self.settings.setValue("project/dbms", implemented_dbms()[self.dbms.currentIndex()])
+        self.settings.setValue("project/batch", self.batch_size.value())
 
     def reset(self):
         """
         Reset the contents of the settings editor to the values currently in the settings file
         """
         self.workspace.setText(self.settings.value("project/workspace"))
-        self.bioit_conf.setText(self.settings.value("bioimageit/config_file"))
+        self.toolbox.setText(self.settings.value("paths/toolbox"))
+        self.conda_path.setText(self.settings.value("project.conda/dir"))
+        self.user.setText(self.settings.value("project/user"))
+        self.dbms.setCurrentIndex(implemented_dbms().index(self.settings.value("project/dbms")))
+        self.batch_size.setValue(int(self.settings.value("project/batch")))
 
 
 class Settings(QAction):

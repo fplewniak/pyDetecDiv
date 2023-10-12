@@ -8,7 +8,7 @@ from sqlalchemy import Column, Integer, String, text, select
 from sqlalchemy.orm import relationship, joinedload
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 from pydetecdiv.persistence.sqlalchemy.orm import dao
-from pydetecdiv.persistence.sqlalchemy.orm.associations import FovData
+# from pydetecdiv.persistence.sqlalchemy.orm.associations import FovData
 
 
 class FOVdao(DAO, Base):
@@ -28,7 +28,28 @@ class FOVdao(DAO, Base):
 
     roi_list_ = relationship('ROIdao')
 
-    data_list = FovData.fov_to_data()
+    # data_list = FovData.fov_to_data()
+
+    image_resources_ = relationship('ImageResourceDao')
+
+    def image_resources(self, fov_id):
+        """
+        A method returning the list of Data records whose parent Dataset has id_ == dataset_id
+
+        :param dataset_id: the id of the Dataset
+        :type dataset_id: str
+        :return: a list of Data records whose parent Dataset has id_ == dataset_id
+        :rtype: list of dict
+        """
+        if self.session.query(FOVdao).filter(FOVdao.id_ == fov_id).first() is not None:
+            data_list = [data.record
+                         for data in self.session.query(FOVdao)
+                         .options(joinedload(FOVdao.image_resources_))
+                         .filter(FOVdao.id_ == fov_id)
+                         .first().image_resources_]
+        else:
+            data_list = []
+        return data_list
 
     @property
     def record(self):

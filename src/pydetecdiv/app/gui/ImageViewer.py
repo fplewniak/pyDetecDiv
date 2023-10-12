@@ -1,8 +1,12 @@
+"""
+Image viewer to display and interact with an Image resource (5D image data)
+"""
+
 import os
 import time
 import pandas as pd
 from PySide6.QtCore import Signal, Qt, QRect, QPoint, QTimer
-from PySide6.QtGui import QPixmap, QImage, QPen, QTransform, QKeySequence
+from PySide6.QtGui import QPixmap, QImage, QPen, QTransform, QKeySequence, QCursor
 from PySide6.QtWidgets import QMainWindow, QGraphicsScene, QGraphicsItem, QGraphicsRectItem, QFileDialog, QMenu
 import numpy as np
 import cv2 as cv
@@ -10,7 +14,7 @@ from skimage.feature import peak_local_max
 
 from pydetecdiv.app import WaitDialog, PyDetecDiv, DrawingTools, pydetecdiv_project
 from pydetecdiv.app.gui.ui.ImageViewer import Ui_ImageViewer
-from pydetecdiv.domain.ImageResource import ImageResource
+from pydetecdiv.domain.ArrayImageResource import ArrayImageResource
 from pydetecdiv.domain.ROI import ROI
 from pydetecdiv.settings import get_config_value
 from pydetecdiv.utils import round_to_even
@@ -21,6 +25,8 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
     Class to view and manipulate an Image resource
     """
     video_frame = Signal(int)
+    video_channel = Signal(int)
+    video_layer = Signal(int)
     finished = Signal(bool)
 
     def __init__(self, **kwargs):
@@ -31,8 +37,10 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.scale = 100
         self.ui.z_slider.setEnabled(False)
         self.ui.t_slider.setEnabled(False)
+        self.ui.c_slider.setEnabled(False)
         self.ui.z_slider.setPageStep(1)
-        self.image_resource = None
+        self.ui.c_slider.setPageStep(1)
+        self.image_resource_data = None
         self.scene = ViewerScene()
         self.scene.setParent(self)
         self.pixmap = QPixmap()
@@ -44,6 +52,9 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.C = 0
         self.T = 0
         self.Z = 0
+        self.drift = None
+        self.parent_viewer = None
+        self.image_source_ref = None
         # self.drift = None
         self.apply_drift = False
         self.roi_template = None
@@ -51,6 +62,8 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.video_frame.emit(self.T)
         self.video_frame.connect(lambda frame: self.ui.current_frame.setText(f'Frame: {frame}'))
         self.video_frame.connect(self.ui.t_slider.setSliderPosition)
+        self.video_channel.connect(self.ui.c_slider.setSliderPosition)
+        self.video_layer.connect(self.ui.z_slider.setSliderPosition)
         self.crop = None
         self.timer = None
         self.start = None
@@ -58,20 +71,24 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.frame = None
         self.wait = None
 
-    def set_image_resource(self, image_resource, crop=None):
+    def set_image_resource_data(self, image_resource, crop=None, T=0, C=0, Z=0):
         """
         Associate an image resource to this viewer, possibly cropping if requested.
 
         :param image_resource: the image resource to load into the viewer
-        :type image_resource: ImageResource
+        :type image_resource: ImageResourceData
         :param crop: the (X,Y) crop area
         :type crop: list of slices [X, Y]
         """
-        self.image_resource = image_resource
-        self.T, self.C, self.Z = (0, 0, 0)
+        self.image_resource_data = image_resource
+        self.T, self.C, self.Z = (T, C, Z)
 
         self.ui.view_name.setText(f'View: {image_resource.fov.name}')
         self.crop = crop
+
+        self.ui.c_slider.setMinimum(0)
+        self.ui.c_slider.setMaximum(image_resource.sizeC - 1)
+        self.ui.c_slider.setEnabled(True)
 
         self.ui.z_slider.setMinimum(0)
         self.ui.z_slider.setMaximum(image_resource.sizeZ - 1)
@@ -140,7 +157,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         Show next frame when playing a video
         """
         self.frame += 1
-        if self.frame >= self.image_resource.sizeT or not self.video_playing:
+        if self.frame >= self.image_resource_data.sizeT or not self.video_playing:
             self.timer.stop()
         else:
             end = time.time()
@@ -182,6 +199,33 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
             self.video_frame.emit(self.T)
             self.display()
 
+    def change_channel(self, C=0):
+        """
+        Change the current frame to the specified time index and refresh the display
+
+        :param T:
+        """
+        if self.C != C:
+            self.C = C
+            self.display()
+
+    def synchronize_with(self, other):
+        """
+        Synchronize the current viewer with another one. This is used to view a portion of an image in a new viewer
+        with the same T, C, Z coordinates as the original.
+        :param other: the other viewer to synchronize with
+        """
+        if self.Z != other.Z:
+            self.Z = other.Z
+            self.video_layer.emit(self.Z)
+        if self.C != other.C:
+            self.C = other.C
+            self.video_channel.emit(self.C)
+        if self.T != other.T:
+            self.T = other.T
+            self.video_frame.emit(self.T)
+        self.display()
+
     def display(self, C=None, T=None, Z=None):
         """
         Display the frame specified by the time, channel and layer indices.
@@ -198,18 +242,16 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         Z = self.Z if Z is None else Z
         if self.apply_drift:
             idx = T if T < len(self.parent().parent().drift) else T - 1
-            arr = self.image_resource.image(C=C, T=T, Z=Z, drift=self.parent().parent().drift.iloc[idx])
+            arr = self.image_resource_data.image(C=C, T=T, Z=Z, drift=self.parent().parent().drift.iloc[idx])
         else:
-            arr = self.image_resource.image(C=C, T=T, Z=Z)
-        print(self.crop)
-        if self.crop is not None:
-            arr = arr[..., self.crop[1], self.crop[0]]
-            print(f'cropping to {self.crop}')
-        ny, nx = arr.shape
-        print(f'display shape: {arr.shape}')
-        img = QImage(np.ascontiguousarray(arr.data), nx, ny, QImage.Format_Grayscale16)
-        self.pixmap.convertFromImage(img)
-        self.pixmapItem.setPixmap(self.pixmap)
+            arr = self.image_resource_data.image(C=C, T=T, Z=Z)
+        if arr is not None:
+            if self.crop is not None:
+                arr = arr[..., self.crop[1], self.crop[0]]
+            ny, nx = arr.shape
+            img = QImage(np.ascontiguousarray(arr.data), nx, ny, QImage.Format_Grayscale16)
+            self.pixmap.convertFromImage(img)
+            self.pixmapItem.setPixmap(self.pixmap)
 
     def draw_saved_rois(self, roi_list):
         """
@@ -240,23 +282,26 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.wait = WaitDialog('Computing drift, please wait.', self, cancel_msg='Cancel drift computation please wait')
         self.finished.connect(self.wait.close_window)
         self.wait.wait_for(self.compute_drift, method=method)
-        for viewer in self.parent().parent().get_image_viewers():
-            viewer.ui.actionPlot.setEnabled(True)
-            viewer.ui.actionApply_correction.setEnabled(True)
-            viewer.ui.actionSave_to_file.setEnabled(True)
-        self.plot_drift()
+        if self.drift is not None:
+            for viewer in self.parent().parent().get_image_viewers():
+                viewer.ui.actionPlot.setEnabled(True)
+                viewer.ui.actionApply_correction.setEnabled(True)
+                viewer.ui.actionSave_to_file.setEnabled(True)
+            self.plot_drift(method)
 
-    def plot_drift(self):
+    def plot_drift(self, method):
         """
         Open a MatplotViewer tab and plot the (x,y) drift against frame index
         """
-        self.parent().parent().show_plot(self.parent().parent().drift, 'Drift')
+        self.parent().parent().show_plot(self.parent().parent().drift, f'Drift - {method}')
 
     def compute_drift(self, method='vidstab'):
         """
         Computation and update of the drift values. When the computation is over, this method emits a finished signal
         """
-        self.parent().parent().drift = self.image_resource.compute_drift(Z=self.Z, C=self.C, method=method)
+        self.drift = self.image_resource_data.compute_drift(Z=self.Z, C=self.C, method=method,
+                                                            thread=self.wait.pdd_thread)
+        self.parent().parent().drift = self.drift if self.drift is not None else self.parent().parent().drift
         self.finished.emit(True)
 
     def compute_drift_vidstab(self):
@@ -269,21 +314,31 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         """
         Computation and update of the drift values using the 'phase correlation' method from OpenCV package
         """
-        self.compute_and_plot_drift(method='phase_correlation')
+        self.compute_and_plot_drift(method='phase correlation')
 
     def apply_drift_correction(self):
         """
-        Apply the drift correction to the display. This method also saves the drift values to a file.
+        Apply the drift correction to the display and reload the image data with extra margins according to the drift
+        values
         """
         self.apply_drift = self.ui.actionApply_correction.isChecked()
+        PyDetecDiv().setOverrideCursor(QCursor(Qt.WaitCursor))
+        if self.image_source_ref and self.parent_viewer:
+            data, crop = self.parent_viewer.get_roi_data(self.image_source_ref)
+            self.set_image_resource_data(self.parent_viewer.image_resource_data, crop=crop)
+            # self.set_image_resource_data(ArrayImageResource(data=data, fov=self.image_resource_data.fov,
+            # image_resource=self.image_resource_data.image_resource), crop=crop,
+            # T=self.T, C=self.C, Z=self.Z)
         self.display()
+        PyDetecDiv().restoreOverrideCursor()
 
     def load_drift_file(self):
         """
         Load a CSV file containing (x, y) drift values
         """
         drift_filename, _ = QFileDialog.getOpenFileName(
-            dir=os.path.join(get_config_value('project', 'workspace'), PyDetecDiv().project_name), filter='*.csv')
+            dir=os.path.join(get_config_value('project', 'workspace'), PyDetecDiv().project_name),
+            filter='*.csv')
         if os.path.isfile(drift_filename):
             self.parent().parent().drift = pd.read_csv(drift_filename)
             self.ui.actionPlot.setEnabled(True)
@@ -297,7 +352,8 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         Save (x, y) drift values to a file
         """
         drift_filename, _ = QFileDialog.getSaveFileName(
-            dir=os.path.join(get_config_value('project', 'workspace'), PyDetecDiv().project_name), filter='*.csv')
+            dir=os.path.join(get_config_value('project', 'workspace'), PyDetecDiv().project_name),
+            filter='*.csv')
         if drift_filename:
             self.parent().parent().drift.to_csv(drift_filename, index=False)
 
@@ -325,7 +381,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         pos = roi.pos()
         x1, x2 = int(pos.x()), w + int(pos.x())
         y1, y2 = int(pos.y()), h + int(pos.y())
-        return self.image_resource.image(C=self.C, T=self.T, Z=self.Z)[y1:y2, x1:x2]
+        return self.image_resource_data.image(C=self.C, T=self.T, Z=self.Z)[y1:y2, x1:x2]
 
     def get_roi_data(self, roi):
         """
@@ -341,28 +397,30 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         pos = roi.pos()
         x1, x2 = int(pos.x()), w + int(pos.x())
         y1, y2 = int(pos.y()), h + int(pos.y())
-        crop = None
-        if self.parent().parent().drift is not None:
-            max_shift_x = np.max(np.abs(self.parent().parent().drift.dx))
-            max_shift_y = np.max(np.abs(self.parent().parent().drift.dy))
-            x1, x2 = round_to_even(x1 - max_shift_x, ceil=False), round_to_even(x2 + max_shift_x)
-            y1, y2 = round_to_even(y1 - max_shift_y, ceil=False), round_to_even(y2 + max_shift_y)
-            x, y = round_to_even(max_shift_x, ceil=False), round_to_even(max_shift_y, ceil=False)
-            crop = [slice(x, x + w), slice(y, y + h)]
-            # min_shift_x, max_shift_x = np.min(self.drift.dx), np.max(self.drift.dx)
-            # min_shift_y, max_shift_y = np.min(self.drift.dy), np.max(self.drift.dy)
-            # print(min_shift_x, max_shift_x, min_shift_y, max_shift_y)
-            # print(f'without margins: ({x1}, {y1}) - ({x2}, {y2}) [{x2 - x1}, {y2 - y1}]')
-            # x1 = round_to_even(np.min([x1 + min_shift_x, x1]), ceil=False)
-            # x2 = round_to_even(np.max([x2 + max_shift_x, x2]))
-            # y1 = round_to_even(np.min([y1 + min_shift_y, y1]), ceil=False)
-            # y2 = round_to_even(np.max([y2 + max_shift_y, y2]))
-            # print(f'   with margins: ({x1}, {y1}) - ({x2}, {y2}) [{x2 - x1}, {y2 - y1}]')
-            # x = round_to_even(max_shift_x, ceil=False) if max_shift_x > 0 else 0
-            # y = round_to_even(max_shift_y, ceil=False) if max_shift_y > 0 else 0
-            # crop = [slice(x, x+w), slice(y, y+h)]
-            # print(f'should crop to {x}, {y}, {x+w}, {y+h} - {self.crop} - {w}, {h}')
-        return self.image_resource.data_sample(X=slice(x1, x2), Y=slice(y1, y2)), crop
+        crop = (slice(x1, x2), slice(y1, y2))
+        # if self.parent().parent().drift is not None:
+        #     max_shift_x = np.max(np.abs(self.parent().parent().drift.dx))
+        #     max_shift_y = np.max(np.abs(self.parent().parent().drift.dy))
+        #     x1, x2 = round_to_even(x1 - max_shift_x, ceil=False), round_to_even(x2 + max_shift_x)
+        #     y1, y2 = round_to_even(y1 - max_shift_y, ceil=False), round_to_even(y2 + max_shift_y)
+        #     x, y = round_to_even(max_shift_x, ceil=False), round_to_even(max_shift_y, ceil=False)
+        #     crop = [slice(x, x + w), slice(y, y + h)]
+
+        # min_shift_x, max_shift_x = np.min(self.drift.dx), np.max(self.drift.dx)
+        # min_shift_y, max_shift_y = np.min(self.drift.dy), np.max(self.drift.dy)
+        # print(min_shift_x, max_shift_x, min_shift_y, max_shift_y)
+        # print(f'without margins: ({x1}, {y1}) - ({x2}, {y2}) [{x2 - x1}, {y2 - y1}]')
+        # x1 = round_to_even(np.min([x1 + min_shift_x, x1]), ceil=False)
+        # x2 = round_to_even(np.max([x2 + max_shift_x, x2]))
+        # y1 = round_to_even(np.min([y1 + min_shift_y, y1]), ceil=False)
+        # y2 = round_to_even(np.max([y2 + max_shift_y, y2]))
+        # print(f'   with margins: ({x1}, {y1}) - ({x2}, {y2}) [{x2 - x1}, {y2 - y1}]')
+        # x = round_to_even(max_shift_x, ceil=False) if max_shift_x > 0 else 0
+        # y = round_to_even(max_shift_y, ceil=False) if max_shift_y > 0 else 0
+        # crop = [slice(x, x+w), slice(y, y+h)]
+        # print(f'should crop to {x}, {y}, {x+w}, {y+h} - {self.crop} - {w}, {h}')
+        # return self.image_resource_data.data_sample(X=slice(x1, x2), Y=slice(y1, y2)), crop
+        return self.image_resource_data, crop
 
     def load_roi_template(self):
         """
@@ -378,7 +436,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         Identify ROIs in an image using the ROI template as a model and the matchTemplate function from OpenCV
         """
         threshold = 0.3
-        img = self.image_resource.image(C=self.C, Z=self.Z, T=self.T)
+        img = self.image_resource_data.image(C=self.C, Z=self.Z, T=self.T)
         img8bits = np.uint8(np.array(img / np.max(img) * 255))
         res = cv.matchTemplate(img8bits, self.roi_template, cv.TM_CCOEFF_NORMED)
         # loc = np.where(res >= threshold)
@@ -405,19 +463,23 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
 
     def view_roi_image(self, selected_roi=None):
         """
-        Display the selected area in a new tab viewer as a 5D image resource.
+        Display the selected area in a new tab viewer
 
         :param selected_roi:
         """
-        if selected_roi is None:
-            selected_roi = self.scene.get_selected_ROI()
         viewer = ImageViewer()
-        data, crop = self.get_roi_data(selected_roi)
-        self.parent().parent().addTab(viewer, selected_roi.data(0))
-        viewer.set_image_resource(ImageResource(data=data, fov=self.image_resource.fov), crop=crop)
-        viewer.ui.view_name.setText(f'View: {selected_roi.data(0)}')
+        PyDetecDiv().setOverrideCursor(QCursor(Qt.WaitCursor))
+        viewer.image_source_ref = selected_roi if selected_roi else self.scene.get_selected_ROI()
+        viewer.parent_viewer = self
+        data, crop = self.get_roi_data(viewer.image_source_ref)
+        self.parent().parent().addTab(viewer, viewer.image_source_ref.data(0))
+        # viewer.set_image_resource_data(ArrayImageResource(data=data, fov=self.image_resource_data.fov, image_resource=self.image_resource_data.image_resource), crop=crop)
+        viewer.set_image_resource_data(self.image_resource_data, crop=crop)
+        viewer.ui.view_name.setText(f'View: {viewer.image_source_ref.data(0)}')
+        viewer.synchronize_with(self)
         viewer.display()
         self.parent().parent().setCurrentWidget(viewer)
+        PyDetecDiv().restoreOverrideCursor()
 
     def save_rois(self):
         """
@@ -428,8 +490,8 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
             for i, rect_item in enumerate(sorted(rois, key=lambda x: x.scenePos().toPoint().toTuple())):
                 x, y = rect_item.scenePos().toPoint().toTuple()
                 w, h = rect_item.rect().toRect().getCoords()[2:]
-                new_roi = ROI(project=project, name=f'{self.image_resource.fov.name}_{i}',
-                              fov=self.image_resource.fov, top_left=(x, y), bottom_right=(int(x) + w, int(y) + h))
+                new_roi = ROI(project=project, name=f'{self.image_resource_data.fov.name}_{i}',
+                              fov=self.image_resource_data.fov, top_left=(x, y), bottom_right=(int(x) + w, int(y) + h))
                 rect_item.setData(0, new_roi.name)
         self.fixate_saved_rois()
 

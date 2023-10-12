@@ -10,8 +10,19 @@ Porting DetecDiv to Python
 Documentation (user's manual and API documentation) is available at: https://fplewniak.github.io/pyDetecDiv/
 
 ## Getting started
+### Known issue
+On Ubuntu distribution with PySide6 version 6.5, you may get the following error:
+`qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found.
+This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.`
+
+This may be due to a missing xcb library that can be identified by issuing the following command:
+`ldd <...>/lib/python3.11/site-packages/PySide6/Qt/plugins/platforms/libqxcb.so`
+
+Then install the missing library (for example, libxcb-cursor0 on a Ubuntu 22.04 installation):
+`sudo apt install libxcb-cursor0`
+
 ### Easy installation (Linux)
-The easiest way to install pyDetecDiv on a Linux box is to download the [pydetecdiv-0.1.0-linux64.tar.gz](https://github.com/fplewniak/pyDetecDiv/releases/download/v0.1.0/pydetecdiv-0.1.0-linux64.tar.gz). 
+The easiest way to install pyDetecDiv on a Linux box is to download the [pydetecdiv-0.2.0-linux64.tar.gz](https://github.com/fplewniak/pyDetecDiv/releases/download/v0.2.0/pydetecdiv-0.2.0-linux64.tar.gz). 
 Then unpack it in a place of your choice and run the pydetecdiv executable you will find in the pydetecdiv directory.
 For a more convenient usage, you may place a link or a copy of the executable in your favourite PATH directory.
 
@@ -22,8 +33,6 @@ It is recommended to install pyDetecDiv in a conda environment (miniconda) to av
 You will need miniconda anyway to manage and run external tools from within the pyDetecDiv interface.
 The minimum compatible Python version is 3.10.
 
-At the moment, pyDetecDiv still requires BioImageIT to be installed but this requirement should not make it into next versions.
-
 #### Installing in a miniconda environment
 _Create a conda environment with python:_
 
@@ -33,28 +42,9 @@ Then, you may activate the newly created environment before proceeding with the 
 
 `conda activate pyDetecDiv`
 
-_Install BioImageIT:_
-BioImageIT needs to be installed manually as there is no pip package available.
-
-`git clone https://github.com/bioimageit/bioimageit_formats.git `
-
-`pip install -e ./bioimageit_formats`
-
-`git clone https://github.com/bioimageit/bioimageit_core.git `
-
-`pip install -e ./bioimageit_core`
-
-`python bioimageit_core/config.py "$USER" "CONDA"`
-
-Complete the BioImageIT configuration according to [BioImageIT documentation](https://bioimageit.github.io/bioimageit_core/install.html#configure-bioimageit-core).
-
 _Install pyDetecDiv:_
 
-PyDetecDiv requires the `h5py` package which itself requires `hdf5` libraries which must be installed  before installing the python bindings as it seems that pip cannot install them:
-
-`conda install hdf5`
-
-Then, download the code and install the application:
+Download the code and install the application:
 
 `git clone https://github.com/fplewniak/pyDetecDiv.git`
 

@@ -27,7 +27,7 @@ class SaveROIsToFiles(Plugin):
                 roi_list.append(roi)
                 x_slice = slice(roi.top_left[0], roi.bottom_right[0])
                 y_slice = slice(roi.top_left[1], roi.bottom_right[1])
-                roi_image = AICSImage(fov.image_resource().data_sample(X=x_slice, Y=y_slice))
+                roi_image = AICSImage(fov.image_resource().image_resource_data().data_sample(X=x_slice, Y=y_slice))
                 print(f'{roi_image} {roi_image.shape}')
                 file_name = os.path.join(self.working_dir, f'{roi.name}.tiff')
                 dataset = project.get_named_object('Dataset', self.dataset)

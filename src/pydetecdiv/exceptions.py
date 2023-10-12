@@ -32,3 +32,39 @@ class JuttingError(Warning):
 
     def __str__(self):
         return self.message
+
+class OpenProjectError(Exception):
+    """
+    Exception raised when a project cannot be opened
+    """
+
+    def __init__(self, msg):
+        self.message = f'Cannot open project.\n {msg}'
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
+
+class ImportImagesError(Exception):
+    """
+    Exception raised when images cannot be imported
+    """
+
+    def __init__(self, msg):
+        self.message = f'Cannot import images.\n {msg}'
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
+
+class UnknownRepositoryTypeError(Exception):
+    """
+    Exception raised when images cannot be imported
+    """
+
+    def __init__(self, msg):
+        self.message = f'Unknown repository type.\n {msg}'
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message

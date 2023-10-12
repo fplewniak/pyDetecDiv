@@ -70,7 +70,7 @@ class MainStatusBar(QStatusBar):
         self.setObjectName('Main status bar')
         self.timer = QTimer()
         self.timer.timeout.connect(self.show_memory_usage)
-        self.timer.setInterval(1000)
+        self.timer.setInterval(10000)
         self.timer.start()
 
     def show_memory_usage(self):
@@ -122,7 +122,7 @@ class Help(QAction):
         font.setBold(True)
         label.setFont(font)
         label_2 = QLabel(about_dialog)
-        label_2.setGeometry(QRect(130, 100, 131, 16))
+        label_2.setGeometry(QRect(110, 100, 161, 16))
         font1 = QFont()
         font1.setFamilies(["Arial"])
         font1.setPointSize(16)
@@ -139,7 +139,7 @@ class Help(QAction):
         label_5 = QLabel(about_dialog)
         label_5.setGeometry(QRect(130, 190, 131, 16))
         label.setText('pyDetecDiv')
-        label_2.setText('version 0.1.0')
+        label_2.setText('version 0.2.0 dev')
         label_3.setText('CeCILL FREE SOFTWARE LICENSE AGREEMENT v2.1 (2013-06-21)')
         label_4.setText('https://github.com/fplewniak/pyDetecDiv')
         label_5.setText('f.plewniak@unistra.fr')

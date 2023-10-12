@@ -3,11 +3,10 @@
 """
  A class defining the business logic methods that can be applied to Fields Of View
 """
-from pydetecdiv.domain.dso import NamedDSO, BoxedDSO, DsoWithImageData
-from pydetecdiv.domain.ImageResource import ImageResource
+from pydetecdiv.domain.dso import NamedDSO, BoxedDSO
 
 
-class FOV(NamedDSO, BoxedDSO, DsoWithImageData):
+class FOV(NamedDSO, BoxedDSO):
     """
     A business-logic class defining valid operations and attributes of Fields of view (FOV)
     """
@@ -102,16 +101,6 @@ Comments:             {self.comments}
         # return roi_list if len(roi_list) == 1 else roi_list[1:]
 
     @property
-    def image_list(self):
-        """
-        Return a list of images related to this FOV
-
-        :return: list of images
-        :rtype: list of Image objects
-        """
-        return self.project.get_linked_objects('Image', to=self)
-
-    @property
     def initial_roi(self):
         """
         Return the initial ROI, created at the creation of this FOV and representing the full FOV
@@ -129,12 +118,8 @@ Comments:             {self.comments}
         :param dataset: the dataset name
         :type dataset: str
         :return: the image resource
-        :rtype: ImageResource
+        :rtype: ImageResourceData
         """
-        ds = self.project.get_named_object('Dataset', dataset)
-        data_list = [data.url for data in self.data if data.dataset_ == ds.uuid]
-        if ds.pattern:
-            image_resource = ImageResource(data_list, fov=self, pattern=ds.pattern)
-        else:
-            image_resource = ImageResource(data_list[0], fov=self)
+        image_resource = \
+        [ir for ir in self.project.get_linked_objects('ImageResource', self) if ir.dataset.name == dataset][0]
         return image_resource

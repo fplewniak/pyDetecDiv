@@ -20,9 +20,9 @@ def get_default_settings() -> dict:
     return {'project': {'dbms': 'SQLite3', 'workspace': '/data2/BioImageIT/workspace', 'user': getpass.getuser(),
                         'batch': 1024},
             'project.sqlite': {'database': 'pydetecdiv'},
-            'project.mysql': {'database': 'pydetecdiv', 'host': 'localhost', 'credentials': 'mysql.credentials', },
-            'omero': {'host': 'localhost', 'credentials': 'omero.credentials', },
-            'bioimageit': {'config_file': '/data2/BioImageIT/config.json'}
+            #'project.mysql': {'database': 'pydetecdiv', 'host': 'localhost', 'credentials': 'mysql.credentials', },
+            #'omero': {'host': 'localhost', 'credentials': 'omero.credentials', },
+            #'bioimageit': {'config_file': '/data2/BioImageIT/config.json'}
             }
 
 

@@ -3,25 +3,24 @@
 """
 Concrete Repositories using a SQL database with the sqlalchemy toolkit
 """
-import json
 import os
 import re
+import sqlite3
 from datetime import datetime
+from PIL import Image
 
 import pandas
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.expression import Delete
 from pandas import DataFrame
-from bioimageit_core.plugins.data_factory import metadataServices
 from pydetecdiv.persistence.repository import ShallowDb
 from pydetecdiv.persistence.sqlalchemy.orm.main import mapper_registry
 from pydetecdiv.persistence.sqlalchemy.orm.dao import dso_dao_mapping as dao
 from pydetecdiv.persistence.sqlalchemy.orm.associations import Linker
-from pydetecdiv.persistence.bioimageit.request import Request
-from pydetecdiv.persistence.bioimageit.plugins.data_sqlite import SQLiteMetadataServiceBuilder
 from pydetecdiv.settings import get_config_value
 from pydetecdiv import generate_uuid, copy_files
+from pydetecdiv.exceptions import OpenProjectError, ImportImagesError
 
 
 class ShallowSQLite3(ShallowDb):
@@ -31,16 +30,12 @@ class ShallowSQLite3(ShallowDb):
 
     def __init__(self, dbname=None):
         self.name = dbname
-        self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}?check_same_thread=True')
+        try:
+            self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}?check_same_thread=True')
+        except sqlite3.OperationalError as e:
+            raise OpenProjectError(f'Could not open project\n{e.message}') from e
         self.session_maker = sessionmaker(self.engine, future=True)
         self.session_ = None
-
-        self.bioiit_req = Request(get_config_value('bioimageit', 'config_file'), debug=False)
-        metadataServices.register_builder('SQLITE', SQLiteMetadataServiceBuilder())
-        self.bioiit_req.connect()
-        self.bioiit_req.data_service.connect_to_session(self.session, self)
-        self.bioiit_exp = None
-
         self.create()
 
     @property
@@ -90,10 +85,27 @@ class ShallowSQLite3(ShallowDb):
         exp_name = str(os.path.splitext(os.path.basename(self.name))[0])
         if not sqlalchemy.inspect(self.engine).get_table_names():
             mapper_registry.metadata.create_all(self.engine)
-            self.bioiit_exp = self.bioiit_req.create_experiment(exp_name)
+            experiment_path = os.path.join(get_config_value('project', 'workspace'), exp_name)
+            os.mkdir(experiment_path)
+            dataset_record = {'id_': None,
+                              'uuid': generate_uuid(),
+                              'name': 'data',
+                              'url': experiment_path,
+                              'type_': 'raw',
+                              'run': None,
+                              'pattern': None,
+                              }
+            self.save_object('Dataset', dataset_record)
+            os.mkdir(os.path.join(experiment_path, dataset_record['name']))
+            experiment_record = {'id_': None,
+                                 'uuid': generate_uuid(),
+                                 'name': exp_name,
+                                 'author': get_config_value('project', 'user'),
+                                 'date': datetime.now(),
+                                 'raw_dataset': self.get_record_by_name('Dataset', dataset_record['name'])['id_'],
+                                 }
+            self.save_object('Experiment', experiment_record)
             self.commit()
-        else:
-            self.bioiit_exp = self.bioiit_req.get_experiment(exp_name)
 
     def close(self):
         """
@@ -129,7 +141,7 @@ class ShallowSQLite3(ShallowDb):
                     'id_': None,
                     'uuid': generate_uuid(),
                     'name': os.path.basename(image_file),
-                    'dataset': self.bioiit_exp.raw_dataset.uuid,
+                    'dataset': self.get_record_by_name('Dataset', 'data')['id_'],
                     'author': get_config_value('project', 'user') if author == '' else author,
                     'date': datetime.now() if date == 'now' else datetime.fromisoformat(date),
                     'url': image_file if in_place else os.path.join(destination, os.path.basename(image_file)),
@@ -138,72 +150,45 @@ class ShallowSQLite3(ShallowDb):
                     'meta_data': '{}',
                     'key_val': '{}',
                 }
+                with Image.open(record['url']) as img:
+                    record['xdim'], record['ydim'] = img.size
                 self.save_object('Data', record)
                 urls.append(record['url'])
         except:
-            print('Could not import batch of images')
+            raise ImportImagesError('Could not import images')
         return urls, process
 
-    def import_source_path(self, source_path, **kwargs):
+    def annotate_data(self, dataset, source, keys_, regex):
         """
-        Import images from a source path. All files corresponding to the path will be imported.
-
-        :param source_path: the source path (glob pattern)
-        :type source_path: str
-        """
-        self.bioiit_req.import_glob(self.bioiit_exp, source_path, **kwargs)
-
-    def determine_fov(self, source, regex):
-        """
-        Uses metadata from raw data to name corresponding FOVs
-
-        :param source: the metadata source used to define FOV names
-        :type source: str or callable
-        :param regex: regular expression providing the source pattern defining FOV names
-        :type regex: regular expression str
-        :return: a DataFrame with the data id_ and FOV names
-        :rtype: pandas DataFrame
-        """
-        return self.determine_links_using_regex('data', source, ('FOV',), regex)
-
-    def determine_links_using_regex(self, dataset_name, source, keys_, regex):
-        """
-        Uses metadata from data in a given dataset to name corresponding objects (FOV, ROIs, etc.)
-
-        :param dataset_name: the name of the dataset
-        :type dataset_name: str
-        :param source: the metadata source used to define object names
-        :type source: str or callable
-        :param keys_: the designation of objects
-        :type keys_: a tuple of str
-        :param regex: regular expression providing the source pattern defining FOV names
-        :type regex: regular expression str
-        :return: a DataFrame with the data id_ and FOV names
-        :rtype: pandas DataFrame
-        """
-        dataset = self.bioiit_req.get_dataset(self.bioiit_exp, dataset_name)
-        df = self.bioiit_req.data_service.determine_links_using_regex(dataset, source, keys_, regex)
-        return df
-
-    def annotate_data(self, dataset_name, source, keys_, regex):
-        """
-        Returns a DataFrame containing all the metadata associated to raw data, including annotations created using a
-        regular expression applied to a field or a combination thereof.
-
-        :param dataset_name: name of dataset to annotate
-        :type dataset_name: str
+        Method to annotate data files in a dataset according to a regular expression applied to a source. The resulting
+        key-value pairs are placed in a key_val column.
+        :param dataset: the dataset whose data should be annotated
+        :type dataset: Dataset object
         :param source: the database field or combination of fields to apply the regular expression to
         :type source: str or callable returning a str
         :param keys_: the list of classes created objects belong to
         :type keys_: tuple of str
-        :param regex: regular expression defining the DSOs' names
+        :param regex: regular expression defining the annotations
         :type regex: regular expression str
-        :return: a table of all the metadata associated to raw data
-        :rtype: pandas DataFrame
+        :return: list of annotated Data records in a dataframe
+        :rtype: pandas.DataFrame
         """
-        dataset = self.bioiit_req.get_dataset(self.bioiit_exp, dataset_name)
-        df = self.bioiit_req.data_service.create_annotations_using_regex(dataset, source, keys_, regex)
-        return pandas.DataFrame([json.loads(k) for k in df.key_val]).join(df.drop(labels='key_val', axis=1))
+        data_list = self.session.query(dao['Dataset']).filter(dao['Dataset'].id_ == dataset.id_).first().data_list_
+
+        pattern = re.compile(regex)
+
+        call_back = source if callable(source) else lambda x: x.record[source]
+
+        df = pandas.DataFrame([d.record for d in data_list])
+        for i, data in enumerate(data_list):
+            m = re.search(pattern, call_back(data))
+            if m:
+                # key_val = json.loads(data.key_val)
+                # key_val.update(dict(zip(keys_, [m.group(k) for k in keys_])))
+                # data.key_val = json.dumps(key_val)
+                for k in keys_:
+                    df.loc[i, k] = m.group(k)
+        return df
 
     def save_object(self, class_name, record):
         """
@@ -330,7 +315,7 @@ class ShallowSQLite3(ShallowDb):
             #     linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['image_data'])]
             # case ['ImageData', ('FOV' | 'ROI')]:
             #     linked_rec = dao[parent_cls_name](self.session).image_data(parent_id)
-            case ['FOV', 'ROI']:
+            case ['FOV', ('ROI'|'ImageResource')]:
                 linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['fov'])]
             # case ['FOV', ('Image' | 'ImageData')]:
             #     linked_rec = dao[parent_cls_name](self.session).fov(parent_id)
@@ -346,10 +331,14 @@ class ShallowSQLite3(ShallowDb):
             #     linked_rec = dao[parent_cls_name](self.session).image_list(parent_id)
             case ['Data', ('FOV' | 'ROI')]:
                 linked_rec = dao[parent_cls_name](self.session).data(parent_id)
-            case ['Data', 'Dataset']:
+            case ['Data', ('Dataset'|'ImageResource')]:
                 linked_rec = dao[parent_cls_name](self.session).data_list(parent_id)
             case ['Dataset', 'Data']:
                 linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['dataset'])]
+            case ['ImageResource', 'Data']:
+                linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['image_resource'])]
+            case ['ImageResource', 'FOV']:
+                linked_rec = dao[parent_cls_name](self.session).image_resources(parent_id)
             case _:
                 linked_rec = []
         return linked_rec

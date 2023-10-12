@@ -6,18 +6,18 @@ The central class for keeping track of all available objects in a project.
 import os
 import itertools
 from collections import defaultdict
+
+from pydetecdiv.domain.ImageResource import ImageResource
 from pydetecdiv.settings import get_config_value
 from pydetecdiv.persistence.project import open_project
 from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.domain.ROI import ROI
-from pydetecdiv.domain.ImageData import ImageData
 from pydetecdiv.domain.FOV import FOV
 from pydetecdiv.domain.Experiment import Experiment
 from pydetecdiv.domain.Data import Data
-from pydetecdiv.domain.Image import Image
 from pydetecdiv.domain.Run import Run
 from pydetecdiv.domain.Dataset import Dataset
-from pydetecdiv.domain.ImageResource import ImageResource
+from pydetecdiv.domain.ImageResourceData import ImageResourceData
 
 
 class Project:
@@ -33,9 +33,8 @@ class Project:
         'Experiment': Experiment,
         'Data': Data,
         'Dataset': Dataset,
+        'ImageResource': ImageResource,
         'Run': Run,
-        'ImageData': ImageData,
-        'Image': Image,
     }
 
     def __init__(self, dbname=None, dbms=None):
@@ -45,6 +44,11 @@ class Project:
 
     @property
     def path(self):
+        """
+        Property returning the path of the project
+
+        :return:
+        """
         return os.path.join(get_config_value('project', 'workspace'), self.dbname)
 
     @property
@@ -104,9 +108,9 @@ class Project:
         :param pattern: pattern defining c, z and t in the case of multiple files
         :type pattern: str
         :return: an image resource
-        :rtype: ImageResource
+        :rtype: ImageResourceData
         """
-        return ImageResource(path, pattern=pattern)
+        return ImageResourceData(path, pattern=pattern)
 
     def import_images(self, image_files, destination=None, **kwargs):
         """
@@ -122,15 +126,6 @@ class Project:
         """
         data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
         return self.repository.import_images(image_files, data_dir_path, destination, **kwargs)
-
-    def import_source_path(self, source_path, **kwargs):
-        """
-        Import images from a source path. All files corresponding to the path will be imported.
-
-        :param source_path: the source path (glob pattern)
-        :type source_path: str
-        """
-        self.repository.import_source_path(source_path, **kwargs)
 
     def annotate(self, dataset, source, columns, regex):
         """
@@ -148,33 +143,53 @@ class Project:
         :return: a table representing annotated Data objects
         :rtype: pandas DataFrame
         """
-        return self.repository.annotate_data(dataset.name, source, columns, regex)
+        return self.repository.annotate_data(dataset, source, columns, regex)
 
-    def create_fov_from_raw_data(self, source, regex):
+    def create_fov_from_raw_data(self, df, multi):
         """
-        Create domain-specific objects from raw data using a regular expression applied to a bioimageit database field
+        Create domain-specific objects from raw data using a regular expression applied to a database field
         or a combination thereof specified by source. DSOs to create are specified by the values in keys.
 
         :param source: the database field or combination of fields to apply the regular expression to
         :type source: str or callable returning a str
-        :param keys_: the list of classes created objects belong to
-        :type keys_: tuple of str
-        :param regex: regular expression defining the DSOs' names
+        :param regex: regular expression defining the annotations
         :type regex: regular expression str
         """
         yield 0
-        df = self.annotate(self.raw_dataset, source, ('FOV',), regex).loc[:, ['id_', 'FOV']]
         fov_names = [f.name for f in self.get_objects('FOV')]
-        new_fovs = df.FOV.drop_duplicates().values
-        total = len(new_fovs) + len(df.values)
-        for n_fov, fov_name in enumerate(new_fovs):
-            if fov_name not in fov_names:
-                FOV(project=self, name=fov_name, top_left=(0, 0), bottom_right=(999, 999))
-            yield int(n_fov * 100 / total)
+        new_fov_names = df.FOV.drop_duplicates().values
+        total = len(new_fov_names) + len(df.values)
+        new_fovs = [FOV(project=self, name=fov_name, top_left=(0, 0), bottom_right=(999, 999)) for fov_name in
+                    new_fov_names if fov_name not in fov_names]
+        new_image_resources = {fov.id_: ImageResource(project=self, dataset=self.raw_dataset, fov=fov, multi=multi)
+                               for fov in new_fovs}
+        image_resources = {fov.id_: fov.image_resource('data') for fov in self.get_objects('FOV')}
+
+        yield int(len(new_fov_names) * 100 / total)
         df['FOV'] = df['FOV'].map(self.id_mapping('FOV'))
-        for i, (data_id, fov_id) in enumerate(df.values):
-            self.link_objects(self.get_object('FOV', int(fov_id)), self.get_object('Data', int(data_id)))
-            yield int((i + n_fov) * 100 / total)
+        # if 'C' in df.columns:
+        if multi:
+            # for fov_id, image_res in new_image_resources.items():
+            for fov_id, image_res in image_resources.items():
+                (image_res.zdim, image_res.cdim, image_res.tdim) = df.loc[df['FOV'] == fov_id, ['Z', 'C', 'T']].astype(
+                    int).max(axis=0).add(1)
+                self.save(image_res)
+        else:
+            # for fov_id, image_res in new_image_resources.items():
+            for fov_id, image_res in image_resources.items():
+                (image_res.tdim, image_res.cdim, image_res.zdim, image_res._ydim, image_res._xdim,) = image_res.shape
+                self.save(image_res)
+
+        for i, (data_id, fov_id) in enumerate(df.loc[:, ['id_', 'FOV']].values):
+            data_file = self.get_object('Data', int(data_id))
+            data_file.image_resource = self.get_object('FOV', int(fov_id)).image_resource('data').id_
+            if multi:
+                data_file.c = df.loc[i, 'C']
+                data_file.t = df.loc[i, 'T']
+                data_file.z = df.loc[i, 'Z']
+            self.save(data_file)
+            yield int((i + len(new_fov_names)) * 100 / total)
+        _ = [image_res.set_image_shape_from_file() for image_res in new_image_resources.values()]
 
     def id_mapping(self, class_name):
         """
