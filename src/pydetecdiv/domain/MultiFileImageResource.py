@@ -29,10 +29,11 @@ class MultiFileImageResource(ImageResourceData):
     """
     A business-logic class defining valid operations and attributes of Image resources stored in multiple files
     """
+
     def __init__(self, max_mem=5000, image_resource=None):
         self.image_files = image_resource.image_files_5d
         self.path = image_resource.image_files
-        self.img_reader = AICSImage(self.path, indexer=lambda x: aics_indexer(x, image_resource.pattern)).reader
+        self.pattern = image_resource.pattern
         self.fov = image_resource.fov
         self.image_resource = image_resource.id_
         self.max_mem = max_mem
@@ -103,10 +104,10 @@ class MultiFileImageResource(ImageResourceData):
         data = tifffile.imread(self.image_files[T, C, Z])
         if drift is not None:
             return cv2.warpAffine(np.array(data),
-                          np.float32(
-                              [[1, 0, -drift.dx],
-                               [0, 1, -drift.dy]]),
-                          (data.shape[1], data.shape[0]))
+                                  np.float32(
+                                      [[1, 0, -drift.dx],
+                                       [0, 1, -drift.dy]]),
+                                  (data.shape[1], data.shape[0]))
         return data
 
     def data_sample(self, X=None, Y=None):
@@ -121,5 +122,5 @@ class MultiFileImageResource(ImageResourceData):
         :return: the sample data (in-memory)
         :rtype: ndarray
         """
-        data = self.img_reader.get_image_dask_data('TCZYX', X=X, Y=Y).compute()
-        return data
+        return (AICSImage(self.path, indexer=lambda x: aics_indexer(x, self.pattern)).reader
+                .get_image_dask_data('TCZYX', X=X, Y=Y).compute())
