@@ -81,6 +81,17 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
+    def count_records(self, class_name):
+        """
+        Get the number of objects of a given class in the current project
+
+        :param class_name: the class name of the objects whose count will be returned
+        :type class_name: str
+        :return: the number of objects
+        :rtype: int
+        """
+
+    @abc.abstractmethod
     def get_dataframe(self, class_name, id_list=None):
         """
         Abstract method enforcing the implementation of a method returning a pandas DataFrame containing the list of
