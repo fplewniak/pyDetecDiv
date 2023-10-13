@@ -400,8 +400,8 @@ class AddPathDialog(QDialog):
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Apply | QDialogButtonBox.Ok | QDialogButtonBox.Cancel,
                                            Qt.Horizontal, self.path_widget)
-        self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
-        self.button_box.button(QDialogButtonBox.Apply).setEnabled(False)
+        # self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+        # self.button_box.button(QDialogButtonBox.Apply).setEnabled(False)
         self.button_box.button(QDialogButtonBox.Apply).clicked.connect(
             lambda _: self.path_validated.emit(self.path_text_input.text()))
 
@@ -414,7 +414,7 @@ class AddPathDialog(QDialog):
 
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.close)
-        self.path_text_input.textChanged.connect(self.path_specification_changed)
+        # self.path_text_input.textChanged.connect(self.path_specification_changed)
 
     def accept(self):
         """
