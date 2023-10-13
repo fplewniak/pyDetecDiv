@@ -291,9 +291,10 @@ class Project:
         :return: the number of objects of the requested class
         :rtype: int
         """
-        if class_name == 'ROI':
-            return len(self._get_rois(None))
-        return len(self.repository.get_records(class_name, None))
+        return self.repository.count_records(class_name)
+        # if class_name == 'ROI':
+        #     return len(self._get_rois(None))
+        # return len(self.repository.get_records(class_name, None))
 
     def _get_rois(self, id_list=None):
         """

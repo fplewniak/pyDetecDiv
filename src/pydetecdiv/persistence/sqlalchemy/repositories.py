@@ -236,6 +236,17 @@ class ShallowSQLite3(ShallowDb):
 
         return [obj.record for obj in dao_list]
 
+    def count_records(self, class_name):
+        """
+        Get the number of objects of a given class in the current project
+
+        :param class_name: the class name of the objects whose count will be returned
+        :type class_name: str
+        :return: the number of objects
+        :rtype: int
+        """
+        return self.session.query(dao[class_name]).count()
+
     def get_dataframe(self, class_name, id_list=None):
         """
         Get a DataFrame containing the list of all domain objects of a given class in the current project
@@ -315,7 +326,7 @@ class ShallowSQLite3(ShallowDb):
             #     linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['image_data'])]
             # case ['ImageData', ('FOV' | 'ROI')]:
             #     linked_rec = dao[parent_cls_name](self.session).image_data(parent_id)
-            case ['FOV', ('ROI'|'ImageResource')]:
+            case ['FOV', ('ROI' | 'ImageResource')]:
                 linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['fov'])]
             # case ['FOV', ('Image' | 'ImageData')]:
             #     linked_rec = dao[parent_cls_name](self.session).fov(parent_id)
@@ -331,7 +342,7 @@ class ShallowSQLite3(ShallowDb):
             #     linked_rec = dao[parent_cls_name](self.session).image_list(parent_id)
             case ['Data', ('FOV' | 'ROI')]:
                 linked_rec = dao[parent_cls_name](self.session).data(parent_id)
-            case ['Data', ('Dataset'|'ImageResource')]:
+            case ['Data', ('Dataset' | 'ImageResource')]:
                 linked_rec = dao[parent_cls_name](self.session).data_list(parent_id)
             case ['Dataset', 'Data']:
                 linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['dataset'])]
