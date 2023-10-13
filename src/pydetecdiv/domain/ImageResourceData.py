@@ -1,84 +1,71 @@
 #  CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21
 #  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
 """
- Classes to manipulate Image resources: loading data from files, etc
+ Class to manipulate Image resources: loading data from files, etc
 """
 import numpy as np
 import pandas as pd
 import cv2 as cv
 from vidstab import VidStab
+import abc
 
 
-# def aics_indexer(path, pattern):
-#     """
-#     An indexer to determine dimensions (T, C, Z) from file names to be used with AICSImage reader when reading a
-#     list of files
-#
-#     :param path: the path of the file name
-#     :type path: str
-#     :param pattern: the pattern defining the dimension indexes from file names
-#     :type pattern: regex str
-#     :return: the dimension indexes corresponding to the path
-#     :rtype: pandas Series
-#     """
-#     return pd.Series({k: int(v) for k, v in re.search(pattern, path).groupdict().items()})
-
-
-class ImageResourceData:
+class ImageResourceData(abc.ABC):
     """
-    A generic class to access image resources (files) on disk without having to load whole time series into memory
+    An abstract class to access image resources (files) on disk without having to load whole time series into memory
     """
     image_resource = None
 
     @property
+    @abc.abstractmethod
     def shape(self):
         """
         The image resource shape (should habitually be 5D with the following dimensions TCZYX)
         """
-        return (-1, -1, -1, -1, -1)
 
     @property
+    @abc.abstractmethod
     def dims(self):
         """
         The image resource dimensions with their size
         """
-        return -1
 
     @property
+    @abc.abstractmethod
     def sizeT(self):
         """
         The number of time frames
         """
-        return -1
 
     @property
+    @abc.abstractmethod
     def sizeC(self):
         """
         The number of channels
         """
-        return -1
 
     @property
+    @abc.abstractmethod
     def sizeZ(self):
         """
         The number of layers
         """
-        return -1
 
     @property
+    @abc.abstractmethod
     def sizeY(self):
         """
         The image height
         """
-        return -1
 
     @property
+    @abc.abstractmethod
     def sizeX(self):
         """
         the image width
         """
-        return -1
 
+    @abc.abstractmethod
     def image(self, C=0, Z=0, T=0, drift=None):
         """
         A 2D grayscale image (on frame, one channel and one layer)
@@ -92,8 +79,8 @@ class ImageResourceData:
         :return: a 2D data array
         :rtype: 2D numpy.array
         """
-        return np.empty((self.image_resource.sizeY, self.image_resource.sizeX))
 
+    @abc.abstractmethod
     def data_sample(self, X=None, Y=None):
         """
         Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for
@@ -106,32 +93,31 @@ class ImageResourceData:
         :return: the sample data (in-memory)
         :rtype: ndarray
         """
-        return np.empty((Y[1] - Y[0], X[1] - X[0]))
 
+    @abc.abstractmethod
     def open(self):
         """
         Open the memory mapped file to access data
         """
 
-
+    @abc.abstractmethod
     def close(self):
         """
         Close the memory mapped file
         """
 
-
+    @abc.abstractmethod
     def flush(self):
         """
         Flush the data to save changes to the meory mapped file
         """
 
-
+    @abc.abstractmethod
     def refresh(self):
         """
         Close and open the memory mapped file to save memory if needed. Useful when creating a new file or making lots
         of changes.
         """
-
 
     def compute_drift(self, method='phase correlation', **kwargs):
         """
