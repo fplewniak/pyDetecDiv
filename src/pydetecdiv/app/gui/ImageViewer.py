@@ -156,12 +156,12 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         """
         Show next frame when playing a video
         """
-        self.frame += 1
+        self.frame += self.ui.t_step.value()
         if self.frame >= self.image_resource_data.sizeT or not self.video_playing:
             self.timer.stop()
         else:
             end = time.time()
-            speed = np.around((self.frame - self.first_frame) / (end - self.start), 1)
+            speed = np.around((self.frame - self.first_frame) / ((end - self.start) * self.ui.t_step.value()), 1)
             self.ui.FPS.setText(f'FPS: {speed}')
             self.change_frame(self.frame)
 

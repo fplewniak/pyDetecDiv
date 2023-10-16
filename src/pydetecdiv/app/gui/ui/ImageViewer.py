@@ -18,8 +18,8 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QTransform)
 from PySide6.QtWidgets import (QApplication, QFrame, QGraphicsView, QGroupBox,
     QHBoxLayout, QLabel, QMainWindow, QMenu,
-    QMenuBar, QSizePolicy, QSlider, QToolButton,
-    QVBoxLayout, QWidget)
+    QMenuBar, QSizePolicy, QSlider, QSpinBox,
+    QToolButton, QVBoxLayout, QWidget)
 
 class Ui_ImageViewer(object):
     def setupUi(self, ImageViewer):
@@ -140,11 +140,33 @@ class Ui_ImageViewer(object):
 
         self.t_slider = QSlider(self.controls)
         self.t_slider.setObjectName(u"t_slider")
+        sizePolicy2 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.t_slider.sizePolicy().hasHeightForWidth())
+        self.t_slider.setSizePolicy(sizePolicy2)
         self.t_slider.setOrientation(Qt.Horizontal)
         self.t_slider.setTickPosition(QSlider.NoTicks)
         self.t_slider.setTickInterval(10)
 
         self.horizontalLayout_2.addWidget(self.t_slider)
+
+        self.label = QLabel(self.controls)
+        self.label.setObjectName(u"label")
+
+        self.horizontalLayout_2.addWidget(self.label)
+
+        self.t_step = QSpinBox(self.controls)
+        self.t_step.setObjectName(u"t_step")
+        sizePolicy3 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(self.t_step.sizePolicy().hasHeightForWidth())
+        self.t_step.setSizePolicy(sizePolicy3)
+        self.t_step.setMinimum(1)
+        self.t_step.setMaximum(999)
+
+        self.horizontalLayout_2.addWidget(self.t_step)
 
         self.sep3 = QFrame(self.controls)
         self.sep3.setObjectName(u"sep3")
@@ -160,11 +182,8 @@ class Ui_ImageViewer(object):
 
         self.c_slider = QSlider(self.controls)
         self.c_slider.setObjectName(u"c_slider")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.c_slider.sizePolicy().hasHeightForWidth())
-        self.c_slider.setSizePolicy(sizePolicy2)
+        sizePolicy3.setHeightForWidth(self.c_slider.sizePolicy().hasHeightForWidth())
+        self.c_slider.setSizePolicy(sizePolicy3)
         self.c_slider.setOrientation(Qt.Horizontal)
 
         self.horizontalLayout_2.addWidget(self.c_slider)
@@ -184,8 +203,8 @@ class Ui_ImageViewer(object):
 
         self.z_slider = QSlider(self.controls)
         self.z_slider.setObjectName(u"z_slider")
-        sizePolicy2.setHeightForWidth(self.z_slider.sizePolicy().hasHeightForWidth())
-        self.z_slider.setSizePolicy(sizePolicy2)
+        sizePolicy3.setHeightForWidth(self.z_slider.sizePolicy().hasHeightForWidth())
+        self.z_slider.setSizePolicy(sizePolicy3)
         self.z_slider.setPageStep(1)
         self.z_slider.setOrientation(Qt.Horizontal)
 
@@ -218,8 +237,8 @@ class Ui_ImageViewer(object):
 
         self.zoom_value = QSlider(self.controls)
         self.zoom_value.setObjectName(u"zoom_value")
-        sizePolicy2.setHeightForWidth(self.zoom_value.sizePolicy().hasHeightForWidth())
-        self.zoom_value.setSizePolicy(sizePolicy2)
+        sizePolicy3.setHeightForWidth(self.zoom_value.sizePolicy().hasHeightForWidth())
+        self.zoom_value.setSizePolicy(sizePolicy3)
         self.zoom_value.setMinimum(10)
         self.zoom_value.setMaximum(200)
         self.zoom_value.setValue(100)
@@ -249,6 +268,8 @@ class Ui_ImageViewer(object):
 
         self.FPS = QLabel(self.FOV_info)
         self.FPS.setObjectName(u"FPS")
+        sizePolicy3.setHeightForWidth(self.FPS.sizePolicy().hasHeightForWidth())
+        self.FPS.setSizePolicy(sizePolicy3)
         self.FPS.setText(u"FPS: 0")
 
         self.horizontalLayout.addWidget(self.FPS)
@@ -331,6 +352,7 @@ class Ui_ImageViewer(object):
     # setupUi
 
     def retranslateUi(self, ImageViewer):
+        self.label.setText(QCoreApplication.translate("ImageViewer", u"step", None))
         self.C.setText(QCoreApplication.translate("ImageViewer", u"C", None))
         pass
     # retranslateUi
