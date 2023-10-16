@@ -94,30 +94,26 @@ class ImageResourceData(abc.ABC):
         :rtype: ndarray
         """
 
-    @abc.abstractmethod
-    def open(self):
-        """
-        Open the memory mapped file to access data
-        """
-
-    @abc.abstractmethod
-    def close(self):
-        """
-        Close the memory mapped file
-        """
-
-    @abc.abstractmethod
-    def flush(self):
-        """
-        Flush the data to save changes to the meory mapped file
-        """
-
-    @abc.abstractmethod
-    def refresh(self):
-        """
-        Close and open the memory mapped file to save memory if needed. Useful when creating a new file or making lots
-        of changes.
-        """
+    # def open(self):
+    #     """
+    #     Open the memory mapped file to access data
+    #     """
+    #
+    # def close(self):
+    #     """
+    #     Close the memory mapped file
+    #     """
+    #
+    # def flush(self):
+    #     """
+    #     Flush the data to save changes to the meory mapped file
+    #     """
+    #
+    # def refresh(self):
+    #     """
+    #     Close and open the memory mapped file to save memory if needed. Useful when creating a new file or making lots
+    #     of changes.
+    #     """
 
     def compute_drift(self, method='phase correlation', **kwargs):
         """
