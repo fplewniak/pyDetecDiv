@@ -3,6 +3,8 @@
 """
 Definition of global objects and methods for easy access from all parts of the application
 """
+import importlib
+import pkgutil
 from contextlib import contextmanager
 from enum import StrEnum
 
@@ -10,6 +12,7 @@ from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal
 
+from pydetecdiv import plugins
 from pydetecdiv.settings import get_config_files
 from pydetecdiv.persistence.project import list_projects
 from pydetecdiv.domain.Project import Project
@@ -39,6 +42,24 @@ class PyDetecDiv(QApplication):
         self.project_name = None
         self.main_window = None
         self.current_drawing_tool = None
+        self.plugins = {}
+        self.load_plugins()
+
+    def load_plugins(self):
+        for _, name, _ in pkgutil.iter_modules(plugins.__path__):
+            plugin = importlib.import_module(f'pydetecdiv.plugins.{name}')
+            self.plugins[plugin.Plugin.name] = plugin
+        # self.plugins = {
+        #     name: importlib.import_module(f'pydetecdiv.plugins.{name}')
+        #     for _, name, _ in pkgutil.iter_modules(plugins.__path__)
+        # }
+
+    # def register_plugin(self, plugin_name, obj):
+    #     self.plugins[plugin_name].Plugin().register_object(obj)
+    #
+    # def register_plugins(self):
+    #     for plugin_name in self.plugins:
+    #         self.register_plugin(plugin_name, self.main_window)
 
 
 @contextmanager

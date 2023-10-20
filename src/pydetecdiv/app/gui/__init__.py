@@ -45,6 +45,14 @@ class DataMenu(QMenu):
         PyDetecDiv().project_selected.connect(lambda e: import_data.setEnabled(True))
         PyDetecDiv().raw_data_counted.connect(create_fovs.enable)
 
+class PluginMenu(QMenu):
+    def __init__(self, parent, *args, **kwargs):
+        if len(PyDetecDiv().plugins):
+            super().__init__(*args, **kwargs)
+            menu = parent.menuBar().addMenu("Plugins")
+            for plugin_name, plugin in PyDetecDiv().plugins.items():
+                sub_menu = menu.addMenu(plugin_name)
+                plugin.Plugin().addActions(sub_menu)
 
 class MainToolBar(QToolBar):
     """

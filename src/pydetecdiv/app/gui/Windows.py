@@ -11,7 +11,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 
-from pydetecdiv.app.gui import MainToolBar, MainStatusBar, FileMenu, DataMenu
+from pydetecdiv.app.gui import MainToolBar, MainStatusBar, FileMenu, DataMenu, PluginMenu
 from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project, DrawingTools
 
 from pydetecdiv.app.gui.ImageViewer import ImageViewer
@@ -33,6 +33,7 @@ class MainWindow(QMainWindow):
 
         FileMenu(self)
         DataMenu(self)
+        PluginMenu(self)
 
         self.setStatusBar(MainStatusBar())
 
