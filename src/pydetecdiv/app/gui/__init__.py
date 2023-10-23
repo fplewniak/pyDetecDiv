@@ -49,10 +49,11 @@ class PluginMenu(QMenu):
     def __init__(self, parent, *args, **kwargs):
         if len(PyDetecDiv().plugins):
             super().__init__(*args, **kwargs)
-            menu = parent.menuBar().addMenu("Plugins")
-            for plugin_name, plugin in PyDetecDiv().plugins.items():
-                sub_menu = menu.addMenu(plugin_name)
-                plugin.Plugin().addActions(sub_menu)
+            for category, plugins in PyDetecDiv().plugins.items():
+                menu = parent.menuBar().addMenu(category)
+                for plugin_name, plugin in plugins.items():
+                    sub_menu = menu.addMenu(plugin_name)
+                    plugin.Plugin().addActions(sub_menu)
 
 class MainToolBar(QToolBar):
     """

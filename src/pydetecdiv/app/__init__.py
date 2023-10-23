@@ -48,7 +48,10 @@ class PyDetecDiv(QApplication):
     def load_plugins(self):
         for _, name, _ in pkgutil.iter_modules(plugins.__path__):
             plugin = importlib.import_module(f'pydetecdiv.plugins.{name}')
-            self.plugins[plugin.Plugin.name] = plugin
+            if plugin.Plugin.category not in self.plugins:
+                self.plugins[plugin.Plugin.category] = {}
+            self.plugins[plugin.Plugin.category][plugin.Plugin.name] = plugin
+
         # self.plugins = {
         #     name: importlib.import_module(f'pydetecdiv.plugins.{name}')
         #     for _, name, _ in pkgutil.iter_modules(plugins.__path__)

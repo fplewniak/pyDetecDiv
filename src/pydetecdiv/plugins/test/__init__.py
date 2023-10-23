@@ -1,9 +1,9 @@
 from pydetecdiv import plugins
-from pydetecdiv.plugins.example.Actions import Action1, Action2
+from pydetecdiv.plugins.test.Actions import Action1, Action2
 
 class Plugin(plugins.Plugin):
-    name = 'Example'
-    category = 'Plugin examples'
+    name = 'Test'
+    category = 'Tests'
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
