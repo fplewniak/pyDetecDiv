@@ -5,11 +5,11 @@ from PySide6.QtGui import QPen
 
 from pydetecdiv import plugins
 from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.plugins.test.Actions import Action1, Action2, Action3
+from pydetecdiv.plugins.showcase.Actions import Action1, Action2, Action3
 
 class Plugin(plugins.Plugin):
-    name = 'Test'
-    category = 'Tests'
+    name = 'Viewer add-ons'
+    category = 'Showcase'
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

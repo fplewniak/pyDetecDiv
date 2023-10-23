@@ -1,6 +1,6 @@
 from PySide6.QtGui import QAction
 
-from pydetecdiv.plugins.test.ActionDialog import ActionDialog
+from pydetecdiv.plugins.showcase.ActionDialog import ActionDialog
 
 
 class Action1(QAction):
