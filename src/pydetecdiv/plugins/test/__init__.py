@@ -1,10 +1,11 @@
+import pandas
+import numpy as np
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPen
 
 from pydetecdiv import plugins
 from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.app.gui.Windows import TabbedViewer
-from pydetecdiv.plugins.test.Actions import Action1, Action2
+from pydetecdiv.plugins.test.Actions import Action1, Action2, Action3
 
 class Plugin(plugins.Plugin):
     name = 'Test'
@@ -32,6 +33,7 @@ class Plugin(plugins.Plugin):
 
     def addActions(self, menu):
         Action1(menu, self)
+        Action3(menu, self)
         Action2(menu, self)
 
     def change_pen(self):
@@ -43,5 +45,16 @@ class Plugin(plugins.Plugin):
                 tab.viewer.scene.pen = QPen(Qt.GlobalColor.blue, 6)
             else:
                 tab.viewer.scene.pen = QPen(Qt.GlobalColor.cyan, 2)
+
+    def add_plot(self):
+        active_subwindow = PyDetecDiv().main_window.mdi_area.activeSubWindow()
+        if active_subwindow:
+            tab = [tab for tab in PyDetecDiv().main_window.tabs.values() if tab.window == active_subwindow][0]
+            print(f'add plot in {tab.windowTitle()}')
+            x = np.linspace(0, 10, 500)
+            y = np.sin(x)
+            df = pandas.DataFrame(y)
+            tab.show_plot(df, 'Plugin plot')
+
 
 

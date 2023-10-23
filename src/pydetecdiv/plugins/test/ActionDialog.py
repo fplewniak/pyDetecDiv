@@ -3,8 +3,9 @@ from PySide6.QtWidgets import QDialog, QDialogButtonBox, QVBoxLayout
 from pydetecdiv.app import PyDetecDiv
 
 class ActionDialog(QDialog):
-    def __init__(self):
+    def __init__(self, plugin):
         super().__init__(PyDetecDiv().main_window)
+        self.plugin = plugin
         self.setMinimumWidth(200)
         layout = QVBoxLayout(self)
         self.button_box = QDialogButtonBox(QDialogButtonBox.Close | QDialogButtonBox.Ok, self)
@@ -16,4 +17,6 @@ class ActionDialog(QDialog):
         self.exec()
 
     def accept(self):
+        self.plugin.add_plot()
         print('OK')
+        self.close()
