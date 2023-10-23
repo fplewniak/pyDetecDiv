@@ -1,12 +1,14 @@
 from PySide6.QtGui import QAction
-from pydetecdiv.plugins.example.ActionDialog import ActionDialog
+
+from pydetecdiv.plugins.test.ActionDialog import ActionDialog
 
 
 class Action1(QAction):
-    def __init__(self, parent):
+    def __init__(self, parent, plugin):
         super().__init__("Test action1", parent)
         self.triggered.connect(self.action)
         self.triggered.connect(ActionDialog)
+        self.plugin = plugin
         parent.addAction(self)
 
     def action(self):
@@ -14,10 +16,8 @@ class Action1(QAction):
 
 
 class Action2(QAction):
-    def __init__(self, parent):
-        super().__init__("Test action2", parent)
-        self.triggered.connect(self.action)
+    def __init__(self, parent, plugin):
+        super().__init__("Change pen", parent)
+        self.plugin = plugin
+        self.triggered.connect(self.plugin.change_pen)
         parent.addAction(self)
-
-    def action(self):
-        print('run test action2')

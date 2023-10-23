@@ -50,7 +50,7 @@ class PyDetecDiv(QApplication):
             plugin = importlib.import_module(f'pydetecdiv.plugins.{name}')
             if plugin.Plugin.category not in self.plugins:
                 self.plugins[plugin.Plugin.category] = {}
-            self.plugins[plugin.Plugin.category][plugin.Plugin.name] = plugin
+            self.plugins[plugin.Plugin.category][plugin.Plugin.name] = plugin.Plugin()
 
         # self.plugins = {
         #     name: importlib.import_module(f'pydetecdiv.plugins.{name}')
@@ -58,11 +58,14 @@ class PyDetecDiv(QApplication):
         # }
 
     # def register_plugin(self, plugin_name, obj):
-    #     self.plugins[plugin_name].Plugin().register_object(obj)
+    #     for category in self.plugins:
+    #         if plugin_name in self.plugins[category]:
+    #             self.plugins[category][plugin_name].register_object(obj)
     #
-    # def register_plugins(self):
-    #     for plugin_name in self.plugins:
-    #         self.register_plugin(plugin_name, self.main_window)
+    # def register_plugins(self, obj):
+    #     for category in self.plugins:
+    #         for plugin_name in self.plugins[category]:
+    #             self.register_plugin(plugin_name, obj)
 
 
 @contextmanager

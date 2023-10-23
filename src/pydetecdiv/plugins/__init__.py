@@ -1,3 +1,6 @@
 class Plugin():
     def __init__(self, **kwargs):
         ...
+
+    # def register_object(self, obj):
+    #     ...

@@ -53,7 +53,7 @@ class PluginMenu(QMenu):
                 menu = parent.menuBar().addMenu(category)
                 for plugin_name, plugin in plugins.items():
                     sub_menu = menu.addMenu(plugin_name)
-                    plugin.Plugin().addActions(sub_menu)
+                    plugin.addActions(sub_menu)
 
 class MainToolBar(QToolBar):
     """
