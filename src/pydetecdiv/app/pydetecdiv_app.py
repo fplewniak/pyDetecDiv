@@ -24,7 +24,6 @@ def main_gui():
     window_icon = QIcon(':icons/app_icon')
     app.setWindowIcon(window_icon)
     app.main_window = MainWindow()
-    # app.register_plugins()
     app.main_window.show()
 
     app.exec()

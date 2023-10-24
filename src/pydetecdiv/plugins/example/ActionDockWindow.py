@@ -1,6 +1,8 @@
+"""
+A DockWidget class extension to handle the interface to the Example plugin's 'create and save results' action.
+"""
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QDialog, QDialogButtonBox, QVBoxLayout, QFormLayout, QLabel, QComboBox, QFrame, \
-    QDockWidget
+from PySide6.QtWidgets import QDialogButtonBox, QFormLayout, QLabel, QComboBox, QFrame, QDockWidget
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 from pydetecdiv.utils import singleton
@@ -8,6 +10,11 @@ from pydetecdiv.utils import singleton
 
 @singleton
 class ActionDockWindow(QDockWidget):
+    """
+    A DockWidget to host the GUI for Example plugin's for Action1 (create and save results)
+    This is a singleton to avoid creating more than one window, but this is not compulsory and there may be several
+    instance of such a window for a single plugin if needed.
+    """
     def __init__(self):
         super().__init__(PyDetecDiv().main_window)
         self.setWindowTitle('Example plugin')
@@ -36,7 +43,9 @@ class ActionDockWindow(QDockWidget):
         PyDetecDiv().main_window.addDockWidget(Qt.LeftDockWidgetArea, self, Qt.Vertical)
 
     def accept(self):
-        print(f'OK: {self.position_choice.currentText()}')
+        """
+        Change the window title when a new position has been chosen
+        """
         self.setWindowTitle(f'Example plugin/{self.position_choice.currentText()}')
 
     def set_choice(self, p_name):

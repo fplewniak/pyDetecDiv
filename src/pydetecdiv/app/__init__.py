@@ -42,18 +42,11 @@ class PyDetecDiv(QApplication):
         self.project_name = None
         self.main_window = None
         self.current_drawing_tool = None
+        self.load_plugins()
+
+    def load_plugins(self):
         self.plugin_list = plugins.PluginList()
         self.plugin_list.load()
-
-    # def register_plugin(self, plugin_name, obj):
-    #     for category in self.plugins:
-    #         if plugin_name in self.plugins[category]:
-    #             self.plugins[category][plugin_name].register_object(obj)
-    #
-    # def register_plugins(self, obj):
-    #     for category in self.plugins:
-    #         for plugin_name in self.plugins[category]:
-    #             self.register_plugin(plugin_name, obj)
 
 
 @contextmanager
@@ -194,6 +187,7 @@ class WaitDialog(QDialog):
             event.ignore()
         else:
             self.cancel()
+
 
 class MessageDialog(QDialog):
     """

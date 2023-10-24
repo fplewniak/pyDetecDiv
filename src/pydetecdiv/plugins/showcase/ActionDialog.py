@@ -1,8 +1,14 @@
+"""
+Action dialog window
+"""
 from PySide6.QtWidgets import QDialog, QDialogButtonBox, QVBoxLayout
 
 from pydetecdiv.app import PyDetecDiv
 
 class ActionDialog(QDialog):
+    """
+    Action dialog window: OK button launches the action
+    """
     def __init__(self, plugin):
         super().__init__(PyDetecDiv().main_window)
         self.plugin = plugin
@@ -17,6 +23,8 @@ class ActionDialog(QDialog):
         self.exec()
 
     def accept(self):
+        """
+        Add plot to the subwindow when the OK button is clicked
+        """
         self.plugin.add_plot()
-        print('OK')
         self.close()

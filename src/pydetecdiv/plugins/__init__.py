@@ -1,3 +1,6 @@
+"""
+Generic classes to discover and handle plugins
+"""
 import importlib
 import pkgutil
 
@@ -5,7 +8,10 @@ import pydetecdiv
 
 
 class Plugin:
-    id = None
+    """
+    Generic class defining common Plugin attributes and methods
+    """
+    id_ = None
     version = None
     name = None
     category = None
@@ -13,26 +19,30 @@ class Plugin:
     def __init__(self, **kwargs):
         ...
 
-    # def register_object(self, obj):
-    #     ...
-
 
 class PluginList:
+    """
+    Class to create and handle list of discovered plugins
+    """
     def __init__(self):
         self.categories = []
         self.plugins = []
 
     def load(self):
+        """
+        Discover plugins and load them in plugin list
+        """
         for _, name, _ in pkgutil.iter_modules(pydetecdiv.plugins.__path__):
             module = importlib.import_module(f'pydetecdiv.plugins.{name}')
             if module.Plugin.category not in self.categories:
                 self.categories.append(module.Plugin.category)
             self.plugins.append(module.Plugin())
-        print(self.categories)
-        for plugin in self.plugins:
-            print(f'{plugin.name} ({plugin.category}):')
-            print(f'   id: {plugin.id} version: {plugin.version}')
 
     @property
     def len(self):
+        """
+        The number of discovered plugins
+        :return: how many plugins have been discovered
+        :rtype: int
+        """
         return len(self.plugins)
