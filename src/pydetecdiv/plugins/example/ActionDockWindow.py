@@ -3,8 +3,10 @@ from PySide6.QtWidgets import QDialog, QDialogButtonBox, QVBoxLayout, QFormLayou
     QDockWidget
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
+from pydetecdiv.utils import singleton
 
 
+@singleton
 class ActionDockWindow(QDockWidget):
     def __init__(self):
         super().__init__(PyDetecDiv().main_window)

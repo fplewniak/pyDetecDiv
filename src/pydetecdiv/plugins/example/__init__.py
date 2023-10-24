@@ -1,5 +1,7 @@
 from pydetecdiv import plugins
+from pydetecdiv.plugins.example.ActionDockWindow import ActionDockWindow
 from pydetecdiv.plugins.example.Actions import Action1, Action2
+from pydetecdiv.app import PyDetecDiv
 
 class Plugin(plugins.Plugin):
     id = 'gmgm.plewniak.example'
@@ -20,6 +22,11 @@ class Plugin(plugins.Plugin):
 
     def addActions(self, menu):
         Action1(menu)
-        Action2(menu)
+        Action2(menu).triggered.connect(self.run)
+
+    def run(self):
+        print('Running plugin action from main plugin code')
+        print(PyDetecDiv().project_name)
+
 
 
