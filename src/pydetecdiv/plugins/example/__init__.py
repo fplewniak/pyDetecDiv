@@ -2,6 +2,8 @@ from pydetecdiv import plugins
 from pydetecdiv.plugins.example.Actions import Action1, Action2
 
 class Plugin(plugins.Plugin):
+    id = 'gmgm.plewniak.example'
+    version = '1.0.0'
     name = 'Example'
     category = 'Plugin examples'
 

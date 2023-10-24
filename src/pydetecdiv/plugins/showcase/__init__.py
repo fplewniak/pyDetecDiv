@@ -8,6 +8,8 @@ from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.plugins.showcase.Actions import Action1, Action2, Action3
 
 class Plugin(plugins.Plugin):
+    id = 'gmgm.plewniak.viewer.addons'
+    version = '1.0.0'
     name = 'Viewer add-ons'
     category = 'Showcase'
 
