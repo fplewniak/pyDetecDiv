@@ -1,12 +1,12 @@
 from PySide6.QtGui import QAction
-from pydetecdiv.plugins.example.ActionDialog import ActionDialog
+from pydetecdiv.plugins.example.ActionDockWindow import ActionDockWindow
 
 
 class Action1(QAction):
     def __init__(self, parent):
         super().__init__("Example action1", parent)
         self.triggered.connect(self.action)
-        self.triggered.connect(ActionDialog)
+        self.triggered.connect(ActionDockWindow)
         parent.addAction(self)
 
     def action(self):
