@@ -63,6 +63,7 @@ class Plugin(plugins.Plugin):
         """
         self.gui = ActionDockWindow()
         self.gui.button_box.accepted.connect(self.save_result)
+        # self.gui.get_saved_results()
         self.gui.setVisible(True)
 
     def save_result(self):
@@ -76,3 +77,4 @@ class Plugin(plugins.Plugin):
             new_result = Results(name=fov.name, fov=fov.id_)
             project.repository.session.add(new_result)
             project.commit()
+        self.gui.get_saved_results()
