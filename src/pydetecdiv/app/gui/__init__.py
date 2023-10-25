@@ -55,7 +55,7 @@ class PluginMenu(QMenu):
                 if category not in menu:
                     menu[category] = parent.menuBar().addMenu(category)
             for plugin in PyDetecDiv().plugin_list.plugins:
-                plugin.addActions(menu[plugin.category].addMenu(plugin.name))
+                plugin.addActions(menu[plugin.category])
 
 
 class MainToolBar(QToolBar):

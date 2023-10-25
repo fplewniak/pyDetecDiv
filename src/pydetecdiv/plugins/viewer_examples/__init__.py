@@ -4,11 +4,12 @@ A showcase plugin showing how to interact with TabbedViewer and ImageViewer obje
 import pandas
 import numpy as np
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPen
+from PySide6.QtGui import QPen, QAction
 
 from pydetecdiv import plugins
 from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.plugins.showcase.Actions import Action1, Action2, Action3
+from pydetecdiv.plugins.viewer_examples.gui import AddPlotDialog
+
 
 class Plugin(plugins.Plugin):
     """
@@ -17,20 +18,40 @@ class Plugin(plugins.Plugin):
     id_ = 'gmgm.plewniak.viewer.addons'
     version = '1.0.0'
     name = 'Viewer add-ons'
-    category = 'Showcase'
+    category = 'Plugin examples'
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def addActions(self, menu):
         """
-        Add actions to the submenu
-        :param menu: the Showcase submenu
+        Create a submenu and add actions thereto
+        :param menu: the parent menu
         :type menu: QMenu
         """
-        Action1(menu, self)
-        Action3(menu, self)
-        Action2(menu, self)
+        submenu = menu.addMenu(self.name)
+        action_launch = QAction("Plot dialog window", submenu)
+        action_launch.triggered.connect(self.launch)
+        submenu.addAction(action_launch)
+
+        action_plot = QAction("Add plot", submenu)
+        action_plot.triggered.connect(self.add_plot)
+        submenu.addAction(action_plot)
+
+        action_change_pen = QAction("change pen", submenu)
+        action_change_pen.triggered.connect(self.change_pen)
+        submenu.addAction(action_change_pen)
+
+    def launch(self, **kwargs):
+        """
+
+        :param kwargs:
+        :return:
+        """
+        self.gui = AddPlotDialog(PyDetecDiv().main_window)
+        self.gui.button_box.accepted.connect(self.add_plot)
+        self.gui.button_box.accepted.connect(self.gui.close)
+        self.gui.exec()
 
     def change_pen(self):
         """

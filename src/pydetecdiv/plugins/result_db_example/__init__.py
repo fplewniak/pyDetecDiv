@@ -1,12 +1,13 @@
 """
 An example plugin showing how to interact with database
 """
+import sqlalchemy
+from PySide6.QtGui import QAction
 from sqlalchemy import Column, Integer, String, ForeignKey
 
 import pydetecdiv.persistence.sqlalchemy.orm.main
 from pydetecdiv import plugins
-from pydetecdiv.plugins.example.ActionDockWindow import ActionDockWindow
-from pydetecdiv.plugins.example.Actions import Action1, Action2
+from pydetecdiv.plugins.result_db_example.gui import DockWindow
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 
 Base = pydetecdiv.persistence.sqlalchemy.orm.main.Base
@@ -28,14 +29,13 @@ class Plugin(plugins.Plugin):
     """
     id_ = 'gmgm.plewniak.example'
     version = '1.0.0'
-    name = 'Example'
+    name = 'Results in DB example'
     category = 'Plugin examples'
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.gui = None
 
-    def update_database(self):
+    def create_table(self):
         """
         Create the table to save results if it does not exist yet
         """
@@ -44,26 +44,30 @@ class Plugin(plugins.Plugin):
 
     def addActions(self, menu):
         """
-        Add actions to Example submenu
-        :param menu: the submenu
+        Add actions to Example menu
+        :param menu: the parent menu
         :type menu: QMenu
         """
-        Action1(menu).triggered.connect(self.show_gui)
-        Action2(menu).triggered.connect(self.run)
+        action = QAction("Create and save results", menu)
+        action.triggered.connect(self.launch)
+        menu.addAction(action)
 
-    def run(self):
+    def launch(self, **kwargs):
         """
-        Dummy method showing how to run code in the main plugin file
+        Method launching the plugin. This may encapsulate (as it is the case here) the call to a GUI or some domain
+        functionalities run directly without any further interface.
         """
-        print(f'Running plugin action from main plugin code (project: {PyDetecDiv().project_name})')
+        self.show_gui()
 
     def show_gui(self):
         """
         Show the docked window containing the GUI for the example plugin, creating it if it does not exist.
         """
-        self.gui = ActionDockWindow()
+        self.gui = DockWindow(PyDetecDiv().main_window)
         self.gui.button_box.accepted.connect(self.save_result)
-        # self.gui.get_saved_results()
+        PyDetecDiv().project_selected.connect(self.show_saved_results)
+        self.set_choice(PyDetecDiv().project_name)
+        PyDetecDiv().project_selected.connect(self.set_choice)
         self.gui.setVisible(True)
 
     def save_result(self):
@@ -77,4 +81,25 @@ class Plugin(plugins.Plugin):
             new_result = Results(name=fov.name, fov=fov.id_)
             project.repository.session.add(new_result)
             project.commit()
-        self.gui.get_saved_results()
+        self.show_saved_results()
+
+    def show_saved_results(self):
+        if PyDetecDiv().project_name:
+            with pydetecdiv_project(PyDetecDiv().project_name) as project:
+                if sqlalchemy.inspect(project.repository.engine).has_table(Results.__tablename__):
+                    self.gui.list_model.setStringList([': '.join([str(r.id_), project.get_object('FOV', r.fov).name])
+                                                       for r in project.repository.session.query(Results).all()])
+        else:
+            self.gui.list_model.setStringList([])
+
+    def set_choice(self, p_name):
+        """
+        Set the available values for FOVs, datasets and channels given a project name
+
+        :param p_name: the project name
+        :type p_name: str
+        """
+        with pydetecdiv_project(p_name) as project:
+            self.gui.position_choice.clear()
+            if project.count_objects('FOV'):
+                self.gui.position_choice.addItems(sorted([fov.name for fov in project.get_objects('FOV')]))

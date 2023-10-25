@@ -17,6 +17,12 @@ class Plugin:
     category = None
 
     def __init__(self, **kwargs):
+        self.gui = None
+
+    def addActions(self, menu):
+        ...
+
+    def launch(self, **kwargs):
         ...
 
 
@@ -24,6 +30,7 @@ class PluginList:
     """
     Class to create and handle list of discovered plugins
     """
+
     def __init__(self):
         self.categories = []
         self.plugins = []
