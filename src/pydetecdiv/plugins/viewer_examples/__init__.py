@@ -20,12 +20,9 @@ class Plugin(plugins.Plugin):
     name = 'Viewer add-ons'
     category = 'Plugin examples'
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def addActions(self, menu):
         """
-        Create a submenu and add actions thereto
+        Overrides the addActions method in order to create a submenu with several actions for the same menu
         :param menu: the parent menu
         :type menu: QMenu
         """
@@ -42,11 +39,9 @@ class Plugin(plugins.Plugin):
         action_change_pen.triggered.connect(self.change_pen)
         submenu.addAction(action_change_pen)
 
-    def launch(self, **kwargs):
+    def launch(self):
         """
-
-        :param kwargs:
-        :return:
+        Launch the AddplotDialog interface
         """
         self.gui = AddPlotDialog(PyDetecDiv().main_window)
         self.gui.button_box.accepted.connect(self.add_plot)

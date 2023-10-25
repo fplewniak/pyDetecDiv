@@ -4,6 +4,8 @@ Generic classes to discover and handle plugins
 import importlib
 import pkgutil
 
+from PySide6.QtGui import QAction
+
 import pydetecdiv
 
 
@@ -16,14 +18,25 @@ class Plugin:
     name = None
     category = None
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         self.gui = None
 
     def addActions(self, menu):
-        ...
+        """
+        Method to add an action to a menu. This action triggers the launch method. If a submenu needs to be implemented
+        or if arguments need to be passed to the launch method, this method may be overriden
+        :param menu:
+        """
+        action = QAction(self.name, menu)
+        action.triggered.connect(self.launch)
+        menu.addAction(action)
 
-    def launch(self, **kwargs):
-        ...
+    def launch(self):
+        """
+        Abstract method that needs to be implemented in each concrete Plugin implementation to launch the plugin (with
+        or without a GUI)
+        """
+        raise NotImplementedError
 
 
 class PluginList:

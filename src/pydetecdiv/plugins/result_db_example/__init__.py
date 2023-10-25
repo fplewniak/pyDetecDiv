@@ -32,9 +32,6 @@ class Plugin(plugins.Plugin):
     name = 'Results in DB example'
     category = 'Plugin examples'
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def create_table(self):
         """
         Create the table to save results if it does not exist yet
@@ -42,17 +39,7 @@ class Plugin(plugins.Plugin):
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             Base.metadata.create_all(project.repository.engine)
 
-    def addActions(self, menu):
-        """
-        Add actions to Example menu
-        :param menu: the parent menu
-        :type menu: QMenu
-        """
-        action = QAction("Create and save results", menu)
-        action.triggered.connect(self.launch)
-        menu.addAction(action)
-
-    def launch(self, **kwargs):
+    def launch(self):
         """
         Method launching the plugin. This may encapsulate (as it is the case here) the call to a GUI or some domain
         functionalities run directly without any further interface.
@@ -84,6 +71,9 @@ class Plugin(plugins.Plugin):
         self.show_saved_results()
 
     def show_saved_results(self):
+        """
+        Shows the list of results in the ListView of the GUI (updates the list model)
+        """
         if PyDetecDiv().project_name:
             with pydetecdiv_project(PyDetecDiv().project_name) as project:
                 if sqlalchemy.inspect(project.repository.engine).has_table(Results.__tablename__):

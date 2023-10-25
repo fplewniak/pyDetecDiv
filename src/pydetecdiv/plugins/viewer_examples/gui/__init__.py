@@ -1,3 +1,6 @@
+"""
+GUI for an example plugin showing how to interact with the tabbed viewer
+"""
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QDialogButtonBox
 
 
