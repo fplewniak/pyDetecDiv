@@ -22,7 +22,6 @@ class MainWindow(QMainWindow):
     """
     The principal window
     """
-    saved_rois = Signal()
 
     def __init__(self):
         super().__init__()

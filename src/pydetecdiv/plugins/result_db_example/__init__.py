@@ -53,7 +53,7 @@ class Plugin(plugins.Plugin):
         self.gui = DockWindow(PyDetecDiv().main_window)
         self.gui.button_box.accepted.connect(self.save_result)
         PyDetecDiv().project_selected.connect(self.show_saved_results)
-        PyDetecDiv().main_window.saved_rois.connect(self.show_saved_results)
+        PyDetecDiv().saved_rois.connect(self.show_saved_results)
         self.set_choice(PyDetecDiv().project_name)
         PyDetecDiv().project_selected.connect(self.set_choice)
         self.gui.setVisible(True)
