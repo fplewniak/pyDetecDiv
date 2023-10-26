@@ -2,7 +2,7 @@
 Classes for persistent windows of the GUI
 """
 import numpy as np
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QCursor, QIcon, QPixmap, QImage
 from PySide6.QtWidgets import QMainWindow, QMdiArea, QTabWidget, QDockWidget, QFormLayout, QLabel, QComboBox, \
     QDialogButtonBox, QWidget, QFrame, QVBoxLayout, QGridLayout, QToolButton, \
@@ -22,6 +22,7 @@ class MainWindow(QMainWindow):
     """
     The principal window
     """
+    saved_rois = Signal()
 
     def __init__(self):
         super().__init__()

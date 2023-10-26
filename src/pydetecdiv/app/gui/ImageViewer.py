@@ -487,12 +487,16 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         """
         rois = [item for item in self.scene.items() if isinstance(item, QGraphicsRectItem)]
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            roi_list = [r.name for r in self.image_resource_data.fov.roi_list]
             for i, rect_item in enumerate(sorted(rois, key=lambda x: x.scenePos().toPoint().toTuple())):
                 x, y = rect_item.scenePos().toPoint().toTuple()
                 w, h = rect_item.rect().toRect().getCoords()[2:]
-                new_roi = ROI(project=project, name=f'{self.image_resource_data.fov.name}_{i}',
-                              fov=self.image_resource_data.fov, top_left=(x, y), bottom_right=(int(x) + w, int(y) + h))
-                rect_item.setData(0, new_roi.name)
+                new_roi_name = f'{self.image_resource_data.fov.name}_{x}_{y}_{w}_{h}'
+                if new_roi_name not in roi_list:
+                    new_roi = ROI(project=project, name=new_roi_name, fov=self.image_resource_data.fov,
+                                  top_left=(x, y), bottom_right=(int(x) + w, int(y) + h))
+                    rect_item.setData(0, new_roi.name)
+        PyDetecDiv().main_window.saved_rois.emit()
         self.fixate_saved_rois()
 
     def fixate_saved_rois(self):
