@@ -53,6 +53,7 @@ class Plugin(plugins.Plugin):
         self.gui = DockWindow(PyDetecDiv().main_window)
         self.gui.button_box.accepted.connect(self.save_result)
         PyDetecDiv().project_selected.connect(self.show_saved_results)
+        PyDetecDiv().main_window.saved_rois.connect(self.show_saved_results)
         self.set_choice(PyDetecDiv().project_name)
         PyDetecDiv().project_selected.connect(self.set_choice)
         self.gui.setVisible(True)
@@ -77,8 +78,10 @@ class Plugin(plugins.Plugin):
         if PyDetecDiv().project_name:
             with pydetecdiv_project(PyDetecDiv().project_name) as project:
                 if sqlalchemy.inspect(project.repository.engine).has_table(Results.__tablename__):
-                    self.gui.list_model.setStringList([': '.join([str(r.id_), project.get_object('FOV', r.fov).name])
-                                                       for r in project.repository.session.query(Results).all()])
+                    results = [(r.id_, project.get_object('FOV', r.fov)) for r in
+                                   project.repository.session.query(Results).all()]
+                    string_list = [f'{r}: {fov.name} ({len(fov.roi_list)} ROIs)' for r, fov in results]
+                    self.gui.list_model.setStringList(string_list)
         else:
             self.gui.list_model.setStringList([])
 
