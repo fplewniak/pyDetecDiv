@@ -2,6 +2,7 @@
 An example plugin showing how to interact with database
 """
 import sqlalchemy
+import numpy as np
 from PySide6.QtGui import QAction
 from sqlalchemy import Column, Integer, String, ForeignKey
 
@@ -65,12 +66,12 @@ class Plugin(plugins.Plugin):
                 fov = project.get_named_object('FOV', fov_name)
                 print(fov, fov.size, fov.box, fov.width, fov.height, fov.top_left, fov.bottom_right)
                 imgdata = fov.image_resource().image_resource_data()
-                for roi in fov.roi_list:
-                    print(
-                        f'{roi.name}: {imgdata.image(slice(roi.x, roi.x + roi.width), slice(roi.y, roi.y + roi.height)).shape}')
-                # print(f'{fov.name}: {len(fov.roi_list)}, {fov.image_resource().shape}')
-        # print([index.data() for index in self.gui.selection_model.selectedRows()])
-        # print([index.siblingAtRow(index.row()).data() for index in self.gui.selection_model.selectedRows()])
+                for t in range(fov.image_resource().sizeT):
+                    image = imgdata.image(T=t)
+                    roi_images = {roi.name: image[slice(roi.x, roi.x + roi.width), slice(roi.y, roi.y + roi.height)]
+                                  for roi in fov.roi_list}
+                    print(t, np.array(list(roi_images.values())).shape)
+                print(f'{fov.name}: {len(roi_images)}')
 
     def roi_selector(self):
         if self.gui is None:
