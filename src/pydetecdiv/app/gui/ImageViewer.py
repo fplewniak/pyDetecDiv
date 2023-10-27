@@ -381,7 +381,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         pos = roi.pos()
         x1, x2 = int(pos.x()), w + int(pos.x())
         y1, y2 = int(pos.y()), h + int(pos.y())
-        return self.image_resource_data.image(C=self.C, T=self.T, Z=self.Z)[y1:y2, x1:x2]
+        return self.image_resource_data.image(sliceX=slice(x1, x2), sliceY=slice(y1, y2), C=self.C, T=self.T, Z=self.Z)
 
     def get_roi_data(self, roi):
         """
@@ -496,7 +496,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
                     new_roi = ROI(project=project, name=new_roi_name, fov=self.image_resource_data.fov,
                                   top_left=(x, y), bottom_right=(int(x) + w, int(y) + h))
                     rect_item.setData(0, new_roi.name)
-        PyDetecDiv().saved_rois.emit()
+        PyDetecDiv().saved_rois.emit(PyDetecDiv().project_name)
         self.fixate_saved_rois()
 
     def fixate_saved_rois(self):

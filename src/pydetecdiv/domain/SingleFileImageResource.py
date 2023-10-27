@@ -74,7 +74,7 @@ class SingleFileImageResource(ImageResourceData):
         """
         return self.img_reader.dims.X
 
-    def image(self, C=0, Z=0, T=0, drift=None):
+    def _image(self, C=0, Z=0, T=0, drift=None):
         """
         A 2D grayscale image (on frame, one channel and one layer)
 

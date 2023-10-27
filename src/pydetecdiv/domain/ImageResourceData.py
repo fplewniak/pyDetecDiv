@@ -66,7 +66,7 @@ class ImageResourceData(abc.ABC):
         """
 
     @abc.abstractmethod
-    def image(self, C=0, Z=0, T=0, drift=None):
+    def _image(self, C=0, Z=0, T=0, drift=None):
         """
         A 2D grayscale image (on frame, one channel and one layer)
 
@@ -79,6 +79,11 @@ class ImageResourceData(abc.ABC):
         :return: a 2D data array
         :rtype: 2D numpy.array
         """
+
+    def image(self, sliceX=None, sliceY=None, **kwargs):
+        if sliceX and sliceY:
+            return self._image(**kwargs)[sliceY, sliceX]
+        return self._image(**kwargs)
 
     @abc.abstractmethod
     def data_sample(self, X=None, Y=None):
