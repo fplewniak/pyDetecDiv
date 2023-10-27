@@ -17,14 +17,15 @@ class FOVdao(DAO, Base):
     """
     __tablename__ = 'FOV'
     exclude = ['id_', 'top_left', 'bottom_right']
-    translate = {'size': ('xsize', 'ysize'), }
+    # translate = {'size': ('xsize', 'ysize'), }
+    translate = {}
 
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
     uuid = Column(String(36))
     name = Column(String, unique=True, nullable=False)
     comments = Column(String)
-    xsize = Column(Integer, nullable=False, server_default=text('1000'))
-    ysize = Column(Integer, nullable=False, server_default=text('1000'))
+    # xsize = Column(Integer, nullable=False, server_default=text('1000'))
+    # ysize = Column(Integer, nullable=False, server_default=text('1000'))
 
     roi_list_ = relationship('ROIdao')
 
@@ -63,26 +64,26 @@ class FOVdao(DAO, Base):
         return {'id_': self.id_,
                 'name': self.name,
                 'comments': self.comments,
-                'top_left': (0, 0),
-                'bottom_right': (self.xsize - 1, self.ysize - 1),
-                'size': (self.xsize, self.ysize),
+                # 'top_left': (0, 0),
+                # 'bottom_right': (self.xsize - 1, self.ysize - 1),
+                # 'size': (self.xsize, self.ysize),
                 'uuid': self.uuid
                 }
 
-    def data(self, fov_id):
-        """
-        Returns a list of DataDao objects linked to the FOVdao object with the specified id_
-
-        :param fov_id: the id_ of the FOV
-        :type fov_id: int
-        :return: the list of Data records linked to the FOV
-        :type: list of dict
-        """
-        return [i.record
-                for i in self.session.query(dao.DataDao)
-                .filter(FovData.data == dao.DataDao.id_)
-                .filter(FovData.fov == fov_id)
-        ]
+    # def data(self, fov_id):
+    #     """
+    #     Returns a list of DataDao objects linked to the FOVdao object with the specified id_
+    #
+    #     :param fov_id: the id_ of the FOV
+    #     :type fov_id: int
+    #     :return: the list of Data records linked to the FOV
+    #     :type: list of dict
+    #     """
+    #     return [i.record
+    #             for i in self.session.query(dao.DataDao)
+    #             .filter(FovData.data == dao.DataDao.id_)
+    #             .filter(FovData.fov == fov_id)
+    #     ]
 
     # def image_data(self, fov_id):
     #     """

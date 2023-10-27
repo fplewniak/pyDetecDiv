@@ -36,9 +36,9 @@ class FOV(NamedDSO, BoxedDSO):
         record = {
             'name': self.name,
             'comments': self.comments,
-            'top_left': self.top_left,
-            'bottom_right': self.bottom_right,
-            'size': self.size,
+            # 'top_left': self.top_left,
+            # 'bottom_right': self.bottom_right,
+            # 'size': self.size,
             'uuid': self.uuid
         }
         if not no_id:
@@ -123,3 +123,15 @@ Comments:             {self.comments}
         image_resource = \
         [ir for ir in self.project.get_linked_objects('ImageResource', self) if ir.dataset.name == dataset][0]
         return image_resource
+
+    @property
+    def size(self):
+        return (self.image_resource().sizeX, self.image_resource().sizeY)
+
+    @property
+    def bottom_right(self):
+        return (self.image_resource().sizeX - 1, self.image_resource().sizeY - 1)
+
+    @property
+    def top_left(self):
+        return (0, 0)
