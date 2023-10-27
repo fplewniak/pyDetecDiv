@@ -50,12 +50,13 @@ class Plugin(plugins.Plugin):
         """
         Show the docked window containing the GUI for the example plugin, creating it if it does not exist.
         """
-        self.gui = DockWindow(PyDetecDiv().main_window)
-        self.gui.button_box.accepted.connect(self.save_result)
-        PyDetecDiv().project_selected.connect(self.show_saved_results)
-        PyDetecDiv().saved_rois.connect(self.show_saved_results)
-        self.set_choice(PyDetecDiv().project_name)
-        PyDetecDiv().project_selected.connect(self.set_choice)
+        if self.gui is None:
+            self.gui = DockWindow(PyDetecDiv().main_window)
+            self.gui.button_box.accepted.connect(self.save_result)
+            PyDetecDiv().project_selected.connect(self.show_saved_results)
+            PyDetecDiv().saved_rois.connect(self.show_saved_results)
+            self.set_choice(PyDetecDiv().project_name)
+            PyDetecDiv().project_selected.connect(self.set_choice)
         self.gui.setVisible(True)
 
     def save_result(self):
@@ -71,12 +72,12 @@ class Plugin(plugins.Plugin):
             project.commit()
         self.show_saved_results()
 
-    def show_saved_results(self):
+    def show_saved_results(self, project_name):
         """
         Shows the list of results in the ListView of the GUI (updates the list model)
         """
-        if PyDetecDiv().project_name:
-            with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        if project_name:
+            with pydetecdiv_project(project_name) as project:
                 if sqlalchemy.inspect(project.repository.engine).has_table(Results.__tablename__):
                     results = [(r.id_, project.get_object('FOV', r.fov)) for r in
                                    project.repository.session.query(Results).all()]

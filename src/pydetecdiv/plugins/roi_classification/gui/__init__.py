@@ -63,3 +63,32 @@ class ROIselector(QDockWidget):
             db=db)
         self.model.setQuery(query)
         self.table.resizeColumnsToContents()
+
+
+@singleton
+class ModelSelector(QDockWidget):
+    """
+    A DockWidget to host the GUI for Example plugin's
+    This is a singleton to avoid creating more than one window, but this is not compulsory and there may be several
+    instance of such a window for a single plugin if needed.
+    """
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setWindowTitle('Select ROI classification model')
+        self.setObjectName('ModelSelector')
+
+        self.form = QFrame()
+        self.form.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
+        self.formLayout = QFormLayout(self.form)
+
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Close | QDialogButtonBox.Ok, self)
+        self.button_box.setCenterButtons(True)
+
+        self.formLayout.addRow(self.button_box)
+
+        self.button_box.rejected.connect(self.close)
+
+        self.setWidget(self.form)
+
+        parent.addDockWidget(Qt.LeftDockWidgetArea, self, Qt.Vertical)

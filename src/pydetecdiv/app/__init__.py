@@ -35,7 +35,7 @@ class PyDetecDiv(QApplication):
     """
     project_selected = Signal(str)
     raw_data_counted = Signal(int)
-    saved_rois = Signal()
+    saved_rois = Signal(str)
 
     def __init__(self, *args):
         super().__init__(*args)
