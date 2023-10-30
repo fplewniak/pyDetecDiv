@@ -249,7 +249,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
             if self.crop is not None:
                 arr = arr[..., self.crop[1], self.crop[0]]
             ny, nx = arr.shape
-            img = QImage(np.ascontiguousarray(arr.data), nx, ny, QImage.Format_Grayscale16)
+            img = QImage(np.ascontiguousarray(arr), nx, ny, QImage.Format_Grayscale16)
             self.pixmap.convertFromImage(img)
             self.pixmapItem.setPixmap(self.pixmap)
 
