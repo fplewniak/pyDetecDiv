@@ -100,6 +100,13 @@ class MainWindow(QMainWindow):
                     # self.image_resource_selector.channel_choice.setCurrentText(str(c.viewer.C))
                     PyDetecDiv().project_name = c.viewer.project_name
 
+    @property
+    def active_subwindow(self):
+        active_subwindow = self.mdi_area.activeSubWindow()
+        if active_subwindow:
+            return [tab for tab in PyDetecDiv().main_window.tabs.values() if tab.window == active_subwindow][0]
+        return None
+
 
 class TabbedViewer(QTabWidget):
     """

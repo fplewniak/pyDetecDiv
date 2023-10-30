@@ -3,7 +3,7 @@ An example plugin showing how to interact with database
 """
 import sqlalchemy
 import numpy as np
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QImage
 from sqlalchemy import Column, Integer, String, ForeignKey
 
 import pydetecdiv.persistence.sqlalchemy.orm.main
@@ -64,14 +64,23 @@ class Plugin(plugins.Plugin):
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             for fov_name in [index.data() for index in self.gui.selection_model.selectedRows(0)]:
                 fov = project.get_named_object('FOV', fov_name)
-                print(fov, fov.size, fov.box, fov.width, fov.height, fov.top_left, fov.bottom_right)
                 imgdata = fov.image_resource().image_resource_data()
+
                 for t in range(fov.image_resource().sizeT):
-                    image = imgdata.image(T=t)
-                    roi_images = {roi.name: image[slice(roi.x, roi.x + roi.width), slice(roi.y, roi.y + roi.height)]
+                    channel1 = imgdata.image(T=t, Z=0)
+                    channel2 = imgdata.image(T=t, Z=1)
+                    channel3 = imgdata.image(T=t, Z=2)
+                    channel1 = (channel1/255).astype(np.uint8)
+                    channel2 = (channel2/255).astype(np.uint8)
+                    channel3 = (channel3/255).astype(np.uint8)
+
+                    image = np.stack((channel1, channel2, channel3), axis=-1)
+
+                    roi_images = {roi.name: image[slice(roi.y, roi.y + roi.height), slice(roi.x, roi.x + roi.width), :]
                                   for roi in fov.roi_list}
-                    print(t, np.array(list(roi_images.values())).shape)
-                print(f'{fov.name}: {len(roi_images)}')
+                    if PyDetecDiv().main_window.active_subwindow:
+                        PyDetecDiv().main_window.active_subwindow.show_image(np.array(list(roi_images.values())[0]),
+                                                                             format_=QImage.Format_RGB888)
 
     def roi_selector(self):
         if self.gui is None:
