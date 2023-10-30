@@ -155,8 +155,17 @@ class TabbedViewer(QTabWidget):
         scene = QGraphicsScene()
         pixmap = QPixmap()
         pixmapItem = scene.addPixmap(pixmap)
-        ny, nx = data.shape
-        img = QImage(np.ascontiguousarray(data), nx, ny, format_)
+        match format_:
+            case QImage.Format_Grayscale16|QImage.Format_Grayscale8:
+                print('Grayscale')
+                ny, nx = data.shape
+                img = QImage(np.ascontiguousarray(data), nx, ny, format_)
+            case QImage.Format_RGB888:
+                print('RGB888')
+                ny, nx, nc = data.shape
+                img = QImage(np.ascontiguousarray(data), nx, ny, nc*nx, format_)
+            case _:
+                ...
         pixmap.convertFromImage(img)
         pixmapItem.setPixmap(pixmap)
         viewer.setScene(scene)
