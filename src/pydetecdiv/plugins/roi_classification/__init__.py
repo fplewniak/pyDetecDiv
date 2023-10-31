@@ -1,15 +1,17 @@
 """
 An example plugin showing how to interact with database
 """
-import sqlalchemy
 import numpy as np
 from PySide6.QtGui import QAction, QImage
 from sqlalchemy import Column, Integer, String, ForeignKey
+import tensorflow as tf
 
 import pydetecdiv.persistence.sqlalchemy.orm.main
 from pydetecdiv import plugins
 from pydetecdiv.plugins.roi_classification.gui import ROIselector, ModelSelector
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
+
+import pydetecdiv.plugins.roi_classification.models.netCNNdiv1 as netCNNdiv1
 
 Base = pydetecdiv.persistence.sqlalchemy.orm.main.Base
 
@@ -61,6 +63,14 @@ class Plugin(plugins.Plugin):
         Method launching the plugin. This may encapsulate (as it is the case here) the call to a GUI or some domain
         functionalities run directly without any further interface.
         """
+        model = netCNNdiv1.load_model()
+        model.compile(
+            optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+            loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+            metrics=["accuracy"],
+        )
+        class_names = ['clog', 'dead', 'empty', 'large', 'small', 'unbud']
+
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             for fov_name in [index.data() for index in self.gui.selection_model.selectedRows(0)]:
                 fov = project.get_named_object('FOV', fov_name)
@@ -75,6 +85,17 @@ class Plugin(plugins.Plugin):
 
                     roi_images = {roi.name: image[slice(roi.y, roi.y + roi.height), slice(roi.x, roi.x + roi.width), :]
                                   for roi in fov.roi_list}
+
+                    img_array = np.array(list(roi_images.values()))
+                    img_array = tf.image.resize(img_array, (224,224))
+                    print(img_array.shape)
+                    predictions = model.predict(img_array)
+                    for p, roi in zip(predictions, roi_images):
+                        max_score, max_index = max((value, index) for index, value in enumerate(p[0, 0]))
+                        print(f'{roi} {t}: {class_names[max_index]} ({max_score})')
+                        # for c, s in enumerate(p[0, 0]):
+                        #     print(f'          {class_names[c]}: {s:.2f} ',)
+
                     # if PyDetecDiv().main_window.active_subwindow:
                     #     PyDetecDiv().main_window.active_subwindow.show_image(
                     #         (np.array(list(roi_images.values())[0]) / 255).astype(np.uint8),
