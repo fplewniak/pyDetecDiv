@@ -67,20 +67,18 @@ class Plugin(plugins.Plugin):
                 imgdata = fov.image_resource().image_resource_data()
 
                 for t in range(fov.image_resource().sizeT):
-                    channel1 = imgdata.image(T=t, Z=0)
-                    channel2 = imgdata.image(T=t, Z=1)
-                    channel3 = imgdata.image(T=t, Z=2)
-                    channel1 = (channel1/255).astype(np.uint8)
-                    channel2 = (channel2/255).astype(np.uint8)
-                    channel3 = (channel3/255).astype(np.uint8)
-
-                    image = np.stack((channel1, channel2, channel3), axis=-1)
+                    image = np.stack((
+                        imgdata.image(T=t, Z=0),
+                        imgdata.image(T=t, Z=1),
+                        imgdata.image(T=t, Z=2)),
+                        axis=-1)
 
                     roi_images = {roi.name: image[slice(roi.y, roi.y + roi.height), slice(roi.x, roi.x + roi.width), :]
                                   for roi in fov.roi_list}
-                    if PyDetecDiv().main_window.active_subwindow:
-                        PyDetecDiv().main_window.active_subwindow.show_image(np.array(list(roi_images.values())[0]),
-                                                                             format_=QImage.Format_RGB888)
+                    # if PyDetecDiv().main_window.active_subwindow:
+                    #     PyDetecDiv().main_window.active_subwindow.show_image(
+                    #         (np.array(list(roi_images.values())[0]) / 255).astype(np.uint8),
+                    #         format_=QImage.Format_RGB888)
 
     def roi_selector(self):
         if self.gui is None:
