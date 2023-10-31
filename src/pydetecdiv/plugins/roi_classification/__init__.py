@@ -86,10 +86,10 @@ class Plugin(plugins.Plugin):
                     roi_images = {roi.name: image[slice(roi.y, roi.y + roi.height), slice(roi.x, roi.x + roi.width), :]
                                   for roi in fov.roi_list}
 
-                    img_array = np.array(list(roi_images.values()))
+                    img_array = (np.array(list(roi_images.values()))/255).astype(np.uint8)
                     img_array = tf.image.resize(img_array, (224,224))
                     print(img_array.shape)
-                    predictions = model.predict(img_array)
+                    data, predictions = model.predict(img_array)
                     for p, roi in zip(predictions, roi_images):
                         max_score, max_index = max((value, index) for index, value in enumerate(p[0, 0]))
                         print(f'{roi} {t}: {class_names[max_index]} ({max_score})')
@@ -98,8 +98,22 @@ class Plugin(plugins.Plugin):
 
                     # if PyDetecDiv().main_window.active_subwindow:
                     #     PyDetecDiv().main_window.active_subwindow.show_image(
-                    #         (np.array(list(roi_images.values())[0]) / 255).astype(np.uint8),
+                    #         np.array(list(roi_images.values())[0]),
                     #         format_=QImage.Format_RGB888)
+
+                    print(np.max(data[0]), np.min(data[0]), np.median(data[0]), np.mean(data[0]))
+                    print(np.max(img_array[0]), np.min(img_array[0]), np.median(img_array[0]), np.mean(img_array[0]))
+
+                    if PyDetecDiv().main_window.active_subwindow:
+                        PyDetecDiv().main_window.active_subwindow.show_image(
+                            np.array(list(img_array.numpy())[0]).astype(np.uint8),
+                            format_=QImage.Format_RGB888)
+
+                    # if PyDetecDiv().main_window.active_subwindow:
+                    #     for d in data:
+                    #         PyDetecDiv().main_window.active_subwindow.show_image(
+                    #             np.array(list(d)).astype(np.uint8),
+                    #             format_=QImage.Format_RGB888)
 
     def roi_selector(self):
         if self.gui is None:
