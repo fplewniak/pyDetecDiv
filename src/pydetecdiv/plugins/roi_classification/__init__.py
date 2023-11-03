@@ -151,8 +151,19 @@ class Plugin(plugins.Plugin):
     def normalize_data(self, img):
         # print(img.shape, img.dtype)
         # print(np.max(img), np.min(img), np.median(img), np.mean(img))
+        ##############################
+        # Contrast stretching
         img = exposure.rescale_intensity(img.astype(np.float64), in_range='image', out_range=(0, 1))
-        return tf.image.convert_image_dtype(img, dtype=np.float64, saturate=False)
+        ##############################
+        # Histogram adaptive equalization
+        # img = tf.image.convert_image_dtype(img, dtype=tf.float64, saturate=False)
+        # img = exposure.equalize_adapthist(img.numpy().astype(np.float64))
+        ##############################
+        # Histogram equalization
+        # img = tf.image.convert_image_dtype(img, dtype=tf.float64, saturate=False)
+        # img = exposure.equalize_hist(img.numpy().astype(np.float64))
+        ##############################
+        return tf.image.convert_image_dtype(img, dtype=tf.float64, saturate=False)
 
 
     def roi_selector(self):
