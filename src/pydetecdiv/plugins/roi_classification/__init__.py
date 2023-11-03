@@ -11,7 +11,8 @@ from pydetecdiv import plugins
 from pydetecdiv.plugins.roi_classification.gui import ROIselector, ModelSelector
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 
-import pydetecdiv.plugins.roi_classification.models.netCNNdiv1 as netCNNdiv1
+from .gui import ROIselector, ModelSelector
+from .models import netCNNdiv1
 
 Base = pydetecdiv.persistence.sqlalchemy.orm.main.Base
 

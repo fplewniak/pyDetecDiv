@@ -2,13 +2,12 @@
 An example plugin showing how to interact with database
 """
 import sqlalchemy
-from PySide6.QtGui import QAction
 from sqlalchemy import Column, Integer, String, ForeignKey
 
 import pydetecdiv.persistence.sqlalchemy.orm.main
 from pydetecdiv import plugins
-from pydetecdiv.plugins.result_db_example.gui import DockWindow
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
+from .gui import DockWindow
 
 Base = pydetecdiv.persistence.sqlalchemy.orm.main.Base
 

@@ -8,7 +8,7 @@ from PySide6.QtGui import QPen, QAction
 
 from pydetecdiv import plugins
 from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.plugins.viewer_examples.gui import AddPlotDialog
+from .gui import AddPlotDialog
 
 
 class Plugin(plugins.Plugin):
