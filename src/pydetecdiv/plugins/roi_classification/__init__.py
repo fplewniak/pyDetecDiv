@@ -2,13 +2,15 @@
 An example plugin showing how to interact with database
 """
 import numpy as np
+import pandas
 from PySide6.QtGui import QAction, QImage
 from sqlalchemy import Column, Integer, String, ForeignKey
 import tensorflow as tf
+from skimage import exposure
 
 import pydetecdiv.persistence.sqlalchemy.orm.main
 from pydetecdiv import plugins
-from pydetecdiv.plugins.roi_classification.gui import ROIselector, ModelSelector
+from pydetecdiv.app.gui.Windows import MatplotViewer
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 
 from .gui import ROIselector, ModelSelector
@@ -78,19 +80,39 @@ class Plugin(plugins.Plugin):
                 imgdata = fov.image_resource().image_resource_data()
 
                 for t in range(fov.image_resource().sizeT):
-                    image = np.stack((
-                        imgdata.image(T=t, Z=0),
-                        imgdata.image(T=t, Z=1),
-                        imgdata.image(T=t, Z=2)),
-                        axis=-1)
+                    n=1
 
-                    roi_images = {roi.name: image[slice(roi.y, roi.y + roi.height), slice(roi.x, roi.x + roi.width), :]
-                                  for roi in fov.roi_list}
+                    image1 = imgdata.image(T=t, Z=0)
+                    image2 = imgdata.image(T=t, Z=1)
+                    image3 = imgdata.image(T=t, Z=2)
 
-                    img_array = (np.array(list(roi_images.values()))/255).astype(np.uint8)
-                    img_array = tf.image.resize(img_array, (224,224))
-                    print(img_array.shape)
+                    roi_images = {roi.name:
+                        np.stack((
+                            self.normalize_data(
+                                image1[slice(roi.y, roi.y + roi.height), slice(roi.x, roi.x + roi.width)]),
+                            self.normalize_data(
+                                image2[slice(roi.y, roi.y + roi.height), slice(roi.x, roi.x + roi.width)]),
+                            self.normalize_data(
+                                image3[slice(roi.y, roi.y + roi.height), slice(roi.x, roi.x + roi.width)])),
+                            axis=-1) for roi in fov.roi_list}
+
+                    # image = np.stack((
+                    #     self.normalize_data(image1),
+                    #     self.normalize_data(image2),
+                    #     self.normalize_data(image3)),
+                    #     axis=-1)
+                    #
+                    # roi_images = {roi.name:
+                    #                   image[slice(roi.y, roi.y + roi.height), slice(roi.x, roi.x + roi.width), :]
+                    #               for roi in fov.roi_list}
+
+                    img_array = np.array(list(roi_images.values()))
+                    img_array = tf.image.resize(img_array, (299, 299), method='nearest')
+                    print(img_array.shape, img_array.dtype)
+                    print(np.max(img_array[n]), np.min(img_array[n]), np.median(img_array[n]), np.mean(img_array[n]))
+
                     data, predictions = model.predict(img_array)
+
                     for p, roi in zip(predictions, roi_images):
                         max_score, max_index = max((value, index) for index, value in enumerate(p[0, 0]))
                         print(f'{roi} {t}: {class_names[max_index]} ({max_score})')
@@ -101,20 +123,37 @@ class Plugin(plugins.Plugin):
                     #     PyDetecDiv().main_window.active_subwindow.show_image(
                     #         np.array(list(roi_images.values())[0]),
                     #         format_=QImage.Format_RGB888)
-
-                    print(np.max(data[0]), np.min(data[0]), np.median(data[0]), np.mean(data[0]))
-                    print(np.max(img_array[0]), np.min(img_array[0]), np.median(img_array[0]), np.mean(img_array[0]))
+                    # print(np.max(data[n]), np.min(data[n]), np.median(data[n]), np.mean(data[n]))
+                    # print(np.max(img_array[n]), np.min(img_array[n]), np.median(img_array[n]), np.mean(img_array[n]))
 
                     if PyDetecDiv().main_window.active_subwindow:
                         PyDetecDiv().main_window.active_subwindow.show_image(
-                            np.array(list(img_array.numpy())[0]).astype(np.uint8),
+                            tf.image.convert_image_dtype(list(img_array.numpy())[n], dtype=tf.uint8, saturate=False),
                             format_=QImage.Format_RGB888)
+
+                        # df = pandas.DataFrame(np.array(list(img_array.numpy())[n]).flatten())
+                        df = pandas.DataFrame()
+                        df['r'] = pandas.Series(np.array(list(img_array.numpy())[n])[...,0].flatten())
+                        df['g'] = pandas.Series(np.array(list(img_array.numpy())[n])[...,1].flatten())
+                        df['b'] = pandas.Series(np.array(list(img_array.numpy())[n])[...,2].flatten())
+                        plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow)
+                        PyDetecDiv().main_window.active_subwindow.addTab(plot_viewer, 'Histogram')
+                        df.plot(ax=plot_viewer.axes, kind='hist')
+                        plot_viewer.canvas.draw()
+                        PyDetecDiv().main_window.active_subwindow.setCurrentWidget(plot_viewer)
 
                     # if PyDetecDiv().main_window.active_subwindow:
                     #     for d in data:
                     #         PyDetecDiv().main_window.active_subwindow.show_image(
-                    #             np.array(list(d)).astype(np.uint8),
+                    #             tf.image.convert_image_dtype(list(d), dtype=tf.uint8, saturate=False),
                     #             format_=QImage.Format_RGB888)
+
+    def normalize_data(self, img):
+        # print(img.shape, img.dtype)
+        # print(np.max(img), np.min(img), np.median(img), np.mean(img))
+        img = exposure.rescale_intensity(img.astype(np.float64), in_range='image', out_range=(0, 1))
+        return tf.image.convert_image_dtype(img, dtype=np.float64, saturate=False)
+
 
     def roi_selector(self):
         if self.gui is None:
