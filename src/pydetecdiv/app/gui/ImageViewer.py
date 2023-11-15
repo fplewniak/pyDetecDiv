@@ -575,6 +575,7 @@ class ViewerScene(QGraphicsScene):
         r = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
         if isinstance(r, QGraphicsRectItem):
             r.setSelected(True)
+            self.display_roi_size(r)
         if self.selectedItems():
             self.parent().ui.actionSet_template.setEnabled(True)
         else:
@@ -662,11 +663,11 @@ class ViewerScene(QGraphicsScene):
         pos = event.scenePos()
         if roi and (roi.flags() & QGraphicsItem.ItemIsMovable):
             roi_pos = roi.scenePos()
-            w, h = round_to_even(pos.x() - roi_pos.x()), round_to_even(pos.y() - roi_pos.y())
+            w, h = np.max([round_to_even(pos.x() - roi_pos.x()), 5]), np.max([round_to_even(pos.y() - roi_pos.y()), 5])
             rect = QRect(0, 0, w, h)
             roi.setRect(rect)
         else:
-            roi = self.addRect(QRect(0, 0, 2, 2))
+            roi = self.addRect(QRect(0, 0, 5, 5))
             roi.setPen(self.pen)
             roi.setPos(QPoint(pos.x(), pos.y()))
             roi.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
@@ -676,3 +677,20 @@ class ViewerScene(QGraphicsScene):
             roi.setPen(self.warning_pen)
         else:
             roi.setPen(self.pen)
+        self.display_roi_size(roi)
+
+    def set_ROI_width(self, width):
+        roi = self.get_selected_ROI()
+        if roi and (roi.flags() & QGraphicsItem.ItemIsMovable):
+            rect = QRect(0, 0, width, roi.rect().height())
+            roi.setRect(rect)
+
+    def set_ROI_height(self, height):
+        roi = self.get_selected_ROI()
+        if roi and (roi.flags() & QGraphicsItem.ItemIsMovable):
+            rect = QRect(0, 0, roi.rect().width(), height)
+            roi.setRect(rect)
+
+    def display_roi_size(self, roi):
+        PyDetecDiv().main_window.drawing_tools.roi_width.setValue(roi.rect().width())
+        PyDetecDiv().main_window.drawing_tools.roi_height.setValue(roi.rect().height())

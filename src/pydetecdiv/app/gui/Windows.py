@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QCursor, QIcon, QPixmap, QImage
 from PySide6.QtWidgets import QMainWindow, QMdiArea, QTabWidget, QDockWidget, QFormLayout, QLabel, QComboBox, \
     QDialogButtonBox, QWidget, QFrame, QVBoxLayout, QGridLayout, QToolButton, \
-    QGraphicsView, QGraphicsScene
+    QGraphicsView, QGraphicsScene, QSpinBox, QGroupBox, QHBoxLayout
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
@@ -299,6 +299,9 @@ class DrawingToolsPalette(QDockWidget):
     def __init__(self, parent):
         super().__init__('Drawing tools', parent)
         self.setObjectName('Drawing_tools_palette')
+        self.palette = QFrame()
+        self.palette_layout = QVBoxLayout(self.palette)
+
         self.form = QFrame()
         self.form.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
 
@@ -316,7 +319,34 @@ class DrawingToolsPalette(QDockWidget):
 
         self.form.setLayout(self.formLayout)
 
-        self.setWidget(self.form)
+        self.properties = QFrame()
+        self.properties.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
+
+        self.properties_layout = QVBoxLayout(self.properties)
+        self.roi_prop_box = QGroupBox(self)
+        self.roi_width = QSpinBox(self)
+        self.roi_width.setMaximum(9999)
+        self.roi_width.setMinimum(5)
+        self.roi_prop_box_layout = QHBoxLayout(self.roi_prop_box)
+        label = QLabel(self)
+        label.setText('width:')
+        self.roi_prop_box_layout.addWidget(label)
+        self.roi_prop_box_layout.addWidget(self.roi_width)
+        self.roi_height = QSpinBox(self)
+        self.roi_height.setMaximum(9999)
+        self.roi_height.setMinimum(5)
+        label = QLabel(self)
+        label.setText('height:')
+        self.roi_prop_box_layout.addWidget(label)
+        self.roi_prop_box_layout.addWidget(self.roi_height)
+        self.properties_layout.addWidget(self.roi_prop_box)
+
+        self.roi_width.valueChanged.connect(self.set_ROI_width)
+        self.roi_height.valueChanged.connect(self.set_ROI_height)
+
+        self.palette_layout.addWidget(self.form)
+        self.palette_layout.addWidget(self.properties)
+        self.setWidget(self.palette)
 
     def unset_tools(self):
         """
@@ -337,6 +367,11 @@ class DrawingToolsPalette(QDockWidget):
                 return t
         return None
 
+    def set_ROI_width(self, width):
+        PyDetecDiv().main_window.active_subwindow.viewer.scene.set_ROI_width(width)
+
+    def set_ROI_height(self, height):
+        PyDetecDiv().main_window.active_subwindow.viewer.scene.set_ROI_height(height)
 
 class Cursor(QToolButton):
     """
