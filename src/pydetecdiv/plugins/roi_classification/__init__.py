@@ -14,7 +14,7 @@ from pydetecdiv.app.gui.Windows import MatplotViewer
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 
 from .gui import ROIselector, ModelSelector
-from .models import netCNNdiv1
+from .models import div1
 
 Base = pydetecdiv.persistence.sqlalchemy.orm.main.Base
 
@@ -66,7 +66,7 @@ class Plugin(plugins.Plugin):
         Method launching the plugin. This may encapsulate (as it is the case here) the call to a GUI or some domain
         functionalities run directly without any further interface.
         """
-        model = netCNNdiv1.load_model()
+        model = div1.load_model()
         model.compile(
             optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
             loss=tf.keras.losses.SparseCategoricalCrossentropy(),
@@ -79,43 +79,24 @@ class Plugin(plugins.Plugin):
                 fov = project.get_named_object('FOV', fov_name)
                 imgdata = fov.image_resource().image_resource_data()
 
-                for t in range(fov.image_resource().sizeT):
-                    n=1
-
-                    image1 = imgdata.image(T=t, Z=0)
-                    image2 = imgdata.image(T=t, Z=1)
-                    image3 = imgdata.image(T=t, Z=2)
-
-                    roi_images = {roi.name:
-                        np.stack((
-                            self.normalize_data(
-                                image1[slice(roi.y, roi.y + roi.height), slice(roi.x, roi.x + roi.width)]),
-                            self.normalize_data(
-                                image2[slice(roi.y, roi.y + roi.height), slice(roi.x, roi.x + roi.width)]),
-                            self.normalize_data(
-                                image3[slice(roi.y, roi.y + roi.height), slice(roi.x, roi.x + roi.width)])),
-                            axis=-1) for roi in fov.roi_list}
-
-                    # image = np.stack((
-                    #     self.normalize_data(image1),
-                    #     self.normalize_data(image2),
-                    #     self.normalize_data(image3)),
-                    #     axis=-1)
-                    #
-                    # roi_images = {roi.name:
-                    #                   image[slice(roi.y, roi.y + roi.height), slice(roi.x, roi.x + roi.width), :]
-                    #               for roi in fov.roi_list}
+                for t in range(fov.image_resource().sizeT - 4):
+                    n=2
+                    # roi_images = self.get_rgb_images_from_stacks(imgdata, fov.roi_list, t)
+                    roi_images = self.get_images_sequences(imgdata, fov.roi_list, t)
 
                     img_array = np.array(list(roi_images.values()))
-                    img_array = tf.image.resize(img_array, (299, 299), method='nearest')
                     print(img_array.shape, img_array.dtype)
-                    print(np.max(img_array[n]), np.min(img_array[n]), np.median(img_array[n]), np.mean(img_array[n]))
+                    img_array = np.array([tf.image.resize(i, (224, 224), method='nearest') for i in img_array])
+                    print(img_array.shape, img_array.dtype)
+                    print(np.max(img_array[0][n]), np.min(img_array[0][n]), np.median(img_array[0][n]), np.mean(img_array[0][n]))
 
                     data, predictions = model.predict(img_array)
 
                     for p, roi in zip(predictions, roi_images):
-                        max_score, max_index = max((value, index) for index, value in enumerate(p[0, 0]))
+                        print(f'{roi} {t}: {p[0]}')
+                        max_score, max_index = max((value, index) for index, value in enumerate(p[0]))
                         print(f'{roi} {t}: {class_names[max_index]} ({max_score})')
+
                         # for c, s in enumerate(p[0, 0]):
                         #     print(f'          {class_names[c]}: {s:.2f} ',)
 
@@ -128,14 +109,14 @@ class Plugin(plugins.Plugin):
 
                     if PyDetecDiv().main_window.active_subwindow:
                         PyDetecDiv().main_window.active_subwindow.show_image(
-                            tf.image.convert_image_dtype(list(img_array.numpy())[n], dtype=tf.uint8, saturate=False),
+                            tf.image.convert_image_dtype(list(img_array[0])[n], dtype=tf.uint8, saturate=False),
                             format_=QImage.Format_RGB888)
 
                         # df = pandas.DataFrame(np.array(list(img_array.numpy())[n]).flatten())
                         df = pandas.DataFrame()
-                        df['r'] = pandas.Series(np.array(list(img_array.numpy())[n])[...,0].flatten())
-                        df['g'] = pandas.Series(np.array(list(img_array.numpy())[n])[...,1].flatten())
-                        df['b'] = pandas.Series(np.array(list(img_array.numpy())[n])[...,2].flatten())
+                        df['r'] = pandas.Series(np.array(list(img_array[0])[n])[...,0].flatten())
+                        df['g'] = pandas.Series(np.array(list(img_array[0])[n])[...,1].flatten())
+                        df['b'] = pandas.Series(np.array(list(img_array[0])[n])[...,2].flatten())
                         plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow)
                         PyDetecDiv().main_window.active_subwindow.addTab(plot_viewer, 'Histogram')
                         df.plot(ax=plot_viewer.axes, kind='hist')
@@ -184,3 +165,30 @@ class Plugin(plugins.Plugin):
         if self.model_gui is None:
             self.model_gui = ModelSelector(PyDetecDiv().main_window)
         self.model_gui.setVisible(True)
+
+    def get_rgb_images_from_stacks(self, imgdata, roi_list, t):
+        image1 = imgdata.image(T=t, Z=0)
+        image2 = imgdata.image(T=t, Z=1)
+        image3 = imgdata.image(T=t, Z=2)
+
+        roi_images = {roi.name:
+            np.stack((
+                self.normalize_data(
+                    image1[slice(roi.y, roi.y + roi.height), slice(roi.x, roi.x + roi.width)]),
+                self.normalize_data(
+                    image2[slice(roi.y, roi.y + roi.height), slice(roi.x, roi.x + roi.width)]),
+                self.normalize_data(
+                    image3[slice(roi.y, roi.y + roi.height), slice(roi.x, roi.x + roi.width)])),
+                axis=-1) for roi in roi_list}
+        return roi_images
+
+    def get_images_sequences(self, imgdata, roi_list, t):
+        set1 = self.get_rgb_images_from_stacks(imgdata, roi_list, t)
+        set2 = self.get_rgb_images_from_stacks(imgdata, roi_list, t+1)
+        set3 = self.get_rgb_images_from_stacks(imgdata, roi_list, t+2)
+        set4 = self.get_rgb_images_from_stacks(imgdata, roi_list, t+3)
+        roi_sequence = {roi.name:
+            np.stack((set1[roi.name], set2[roi.name], set3[roi.name], set4[roi.name]),
+                axis=0) for roi in roi_list}
+        print('roi sequence', np.array(list(roi_sequence.values())).shape)
+        return roi_sequence
