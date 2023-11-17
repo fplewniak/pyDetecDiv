@@ -2,6 +2,7 @@
  A class handling image resource in multiple files (one for each combination of T, C, Z dimensions)
 """
 import re
+import tensorflow as tf
 from aicsimageio import AICSImage
 import numpy as np
 import pandas as pd
@@ -108,13 +109,14 @@ class MultiFileImageResource(ImageResourceData):
         if self.image_files[T, C, Z]:
             data = tifffile.imread(self.image_files[T, C, Z])
             if drift is not None:
-                return cv2.warpAffine(np.array(data),
+                data = cv2.warpAffine(np.array(data),
                                       np.float32(
                                           [[1, 0, -drift.dx],
                                            [0, 1, -drift.dy]]),
                                       (data.shape[1], data.shape[0]))
+            data = tf.image.convert_image_dtype(data, dtype=tf.uint16, saturate=False).numpy()
             return data
-        return np.zeros((self.sizeY, self.sizeX), np.float16)
+        return np.zeros((self.sizeY, self.sizeX), np.uint16)
         # return None
 
     def data_sample(self, X=None, Y=None):

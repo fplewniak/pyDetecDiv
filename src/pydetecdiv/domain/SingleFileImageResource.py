@@ -2,6 +2,7 @@
  A class handling image resource in a single 5D TIFF file
 """
 import psutil
+import tensorflow as tf
 from aicsimageio import AICSImage
 from tifffile import tifffile
 import numpy as np
@@ -91,11 +92,12 @@ class SingleFileImageResource(ImageResourceData):
         data = np.expand_dims(self._memmap, axis=tuple(i for i in range(len(s)) if s[i] == 1))[T, C, Z, ...]
 
         if drift is not None:
-            return cv2.warpAffine(np.array(data),
+            data = cv2.warpAffine(np.array(data),
                                   np.float32(
                                       [[1, 0, -drift.dx],
                                        [0, 1, -drift.dy]]),
                                   (data.shape[1], data.shape[0]))
+        data = tf.image.convert_image_dtype(data, dtype=tf.uint16, saturate=False).numpy()
         return data
 
     def data_sample(self, X=None, Y=None):
