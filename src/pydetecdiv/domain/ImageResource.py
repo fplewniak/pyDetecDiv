@@ -20,7 +20,7 @@ class ImageResource(DomainSpecificObject):
     """
 
     def __init__(self, dataset, fov, multi,
-                 xdim=-1, ydim=-1, zdim=1, cdim=1, tdim=1,
+                 xdim=-1, ydim=-1, zdim=-1, cdim=-1, tdim=-1,
                  xyscale=1, tscale=1, zscale=1,
                  xyunit=1e-6, zunit=1e-6, tunit=60,
                  **kwargs):
@@ -30,9 +30,9 @@ class ImageResource(DomainSpecificObject):
         self.multi = multi
         self._xdim = xdim
         self._ydim = ydim
-        self.zdim = zdim
-        self.cdim = cdim
-        self.tdim = tdim
+        self._zdim = zdim
+        self._cdim = cdim
+        self._tdim = tdim
         self.xyscale = xyscale
         self.xyunit = xyunit
         self.zscale = zscale
@@ -96,6 +96,46 @@ class ImageResource(DomainSpecificObject):
         if self._ydim is None and len(self.project.get_linked_objects('Data', self)):
             self._ydim, self._xdim = self.set_image_shape_from_file()
         return self._ydim
+
+    @property
+    def tdim(self):
+        """
+        The image resource Y dimension size determined from file
+        """
+        if (self._tdim == -1) and len(self.project.get_linked_objects('Data', self)):
+            self._tdim = self.image_resource_data().sizeT
+        return self._tdim
+
+    @tdim.setter
+    def tdim(self, tdim):
+        self._tdim = tdim
+
+    @property
+    def cdim(self):
+        """
+        The image resource Y dimension size determined from file
+        """
+        if (self._cdim == -1) and len(self.project.get_linked_objects('Data', self)):
+            self._cdim = self.image_resource_data().sizeC
+        return self._cdim
+
+    @cdim.setter
+    def cdim(self, cdim):
+        self._cdim = cdim
+
+    @property
+    def zdim(self):
+        """
+        The image resource Y dimension size determined from file
+        """
+        if (self._zdim == -1) and len(self.project.get_linked_objects('Data', self)):
+            self._zdim = self.image_resource_data().sizeZ
+        return self._zdim
+
+    @zdim.setter
+    def zdim(self, zdim):
+        self._zdim = zdim
+
 
     def set_image_shape_from_file(self):
         """
