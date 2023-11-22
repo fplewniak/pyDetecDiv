@@ -90,20 +90,28 @@ class Image():
         :param method:
         :return:
         """
-        tensor = tf.expand_dims(self.tensor, axis=-1) if len(self.tensor.shape) == 2 else self.tensor
+        tensor = tf.expand_dims(self.tensor, axis=-1) if len(self.shape) == 2 else self.tensor
         return Image(tf.squeeze(tf.image.resize(tensor, shape, method='nearest')))
+
+    def show(self, ax):
+        ax.imshow(self.as_array(DType.uint8))
 
     def histogram(self, ax, bins='auto', color='black'):
         ax.hist(self.as_array().flatten(), bins=bins, histtype='step', color=color)
 
     def channel_histogram(self, ax, bins='auto', ):
         colours = ['red', 'green', 'blue', 'yellow']
-        if len(self.tensor.shape) > 2:
+        if len(self.shape) != 2:
             ax.hist(self.rgb_to_gray().as_array().flatten(), bins=bins, histtype='step', color='black')
             for c in range(self.tensor.shape[-1]):
                 ax.hist(self.as_array()[..., c].flatten(), bins=bins, histtype='step', color=colours[c])
         else:
             self.histogram(ax, bins=bins)
+
+    def crop(self, offset_height, offset_width, target_height, target_width):
+        tensor = tf.expand_dims(self.tensor, axis=-1) if len(self.shape) == 2 else self.tensor
+        return Image(tf.squeeze(tf.image.crop_to_bounding_box(tensor, offset_height, offset_width, target_height, target_width)))
+
 
     def adjust_contrast(self, factor=2.0):
         return Image(tf.image.adjust_contrast(self.tensor, factor))
@@ -121,6 +129,22 @@ class Image():
     def sigmoid_correction(self):
         return Image(exposure.adjust_sigmoid(self.as_array()))
 
+
+    def decompose_channels(self):
+        if len(self.shape) == 2:
+            return [self]
+        return [Image(array) for array in tf.unstack(self.tensor, axis=-1)]
+
+    @staticmethod
+    def add(images):
+        return Image(tf.math.add_n([i.tensor for i in images]))
+
+    @staticmethod
+    def mean(images):
+        if len(images) > 1:
+            tensor = tf.math.add_n([i.as_tensor(DType.float32)/len(images) for i in images])
+            return Image(tf.image.convert_image_dtype(tensor, images[0].tensor.dtype))
+        return images[0]
     @staticmethod
     def compose_channels(channels):
-        return Image(np.stack([c.as_array() for c in channels], axis=-1))
+        return Image(tf.stack([c.as_tensor() for c in channels], axis=-1))
