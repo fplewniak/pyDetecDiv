@@ -204,12 +204,12 @@ class MatplotViewer(QWidget):
     A widget to display matplotlib plots in a tab
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, rows=1, columns=1):
         super().__init__(parent)
         # self.dismiss_button = QPushButton('Dismiss')
         # self.dismiss_button.clicked.connect(lambda: self.parent().removeWidget(self))
         self.canvas = FigureCanvas(Figure(figsize=(5, 3)))
-        self.axes = self.canvas.figure.subplots()
+        self.axes = self.canvas.figure.subplots(rows, columns)
         self.canvas.figure.tight_layout(pad=0.1)
         self.toolbar = QWidget(self)
         self.matplot_toolbar = NavigationToolbar(self.canvas, self)
