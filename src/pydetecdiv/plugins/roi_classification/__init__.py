@@ -79,9 +79,9 @@ class Plugin(plugins.Plugin):
         class_names = ['clog', 'dead', 'empty', 'large', 'small', 'unbud']
 
         # self.test_model(model)
-        self.test_Image()
+        # self.test_Image()
 
-    def dummy(self, model, class_names):
+    # def dummy(self, model, class_names):
 
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             for fov_name in [index.data() for index in self.gui.selection_model.selectedRows(0)]:
@@ -97,67 +97,27 @@ class Plugin(plugins.Plugin):
                     roi_images = self.get_images_sequences(imgdata, roi_list, t)
 
                     img_array = np.array(list(roi_images.values()))
-                    # print(img_array.shape, img_array.dtype)
                     img_array = np.array([tf.image.resize(i, (224, 224), method='nearest') for i in img_array])
-                    # print(img_array.shape, img_array.dtype)
-                    # print(np.max(img_array[n][0]), np.min(img_array[n][0]), np.median(img_array[n][0]), np.mean(img_array[n][0]))
-                    # print(np.max(img_array[n]), np.min(img_array[n]), np.median(img_array[n]), np.mean(img_array[n]))
-
                     data, predictions = model.predict(img_array)
 
                     for p, roi in zip(predictions, roi_images):
-                        # print(f'{roi} {t}: {p[0]}')
                         max_score, max_index = max((value, index) for index, value in enumerate(p[0]))
                         print(f'{roi} {t}: {class_names[max_index]} ({max_score:.2f})')
 
-                        # for c, s in enumerate(p[0, 0]):
-                        #     print(f'          {class_names[c]}: {s:.2f} ',)
+                        if PyDetecDiv().main_window.active_subwindow:
+                            if t == 0:
+                                for i in range(1):
+                                    plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=2)
+                                    PyDetecDiv().main_window.active_subwindow.addTab(plot_viewer,
+                                                                                     f'{roi} - {class_names[max_index]}')
 
-                    if PyDetecDiv().main_window.active_subwindow:
-                        if t == 0:
-                            for i in range(1):
-                                ndx = random.randint(0, len(roi_list) - 1)
-                                PyDetecDiv().main_window.active_subwindow.show_image(
-                                    np.array(list(img_array)[ndx][0]), title=class_names[max_index],
-                                    format_=QImage.Format_RGB888)
-                                gray = cv2.cvtColor(np.array(list(img_array)[ndx][0]), cv2.COLOR_BGR2GRAY)
-                                df = pandas.DataFrame()
-                                df['L'] = pandas.Series(np.array(gray).flatten())
-                                df['r'] = pandas.Series(np.array(list(img_array[ndx][0]))[...,0].flatten())
-                                df['g'] = pandas.Series(np.array(list(img_array[ndx][0]))[...,1].flatten())
-                                df['b'] = pandas.Series(np.array(list(img_array[ndx][0]))[...,2].flatten())
-                                plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow)
-                                PyDetecDiv().main_window.active_subwindow.addTab(plot_viewer, 'Histogram')
-                                df['L'].plot(ax=plot_viewer.axes, kind='hist', bins=64, color='black', alpha=1)
-                                df['r'].plot(ax=plot_viewer.axes, kind='hist', bins=64, color='red', alpha=0.8)
-                                df['g'].plot(ax=plot_viewer.axes, kind='hist', bins=64, color='green', alpha=0.8)
-                                df['b'].plot(ax=plot_viewer.axes, kind='hist', bins=64, color='blue', alpha=0.8)
-                                plot_viewer.canvas.draw()
-                                PyDetecDiv().main_window.active_subwindow.setCurrentWidget(plot_viewer)
+                                    image = Image(list(img_array)[0][0])
+                                    image.show(plot_viewer.axes[0])
+                                    plot_viewer.axes[0].set_title(f'{roi} - {class_names[max_index]}')
+                                    image.channel_histogram(plot_viewer.axes[1], bins=64)
 
-
-
-                    # if PyDetecDiv().main_window.active_subwindow:
-                    #     PyDetecDiv().main_window.active_subwindow.show_image(
-                    #         tf.image.convert_image_dtype(list(img_array[n])[0], dtype=tf.uint8, saturate=False),
-                    #         format_=QImage.Format_RGB888)
-                    #
-                    #     # df = pandas.DataFrame(np.array(list(img_array.numpy())[n]).flatten())
-                    #     df = pandas.DataFrame()
-                    #     df['r'] = pandas.Series(np.array(list(img_array[n])[0])[...,0].flatten())
-                    #     df['g'] = pandas.Series(np.array(list(img_array[n])[0])[...,1].flatten())
-                    #     df['b'] = pandas.Series(np.array(list(img_array[n])[0])[...,2].flatten())
-                    #     plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow)
-                    #     PyDetecDiv().main_window.active_subwindow.addTab(plot_viewer, 'Histogram')
-                    #     df.plot(ax=plot_viewer.axes, kind='hist')
-                    #     plot_viewer.canvas.draw()
-                    #     PyDetecDiv().main_window.active_subwindow.setCurrentWidget(plot_viewer)
-
-                    # if PyDetecDiv().main_window.active_subwindow:
-                    #     for d in data:
-                    #         PyDetecDiv().main_window.active_subwindow.show_image(
-                    #             tf.image.convert_image_dtype(list(d), dtype=tf.uint8, saturate=False),
-                    #             format_=QImage.Format_RGB888)
+                                    plot_viewer.canvas.draw()
+                                    PyDetecDiv().main_window.active_subwindow.setCurrentWidget(plot_viewer)
 
     def normalize_data(self, img):
         # print(img.shape, img.dtype)
@@ -172,8 +132,8 @@ class Plugin(plugins.Plugin):
         # img = exposure.rescale_intensity(img, in_range='image', out_range=(0, 1))
         # img = exposure.rescale_intensity(img, in_range='image', out_range='uint8')
         img = np.array(img)
-        # qlow, qhi = np.quantile(img[img > 0.0], [0.001, 0.999])
-        qlow, qhi = np.quantile(img[img > 0], [0.01, 0.99])
+        qlow, qhi = np.quantile(img[img > 0.0], [0.001, 0.999])
+        # qlow, qhi = np.quantile(img[img > 0], [0.01, 0.99])
         # qlow, qhi = np.min(img), np.max(img)
         # qhi = np.max(img)
         img = exposure.rescale_intensity(img, in_range=(qlow, qhi))
@@ -213,20 +173,14 @@ class Plugin(plugins.Plugin):
         self.model_gui.setVisible(True)
 
     def get_rgb_images_from_stacks(self, imgdata, roi_list, t):
-        image1 = imgdata.image(T=t, Z=0)
-        image2 = imgdata.image(T=t, Z=1)
-        image3 = imgdata.image(T=t, Z=2)
+        image1 = Image(imgdata.image(T=t, Z=0)).stretch_contrast()
+        image2 = Image(imgdata.image(T=t, Z=1)).stretch_contrast()
+        image3 = Image(imgdata.image(T=t, Z=2)).stretch_contrast()
 
-        roi_images = {roi.name:
-            np.stack((
-                self.normalize_data(
-                    image1[slice(roi.y, roi.y + roi.height), slice(roi.x, roi.x + roi.width)]),
-                self.normalize_data(
-                    image2[slice(roi.y, roi.y + roi.height), slice(roi.x, roi.x + roi.width)]),
-                self.normalize_data(
-                    image3[slice(roi.y, roi.y + roi.height), slice(roi.x, roi.x + roi.width)])),
-                axis=-1) for roi in roi_list}
-
+        roi_images = {roi.name: Image.compose_channels([image1.crop(roi.y, roi.x, roi.height, roi.width),
+                                                        image2.crop(roi.y, roi.x, roi.height, roi.width),
+                                                        image3.crop(roi.y, roi.x, roi.height, roi.width)
+                                                        ]).as_array(DType.uint8) for roi in roi_list}
         return roi_images
 
     def get_images_sequences(self, imgdata, roi_list, t):
@@ -303,7 +257,10 @@ class Plugin(plugins.Plugin):
              '/NAS/Data/BioImageIT/TestTrainingSet/Grayscale/Pos16_empty_channel00_z02_frame_0000.tif',
              '/NAS/DataGS02/Fred/div_1_first_tests/trainingdataset/images/small/Pos0_1_221_frame_0410.tif',
              '/NAS/DataGS02/Fred/div_1_first_tests/trainingdataset/images/large/Pos0_1_83_frame_0211.tif',
-             '/NAS/DataGS02/Fred/div_1_first_tests/trainingdataset/images/empty/Pos0_1_47_frame_0018.tif'
+             '/NAS/DataGS02/Fred/div_1_first_tests/trainingdataset/images/empty/Pos0_1_47_frame_0018.tif',
+             '/NAS/Data/BioImageIT/TestChannels/img_channel000_position001_time000000284_z001.tif',
+             '/NAS/Data/BioImageIT/TestChannels/img_channel001_position001_time000000284_z001.tif',
+             '/NAS/Data/BioImageIT/TestChannels/img_channel002_position001_time000000284_z001.tif',
              ])
 
         image1 = Image(tifffile.imread(images[0]))
@@ -312,6 +269,16 @@ class Plugin(plugins.Plugin):
 
         image_rgb = Image(tifffile.imread(images[3]))
 
+        bright_field = Image(tifffile.imread(images[6]))
+        red = Image(tifffile.imread(images[7]))
+        green = Image(tifffile.imread(images[8]))
+        blue = bright_field
+        zeros = Image(tf.zeros_like(blue.tensor))
+
+        image_fluo = Image.compose_channels([Image.mean([red, bright_field]),
+                                             Image.mean([green, bright_field]),
+                                             Image.mean([zeros, bright_field])]
+                                            ).equalize_hist(adapt=True)
         print(image1.shape)
         print(image1.as_array().dtype)
         print(image1.as_tensor().dtype)
@@ -327,7 +294,7 @@ class Plugin(plugins.Plugin):
         PyDetecDiv().main_window.active_subwindow.addTab(plot_viewer, 'Histogram RGB')
         image_rgb.channel_histogram(ax=plot_viewer.axes)
         plot_viewer.canvas.draw()
-        PyDetecDiv().main_window.active_subwindow.setCurrentWidget(plot_viewer)
+
 
         plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow)
         PyDetecDiv().main_window.active_subwindow.addTab(plot_viewer, 'Histogram gray scale')
@@ -335,9 +302,35 @@ class Plugin(plugins.Plugin):
         plot_viewer.canvas.draw()
         PyDetecDiv().main_window.active_subwindow.setCurrentWidget(plot_viewer)
 
-        plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow)
+        plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=2)
         PyDetecDiv().main_window.active_subwindow.addTab(plot_viewer, 'Histogram gray scale')
-        image1.stretch_contrast().histogram(ax=plot_viewer.axes, color='blue')
-        image1.equalize_hist().histogram(ax=plot_viewer.axes, color='green')
-        image1.equalize_hist(adapt=True).histogram(ax=plot_viewer.axes, color='red')
-        image1.sigmoid_correction().histogram(ax=plot_viewer.axes, color='yellow')
+        image1.stretch_contrast().histogram(ax=plot_viewer.axes[0], color='blue')
+        image1.equalize_hist().histogram(ax=plot_viewer.axes[1], color='green')
+        image1.equalize_hist(adapt=True).histogram(ax=plot_viewer.axes[1], color='red')
+        image1.sigmoid_correction().histogram(ax=plot_viewer.axes[0], color='yellow')
+
+        plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=4)
+        PyDetecDiv().main_window.active_subwindow.addTab(plot_viewer, 'Image & channels')
+        plot_viewer.axes[0].imshow(image_rgb.as_array(DType.uint8))
+        channels = image_rgb.decompose_channels()
+        colours = ['R', 'G', 'B']
+        for i, c in enumerate(channels):
+            plot_viewer.axes[i+1].imshow(c.as_array(DType.uint8), cmap='gray')
+            plot_viewer.axes[i+1].set_title(colours[i])
+
+        plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow,)
+        PyDetecDiv().main_window.active_subwindow.addTab(plot_viewer, 'Fluorescence')
+        plot_viewer.axes.imshow(image_fluo.as_array(DType.uint8))
+
+
+        plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, rows=3, columns=2)
+        PyDetecDiv().main_window.active_subwindow.addTab(plot_viewer, 'Fluorescence histograms')
+        red.histogram(ax=plot_viewer.axes[0, 0], color='red', bins=64)
+        green.histogram(ax=plot_viewer.axes[1, 0], color='green', bins=64)
+        blue.histogram(ax=plot_viewer.axes[2, 0], color='blue', bins=64)
+
+        colours = ['red', 'green', 'blue']
+        for i, c in enumerate(image_fluo.decompose_channels()):
+            c.histogram(ax=plot_viewer.axes[i, 1], color=colours[i], bins=64)
+
+        PyDetecDiv().main_window.active_subwindow.setCurrentWidget(plot_viewer)
