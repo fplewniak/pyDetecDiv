@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from skimage import exposure
 
 
-class DType(Enum):
+class ImgDType(Enum):
     uint8 = (np.uint8, tf.uint8)
     uint16 = (np.uint16, tf.uint16)
     uint32 = (np.uint32, tf.uint32)
@@ -36,7 +36,11 @@ class Image():
     """
 
     def __init__(self, data=None, **kwargs):
-        self.tensor = tf.convert_to_tensor(data)
+        self.tensor = data if tf.is_tensor(data) else tf.convert_to_tensor(data)
+        self._initial_tensor = self.tensor
+
+    def reset(self):
+        self.tensor = self._initial_tensor
 
     @property
     def shape(self):
@@ -46,27 +50,32 @@ class Image():
     def dtype(self):
         return self.tensor.dtype
 
-    def as_array(self, dtype=None):
+    def as_array(self, dtype=None, grayscale=False):
         """
         property returning the image data for this image
         :return: the image data
         :rtype: numpy.array
         """
-        return self.as_tensor(dtype=dtype).numpy()
+        return self.as_tensor(dtype=dtype, grayscale=grayscale).numpy()
 
-    def as_tensor(self, dtype=None):
-        if dtype is None:
-            return self.tensor
-        return self._convert_to_dtype(dtype=dtype)
+    def as_tensor(self, dtype=None, grayscale=False):
+        tensor = self.tensor if dtype is None else self._convert_to_dtype(dtype=dtype)
+        if grayscale:
+            return tf.image.rgb_to_grayscale(tensor)
+        return tensor
 
-    def _convert_to_dtype(self, dtype=DType.uint16):
-        dtype = dtype.tensor_dtype
+    def _convert_to_dtype(self, dtype=ImgDType.uint16):
+        if isinstance(dtype, ImgDType):
+            dtype = dtype.tensor_dtype
         saturate = True if (self.tensor.dtype.is_floating and dtype.is_integer) or (
                 not self.tensor.dtype.is_unsigned and dtype.is_unsigned) else False
         return tf.image.convert_image_dtype(self.tensor, dtype=dtype, saturate=saturate)
 
     def rgb_to_gray(self):
-        return (Image(cv2.cvtColor(np.array(self.as_array()), cv2.COLOR_BGR2GRAY)))
+        return Image(self._rgb_to_gray())
+
+    def _rgb_to_gray(self):
+        return tf.image.rgb_to_grayscale(self.tensor)
 
     def resize(self, shape=None, method='nearest'):
         """
@@ -93,8 +102,8 @@ class Image():
         tensor = tf.expand_dims(self.tensor, axis=-1) if len(self.shape) == 2 else self.tensor
         return Image(tf.squeeze(tf.image.resize(tensor, shape, method='nearest')))
 
-    def show(self, ax):
-        ax.imshow(self.as_array(DType.uint8))
+    def show(self, ax, grayscale=False, **kwargs):
+        ax.imshow(self.as_array(ImgDType.uint8, grayscale), **kwargs)
 
     def histogram(self, ax, bins='auto', color='black'):
         ax.hist(self.as_array().flatten(), bins=bins, histtype='step', color=color)
@@ -102,33 +111,42 @@ class Image():
     def channel_histogram(self, ax, bins='auto', ):
         colours = ['red', 'green', 'blue', 'yellow']
         if len(self.shape) != 2:
-            ax.hist(self.rgb_to_gray().as_array().flatten(), bins=bins, histtype='step', color='black')
+            ax.hist(self._rgb_to_gray().numpy().flatten(), bins=bins, histtype='step', color='black')
             for c in range(self.tensor.shape[-1]):
                 ax.hist(self.as_array()[..., c].flatten(), bins=bins, histtype='step', color=colours[c])
         else:
             self.histogram(ax, bins=bins)
 
-    def crop(self, offset_height, offset_width, target_height, target_width):
+    def crop(self, offset_height, offset_width, target_height, target_width, new_image=True):
         tensor = tf.expand_dims(self.tensor, axis=-1) if len(self.shape) == 2 else self.tensor
-        return Image(tf.squeeze(tf.image.crop_to_bounding_box(tensor, offset_height, offset_width, target_height, target_width)))
-
+        tensor = tf.squeeze(
+            tf.image.crop_to_bounding_box(tensor, offset_height, offset_width, target_height, target_width))
+        if new_image:
+            return Image(tensor)
+        self.tensor = tensor
+        return self
 
     def adjust_contrast(self, factor=2.0):
-        return Image(tf.image.adjust_contrast(self.tensor, factor))
+        self.tensor = tf.image.adjust_contrast(self.tensor, factor)
+        return self
 
     def stretch_contrast(self, q=[0.001, 0.999]):
         img = self.as_array()
         qlow, qhi = np.quantile(img[img > 0.0], q)
-        return Image(exposure.rescale_intensity(img, in_range=(qlow, qhi)))
+        self.tensor = tf.convert_to_tensor(exposure.rescale_intensity(img, in_range=(qlow, qhi)))
+        return self
 
     def equalize_hist(self, adapt=False):
         if adapt:
-            return Image(exposure.equalize_adapthist(self.as_array(DType.float64)))
-        return Image(exposure.equalize_hist(self.as_array(DType.float64)))
+            self.tensor = tf.convert_to_tensor(exposure.equalize_adapthist(self.as_array(ImgDType.float64)))
+        else:
+            self.tensor = tf.convert_to_tensor(exposure.equalize_hist(self.as_array(ImgDType.float64)))
+        self.tensor = self._convert_to_dtype(dtype=self._initial_tensor.dtype)
+        return self
 
     def sigmoid_correction(self):
-        return Image(exposure.adjust_sigmoid(self.as_array()))
-
+        self.tensor = tf.convert_to_tensor(exposure.adjust_sigmoid(self.as_array()))
+        return self
 
     def decompose_channels(self):
         if len(self.shape) == 2:
@@ -142,9 +160,10 @@ class Image():
     @staticmethod
     def mean(images):
         if len(images) > 1:
-            tensor = tf.math.add_n([i.as_tensor(DType.float32)/len(images) for i in images])
+            tensor = tf.math.add_n([i.as_tensor(ImgDType.float32) / len(images) for i in images])
             return Image(tf.image.convert_image_dtype(tensor, images[0].tensor.dtype))
         return images[0]
+
     @staticmethod
     def compose_channels(channels):
         return Image(tf.stack([c.as_tensor() for c in channels], axis=-1))
