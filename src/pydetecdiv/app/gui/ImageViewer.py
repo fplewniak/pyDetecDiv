@@ -533,7 +533,7 @@ class ViewerScene(QGraphicsScene):
         r = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
         if isinstance(r, QGraphicsRectItem):
             view_in_new_tab.triggered.connect(lambda _: self.parent().view_roi_image(r))
-        menu.exec(event.screenPos())
+            menu.exec(event.screenPos())
 
     def keyPressEvent(self, event):
         """
@@ -617,7 +617,7 @@ class ViewerScene(QGraphicsScene):
 
     def mouseMoveEvent(self, event):
         """
-        Detect mouse movement and apply the appropriate method according to the currently cjecked drawing tool and key
+        Detect mouse movement and apply the appropriate method according to the currently checked drawing tool and key
         modifier
 
         :param event: the mouse move event
