@@ -208,9 +208,9 @@ class MatplotViewer(QWidget):
         super().__init__(parent)
         # self.dismiss_button = QPushButton('Dismiss')
         # self.dismiss_button.clicked.connect(lambda: self.parent().removeWidget(self))
-        self.canvas = FigureCanvas(Figure(figsize=(5, 3)))
+        self.canvas = FigureCanvas(Figure())
         self.axes = self.canvas.figure.subplots(rows, columns)
-        self.canvas.figure.tight_layout(pad=0.1)
+        self.canvas.figure.tight_layout()
         self.toolbar = QWidget(self)
         self.matplot_toolbar = NavigationToolbar(self.canvas, self)
 
