@@ -171,7 +171,7 @@ class Plugin(plugins.Plugin):
 
     def get_images_sequences(self, imgdata, roi_list, t):
         roi_sequences = tf.stack(
-            [self.get_rgb_images_from_stacks(imgdata, roi_list, t) for frame in range(t, min(imgdata.sizeT, t + 6))],
+            [self.get_rgb_images_from_stacks(imgdata, roi_list, f) for f in range(t, min(imgdata.sizeT, t + 6))],
             axis=1)
         print('roi sequence', roi_sequences.shape)
         return roi_sequences
