@@ -1,6 +1,7 @@
 """
 An example plugin showing how to interact with database
 """
+import os.path
 import random
 
 import cv2
@@ -71,7 +72,6 @@ class Plugin(plugins.Plugin):
         functionalities run directly without any further interface.
         """
         model = div1.load_model()
-        # print(model.layers)
         # for p, w in model.get_weight_paths().items():
         #     print(p, w.shape, w.dtype, np.min(w), np.max(w))
         # print(model.trainable_variables[0].name, model.trainable_variables[0].dtype)
@@ -82,11 +82,6 @@ class Plugin(plugins.Plugin):
             metrics=["accuracy"],
         )
         class_names = ['clog', 'dead', 'empty', 'large', 'small', 'unbud']
-
-        # self.test_model(model)
-        # self.test_Image()
-
-        # def dummy(self, model, class_names):
 
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             for fov_name in [index.data() for index in self.gui.selection_model.selectedRows(0)]:
@@ -107,6 +102,7 @@ class Plugin(plugins.Plugin):
                         [tf.image.resize(i, (224, 224), method='nearest') for i in roi_sequences])
                     # img_array = tf.math.multiply(img_array, 255.0)
                     data, predictions = model.predict(img_array)
+                    print('predictions OK')
 
                     if t == 0:
                         plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow,
@@ -114,9 +110,8 @@ class Plugin(plugins.Plugin):
                         PyDetecDiv().main_window.active_subwindow.addTab(plot_viewer, 'sequences')
                         for i, roi in enumerate(roi_list):
                             plot_viewer.axes[i, 0].set_title(roi.name)
-                            for j, arr in enumerate(list(img_array)[i]):
-                                arr = tf.math.divide(arr, 255.0)
-                                img = Image(arr).equalize_hist(adapt=True)
+                            for j, arr in enumerate(img_array[i]):
+                                img = Image(arr) #.equalize_hist(adapt=True)
                                 img.show(plot_viewer.axes[i, j])
                         plot_viewer.canvas.draw()
                         PyDetecDiv().main_window.active_subwindow.setCurrentWidget(plot_viewer)
@@ -131,10 +126,10 @@ class Plugin(plugins.Plugin):
                                 PyDetecDiv().main_window.active_subwindow.addTab(plot_viewer,
                                                                                  f'{roi} - {class_names[max_index]}')
 
-                                image = Image(list(img_array)[i][0])
+                                image = Image(img_array[i][0])
                                 image.show(plot_viewer.axes[0])
+                                image.channel_histogram(plot_viewer.axes[1], bins=64)
                                 plot_viewer.axes[0].set_title(f'{roi} - {class_names[max_index]}')
-                                Image(image.as_tensor(ImgDType.uint8)).channel_histogram(plot_viewer.axes[1], bins=64)
 
                                 plot_viewer.canvas.draw()
                                 PyDetecDiv().main_window.active_subwindow.setCurrentWidget(plot_viewer)
@@ -179,53 +174,45 @@ class Plugin(plugins.Plugin):
         return roi_sequences
 
     def test_model(self, model):
-        import matplotlib.pyplot as plt
-        from tifffile import tifffile
+        import tifffile
 
         images = np.array(
-            ['/NAS/DataGS02/Fred/div_1_first_tests/trainingdataset/images/small/Pos0_1_221_frame_0410.tif',
-             '/NAS/DataGS02/Fred/div_1_first_tests/trainingdataset/images/large/Pos0_1_83_frame_0211.tif',
-             '/NAS/DataGS02/Fred/div_1_first_tests/trainingdataset/images/empty/Pos0_1_47_frame_0018.tif'
+            [
+            '/NAS/DataGS02/Fred/div_1_first_tests/trainingdataset/images/small/Pos0_1_221_frame_0410.tif',
+            '/NAS/DataGS02/Fred/div_1_first_tests/trainingdataset/images/large/Pos0_1_83_frame_0211.tif',
+            '/NAS/DataGS02/Fred/div_1_first_tests/trainingdataset/images/empty/Pos0_1_47_frame_0018.tif'
              ])
 
         class_names = ['clog', 'dead', 'empty', 'large', 'small', 'unbud']
 
-        fig, axs = plt.subplots(frameon=False)
-        spec = fig.add_gridspec(ncols=2, nrows=len(images))
+        plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, rows=len(images), columns=2)
+        PyDetecDiv().main_window.active_subwindow.addTab(plot_viewer, 'Predictions')
 
         for i, fichier in enumerate(images):
-            data = tifffile.imread(fichier)
-            # sequence =  np.stack((data, data, data, data), axis=0)
-            sequence = np.stack((data,), axis=0)
+            image = Image(tifffile.imread(fichier))
+            sequence = tf.stack((image.as_tensor(),), axis=0)
+            # sequence = image.as_tensor()
             img_array = tf.expand_dims(sequence, 0)  # Create batch axis
             # img_array = tf.expand_dims(data, 0)  # Create batch axis
             print(img_array.shape, img_array.dtype)
-            img_array = np.array([tf.image.resize(i, (224, 224), method='nearest') for i in img_array])
+            img_array = tf.convert_to_tensor([tf.image.resize(i, (224, 224), method='nearest') for i in img_array])
+
             print(img_array.shape, img_array.dtype)
             # print(img_array)
 
-            ax0 = fig.add_subplot(spec[i, 0])
-            plt.imshow(tf.image.convert_image_dtype(img_array[0][0], dtype=tf.float32, saturate=False))
-
-            ax1 = fig.add_subplot(spec[i, 1])
-            gray = cv2.cvtColor(np.array(img_array[0][0]), cv2.COLOR_BGR2GRAY)
-            df = pandas.DataFrame()
-            df['L'] = pandas.Series(np.array(gray).flatten())
-            df['r'] = pandas.Series(np.array(img_array[0][0])[..., 0].flatten())
-            df['g'] = pandas.Series(np.array(img_array[0][0])[..., 1].flatten())
-            df['b'] = pandas.Series(np.array(img_array[0][0])[..., 2].flatten())
-            df['L'].plot(ax=ax1, kind='hist', bins=32, color='black', alpha=0.7)
-            df['r'].plot(ax=ax1, kind='hist', bins=32, color='red', alpha=0.7)
-            df['g'].plot(ax=ax1, kind='hist', bins=32, color='green', alpha=0.7)
-            df['b'].plot(ax=ax1, kind='hist', bins=32, color='blue', alpha=0.7)
-
-            print(img_array.shape, img_array.dtype)
             data, predictions = model.predict(img_array)
 
             score = predictions[0, 0,]
 
+            plot_viewer.axes[i][0].set_title(os.path.basename(fichier))
+            image.show(ax=plot_viewer.axes[i][0])
+            image.channel_histogram(ax=plot_viewer.axes[i][1], bins=64)
+            max_score, max_index = max((value, index) for index, value in enumerate(score))
+            plot_viewer.axes[i][0].text(1, 5, f'{class_names[max_index]}: {max_score:.2f}',
+                                        {'fontsize': 8, 'color': 'yellow'})
+            plot_viewer.canvas.draw()
+            PyDetecDiv().main_window.active_subwindow.setCurrentWidget(plot_viewer)
+
             print(fichier)
             for c, s in enumerate(score):
-                print(f'{class_names[c]}: {s:.2f} ', )
-
-        plt.show()
+                print(f'{class_names[c]}: {s:.2f}', )
