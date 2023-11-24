@@ -158,10 +158,12 @@ class Plugin(plugins.Plugin):
             self.model_gui = ModelSelector(PyDetecDiv().main_window)
         self.model_gui.setVisible(True)
 
-    def get_rgb_images_from_stacks(self, imgdata, roi_list, t):
-        image1 = Image(imgdata.image(T=t, Z=0))
-        image2 = Image(imgdata.image(T=t, Z=1))
-        image3 = Image(imgdata.image(T=t, Z=2))
+    def get_rgb_images_from_stacks(self, imgdata, roi_list, t, z=None):
+        if z is None:
+            z = [0, 1, 2]
+        image1 = Image(imgdata.image(T=t, Z=z[0]))
+        image2 = Image(imgdata.image(T=t, Z=z[1]))
+        image3 = Image(imgdata.image(T=t, Z=z[2]))
 
         roi_images = [Image.compose_channels([image1.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
                                               image2.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
