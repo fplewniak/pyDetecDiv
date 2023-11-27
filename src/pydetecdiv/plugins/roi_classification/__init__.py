@@ -91,48 +91,51 @@ class Plugin(plugins.Plugin):
                 roi_list = [fov.roi_list[r] for r in roi_idx]
                 roi_names = [roi.name for roi in roi_list]
 
-                # for t in range(fov.image_resource().sizeT - 4):
-                for t in range(1):
-                    n = 0
-                    # roi_images = self.get_rgb_images_from_stacks(imgdata, fov.roi_list, t)
-                    roi_sequences = self.get_images_sequences(imgdata, roi_list, t)
-                    print(np.min(roi_sequences), np.max(roi_sequences))
+                # roi_images = self.get_rgb_images_from_stacks(imgdata, fov.roi_list, t)
+                roi_sequences = self.get_images_sequences(imgdata, roi_list, 0)
 
-                    img_array = tf.convert_to_tensor(
-                        [tf.image.resize(i, (224, 224), method='nearest') for i in roi_sequences])
-                    # img_array = tf.math.multiply(img_array, 255.0)
-                    data, predictions = model.predict(img_array)
-                    print('predictions OK')
+                img_array = tf.convert_to_tensor(
+                    [tf.image.resize(i, (224, 224), method='nearest') for i in roi_sequences])
 
-                    if t == 0:
-                        plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow,
-                                                    rows=len(roi_list), columns=6)
-                        PyDetecDiv().main_window.active_subwindow.addTab(plot_viewer, 'sequences')
-                        for i, roi in enumerate(roi_list):
-                            plot_viewer.axes[i, 0].set_title(roi.name)
-                            for j, arr in enumerate(img_array[i]):
-                                img = Image(arr) #.equalize_hist(adapt=True)
-                                img.show(plot_viewer.axes[i, j])
-                        plot_viewer.canvas.draw()
-                        PyDetecDiv().main_window.active_subwindow.setCurrentWidget(plot_viewer)
+                data, predictions = model.predict(img_array)
+                print('predictions OK')
+                step = 20
+                plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, rows=len(roi_list),
+                                            columns=1+int(len(img_array[0])/step))
+                PyDetecDiv().main_window.active_subwindow.addTab(plot_viewer, 'Sequences')
+                heatmap_plot = MatplotViewer(PyDetecDiv().main_window.active_subwindow, rows=len(roi_list),)
+                PyDetecDiv().main_window.active_subwindow.addTab(heatmap_plot, 'Predictions')
 
-                    for i, (p, roi) in enumerate(zip(predictions, roi_names)):
-                        max_score, max_index = max((value, index) for index, value in enumerate(p[0]))
-                        print(f'{roi} {i} {t}: {class_names[max_index]} ({max_score:.2f})')
+                for i, (pred, roi) in enumerate(zip(predictions, roi_names)):
+                    plot_viewer.axes[i, 0].set_ylabel(f'{roi}', fontsize='xx-small')
+                    for frame, p in enumerate(pred):
+                        if frame % step == 0:
+                            max_score, max_index = max((value, index) for index, value in enumerate(p))
+                            j = int(frame / step)
+                            plot_viewer.axes[i,j].set_title(f'{frame} ({class_names[max_index]})', fontsize='xx-small')
+                            plot_viewer.axes[i,j].set_xticks([])
+                            plot_viewer.axes[i,j].set_yticks([])
+                            img = Image(img_array[i][frame])
+                            img.show(plot_viewer.axes[i, j])
 
-                        if PyDetecDiv().main_window.active_subwindow:
-                            if t == 0:
-                                plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=2)
-                                PyDetecDiv().main_window.active_subwindow.addTab(plot_viewer,
-                                                                                 f'{roi} - {class_names[max_index]}')
+                    heatmap_plot.axes[i].set_ylabel(f'{roi}', fontsize='xx-small')
+                    heatmap_plot.axes[i].imshow(np.moveaxis(pred, 0, -1))
+                    heatmap_plot.axes[i].set_yticks(np.arange(len(class_names)), labels=class_names, fontsize='xx-small')
+                    heatmap_plot.axes[i].set_aspect('auto')
 
-                                image = Image(img_array[i][0])
-                                image.show(plot_viewer.axes[0])
-                                image.channel_histogram(plot_viewer.axes[1], bins=64)
-                                plot_viewer.axes[0].set_title(f'{roi} - {class_names[max_index]}')
+                plot_viewer.canvas.draw()
+                heatmap_plot.canvas.draw()
+                PyDetecDiv().main_window.active_subwindow.setCurrentWidget(heatmap_plot)
 
-                                plot_viewer.canvas.draw()
-                                PyDetecDiv().main_window.active_subwindow.setCurrentWidget(plot_viewer)
+                # plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=2)
+                # PyDetecDiv().main_window.active_subwindow.addTab(plot_viewer, f'{roi} - {class_names[max_index]}')
+                # image = Image(img_array[i][0])
+                # image.show(plot_viewer.axes[0])
+                # image.channel_histogram(plot_viewer.axes[1], bins=64)
+                # plot_viewer.axes[0].set_title(f'{roi} - {class_names[max_index]}')
+                #
+                # plot_viewer.canvas.draw()
+                # PyDetecDiv().main_window.active_subwindow.setCurrentWidget(plot_viewer)
 
     def roi_selector(self):
         if self.gui is None:
@@ -168,7 +171,7 @@ class Plugin(plugins.Plugin):
 
     def get_images_sequences(self, imgdata, roi_list, t):
         roi_sequences = tf.stack(
-            [self.get_rgb_images_from_stacks(imgdata, roi_list, f) for f in range(t, min(imgdata.sizeT, t + 6))],
+            [self.get_rgb_images_from_stacks(imgdata, roi_list, f) for f in range(t, min(imgdata.sizeT, t + 150))],
             axis=1)
         print('roi sequence', roi_sequences.shape)
         return roi_sequences
@@ -178,10 +181,10 @@ class Plugin(plugins.Plugin):
 
         images = np.array(
             [
-            '/NAS/DataGS02/Fred/div_1_first_tests/trainingdataset/images/small/Pos0_1_221_frame_0410.tif',
-            '/NAS/DataGS02/Fred/div_1_first_tests/trainingdataset/images/large/Pos0_1_83_frame_0211.tif',
-            '/NAS/DataGS02/Fred/div_1_first_tests/trainingdataset/images/empty/Pos0_1_47_frame_0018.tif'
-             ])
+                '/NAS/DataGS02/Fred/div_1_first_tests/trainingdataset/images/small/Pos0_1_221_frame_0410.tif',
+                '/NAS/DataGS02/Fred/div_1_first_tests/trainingdataset/images/large/Pos0_1_83_frame_0211.tif',
+                '/NAS/DataGS02/Fred/div_1_first_tests/trainingdataset/images/empty/Pos0_1_47_frame_0018.tif'
+            ])
 
         class_names = ['clog', 'dead', 'empty', 'large', 'small', 'unbud']
 
