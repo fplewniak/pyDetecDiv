@@ -18,8 +18,8 @@ from pydetecdiv.app.gui.Windows import MatplotViewer
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 from pydetecdiv.domain.Image import Image, ImgDType
 
-from .gui import ROIselector, ModelSelector
-from .models import div1, netCNNdiv1, netCNN_div1_10
+from .gui import ROIclassification, ROIselector, ModelSelector
+# from .models import div1, netCNNdiv1, netCNN_div1_10
 
 Base = pydetecdiv.persistence.sqlalchemy.orm.main.Base
 
@@ -59,19 +59,23 @@ class Plugin(plugins.Plugin):
         :type menu: QMenu
         """
         submenu = menu.addMenu(self.name)
-        action_select_model = QAction("Select model", submenu)
-        action_select_model.triggered.connect(self.model_selector)
-        action_launch = QAction("ROI selection", submenu)
-        action_launch.triggered.connect(self.roi_selector)
-        submenu.addAction(action_select_model)
+        action_launch = QAction("Classify ROIs", submenu)
+        action_launch.triggered.connect(self.roi_classification)
+        action_train_model = QAction("Train new model", submenu)
+        action_train_model.triggered.connect(self.model_selector)
         submenu.addAction(action_launch)
+        submenu.addAction(action_train_model)
 
     def launch(self):
         """
         Method launching the plugin. This may encapsulate (as it is the case here) the call to a GUI or some domain
         functionalities run directly without any further interface.
         """
-        model = div1.load_model()
+        module = self.gui.network.currentData()
+        model = module.load_model(load_weights=False)
+        weights = self.gui.weights.currentData()
+        if weights:
+            module.loadWeights(model, filename=self.gui.weights.currentData())
         # for p, w in model.get_weight_paths().items():
         #     print(p, w.shape, w.dtype, np.min(w), np.max(w))
         # print(model.trainable_variables[0].name, model.trainable_variables[0].dtype)
@@ -137,6 +141,15 @@ class Plugin(plugins.Plugin):
                 # plot_viewer.canvas.draw()
                 # PyDetecDiv().main_window.active_subwindow.setCurrentWidget(plot_viewer)
 
+    def roi_classification(self):
+        if self.gui is None:
+            self.gui = ROIclassification(PyDetecDiv().main_window)
+            self.set_table_view(PyDetecDiv().project_name)
+            PyDetecDiv().project_selected.connect(self.set_table_view)
+            PyDetecDiv().saved_rois.connect(self.set_table_view)
+            self.gui.button_box.accepted.connect(self.launch)
+        self.gui.setVisible(True)
+
     def roi_selector(self):
         if self.gui is None:
             self.gui = ROIselector(PyDetecDiv().main_window)
@@ -149,7 +162,7 @@ class Plugin(plugins.Plugin):
     def set_table_view(self, project_name):
         if project_name:
             with pydetecdiv_project(project_name) as project:
-                self.gui.update_list(project.repository.name)
+                self.gui.update_list(project)
 
     def model_selector(self):
         if self.model_gui is None:
@@ -159,9 +172,9 @@ class Plugin(plugins.Plugin):
     def get_rgb_images_from_stacks(self, imgdata, roi_list, t, z=None):
         if z is None:
             z = [0, 1, 2]
-        image1 = Image(imgdata.image(T=t, Z=z[0]))
-        image2 = Image(imgdata.image(T=t, Z=z[1]))
-        image3 = Image(imgdata.image(T=t, Z=z[2]))
+        image1 = Image(imgdata.image(T=t, Z=self.gui.red_channel.currentIndex()))
+        image2 = Image(imgdata.image(T=t, Z=self.gui.green_channel.currentIndex()))
+        image3 = Image(imgdata.image(T=t, Z=self.gui.blue_channel.currentIndex()))
 
         roi_images = [Image.compose_channels([image1.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
                                               image2.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
