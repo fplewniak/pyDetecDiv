@@ -20,9 +20,10 @@ def get_default_settings() -> dict:
     return {'project': {'dbms': 'SQLite3', 'workspace': '/data2/BioImageIT/workspace', 'user': getpass.getuser(),
                         'batch': 1024},
             'project.sqlite': {'database': 'pydetecdiv'},
-            #'project.mysql': {'database': 'pydetecdiv', 'host': 'localhost', 'credentials': 'mysql.credentials', },
-            #'omero': {'host': 'localhost', 'credentials': 'omero.credentials', },
-            #'bioimageit': {'config_file': '/data2/BioImageIT/config.json'}
+            'paths': {'appdata': get_appdata_dir()}
+            # 'project.mysql': {'database': 'pydetecdiv', 'host': 'localhost', 'credentials': 'mysql.credentials', },
+            # 'omero': {'host': 'localhost', 'credentials': 'omero.credentials', },
+            # 'bioimageit': {'config_file': '/data2/BioImageIT/config.json'}
             }
 
 
@@ -82,3 +83,9 @@ def get_config_value(section: str, key: str):
     """
     config = get_config()
     return config.get(section, key)
+
+
+def get_appdata_dir():
+    if not get_config().has_option('paths', 'appdata'):
+        return xdg.BaseDirectory.save_data_path('pyDetecDiv')
+    return get_config_value('paths', 'appdata')
