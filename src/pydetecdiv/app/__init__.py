@@ -13,7 +13,7 @@ from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout, QProgr
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal
 
 from pydetecdiv import plugins
-from pydetecdiv.settings import get_config_files
+from pydetecdiv.settings import get_config_file
 from pydetecdiv.persistence.project import list_projects
 from pydetecdiv.domain.Project import Project
 from pydetecdiv.utils import singleton
@@ -219,7 +219,7 @@ def get_settings():
     :return: the settings
     :rtype: QSetting instance
     """
-    return QSettings(str(get_config_files()[0]), QSettings.IniFormat)
+    return QSettings(str(get_config_file()), QSettings.IniFormat)
 
 
 def project_list():

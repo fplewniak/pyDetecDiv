@@ -30,7 +30,7 @@ def get_config_dir():
     if 'APPDATA' in os.environ:
         config_dir = Path(os.environ['APPDATA']).joinpath('pyDetecDiv')
     else:
-        config_dir = [d for d in xdg.BaseDirectory.load_config_paths('pyDetecDiv')][0]
+        config_dir = xdg.BaseDirectory.load_first_config('pyDetecDiv')
     return config_dir
 
 
@@ -47,6 +47,10 @@ def get_config_files():
     else:
         config_files = [Path(d).joinpath('settings.ini') for d in xdg.BaseDirectory.load_config_paths('pyDetecDiv')]
     return config_files
+
+
+def get_config_file():
+    return get_config_files()[0]
 
 
 def get_config():
