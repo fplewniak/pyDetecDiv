@@ -59,7 +59,7 @@ class Plugin(plugins.Plugin):
         action_launch = QAction("Classify ROIs", submenu)
         action_launch.triggered.connect(self.roi_classification)
         action_train_model = QAction("Train new model", submenu)
-        action_train_model.triggered.connect(self.model_selector)
+        action_train_model.triggered.connect(self.train_model)
         submenu.addAction(action_launch)
         submenu.addAction(action_train_model)
 
@@ -93,7 +93,7 @@ class Plugin(plugins.Plugin):
                 roi_names = [roi.name for roi in roi_list]
 
                 # roi_images = self.get_rgb_images_from_stacks(imgdata, fov.roi_list, t)
-                roi_sequences = self.get_images_sequences(imgdata, roi_list, 0)
+                roi_sequences = self.get_images_sequences(imgdata, roi_list, 0, 150)
 
                 img_array = tf.convert_to_tensor(
                     [tf.image.resize(i, (224, 224), method='nearest') for i in roi_sequences])
@@ -102,9 +102,9 @@ class Plugin(plugins.Plugin):
                 print('predictions OK')
                 step = 20
                 plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, rows=len(roi_list),
-                                            columns=1+int(len(img_array[0])/step))
+                                            columns=1 + int(len(img_array[0]) / step))
                 PyDetecDiv().main_window.active_subwindow.addTab(plot_viewer, 'Sequences')
-                heatmap_plot = MatplotViewer(PyDetecDiv().main_window.active_subwindow, rows=len(roi_list),)
+                heatmap_plot = MatplotViewer(PyDetecDiv().main_window.active_subwindow, rows=len(roi_list), )
                 PyDetecDiv().main_window.active_subwindow.addTab(heatmap_plot, 'Predictions')
 
                 for i, (pred, roi) in enumerate(zip(predictions, roi_names)):
@@ -113,15 +113,16 @@ class Plugin(plugins.Plugin):
                         if frame % step == 0:
                             max_score, max_index = max((value, index) for index, value in enumerate(p))
                             j = int(frame / step)
-                            plot_viewer.axes[i,j].set_title(f'{frame} ({class_names[max_index]})', fontsize='xx-small')
-                            plot_viewer.axes[i,j].set_xticks([])
-                            plot_viewer.axes[i,j].set_yticks([])
+                            plot_viewer.axes[i, j].set_title(f'{frame} ({class_names[max_index]})', fontsize='xx-small')
+                            plot_viewer.axes[i, j].set_xticks([])
+                            plot_viewer.axes[i, j].set_yticks([])
                             img = Image(img_array[i][frame])
                             img.show(plot_viewer.axes[i, j])
 
                     heatmap_plot.axes[i].set_ylabel(f'{roi}', fontsize='xx-small')
                     heatmap_plot.axes[i].imshow(np.moveaxis(pred, 0, -1))
-                    heatmap_plot.axes[i].set_yticks(np.arange(len(class_names)), labels=class_names, fontsize='xx-small')
+                    heatmap_plot.axes[i].set_yticks(np.arange(len(class_names)), labels=class_names,
+                                                    fontsize='xx-small')
                     heatmap_plot.axes[i].set_aspect('auto')
 
                 plot_viewer.canvas.draw()
@@ -139,6 +140,9 @@ class Plugin(plugins.Plugin):
                 # PyDetecDiv().main_window.active_subwindow.setCurrentWidget(plot_viewer)
 
     def roi_classification(self):
+        """
+        Display the ROI classification docked GUI window
+        """
         if self.gui is None:
             self.gui = ROIclassification(PyDetecDiv().main_window)
             self.set_table_view(PyDetecDiv().project_name)
@@ -147,26 +151,45 @@ class Plugin(plugins.Plugin):
             self.gui.button_box.accepted.connect(self.launch)
         self.gui.setVisible(True)
 
-    def roi_selector(self):
-        if self.gui is None:
-            self.gui = ROIselector(PyDetecDiv().main_window)
-            self.set_table_view(PyDetecDiv().project_name)
-            PyDetecDiv().project_selected.connect(self.set_table_view)
-            PyDetecDiv().saved_rois.connect(self.set_table_view)
-            self.gui.button_box.accepted.connect(self.launch)
-        self.gui.setVisible(True)
+    # def roi_selector(self):
+    #     if self.gui is None:
+    #         self.gui = ROIselector(PyDetecDiv().main_window)
+    #         self.set_table_view(PyDetecDiv().project_name)
+    #         PyDetecDiv().project_selected.connect(self.set_table_view)
+    #         PyDetecDiv().saved_rois.connect(self.set_table_view)
+    #         self.gui.button_box.accepted.connect(self.launch)
+    #     self.gui.setVisible(True)
 
     def set_table_view(self, project_name):
+        """
+        Set the content of the Table view to display the available ROIs to classify
+        :param project_name: the name of the project
+        """
         if project_name:
             with pydetecdiv_project(project_name) as project:
                 self.gui.update_list(project)
 
-    def model_selector(self):
-        if self.model_gui is None:
-            self.model_gui = ModelSelector(PyDetecDiv().main_window)
-        self.model_gui.setVisible(True)
+    def train_model(self):
+        """
+        Launch training a model: select the network, load weights (optional), define the training and validation sets,
+        then run the training.
+        """
+        print('Not implemented')
+
+    # def model_selector(self):
+    #     if self.model_gui is None:
+    #         self.model_gui = ModelSelector(PyDetecDiv().main_window)
+    #     self.model_gui.setVisible(True)
 
     def get_rgb_images_from_stacks(self, imgdata, roi_list, t, z=None):
+        """
+        Combine 3 z-layers of a grayscale image resource into a RGB image where each of the z-layer is a channel
+        :param imgdata: the image data resource
+        :param roi_list: the list of ROIs
+        :param t: the frame index
+        :param z: a list of 3 z-layer indices defining the grayscale layers that must be combined as channels
+        :return: a tensor of the combined RGB images
+        """
         if z is None:
             z = [0, 1, 2]
         image1 = Image(imgdata.image(T=t, Z=self.gui.red_channel.currentIndex()))
@@ -179,9 +202,17 @@ class Plugin(plugins.Plugin):
                                               ]).as_tensor(ImgDType.float32) for roi in roi_list]
         return roi_images
 
-    def get_images_sequences(self, imgdata, roi_list, t):
+    def get_images_sequences(self, imgdata, roi_list, t, seqlen):
+        """
+        Get a sequence of seqlen images for each roi
+        :param imgdata: the image data resource
+        :param roi_list: the list of ROIs
+        :param t: the starting time point (index of frame)
+        :param seqlen: the number of frames
+        :return: a tensor containing the sequences for all ROIs
+        """
         roi_sequences = tf.stack(
-            [self.get_rgb_images_from_stacks(imgdata, roi_list, f) for f in range(t, min(imgdata.sizeT, t + 150))],
+            [self.get_rgb_images_from_stacks(imgdata, roi_list, f) for f in range(t, min(imgdata.sizeT, t + seqlen))],
             axis=1)
         print('roi sequence', roi_sequences.shape)
         return roi_sequences

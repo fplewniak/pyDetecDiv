@@ -45,6 +45,9 @@ class PyDetecDiv(QApplication):
         self.load_plugins()
 
     def load_plugins(self):
+        """
+        Load the available plugins
+        """
         self.plugin_list = plugins.PluginList()
         self.plugin_list.load()
 
@@ -223,7 +226,13 @@ def get_settings():
         settings.setValue("paths/appdata", get_appdata_dir())
     return settings
 
+
 def get_plugins_dir():
+    """
+    Get the user directory where plugins are installed. The directory is created if it does not exist
+    :return: the user plugin path
+    :rtype: Path
+    """
     plugins_path = os.path.join(get_appdata_dir(), 'plugins')
     if not os.path.exists(plugins_path):
         os.mkdir(plugins_path)

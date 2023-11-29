@@ -17,6 +17,7 @@ class Results(Base):
     The DAO defining and handling the table to store results
     """
     __tablename__ = 'example_results'
+    __table_args__ = {'extend_existing': True}
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
     name = Column(String)
     fov = Column(Integer, ForeignKey('FOV.id_'), nullable=True, index=True)
@@ -69,7 +70,7 @@ class Plugin(plugins.Plugin):
             new_result = Results(name=fov.name, fov=fov.id_)
             project.repository.session.add(new_result)
             project.commit()
-        self.show_saved_results()
+        self.show_saved_results(PyDetecDiv().project_name)
 
     def show_saved_results(self, project_name):
         """
