@@ -3,8 +3,7 @@
 """
 Definition of global objects and methods for easy access from all parts of the application
 """
-import importlib
-import pkgutil
+import os.path
 from contextlib import contextmanager
 from enum import StrEnum
 
@@ -223,6 +222,12 @@ def get_settings():
     if settings.value("paths/appdata") is None:
         settings.setValue("paths/appdata", get_appdata_dir())
     return settings
+
+def get_plugins_dir():
+    plugins_path = os.path.join(get_appdata_dir(), 'plugins')
+    if not os.path.exists(plugins_path):
+        os.mkdir(plugins_path)
+    return plugins_path
 
 
 def project_list():

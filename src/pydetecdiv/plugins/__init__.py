@@ -3,11 +3,11 @@ Generic classes to discover and handle plugins
 """
 import importlib
 import pkgutil
+import sys
 
 from PySide6.QtGui import QAction
 
 import pydetecdiv
-
 
 class Plugin:
     """
@@ -52,8 +52,18 @@ class PluginList:
         """
         Discover plugins and load them in plugin list
         """
-        for _, name, _ in pkgutil.iter_modules(pydetecdiv.plugins.__path__):
-            module = importlib.import_module(f'pydetecdiv.plugins.{name}')
+        # for _, name, _ in pkgutil.iter_modules(pydetecdiv.plugins.__path__):
+        #     module = importlib.import_module(f'pydetecdiv.plugins.{name}')
+        #     if module.Plugin.category not in self.categories:
+        #         self.categories.append(module.Plugin.category)
+        #     self.plugins.append(module.Plugin())
+        plugins_dir = pydetecdiv.plugins.__path__+[pydetecdiv.app.get_plugins_dir()]
+        for finder, name, _ in pkgutil.iter_modules(plugins_dir):
+            loader = finder.find_module(name)
+            spec = importlib.util.spec_from_file_location(name, loader.path)
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[name] = module
+            spec.loader.exec_module(module)
             if module.Plugin.category not in self.categories:
                 self.categories.append(module.Plugin.category)
             self.plugins.append(module.Plugin())

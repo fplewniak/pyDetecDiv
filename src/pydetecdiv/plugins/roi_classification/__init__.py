@@ -4,13 +4,10 @@ An example plugin showing how to interact with database
 import os.path
 import random
 
-import cv2
 import numpy as np
-import pandas
-from PySide6.QtGui import QAction, QImage
+from PySide6.QtGui import QAction
 from sqlalchemy import Column, Integer, String, ForeignKey
 import tensorflow as tf
-from skimage import exposure
 
 import pydetecdiv.persistence.sqlalchemy.orm.main
 from pydetecdiv import plugins
@@ -19,7 +16,6 @@ from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 from pydetecdiv.domain.Image import Image, ImgDType
 
 from .gui import ROIclassification, ROIselector, ModelSelector
-# from .models import div1, netCNNdiv1, netCNN_div1_10
 
 Base = pydetecdiv.persistence.sqlalchemy.orm.main.Base
 
@@ -29,6 +25,7 @@ class Results(Base):
     The DAO defining and handling the table to store results
     """
     __tablename__ = 'roi_classification'
+    __table_args__ = {'extend_existing': True}
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
 
 
