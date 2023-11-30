@@ -101,6 +101,21 @@ class ROIclassification(QDockWidget):
         self.green_channel.setCurrentIndex(1)
         self.blue_channel.setCurrentIndex(2)
 
+    # def get_networks(self):
+    #     """
+    #     Discover available network modules and load them
+    #     """
+    #     networks_dir = pydetecdiv.plugins.__path__ + [pydetecdiv.app.get_plugins_dir()]
+    #     for finder, name, _ in pkgutil.iter_modules(plugins_dir):
+    #         loader = finder.find_module(name)
+    #         spec = importlib.util.spec_from_file_location(name, loader.path)
+    #         module = importlib.util.module_from_spec(spec)
+    #         sys.modules[name] = module
+    #         spec.loader.exec_module(module)
+    #         if module.Plugin.category not in self.categories:
+    #             self.categories.append(module.Plugin.category)
+    #         self.plugins.append(module.Plugin())
+
     def update_model_weights(self):
         model_path = self.network.currentData().__path__[0]
         w_files = [f for f in os.listdir(model_path) if os.path.isfile(os.path.join(model_path, f))]

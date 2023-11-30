@@ -7,6 +7,7 @@ import random
 import numpy as np
 from PySide6.QtGui import QAction
 from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import registry
 import tensorflow as tf
 
 import pydetecdiv.persistence.sqlalchemy.orm.main
@@ -17,7 +18,7 @@ from pydetecdiv.domain.Image import Image, ImgDType
 
 from .gui import ROIclassification, ROIselector, ModelSelector
 
-Base = pydetecdiv.persistence.sqlalchemy.orm.main.Base
+Base = registry().generate_base()
 
 
 class Results(Base):
@@ -41,6 +42,7 @@ class Plugin(plugins.Plugin):
     def __init__(self):
         super().__init__()
         self.model_gui = None
+        self.menu = None
 
     def create_table(self):
         """
@@ -55,13 +57,18 @@ class Plugin(plugins.Plugin):
         :param menu: the parent menu
         :type menu: QMenu
         """
-        submenu = menu.addMenu(self.name)
-        action_launch = QAction("Classify ROIs", submenu)
+        self.menu = menu.addMenu(self.name)
+        action_launch = QAction("Classify ROIs", self.menu)
         action_launch.triggered.connect(self.roi_classification)
-        action_train_model = QAction("Train new model", submenu)
+        self.menu.addAction(action_launch)
+        action_train_model = QAction("Train new model", self.menu)
         action_train_model.triggered.connect(self.train_model)
-        submenu.addAction(action_launch)
-        submenu.addAction(action_train_model)
+        self.menu.addAction(action_train_model)
+        action_save_results = QAction("Save results", self.menu)
+        action_save_results.triggered.connect(self.save_results)
+        self.menu.addAction(action_save_results)
+
+
 
     def launch(self):
         """
@@ -138,6 +145,17 @@ class Plugin(plugins.Plugin):
                 #
                 # plot_viewer.canvas.draw()
                 # PyDetecDiv().main_window.active_subwindow.setCurrentWidget(plot_viewer)
+
+    def save_results(self):
+        """
+        Save results in database, creating the necessary table if it does not exist. Here, results are simply the name
+        and id_ of the selected FOV
+        """
+        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            Base.metadata.create_all(project.repository.engine)
+            new_result = Results()
+            project.repository.session.add(new_result)
+            project.commit()
 
     def roi_classification(self):
         """

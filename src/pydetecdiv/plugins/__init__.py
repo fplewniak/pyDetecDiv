@@ -2,6 +2,7 @@
 Generic classes to discover and handle plugins
 """
 import importlib
+import os
 import pkgutil
 import sys
 
@@ -39,6 +40,19 @@ class Plugin:
         raise NotImplementedError
 
 
+def get_plugins_dir():
+    """
+Get the user directory where plugins are installed. The directory is created if it does not exist
+:return: the user plugin path
+:rtype: Path
+"""
+    plugins_path = os.path.join(pydetecdiv.app.get_appdata_dir(), 'plugins')
+    if not os.path.exists(plugins_path):
+        os.mkdir(plugins_path)
+    return [plugins_path]
+    # return [pydetecdiv.plugins.__path__[0], plugins_path]
+
+
 class PluginList:
     """
     Class to create and handle list of discovered plugins
@@ -46,7 +60,11 @@ class PluginList:
 
     def __init__(self):
         self.categories = []
-        self.plugins = []
+        self.plugins_dict = {}
+
+    @property
+    def plugins(self):
+        return self.plugins_dict.values()
 
     def load(self):
         """
@@ -57,8 +75,18 @@ class PluginList:
         #     if module.Plugin.category not in self.categories:
         #         self.categories.append(module.Plugin.category)
         #     self.plugins.append(module.Plugin())
-        plugins_dir = pydetecdiv.plugins.__path__+[pydetecdiv.app.get_plugins_dir()]
-        for finder, name, _ in pkgutil.iter_modules(plugins_dir):
+        # plugins_dir = pydetecdiv.plugins.__path__+[pydetecdiv.app.get_plugins_dir()]
+        for finder, name, _ in pkgutil.iter_modules(pydetecdiv.plugins.__path__):
+            loader = finder.find_module(name)
+            spec = importlib.util.spec_from_file_location(f'pydetecdiv.plugins.{name}', loader.path)
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[name] = module
+            spec.loader.exec_module(module)
+            if module.Plugin.category not in self.categories:
+                self.categories.append(module.Plugin.category)
+            # self.plugins.append(module.Plugin())
+            self.plugins_dict[module.Plugin.id_] = module.Plugin()
+        for finder, name, _ in pkgutil.iter_modules(get_plugins_dir()):
             loader = finder.find_module(name)
             spec = importlib.util.spec_from_file_location(name, loader.path)
             module = importlib.util.module_from_spec(spec)
@@ -66,7 +94,8 @@ class PluginList:
             spec.loader.exec_module(module)
             if module.Plugin.category not in self.categories:
                 self.categories.append(module.Plugin.category)
-            self.plugins.append(module.Plugin())
+            # self.plugins.append(module.Plugin())
+            self.plugins_dict[module.Plugin.id_] = module.Plugin()
 
     @property
     def len(self):
