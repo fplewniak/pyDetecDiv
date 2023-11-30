@@ -10,6 +10,7 @@ from PySide6.QtGui import QAction
 
 import pydetecdiv
 
+
 class Plugin:
     """
     Generic class defining common Plugin attributes and methods
@@ -70,32 +71,27 @@ class PluginList:
         """
         Discover plugins and load them in plugin list
         """
-        # for _, name, _ in pkgutil.iter_modules(pydetecdiv.plugins.__path__):
-        #     module = importlib.import_module(f'pydetecdiv.plugins.{name}')
-        #     if module.Plugin.category not in self.categories:
-        #         self.categories.append(module.Plugin.category)
-        #     self.plugins.append(module.Plugin())
-        # plugins_dir = pydetecdiv.plugins.__path__+[pydetecdiv.app.get_plugins_dir()]
         for finder, name, _ in pkgutil.iter_modules(pydetecdiv.plugins.__path__):
-            loader = finder.find_module(name)
-            spec = importlib.util.spec_from_file_location(f'pydetecdiv.plugins.{name}', loader.path)
-            module = importlib.util.module_from_spec(spec)
-            sys.modules[name] = module
-            spec.loader.exec_module(module)
-            if module.Plugin.category not in self.categories:
-                self.categories.append(module.Plugin.category)
-            # self.plugins.append(module.Plugin())
-            self.plugins_dict[module.Plugin.id_] = module.Plugin()
+            _ = self.load_plugin(finder, f'pydetecdiv.plugins.{name}')
         for finder, name, _ in pkgutil.iter_modules(get_plugins_dir()):
-            loader = finder.find_module(name)
-            spec = importlib.util.spec_from_file_location(name, loader.path)
-            module = importlib.util.module_from_spec(spec)
-            sys.modules[name] = module
-            spec.loader.exec_module(module)
-            if module.Plugin.category not in self.categories:
-                self.categories.append(module.Plugin.category)
-            # self.plugins.append(module.Plugin())
-            self.plugins_dict[module.Plugin.id_] = module.Plugin()
+            _ = self.load_plugin(finder, f'{name}')
+
+    def load_plugin(self, finder, name):
+        """
+        Load a plugin given a finder and its module name
+        :param finder: the module finder
+        :param name: the module name
+        :return: the plugin module
+        """
+        loader = finder.find_module(name)
+        spec = importlib.util.spec_from_file_location(name, loader.path)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module
+        spec.loader.exec_module(module)
+        if module.Plugin.category not in self.categories:
+            self.categories.append(module.Plugin.category)
+        self.plugins_dict[module.Plugin.id_] = module.Plugin()
+        return module
 
     @property
     def len(self):
