@@ -142,7 +142,7 @@ class Plugin(plugins.Plugin):
         return self.results['classes']
 
     @classes.setter
-    def img_array(self, classes):
+    def classes(self, classes):
         self.results['classes'] = classes
 
     def roi_classification(self):
