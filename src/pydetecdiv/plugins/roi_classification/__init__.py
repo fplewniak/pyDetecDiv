@@ -43,6 +43,7 @@ class Plugin(plugins.Plugin):
         super().__init__()
         self.model_gui = None
         self.menu = None
+        self.prediction = []
 
     def create_table(self):
         """
@@ -106,6 +107,7 @@ class Plugin(plugins.Plugin):
                     [tf.image.resize(i, (224, 224), method='nearest') for i in roi_sequences])
 
                 data, predictions = model.predict(img_array)
+                self.prediction = predictions
                 print('predictions OK')
                 step = 20
                 plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, rows=len(roi_list),

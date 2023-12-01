@@ -19,6 +19,7 @@ class Plugin:
     version = None
     name = None
     category = None
+    parent = None
 
     def __init__(self):
         self.gui = None
@@ -39,6 +40,12 @@ class Plugin:
         or without a GUI)
         """
         raise NotImplementedError
+
+    @property
+    def parent_plugin(self):
+        if self.parent in pydetecdiv.app.PyDetecDiv().plugin_list.plugins_dict:
+            return pydetecdiv.app.PyDetecDiv().plugin_list.plugins_dict[self.parent]
+        return None
 
 
 def get_plugins_dir():
