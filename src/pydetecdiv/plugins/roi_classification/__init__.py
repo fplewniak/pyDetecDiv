@@ -42,7 +42,7 @@ class Plugin(plugins.Plugin):
     def __init__(self):
         super().__init__()
         self.menu = None
-        self.results = {'predictions': None, 'roi_list': None, 'img_array': None, 'classes': None}
+        self.results = {'predictions': [], 'roi_list': None, 'img_array': None, 'classes': None}
         self.class_names = ['clog', 'dead', 'empty', 'large', 'small', 'unbud']
 
     def create_table(self):
@@ -87,19 +87,29 @@ class Plugin(plugins.Plugin):
         )
 
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            self.predictions = []
             for fov_name in [index.data() for index in self.gui.selection_model.selectedRows(0)]:
                 fov = project.get_named_object('FOV', fov_name)
                 imgdata = fov.image_resource().image_resource_data()
-                roi_idx = [random.randint(0, len(fov.roi_list) - 1) for _ in range(5)]
-                self.roi_list = [fov.roi_list[r] for r in roi_idx]
-
-                # roi_images = self.get_rgb_images_from_stacks(imgdata, fov.roi_list, t)
-                roi_sequences = self.get_images_sequences(imgdata, self.roi_list, 0, 150)
-
-                self.img_array = tf.convert_to_tensor(
-                    [tf.image.resize(i, (224, 224), method='nearest') for i in roi_sequences])
-                data, predictions = model.predict(self.img_array)
-                self.predictions = predictions
+                self.roi_list = fov.roi_list
+                input_shape = model.layers[0].output.shape
+                if len(input_shape) == 4:
+                    x, y = input_shape[1:3]
+                    for t in range(imgdata.sizeT):
+                        roi_images = self.get_rgb_images_from_stacks(imgdata, fov.roi_list, t)
+                        self.img_array = tf.image.resize(roi_images, (y, x), method='nearest')
+                        data, predictions = model.predict(self.img_array)
+                        self.predictions.append(predictions)
+                    self.predictions = tf.squeeze(np.moveaxis(np.array(self.predictions), 0, 1))
+                    print(np.array(self.predictions).shape)
+                else:
+                    x, y = input_shape[2:4]
+                    roi_sequences = self.get_images_sequences(imgdata, self.roi_list, 0)
+                    self.img_array = tf.convert_to_tensor(
+                        [tf.image.resize(i, (y, x), method='nearest') for i in roi_sequences])
+                    data, predictions = model.predict(self.img_array)
+                    self.predictions = predictions
+                    print(self.predictions.shape)
                 print('predictions OK')
 
     def save_results(self):
@@ -194,7 +204,7 @@ class Plugin(plugins.Plugin):
                                               ]).as_tensor(ImgDType.float32) for roi in roi_list]
         return roi_images
 
-    def get_images_sequences(self, imgdata, roi_list, t, seqlen):
+    def get_images_sequences(self, imgdata, roi_list, t, seqlen=None):
         """
         Get a sequence of seqlen images for each roi
         :param imgdata: the image data resource
@@ -203,8 +213,8 @@ class Plugin(plugins.Plugin):
         :param seqlen: the number of frames
         :return: a tensor containing the sequences for all ROIs
         """
-        roi_sequences = tf.stack(
-            [self.get_rgb_images_from_stacks(imgdata, roi_list, f) for f in range(t, min(imgdata.sizeT, t + seqlen))],
-            axis=1)
+        maxt = min(imgdata.sizeT, t + seqlen) if seqlen else imgdata.sizeT
+        roi_sequences = tf.stack([self.get_rgb_images_from_stacks(imgdata, roi_list, f) for f in range(t, maxt)],
+                                 axis=1)
         print('roi sequence', roi_sequences.shape)
         return roi_sequences
