@@ -35,12 +35,9 @@ class ROIclassification(QDockWidget):
         self.classifier_selectionLayout = QFormLayout(self.classifier_selection)
 
         self.network = QComboBox(self.classifier_selection)
-        for _, name, _ in pkgutil.iter_modules(models.__path__):
-            self.network.addItem(name, userData=importlib.import_module(f'..models.{name}', package=__package__))
         self.classifier_selectionLayout.addRow(QLabel('Network:'), self.network)
         self.weights = QComboBox(self.classifier_selection)
         self.network.currentIndexChanged.connect(self.update_model_weights)
-        self.update_model_weights()
         self.classifier_selectionLayout.addRow(QLabel('Weights:'), self.weights)
 
         self.roi_selection = QGroupBox(self.form)

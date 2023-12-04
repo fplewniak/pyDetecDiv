@@ -1,7 +1,9 @@
 """
 An example plugin showing how to interact with database
 """
+import importlib
 import os.path
+import pkgutil
 import random
 
 import numpy as np
@@ -13,10 +15,11 @@ import tensorflow as tf
 import pydetecdiv.persistence.sqlalchemy.orm.main
 from pydetecdiv import plugins
 from pydetecdiv.app.gui.Windows import MatplotViewer
-from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
+from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
 from pydetecdiv.domain.Image import Image, ImgDType
 
 from .gui import ROIclassification, ROIselector, ModelSelector
+from . import models
 
 Base = registry().generate_base()
 
@@ -161,6 +164,13 @@ class Plugin(plugins.Plugin):
         """
         if self.gui is None:
             self.gui = ROIclassification(PyDetecDiv().main_window)
+            for _, name, _ in pkgutil.iter_modules(models.__path__):
+                self.gui.network.addItem(name, userData=importlib.import_module(f'.models.{name}', package=__package__))
+            for finder, name, _ in pkgutil.iter_modules([os.path.join(get_plugins_dir(), 'roi_classification/models')]):
+                loader = finder.find_module(name)
+                spec = importlib.util.spec_from_file_location(name, loader.path)
+                self.gui.network.addItem(name, userData=importlib.util.module_from_spec(spec))
+            self.gui.update_model_weights()
             self.set_table_view(PyDetecDiv().project_name)
             PyDetecDiv().project_selected.connect(self.set_table_view)
             PyDetecDiv().saved_rois.connect(self.set_table_view)
