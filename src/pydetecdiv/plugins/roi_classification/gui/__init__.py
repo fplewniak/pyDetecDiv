@@ -96,7 +96,7 @@ class ROIclassification(QDockWidget):
             db=db)
         self.model.setQuery(query)
         self.table.resizeColumnsToContents()
-        n_layers = project.get_object('ImageResource', 1).zdim
+        n_layers = project.get_object('ImageResource', 1).zdim if project.get_object('ImageResource', 1) else 0
         self.red_channel.clear()
         self.green_channel.clear()
         self.blue_channel.clear()
