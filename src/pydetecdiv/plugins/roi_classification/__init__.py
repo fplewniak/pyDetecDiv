@@ -78,6 +78,7 @@ class Plugin(plugins.Plugin):
         functionalities run directly without any further interface.
         """
         module = self.gui.network.currentData()
+        print(module.__name__)
         model = module.load_model(load_weights=False)
         weights = self.gui.weights.currentData()
         if weights:
@@ -88,7 +89,7 @@ class Plugin(plugins.Plugin):
             loss=tf.keras.losses.SparseCategoricalCrossentropy(),
             metrics=["accuracy"],
         )
-
+        batch_size = self.gui.batch_size.value()
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             self.predictions = []
             for fov_name in [index.data() for index in self.gui.selection_model.selectedRows(0)]:
@@ -96,23 +97,26 @@ class Plugin(plugins.Plugin):
                 imgdata = fov.image_resource().image_resource_data()
                 self.roi_list = fov.roi_list
                 input_shape = model.layers[0].output.shape
-                if len(input_shape) == 4:
-                    x, y = input_shape[1:3]
-                    for t in range(imgdata.sizeT):
-                        roi_images = self.get_rgb_images_from_stacks(imgdata, fov.roi_list, t)
-                        self.img_array = tf.image.resize(roi_images, (y, x), method='nearest')
+                # for batch in [fov.roi_list[i:i + batch_size] for i in range(0, len(fov.roi_list), batch_size)]:
+                n_sections = np.max([int(len(self.roi_list) // batch_size), 1])
+                for batch in np.array_split(np.array(self.roi_list), n_sections):
+                    if len(input_shape) == 4:
+                        x, y = input_shape[1:3]
+                        for t in range(imgdata.sizeT):
+                            roi_images = self.get_rgb_images_from_stacks(imgdata, batch, t)
+                            self.img_array = tf.image.resize(roi_images, (y, x), method='nearest')
+                            data, predictions = model.predict(self.img_array)
+                            self.predictions.append(predictions)
+                        self.predictions = tf.squeeze(np.moveaxis(np.array(self.predictions), 0, 1))
+                        print(np.array(self.predictions).shape)
+                    else:
+                        x, y = input_shape[2:4]
+                        roi_sequences = self.get_images_sequences(imgdata, batch, 0)
+                        self.img_array = tf.convert_to_tensor(
+                            [tf.image.resize(i, (y, x), method='nearest') for i in roi_sequences])
                         data, predictions = model.predict(self.img_array)
-                        self.predictions.append(predictions)
-                    self.predictions = tf.squeeze(np.moveaxis(np.array(self.predictions), 0, 1))
-                    print(np.array(self.predictions).shape)
-                else:
-                    x, y = input_shape[2:4]
-                    roi_sequences = self.get_images_sequences(imgdata, self.roi_list, 0)
-                    self.img_array = tf.convert_to_tensor(
-                        [tf.image.resize(i, (y, x), method='nearest') for i in roi_sequences])
-                    data, predictions = model.predict(self.img_array)
-                    self.predictions = predictions
-                    print(self.predictions.shape)
+                        self.predictions = predictions
+                        print(self.predictions.shape)
                 print('predictions OK')
 
     def save_results(self):

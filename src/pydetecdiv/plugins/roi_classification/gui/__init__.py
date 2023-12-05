@@ -9,7 +9,7 @@ import pkgutil
 from PySide6.QtCore import QStringListModel, Qt
 from PySide6.QtSql import QSqlQueryModel, QSqlQuery, QSqlDatabase
 from PySide6.QtWidgets import QFrame, QFormLayout, QLabel, QComboBox, QListView, QDialogButtonBox, QDockWidget, \
-    QTableView, QHeaderView, QAbstractItemView, QVBoxLayout, QGroupBox
+    QTableView, QHeaderView, QAbstractItemView, QVBoxLayout, QGroupBox, QSpinBox, QAbstractSpinBox
 
 from pydetecdiv.utils import singleton
 from pydetecdiv.plugins.roi_classification import models
@@ -63,6 +63,13 @@ class ROIclassification(QDockWidget):
         self.channelsLayout.addRow(QLabel('Green'), self.green_channel)
         self.channelsLayout.addRow(QLabel('Blue'), self.blue_channel)
         self.roi_selectionLayout.addRow(self.channels)
+
+        self.batch_size = QSpinBox(self.roi_selection)
+        self.batch_size.setRange(2, 4096)
+        self.batch_size.setSingleStep(2)
+        self.batch_size.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
+        self.batch_size.setValue(128)
+        self.roi_selectionLayout.addRow(QLabel('Batch size:'), self.batch_size)
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Close | QDialogButtonBox.Ok, self)
         self.button_box.setCenterButtons(True)
