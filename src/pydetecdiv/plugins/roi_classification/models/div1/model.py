@@ -194,7 +194,7 @@ def create_model():
     softmax = layers.Softmax()(fc)
     classification = softmax
 
-    model = keras.Model(inputs=[input_unnormalized], outputs=[input, classification])
+    model = keras.Model(inputs=[input_unnormalized], outputs=[classification])
     return model
 
 ## Helper layers:

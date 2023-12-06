@@ -5,6 +5,7 @@ import importlib
 import os.path
 import pkgutil
 import random
+import sys
 
 import numpy as np
 from PySide6.QtGui import QAction
@@ -114,7 +115,7 @@ class Plugin(plugins.Plugin):
                         roi_sequences = self.get_images_sequences(imgdata, batch, 0)
                         self.img_array = tf.convert_to_tensor(
                             [tf.image.resize(i, (y, x), method='nearest') for i in roi_sequences])
-                        data, predictions = model.predict(self.img_array)
+                        predictions = model.predict(self.img_array)
                         self.predictions = predictions
                         print(self.predictions.shape)
                 print('predictions OK')
@@ -173,7 +174,10 @@ class Plugin(plugins.Plugin):
             for finder, name, _ in pkgutil.iter_modules([os.path.join(get_plugins_dir(), 'roi_classification/models')]):
                 loader = finder.find_module(name)
                 spec = importlib.util.spec_from_file_location(name, loader.path)
-                self.gui.network.addItem(name, userData=importlib.util.module_from_spec(spec))
+                module = importlib.util.module_from_spec(spec)
+                sys.modules[name] = module
+                spec.loader.exec_module(module)
+                self.gui.network.addItem(name, userData=module)
             self.gui.update_model_weights()
             self.set_table_view(PyDetecDiv().project_name)
             PyDetecDiv().project_selected.connect(self.set_table_view)

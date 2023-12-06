@@ -190,5 +190,5 @@ def create_model():
     new_classoutput = prob
     print(f'Model output shape: {new_classoutput.shape}')
 
-    model = keras.Model(inputs=[data_unnormalized], outputs=[data, new_classoutput])
+    model = keras.Model(inputs=[data_unnormalized], outputs=[new_classoutput])
     return model
