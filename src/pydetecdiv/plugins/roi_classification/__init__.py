@@ -90,6 +90,7 @@ class Plugin(plugins.Plugin):
             loss=tf.keras.losses.SparseCategoricalCrossentropy(),
             metrics=["accuracy"],
         )
+        input_shape = model.layers[0].output.shape
         batch_size = self.gui.batch_size.value()
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             self.predictions = []
@@ -97,8 +98,6 @@ class Plugin(plugins.Plugin):
                 fov = project.get_named_object('FOV', fov_name)
                 imgdata = fov.image_resource().image_resource_data()
                 self.roi_list = fov.roi_list
-                input_shape = model.layers[0].output.shape
-                # for batch in [fov.roi_list[i:i + batch_size] for i in range(0, len(fov.roi_list), batch_size)]:
                 n_sections = np.max([int(len(self.roi_list) // batch_size), 1])
                 for batch in np.array_split(np.array(self.roi_list), n_sections):
                     if len(input_shape) == 4:
@@ -106,7 +105,7 @@ class Plugin(plugins.Plugin):
                         for t in range(imgdata.sizeT):
                             roi_images = self.get_rgb_images_from_stacks(imgdata, batch, t)
                             self.img_array = tf.image.resize(roi_images, (y, x), method='nearest')
-                            data, predictions = model.predict(self.img_array)
+                            predictions = model.predict(self.img_array)
                             self.predictions.append(predictions)
                         self.predictions = tf.squeeze(np.moveaxis(np.array(self.predictions), 0, 1))
                         print(np.array(self.predictions).shape)
