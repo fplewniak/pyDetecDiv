@@ -2,6 +2,7 @@
 Generic classes to discover and handle plugins
 """
 import importlib
+import json
 import os
 import pkgutil
 import sys
@@ -9,6 +10,7 @@ import sys
 from PySide6.QtGui import QAction
 
 import pydetecdiv
+from pydetecdiv.persistence.sqlalchemy.orm.RunDao import RunDao
 
 
 class Plugin:
@@ -47,6 +49,16 @@ class Plugin:
             return pydetecdiv.app.PyDetecDiv().plugin_list.plugins_dict[self.parent]
         return None
 
+    def save_run(self, project, parameters):
+        run = RunDao(project.repository.session)
+        run.uuid = pydetecdiv.generate_uuid()
+        run.tool_name = self.id_
+        run.tool_version = self.version
+        run.command = 'plugin'
+        run.parameters = json.dumps(parameters)
+        project.repository.session.add(run)
+        project.commit()
+        return run
 
 def get_plugins_dir():
     """

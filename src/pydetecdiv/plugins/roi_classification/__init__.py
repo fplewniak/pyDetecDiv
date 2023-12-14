@@ -2,9 +2,9 @@
 An example plugin showing how to interact with database
 """
 import importlib
+import json
 import os.path
 import pkgutil
-import random
 import sys
 
 import numpy as np
@@ -13,9 +13,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import registry
 import tensorflow as tf
 
-import pydetecdiv.persistence.sqlalchemy.orm.main
 from pydetecdiv import plugins
-from pydetecdiv.app.gui.Windows import MatplotViewer
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
 from pydetecdiv.domain.Image import Image, ImgDType
 
@@ -32,6 +30,10 @@ class Results(Base):
     __tablename__ = 'roi_classification'
     __table_args__ = {'extend_existing': True}
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
+    run = Column(Integer, nullable=False, index=True)
+    roi = Column(Integer, nullable=False, index=True)
+    t = Column(Integer, nullable=False, index=True)
+    predictions = Column(String)
 
 
 class Plugin(plugins.Plugin):
@@ -46,7 +48,6 @@ class Plugin(plugins.Plugin):
     def __init__(self):
         super().__init__()
         self.menu = None
-        self.results = {'predictions': [], 'roi_list': None, 'img_array': None, 'classes': None}
         self.class_names = ['clog', 'dead', 'empty', 'large', 'small', 'unbud']
 
     def create_table(self):
@@ -69,9 +70,6 @@ class Plugin(plugins.Plugin):
         action_train_model = QAction("Train new model", self.menu)
         action_train_model.triggered.connect(self.train_model)
         self.menu.addAction(action_train_model)
-        action_save_results = QAction("Save results", self.menu)
-        action_save_results.triggered.connect(self.save_results)
-        self.menu.addAction(action_save_results)
 
     def launch(self):
         """
@@ -92,32 +90,48 @@ class Plugin(plugins.Plugin):
         )
         input_shape = model.layers[0].output.shape
         batch_size = self.gui.batch_size.value()
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            self.predictions = []
-            for fov_name in [index.data() for index in self.gui.selection_model.selectedRows(0)]:
+        fov_names = [index.data() for index in self.gui.selection_model.selectedRows(0)]
+        with (pydetecdiv_project(PyDetecDiv().project_name) as project):
+            Base.metadata.create_all(project.repository.engine)
+            run = self.save_run(project, {'fov': fov_names,
+                                          'network': module.__name__,
+                                          'weights': weights,
+                                          'class_names': self.class_names
+                                          })
+            print(run.record)
+            for fov_name in fov_names:
                 fov = project.get_named_object('FOV', fov_name)
                 imgdata = fov.image_resource().image_resource_data()
-                self.roi_list = fov.roi_list
-                n_sections = np.max([int(len(self.roi_list) // batch_size), 1])
-                for batch in np.array_split(np.array(self.roi_list), n_sections):
+                n_sections = np.max([int(len(fov.roi_list) // batch_size), 1])
+                for batch in np.array_split(np.array(fov.roi_list), n_sections):
+                    self.roi_list = batch
                     if len(input_shape) == 4:
                         x, y = input_shape[1:3]
                         for t in range(imgdata.sizeT):
                             roi_images = self.get_rgb_images_from_stacks(imgdata, batch, t)
-                            self.img_array = tf.image.resize(roi_images, (y, x), method='nearest')
-                            predictions = model.predict(self.img_array)
-                            self.predictions.append(predictions)
-                        self.predictions = tf.squeeze(np.moveaxis(np.array(self.predictions), 0, 1))
-                        print(np.array(self.predictions).shape)
+                            img_array = tf.image.resize(roi_images, (y, x), method='nearest')
+                            predictions = model.predict(img_array)
+                            for roi, pred in zip(batch, predictions):
+                                new_results = Results()
+                                new_results.roi = roi.id_
+                                new_results.run = run.id_
+                                new_results.t = t
+                                new_results.predictions = json.dumps(str((pred[0, 0, ...])))
+                                project.repository.session.add(new_results)
                     else:
                         x, y = input_shape[2:4]
                         roi_sequences = self.get_images_sequences(imgdata, batch, 0)
-                        self.img_array = tf.convert_to_tensor(
+                        img_array = tf.convert_to_tensor(
                             [tf.image.resize(i, (y, x), method='nearest') for i in roi_sequences])
-                        predictions = model.predict(self.img_array)
-                        self.predictions = predictions
-                        print(self.predictions.shape)
-                print('predictions OK')
+                        predictions = model.predict(img_array)
+                        for roi, pred in zip(batch, predictions):
+                            new_results = Results()
+                            new_results.roi = roi.id_
+                            new_results.run = run.id_
+                            new_results.t = 0
+                            new_results.predictions = json.dumps(str(pred[0]))
+                            project.repository.session.add(new_results)
+            print('predictions OK')
 
     def save_results(self):
         """
@@ -125,9 +139,11 @@ class Plugin(plugins.Plugin):
         and id_ of the selected FOV
         """
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            Base.metadata.create_all(project.repository.engine)
-            new_result = Results()
-            project.repository.session.add(new_result)
+            # Base.metadata.create_all(project.repository.engine)
+            for k, result in self.results.items():
+                print(k, len(result))
+                # new_result = Results()
+                # project.repository.session.add(new_result)
             project.commit()
 
     @property
@@ -145,14 +161,6 @@ class Plugin(plugins.Plugin):
     @roi_list.setter
     def roi_list(self, roi_list):
         self.results['roi_list'] = roi_list
-
-    @property
-    def img_array(self):
-        return self.results['img_array']
-
-    @img_array.setter
-    def img_array(self, img_array):
-        self.results['img_array'] = img_array
 
     @property
     def classes(self):
