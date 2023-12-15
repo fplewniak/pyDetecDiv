@@ -1,5 +1,5 @@
 """
-Tool module to handle tool definition, requirements and running them in an appropriate environment.
+CommandLineTool module to handle tool definition, requirements and running them in an appropriate environment.
 """
 import json
 import os
@@ -28,7 +28,7 @@ def list_tools():
     for current_path, _, files in os.walk(os.path.abspath(os.path.join(toolbox_path, 'tools'))):
         for file in files:
             if file.endswith('.xml'):
-                tool = Tool(os.path.join(current_path, file))
+                tool = CommandLineTool(os.path.join(current_path, file))
                 for category in tool.categories:
                     tool_list[category].append(tool)
     return tool_list
@@ -137,7 +137,7 @@ class Requirements:
 
 class Inputs:
     """
-    A class to handle Tool's input as defined in the configuration file
+    A class to handle CommandLineTool's input as defined in the configuration file
     """
 
     def __init__(self, tool):
@@ -157,7 +157,7 @@ class Inputs:
 
 class Outputs:
     """
-    A class to handle Tool's input as defined in the configuration file
+    A class to handle CommandLineTool's input as defined in the configuration file
     """
 
     def __init__(self, tool):
@@ -168,7 +168,7 @@ class Outputs:
 class Command:
     """
     A class handling commands for running tools. A command can be a command-line or a call to the execute method of a
-    class inheriting from Tool (i.e. generic tool) and representing a particular tool
+    class inheriting from CommandLineTool (i.e. generic tool) and representing a particular tool
     """
 
     def __init__(self, command, requirements, tool_path):
@@ -265,9 +265,9 @@ class Command:
         return output
 
 
-class Tool:
+class CommandLineTool:
     """
-    A class for handling tools specified by XML files. A Tool object represents a generic tool in the toolbox. Internal
+    A class for handling tools specified by XML files. A CommandLineTool object represents a generic tool in the toolbox. Internal
     tools must inherit from this class with the addition of a supplementary method implementing the tool's algorithm.
     """
 
@@ -312,7 +312,7 @@ class Tool:
     @property
     def root(self):
         """
-        Convenience property returning the root of the Tool's XML configuration
+        Convenience property returning the root of the CommandLineTool's XML configuration
 
         :return: the root of the XML tool definition
         :rtype: xml.etree.Element 'tool'

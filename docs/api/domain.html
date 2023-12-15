@@ -71,7 +71,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.MultiFileImageResource.MultiFileImageResource"><code class="docutils literal notranslate"><span class="pre">MultiFileImageResource</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.SingleFileImageResource.SingleFileImageResource"><code class="docutils literal notranslate"><span class="pre">SingleFileImageResource</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.ArrayImageResource.ArrayImageResource"><code class="docutils literal notranslate"><span class="pre">ArrayImageResource</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.Tool.Tool"><code class="docutils literal notranslate"><span class="pre">Tool</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.CommandLineTool.CommandLineTool"><code class="docutils literal notranslate"><span class="pre">CommandLineTool</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.Run.Run"><code class="docutils literal notranslate"><span class="pre">Run</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.domain.Experiment.Experiment"><code class="docutils literal notranslate"><span class="pre">Experiment</span></code></a></li>
 </ul>
@@ -1623,14 +1623,14 @@ regions of interest from a field of view.</p>
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.Tool.</span></span><span class="sig-name descname"><span class="pre">Tool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.CommandLineTool.CommandLineTool">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.CommandLineTool.</span></span><span class="sig-name descname"><span class="pre">CommandLineTool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.CommandLineTool.CommandLineTool" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>A class for handling tools specified by XML files. A Tool object represents a generic tool in the toolbox. Internal
+<p>A class for handling tools specified by XML files. A CommandLineTool object represents a generic tool in the toolbox. Internal
 tools must inherit from this class with the addition of a supplementary method implementing the tool’s algorithm.</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool.init_dso_inputs">
-<span class="sig-name descname"><span class="pre">init_dso_inputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool.init_dso_inputs" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.CommandLineTool.CommandLineTool.init_dso_inputs">
+<span class="sig-name descname"><span class="pre">init_dso_inputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.CommandLineTool.CommandLineTool.init_dso_inputs" title="Permalink to this definition"></a></dt>
 <dd><p>Initialize the DSOs for input parameters and place them in the dso field.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1640,8 +1640,8 @@ tools must inherit from this class with the addition of a supplementary method i
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool.init_test">
-<span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_param</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool.init_test" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.CommandLineTool.CommandLineTool.init_test">
+<span class="sig-name descname"><span class="pre">init_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_param</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.CommandLineTool.CommandLineTool.init_test" title="Permalink to this definition"></a></dt>
 <dd><p>Initialize values of parameters for testing purposes. If an input defines a DSO then its dso field is set to the
 corresponding DSO or list thereof.</p>
 <dl class="field-list simple">
@@ -1655,9 +1655,9 @@ corresponding DSO or list thereof.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool.root">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">root</span></span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool.root" title="Permalink to this definition"></a></dt>
-<dd><p>Convenience property returning the root of the Tool’s XML configuration</p>
+<dt class="sig sig-object py" id="pydetecdiv.domain.CommandLineTool.CommandLineTool.root">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">root</span></span><a class="headerlink" href="#pydetecdiv.domain.CommandLineTool.CommandLineTool.root" title="Permalink to this definition"></a></dt>
+<dd><p>Convenience property returning the root of the CommandLineTool’s XML configuration</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>the root of the XML tool definition</p>
@@ -1669,8 +1669,8 @@ corresponding DSO or list thereof.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool.name">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool.name" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.CommandLineTool.CommandLineTool.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#pydetecdiv.domain.CommandLineTool.CommandLineTool.name" title="Permalink to this definition"></a></dt>
 <dd><p>Property returning the name of the tool</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -1683,8 +1683,8 @@ corresponding DSO or list thereof.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool.version">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">version</span></span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool.version" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.CommandLineTool.CommandLineTool.version">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">version</span></span><a class="headerlink" href="#pydetecdiv.domain.CommandLineTool.CommandLineTool.version" title="Permalink to this definition"></a></dt>
 <dd><p>Property returning the version of the tool</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -1697,8 +1697,8 @@ corresponding DSO or list thereof.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool.categories">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">categories</span></span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool.categories" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.CommandLineTool.CommandLineTool.categories">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">categories</span></span><a class="headerlink" href="#pydetecdiv.domain.CommandLineTool.CommandLineTool.categories" title="Permalink to this definition"></a></dt>
 <dd><p>Property returning the categories the tool belongs to</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -1711,8 +1711,8 @@ corresponding DSO or list thereof.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool.command_line">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">command_line</span></span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool.command_line" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.CommandLineTool.CommandLineTool.command_line">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">command_line</span></span><a class="headerlink" href="#pydetecdiv.domain.CommandLineTool.CommandLineTool.command_line" title="Permalink to this definition"></a></dt>
 <dd><p>Property returning the command line</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -1722,8 +1722,8 @@ corresponding DSO or list thereof.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool.attributes">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">attributes</span></span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool.attributes" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.CommandLineTool.CommandLineTool.attributes">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">attributes</span></span><a class="headerlink" href="#pydetecdiv.domain.CommandLineTool.CommandLineTool.attributes" title="Permalink to this definition"></a></dt>
 <dd><p>Convenience property returning the tool’s attributes as defined in the root node</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -1736,14 +1736,14 @@ corresponding DSO or list thereof.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool.tests">
-<span class="sig-name descname"><span class="pre">tests</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool.tests" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.CommandLineTool.CommandLineTool.tests">
+<span class="sig-name descname"><span class="pre">tests</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.CommandLineTool.CommandLineTool.tests" title="Permalink to this definition"></a></dt>
 <dd><p>Return the parameters for running the testing</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="pydetecdiv.domain.Tool.Tool.parameters">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">parameters</span></span><a class="headerlink" href="#pydetecdiv.domain.Tool.Tool.parameters" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pydetecdiv.domain.CommandLineTool.CommandLineTool.parameters">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">parameters</span></span><a class="headerlink" href="#pydetecdiv.domain.CommandLineTool.CommandLineTool.parameters" title="Permalink to this definition"></a></dt>
 <dd><p>Return the all the input and output parameters for running the tool</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>

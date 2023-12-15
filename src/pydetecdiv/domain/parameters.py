@@ -33,7 +33,7 @@ class ParameterFactory:
         :param element: the parameter element in XML configuration file
         :type element: xml.etree.ElementTree.Element
         :param tool: the tool object
-        :type tool: Tool
+        :type tool: CommandLineTool
         :param kwargs: any extra keyword arguments
         :return: the parameter object
         """

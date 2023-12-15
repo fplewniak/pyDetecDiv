@@ -49,7 +49,7 @@ Domain-specific classes
    :members:
    :show-inheritance:
 
-.. autoclass:: pydetecdiv.domain.Tool.Tool
+.. autoclass:: pydetecdiv.domain.CommandLineTool.CommandLineTool
    :members:
    :show-inheritance:
 

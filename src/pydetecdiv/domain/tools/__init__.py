@@ -1,5 +1,5 @@
 """
-Tool plugins
+CommandLineTool plugins
 This code is deprecated and will be replaced with code in pydetecdiv.plugins module
 """
 import importlib

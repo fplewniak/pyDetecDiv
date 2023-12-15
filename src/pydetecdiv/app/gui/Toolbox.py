@@ -11,7 +11,7 @@ from pydetecdiv.app.gui.parameters import ParameterWidgetFactory
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, WaitDialog
 from pydetecdiv.app.gui.Trees import TreeDictModel, TreeItem
 from pydetecdiv.domain.Run import Run
-from pydetecdiv.domain.Tool import list_tools
+from pydetecdiv.domain.CommandLineTool import list_tools
 
 
 class ToolItem(TreeItem):
@@ -125,7 +125,7 @@ class ToolboxTreeModel(TreeDictModel):
     """
 
     def __init__(self, parent=None):
-        super().__init__(list_tools(), ["Tool", "version"], parent=parent)
+        super().__init__(list_tools(), ["CommandLineTool", "version"], parent=parent)
 
     def is_category(self, index):
         """
