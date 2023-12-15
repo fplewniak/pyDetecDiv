@@ -11,6 +11,7 @@ import numpy as np
 from PySide6.QtGui import QAction
 from sqlalchemy import Column, Integer, String, ForeignKey, Float
 from sqlalchemy.orm import registry
+from sqlalchemy.types import JSON
 import tensorflow as tf
 
 from pydetecdiv import plugins
@@ -33,7 +34,7 @@ class Results(Base):
     run = Column(Integer, nullable=False, index=True)
     roi = Column(Integer, nullable=False, index=True)
     t = Column(Integer, nullable=False, index=True)
-    predictions = Column(String)
+    predictions = Column(JSON)
     class_name = Column(String)
     score = Column(Float)
 
@@ -41,12 +42,11 @@ class Results(Base):
         self.roi = roi.id_
         self.run = run.id_
         self.t = t
-        self.predictions = json.dumps(str((predictions)))
+        self.predictions = predictions.tolist()
         max_score, max_index = max((value, index) for index, value in enumerate(predictions))
         self.class_name = class_names[max_index]
         self.score = max_score
         project.repository.session.add(self)
-
 
 
 class Plugin(plugins.Plugin):
@@ -109,7 +109,10 @@ class Plugin(plugins.Plugin):
             run = self.save_run(project, {'fov': fov_names,
                                           'network': module.__name__,
                                           'weights': weights,
-                                          'class_names': self.class_names
+                                          'class_names': self.class_names,
+                                          'red': self.gui.red_channel.currentIndex(),
+                                          'green': self.gui.green_channel.currentIndex(),
+                                          'blue': self.gui.blue_channel.currentIndex()
                                           })
             for fov_name in fov_names:
                 fov = project.get_named_object('FOV', fov_name)
@@ -184,10 +187,12 @@ class Plugin(plugins.Plugin):
         :return: a tensor of the combined RGB images
         """
         if z is None:
-            z = [0, 1, 2]
-        image1 = Image(imgdata.image(T=t, Z=self.gui.red_channel.currentIndex()))
-        image2 = Image(imgdata.image(T=t, Z=self.gui.green_channel.currentIndex()))
-        image3 = Image(imgdata.image(T=t, Z=self.gui.blue_channel.currentIndex()))
+            z = [self.gui.red_channel.currentIndex(),
+                 self.gui.green_channel.currentIndex(),
+                 self.gui.blue_channel.currentIndex()]
+        image1 = Image(imgdata.image(T=t, Z=z[0]))
+        image2 = Image(imgdata.image(T=t, Z=z[1]))
+        image3 = Image(imgdata.image(T=t, Z=z[2]))
 
         roi_images = [Image.compose_channels([image1.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
                                               image2.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),

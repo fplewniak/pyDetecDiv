@@ -4,6 +4,7 @@
 Access to ROI data
 """
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.types import JSON
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 
 
@@ -20,7 +21,7 @@ class RunDao(DAO, Base):
     tool_name = Column(String, nullable=False,)
     tool_version = Column(String, nullable=False,)
     command = Column(String)
-    parameters = Column(String)
+    parameters = Column(JSON)
 
     @property
     def record(self):
