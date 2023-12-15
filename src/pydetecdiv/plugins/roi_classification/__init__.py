@@ -9,7 +9,7 @@ import sys
 
 import numpy as np
 from PySide6.QtGui import QAction
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Float
 from sqlalchemy.orm import registry
 import tensorflow as tf
 
@@ -34,6 +34,19 @@ class Results(Base):
     roi = Column(Integer, nullable=False, index=True)
     t = Column(Integer, nullable=False, index=True)
     predictions = Column(String)
+    class_name = Column(String)
+    score = Column(Float)
+
+    def save(self, project, run, roi, t, predictions, class_names):
+        self.roi = roi.id_
+        self.run = run.id_
+        self.t = t
+        self.predictions = json.dumps(str((predictions)))
+        max_score, max_index = max((value, index) for index, value in enumerate(predictions))
+        self.class_name = class_names[max_index]
+        self.score = max_score
+        project.repository.session.add(self)
+
 
 
 class Plugin(plugins.Plugin):
@@ -76,6 +89,7 @@ class Plugin(plugins.Plugin):
         Method launching the plugin. This may encapsulate (as it is the case here) the call to a GUI or some domain
         functionalities run directly without any further interface.
         """
+        self.create_table()
         module = self.gui.network.currentData()
         print(module.__name__)
         model = module.load_model(load_weights=False)
@@ -92,19 +106,16 @@ class Plugin(plugins.Plugin):
         batch_size = self.gui.batch_size.value()
         fov_names = [index.data() for index in self.gui.selection_model.selectedRows(0)]
         with (pydetecdiv_project(PyDetecDiv().project_name) as project):
-            Base.metadata.create_all(project.repository.engine)
             run = self.save_run(project, {'fov': fov_names,
                                           'network': module.__name__,
                                           'weights': weights,
                                           'class_names': self.class_names
                                           })
-            print(run.record)
             for fov_name in fov_names:
                 fov = project.get_named_object('FOV', fov_name)
                 imgdata = fov.image_resource().image_resource_data()
                 n_sections = np.max([int(len(fov.roi_list) // batch_size), 1])
                 for batch in np.array_split(np.array(fov.roi_list), n_sections):
-                    self.roi_list = batch
                     if len(input_shape) == 4:
                         x, y = input_shape[1:3]
                         for t in range(imgdata.sizeT):
@@ -112,63 +123,18 @@ class Plugin(plugins.Plugin):
                             img_array = tf.image.resize(roi_images, (y, x), method='nearest')
                             predictions = model.predict(img_array)
                             for roi, pred in zip(batch, predictions):
-                                new_results = Results()
-                                new_results.roi = roi.id_
-                                new_results.run = run.id_
-                                new_results.t = t
-                                new_results.predictions = json.dumps(str((pred[0, 0, ...])))
-                                project.repository.session.add(new_results)
+                                Results().save(project, run, roi, t, pred[0, 0, ...], self.class_names)
                     else:
                         x, y = input_shape[2:4]
                         roi_sequences = self.get_images_sequences(imgdata, batch, 0)
                         img_array = tf.convert_to_tensor(
                             [tf.image.resize(i, (y, x), method='nearest') for i in roi_sequences])
                         predictions = model.predict(img_array)
+                        print(predictions.shape)
                         for roi, pred in zip(batch, predictions):
-                            new_results = Results()
-                            new_results.roi = roi.id_
-                            new_results.run = run.id_
-                            new_results.t = 0
-                            new_results.predictions = json.dumps(str(pred[0]))
-                            project.repository.session.add(new_results)
+                            for t, scores in enumerate(pred):
+                                Results().save(project, run, roi, t, scores, self.class_names)
             print('predictions OK')
-
-    def save_results(self):
-        """
-        Save results in database, creating the necessary table if it does not exist. Here, results are simply the name
-        and id_ of the selected FOV
-        """
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            # Base.metadata.create_all(project.repository.engine)
-            for k, result in self.results.items():
-                print(k, len(result))
-                # new_result = Results()
-                # project.repository.session.add(new_result)
-            project.commit()
-
-    @property
-    def predictions(self):
-        return self.results['predictions']
-
-    @predictions.setter
-    def predictions(self, predictions):
-        self.results['predictions'] = predictions
-
-    @property
-    def roi_list(self):
-        return self.results['roi_list']
-
-    @roi_list.setter
-    def roi_list(self, roi_list):
-        self.results['roi_list'] = roi_list
-
-    @property
-    def classes(self):
-        return self.results['classes']
-
-    @classes.setter
-    def classes(self, classes):
-        self.results['classes'] = classes
 
     def roi_classification(self):
         """
