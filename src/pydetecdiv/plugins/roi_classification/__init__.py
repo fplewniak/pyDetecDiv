@@ -93,10 +93,12 @@ class Plugin(plugins.Plugin):
         module = self.gui.network.currentData()
         print(module.__name__)
         model = module.load_model(load_weights=False)
+        print('Loading weights')
         weights = self.gui.weights.currentData()
         if weights:
             module.loadWeights(model, filename=self.gui.weights.currentData())
 
+        print('Compiling model')
         model.compile(
             optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
             loss=tf.keras.losses.SparseCategoricalCrossentropy(),
@@ -106,6 +108,7 @@ class Plugin(plugins.Plugin):
         batch_size = self.gui.batch_size.value()
         fov_names = [index.data() for index in self.gui.selection_model.selectedRows(0)]
         with (pydetecdiv_project(PyDetecDiv().project_name) as project):
+            print('Saving run')
             run = self.save_run(project, {'fov': fov_names,
                                           'network': module.__name__,
                                           'weights': weights,
@@ -116,8 +119,10 @@ class Plugin(plugins.Plugin):
                                           })
             for fov_name in fov_names:
                 fov = project.get_named_object('FOV', fov_name)
+                print(f'Getting image data for FOV = {fov_name}')
                 imgdata = fov.image_resource().image_resource_data()
                 n_sections = np.max([int(len(fov.roi_list) // batch_size), 1])
+                print(f'ROI list in {n_sections} batches')
                 for batch in np.array_split(np.array(fov.roi_list), n_sections):
                     if len(input_shape) == 4:
                         x, y = input_shape[1:3]
@@ -125,18 +130,26 @@ class Plugin(plugins.Plugin):
                             roi_images = self.get_rgb_images_from_stacks(imgdata, batch, t)
                             img_array = tf.image.resize(roi_images, (y, x), method='nearest')
                             predictions = model.predict(img_array)
+                            print(predictions.shape)
                             for roi, pred in zip(batch, predictions):
                                 Results().save(project, run, roi, t, pred[0, 0, ...], self.class_names)
                     else:
                         x, y = input_shape[2:4]
-                        roi_sequences = self.get_images_sequences(imgdata, batch, 0)
-                        img_array = tf.convert_to_tensor(
-                            [tf.image.resize(i, (y, x), method='nearest') for i in roi_sequences])
-                        predictions = model.predict(img_array)
-                        print(predictions.shape)
-                        for roi, pred in zip(batch, predictions):
-                            for t, scores in enumerate(pred):
-                                Results().save(project, run, roi, t, scores, self.class_names)
+                        seqlen = 3
+                        for t in range(0, imgdata.sizeT, seqlen):
+                            print(f'Sequence from {t} to {t + seqlen - 1}')
+                            print('Reading batch')
+                            roi_sequences = self.get_images_sequences(imgdata, batch, t, seqlen=seqlen)
+                            print('Sequence loaded, resizing images')
+                            img_array = tf.convert_to_tensor(
+                                [tf.image.resize(i, (y, x), method='nearest') for i in roi_sequences])
+                            print('Classification')
+                            predictions = model.predict(img_array)
+                            print(predictions.shape)
+                            print('Saving results')
+                            for roi, pred in zip(batch, predictions):
+                                for frame, scores in enumerate(pred):
+                                    Results().save(project, run, roi, t + frame, scores, self.class_names)
             print('predictions OK')
 
     def roi_classification(self):
@@ -194,6 +207,7 @@ class Plugin(plugins.Plugin):
         image2 = Image(imgdata.image(T=t, Z=z[1]))
         image3 = Image(imgdata.image(T=t, Z=z[2]))
 
+        print(f'Composing for frame {t}')
         roi_images = [Image.compose_channels([image1.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
                                               image2.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
                                               image3.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast()
