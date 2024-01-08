@@ -84,7 +84,7 @@ class Plugin(plugins.Plugin):
         action_train_model.triggered.connect(self.train_model)
         self.menu.addAction(action_train_model)
 
-    def launch(self):
+    def predict(self):
         """
         Method launching the plugin. This may encapsulate (as it is the case here) the call to a GUI or some domain
         functionalities run directly without any further interface.
@@ -109,7 +109,7 @@ class Plugin(plugins.Plugin):
         fov_names = [index.data() for index in self.gui.selection_model.selectedRows(0)]
         with (pydetecdiv_project(PyDetecDiv().project_name) as project):
             print('Saving run')
-            run = self.save_run(project, 'launch',{'fov': fov_names,
+            run = self.save_run(project, 'predict',{'fov': fov_names,
                                           'network': module.__name__,
                                           'weights': weights,
                                           'class_names': self.class_names,
@@ -174,7 +174,7 @@ class Plugin(plugins.Plugin):
             PyDetecDiv().project_selected.connect(self.set_table_view)
             PyDetecDiv().project_selected.connect(self.set_sequence_length)
             PyDetecDiv().saved_rois.connect(self.set_table_view)
-            self.gui.button_box.accepted.connect(self.launch)
+            self.gui.button_box.accepted.connect(self.predict)
         self.gui.setVisible(True)
 
     def set_table_view(self, project_name):

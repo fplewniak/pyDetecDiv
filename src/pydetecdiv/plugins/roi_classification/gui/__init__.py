@@ -23,8 +23,8 @@ class ROIclassification(QDockWidget):
     """
     def __init__(self, parent):
         super().__init__(parent)
-        self.setWindowTitle('ROI classification (Deep Learning)')
-        self.setObjectName('ROIclassification')
+        self.setWindowTitle('ROI class prediction (Deep Learning)')
+        self.setObjectName('ROIclassPrediction')
 
         self.form = QFrame()
         self.form.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
