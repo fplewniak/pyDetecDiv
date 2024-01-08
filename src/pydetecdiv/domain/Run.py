@@ -17,10 +17,11 @@ class Run(DomainSpecificObject):
     A business-logic class defining valid operations and attributes of data
     """
 
-    def __init__(self, tool_name, tool_version, command, parameters, **kwargs):
+    def __init__(self, tool_name, tool_version, is_plugin, command, parameters, **kwargs):
         super().__init__(**kwargs)
         self.tool_name = tool_name
         self.tool_version = tool_version
+        self.is_plugin = is_plugin,
         self.command = command
         self.parameters = parameters
         self.validate()
@@ -37,6 +38,7 @@ class Run(DomainSpecificObject):
         record = {
             'tool_name': self.tool_name,
             'tool_version': self.tool_version,
+            'is_plugin': self.is_plugin,
             'command': self.command,
             # 'parameters': json.dumps({name: param.value for name, param in self.parameters.items()}),
             'parameters': self.parameters,

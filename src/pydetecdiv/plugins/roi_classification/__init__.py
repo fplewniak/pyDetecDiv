@@ -109,7 +109,7 @@ class Plugin(plugins.Plugin):
         fov_names = [index.data() for index in self.gui.selection_model.selectedRows(0)]
         with (pydetecdiv_project(PyDetecDiv().project_name) as project):
             print('Saving run')
-            run = self.save_run(project, {'fov': fov_names,
+            run = self.save_run(project, 'launch',{'fov': fov_names,
                                           'network': module.__name__,
                                           'weights': weights,
                                           'class_names': self.class_names,

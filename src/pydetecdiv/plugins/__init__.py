@@ -49,12 +49,13 @@ class Plugin:
             return pydetecdiv.app.PyDetecDiv().plugin_list.plugins_dict[self.parent]
         return None
 
-    def save_run(self, project, parameters):
+    def save_run(self, project, method, parameters):
         run = RunDao(project.repository.session)
         run.uuid = pydetecdiv.generate_uuid()
         run.tool_name = self.id_
         run.tool_version = self.version
-        run.command = 'plugin'
+        run.is_plugin = True
+        run.command = method
         run.parameters = json.dumps(parameters)
         project.repository.session.add(run)
         project.commit()

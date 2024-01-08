@@ -3,7 +3,7 @@
 """
 Access to ROI data
 """
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.types import JSON
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 
@@ -20,6 +20,7 @@ class RunDao(DAO, Base):
     uuid = Column(String(36),)
     tool_name = Column(String, nullable=False,)
     tool_version = Column(String, nullable=False,)
+    is_plugin = Column(Boolean, nullable=False)
     command = Column(String)
     parameters = Column(JSON)
 
@@ -36,6 +37,7 @@ class RunDao(DAO, Base):
                 'uuid': self.uuid,
                 'tool_name': self.tool_name,
                 'tool_version': self.tool_version,
+                'is_plugin': self.is_plugin,
                 'command': self.command,
                 'parameters': self.parameters
                 }
