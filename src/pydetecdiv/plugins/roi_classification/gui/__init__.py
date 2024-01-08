@@ -64,18 +64,29 @@ class ROIclassification(QDockWidget):
         self.channelsLayout.addRow(QLabel('Blue'), self.blue_channel)
         self.roi_selectionLayout.addRow(self.channels)
 
-        self.batch_size = QSpinBox(self.roi_selection)
+        self.misc_box = QGroupBox(self.form)
+        self.misc_boxLayout = QFormLayout(self.misc_box)
+
+        self.batch_size = QSpinBox(self.misc_box)
         self.batch_size.setRange(2, 4096)
         self.batch_size.setSingleStep(2)
         self.batch_size.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
         self.batch_size.setValue(128)
-        self.roi_selectionLayout.addRow(QLabel('Batch size:'), self.batch_size)
+        self.misc_boxLayout.addRow(QLabel('Batch size:'), self.batch_size)
+
+        self.seq_length = QSpinBox(self.misc_box)
+        self.seq_length.setRange(1, 4096)
+        self.seq_length.setSingleStep(1)
+        self.seq_length.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
+        self.seq_length.setValue(10)
+        self.misc_boxLayout.addRow(QLabel('Sequence length:'), self.seq_length)
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Close | QDialogButtonBox.Ok, self)
         self.button_box.setCenterButtons(True)
 
         self.vert_layout.addWidget(self.classifier_selection)
         self.vert_layout.addWidget(self.roi_selection)
+        self.vert_layout.addWidget(self.misc_box)
         self.vert_layout.addWidget(self.button_box)
 
         self.button_box.rejected.connect(self.close)
@@ -105,6 +116,16 @@ class ROIclassification(QDockWidget):
         self.blue_channel.addItems([str(i) for i in range(n_layers)])
         self.green_channel.setCurrentIndex(1)
         self.blue_channel.setCurrentIndex(2)
+
+    def update_sequence_length(self, project):
+        db = QSqlDatabase("QSQLITE")
+        db.setDatabaseName(project.repository.name)
+        db.open()
+        query = QSqlQuery(
+            "SELECT min(tdim) from ImageResource",
+            db=db)
+        if query.first():
+            self.seq_length.setRange(1, query.record().value('min(tdim)'))
 
     # def get_networks(self):
     #     """

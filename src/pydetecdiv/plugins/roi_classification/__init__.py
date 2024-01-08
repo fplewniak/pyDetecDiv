@@ -135,7 +135,7 @@ class Plugin(plugins.Plugin):
                                 Results().save(project, run, roi, t, pred[0, 0, ...], self.class_names)
                     else:
                         x, y = input_shape[2:4]
-                        seqlen = 3
+                        seqlen = self.gui.seq_length.value()
                         for t in range(0, imgdata.sizeT, seqlen):
                             print(f'Sequence from {t} to {t + seqlen - 1}')
                             print('Reading batch')
@@ -158,6 +158,7 @@ class Plugin(plugins.Plugin):
         """
         if self.gui is None:
             self.gui = ROIclassification(PyDetecDiv().main_window)
+            # TODO implement a generalized method for loading models. This method should be implemented in the general plugin class
             for _, name, _ in pkgutil.iter_modules(models.__path__):
                 self.gui.network.addItem(name, userData=importlib.import_module(f'.models.{name}', package=__package__))
             for finder, name, _ in pkgutil.iter_modules([os.path.join(get_plugins_dir(), 'roi_classification/models')]):
@@ -169,7 +170,9 @@ class Plugin(plugins.Plugin):
                 self.gui.network.addItem(name, userData=module)
             self.gui.update_model_weights()
             self.set_table_view(PyDetecDiv().project_name)
+            self.set_sequence_length(PyDetecDiv().project_name)
             PyDetecDiv().project_selected.connect(self.set_table_view)
+            PyDetecDiv().project_selected.connect(self.set_sequence_length)
             PyDetecDiv().saved_rois.connect(self.set_table_view)
             self.gui.button_box.accepted.connect(self.launch)
         self.gui.setVisible(True)
@@ -182,6 +185,20 @@ class Plugin(plugins.Plugin):
         if project_name:
             with pydetecdiv_project(project_name) as project:
                 self.gui.update_list(project)
+
+    def set_sequence_length(self, project_name):
+        """
+        Set the maximum value for sequence length
+        :param project_name: the name of the project
+        """
+        if project_name:
+            with pydetecdiv_project(project_name) as project:
+                self.gui.update_sequence_length(project)
+
+    def set_sequence_length(self, project_name):
+        if project_name:
+            with pydetecdiv_project(project_name) as project:
+                self.gui.update_sequence_length(project)
 
     def train_model(self):
         """
