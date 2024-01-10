@@ -14,7 +14,6 @@ from skimage.feature import peak_local_max
 
 from pydetecdiv.app import WaitDialog, PyDetecDiv, DrawingTools, pydetecdiv_project
 from pydetecdiv.app.gui.ui.ImageViewer import Ui_ImageViewer
-from pydetecdiv.domain.ArrayImageResource import ArrayImageResource
 from pydetecdiv.domain.ROI import ROI
 from pydetecdiv.settings import get_config_value
 from pydetecdiv.utils import round_to_even
@@ -533,6 +532,7 @@ class ViewerScene(QGraphicsScene):
         r = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
         if isinstance(r, QGraphicsRectItem):
             view_in_new_tab.triggered.connect(lambda _: self.parent().view_roi_image(r))
+            PyDetecDiv().viewer_roi_click.emit((r, menu))
             menu.exec(event.screenPos())
 
     def keyPressEvent(self, event):
