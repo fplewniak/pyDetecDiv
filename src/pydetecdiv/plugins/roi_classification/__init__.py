@@ -20,6 +20,7 @@ from pydetecdiv.domain.Image import Image, ImgDType
 
 from .gui import ROIclassification, ROIselector, ModelSelector
 from . import models
+from .gui.annotate import open_annotator_tab
 
 Base = registry().generate_base()
 
@@ -84,6 +85,13 @@ class Plugin(plugins.Plugin):
         action_train_model.triggered.connect(self.train_model)
         self.menu.addAction(action_train_model)
 
+        PyDetecDiv().viewer_roi_click.connect(self.add_context_action)
+
+    def add_context_action(self, data):
+        r, menu, scene = data
+        annotate = menu.addAction('Annotate region class')
+        annotate.triggered.connect(lambda _: open_annotator_tab(r, scene))
+
     def predict(self):
         """
         Method launching the plugin. This may encapsulate (as it is the case here) the call to a GUI or some domain
@@ -109,14 +117,14 @@ class Plugin(plugins.Plugin):
         fov_names = [index.data() for index in self.gui.selection_model.selectedRows(0)]
         with (pydetecdiv_project(PyDetecDiv().project_name) as project):
             print('Saving run')
-            run = self.save_run(project, 'predict',{'fov': fov_names,
-                                          'network': module.__name__,
-                                          'weights': weights,
-                                          'class_names': self.class_names,
-                                          'red': self.gui.red_channel.currentIndex(),
-                                          'green': self.gui.green_channel.currentIndex(),
-                                          'blue': self.gui.blue_channel.currentIndex()
-                                          })
+            run = self.save_run(project, 'predict', {'fov': fov_names,
+                                                     'network': module.__name__,
+                                                     'weights': weights,
+                                                     'class_names': self.class_names,
+                                                     'red': self.gui.red_channel.currentIndex(),
+                                                     'green': self.gui.green_channel.currentIndex(),
+                                                     'blue': self.gui.blue_channel.currentIndex()
+                                                     })
             for fov_name in fov_names:
                 fov = project.get_named_object('FOV', fov_name)
                 print(f'Getting image data for FOV = {fov_name}')

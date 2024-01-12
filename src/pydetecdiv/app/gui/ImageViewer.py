@@ -135,6 +135,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         """
         self.ui.viewer.scale(value / self.scale, value / self.scale)
         self.scale = value
+        self.ui.zoom_value.setValue(value)
         self.ui.scale_value.setText(f'Zoom: {self.scale}%')
 
     def play_video(self):
@@ -532,7 +533,7 @@ class ViewerScene(QGraphicsScene):
         r = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
         if isinstance(r, QGraphicsRectItem):
             view_in_new_tab.triggered.connect(lambda _: self.parent().view_roi_image(r))
-            PyDetecDiv().viewer_roi_click.emit((r, menu))
+            PyDetecDiv().viewer_roi_click.emit((r, menu, self))
             menu.exec(event.screenPos())
 
     def keyPressEvent(self, event):
