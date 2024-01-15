@@ -49,6 +49,11 @@ class Annotator(ImageViewer):
         self.display_class_name()
 
     def display_class_name(self):
+        if self.roi_classes[self.T] == '-' and self.T > 0 and self.roi_classes[self.T - 1] != '-':
+            self.roi_classes[self.T] = self.roi_classes[self.T - 1]
+            self.class_item.setDefaultTextColor('red')
+        else:
+            self.class_item.setDefaultTextColor('black')
         self.class_item.setPlainText(self.roi_classes[self.T])
         text_boundingRect = self.class_item.boundingRect()
         frame_boundingRect = self.pixmapItem.boundingRect()
