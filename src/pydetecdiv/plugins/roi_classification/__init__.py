@@ -5,6 +5,7 @@ import importlib
 import json
 import os.path
 import pkgutil
+import random
 import sys
 
 import numpy as np
@@ -18,9 +19,9 @@ from pydetecdiv import plugins
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
 from pydetecdiv.domain.Image import Image, ImgDType
 
-from .gui import ROIclassification, ROIselector, ModelSelector
+from .gui import ROIclassification, ROIselector, ModelSelector, ROIannotate
 from . import models
-from .gui.annotate import open_annotator_tab
+from .gui.annotate import open_annotator_from_selection, open_annotator
 
 Base = registry().generate_base()
 
@@ -64,6 +65,8 @@ class Plugin(plugins.Plugin):
         self.menu = None
         # self.class_names = ['clog', 'dead', 'empty', 'large', 'small', 'unbud']
         self.class_names = []
+        self.annotate_gui = None
+        self.train_gui = None
 
     def create_table(self):
         """
@@ -82,6 +85,9 @@ class Plugin(plugins.Plugin):
         action_launch = QAction("Classify ROIs", self.menu)
         action_launch.triggered.connect(self.roi_classification)
         self.menu.addAction(action_launch)
+        action_annotate = QAction("Annotate ROIs", self.menu)
+        action_annotate.triggered.connect(self.annotate)
+        self.menu.addAction(action_annotate)
         action_train_model = QAction("Train new model", self.menu)
         action_train_model.triggered.connect(self.train_model)
         self.menu.addAction(action_train_model)
@@ -89,10 +95,10 @@ class Plugin(plugins.Plugin):
         PyDetecDiv().viewer_roi_click.connect(self.add_context_action)
 
     def add_context_action(self, data):
-        if self.gui:
+        if self.gui or self.annotate_gui:
             r, menu, scene = data
             annotate = menu.addAction('Annotate region class')
-            annotate.triggered.connect(lambda _: open_annotator_tab(self, r, scene))
+            annotate.triggered.connect(lambda _: open_annotator_from_selection(self, r, scene))
 
     def predict(self):
         """
@@ -162,22 +168,23 @@ class Plugin(plugins.Plugin):
                                     Results().save(project, run, roi, t + frame, scores, self.class_names)
             print('predictions OK')
 
+    def load_models(self, gui):
+        for _, name, _ in pkgutil.iter_modules(models.__path__):
+            gui.network.addItem(name, userData=importlib.import_module(f'.models.{name}', package=__package__))
+        for finder, name, _ in pkgutil.iter_modules([os.path.join(get_plugins_dir(), 'roi_classification/models')]):
+            loader = finder.find_module(name)
+            spec = importlib.util.spec_from_file_location(name, loader.path)
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[name] = module
+            spec.loader.exec_module(module)
+            gui.network.addItem(name, userData=module)
     def roi_classification(self):
         """
         Display the ROI classification docked GUI window
         """
         if self.gui is None:
             self.gui = ROIclassification(PyDetecDiv().main_window)
-            # TODO implement a generalized method for loading models. This method should be implemented in the general plugin class
-            for _, name, _ in pkgutil.iter_modules(models.__path__):
-                self.gui.network.addItem(name, userData=importlib.import_module(f'.models.{name}', package=__package__))
-            for finder, name, _ in pkgutil.iter_modules([os.path.join(get_plugins_dir(), 'roi_classification/models')]):
-                loader = finder.find_module(name)
-                spec = importlib.util.spec_from_file_location(name, loader.path)
-                module = importlib.util.module_from_spec(spec)
-                sys.modules[name] = module
-                spec.loader.exec_module(module)
-                self.gui.network.addItem(name, userData=module)
+            self.load_models(self.gui)
             self.gui.update_model_weights()
             self.update_class_names()
             self.set_table_view(PyDetecDiv().project_name)
@@ -189,8 +196,29 @@ class Plugin(plugins.Plugin):
             self.gui.network.currentIndexChanged.connect(self.update_class_names)
         self.gui.setVisible(True)
 
+    def annotate(self):
+        """
+        Display the ROI classification docked GUI window
+        """
+        if self.annotate_gui is None:
+            self.annotate_gui = ROIannotate(PyDetecDiv().main_window)
+            self.load_models(self.annotate_gui)
+            self.update_class_names()
+            PyDetecDiv().project_selected.connect(self.annotate_gui.update_roi_selection)
+            self.annotate_gui.button_box.accepted.connect(self.annotate_rois)
+            self.annotate_gui.network.currentIndexChanged.connect(self.update_class_names)
+        self.annotate_gui.setVisible(True)
+
+    def annotate_rois(self):
+        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            selected_rois = random.sample(project.get_objects('ROI'), self.annotate_gui.roi_number.value())
+        open_annotator(self, selected_rois)
+
     def update_class_names(self):
-        self.class_names = self.gui.network.currentData().class_names
+        if self.gui:
+            self.class_names = self.gui.network.currentData().class_names
+        elif self.annotate_gui:
+            self.class_names = self.annotate_gui.network.currentData().class_names
 
     def set_table_view(self, project_name):
         """

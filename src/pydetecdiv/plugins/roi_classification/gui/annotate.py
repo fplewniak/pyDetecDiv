@@ -3,11 +3,11 @@ from PySide6.QtGui import QCursor, QImage, QKeySequence
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsTextItem, QDockWidget
 import numpy as np
 
-from pydetecdiv.app import PyDetecDiv
+from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 from pydetecdiv.app.gui.ImageViewer import ImageViewer, ViewerScene
 
 
-def open_annotator_tab(plugin, selected_roi, scene):
+def open_annotator_from_selection(plugin, selected_roi, scene):
     project_window = scene.parent()
     viewer = Annotator()
     viewer.set_plugin(plugin)
@@ -24,6 +24,24 @@ def open_annotator_tab(plugin, selected_roi, scene):
     viewer.display()
     project_window.parent().parent().setCurrentWidget(viewer)
     PyDetecDiv().restoreOverrideCursor()
+
+
+def open_annotator(plugin, roi_selection):
+    project_window = PyDetecDiv().main_window.active_subwindow
+    viewer = Annotator()
+    viewer.set_plugin(plugin)
+    viewer.ui.zoom_value.setMaximum(400)
+    roi = roi_selection[0]
+    project_window.addTab(viewer, roi.name)
+    with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        image_resource = project.get_linked_objects('FOV', roi)[0].image_resource()
+        x1, x2 = roi.top_left[0], roi.bottom_right[0] + 1
+        y1, y2 = roi.top_left[1], roi.bottom_right[1] + 1
+        crop = (slice(x1, x2), slice(y1, y2))
+        viewer.set_image_resource_data(image_resource.image_resource_data(), crop=crop)
+        viewer.roi_classes = ['-'] * viewer.image_resource_data.sizeT
+        viewer.display()
+        project_window.setCurrentWidget(viewer)
 
 
 class Annotator(ImageViewer):
@@ -69,7 +87,6 @@ class Annotator(ImageViewer):
                                     text_boundingRect.height() + frame_boundingRect.height() + 5,
                                     )
 
-
     def zoom_fit(self):
         """
         Set the zoom value to fit the image in the viewer
@@ -90,7 +107,7 @@ class AnnotatorScene(ViewerScene):
         self.plugin = None
 
     def keyPressEvent(self, event):
-        if event.text() in ['a','z', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'][0:len(self.plugin.class_names)]:
+        if event.text() in ['a', 'z', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'][0:len(self.plugin.class_names)]:
             self.parent().annotate_current(class_name=f'{self.plugin.class_names["azertyuiop".find(event.text())]}')
         elif event.matches(QKeySequence.MoveToNextChar):
             self.parent().change_frame(min(self.parent().T + 1, self.parent().image_resource_data.sizeT - 1))
