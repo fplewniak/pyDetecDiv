@@ -14,6 +14,7 @@ from PySide6.QtWidgets import QFrame, QFormLayout, QLabel, QComboBox, QListView,
 from pydetecdiv.utils import singleton
 from pydetecdiv.plugins.roi_classification import models
 
+
 @singleton
 class ROIclassification(QDockWidget):
     """
@@ -21,6 +22,7 @@ class ROIclassification(QDockWidget):
     This is a singleton to avoid creating more than one window, but this is not compulsory and there may be several
     instance of such a window for a single plugin if needed.
     """
+
     def __init__(self, parent):
         super().__init__(parent)
         self.setWindowTitle('ROI class prediction (Deep Learning)')
@@ -150,6 +152,7 @@ class ROIclassification(QDockWidget):
             if f.endswith('.h5'):
                 self.weights.addItem(f, userData=os.path.join(model_path, f))
         self.weights.addItem('None', userData=None)
+
 
 @singleton
 class ROIselector(QDockWidget):

@@ -5,6 +5,8 @@
 from . import model
 import os
 
+class_names = ['clog', 'dead', 'empty', 'large', 'small', 'unbud']
+
 def load_model(load_weights=True, debug=False):
     m = model.create_model()
     if load_weights:

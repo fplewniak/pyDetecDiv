@@ -5,16 +5,21 @@
 from . import model
 import os
 
+class_names = ['clog', 'dead', 'empty', 'large', 'small', 'unbud']
+
+
 def load_model(load_weights=True, debug=False):
     m = model.create_model()
     if load_weights:
         loadWeights(m, debug=debug)
     return m
 
+
 ## Utility functions:
 
 import tensorflow as tf
 import h5py
+
 
 def loadWeights(model, filename=os.path.join(__path__[0], "weights.h5"), debug=False):
     with h5py.File(filename, 'r') as f:
@@ -34,11 +39,11 @@ def loadWeights(model, filename=os.path.join(__path__[0], "weights.h5"), debug=F
                     print("    layerIdx=", layerIdx)
                 # Every weight is an h5 dataset in the layer group. Read the weights 
                 # into a list in the correct order
-                weightList = [0]*numVars
+                weightList = [0] * numVars
                 for d in group:
                     dataset = group[d]
                     varName = dataset.attrs['Name']
-                    shp     = intList(dataset.attrs['Shape'])
+                    shp = intList(dataset.attrs['Shape'])
                     weightNum = int(dataset.attrs['WeightNum'])
                     # Read the weight and put it into the right position in the list
                     if debug:
@@ -60,18 +65,19 @@ def loadWeights(model, filename=os.path.join(__path__[0], "weights.h5"), debug=F
                 if hasattr(layer, 'finalize_state'):
                     layer.finalize_state()
 
+
 def layerNum(model, layerName):
     # Returns the index to the layer
     layers = model.layers
     for i in range(len(layers)):
-        if layerName==layers[i].name:
+        if layerName == layers[i].name:
             return i
     print("")
     print("WEIGHT LOADING FAILED. MODEL DOES NOT CONTAIN LAYER WITH NAME: ", layerName)
     print("")
     return -1
 
-def intList(myList): 
+
+def intList(myList):
     # Converts a list of numbers into a list of ints.
     return list(map(int, myList))
-

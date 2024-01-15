@@ -62,7 +62,8 @@ class Plugin(plugins.Plugin):
     def __init__(self):
         super().__init__()
         self.menu = None
-        self.class_names = ['clog', 'dead', 'empty', 'large', 'small', 'unbud']
+        # self.class_names = ['clog', 'dead', 'empty', 'large', 'small', 'unbud']
+        self.class_names = []
 
     def create_table(self):
         """
@@ -88,9 +89,10 @@ class Plugin(plugins.Plugin):
         PyDetecDiv().viewer_roi_click.connect(self.add_context_action)
 
     def add_context_action(self, data):
-        r, menu, scene = data
-        annotate = menu.addAction('Annotate region class')
-        annotate.triggered.connect(lambda _: open_annotator_tab(r, scene))
+        if self.gui:
+            r, menu, scene = data
+            annotate = menu.addAction('Annotate region class')
+            annotate.triggered.connect(lambda _: open_annotator_tab(self, r, scene))
 
     def predict(self):
         """
@@ -177,13 +179,18 @@ class Plugin(plugins.Plugin):
                 spec.loader.exec_module(module)
                 self.gui.network.addItem(name, userData=module)
             self.gui.update_model_weights()
+            self.update_class_names()
             self.set_table_view(PyDetecDiv().project_name)
             self.set_sequence_length(PyDetecDiv().project_name)
             PyDetecDiv().project_selected.connect(self.set_table_view)
             PyDetecDiv().project_selected.connect(self.set_sequence_length)
             PyDetecDiv().saved_rois.connect(self.set_table_view)
             self.gui.button_box.accepted.connect(self.predict)
+            self.gui.network.currentIndexChanged.connect(self.update_class_names)
         self.gui.setVisible(True)
+
+    def update_class_names(self):
+        self.class_names = self.gui.network.currentData().class_names
 
     def set_table_view(self, project_name):
         """
