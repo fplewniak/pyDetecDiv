@@ -1,6 +1,6 @@
 from PySide6.QtCore import Qt, QRectF
-from PySide6.QtGui import QCursor, QImage, QKeySequence
-from PySide6.QtWidgets import QGraphicsScene, QGraphicsTextItem, QDockWidget
+from PySide6.QtGui import QKeySequence
+from PySide6.QtWidgets import QGraphicsTextItem
 import numpy as np
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
@@ -22,7 +22,7 @@ def open_annotator_from_selection(plugin, selected_roi, scene):
     viewer.synchronize_with(project_window)
     viewer.display()
     project_window.parent().parent().setCurrentWidget(viewer)
-    viewer.setFocus()
+    viewer.grabKeyboard()
 
 
 def open_annotator(plugin, roi_selection):
@@ -41,7 +41,6 @@ def open_annotator(plugin, roi_selection):
         viewer.roi_classes = ['-'] * viewer.image_resource_data.sizeT
         viewer.display()
         project_window.setCurrentWidget(viewer)
-        viewer.setFocus()
 
 
 class Annotator(ImageViewer):
@@ -57,6 +56,13 @@ class Annotator(ImageViewer):
         self.roi_classes = []
         self.plugin = None
         self.scene.addItem(self.class_item)
+
+
+    def hideEvent(self, event):
+        self.releaseKeyboard()
+
+    def showEvent(self, event):
+        self.grabKeyboard()
 
     def set_plugin(self, plugin):
         self.plugin = plugin
@@ -113,11 +119,3 @@ class AnnotatorScene(ViewerScene):
     def __init__(self):
         super().__init__()
         self.plugin = None
-
-    # def keyPressEvent(self, event):
-    #     if event.text() in ['a', 'z', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'][0:len(self.plugin.class_names)]:
-    #         self.parent().annotate_current(class_name=f'{self.plugin.class_names["azertyuiop".find(event.text())]}')
-    #     elif event.matches(QKeySequence.MoveToNextChar):
-    #         self.parent().change_frame(min(self.parent().T + 1, self.parent().image_resource_data.sizeT - 1))
-    #     elif event.matches(QKeySequence.MoveToPreviousChar):
-    #         self.parent().change_frame(max(self.parent().T - 1, 0))
