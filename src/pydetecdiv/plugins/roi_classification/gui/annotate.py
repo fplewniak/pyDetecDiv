@@ -1,10 +1,9 @@
-from PySide6.QtCore import Qt, QRectF
-from PySide6.QtGui import QKeySequence
-from PySide6.QtWidgets import QGraphicsTextItem
+from PySide6.QtCore import Qt, QRectF, QEvent
+from PySide6.QtWidgets import QGraphicsTextItem, QGraphicsScene
 import numpy as np
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
-from pydetecdiv.app.gui.ImageViewer import ImageViewer, ViewerScene
+from pydetecdiv.app.gui.ImageViewer import ImageViewer
 
 
 def open_annotator_from_selection(plugin, selected_roi, scene):
@@ -14,7 +13,7 @@ def open_annotator_from_selection(plugin, selected_roi, scene):
     viewer.ui.zoom_value.setMaximum(400)
     viewer.image_source_ref = selected_roi if selected_roi else project_window.scene.get_selected_ROI()
     viewer.parent_viewer = project_window
-    data, crop = project_window.get_roi_data(viewer.image_source_ref)
+    _, crop = project_window.get_roi_data(viewer.image_source_ref)
     project_window.parent().parent().addTab(viewer, viewer.image_source_ref.data(0))
     viewer.set_image_resource_data(project_window.image_resource_data, crop=crop)
     viewer.roi_classes = ['-'] * viewer.image_resource_data.sizeT
@@ -22,7 +21,6 @@ def open_annotator_from_selection(plugin, selected_roi, scene):
     viewer.synchronize_with(project_window)
     viewer.display()
     project_window.parent().parent().setCurrentWidget(viewer)
-    viewer.grabKeyboard()
 
 
 def open_annotator(plugin, roi_selection):
@@ -40,16 +38,19 @@ def open_annotator(plugin, roi_selection):
         viewer.set_image_resource_data(image_resource.image_resource_data(), crop=crop)
         viewer.roi_classes = ['-'] * viewer.image_resource_data.sizeT
         viewer.display()
+        viewer.display_class_name('-')
         project_window.setCurrentWidget(viewer)
 
 
 class Annotator(ImageViewer):
     def __init__(self):
         super().__init__()
+        self.setObjectName('Annotator')
         self.scene = AnnotatorScene()
         self.pixmapItem = self.scene.addPixmap(self.pixmap)
         self.ui.viewer.setScene(self.scene)
         self.scene.setParent(self)
+        self.scene.installEventFilter(self)
         self.viewport_rect = None
         self.zoom_set_value(200)
         self.class_item = QGraphicsTextItem('-')
@@ -57,32 +58,20 @@ class Annotator(ImageViewer):
         self.plugin = None
         self.scene.addItem(self.class_item)
 
-
-    def hideEvent(self, event):
-        self.releaseKeyboard()
-
-    def showEvent(self, event):
-        self.grabKeyboard()
-
     def set_plugin(self, plugin):
         self.plugin = plugin
-        self.scene.plugin = plugin
 
-    def annotate_current(self, class_name='-'):
+    def annotate_current(self, class_name=None):
         self.roi_classes[self.T] = class_name
-        self.display()
 
-    def display(self, C=None, T=None, Z=None):
-        super().display(C, T, Z)
-        self.display_class_name()
-
-    def display_class_name(self):
+    def display_class_name(self, roi_class=None):
         if self.roi_classes[self.T] == '-' and self.T > 0 and self.roi_classes[self.T - 1] != '-':
-            self.roi_classes[self.T] = self.roi_classes[self.T - 1]
+            roi_class = self.roi_classes[self.T - 1]
             self.class_item.setDefaultTextColor('red')
         else:
+            roi_class = self.roi_classes[self.T] if roi_class is None else roi_class
             self.class_item.setDefaultTextColor('black')
-        self.class_item.setPlainText(self.roi_classes[self.T])
+        self.class_item.setPlainText(roi_class)
         text_boundingRect = self.class_item.boundingRect()
         frame_boundingRect = self.pixmapItem.boundingRect()
         self.class_item.setPos((frame_boundingRect.width() - text_boundingRect.width()) / 2,
@@ -102,20 +91,37 @@ class Annotator(ImageViewer):
         self.ui.zoom_value.setSliderPosition(self.scale)
         self.ui.scale_value.setText(f'Zoom: {self.scale}%')
 
-    def keyPressEvent(self, event):
-        if event.text() in ['a', 'z', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'][0:len(self.plugin.class_names)]:
-            self.annotate_current(class_name=f'{self.plugin.class_names["azertyuiop".find(event.text())]}')
-        elif event.matches(QKeySequence.MoveToNextChar):
-            self.change_frame(min(self.T + 1, self.image_resource_data.sizeT - 1))
-        elif event.matches(QKeySequence.MoveToPreviousChar):
-            self.change_frame(max(self.T - 1, 0))
+    def change_frame(self, T=0):
+        super().change_frame(T)
+        self.display_class_name()
+
+    def eventFilter(self, watched, event):
+        if watched == self.scene:
+            if event.type() == QEvent.ShortcutOverride:
+                if event.text() in list('azertyuiop')[0:len(self.plugin.class_names)]:
+                    self.annotate_current(self.plugin.class_names["azertyuiop".find(event.text())])
+                    self.change_frame(min(self.T + 1, self.image_resource_data.sizeT - 1))
+                elif event.text() == ' ':
+                    self.annotate_current(class_name=f'{self.class_item.toPlainText()}')
+                    self.change_frame(min(self.T + 1, self.image_resource_data.sizeT - 1))
+                    return True
+                elif event.key() == Qt.Key_Right:
+                    self.change_frame(min(self.T + 1, self.image_resource_data.sizeT - 1))
+                    return True
+                elif event.key() == Qt.Key_Left:
+                    self.change_frame(max(self.T - 1, 0))
+                    return True
+            elif event.type() == QEvent.FocusIn:
+                self.ui.viewer.setLineWidth(3)
+            elif event.type() == QEvent.FocusOut:
+                self.ui.viewer.setLineWidth(1)
+        return False
 
 
-class AnnotatorScene(ViewerScene):
+class AnnotatorScene(QGraphicsScene):
     """
     The viewer scene where images and other items are drawn
     """
 
     def __init__(self):
         super().__init__()
-        self.plugin = None
