@@ -8,6 +8,7 @@ import numpy as np
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 from pydetecdiv.app.gui.ImageViewer import ImageViewer
+from pydetecdiv.settings import get_config_value
 
 
 def open_annotator_from_selection(plugin, selected_roi, scene):
@@ -52,9 +53,12 @@ class Annotator(ImageViewer):
     """
     Annotator class extending the ImageViewer class to define functionalities specific to ROI image annotation
     """
+
     def __init__(self):
         super().__init__()
         self.roi_list = None
+        self.roi = None
+        self.run = None
         self.setObjectName('Annotator')
         self.scene = AnnotatorScene()
         self.pixmapItem = self.scene.addPixmap(self.pixmap)
@@ -80,18 +84,17 @@ class Annotator(ImageViewer):
 
     def next_roi(self):
         try:
-            print(self.roi_classes)
-            roi = next(self.roi_list)
+            self.roi = next(self.roi_list)
             with pydetecdiv_project(PyDetecDiv().project_name) as project:
-                image_resource = project.get_linked_objects('FOV', roi)[0].image_resource()
-                x1, x2 = roi.top_left[0], roi.bottom_right[0] + 1
-                y1, y2 = roi.top_left[1], roi.bottom_right[1] + 1
+                image_resource = project.get_linked_objects('FOV', self.roi)[0].image_resource()
+                x1, x2 = self.roi.top_left[0], self.roi.bottom_right[0] + 1
+                y1, y2 = self.roi.top_left[1], self.roi.bottom_right[1] + 1
                 crop = (slice(x1, x2), slice(y1, y2))
                 self.set_image_resource_data(image_resource.image_resource_data(), crop=crop)
                 self.roi_classes = ['-'] * self.image_resource_data.sizeT
                 self.change_frame(0)
                 self.ui.t_slider.setSliderPosition(0)
-                self.ui.view_name.setText(f'ROI: {roi.name}')
+                self.ui.view_name.setText(f'ROI: {self.roi.name}')
                 self.display()
                 self.display_class_name('-')
                 PyDetecDiv().main_window.active_subwindow.setCurrentWidget(self)
@@ -169,14 +172,28 @@ class Annotator(ImageViewer):
                 elif event.key() == Qt.Key_Enter:
                     self.annotate_current(class_name=f'{self.class_item.toPlainText()}')
                     self.class_item.setDefaultTextColor('black')
+                    if self.run is None:
+                        self.save_run()
+                    self.plugin.save_annotations(self.roi, self.roi_classes, self.run)
+                    self.next_roi()
+                    return True
+                elif event.key() == Qt.Key_Escape:
                     self.next_roi()
                     return True
             elif event.type() == QEvent.FocusIn:
                 self.ui.viewer.setLineWidth(3)
-                return True
             elif event.type() == QEvent.FocusOut:
                 self.ui.viewer.setLineWidth(1)
         return False
+
+    def save_run(self):
+        with (pydetecdiv_project(PyDetecDiv().project_name) as project):
+            self.run = self.plugin.save_run(project, 'annotate_rois',
+                                            {'roi_num': self.plugin.annotate_gui.roi_number.value(),
+                                             'network': self.plugin.annotate_gui.network.currentData().__name__,
+                                             'class_names': self.plugin.class_names,
+                                             'annotator': get_config_value('project', 'user')
+                                             })
 
 
 class AnnotatorScene(QGraphicsScene):
