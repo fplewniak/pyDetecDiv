@@ -43,18 +43,9 @@ def open_annotator(plugin, roi_selection):
     viewer = Annotator()
     viewer.set_plugin(plugin)
     viewer.ui.zoom_value.setMaximum(400)
-    roi = roi_selection[0]
-    project_window.addTab(viewer, roi.name)
-    with pydetecdiv_project(PyDetecDiv().project_name) as project:
-        image_resource = project.get_linked_objects('FOV', roi)[0].image_resource()
-        x1, x2 = roi.top_left[0], roi.bottom_right[0] + 1
-        y1, y2 = roi.top_left[1], roi.bottom_right[1] + 1
-        crop = (slice(x1, x2), slice(y1, y2))
-        viewer.set_image_resource_data(image_resource.image_resource_data(), crop=crop)
-        viewer.roi_classes = ['-'] * viewer.image_resource_data.sizeT
-        viewer.display()
-        viewer.display_class_name('-')
-        project_window.setCurrentWidget(viewer)
+    project_window.addTab(viewer, 'ROI annotation')
+    viewer.set_roi_list(roi_selection)
+    viewer.next_roi()
 
 
 class Annotator(ImageViewer):
@@ -63,6 +54,7 @@ class Annotator(ImageViewer):
     """
     def __init__(self):
         super().__init__()
+        self.roi_list = None
         self.setObjectName('Annotator')
         self.scene = AnnotatorScene()
         self.pixmapItem = self.scene.addPixmap(self.pixmap)
@@ -82,6 +74,29 @@ class Annotator(ImageViewer):
         :param plugin: the plugin instance
         """
         self.plugin = plugin
+
+    def set_roi_list(self, roi_selection):
+        self.roi_list = iter(roi_selection)
+
+    def next_roi(self):
+        try:
+            print(self.roi_classes)
+            roi = next(self.roi_list)
+            with pydetecdiv_project(PyDetecDiv().project_name) as project:
+                image_resource = project.get_linked_objects('FOV', roi)[0].image_resource()
+                x1, x2 = roi.top_left[0], roi.bottom_right[0] + 1
+                y1, y2 = roi.top_left[1], roi.bottom_right[1] + 1
+                crop = (slice(x1, x2), slice(y1, y2))
+                self.set_image_resource_data(image_resource.image_resource_data(), crop=crop)
+                self.roi_classes = ['-'] * self.image_resource_data.sizeT
+                self.change_frame(0)
+                self.ui.t_slider.setSliderPosition(0)
+                self.ui.view_name.setText(f'ROI: {roi.name}')
+                self.display()
+                self.display_class_name('-')
+                PyDetecDiv().main_window.active_subwindow.setCurrentWidget(self)
+        except StopIteration:
+            pass
 
     def annotate_current(self, class_name=None):
         """
@@ -121,7 +136,7 @@ class Annotator(ImageViewer):
         self.ui.zoom_value.setSliderPosition(self.scale)
         self.ui.scale_value.setText(f'Zoom: {self.scale}%')
 
-    def change_frame(self, T: object = 0):
+    def change_frame(self, T=0):
         """
 
         :param T:
@@ -151,8 +166,14 @@ class Annotator(ImageViewer):
                 elif event.key() == Qt.Key_Left:
                     self.change_frame(max(self.T - 1, 0))
                     return True
+                elif event.key() == Qt.Key_Enter:
+                    self.annotate_current(class_name=f'{self.class_item.toPlainText()}')
+                    self.class_item.setDefaultTextColor('black')
+                    self.next_roi()
+                    return True
             elif event.type() == QEvent.FocusIn:
                 self.ui.viewer.setLineWidth(3)
+                return True
             elif event.type() == QEvent.FocusOut:
                 self.ui.viewer.setLineWidth(1)
         return False
