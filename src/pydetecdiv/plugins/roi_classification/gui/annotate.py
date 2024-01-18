@@ -1,3 +1,7 @@
+"""
+ROI annotation for image classification
+"""
+
 from PySide6.QtCore import Qt, QRectF, QEvent
 from PySide6.QtWidgets import QGraphicsTextItem, QGraphicsScene
 import numpy as np
@@ -7,6 +11,12 @@ from pydetecdiv.app.gui.ImageViewer import ImageViewer
 
 
 def open_annotator_from_selection(plugin, selected_roi, scene):
+    """
+    Open an annotator instance to annotate a ROI selected in the Image viewer.
+    :param plugin: the Plugin instance
+    :param selected_roi: the selected ROI
+    :param scene: the ViewerScene instance
+    """
     project_window = scene.parent()
     viewer = Annotator()
     viewer.set_plugin(plugin)
@@ -24,6 +34,11 @@ def open_annotator_from_selection(plugin, selected_roi, scene):
 
 
 def open_annotator(plugin, roi_selection):
+    """
+    Open an annotator instance with a selection of ROIs
+    :param plugin: the plugin instance
+    :param roi_selection: the list of ROIs to annotate
+    """
     project_window = PyDetecDiv().main_window.active_subwindow
     viewer = Annotator()
     viewer.set_plugin(plugin)
@@ -43,6 +58,9 @@ def open_annotator(plugin, roi_selection):
 
 
 class Annotator(ImageViewer):
+    """
+    Annotator class extending the ImageViewer class to define functionalities specific to ROI image annotation
+    """
     def __init__(self):
         super().__init__()
         self.setObjectName('Annotator')
@@ -59,12 +77,24 @@ class Annotator(ImageViewer):
         self.scene.addItem(self.class_item)
 
     def set_plugin(self, plugin):
+        """
+        Define the plugin instance to enable the annotator to access some data
+        :param plugin: the plugin instance
+        """
         self.plugin = plugin
 
     def annotate_current(self, class_name=None):
+        """
+        Assign the class name to the current frame
+        :param class_name: the class name
+        """
         self.roi_classes[self.T] = class_name
 
     def display_class_name(self, roi_class=None):
+        """
+        Display the class name below the frame
+        :param roi_class: the class name
+        """
         if self.roi_classes[self.T] == '-' and self.T > 0 and self.roi_classes[self.T - 1] != '-':
             roi_class = self.roi_classes[self.T - 1]
             self.class_item.setDefaultTextColor('red')
@@ -91,11 +121,21 @@ class Annotator(ImageViewer):
         self.ui.zoom_value.setSliderPosition(self.scale)
         self.ui.scale_value.setText(f'Zoom: {self.scale}%')
 
-    def change_frame(self, T=0):
+    def change_frame(self, T: object = 0):
+        """
+
+        :param T:
+        """
         super().change_frame(T)
         self.display_class_name()
 
     def eventFilter(self, watched, event):
+        """
+        Event filter to handle events related to the AnnotatorScene (focus, annotation, viewing next or previous frame)
+        :param watched: the watched object
+        :param event: the caught event
+        :return: True if an event was captured and should not be forwarded, False otherwise.
+        """
         if watched == self.scene:
             if event.type() == QEvent.ShortcutOverride:
                 if event.text() in list('azertyuiop')[0:len(self.plugin.class_names)]:
@@ -122,6 +162,3 @@ class AnnotatorScene(QGraphicsScene):
     """
     The viewer scene where images and other items are drawn
     """
-
-    def __init__(self):
-        super().__init__()
