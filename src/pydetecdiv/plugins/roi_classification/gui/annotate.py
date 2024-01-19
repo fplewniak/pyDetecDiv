@@ -1,7 +1,7 @@
 """
 ROI annotation for image classification
 """
-
+import sqlalchemy
 from PySide6.QtCore import Qt, QRectF
 from PySide6.QtWidgets import QGraphicsTextItem, QGraphicsScene
 import numpy as np
@@ -97,16 +97,27 @@ class Annotator(ImageViewer):
                 y1, y2 = self.roi.top_left[1], self.roi.bottom_right[1] + 1
                 crop = (slice(x1, x2), slice(y1, y2))
                 self.set_image_resource_data(image_resource.image_resource_data(), crop=crop)
-                self.roi_classes = ['-'] * self.image_resource_data.sizeT
+                self.display()
+                self.get_roi_annotations()
                 self.change_frame(0)
                 self.video_frame.emit(0)
                 self.ui.t_slider.setSliderPosition(0)
                 self.ui.view_name.setText(f'ROI: {self.roi.name}')
-                self.display()
-                self.display_class_name('-')
                 PyDetecDiv().main_window.active_subwindow.setCurrentWidget(self)
         except StopIteration:
             pass
+
+    def get_roi_annotations(self):
+        self.roi_classes = ['-'] * self.image_resource_data.sizeT
+        user = get_config_value('project', 'user')
+        with (pydetecdiv_project(PyDetecDiv().project_name) as project):
+            results = [c for c in project.repository.session.execute(
+                sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,run.parameters ->> '$.annotator' as annotator "
+                                f"FROM run, roi_classification as rc "
+                                f"WHERE run.command='annotate_rois' and rc.run=run.id_ and rc.roi={self.roi.id_} "
+                                f";"))]
+            for annotation in results:
+                self.roi_classes[annotation[1]] = annotation[2]
 
     def annotate_current(self, class_name=None):
         """

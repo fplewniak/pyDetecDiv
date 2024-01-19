@@ -22,7 +22,6 @@ from pydetecdiv.domain.Image import Image, ImgDType
 from .gui import ROIclassification, ROIselector, ModelSelector, ROIannotate
 from . import models
 from .gui.annotate import open_annotator_from_selection, open_annotator
-from ...settings import get_config_value
 
 Base = registry().generate_base()
 
@@ -211,6 +210,7 @@ class Plugin(plugins.Plugin):
         self.annotate_gui.setVisible(True)
 
     def annotate_rois(self):
+        self.create_table()
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             selected_rois = random.sample(project.get_objects('ROI'), self.annotate_gui.roi_number.value())
         open_annotator(self, selected_rois)
