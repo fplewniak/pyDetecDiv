@@ -2,7 +2,7 @@
 ROI annotation for image classification
 """
 
-from PySide6.QtCore import Qt, QRectF, QEvent
+from PySide6.QtCore import Qt, QRectF
 from PySide6.QtWidgets import QGraphicsTextItem, QGraphicsScene
 import numpy as np
 
@@ -64,7 +64,6 @@ class Annotator(ImageViewer):
         self.pixmapItem = self.scene.addPixmap(self.pixmap)
         self.ui.viewer.setScene(self.scene)
         self.scene.setParent(self)
-        self.scene.installEventFilter(self)
         self.viewport_rect = None
         self.zoom_set_value(200)
         self.class_item = QGraphicsTextItem('-')
@@ -80,9 +79,16 @@ class Annotator(ImageViewer):
         self.plugin = plugin
 
     def set_roi_list(self, roi_selection):
+        """
+        Sets the list of ROIs to annotate as an iterator
+        :param roi_selection: the list of ROIs
+        """
         self.roi_list = iter(roi_selection)
 
     def next_roi(self):
+        """
+        Jumps to first frame of next ROI if there is one.
+        """
         try:
             self.roi = next(self.roi_list)
             with pydetecdiv_project(PyDetecDiv().project_name) as project:
@@ -93,6 +99,7 @@ class Annotator(ImageViewer):
                 self.set_image_resource_data(image_resource.image_resource_data(), crop=crop)
                 self.roi_classes = ['-'] * self.image_resource_data.sizeT
                 self.change_frame(0)
+                self.video_frame.emit(0)
                 self.ui.t_slider.setSliderPosition(0)
                 self.ui.view_name.setText(f'ROI: {self.roi.name}')
                 self.display()
@@ -141,58 +148,21 @@ class Annotator(ImageViewer):
 
     def change_frame(self, T=0):
         """
-
-        :param T:
+        Change frame and display the corresponding class name below the image
+        :param T: the frame index
         """
         super().change_frame(T)
         self.display_class_name()
 
-    def eventFilter(self, watched, event):
-        """
-        Event filter to handle events related to the AnnotatorScene (focus, annotation, viewing next or previous frame)
-        :param watched: the watched object
-        :param event: the caught event
-        :return: True if an event was captured and should not be forwarded, False otherwise.
-        """
-        if watched == self.scene:
-            if event.type() == QEvent.ShortcutOverride:
-                if event.text() in list('azertyuiop')[0:len(self.plugin.class_names)]:
-                    self.annotate_current(self.plugin.class_names["azertyuiop".find(event.text())])
-                    self.change_frame(min(self.T + 1, self.image_resource_data.sizeT - 1))
-                elif event.text() == ' ':
-                    self.annotate_current(class_name=f'{self.class_item.toPlainText()}')
-                    self.change_frame(min(self.T + 1, self.image_resource_data.sizeT - 1))
-                    return True
-                elif event.key() == Qt.Key_Right:
-                    self.change_frame(min(self.T + 1, self.image_resource_data.sizeT - 1))
-                    return True
-                elif event.key() == Qt.Key_Left:
-                    self.change_frame(max(self.T - 1, 0))
-                    return True
-                elif event.key() == Qt.Key_Enter:
-                    self.annotate_current(class_name=f'{self.class_item.toPlainText()}')
-                    self.class_item.setDefaultTextColor('black')
-                    if self.run is None:
-                        self.save_run()
-                    self.plugin.save_annotations(self.roi, self.roi_classes, self.run)
-                    self.next_roi()
-                    return True
-                elif event.key() == Qt.Key_Escape:
-                    self.next_roi()
-                    return True
-            elif event.type() == QEvent.FocusIn:
-                self.ui.viewer.setLineWidth(3)
-            elif event.type() == QEvent.FocusOut:
-                self.ui.viewer.setLineWidth(1)
-        return False
-
     def save_run(self):
-        with (pydetecdiv_project(PyDetecDiv().project_name) as project):
+        """
+        Save the current ROI annotation process in the database
+        """
+        with pydetecdiv_project(PyDetecDiv().project_name) as project:
             self.run = self.plugin.save_run(project, 'annotate_rois',
-                                            {'roi_num': self.plugin.annotate_gui.roi_number.value(),
-                                             'network': self.plugin.annotate_gui.network.currentData().__name__,
-                                             'class_names': self.plugin.class_names,
-                                             'annotator': get_config_value('project', 'user')
+                                            {'class_names': self.plugin.class_names,
+                                             'annotator': get_config_value('project', 'user'),
+                                             'roi_num': self.plugin.annotate_gui.roi_number.value(),
                                              })
 
 
@@ -200,3 +170,49 @@ class AnnotatorScene(QGraphicsScene):
     """
     The viewer scene where images and other items are drawn
     """
+
+    def focusInEvent(self, event):
+        """
+        When the scene is in focus, then draw a larger frame around it to indicate its in-focus status
+        :param event: the focusInEvent
+        """
+        self.parent().ui.viewer.setLineWidth(3)
+
+    def focusOutEvent(self, event):
+        """
+        When the scene is out of focus, then draw a small frame around it to indicate its out-focus status
+        :param event: the focusOutEvent
+        """
+        self.parent().ui.viewer.setLineWidth(1)
+
+    def keyPressEvent(self, event):
+        """
+        Handle actions triggered by pressing keys when the scene is in focus.
+        Letters from azertyuiop assign a class to the current frame, and jumps to the next frame suggesting a class
+        Space bar validates the suggested assignation and jumps to the next frame
+        Right arrow moves one frame forward
+        Left arrow moves one frame backwards
+        Enter key validates the current suggestion, saves the annotations to the database and jumps to the nex ROI if
+        there is one
+        Escape key cancels annotations and jumps to the next ROI if there is one
+        :param event: the keyPressEvent
+        """
+        if event.text() in list('azertyuiop')[0:len(self.parent().plugin.class_names)]:
+            self.parent().annotate_current(self.parent().plugin.class_names["azertyuiop".find(event.text())])
+            self.parent().change_frame(min(self.parent().T + 1, self.parent().image_resource_data.sizeT - 1))
+        elif event.text() == ' ':
+            self.parent().annotate_current(class_name=f'{self.parent().class_item.toPlainText()}')
+            self.parent().change_frame(min(self.parent().T + 1, self.parent().image_resource_data.sizeT - 1))
+        elif event.key() == Qt.Key_Right:
+            self.parent().change_frame(min(self.parent().T + 1, self.parent().image_resource_data.sizeT - 1))
+        elif event.key() == Qt.Key_Left:
+            self.parent().change_frame(max(self.parent().T - 1, 0))
+        elif event.key() == Qt.Key_Enter:
+            self.parent().annotate_current(class_name=f'{self.parent().class_item.toPlainText()}')
+            self.parent().class_item.setDefaultTextColor('black')
+            if self.parent().run is None:
+                self.parent().save_run()
+            self.parent().plugin.save_annotations(self.parent().roi, self.parent().roi_classes, self.parent().run)
+            self.parent().next_roi()
+        elif event.key() == Qt.Key_Escape:
+            self.parent().next_roi()
