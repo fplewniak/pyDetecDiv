@@ -256,6 +256,7 @@ class Plugin(plugins.Plugin):
                 self.gui.classes.setReadOnly(True)
             case _:
                 pass
+        self.gui.resize(self.gui.form.sizeHint())
 
     def annotate_rois(self):
         """

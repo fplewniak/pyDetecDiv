@@ -8,7 +8,7 @@ import os
 from PySide6.QtCore import Qt
 from PySide6.QtSql import QSqlQueryModel, QSqlQuery, QSqlDatabase
 from PySide6.QtWidgets import QFrame, QFormLayout, QLabel, QComboBox, QDialogButtonBox, QDockWidget, \
-    QTableView, QAbstractItemView, QVBoxLayout, QGroupBox, QSpinBox, QAbstractSpinBox, QLineEdit
+    QTableView, QAbstractItemView, QVBoxLayout, QGroupBox, QSpinBox, QAbstractSpinBox, QLineEdit, QSizePolicy
 
 from pydetecdiv.utils import singleton
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
@@ -120,6 +120,7 @@ class ROIclassification(QDockWidget):
         self.vert_layout.addWidget(self.button_box)
 
         self.button_box.rejected.connect(self.close)
+        self.form.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
         self.setWidget(self.form)
         parent.addDockWidget(Qt.LeftDockWidgetArea, self, Qt.Vertical)
         self.setFloating(True)
