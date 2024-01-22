@@ -115,7 +115,8 @@ class Annotator(ImageViewer):
                 sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,run.parameters ->> '$.annotator' as annotator "
                                 f"FROM run, roi_classification as rc "
                                 f"WHERE run.command='annotate_rois' and rc.run=run.id_ and rc.roi={self.roi.id_} "
-                                f"AND annotator='{get_config_value('project', 'user')}';"))]
+                                f"AND annotator='{get_config_value('project', 'user')}' "
+                                f"ORDER BY rc.run ASC;"))]
             for annotation in results:
                 self.roi_classes[annotation[1]] = annotation[2]
 
