@@ -2,7 +2,6 @@
 An example plugin showing how to interact with database
 """
 import importlib
-import json
 import os.path
 import pkgutil
 import random
@@ -10,8 +9,7 @@ import sys
 
 import numpy as np
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QDialogButtonBox
-from sqlalchemy import Column, Integer, String, ForeignKey, Float
+from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
 import tensorflow as tf
@@ -42,6 +40,15 @@ class Results(Base):
     score = Column(Float)
 
     def save(self, project, run, roi, t, predictions, class_names):
+        """
+        Save the results from a plugin run on a ROI at time t into the database
+        :param project: the current project
+        :param run: the current run
+        :param roi: the current ROI
+        :param t: the current frame
+        :param predictions: the list of prediction values
+        :param class_names: the class names
+        """
         self.roi = roi.id_
         self.run = run.id_
         self.t = t
@@ -64,11 +71,8 @@ class Plugin(plugins.Plugin):
     def __init__(self):
         super().__init__()
         self.menu = None
-        # self.class_names = ['clog', 'dead', 'empty', 'large', 'small', 'unbud']
         self.class_names = []
         self.gui = None
-        # self.annotate_gui = None
-        # self.train_gui = None
 
     def create_table(self):
         """
@@ -88,16 +92,13 @@ class Plugin(plugins.Plugin):
         action_launch = QAction("ROI classification", self.menu)
         action_launch.triggered.connect(self.launch)
         self.menu.addAction(action_launch)
-        # action_annotate = QAction("Annotate ROIs", self.menu)
-        # action_annotate.triggered.connect(self.annotate)
-        # self.menu.addAction(action_annotate)
-        # action_train_model = QAction("Train new model", self.menu)
-        # action_train_model.triggered.connect(self.train_model)
-        # self.menu.addAction(action_train_model)
-
         PyDetecDiv().viewer_roi_click.connect(self.add_context_action)
 
     def add_context_action(self, data):
+        """
+        Add an action to annotate the ROI from the FOV viewer
+        :param data: the data sent by the PyDetecDiv().viewer_roi_click signal
+        """
         if self.gui:
             r, menu, scene = data
             annotate = menu.addAction('Annotate region class')
@@ -172,6 +173,10 @@ class Plugin(plugins.Plugin):
             print('predictions OK')
 
     def load_models(self, gui):
+        """
+        Load available models (modules)
+        :param gui: the GUI
+        """
         for _, name, _ in pkgutil.iter_modules(models.__path__):
             gui.network.addItem(name, userData=importlib.import_module(f'.models.{name}', package=__package__))
         for finder, name, _ in pkgutil.iter_modules([os.path.join(get_plugins_dir(), 'roi_classification/models')]):
@@ -183,6 +188,9 @@ class Plugin(plugins.Plugin):
             gui.network.addItem(name, userData=module)
 
     def run(self):
+        """
+        Run the action selected in the GUI (create new model, annotate ROIs, train model, classify ROIs)
+        """
         self.gui.action_menu.currentData()()
 
     def launch(self):
@@ -210,6 +218,9 @@ class Plugin(plugins.Plugin):
         self.gui.setVisible(True)
 
     def adapt_gui(self):
+        """
+        Modify the appearance of the GUI according to the selected action
+        """
         match (self.gui.action_menu.currentIndex()):
             case 0:
                 self.gui.roi_selection.hide()
@@ -246,36 +257,33 @@ class Plugin(plugins.Plugin):
             case _:
                 pass
 
-    # def annotate(self):
-    #     """
-    #     Display the ROI classification docked GUI window
-    #     """
-    #     if self.annotate_gui is None:
-    #         self.annotate_gui = ROIannotate(PyDetecDiv().main_window)
-    #         self.load_models(self.annotate_gui)
-    #         self.update_class_names()
-    #         PyDetecDiv().project_selected.connect(self.annotate_gui.update_roi_selection)
-    #         self.annotate_gui.button_box.accepted.connect(self.annotate_rois)
-    #         self.annotate_gui.network.currentIndexChanged.connect(self.update_class_names)
-    #     self.annotate_gui.setVisible(True)
-
     def annotate_rois(self):
+        """
+        Launch the annotator GUI for ROI annotation
+        """
         self.create_table()
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             selected_rois = random.sample(project.get_objects('ROI'), self.gui.roi_number.value())
         open_annotator(self, selected_rois)
 
     def save_annotations(self, roi, roi_classes, run):
+        """
+        Save manual annotation into the database
+        :param roi: the annotated ROI
+        :param roi_classes: the classes along time
+        :param run: the annotation run
+        """
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             for t, class_name in enumerate(roi_classes):
                 if class_name != '-':
                     Results().save(project, run, roi, t, np.array([1]), [class_name])
 
     def update_class_names(self):
+        """
+        Gets the names of classes from the GUI
+        """
         if self.gui:
             self.class_names = self.gui.network.currentData().class_names
-        # elif self.annotate_gui:
-        #     self.class_names = self.annotate_gui.network.currentData().class_names
 
     def set_table_view(self, project_name):
         """
@@ -291,11 +299,6 @@ class Plugin(plugins.Plugin):
         Set the maximum value for sequence length
         :param project_name: the name of the project
         """
-        if project_name:
-            with pydetecdiv_project(project_name) as project:
-                self.gui.update_sequence_length(project)
-
-    def set_sequence_length(self, project_name):
         if project_name:
             with pydetecdiv_project(project_name) as project:
                 self.gui.update_sequence_length(project)

@@ -7,7 +7,7 @@ import os
 
 from PySide6.QtCore import Qt
 from PySide6.QtSql import QSqlQueryModel, QSqlQuery, QSqlDatabase
-from PySide6.QtWidgets import QFrame, QFormLayout, QLabel, QComboBox, QListView, QDialogButtonBox, QDockWidget, \
+from PySide6.QtWidgets import QFrame, QFormLayout, QLabel, QComboBox, QDialogButtonBox, QDockWidget, \
     QTableView, QAbstractItemView, QVBoxLayout, QGroupBox, QSpinBox, QAbstractSpinBox, QLineEdit
 
 from pydetecdiv.utils import singleton
@@ -73,7 +73,7 @@ class ROIclassification(QDockWidget):
         self.roi_number.setRange(1, num_rois)
         self.roi_number.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
         self.roi_number.setSingleStep(1)
-        self.roi_number.setValue(int(num_rois/10))
+        self.roi_number.setValue(int(num_rois / 10))
         self.roi_sampleLayout.addRow(QLabel('ROI sample size:'), self.roi_number)
 
         self.preprocessing = QGroupBox(self.form)
@@ -125,6 +125,10 @@ class ROIclassification(QDockWidget):
         self.setFloating(True)
 
     def update_list(self, project):
+        """
+        Update the list of FOVs and the number of corresponding ROIs
+        :param project: the current project
+        """
         db = QSqlDatabase("QSQLITE")
         db.setDatabaseName(project.repository.name)
         db.open()
@@ -149,6 +153,10 @@ class ROIclassification(QDockWidget):
         self.blue_channel.setCurrentIndex(2)
 
     def update_sequence_length(self, project):
+        """
+        Update the maximum value for image sequence according to the umber of frames in the dataset
+        :param project: the current project
+        """
         db = QSqlDatabase("QSQLITE")
         db.setDatabaseName(project.repository.name)
         db.open()
@@ -158,22 +166,10 @@ class ROIclassification(QDockWidget):
         if query.first():
             self.seq_length.setRange(1, query.record().value('min(tdim)'))
 
-    # def get_networks(self):
-    #     """
-    #     Discover available network modules and load them
-    #     """
-    #     networks_dir = pydetecdiv.plugins.__path__ + [pydetecdiv.app.get_plugins_dir()]
-    #     for finder, name, _ in pkgutil.iter_modules(plugins_dir):
-    #         loader = finder.find_module(name)
-    #         spec = importlib.util.spec_from_file_location(name, loader.path)
-    #         module = importlib.util.module_from_spec(spec)
-    #         sys.modules[name] = module
-    #         spec.loader.exec_module(module)
-    #         if module.Plugin.category not in self.categories:
-    #             self.categories.append(module.Plugin.category)
-    #         self.plugins.append(module.Plugin())
-
     def update_model_weights(self):
+        """
+        Update the list of model weights associated with the currently selected network
+        """
         model_path = self.network.currentData().__path__[0]
         w_files = [f for f in os.listdir(model_path) if os.path.isfile(os.path.join(model_path, f))]
         self.weights.clear()
@@ -183,144 +179,7 @@ class ROIclassification(QDockWidget):
         self.weights.addItem('None', userData=None)
 
     def update_classes(self):
+        """
+        Update the classes associated with the currently selected model
+        """
         self.classes.setText(json.dumps(self.network.currentData().class_names))
-
-
-# @singleton
-# class ROIannotate(QDockWidget):
-#     """
-#     A DockWidget to host the GUI for ROI classification plugin
-#     This is a singleton to avoid creating more than one window, but this is not compulsory and there may be several
-#     instance of such a window for a single plugin if needed.
-#     """
-#
-#     def __init__(self, parent):
-#         super().__init__(parent)
-#         self.setWindowTitle('ROI class annotation (Deep Learning)')
-#         self.setObjectName('ROIannotation')
-#
-#         self.form = QFrame()
-#         self.form.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
-#         self.vert_layout = QVBoxLayout(self.form)
-#
-#         self.classifier_selection = QGroupBox(self.form)
-#         self.classifier_selection.setTitle('Select classifier')
-#         self.classifier_selectionLayout = QFormLayout(self.classifier_selection)
-#
-#         self.network = QComboBox(self.classifier_selection)
-#         self.classifier_selectionLayout.addRow(QLabel('Network:'), self.network)
-#
-#         self.roi_selection = QGroupBox(self.form)
-#         self.roi_selection.setTitle('Select ROIs')
-#         self.roi_selectionLayout = QFormLayout(self.roi_selection)
-#
-#         self.roi_number = QSpinBox(self.roi_selection)
-#         with pydetecdiv_project(PyDetecDiv().project_name) as project:
-#             num_rois = project.count_objects('ROI')
-#         self.roi_number.setRange(1, num_rois)
-#         self.roi_number.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
-#         self.roi_number.setSingleStep(1)
-#         self.roi_number.setValue(int(num_rois/10))
-#         self.roi_selectionLayout.addRow(QLabel('ROI number:'), self.roi_number)
-#
-#         self.button_box = QDialogButtonBox(QDialogButtonBox.Close | QDialogButtonBox.Ok, self)
-#         self.button_box.setCenterButtons(True)
-#
-#         self.vert_layout.addWidget(self.classifier_selection)
-#         self.vert_layout.addWidget(self.roi_selection)
-#         self.vert_layout.addWidget(self.button_box)
-#
-#         self.button_box.rejected.connect(self.close)
-#         self.setWidget(self.form)
-#         parent.addDockWidget(Qt.LeftDockWidgetArea, self, Qt.Vertical)
-#
-#
-#     def update_roi_selection(self):
-#         with pydetecdiv_project(PyDetecDiv().project_name) as project:
-#             num_rois = project.count_objects('ROI')
-#         self.roi_number.setRange(1, num_rois)
-#         self.roi_number.setValue(int(num_rois/10))
-#
-#
-# @singleton
-# class ROIselector(QDockWidget):
-#     """
-#     A DockWidget to host the GUI for Example plugin's
-#     This is a singleton to avoid creating more than one window, but this is not compulsory and there may be several
-#     instance of such a window for a single plugin if needed.
-#     """
-#
-#     def __init__(self, parent):
-#         super().__init__(parent)
-#         self.setWindowTitle('ROI classification (Deep Learning)')
-#         self.setObjectName('ROIclassification')
-#
-#         self.form = QFrame()
-#         self.form.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
-#         self.formLayout = QFormLayout(self.form)
-#
-#         self.table = QTableView(self.form)
-#
-#         self.model = QSqlQueryModel()
-#         self.table.setModel(self.model)
-#
-#         self.table.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
-#         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-#         self.selection_model = self.table.selectionModel()
-#
-#         self.formLayout.addRow(self.table)
-#
-#         self.button_box = QDialogButtonBox(QDialogButtonBox.Close | QDialogButtonBox.Ok, self)
-#         self.button_box.setCenterButtons(True)
-#
-#         self.formLayout.addRow(self.button_box)
-#
-#         self.button_box.rejected.connect(self.close)
-#
-#         self.setWidget(self.form)
-#
-#         parent.addDockWidget(Qt.LeftDockWidgetArea, self, Qt.Vertical)
-#
-#     def update_list(self, dbname):
-#         db = QSqlDatabase("QSQLITE")
-#         db.setDatabaseName(dbname)
-#         db.open()
-#         query = QSqlQuery(
-#             "SELECT FOV.name as 'FOV name', count(ROI.id_) as 'ROIs', ImageResource.tdim as 'frames',"
-#             "ImageResource.zdim as 'layers', ImageResource.cdim as 'channels'"
-#             " FROM FOV, ImageResource "
-#             "JOIN ROI ON ROI.fov == FOV.id_ "
-#             "WHERE FOV.id_ == ImageResource.fov "
-#             "GROUP BY FOV.id_",
-#             db=db)
-#         self.model.setQuery(query)
-#         self.table.resizeColumnsToContents()
-#
-#
-# @singleton
-# class ModelSelector(QDockWidget):
-#     """
-#     A DockWidget to host the GUI for Example plugin's
-#     This is a singleton to avoid creating more than one window, but this is not compulsory and there may be several
-#     instance of such a window for a single plugin if needed.
-#     """
-#
-#     def __init__(self, parent):
-#         super().__init__(parent)
-#         self.setWindowTitle('Select ROI classification model')
-#         self.setObjectName('ModelSelector')
-#
-#         self.form = QFrame()
-#         self.form.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
-#         self.formLayout = QFormLayout(self.form)
-#
-#         self.button_box = QDialogButtonBox(QDialogButtonBox.Close | QDialogButtonBox.Ok, self)
-#         self.button_box.setCenterButtons(True)
-#
-#         self.formLayout.addRow(self.button_box)
-#
-#         self.button_box.rejected.connect(self.close)
-#
-#         self.setWidget(self.form)
-#
-#         parent.addDockWidget(Qt.LeftDockWidgetArea, self, Qt.Vertical)

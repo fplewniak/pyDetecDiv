@@ -108,15 +108,17 @@ class Annotator(ImageViewer):
             pass
 
     def get_roi_annotations(self):
+        """
+        Retrieve from the database the manual annotations for a ROI
+        """
         self.roi_classes = ['-'] * self.image_resource_data.sizeT
-        user = get_config_value('project', 'user')
-        with (pydetecdiv_project(PyDetecDiv().project_name) as project):
-            results = [c for c in project.repository.session.execute(
+        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            results = list(project.repository.session.execute(
                 sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,run.parameters ->> '$.annotator' as annotator "
                                 f"FROM run, roi_classification as rc "
                                 f"WHERE run.command='annotate_rois' and rc.run=run.id_ and rc.roi={self.roi.id_} "
                                 f"AND annotator='{get_config_value('project', 'user')}' "
-                                f"ORDER BY rc.run ASC;"))]
+                                f"ORDER BY rc.run ASC;")))
             for annotation in results:
                 self.roi_classes[annotation[1]] = annotation[2]
 
