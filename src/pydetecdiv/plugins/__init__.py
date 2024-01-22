@@ -56,8 +56,7 @@ class Plugin:
         run.tool_version = self.version
         run.is_plugin = True
         run.command = method
-        run.parameters = json.dumps(parameters)
-        print(run.parameters)
+        run.parameters = parameters
         project.repository.session.add(run)
         project.commit()
         return run
