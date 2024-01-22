@@ -174,7 +174,7 @@ class Annotator(ImageViewer):
             self.run = self.plugin.save_run(project, 'annotate_rois',
                                             {'class_names': self.plugin.class_names,
                                              'annotator': get_config_value('project', 'user'),
-                                             'roi_num': self.plugin.annotate_gui.roi_number.value(),
+                                             'roi_num': self.plugin.gui.roi_number.value(),
                                              })
 
 

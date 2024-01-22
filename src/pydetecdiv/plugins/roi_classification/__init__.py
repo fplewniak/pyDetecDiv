@@ -10,6 +10,7 @@ import sys
 
 import numpy as np
 from PySide6.QtGui import QAction
+from PySide6.QtWidgets import QDialogButtonBox
 from sqlalchemy import Column, Integer, String, ForeignKey, Float
 from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
@@ -19,7 +20,7 @@ from pydetecdiv import plugins
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
 from pydetecdiv.domain.Image import Image, ImgDType
 
-from .gui import ROIclassification, ROIselector, ModelSelector, ROIannotate
+from .gui import ROIclassification
 from . import models
 from .gui.annotate import open_annotator_from_selection, open_annotator
 
@@ -57,16 +58,17 @@ class Plugin(plugins.Plugin):
     """
     id_ = 'gmgm.plewniak.roiclassification'
     version = '1.0.0'
-    name = 'Deep learning'
-    category = 'ROI classification'
+    name = 'ROI classification'
+    category = 'Deep learning'
 
     def __init__(self):
         super().__init__()
         self.menu = None
         # self.class_names = ['clog', 'dead', 'empty', 'large', 'small', 'unbud']
         self.class_names = []
-        self.annotate_gui = None
-        self.train_gui = None
+        self.gui = None
+        # self.annotate_gui = None
+        # self.train_gui = None
 
     def create_table(self):
         """
@@ -81,21 +83,22 @@ class Plugin(plugins.Plugin):
         :param menu: the parent menu
         :type menu: QMenu
         """
-        self.menu = menu.addMenu(self.name)
-        action_launch = QAction("Classify ROIs", self.menu)
-        action_launch.triggered.connect(self.roi_classification)
+        # self.menu = menu.addMenu(self.name)
+        self.menu = menu
+        action_launch = QAction("ROI classification", self.menu)
+        action_launch.triggered.connect(self.launch)
         self.menu.addAction(action_launch)
-        action_annotate = QAction("Annotate ROIs", self.menu)
-        action_annotate.triggered.connect(self.annotate)
-        self.menu.addAction(action_annotate)
-        action_train_model = QAction("Train new model", self.menu)
-        action_train_model.triggered.connect(self.train_model)
-        self.menu.addAction(action_train_model)
+        # action_annotate = QAction("Annotate ROIs", self.menu)
+        # action_annotate.triggered.connect(self.annotate)
+        # self.menu.addAction(action_annotate)
+        # action_train_model = QAction("Train new model", self.menu)
+        # action_train_model.triggered.connect(self.train_model)
+        # self.menu.addAction(action_train_model)
 
         PyDetecDiv().viewer_roi_click.connect(self.add_context_action)
 
     def add_context_action(self, data):
-        if self.gui or self.annotate_gui:
+        if self.gui:
             r, menu, scene = data
             annotate = menu.addAction('Annotate region class')
             annotate.triggered.connect(lambda _: open_annotator_from_selection(self, r, scene))
@@ -146,7 +149,7 @@ class Plugin(plugins.Plugin):
                             roi_images = self.get_rgb_images_from_stacks(imgdata, batch, t)
                             img_array = tf.image.resize(roi_images, (y, x), method='nearest')
                             predictions = model.predict(img_array)
-                            print(predictions.shape)
+                            # print(predictions.shape)
                             for roi, pred in zip(batch, predictions):
                                 Results().save(project, run, roi, t, pred[0, 0, ...], self.class_names)
                     else:
@@ -161,7 +164,7 @@ class Plugin(plugins.Plugin):
                                 [tf.image.resize(i, (y, x), method='nearest') for i in roi_sequences])
                             print('Classification')
                             predictions = model.predict(img_array)
-                            print(predictions.shape)
+                            # print(predictions.shape)
                             print('Saving results')
                             for roi, pred in zip(batch, predictions):
                                 for frame, scores in enumerate(pred):
@@ -178,7 +181,11 @@ class Plugin(plugins.Plugin):
             sys.modules[name] = module
             spec.loader.exec_module(module)
             gui.network.addItem(name, userData=module)
-    def roi_classification(self):
+
+    def run(self):
+        self.gui.action_menu.currentData()()
+
+    def launch(self):
         """
         Display the ROI classification docked GUI window
         """
@@ -186,33 +193,76 @@ class Plugin(plugins.Plugin):
             self.gui = ROIclassification(PyDetecDiv().main_window)
             self.load_models(self.gui)
             self.gui.update_model_weights()
+            self.gui.action_menu.addItem('Create new model', userData=self.create_model)
+            self.gui.action_menu.addItem('Annotate ROIs', userData=self.annotate_rois)
+            self.gui.action_menu.addItem('Train model', userData=self.train_model)
+            self.gui.action_menu.addItem('Classify ROIs', userData=self.predict)
             self.update_class_names()
             self.set_table_view(PyDetecDiv().project_name)
             self.set_sequence_length(PyDetecDiv().project_name)
             PyDetecDiv().project_selected.connect(self.set_table_view)
             PyDetecDiv().project_selected.connect(self.set_sequence_length)
             PyDetecDiv().saved_rois.connect(self.set_table_view)
-            self.gui.button_box.accepted.connect(self.predict)
+            self.gui.button_box.accepted.connect(self.run)
             self.gui.network.currentIndexChanged.connect(self.update_class_names)
+            self.gui.action_menu.currentIndexChanged.connect(self.adapt_gui)
+            self.gui.action_menu.setCurrentIndex(3)
         self.gui.setVisible(True)
 
-    def annotate(self):
-        """
-        Display the ROI classification docked GUI window
-        """
-        if self.annotate_gui is None:
-            self.annotate_gui = ROIannotate(PyDetecDiv().main_window)
-            self.load_models(self.annotate_gui)
-            self.update_class_names()
-            PyDetecDiv().project_selected.connect(self.annotate_gui.update_roi_selection)
-            self.annotate_gui.button_box.accepted.connect(self.annotate_rois)
-            self.annotate_gui.network.currentIndexChanged.connect(self.update_class_names)
-        self.annotate_gui.setVisible(True)
+    def adapt_gui(self):
+        match (self.gui.action_menu.currentIndex()):
+            case 0:
+                self.gui.roi_selection.hide()
+                self.gui.roi_sample.hide()
+                self.gui.classifier_selectionLayout.setRowVisible(1, False)
+                self.gui.preprocessing.show()
+                self.gui.misc_box.hide()
+                self.gui.network.setEditable(True)
+                self.gui.classes.setReadOnly(False)
+            case 1:
+                self.gui.roi_selection.hide()
+                self.gui.roi_sample.show()
+                self.gui.classifier_selectionLayout.setRowVisible(1, False)
+                self.gui.preprocessing.hide()
+                self.gui.misc_box.hide()
+                self.gui.network.setEditable(False)
+                self.gui.classes.setReadOnly(True)
+            case 2:
+                self.gui.roi_selection.hide()
+                self.gui.roi_sample.hide()
+                self.gui.classifier_selectionLayout.setRowVisible(1, True)
+                self.gui.preprocessing.show()
+                self.gui.misc_box.show()
+                self.gui.network.setEditable(False)
+                self.gui.classes.setReadOnly(True)
+            case 3:
+                self.gui.roi_selection.show()
+                self.gui.roi_sample.hide()
+                self.gui.classifier_selectionLayout.setRowVisible(1, True)
+                self.gui.preprocessing.show()
+                self.gui.misc_box.show()
+                self.gui.network.setEditable(False)
+                self.gui.classes.setReadOnly(True)
+            case _:
+                pass
+
+    # def annotate(self):
+    #     """
+    #     Display the ROI classification docked GUI window
+    #     """
+    #     if self.annotate_gui is None:
+    #         self.annotate_gui = ROIannotate(PyDetecDiv().main_window)
+    #         self.load_models(self.annotate_gui)
+    #         self.update_class_names()
+    #         PyDetecDiv().project_selected.connect(self.annotate_gui.update_roi_selection)
+    #         self.annotate_gui.button_box.accepted.connect(self.annotate_rois)
+    #         self.annotate_gui.network.currentIndexChanged.connect(self.update_class_names)
+    #     self.annotate_gui.setVisible(True)
 
     def annotate_rois(self):
         self.create_table()
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            selected_rois = random.sample(project.get_objects('ROI'), self.annotate_gui.roi_number.value())
+            selected_rois = random.sample(project.get_objects('ROI'), self.gui.roi_number.value())
         open_annotator(self, selected_rois)
 
     def save_annotations(self, roi, roi_classes, run):
@@ -220,11 +270,12 @@ class Plugin(plugins.Plugin):
             for t, class_name in enumerate(roi_classes):
                 if class_name != '-':
                     Results().save(project, run, roi, t, np.array([1]), [class_name])
+
     def update_class_names(self):
         if self.gui:
             self.class_names = self.gui.network.currentData().class_names
-        elif self.annotate_gui:
-            self.class_names = self.annotate_gui.network.currentData().class_names
+        # elif self.annotate_gui:
+        #     self.class_names = self.annotate_gui.network.currentData().class_names
 
     def set_table_view(self, project_name):
         """
@@ -248,6 +299,12 @@ class Plugin(plugins.Plugin):
         if project_name:
             with pydetecdiv_project(project_name) as project:
                 self.gui.update_sequence_length(project)
+
+    def create_model(self):
+        """
+        Launch model creation.
+        """
+        print('Not implemented')
 
     def train_model(self):
         """
@@ -292,5 +349,5 @@ class Plugin(plugins.Plugin):
         maxt = min(imgdata.sizeT, t + seqlen) if seqlen else imgdata.sizeT
         roi_sequences = tf.stack([self.get_rgb_images_from_stacks(imgdata, roi_list, f) for f in range(t, maxt)],
                                  axis=1)
-        print('roi sequence', roi_sequences.shape)
+        # print('roi sequence', roi_sequences.shape)
         return roi_sequences
