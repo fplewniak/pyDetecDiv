@@ -288,7 +288,10 @@ class ShallowSQLite3(ShallowDb):
         :return: the record
         :rtype: dict
         """
-        return self.session.query(dao[class_name]).where(dao[class_name].name.in_([name])).first().record
+        obj = self.session.query(dao[class_name]).where(dao[class_name].name.in_([name])).first()
+        if obj:
+            return obj.record
+        return None
 
     def get_records(self, class_name, id_list=None):
         """

@@ -20,7 +20,7 @@ from pydetecdiv.domain.Image import Image, ImgDType
 
 from .gui import ROIclassification
 from . import models
-from .gui.annotate import open_annotator_from_selection, open_annotator
+from .gui.annotate import open_annotator
 
 Base = registry().generate_base()
 
@@ -101,8 +101,12 @@ class Plugin(plugins.Plugin):
         """
         if self.gui:
             r, menu = data
-            annotate = menu.addAction('Annotate region class')
-            annotate.triggered.connect(lambda _: open_annotator_from_selection(self, r))
+            with pydetecdiv_project(PyDetecDiv().project_name) as project:
+                selected_roi = project.get_named_object('ROI', r.data(0))
+                if selected_roi:
+                    roi_list = [selected_roi]
+                    annotate = menu.addAction('Annotate region class')
+                    annotate.triggered.connect(lambda _: open_annotator(self, roi_list))
 
     def predict(self):
         """

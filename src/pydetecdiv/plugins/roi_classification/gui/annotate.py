@@ -11,18 +11,6 @@ from pydetecdiv.app.gui.ImageViewer import ImageViewer
 from pydetecdiv.settings import get_config_value
 
 
-def open_annotator_from_selection(plugin, selected_roi):
-    """
-    Open an annotator instance to annotate a ROI selected in the Image viewer.
-    :param plugin: the Plugin instance
-    :param selected_roi: the selected ROI
-    :param scene: the ViewerScene instance
-    """
-    with pydetecdiv_project(PyDetecDiv().project_name) as project:
-        roi_selection = [project.get_named_object('ROI', selected_roi.data(0))]
-        open_annotator(plugin, roi_selection)
-
-
 def open_annotator(plugin, roi_selection):
     """
     Open an annotator instance with a selection of ROIs

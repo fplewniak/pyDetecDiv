@@ -400,6 +400,8 @@ class Project:
         :return: the requested object
         :rtype: DomainSpecificObject
         """
+        if rec is None:
+            return None
         if 'id_' in rec and (class_name, rec['id_']) in self.pool:
             return self.pool[(class_name, rec['id_'])]
         obj = Project.classes[class_name](project=self, **rec)
