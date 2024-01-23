@@ -100,9 +100,9 @@ class Plugin(plugins.Plugin):
         :param data: the data sent by the PyDetecDiv().viewer_roi_click signal
         """
         if self.gui:
-            r, menu, scene = data
+            r, menu = data
             annotate = menu.addAction('Annotate region class')
-            annotate.triggered.connect(lambda _: open_annotator_from_selection(self, r, scene))
+            annotate.triggered.connect(lambda _: open_annotator_from_selection(self, r))
 
     def predict(self):
         """

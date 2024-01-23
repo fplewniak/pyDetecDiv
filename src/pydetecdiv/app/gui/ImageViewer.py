@@ -533,7 +533,7 @@ class ViewerScene(QGraphicsScene):
         r = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
         if isinstance(r, QGraphicsRectItem):
             view_in_new_tab.triggered.connect(lambda _: self.parent().view_roi_image(r))
-            PyDetecDiv().viewer_roi_click.emit((r, menu, self))
+            PyDetecDiv().viewer_roi_click.emit((r, menu))
             menu.exec(event.screenPos())
 
     def keyPressEvent(self, event):

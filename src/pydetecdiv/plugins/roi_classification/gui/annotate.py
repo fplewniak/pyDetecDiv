@@ -11,27 +11,16 @@ from pydetecdiv.app.gui.ImageViewer import ImageViewer
 from pydetecdiv.settings import get_config_value
 
 
-def open_annotator_from_selection(plugin, selected_roi, scene):
+def open_annotator_from_selection(plugin, selected_roi):
     """
     Open an annotator instance to annotate a ROI selected in the Image viewer.
     :param plugin: the Plugin instance
     :param selected_roi: the selected ROI
     :param scene: the ViewerScene instance
     """
-    project_window = scene.parent()
-    viewer = Annotator()
-    viewer.set_plugin(plugin)
-    viewer.ui.zoom_value.setMaximum(400)
-    viewer.image_source_ref = selected_roi if selected_roi else project_window.scene.get_selected_ROI()
-    viewer.parent_viewer = project_window
-    _, crop = project_window.get_roi_data(viewer.image_source_ref)
-    project_window.parent().parent().addTab(viewer, viewer.image_source_ref.data(0))
-    viewer.set_image_resource_data(project_window.image_resource_data, crop=crop)
-    viewer.roi_classes = ['-'] * viewer.image_resource_data.sizeT
-    viewer.ui.view_name.setText(f'View: {viewer.image_source_ref.data(0)}')
-    viewer.synchronize_with(project_window)
-    viewer.display()
-    project_window.parent().parent().setCurrentWidget(viewer)
+    with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        roi_selection = [project.get_named_object('ROI', selected_roi.data(0))]
+        open_annotator(plugin, roi_selection)
 
 
 def open_annotator(plugin, roi_selection):
