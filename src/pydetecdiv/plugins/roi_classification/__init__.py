@@ -109,7 +109,6 @@ class Plugin(plugins.Plugin):
         Method launching the plugin. This may encapsulate (as it is the case here) the call to a GUI or some domain
         functionalities run directly without any further interface.
         """
-        self.create_table()
         module = self.gui.network.currentData()
         print(module.__name__)
         model = module.load_model(load_weights=False)
@@ -198,6 +197,7 @@ class Plugin(plugins.Plugin):
         Display the ROI classification docked GUI window
         """
         if self.gui is None:
+            self.create_table()
             self.gui = ROIclassification(PyDetecDiv().main_window)
             self.load_models(self.gui)
             self.gui.update_model_weights()
@@ -262,7 +262,6 @@ class Plugin(plugins.Plugin):
         """
         Launch the annotator GUI for ROI annotation
         """
-        self.create_table()
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             selected_rois = random.sample(project.get_objects('ROI'), self.gui.roi_number.value())
         open_annotator(self, selected_rois)
