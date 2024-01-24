@@ -76,6 +76,27 @@ class ROIclassification(QDockWidget):
         self.roi_number.setValue(int(num_rois / 10))
         self.roi_sampleLayout.addRow(QLabel('ROI sample size:'), self.roi_number)
 
+        self.datasets = QGroupBox(self.form)
+        self.datasets.setTitle('ROI dataset sizes')
+        self.datasetsLayout = QFormLayout(self.datasets)
+
+        annotated_roi_count = self.count_annotated_rois()
+        self.training_data = QSpinBox(self.datasets)
+        self.training_data.setRange(1, annotated_roi_count)
+        self.training_data.setValue(int(0.6 * annotated_roi_count))
+        self.validation_data = QSpinBox(self.datasets)
+        self.validation_data.setRange(1, annotated_roi_count)
+        self.validation_data.setValue(int(0.2 * annotated_roi_count))
+        self.test_data = QSpinBox(self.datasets)
+        self.test_data.setRange(1, annotated_roi_count)
+        self.test_data.setValue(annotated_roi_count - self.training_data.value() - self.validation_data.value())
+        self.training_data.valueChanged.connect(lambda _: self.update_datasets(self.training_data))
+        self.validation_data.valueChanged.connect(lambda _: self.update_datasets(self.validation_data))
+        self.test_data.valueChanged.connect(lambda _: self.update_datasets(self.test_data))
+        self.datasetsLayout.addRow(QLabel('Training dataset:'), self.training_data)
+        self.datasetsLayout.addRow(QLabel('Validation dataset:'), self.validation_data)
+        self.datasetsLayout.addRow(QLabel('Test dataset:'), self.test_data)
+
         self.preprocessing = QGroupBox(self.form)
         self.preprocessing.setTitle('Preprocessing')
         self.preprocessingLayout = QFormLayout(self.preprocessing)
@@ -116,6 +137,7 @@ class ROIclassification(QDockWidget):
         self.vert_layout.addWidget(self.preprocessing)
         self.vert_layout.addWidget(self.roi_selection)
         self.vert_layout.addWidget(self.roi_sample)
+        self.vert_layout.addWidget(self.datasets)
         self.vert_layout.addWidget(self.misc_box)
         self.vert_layout.addWidget(self.button_box)
 
@@ -184,3 +206,22 @@ class ROIclassification(QDockWidget):
         Update the classes associated with the currently selected model
         """
         self.classes.setText(json.dumps(self.network.currentData().class_names))
+
+    def update_datasets(self, changed_dataset):
+        annotated_rois_count = self.count_annotated_rois()
+        total = self.training_data.value() + self.validation_data.value() + self.test_data.value()
+        if total > annotated_rois_count:
+            changed_dataset.setValue(changed_dataset.value() - total + annotated_rois_count)
+
+
+    def count_annotated_rois(self):
+        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            db = QSqlDatabase("QSQLITE")
+            db.setDatabaseName(project.repository.name)
+            db.open()
+            query = QSqlQuery(
+                "SELECT COUNT(DISTINCT(roi)) as roi_count FROM roi_classification, run "
+                "WHERE run.id_=roi_classification.run "
+                "AND run.command='annotate_rois';",
+                db=db)
+            return query.record().value('roi_count') if query.first() else 0

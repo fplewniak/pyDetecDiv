@@ -8,7 +8,9 @@ import random
 import sys
 
 import numpy as np
+import sqlalchemy
 from PySide6.QtGui import QAction
+from PySide6.QtSql import QSqlDatabase, QSqlQuery
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
@@ -21,6 +23,7 @@ from pydetecdiv.domain.Image import Image, ImgDType
 from .gui import ROIclassification
 from . import models
 from .gui.annotate import open_annotator
+from ...settings import get_config_value
 
 Base = registry().generate_base()
 
@@ -227,6 +230,7 @@ class Plugin(plugins.Plugin):
         """
         match (self.gui.action_menu.currentIndex()):
             case 0:
+                # Create new model
                 self.gui.roi_selection.hide()
                 self.gui.roi_sample.hide()
                 self.gui.classifier_selectionLayout.setRowVisible(1, False)
@@ -235,6 +239,7 @@ class Plugin(plugins.Plugin):
                 self.gui.network.setEditable(True)
                 self.gui.classes.setReadOnly(False)
             case 1:
+                # Annotate ROIs
                 self.gui.roi_selection.hide()
                 self.gui.roi_sample.show()
                 self.gui.classifier_selectionLayout.setRowVisible(1, False)
@@ -243,6 +248,7 @@ class Plugin(plugins.Plugin):
                 self.gui.network.setEditable(False)
                 self.gui.classes.setReadOnly(True)
             case 2:
+                # Train model
                 self.gui.roi_selection.hide()
                 self.gui.roi_sample.hide()
                 self.gui.classifier_selectionLayout.setRowVisible(1, True)
@@ -251,6 +257,7 @@ class Plugin(plugins.Plugin):
                 self.gui.network.setEditable(False)
                 self.gui.classes.setReadOnly(True)
             case 3:
+                # Classify ROIs
                 self.gui.roi_selection.show()
                 self.gui.roi_sample.hide()
                 self.gui.classifier_selectionLayout.setRowVisible(1, True)
@@ -315,10 +322,79 @@ class Plugin(plugins.Plugin):
 
     def train_model(self):
         """
-        Launch training a model: select the network, load weights (optional), define the training and validation sets,
-        then run the training.
+        Launch training a model: select the network, load weights (optional), define the training, validation
+        and test sets, then run the training using training and validation sets and the evaluation on the test set.
         """
+        roi_list = self.get_annotated_rois()
+        random.shuffle(roi_list)
+        num_training = self.gui.training_data.value()
+        num_validation = self.gui.validation_data.value()
+        training_dataset = self.dataset_generator(roi_list[:num_training])
+        validation_dataset = self.dataset_generator(roi_list[num_training:num_training + num_validation])
+        test_dataset = self.dataset_generator(roi_list[num_training:num_training + num_validation:])
+
+        module = self.gui.network.currentData()
+        print(module.__name__)
+        model = module.load_model(load_weights=False)
+        print('Loading weights')
+        weights = self.gui.weights.currentData()
+        if weights:
+            module.loadWeights(model, filename=self.gui.weights.currentData())
+
+        print('Compiling model')
+        model.compile(
+            optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+            loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+            metrics=["accuracy"],
+        )
+        input_shape = model.layers[0].output.shape
+        batch_size = self.gui.batch_size.value()
+
+        histories = {'Training': model.fit(training_dataset, epochs=5,
+                                           # callbacks=callbacks,
+                                           validation_data=validation_dataset,
+                                           workers=4, use_multiprocessing=True)}
+
         print('Not implemented')
+
+    def dataset_generator(self, data_list):
+        # Should actually generate a batch instead of just one sequence at a time
+        for roi in data_list:
+            with pydetecdiv_project(PyDetecDiv().project_name) as project:
+                imgdata = roi.fov.image_resource().image_resource_data()
+                yield (self.get_images_sequences(imgdata, [roi], 0, seqlen=self.gui.seq_length.value()),
+                       self.get_annotation(roi))
+
+    def get_annotation(self, roi):
+        roi_classes = [''] * roi.fov.image_resource().image_resource_data().sizeT
+        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            results = list(project.repository.session.execute(
+                sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,run.parameters ->> '$.annotator' as annotator "
+                                f"FROM run, roi_classification as rc "
+                                f"WHERE run.command='annotate_rois' and rc.run=run.id_ and rc.roi={roi.id_} "
+                                f"AND annotator='{get_config_value('project', 'user')}' "
+                                f"ORDER BY rc.run ASC;")))
+            for annotation in results:
+                roi_classes[annotation[1]] = annotation[2]
+        return roi_classes
+
+    def get_annotated_rois(self):
+        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            db = QSqlDatabase("QSQLITE")
+            db.setDatabaseName(project.repository.name)
+            db.open()
+            query = QSqlQuery(
+                "SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
+                "WHERE run.id_=roi_classification.run "
+                "AND run.command='annotate_rois';",
+                db=db)
+            query.exec()
+            if query.first():
+                roi_ids = [query.value('annotated_rois')]
+                while query.next():
+                    roi_ids.append(query.value('annotated_rois'))
+                return project.get_objects('ROI', roi_ids)
+            return []
 
     def get_rgb_images_from_stacks(self, imgdata, roi_list, t, z=None):
         """
@@ -337,7 +413,7 @@ class Plugin(plugins.Plugin):
         image2 = Image(imgdata.image(T=t, Z=z[1]))
         image3 = Image(imgdata.image(T=t, Z=z[2]))
 
-        print(f'Composing for frame {t}')
+        # print(f'Composing for frame {t}')
         roi_images = [Image.compose_channels([image1.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
                                               image2.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
                                               image3.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast()
