@@ -2,6 +2,7 @@
 An example plugin showing how to interact with database
 """
 import importlib
+import math
 import os.path
 import pkgutil
 import random
@@ -61,6 +62,29 @@ class Results(Base):
         self.score = max_score
         project.repository.session.add(self)
 
+# class DatasetGenerator:
+#     def __init__(self, data_list, plugin, timeseries=True):
+#         self.data_list = data_list
+#         self.timeseries = timeseries
+#         self.plugin = plugin
+#
+#     def __iter__(self):
+#         for data in self.data_list:
+#             if self.timeseries:
+#                 roi_sequences = self.plugin.get_images_sequences(data.imgdata, [data.roi], 0,
+#                                                           seqlen=self.plugin.gui.seq_length.value())
+#                 img_array = tf.convert_to_tensor(
+#                     [tf.image.resize(i, (224, 224), method='nearest') for i in roi_sequences])
+#                 print(data.roi.name)
+#                 yield (img_array, np.array([data.target]))
+#             else:
+#                 print('not implemented')
+
+class ROIdata:
+    def __init__(self, roi, imgdata, target=None):
+        self.roi = roi
+        self.imgdata = imgdata
+        self.target = target
 
 class Plugin(plugins.Plugin):
     """
@@ -327,11 +351,11 @@ class Plugin(plugins.Plugin):
         """
         roi_list = self.get_annotated_rois()
         random.shuffle(roi_list)
+        targets = []
+        for roi in roi_list:
+            targets.append([self.class_names.index(a) for a in self.get_annotation(roi)])
         num_training = self.gui.training_data.value()
         num_validation = self.gui.validation_data.value()
-        training_dataset = self.dataset_generator(roi_list[:num_training])
-        validation_dataset = self.dataset_generator(roi_list[num_training:num_training + num_validation])
-        test_dataset = self.dataset_generator(roi_list[num_training + num_validation:])
 
         module = self.gui.network.currentData()
         print(module.__name__)
@@ -350,20 +374,56 @@ class Plugin(plugins.Plugin):
         input_shape = model.layers[0].output.shape
         batch_size = self.gui.batch_size.value()
 
+        roi_data_list = self.prepare_data(roi_list)
+
+        if len(input_shape) == 4:
+            training_dataset = self.dataset_generator(roi_data_list[:num_training], timeseries=False)
+            validation_dataset = self.dataset_generator(roi_data_list[num_training:num_training + num_validation],
+                                                        timeseries=False)
+            test_dataset = self.dataset_generator(roi_list[num_training + num_validation:], timeseries=False)
+        else:
+            training_dataset = self.dataset_generator(roi_data_list[:num_training])
+            validation_dataset = self.dataset_generator(roi_data_list[num_training:num_training + num_validation])
+            test_dataset = self.dataset_generator(roi_data_list[num_training + num_validation:])
+
+        print(input_shape)
+        print(len(roi_data_list[:num_training]), len(roi_data_list[num_training:num_training + num_validation]),
+              len(roi_list[num_training + num_validation:]))
+
+        # for r in test_dataset:
+        #     print(r[0].shape, r[1].shape)
+
         histories = {'Training': model.fit(training_dataset, epochs=5,
+                                           steps_per_epoch=num_training, #//batch_size,
                                            # callbacks=callbacks,
                                            validation_data=validation_dataset,
-                                           workers=4, use_multiprocessing=True)}
+                                           # workers=4, use_multiprocessing=True
+                                           )}
 
         print('Not implemented')
 
-    def dataset_generator(self, data_list):
-        # Should actually generate a batch instead of just one sequence at a time
+    def prepare_data(self, data_list):
+        roi_data_list = []
         for roi in data_list:
-            with pydetecdiv_project(PyDetecDiv().project_name) as project:
-                imgdata = roi.fov.image_resource().image_resource_data()
-                yield (self.get_images_sequences(imgdata, [roi], 0, seqlen=self.gui.seq_length.value()),
-                       self.get_annotation(roi))
+            imgdata = roi.fov.image_resource().image_resource_data()
+            annotation_indices = [self.class_names.index(a) for a in self.get_annotation(roi)]
+            roi_data_list.append(ROIdata(roi, imgdata, annotation_indices))
+        return roi_data_list
+
+    def dataset_generator(self, data_list, timeseries=True):
+        # Should actually generate a batch instead of just one sequence at a time
+        for data in data_list:
+            if timeseries:
+                roi_sequences = self.get_images_sequences(data.imgdata, [data.roi], 0,
+                                                          seqlen=self.gui.seq_length.value())
+                img_array = tf.convert_to_tensor(
+                    [tf.image.resize(i, (224, 224), method='nearest') for i in roi_sequences])
+                print(data.roi.name)
+                yield (img_array, np.array([data.target]))
+            else:
+                print('not implemented')
+                # yield (
+                # [self.get_rgb_images_from_stacks(data.imgdata, [data.roi], t) for t in range(0, data.imgdata.sizeT)])
 
     def get_annotation(self, roi):
         roi_classes = [''] * roi.fov.image_resource().image_resource_data().sizeT
