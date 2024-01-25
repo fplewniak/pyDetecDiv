@@ -88,11 +88,11 @@ class ROIclassification(QDockWidget):
         self.validation_data.setRange(1, annotated_roi_count)
         self.validation_data.setValue(int(0.2 * annotated_roi_count))
         self.test_data = QSpinBox(self.datasets)
-        self.test_data.setRange(1, annotated_roi_count)
+        self.test_data.setRange(0, annotated_roi_count)
         self.test_data.setValue(annotated_roi_count - self.training_data.value() - self.validation_data.value())
         self.training_data.valueChanged.connect(lambda _: self.update_datasets(self.training_data))
         self.validation_data.valueChanged.connect(lambda _: self.update_datasets(self.validation_data))
-        self.test_data.valueChanged.connect(lambda _: self.update_datasets(self.test_data))
+        self.test_data.setEnabled(False)
         self.datasetsLayout.addRow(QLabel('Training dataset:'), self.training_data)
         self.datasetsLayout.addRow(QLabel('Validation dataset:'), self.validation_data)
         self.datasetsLayout.addRow(QLabel('Test dataset:'), self.test_data)
@@ -209,6 +209,7 @@ class ROIclassification(QDockWidget):
 
     def update_datasets(self, changed_dataset):
         annotated_rois_count = self.count_annotated_rois()
+        self.test_data.setValue(annotated_rois_count - (self.training_data.value() + self.validation_data.value()))
         total = self.training_data.value() + self.validation_data.value() + self.test_data.value()
         if total > annotated_rois_count:
             changed_dataset.setValue(changed_dataset.value() - total + annotated_rois_count)

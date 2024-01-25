@@ -331,7 +331,7 @@ class Plugin(plugins.Plugin):
         num_validation = self.gui.validation_data.value()
         training_dataset = self.dataset_generator(roi_list[:num_training])
         validation_dataset = self.dataset_generator(roi_list[num_training:num_training + num_validation])
-        test_dataset = self.dataset_generator(roi_list[num_training:num_training + num_validation:])
+        test_dataset = self.dataset_generator(roi_list[num_training + num_validation:])
 
         module = self.gui.network.currentData()
         print(module.__name__)
