@@ -41,7 +41,7 @@ class MultiFileImageResource(ImageResourceData):
         self._shape = image_resource.shape
         self._dims = image_resource.dims
 
-        print(f'Multiple file image resource: {self.dims}')
+        # print(f'Multiple file image resource: {self.dims}')
 
     @property
     def shape(self):

@@ -127,7 +127,7 @@ class SettingsDialog(QDialog):
         """
         Enable or disable OK and Apply buttons depending upon the validity of input text
         """
-        if self.workspace.text() and self.user.text() and self.toolbox.text():
+        if self.workspace.text() and self.user.text():
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
             self.button_box.button(QDialogButtonBox.Apply).setEnabled(True)
         else:

@@ -80,16 +80,10 @@ class ROIclassification(QDockWidget):
         self.datasets.setTitle('ROI dataset sizes')
         self.datasetsLayout = QFormLayout(self.datasets)
 
-        annotated_roi_count = self.count_annotated_rois()
         self.training_data = QSpinBox(self.datasets)
-        self.training_data.setRange(1, annotated_roi_count)
-        self.training_data.setValue(int(0.6 * annotated_roi_count))
         self.validation_data = QSpinBox(self.datasets)
-        self.validation_data.setRange(1, annotated_roi_count)
-        self.validation_data.setValue(int(0.2 * annotated_roi_count))
         self.test_data = QSpinBox(self.datasets)
-        self.test_data.setRange(0, annotated_roi_count)
-        self.test_data.setValue(annotated_roi_count - self.training_data.value() - self.validation_data.value())
+        self.update_datasets()
         self.training_data.valueChanged.connect(lambda _: self.update_datasets(self.training_data))
         self.validation_data.valueChanged.connect(lambda _: self.update_datasets(self.validation_data))
         self.test_data.setEnabled(False)
@@ -141,6 +135,7 @@ class ROIclassification(QDockWidget):
         self.vert_layout.addWidget(self.misc_box)
         self.vert_layout.addWidget(self.button_box)
 
+        PyDetecDiv().project_selected.connect(lambda _: self.update_datasets())
         self.button_box.rejected.connect(self.close)
         self.form.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
         self.setWidget(self.form)
@@ -207,13 +202,20 @@ class ROIclassification(QDockWidget):
         """
         self.classes.setText(json.dumps(self.network.currentData().class_names))
 
-    def update_datasets(self, changed_dataset):
+    def update_datasets(self, changed_dataset=None):
         annotated_rois_count = self.count_annotated_rois()
-        self.test_data.setValue(annotated_rois_count - (self.training_data.value() + self.validation_data.value()))
-        total = self.training_data.value() + self.validation_data.value() + self.test_data.value()
-        if total > annotated_rois_count:
-            changed_dataset.setValue(changed_dataset.value() - total + annotated_rois_count)
-
+        if changed_dataset:
+            self.test_data.setValue(annotated_rois_count - (self.training_data.value() + self.validation_data.value()))
+            total = self.training_data.value() + self.validation_data.value() + self.test_data.value()
+            if total > annotated_rois_count:
+                changed_dataset.setValue(changed_dataset.value() - total + annotated_rois_count)
+        else:
+            self.training_data.setRange(1, annotated_rois_count)
+            self.training_data.setValue(int(0.6 * annotated_rois_count))
+            self.validation_data.setRange(1, annotated_rois_count)
+            self.validation_data.setValue(int(0.2 * annotated_rois_count))
+            self.test_data.setRange(0, annotated_rois_count)
+            self.test_data.setValue(annotated_rois_count - self.training_data.value() - self.validation_data.value())
 
     def count_annotated_rois(self):
         with pydetecdiv_project(PyDetecDiv().project_name) as project:

@@ -23,7 +23,7 @@ class SingleFileImageResource(ImageResourceData):
         self._memmap = tifffile.memmap(self.path, **kwargs)
         self.img_reader = AICSImage(self.path).reader
 
-        print(f'Single file image resource: {self.dims}')
+        # print(f'Single file image resource: {self.dims}')
 
     @property
     def shape(self):
