@@ -118,7 +118,7 @@ Comments:             {self.comments}
         :param dataset: the dataset name
         :type dataset: str
         :return: the image resource
-        :rtype: ImageResourceData
+        :rtype: ImageResource
         """
         image_resource = \
         [ir for ir in self.project.get_linked_objects('ImageResource', self) if ir.dataset.name == dataset][0]
