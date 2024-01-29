@@ -101,7 +101,7 @@ class ROISequence(tf.keras.utils.Sequence):
     def prepare_data(self, data_list):
         roi_data_list = []
         for roi in data_list:
-            imgdata = roi.fov.image_resource().image_resource_data()
+            imgdata = roi.fov.image_resource()
             annotation_indices = [self.class_names.index(a) for a in Plugin.get_annotation(roi)]
             roi_data_list.append(ROIdata(roi, imgdata, annotation_indices))
         return roi_data_list
@@ -118,7 +118,7 @@ class ROISequence(tf.keras.utils.Sequence):
         batch_targets = []
         batch_data = []
         for data in batch_roi:
-            roi_sequences = Plugin.get_images_sequences(data.imgdata, [data.roi], 0,
+            roi_sequences = Plugin.get_images_sequences(data.imgdata.image_resource_data(), [data.roi], 0,
                                                               seqlen=self.seqlen)
             img_array = tf.convert_to_tensor(
                         [tf.image.resize(i, self.img_size, method='nearest') for i in roi_sequences])

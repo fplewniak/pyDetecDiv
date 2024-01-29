@@ -26,7 +26,7 @@ class ImageResource(DomainSpecificObject):
                  **kwargs):
         super().__init__(**kwargs)
         self._dataset = dataset.id_ if isinstance(dataset, Dataset) else dataset
-        self._fov = fov.id_ if isinstance(fov, FOV) else fov
+        self.fov_id = fov.id_ if isinstance(fov, FOV) else fov
         self.multi = multi
         self._xdim = xdim
         self._ydim = ydim
@@ -40,6 +40,10 @@ class ImageResource(DomainSpecificObject):
         self.tscale = tscale
         self.tunit = tunit
         self.validate(updated=False)
+        self.image_files_5d = self._image_files_5d
+        self.image_files = self._image_files
+        self.pattern = self._pattern
+        self.fov = self._fov
 
     @property
     def dataset(self):
@@ -49,11 +53,11 @@ class ImageResource(DomainSpecificObject):
         return self.project.get_object('Dataset', self._dataset)
 
     @property
-    def fov(self):
+    def _fov(self):
         """
         the FOV corresponding to this image resource
         """
-        return self.project.get_object('FOV', self._fov)
+        return self.project.get_object('FOV', self.fov_id)
 
     @property
     def data_list(self):
@@ -227,7 +231,7 @@ class ImageResource(DomainSpecificObject):
     # return data
 
     @property
-    def image_files_5d(self):
+    def _image_files_5d(self):
         """
         property returning the list of file paths as a 3D array. Each file contains a XY 2D image, and there is one
         file for each T, C,Z combination of coordinates
@@ -244,7 +248,7 @@ class ImageResource(DomainSpecificObject):
         return image_files
 
     @property
-    def image_files(self):
+    def _image_files(self):
         """
         property returning the list of all files associated with this image resource
         :return: list of image files
@@ -253,7 +257,7 @@ class ImageResource(DomainSpecificObject):
         return [d.url for d in sorted(self.project.get_linked_objects('Data', self), key=lambda x: (x.t, x.c, x.z))]
 
     @property
-    def pattern(self):
+    def _pattern(self):
         """
         property returning the pattern defining the dimensions for the dataset associated with this image resource
         :return: pattern
@@ -279,7 +283,7 @@ class ImageResource(DomainSpecificObject):
             'zunit': self.zunit,
             'tscale': self.tscale,
             'tunit': self.tunit,
-            'fov': self._fov,
+            'fov': self.fov_id,
             'multi': self.multi,
             'uuid': self.uuid
         }
