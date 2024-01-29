@@ -123,7 +123,7 @@ class ROISequence(tf.keras.utils.Sequence):
             img_array = tf.convert_to_tensor(
                         [tf.image.resize(i, self.img_size, method='nearest') for i in roi_sequences])
             batch_data.append(img_array[0])
-            batch_targets.append(data.target)
+            batch_targets.append(data.target[0:self.seqlen])
         print(
             f'{np.format_float_positional(psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024), precision=1)} MB')
         return np.array(batch_data), np.array(batch_targets)
