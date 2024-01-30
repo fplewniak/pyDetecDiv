@@ -182,6 +182,9 @@ class ImageResourceData(abc.ABC):
                 return None
         return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)
 
+    def refresh(self):
+        pass
+
     # def correct_drift(self, drift, filename=None, max_mem=5000):
     #     """
     #     Apply the drift correction and save to a multipage TIF file
