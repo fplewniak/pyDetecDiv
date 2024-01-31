@@ -272,7 +272,9 @@ class ShallowSQLite3(ShallowDb):
         :rtype: dict (record)
         """
         if id_ is not None:
-            return self.session.get(dao[class_name], id_).record
+            dso = self.session.get(dao[class_name], id_)
+            if dso is not None:
+                return dso.record
         if uuid is not None:
             return self.session.query(dao[class_name]).filter(dao[class_name].uuid == uuid).first().record
         return None

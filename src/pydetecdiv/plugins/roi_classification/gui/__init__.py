@@ -181,7 +181,7 @@ class ROIclassification(QDockWidget):
         query = QSqlQuery(
             "SELECT min(tdim) from ImageResource",
             db=db)
-        if query.first():
+        if query.first() and query.record().value('min(tdim)'):
             self.seq_length.setRange(1, query.record().value('min(tdim)'))
 
     def update_model_weights(self):
