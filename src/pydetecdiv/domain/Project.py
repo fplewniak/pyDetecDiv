@@ -161,8 +161,14 @@ class Project:
         total = len(new_fov_names) + len(df.values)
         new_fovs = [FOV(project=self, name=fov_name, top_left=(0, 0), bottom_right=(999, 999)) for fov_name in
                     new_fov_names if fov_name not in fov_names]
-        new_image_resources = {fov.id_: ImageResource(project=self, dataset=self.raw_dataset, fov=fov, multi=multi)
-                               for fov in new_fovs}
+        if multi:
+            new_image_resources = {fov.id_: ImageResource(project=self, dataset=self.raw_dataset, fov=fov, multi=True,
+                                                          zdim=int(df['Z'].max()),
+                                                          cdim=int(df['C'].max()),
+                                                          tdim=int(df['T'].max())) for fov in new_fovs}
+        else:
+            new_image_resources = {fov.id_: ImageResource(project=self, dataset=self.raw_dataset, fov=fov, multi=False,
+                                                          ) for fov in new_fovs}
         image_resources = {fov.id_: fov.image_resource('data') for fov in self.get_objects('FOV')}
 
         yield int(len(new_fov_names) * 100 / total)
@@ -189,7 +195,7 @@ class Project:
                 data_file.z = df.loc[i, 'Z']
             self.save(data_file)
             yield int((i + len(new_fov_names)) * 100 / total)
-        _ = [image_res.set_image_shape_from_file() for image_res in new_image_resources.values()]
+        # _ = [image_res.set_image_shape_from_file() for image_res in new_image_resources.values()]
 
     def id_mapping(self, class_name):
         """

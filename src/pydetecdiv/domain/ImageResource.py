@@ -88,7 +88,7 @@ class ImageResource(DomainSpecificObject):
         """
         The image resource X dimension size determined from file
         """
-        if self._xdim is None and len(self.project.get_linked_objects('Data', self)):
+        if (self._xdim == -1) and len(self.project.get_linked_objects('Data', self)):
             self._ydim, self._xdim = self.set_image_shape_from_file()
         return self._xdim
 
@@ -97,7 +97,7 @@ class ImageResource(DomainSpecificObject):
         """
         The image resource Y dimension size determined from file
         """
-        if self._ydim is None and len(self.project.get_linked_objects('Data', self)):
+        if (self._ydim == -1) and len(self.project.get_linked_objects('Data', self)):
             self._ydim, self._xdim = self.set_image_shape_from_file()
         return self._ydim
 
@@ -146,7 +146,7 @@ class ImageResource(DomainSpecificObject):
         The image shape determined from first file
         """
         # with Image.open(self.project.get_linked_objects('Data', self)[0].url) as img:
-        with Image.open(self.image_files[0]) as img:
+        with Image.open(self._image_files[0]) as img:
             self._xdim, self._ydim = img.size
         self.project.save(self)
         return (self._ydim, self._xdim)
