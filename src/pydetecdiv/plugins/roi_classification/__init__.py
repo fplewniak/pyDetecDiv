@@ -17,6 +17,7 @@ from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
 import tensorflow as tf
+from tifffile import tifffile
 
 from pydetecdiv import plugins
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
@@ -88,6 +89,7 @@ class ROIdata:
         self.imgdata = imgdata
         self.target = target
 
+
 class ROIDataset(tf.keras.utils.Sequence):
     def __init__(self, roi_list, image_size=(60, 60), class_names=None, batch_size=32, seqlen=None, ):
         self.roi_list = roi_list
@@ -101,6 +103,7 @@ class ROIDataset(tf.keras.utils.Sequence):
         roi_data_list = []
         for roi in sorted(data_list, key=lambda roi: roi.fov.id_):
             imgdata = roi.fov.image_resource().image_resource_data()
+            # annotation_indices = [0] * roi.fov.image_resource().sizeT
             annotation_indices = [self.class_names.index(a) for a in Plugin.get_annotation(roi)]
             roi_data_list.append(ROIdata(roi, imgdata, annotation_indices))
         return roi_data_list
@@ -118,10 +121,11 @@ class ROIDataset(tf.keras.utils.Sequence):
         batch_data = []
         for data in batch_roi:
             if self.seqlen is None:
-                roi_dataset = Plugin.get_rgb_images_from_stacks(imgdata=data.imgdata, roi_list=[data.roi], t=0)
+                roi_dataset = Plugin.get_rgb_images_from_stacks_memmap(imgdata=data.imgdata, roi_list=[data.roi], t=0)
                 batch_targets.append(data.target[0])
             else:
-                roi_dataset = Plugin.get_images_sequences(imgdata=data.imgdata, roi_list=[data.roi], t=0, seqlen=self.seqlen)
+                roi_dataset = Plugin.get_images_sequences(imgdata=data.imgdata, roi_list=[data.roi], t=0,
+                                                          seqlen=self.seqlen)
                 batch_targets.append(data.target[0:self.seqlen])
             img_array = tf.convert_to_tensor([tf.image.resize(i, self.img_size, method='nearest') for i in roi_dataset])
             batch_data.append(img_array[0])
@@ -202,8 +206,8 @@ class Plugin(plugins.Plugin):
         batch_size = self.gui.batch_size.value()
         fov_names = [index.data() for index in self.gui.selection_model.selectedRows(0)]
         z_comb = [self.gui.red_channel.currentIndex(),
-             self.gui.green_channel.currentIndex(),
-             self.gui.blue_channel.currentIndex()]
+                  self.gui.green_channel.currentIndex(),
+                  self.gui.blue_channel.currentIndex()]
         with (pydetecdiv_project(PyDetecDiv().project_name) as project):
             print('Saving run')
             run = self.save_run(project, 'predict', {'fov': fov_names,
@@ -401,12 +405,17 @@ class Plugin(plugins.Plugin):
         and test sets, then run the training using training and validation sets and the evaluation on the test set.
         """
         roi_list = self.get_annotated_rois()
-        random.shuffle(roi_list)
-        targets = []
-        for roi in roi_list:
-            targets.append([self.class_names.index(a) for a in self.get_annotation(roi)])
+        # with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        #     roi_list = project.get_objects('ROI')
+        # random.shuffle(roi_list)
+        # targets = []
+        # for roi in roi_list:
+        #     targets.append([self.class_names.index(a) for a in self.get_annotation(roi)])
         num_training = self.gui.training_data.value()
         num_validation = self.gui.validation_data.value()
+
+        # num_training = int(len(roi_list) * 0.8)
+        # num_validation = int(len(roi_list) * 0.2)
 
         module = self.gui.network.currentData()
         print(module.__name__)
@@ -431,21 +440,25 @@ class Plugin(plugins.Plugin):
             img_size = (input_shape[1], input_shape[2])
             print('Training dataset')
             training_dataset = ROIDataset(roi_list[:num_training],
-                                             image_size=img_size, class_names=self.class_names, batch_size=batch_size)
+                                          image_size=img_size, class_names=self.class_names, batch_size=batch_size)
             print('Validation dataset')
             validation_dataset = ROIDataset(roi_list[num_training:num_training + num_validation],
-                                               image_size=img_size, class_names=self.class_names, batch_size=batch_size)
+                                            image_size=img_size, class_names=self.class_names, batch_size=batch_size)
             print('Test dataset')
-            test_dataset = ROIDataset(roi_list[num_training + num_validation:], image_size=img_size, class_names=self.class_names, batch_size=batch_size)
+            test_dataset = ROIDataset(roi_list[num_training + num_validation:], image_size=img_size,
+                                      class_names=self.class_names, batch_size=batch_size)
         else:
             img_size = (input_shape[2], input_shape[3])
             print('Training dataset')
-            training_dataset = ROIDataset(roi_list[:num_training], image_size=img_size, class_names=self.class_names, seqlen=seqlen, batch_size=batch_size)
+            training_dataset = ROIDataset(roi_list[:num_training], image_size=img_size, class_names=self.class_names,
+                                          seqlen=seqlen, batch_size=batch_size)
             print('Validation dataset')
             validation_dataset = ROIDataset(roi_list[num_training:num_training + num_validation],
-                                               image_size=img_size, class_names=self.class_names, seqlen=seqlen, batch_size=batch_size)
+                                            image_size=img_size, class_names=self.class_names, seqlen=seqlen,
+                                            batch_size=batch_size)
             print('Test dataset')
-            test_dataset = ROIDataset(roi_list[num_training + num_validation:], image_size=img_size, class_names=self.class_names, seqlen=seqlen, batch_size=batch_size)
+            test_dataset = ROIDataset(roi_list[num_training + num_validation:], image_size=img_size,
+                                      class_names=self.class_names, seqlen=seqlen, batch_size=batch_size)
 
         print(input_shape)
 
@@ -523,6 +536,31 @@ class Plugin(plugins.Plugin):
         return roi_images
 
     @staticmethod
+    def get_rgb_images_from_stacks_memmap(imgdata, roi_list, t, z=None):
+        """
+        Combine 3 z-layers of a grayscale image resource into a RGB image where each of the z-layer is a channel
+        :param imgdata: the image data resource
+        :param roi_list: the list of ROIs
+        :param t: the frame index
+        :param z: a list of 3 z-layer indices defining the grayscale layers that must be combined as channels
+        :return: a tensor of the combined RGB images
+        """
+        if z is None:
+            z = [0, 0, 0]
+
+        image1 = tifffile.memmap(imgdata.image_files[t, 0, z[0]])
+        image2 = tifffile.memmap(imgdata.image_files[t, 0, z[1]])
+        image3 = tifffile.memmap(imgdata.image_files[t, 0, z[2]])
+
+        # print(f'Composing for frame {t}')
+        roi_images = [
+            Image.compose_channels([Image(image1[roi.y:roi.y + roi.height, roi.x:roi.x + roi.width]).stretch_contrast(),
+                                    Image(image2[roi.y:roi.y + roi.height, roi.x:roi.x + roi.width]).stretch_contrast(),
+                                    Image(image3[roi.y:roi.y + roi.height, roi.x:roi.x + roi.width]).stretch_contrast()
+                                    ]).as_tensor(ImgDType.float32) for roi in roi_list]
+        return roi_images
+
+    @staticmethod
     def get_images_sequences(imgdata, roi_list, t, seqlen=None, z=None):
         """
         Get a sequence of seqlen images for each roi
@@ -533,7 +571,8 @@ class Plugin(plugins.Plugin):
         :return: a tensor containing the sequences for all ROIs
         """
         maxt = min(imgdata.sizeT, t + seqlen) if seqlen else imgdata.sizeT
-        roi_sequences = tf.stack([Plugin.get_rgb_images_from_stacks(imgdata, roi_list, f, z=z) for f in range(t, maxt)],
-                                 axis=1)
+        roi_sequences = tf.stack(
+            [Plugin.get_rgb_images_from_stacks_memmap(imgdata, roi_list, f, z=z) for f in range(t, maxt)],
+            axis=1)
         # print('roi sequence', roi_sequences.shape)
         return roi_sequences
