@@ -100,6 +100,22 @@ class SingleFileImageResource(ImageResourceData):
         data = tf.image.convert_image_dtype(data, dtype=tf.uint16, saturate=False).numpy()
         return data
 
+    def _image_memmap(self,  sliceX=None, sliceY=None, C=0, Z=0, T=0, drift=None):
+        if sliceX is None:
+            sliceX = slice(0, self.sizeX)
+        if sliceY is None:
+            sliceY = slice(0, self.sizeX)
+        deltaX = 0 if drift is None else drift.dx
+        deltaY = 0 if drift is None else drift.dy
+
+        sliceX = slice(sliceX.start - deltaX, sliceX.stop - deltaX)
+        sliceY = slice(sliceY.start - deltaY, sliceY.stop - deltaY)
+
+        s = self.shape
+        data = np.expand_dims(self._memmap, axis=tuple(i for i in range(len(s)) if s[i] == 1))[T, C, Z, sliceY, sliceX]
+        return data
+
+
     def data_sample(self, X=None, Y=None):
         """
         Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for

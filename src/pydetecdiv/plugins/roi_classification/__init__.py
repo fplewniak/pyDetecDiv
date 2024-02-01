@@ -17,7 +17,6 @@ from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
 import tensorflow as tf
-from tifffile import tifffile
 
 from pydetecdiv import plugins
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
@@ -101,7 +100,8 @@ class ROIDataset(tf.keras.utils.Sequence):
 
     def prepare_data(self, data_list):
         roi_data_list = []
-        for roi in sorted(data_list, key=lambda roi: roi.fov.id_):
+        # for roi in sorted(data_list, key=lambda roi: roi.fov.id_):
+        for roi in data_list:
             imgdata = roi.fov.image_resource().image_resource_data()
             # annotation_indices = [0] * roi.fov.image_resource().sizeT
             annotation_indices = [self.class_names.index(a) for a in Plugin.get_annotation(roi)]
@@ -129,8 +129,8 @@ class ROIDataset(tf.keras.utils.Sequence):
                 batch_targets.append(data.target[0:self.seqlen])
             img_array = tf.convert_to_tensor([tf.image.resize(i, self.img_size, method='nearest') for i in roi_dataset])
             batch_data.append(img_array[0])
-        print(
-            f'{np.format_float_positional(psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024), precision=1)} MB')
+        # print(
+        #     f'{np.format_float_positional(psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024), precision=1)} MB')
         return np.array(batch_data), np.array(batch_targets)
 
 
@@ -405,17 +405,9 @@ class Plugin(plugins.Plugin):
         and test sets, then run the training using training and validation sets and the evaluation on the test set.
         """
         roi_list = self.get_annotated_rois()
-        # with pydetecdiv_project(PyDetecDiv().project_name) as project:
-        #     roi_list = project.get_objects('ROI')
-        # random.shuffle(roi_list)
-        # targets = []
-        # for roi in roi_list:
-        #     targets.append([self.class_names.index(a) for a in self.get_annotation(roi)])
+        random.shuffle(roi_list)
         num_training = self.gui.training_data.value()
         num_validation = self.gui.validation_data.value()
-
-        # num_training = int(len(roi_list) * 0.8)
-        # num_validation = int(len(roi_list) * 0.2)
 
         module = self.gui.network.currentData()
         print(module.__name__)
@@ -472,8 +464,6 @@ class Plugin(plugins.Plugin):
                                            verbose=2,
                                            # workers=4, use_multiprocessing=True
                                            )}
-        print(
-            f'{np.format_float_positional(psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024), precision=1)} MB')
         print('Not implemented')
 
     @staticmethod
@@ -547,16 +537,19 @@ class Plugin(plugins.Plugin):
         """
         if z is None:
             z = [0, 0, 0]
-
-        image1 = tifffile.memmap(imgdata.image_files[t, 0, z[0]])
-        image2 = tifffile.memmap(imgdata.image_files[t, 0, z[1]])
-        image3 = tifffile.memmap(imgdata.image_files[t, 0, z[2]])
-
-        # print(f'Composing for frame {t}')
         roi_images = [
-            Image.compose_channels([Image(image1[roi.y:roi.y + roi.height, roi.x:roi.x + roi.width]).stretch_contrast(),
-                                    Image(image2[roi.y:roi.y + roi.height, roi.x:roi.x + roi.width]).stretch_contrast(),
-                                    Image(image3[roi.y:roi.y + roi.height, roi.x:roi.x + roi.width]).stretch_contrast()
+            Image.compose_channels([Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
+                                                               sliceY=slice(roi.y, roi.y + roi.height),
+                                                               C=0, Z=z[0], T=0,
+                                                               drift=None)).stretch_contrast(),
+                                    Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
+                                                               sliceY=slice(roi.y, roi.y + roi.height),
+                                                               C=0, Z=z[1], T=0,
+                                                               drift=None)).stretch_contrast(),
+                                    Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
+                                                               sliceY=slice(roi.y, roi.y + roi.height),
+                                                               C=0, Z=z[2], T=0,
+                                                               drift=None)).stretch_contrast(),
                                     ]).as_tensor(ImgDType.float32) for roi in roi_list]
         return roi_images
 

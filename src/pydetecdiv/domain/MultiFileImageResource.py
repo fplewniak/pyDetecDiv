@@ -119,6 +119,22 @@ class MultiFileImageResource(ImageResourceData):
         return np.zeros((self.sizeY, self.sizeX), np.uint16)
         # return None
 
+    def _image_memmap(self,  sliceX=None, sliceY=None, C=0, Z=0, T=0, drift=None):
+        if sliceX is None:
+            sliceX = slice(0, self.sizeX)
+        if sliceY is None:
+            sliceY = slice(0, self.sizeX)
+        deltaX = 0 if drift is None else drift.dx
+        deltaY = 0 if drift is None else drift.dy
+
+        sliceX = slice(sliceX.start - deltaX, sliceX.stop - deltaX)
+        sliceY = slice(sliceY.start - deltaY, sliceY.stop - deltaY)
+
+        if self.image_files[T, C, Z]:
+            return tifffile.memmap(self.image_files[T, C, Z])[sliceY, sliceX]
+        return np.zeros((sliceY.stop - sliceY.start, sliceX.stop - sliceX.start), np.uint16)
+
+
     def data_sample(self, X=None, Y=None):
         """
         Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for

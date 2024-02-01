@@ -68,7 +68,7 @@ class ImageResourceData(abc.ABC):
     @abc.abstractmethod
     def _image(self, C=0, Z=0, T=0, drift=None):
         """
-        A 2D grayscale image (on frame, one channel and one layer)
+        A 2D grayscale image (one frame, one channel and one layer)
 
         :param C: the channel index
         :type C: int
@@ -83,6 +83,26 @@ class ImageResourceData(abc.ABC):
     def image(self, sliceX=None, sliceY=None, **kwargs):
         if sliceX and sliceY:
             return self._image(**kwargs)[sliceY, sliceX]
+        return self._image(**kwargs)
+
+    @abc.abstractmethod
+    def _image_memmap(self, sliceX=None, sliceY=None, C=0, Z=0, T=0, drift=None):
+        """
+        A 2D grayscale memory mapped image (one frame, one channel and one layer)
+
+        :param C: the channel index
+        :type C: int
+        :param Z: the layer index
+        :type Z: int
+        :param T: the frame index
+        :type T: int
+        :return: a 2D data array
+        :rtype: 2D numpy.array
+        """
+
+    def image_memmap(self, sliceX=None, sliceY=None, **kwargs):
+        if sliceX and sliceY:
+            return self._image_memmap(sliceY, sliceX, **kwargs)
         return self._image(**kwargs)
 
     @abc.abstractmethod
