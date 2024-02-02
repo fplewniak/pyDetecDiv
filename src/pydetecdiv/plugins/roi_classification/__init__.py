@@ -11,8 +11,9 @@ import sys
 import numpy as np
 import psutil
 import sqlalchemy
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QColor, QPen
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
+from PySide6.QtWidgets import QGraphicsRectItem
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
@@ -293,11 +294,13 @@ class Plugin(plugins.Plugin):
             PyDetecDiv().project_selected.connect(self.set_table_view)
             PyDetecDiv().project_selected.connect(self.set_sequence_length)
             PyDetecDiv().saved_rois.connect(self.set_table_view)
+            # PyDetecDiv().main_window.active_subwindow.viewer.video_frame.connect(self.draw_annotated_rois)
             self.gui.button_box.accepted.connect(self.run)
             self.gui.network.currentIndexChanged.connect(self.update_class_names)
             self.gui.action_menu.currentIndexChanged.connect(self.adapt_gui)
             self.gui.action_menu.setCurrentIndex(3)
         self.gui.setVisible(True)
+        # self.draw_annotated_rois()
 
     def adapt_gui(self):
         """
@@ -498,6 +501,26 @@ class Plugin(plugins.Plugin):
                     roi_ids.append(query.value('annotated_rois'))
                 return project.get_objects('ROI', roi_ids)
             return []
+
+    def draw_annotated_rois(self):
+        colours = [
+            QColor(255, 0, 0, 64),
+            QColor(0, 255, 0, 64),
+            QColor(0, 0, 255, 64),
+            QColor(255, 255, 0, 64),
+            QColor(0, 255, 255, 64),
+            QColor(255, 0, 255, 64),
+            QColor(64, 128, 0, 64),
+            QColor(64, 0, 128, 64),
+            QColor(128, 64, 0, 64),
+            QColor(0, 64, 128, 64),
+        ]
+        rec_items = {item.data(0): item for item in PyDetecDiv().main_window.active_subwindow.viewer.scene.items() if
+                     isinstance(item, QGraphicsRectItem)}
+        for roi in Plugin.get_annotated_rois():
+            if roi.name in rec_items:
+                annotation = Plugin.get_annotation(roi)[PyDetecDiv().main_window.active_subwindow.viewer.T]
+                rec_items[roi.name].setBrush(colours[self.class_names.index(annotation)])
 
     @staticmethod
     def get_rgb_images_from_stacks(imgdata, roi_list, t, z=None):
