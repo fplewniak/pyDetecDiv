@@ -2,6 +2,7 @@
 An example plugin showing how to interact with database
 """
 import importlib
+import json
 import math
 import os.path
 import pkgutil
@@ -71,9 +72,26 @@ def prepare_data(data_list, seqlen):
     for roi in data_list:
         imgdata = roi.fov.image_resource().image_resource_data()
         # annotation_indices = [0] * roi.fov.image_resource().sizeT
-        annotation_indices = split_list(Plugin.get_annotation(roi), -1, seqlen)
+        annotation_indices = split_list(get_annotation(roi), -1, seqlen)
         roi_data_list.extend([ROIdata(roi, imgdata, annotation_seq) for annotation_seq in annotation_indices])
     return roi_data_list
+
+
+def get_annotation(roi):
+    roi_classes = [-1] * roi.fov.image_resource().image_resource_data().sizeT
+    with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        results = list(project.repository.session.execute(
+            sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,"
+                            f"run.parameters ->> '$.annotator' as annotator, "
+                            f"run.parameters ->> '$.class_names' as class_names "
+                            f"FROM run, roi_classification as rc "
+                            f"WHERE run.command='annotate_rois' and rc.run=run.id_ and rc.roi={roi.id_} "
+                            f"AND annotator='{get_config_value('project', 'user')}' "
+                            f"ORDER BY rc.run ASC;")))
+        class_names = json.loads(results[0][4])
+        for annotation in results:
+            roi_classes[annotation[1]] = class_names.index(annotation[2])
+    return roi_classes
 
 
 # class DatasetGenerator:
@@ -111,16 +129,6 @@ class ROIDataset(tf.keras.utils.Sequence):
         self.roi_data_list = roi_list
         self.seqlen = seqlen
 
-    # def prepare_data(self, data_list):
-    #     roi_data_list = []
-    #     # for roi in sorted(data_list, key=lambda roi: roi.fov.id_):
-    #     for roi in data_list:
-    #         imgdata = roi.fov.image_resource().image_resource_data()
-    #         # annotation_indices = [0] * roi.fov.image_resource().sizeT
-    #         annotation_indices = Plugin.get_annotation(roi)
-    #         roi_data_list.append(ROIdata(roi, imgdata, annotation_indices))
-    #     return roi_data_list
-
     def __len__(self):
         return math.ceil(len(self.roi_list) / self.batch_size)
 
@@ -155,12 +163,12 @@ class Plugin(plugins.Plugin):
     version = '1.0.0'
     name = 'ROI classification'
     category = 'Deep learning'
-    class_names = []
+    # class_names = []
 
     def __init__(self):
         super().__init__()
         self.menu = None
-        # self.class_names = []
+        self.class_names = []
         self.gui = None
 
     def create_table(self):
@@ -227,7 +235,7 @@ class Plugin(plugins.Plugin):
             run = self.save_run(project, 'predict', {'fov': fov_names,
                                                      'network': module.__name__,
                                                      'weights': weights,
-                                                     'class_names': Plugin.class_names,
+                                                     'class_names': self.class_names,
                                                      'red': self.gui.red_channel.currentIndex(),
                                                      'green': self.gui.green_channel.currentIndex(),
                                                      'blue': self.gui.blue_channel.currentIndex()
@@ -247,7 +255,7 @@ class Plugin(plugins.Plugin):
                             predictions = model.predict(img_array)
                             # print(predictions.shape)
                             for roi, pred in zip(batch, predictions):
-                                Results().save(project, run, roi, t, pred[0, 0, ...], Plugin.class_names)
+                                Results().save(project, run, roi, t, pred[0, 0, ...], self.class_names)
                     else:
                         x, y = input_shape[2:4]
                         seqlen = self.gui.seq_length.value()
@@ -264,7 +272,7 @@ class Plugin(plugins.Plugin):
                             print('Saving results')
                             for roi, pred in zip(batch, predictions):
                                 for frame, scores in enumerate(pred):
-                                    Results().save(project, run, roi, t + frame, scores, Plugin.class_names)
+                                    Results().save(project, run, roi, t + frame, scores, self.class_names)
             print('predictions OK')
 
     def load_models(self, gui):
@@ -389,7 +397,7 @@ class Plugin(plugins.Plugin):
         Gets the names of classes from the GUI
         """
         if self.gui:
-            Plugin.class_names = self.gui.network.currentData().class_names
+            self.class_names = self.gui.network.currentData().class_names
 
     def set_table_view(self, project_name):
         """
@@ -449,25 +457,25 @@ class Plugin(plugins.Plugin):
             img_size = (input_shape[1], input_shape[2])
             print('Training dataset')
             training_dataset = ROIDataset(roi_list[:num_training],
-                                          image_size=img_size, class_names=Plugin.class_names, batch_size=batch_size)
+                                          image_size=img_size, class_names=self.class_names, batch_size=batch_size)
             print('Validation dataset')
             validation_dataset = ROIDataset(roi_list[num_training:num_training + num_validation],
-                                            image_size=img_size, class_names=Plugin.class_names, batch_size=batch_size)
+                                            image_size=img_size, class_names=self.class_names, batch_size=batch_size)
             print('Test dataset')
             test_dataset = ROIDataset(roi_list[num_training + num_validation:], image_size=img_size,
-                                      class_names=Plugin.class_names, batch_size=batch_size)
+                                      class_names=self.class_names, batch_size=batch_size)
         else:
             img_size = (input_shape[2], input_shape[3])
             print('Training dataset')
-            training_dataset = ROIDataset(roi_list[:num_training], image_size=img_size, class_names=Plugin.class_names,
+            training_dataset = ROIDataset(roi_list[:num_training], image_size=img_size, class_names=self.class_names,
                                           seqlen=seqlen, batch_size=batch_size)
             print('Validation dataset')
             validation_dataset = ROIDataset(roi_list[num_training:num_training + num_validation],
-                                            image_size=img_size, class_names=Plugin.class_names, seqlen=seqlen,
+                                            image_size=img_size, class_names=self.class_names, seqlen=seqlen,
                                             batch_size=batch_size)
             print('Test dataset')
             test_dataset = ROIDataset(roi_list[num_training + num_validation:], image_size=img_size,
-                                      class_names=Plugin.class_names, seqlen=seqlen, batch_size=batch_size)
+                                      class_names=self.class_names, seqlen=seqlen, batch_size=batch_size)
 
         print(input_shape)
 
@@ -482,20 +490,6 @@ class Plugin(plugins.Plugin):
                                            # workers=4, use_multiprocessing=True
                                            )}
         print('Not implemented')
-
-    @staticmethod
-    def get_annotation(roi):
-        roi_classes = [-1] * roi.fov.image_resource().image_resource_data().sizeT
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            results = list(project.repository.session.execute(
-                sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,run.parameters ->> '$.annotator' as annotator "
-                                f"FROM run, roi_classification as rc "
-                                f"WHERE run.command='annotate_rois' and rc.run=run.id_ and rc.roi={roi.id_} "
-                                f"AND annotator='{get_config_value('project', 'user')}' "
-                                f"ORDER BY rc.run ASC;")))
-            for annotation in results:
-                roi_classes[annotation[1]] = Plugin.class_names.index(annotation[2])
-        return roi_classes
 
     @staticmethod
     def get_annotated_rois():
@@ -534,7 +528,7 @@ class Plugin(plugins.Plugin):
                      isinstance(item, QGraphicsRectItem)}
         for roi in Plugin.get_annotated_rois():
             if roi.name in rec_items:
-                annotation = Plugin.get_annotation(roi)[PyDetecDiv().main_window.active_subwindow.viewer.T]
+                annotation = get_annotation(roi)[PyDetecDiv().main_window.active_subwindow.viewer.T]
                 rec_items[roi.name].setBrush(colours[annotation])
 
     @staticmethod
