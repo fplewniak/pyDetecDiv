@@ -56,3 +56,24 @@ def remove_keys_from_dict(dictionary, keys):
     :rtype: dict
     """
     return dict(filter(lambda item: item[0] not in keys, dictionary.items()))
+
+
+def split_list(arr, sep, max_length=None, constant_length=True):
+    arr = np.array(arr)
+    sep = sep if isinstance(sep, list) else [sep]
+    indices = np.where(np.diff([arr == s for s in sep]))[0] + 1
+    sublists = []
+    start = 0
+    for idx in indices:
+        # sublists.extend(keras.ops.extract_sequences(arr[start:idx], max_length, max_length)) # Keras3
+        num_sections = int((idx - start) / max_length + 0.5) if max_length else 1
+        sublists.extend(np.array_split(arr[start:idx], num_sections))
+        start = idx
+
+    if start < len(arr):
+        num_sections = int((len(arr) - start) / max_length + 0.5) if max_length else 1
+        sublists.extend(np.array_split(arr[start:], num_sections))
+
+    if constant_length:
+        return [sublist for sublist in sublists if len(sublist) == max_length]
+    return sublists

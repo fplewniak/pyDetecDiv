@@ -22,6 +22,7 @@ import tensorflow as tf
 from pydetecdiv import plugins
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
 from pydetecdiv.domain.Image import Image, ImgDType
+from pydetecdiv.utils import split_list
 
 from .gui import ROIclassification
 from . import models
@@ -65,13 +66,13 @@ class Results(Base):
         project.repository.session.add(self)
 
 
-def prepare_data(data_list):
+def prepare_data(data_list, seqlen):
     roi_data_list = []
     for roi in data_list:
         imgdata = roi.fov.image_resource().image_resource_data()
         # annotation_indices = [0] * roi.fov.image_resource().sizeT
-        annotation_indices = Plugin.get_annotation(roi)
-        roi_data_list.append(ROIdata(roi, imgdata, annotation_indices))
+        annotation_indices = split_list(Plugin.get_annotation(roi), -1, seqlen)
+        roi_data_list.extend([ROIdata(roi, imgdata, annotation_seq) for annotation_seq in annotation_indices])
     return roi_data_list
 
 
@@ -419,7 +420,11 @@ class Plugin(plugins.Plugin):
         Launch training a model: select the network, load weights (optional), define the training, validation
         and test sets, then run the training using training and validation sets and the evaluation on the test set.
         """
-        roi_list = prepare_data(self.get_annotated_rois())
+        batch_size = self.gui.batch_size.value()
+        seqlen = self.gui.seq_length.value()
+        epochs = 5
+
+        roi_list = prepare_data(self.get_annotated_rois(), seqlen)
         random.shuffle(roi_list)
         num_training = int(self.gui.training_data.value() * len(roi_list))
         num_validation = int(self.gui.validation_data.value() * len(roi_list))
@@ -439,9 +444,6 @@ class Plugin(plugins.Plugin):
             metrics=["accuracy"],
         )
         input_shape = model.layers[0].output.shape
-        batch_size = self.gui.batch_size.value()
-        seqlen = self.gui.seq_length.value()
-        epochs = 5
 
         if len(input_shape) == 4:
             img_size = (input_shape[1], input_shape[2])
