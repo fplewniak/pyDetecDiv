@@ -65,6 +65,16 @@ class Results(Base):
         project.repository.session.add(self)
 
 
+def prepare_data(data_list):
+    roi_data_list = []
+    for roi in data_list:
+        imgdata = roi.fov.image_resource().image_resource_data()
+        # annotation_indices = [0] * roi.fov.image_resource().sizeT
+        annotation_indices = Plugin.get_annotation(roi)
+        roi_data_list.append(ROIdata(roi, imgdata, annotation_indices))
+    return roi_data_list
+
+
 # class DatasetGenerator:
 #     def __init__(self, data_list, plugin, timeseries=True):
 #         self.data_list = data_list
@@ -96,18 +106,19 @@ class ROIDataset(tf.keras.utils.Sequence):
         self.img_size = image_size
         self.class_names = class_names
         self.batch_size = batch_size
-        self.roi_data_list = self.prepare_data(roi_list)
+        # self.roi_data_list = self.prepare_data(roi_list)
+        self.roi_data_list = roi_list
         self.seqlen = seqlen
 
-    def prepare_data(self, data_list):
-        roi_data_list = []
-        # for roi in sorted(data_list, key=lambda roi: roi.fov.id_):
-        for roi in data_list:
-            imgdata = roi.fov.image_resource().image_resource_data()
-            # annotation_indices = [0] * roi.fov.image_resource().sizeT
-            annotation_indices = Plugin.get_annotation(roi)
-            roi_data_list.append(ROIdata(roi, imgdata, annotation_indices))
-        return roi_data_list
+    # def prepare_data(self, data_list):
+    #     roi_data_list = []
+    #     # for roi in sorted(data_list, key=lambda roi: roi.fov.id_):
+    #     for roi in data_list:
+    #         imgdata = roi.fov.image_resource().image_resource_data()
+    #         # annotation_indices = [0] * roi.fov.image_resource().sizeT
+    #         annotation_indices = Plugin.get_annotation(roi)
+    #         roi_data_list.append(ROIdata(roi, imgdata, annotation_indices))
+    #     return roi_data_list
 
     def __len__(self):
         return math.ceil(len(self.roi_list) / self.batch_size)
@@ -408,7 +419,7 @@ class Plugin(plugins.Plugin):
         Launch training a model: select the network, load weights (optional), define the training, validation
         and test sets, then run the training using training and validation sets and the evaluation on the test set.
         """
-        roi_list = self.get_annotated_rois()
+        roi_list = prepare_data(self.get_annotated_rois())
         random.shuffle(roi_list)
         num_training = int(self.gui.training_data.value() * len(roi_list))
         num_validation = int(self.gui.validation_data.value() * len(roi_list))
