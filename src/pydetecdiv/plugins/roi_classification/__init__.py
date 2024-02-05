@@ -410,8 +410,8 @@ class Plugin(plugins.Plugin):
         """
         roi_list = self.get_annotated_rois()
         random.shuffle(roi_list)
-        num_training = self.gui.training_data.value()
-        num_validation = self.gui.validation_data.value()
+        num_training = int(self.gui.training_data.value() * len(roi_list))
+        num_validation = int(self.gui.validation_data.value() * len(roi_list))
 
         module = self.gui.network.currentData()
         print(module.__name__)
