@@ -116,6 +116,13 @@ class ROIclassification(QDockWidget):
         self.misc_box = QGroupBox(self.form)
         self.misc_boxLayout = QFormLayout(self.misc_box)
 
+        self.epochs = QSpinBox(self.misc_box)
+        self.epochs.setRange(1, 4096)
+        self.epochs.setSingleStep(1)
+        self.epochs.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
+        self.epochs.setValue(16)
+        self.misc_boxLayout.addRow(QLabel('Epochs:'), self.epochs)
+
         self.batch_size = QSpinBox(self.misc_box)
         self.batch_size.setRange(2, 4096)
         self.batch_size.setSingleStep(2)
