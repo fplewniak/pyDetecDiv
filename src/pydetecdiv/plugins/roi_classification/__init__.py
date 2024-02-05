@@ -142,10 +142,10 @@ class ROIDataset(tf.keras.utils.Sequence):
         batch_data = []
         for data in batch_roi:
             if self.seqlen is None:
-                roi_dataset = Plugin.get_rgb_images_from_stacks_memmap(imgdata=data.imgdata, roi_list=[data.roi], t=0)
+                roi_dataset = get_rgb_images_from_stacks_memmap(imgdata=data.imgdata, roi_list=[data.roi], t=0)
                 batch_targets.append(data.target[0])
             else:
-                roi_dataset = Plugin.get_images_sequences(imgdata=data.imgdata, roi_list=[data.roi], t=0,
+                roi_dataset = get_images_sequences(imgdata=data.imgdata, roi_list=[data.roi], t=0,
                                                           seqlen=self.seqlen)
                 batch_targets.append(data.target[0:self.seqlen])
             img_array = tf.convert_to_tensor([tf.image.resize(i, self.img_size, method='nearest') for i in roi_dataset])
@@ -250,7 +250,7 @@ class Plugin(plugins.Plugin):
                     if len(input_shape) == 4:
                         x, y = input_shape[1:3]
                         for t in range(imgdata.sizeT):
-                            roi_images = self.get_rgb_images_from_stacks(imgdata, batch, t, z=z_comb)
+                            roi_images = get_rgb_images_from_stacks(imgdata, batch, t, z=z_comb)
                             img_array = tf.image.resize(roi_images, (y, x), method='nearest')
                             predictions = model.predict(img_array)
                             # print(predictions.shape)
@@ -262,7 +262,7 @@ class Plugin(plugins.Plugin):
                         for t in range(0, imgdata.sizeT, seqlen):
                             print(f'Sequence from {t} to {t + seqlen - 1}')
                             print('Reading batch')
-                            roi_sequences = self.get_images_sequences(imgdata, batch, t, seqlen=seqlen, z=z_comb)
+                            roi_sequences = get_images_sequences(imgdata, batch, t, seqlen=seqlen, z=z_comb)
                             print('Sequence loaded, resizing images')
                             img_array = tf.convert_to_tensor(
                                 [tf.image.resize(i, (y, x), method='nearest') for i in roi_sequences])
@@ -430,9 +430,9 @@ class Plugin(plugins.Plugin):
         """
         batch_size = self.gui.batch_size.value()
         seqlen = self.gui.seq_length.value()
-        epochs = 5
+        epochs = self.gui.epochs.value()
 
-        roi_list = prepare_data(self.get_annotated_rois(), seqlen)
+        roi_list = prepare_data(get_annotated_rois(), seqlen)
         random.shuffle(roi_list)
         num_training = int(self.gui.training_data.value() * len(roi_list))
         num_validation = int(self.gui.validation_data.value() * len(roi_list))
@@ -452,6 +452,7 @@ class Plugin(plugins.Plugin):
             metrics=["accuracy"],
         )
         input_shape = model.layers[0].output.shape
+        print(model.layers[-1].output.shape)
 
         if len(input_shape) == 4:
             img_size = (input_shape[1], input_shape[2])
@@ -491,113 +492,113 @@ class Plugin(plugins.Plugin):
                                            )}
         print('Not implemented')
 
-    @staticmethod
-    def get_annotated_rois():
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            db = QSqlDatabase("QSQLITE")
-            db.setDatabaseName(project.repository.name)
-            db.open()
-            query = QSqlQuery(
-                "SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
-                "WHERE run.id_=roi_classification.run "
-                "AND run.command='annotate_rois';",
-                db=db)
-            query.exec()
-            if query.first():
-                roi_ids = [query.value('annotated_rois')]
-                while query.next():
-                    roi_ids.append(query.value('annotated_rois'))
-                return project.get_objects('ROI', roi_ids)
-            return []
 
-    @staticmethod
-    def draw_annotated_rois():
-        colours = [
-            QColor(255, 0, 0, 64),
-            QColor(0, 255, 0, 64),
-            QColor(0, 0, 255, 64),
-            QColor(255, 255, 0, 64),
-            QColor(0, 255, 255, 64),
-            QColor(255, 0, 255, 64),
-            QColor(64, 128, 0, 64),
-            QColor(64, 0, 128, 64),
-            QColor(128, 64, 0, 64),
-            QColor(0, 64, 128, 64),
-        ]
-        rec_items = {item.data(0): item for item in PyDetecDiv().main_window.active_subwindow.viewer.scene.items() if
-                     isinstance(item, QGraphicsRectItem)}
-        for roi in Plugin.get_annotated_rois():
-            if roi.name in rec_items:
-                annotation = get_annotation(roi)[PyDetecDiv().main_window.active_subwindow.viewer.T]
-                rec_items[roi.name].setBrush(colours[annotation])
+def get_images_sequences(imgdata, roi_list, t, seqlen=None, z=None):
+    """
+    Get a sequence of seqlen images for each roi
+    :param imgdata: the image data resource
+    :param roi_list: the list of ROIs
+    :param t: the starting time point (index of frame)
+    :param seqlen: the number of frames
+    :return: a tensor containing the sequences for all ROIs
+    """
+    maxt = min(imgdata.sizeT, t + seqlen) if seqlen else imgdata.sizeT
+    roi_sequences = tf.stack(
+        [get_rgb_images_from_stacks_memmap(imgdata, roi_list, f, z=z) for f in range(t, maxt)],
+        axis=1)
+    # print('roi sequence', roi_sequences.shape)
+    return roi_sequences
 
-    @staticmethod
-    def get_rgb_images_from_stacks(imgdata, roi_list, t, z=None):
-        """
-        Combine 3 z-layers of a grayscale image resource into a RGB image where each of the z-layer is a channel
-        :param imgdata: the image data resource
-        :param roi_list: the list of ROIs
-        :param t: the frame index
-        :param z: a list of 3 z-layer indices defining the grayscale layers that must be combined as channels
-        :return: a tensor of the combined RGB images
-        """
-        if z is None:
-            z = [0, 0, 0]
-            # z = [self.gui.red_channel.currentIndex(),
-            #      self.gui.green_channel.currentIndex(),
-            #      self.gui.blue_channel.currentIndex()]
-        image1 = Image(imgdata.image(T=t, Z=z[0]))
-        image2 = Image(imgdata.image(T=t, Z=z[1]))
-        image3 = Image(imgdata.image(T=t, Z=z[2]))
 
-        # print(f'Composing for frame {t}')
-        roi_images = [Image.compose_channels([image1.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
-                                              image2.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
-                                              image3.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast()
-                                              ]).as_tensor(ImgDType.float32) for roi in roi_list]
-        return roi_images
+def get_rgb_images_from_stacks_memmap(imgdata, roi_list, t, z=None):
+    """
+    Combine 3 z-layers of a grayscale image resource into a RGB image where each of the z-layer is a channel
+    :param imgdata: the image data resource
+    :param roi_list: the list of ROIs
+    :param t: the frame index
+    :param z: a list of 3 z-layer indices defining the grayscale layers that must be combined as channels
+    :return: a tensor of the combined RGB images
+    """
+    if z is None:
+        z = [0, 0, 0]
+    roi_images = [
+        Image.compose_channels([Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
+                                                           sliceY=slice(roi.y, roi.y + roi.height),
+                                                           C=0, Z=z[0], T=0,
+                                                           drift=None)).stretch_contrast(),
+                                Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
+                                                           sliceY=slice(roi.y, roi.y + roi.height),
+                                                           C=0, Z=z[1], T=0,
+                                                           drift=None)).stretch_contrast(),
+                                Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
+                                                           sliceY=slice(roi.y, roi.y + roi.height),
+                                                           C=0, Z=z[2], T=0,
+                                                           drift=None)).stretch_contrast(),
+                                ]).as_tensor(ImgDType.float32) for roi in roi_list]
+    return roi_images
 
-    @staticmethod
-    def get_rgb_images_from_stacks_memmap(imgdata, roi_list, t, z=None):
-        """
-        Combine 3 z-layers of a grayscale image resource into a RGB image where each of the z-layer is a channel
-        :param imgdata: the image data resource
-        :param roi_list: the list of ROIs
-        :param t: the frame index
-        :param z: a list of 3 z-layer indices defining the grayscale layers that must be combined as channels
-        :return: a tensor of the combined RGB images
-        """
-        if z is None:
-            z = [0, 0, 0]
-        roi_images = [
-            Image.compose_channels([Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
-                                                               sliceY=slice(roi.y, roi.y + roi.height),
-                                                               C=0, Z=z[0], T=0,
-                                                               drift=None)).stretch_contrast(),
-                                    Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
-                                                               sliceY=slice(roi.y, roi.y + roi.height),
-                                                               C=0, Z=z[1], T=0,
-                                                               drift=None)).stretch_contrast(),
-                                    Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
-                                                               sliceY=slice(roi.y, roi.y + roi.height),
-                                                               C=0, Z=z[2], T=0,
-                                                               drift=None)).stretch_contrast(),
-                                    ]).as_tensor(ImgDType.float32) for roi in roi_list]
-        return roi_images
 
-    @staticmethod
-    def get_images_sequences(imgdata, roi_list, t, seqlen=None, z=None):
-        """
-        Get a sequence of seqlen images for each roi
-        :param imgdata: the image data resource
-        :param roi_list: the list of ROIs
-        :param t: the starting time point (index of frame)
-        :param seqlen: the number of frames
-        :return: a tensor containing the sequences for all ROIs
-        """
-        maxt = min(imgdata.sizeT, t + seqlen) if seqlen else imgdata.sizeT
-        roi_sequences = tf.stack(
-            [Plugin.get_rgb_images_from_stacks_memmap(imgdata, roi_list, f, z=z) for f in range(t, maxt)],
-            axis=1)
-        # print('roi sequence', roi_sequences.shape)
-        return roi_sequences
+def get_rgb_images_from_stacks(imgdata, roi_list, t, z=None):
+    """
+    Combine 3 z-layers of a grayscale image resource into a RGB image where each of the z-layer is a channel
+    :param imgdata: the image data resource
+    :param roi_list: the list of ROIs
+    :param t: the frame index
+    :param z: a list of 3 z-layer indices defining the grayscale layers that must be combined as channels
+    :return: a tensor of the combined RGB images
+    """
+    if z is None:
+        z = [0, 0, 0]
+        # z = [self.gui.red_channel.currentIndex(),
+        #      self.gui.green_channel.currentIndex(),
+        #      self.gui.blue_channel.currentIndex()]
+    image1 = Image(imgdata.image(T=t, Z=z[0]))
+    image2 = Image(imgdata.image(T=t, Z=z[1]))
+    image3 = Image(imgdata.image(T=t, Z=z[2]))
+
+    # print(f'Composing for frame {t}')
+    roi_images = [Image.compose_channels([image1.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
+                                          image2.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
+                                          image3.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast()
+                                          ]).as_tensor(ImgDType.float32) for roi in roi_list]
+    return roi_images
+
+
+def draw_annotated_rois():
+    colours = [
+        QColor(255, 0, 0, 64),
+        QColor(0, 255, 0, 64),
+        QColor(0, 0, 255, 64),
+        QColor(255, 255, 0, 64),
+        QColor(0, 255, 255, 64),
+        QColor(255, 0, 255, 64),
+        QColor(64, 128, 0, 64),
+        QColor(64, 0, 128, 64),
+        QColor(128, 64, 0, 64),
+        QColor(0, 64, 128, 64),
+    ]
+    rec_items = {item.data(0): item for item in PyDetecDiv().main_window.active_subwindow.viewer.scene.items() if
+                 isinstance(item, QGraphicsRectItem)}
+    for roi in get_annotated_rois():
+        if roi.name in rec_items:
+            annotation = get_annotation(roi)[PyDetecDiv().main_window.active_subwindow.viewer.T]
+            rec_items[roi.name].setBrush(colours[annotation])
+
+
+def get_annotated_rois():
+    with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        db = QSqlDatabase("QSQLITE")
+        db.setDatabaseName(project.repository.name)
+        db.open()
+        query = QSqlQuery(
+            "SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
+            "WHERE run.id_=roi_classification.run "
+            "AND run.command='annotate_rois';",
+            db=db)
+        query.exec()
+        if query.first():
+            roi_ids = [query.value('annotated_rois')]
+            while query.next():
+                roi_ids.append(query.value('annotated_rois'))
+            return project.get_objects('ROI', roi_ids)
+        return []
