@@ -10,7 +10,6 @@ import random
 import sys
 
 import numpy as np
-import psutil
 import sqlalchemy
 from PySide6.QtGui import QAction, QColor, QPen
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
@@ -23,7 +22,6 @@ import tensorflow as tf
 from pydetecdiv import plugins
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
 from pydetecdiv.domain.Image import Image, ImgDType
-from pydetecdiv.utils import split_list
 
 from .gui import ROIclassification
 from . import models
@@ -67,13 +65,19 @@ class Results(Base):
         project.repository.session.add(self)
 
 
-def prepare_data(data_list, seqlen):
+def prepare_data(data_list, seqlen=None, targets=True):
     roi_data_list = []
     for roi in data_list:
         imgdata = roi.fov.image_resource().image_resource_data()
-        # annotation_indices = [0] * roi.fov.image_resource().sizeT
-        annotation_indices = split_list(get_annotation(roi), -1, seqlen)
-        roi_data_list.extend([ROIdata(roi, imgdata, annotation_seq) for annotation_seq in annotation_indices])
+        seqlen = seqlen if seqlen else 1
+        if targets:
+            annotation_indices = get_annotation(roi)
+            for i in range(0, imgdata.sizeT, seqlen):
+                sequence = annotation_indices[i:i + seqlen]
+                if len(sequence) == seqlen and all([a > 0 for a in sequence]):
+                    roi_data_list.extend([ROIdata(roi, imgdata, sequence, i)])
+        else:
+            roi_data_list.extend([ROIdata(roi, imgdata, None, frame) for frame in range(0, imgdata.sizeT, seqlen)])
     return roi_data_list
 
 
@@ -93,66 +97,48 @@ def get_annotation(roi):
             roi_classes[annotation[1]] = class_names.index(annotation[2])
     return roi_classes
 
-
-# class DatasetGenerator:
-#     def __init__(self, data_list, plugin, timeseries=True):
-#         self.data_list = data_list
-#         self.timeseries = timeseries
-#         self.plugin = plugin
-#
-#     def __iter__(self):
-#         for data in self.data_list:
-#             if self.timeseries:
-#                 roi_sequences = self.plugin.get_images_sequences(data.imgdata, [data.roi], 0,
-#                                                           seqlen=self.plugin.gui.seq_length.value())
-#                 img_array = tf.convert_to_tensor(
-#                     [tf.image.resize(i, (224, 224), method='nearest') for i in roi_sequences])
-#                 print(data.roi.name)
-#                 yield (img_array, np.array([data.target]))
-#             else:
-#                 print('not implemented')
-
 class ROIdata:
-    def __init__(self, roi, imgdata, target=None):
+    def __init__(self, roi, imgdata, target=None, frame=0):
         self.roi = roi
         self.imgdata = imgdata
         self.target = target
+        self.frame = frame
 
 
 class ROIDataset(tf.keras.utils.Sequence):
-    def __init__(self, roi_list, image_size=(60, 60), class_names=None, batch_size=32, seqlen=None):
-        self.roi_list = roi_list
+    def __init__(self, roi_data_list, image_size=(60, 60), class_names=None, batch_size=32, seqlen=None):
         self.img_size = image_size
         self.class_names = class_names
         self.batch_size = batch_size
-        # self.roi_data_list = self.prepare_data(roi_list)
-        self.roi_data_list = roi_list
+        self.roi_data_list = roi_data_list
         self.seqlen = seqlen
 
     def __len__(self):
-        return math.ceil(len(self.roi_list) / self.batch_size)
+        return math.ceil(len(self.roi_data_list) / self.batch_size)
 
     def __getitem__(self, idx):
         low = idx * self.batch_size
         # Cap upper bound at array length; the last batch may be smaller
         # if the total number of items is not a multiple of batch size.
-        high = min(low + self.batch_size, len(self.roi_list))
+        high = min(low + self.batch_size, len(self.roi_data_list))
         batch_roi = self.roi_data_list[low:high]
         batch_targets = []
         batch_data = []
         for data in batch_roi:
             if self.seqlen is None:
-                roi_dataset = get_rgb_images_from_stacks_memmap(imgdata=data.imgdata, roi_list=[data.roi], t=0)
-                batch_targets.append(data.target[0])
+                roi_dataset = get_rgb_images_from_stacks_memmap(imgdata=data.imgdata, roi_list=[data.roi], t=data.frame)
+                if data.target is not None:
+                    batch_targets.append(data.target[0])
             else:
-                roi_dataset = get_images_sequences(imgdata=data.imgdata, roi_list=[data.roi], t=0,
-                                                          seqlen=self.seqlen)
-                batch_targets.append(data.target[0:self.seqlen])
+                roi_dataset = get_images_sequences(imgdata=data.imgdata, roi_list=[data.roi], t=data.frame,
+                                                   seqlen=self.seqlen)
+                if data.target is not None:
+                    batch_targets.append(data.target)
             img_array = tf.convert_to_tensor([tf.image.resize(i, self.img_size, method='nearest') for i in roi_dataset])
             batch_data.append(img_array[0])
-        # print(
-        #     f'{np.format_float_positional(psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024), precision=1)} MB')
-        return np.array(batch_data), np.array(batch_targets)
+        if batch_targets:
+            return np.array(batch_data), np.array(batch_targets)
+        return np.array(batch_data)
 
 
 class Plugin(plugins.Plugin):
@@ -163,7 +149,6 @@ class Plugin(plugins.Plugin):
     version = '1.0.0'
     name = 'ROI classification'
     category = 'Deep learning'
-    # class_names = []
 
     def __init__(self):
         super().__init__()
@@ -184,7 +169,6 @@ class Plugin(plugins.Plugin):
         :param menu: the parent menu
         :type menu: QMenu
         """
-        # self.menu = menu.addMenu(self.name)
         self.menu = menu
         action_launch = QAction("ROI classification", self.menu)
         action_launch.triggered.connect(self.launch)
@@ -434,11 +418,6 @@ class Plugin(plugins.Plugin):
         seqlen = self.gui.seq_length.value()
         epochs = self.gui.epochs.value()
 
-        roi_list = prepare_data(get_annotated_rois(), seqlen)
-        random.shuffle(roi_list)
-        num_training = int(self.gui.training_data.value() * len(roi_list))
-        num_validation = int(self.gui.validation_data.value() * len(roi_list))
-
         module = self.gui.network.currentData()
         print(module.__name__)
         model = module.load_model(load_weights=False)
@@ -454,10 +433,16 @@ class Plugin(plugins.Plugin):
             metrics=["accuracy"],
         )
         input_shape = model.layers[0].output.shape
-        print(model.layers[-1].output.shape)
+        # print(model.layers[-1].output.shape)
 
         if len(input_shape) == 4:
             img_size = (input_shape[1], input_shape[2])
+
+            roi_list = prepare_data(get_annotated_rois())
+            random.shuffle(roi_list)
+            num_training = int(self.gui.training_data.value() * len(roi_list))
+            num_validation = int(self.gui.validation_data.value() * len(roi_list))
+
             print('Training dataset')
             training_dataset = ROIDataset(roi_list[:num_training],
                                           image_size=img_size, class_names=self.class_names, batch_size=batch_size)
@@ -469,6 +454,12 @@ class Plugin(plugins.Plugin):
                                       class_names=self.class_names, batch_size=batch_size)
         else:
             img_size = (input_shape[2], input_shape[3])
+
+            roi_list = prepare_data(get_annotated_rois(), seqlen)
+            random.shuffle(roi_list)
+            num_training = int(self.gui.training_data.value() * len(roi_list))
+            num_validation = int(self.gui.validation_data.value() * len(roi_list))
+
             print('Training dataset')
             training_dataset = ROIDataset(roi_list[:num_training], image_size=img_size, class_names=self.class_names,
                                           seqlen=seqlen, batch_size=batch_size)
@@ -480,7 +471,7 @@ class Plugin(plugins.Plugin):
             test_dataset = ROIDataset(roi_list[num_training + num_validation:], image_size=img_size,
                                       class_names=self.class_names, seqlen=seqlen, batch_size=batch_size)
 
-        print(input_shape)
+        # print(input_shape)
 
         for r in training_dataset.__iter__():
             print(r[0].shape, r[1].shape)
