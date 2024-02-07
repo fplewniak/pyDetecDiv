@@ -189,7 +189,71 @@ class Plugin(plugins.Plugin):
                     annotate = menu.addAction('Annotate region class')
                     annotate.triggered.connect(lambda _: open_annotator(self, roi_list))
 
+    def load_model(self):
+        module = self.gui.network.currentData()
+        print(module.__name__)
+        model = module.load_model(load_weights=False)
+        print('Loading weights')
+        weights = self.gui.weights.currentData()
+        if weights:
+            module.loadWeights(model, filename=self.gui.weights.currentData())
+
+        print('Compiling model')
+        model.compile(
+            optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+            loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+            metrics=["accuracy"],
+        )
+        return model
+
     def predict(self):
+        """
+        Running prediction on all available ROIs.
+        """
+        model = self.load_model()
+        input_shape = model.layers[0].output.shape
+        batch_size = self.gui.batch_size.value()
+        seqlen = self.gui.seq_length.value()
+        fov_names = [index.data() for index in self.gui.selection_model.selectedRows(0)]
+
+        with (pydetecdiv_project(PyDetecDiv().project_name) as project):
+            print('Saving run')
+            run = self.save_run(project, 'predict', {'fov': fov_names,
+                                                     'network': self.gui.network.currentData().__name__,
+                                                     'weights': self.gui.weights.currentData(),
+                                                     'class_names': self.class_names,
+                                                     'red': self.gui.red_channel.currentIndex(),
+                                                     'green': self.gui.green_channel.currentIndex(),
+                                                     'blue': self.gui.blue_channel.currentIndex()
+                                                     })
+            roi_list = np.ndarray.flatten(np.array([roi for roi in [fov.roi_list for fov in
+                                                                    [project.get_named_object('FOV', fov_name) for
+                                                                     fov_name in
+                                                                     fov_names]]]))
+
+            if len(input_shape) == 4:
+                img_size = (input_shape[1], input_shape[2])
+                roi_data_list = prepare_data(roi_list, targets=False)
+                roi_dataset = ROIDataset(roi_data_list, image_size=img_size, class_names=self.class_names,
+                                         batch_size=batch_size)
+            else:
+                img_size = (input_shape[2], input_shape[3])
+                roi_data_list = prepare_data(roi_list, seqlen, targets=False)
+                roi_dataset = ROIDataset(roi_data_list, image_size=img_size, class_names=self.class_names,
+                                         seqlen=seqlen, batch_size=batch_size)
+
+            predictions = model.predict(roi_dataset)
+
+            for (prediction, rd) in zip(np.squeeze(predictions), roi_data_list):
+                if len(input_shape) == 4:
+                    max_score, max_index = max((value, index) for index, value in enumerate(prediction))
+                    print(rd.roi.name, rd.frame, self.class_names[max_index], max_score)
+                else:
+                    for i in range(seqlen):
+                        max_score, max_index = max((value, index) for index, value in enumerate(prediction[i]))
+                        print(rd.roi.name, rd.frame + i, self.class_names[max_index], max_score)
+
+    def predict_off(self):
         """
         Method launching the plugin. This may encapsulate (as it is the case here) the call to a GUI or some domain
         functionalities run directly without any further interface.
