@@ -83,6 +83,24 @@ class MainWindow(QMainWindow):
             self.tabs[title].show()
         return self.tabs[title]
 
+    def add_tabbed_window(self, title):
+        """
+        Add a new Tabbed viewer to visualize a FOV and its related information and analyses
+
+        :param title: the title for the tabbed viewer window (i.e. Project/FOV/dataset
+        :type title: str
+        :return: the new tabbed viewer widget
+        :rtype: TabbedViewer
+        """
+        if title not in self.tabs:
+            self.tabs[title] = TabbedWindow(title, self)
+            self.tabs[title].window = self.mdi_area.addSubWindow(self.tabs[title])
+            self.tabs[title].setMovable(True)
+            self.tabs[title].setTabsClosable(True)
+            self.tabs[title].tabCloseRequested.connect(self.tabs[title].close_tab)
+            self.tabs[title].show()
+        return self.tabs[title]
+
     def subwindow_activation(self, subwindow):
         """
         When a tabbed viewer is activated (its focus is set), then the Image resource selector should be fed with the
@@ -108,20 +126,13 @@ class MainWindow(QMainWindow):
         return None
 
 
-class TabbedViewer(QTabWidget):
-    """
-    A tabbed widget to hold the FOV main viewer and all related viewers (plots, image resources, etc.)
-    """
-
+class TabbedWindow(QTabWidget):
     def __init__(self, title, parent=None):
         super().__init__()
         self.viewer = ImageViewer()
         self.setWindowTitle(title)
         self.setDocumentMode(True)
-        self.addTab(self.viewer, 'FOV')
         self.parent = parent
-        self.window = None
-        self.drift = None
 
     def closeEvent(self, _):
         """
@@ -147,6 +158,29 @@ class TabbedViewer(QTabWidget):
         plot_viewer.canvas.draw()
         self.setCurrentWidget(plot_viewer)
 
+    def close_tab(self, index):
+        """
+        Close the tab with the specified index
+
+        :param index: the index of the tab to close
+        :type index: int
+        """
+        if self.widget(index) != self.viewer:
+            self.removeTab(index)
+
+
+class TabbedViewer(TabbedWindow):
+    """
+    A tabbed widget to hold the FOV main viewer and all related viewers (plots, image resources, etc.)
+    """
+
+    def __init__(self, title, parent=None):
+        super().__init__(title, parent)
+        self.viewer = ImageViewer()
+        self.addTab(self.viewer, 'FOV')
+        self.window = None
+        self.drift = None
+
     def show_image(self, data, title='Image', format_=QImage.Format_Grayscale16):
         """
         Display a 2D image
@@ -163,14 +197,14 @@ class TabbedViewer(QTabWidget):
         pixmap = QPixmap()
         pixmapItem = scene.addPixmap(pixmap)
         match format_:
-            case QImage.Format_Grayscale16|QImage.Format_Grayscale8:
+            case QImage.Format_Grayscale16 | QImage.Format_Grayscale8:
                 # print('Grayscale')
                 ny, nx = data.shape
                 img = QImage(np.ascontiguousarray(data), nx, ny, format_)
             case QImage.Format_RGB888:
                 # print('RGB888')
                 ny, nx, nc = data.shape
-                img = QImage(np.ascontiguousarray(data), nx, ny, nc*nx, format_)
+                img = QImage(np.ascontiguousarray(data), nx, ny, nc * nx, format_)
             case _:
                 ...
         pixmap.convertFromImage(img)
@@ -178,16 +212,6 @@ class TabbedViewer(QTabWidget):
         viewer.setScene(scene)
         self.addTab(viewer, title)
         self.setCurrentWidget(viewer)
-
-    def close_tab(self, index):
-        """
-        Close the tab with the specified index
-
-        :param index: the index of the tab to close
-        :type index: int
-        """
-        if self.widget(index) != self.viewer:
-            self.removeTab(index)
 
     def get_image_viewers(self):
         """
@@ -279,7 +303,7 @@ class ImageResourceChooser(QDockWidget):
             roi_list = fov.roi_list
             image_resource = fov.image_resource('data').image_resource_data()
         tab_key = f'{PyDetecDiv().project_name}/{fov.name}'
-        tab = self.parent().add_tabbbed_viewer(tab_key)
+        tab = self.parent().add_tabbed_viewer(tab_key)
         tab.setWindowTitle(tab_key)
         tab.viewer.set_image_resource_data(image_resource)
         tab.viewer.set_channel(0)
@@ -372,6 +396,7 @@ class DrawingToolsPalette(QDockWidget):
 
     def set_ROI_height(self, height):
         PyDetecDiv().main_window.active_subwindow.viewer.scene.set_ROI_height(height)
+
 
 class Cursor(QToolButton):
     """

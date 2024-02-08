@@ -26,6 +26,7 @@ from pydetecdiv.domain.Image import Image, ImgDType
 from .gui import ROIclassification
 from . import models
 from .gui.annotate import open_annotator
+from ...app.gui.Windows import MatplotViewer
 from ...settings import get_config_value
 
 Base = registry().generate_base()
@@ -480,9 +481,50 @@ class Plugin(plugins.Plugin):
                                            verbose=2,
                                            # workers=4, use_multiprocessing=True
                                            )}
-        print('Not implemented')
+        print(histories)
+        tab = PyDetecDiv().main_window.add_tabbed_window(f'{module.__name__} / {PyDetecDiv().project_name}')
+        tab.viewer.project_name = PyDetecDiv().project_name
+        PyDetecDiv().main_window.active_subwindow.addTab(plot_history(histories), 'Training')
 
+        print('Not fully implemented')
 
+def plot_history(history):
+    """
+    Plots metrics histories: accuracy and loss for training and fine tuning.
+    :param history: list of metrics histories to plot
+    :param fichier: file name to save the plot in
+    """
+    plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=2, rows=len(history))
+    # fig, axs = plt.subplots(2, len(history))
+    axs = plot_viewer.axes
+    # fig.suptitle('Model accuracy')
+    if len(history) == 1:
+        for k in history:
+            axs[0].plot(history[k].history['accuracy'])
+            axs[0].plot(history[k].history['val_accuracy'])
+            axs[0].set_ylabel('accuracy')
+            axs[0].set_xlabel('epoch')
+            axs[0].legend(['train', 'val'], loc='lower right')
+            axs[1].plot(history[k].history['loss'])
+            axs[1].plot(history[k].history['val_loss'])
+            axs[1].legend(['train', 'val'], loc='upper right')
+            axs[1].set_ylabel('loss')
+    else:
+        i = 0
+        for k in history:
+            axs[0, i].plot(history[k].history['accuracy'])
+            axs[0, i].plot(history[k].history['val_accuracy'])
+            axs[0, i].set_title(k)
+            axs[0, i].set_ylabel('accuracy')
+            axs[0, i].set_xlabel('epoch')
+            axs[0, i].legend(['train', 'val'], loc='lower right')
+            axs[1, i].plot(history[k].history['loss'])
+            axs[1, i].plot(history[k].history['val_loss'])
+            axs[1, i].legend(['train', 'val'], loc='upper right')
+            axs[1, i].set_ylabel('loss')
+            i += 1
+    plot_viewer.canvas.draw()
+    return plot_viewer
 def get_images_sequences(imgdata, roi_list, t, seqlen=None, z=None):
     """
     Get a sequence of seqlen images for each roi
