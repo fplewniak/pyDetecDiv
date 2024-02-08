@@ -65,7 +65,7 @@ class MainWindow(QMainWindow):
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("windowState", self.saveState())
 
-    def add_tabbbed_viewer(self, title):
+    def add_tabbed_viewer(self, title):
         """
         Add a new Tabbed viewer to visualize a FOV and its related information and analyses
 
