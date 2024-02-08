@@ -244,84 +244,17 @@ class Plugin(plugins.Plugin):
 
             predictions = model.predict(roi_dataset)
 
-            for (prediction, rd) in zip(np.squeeze(predictions), roi_data_list):
+            for (prediction, data) in zip(np.squeeze(predictions), roi_data_list):
                 if len(input_shape) == 4:
-                    max_score, max_index = max((value, index) for index, value in enumerate(prediction))
-                    print(rd.roi.name, rd.frame, self.class_names[max_index], max_score)
+                    # max_score, max_index = max((value, index) for index, value in enumerate(prediction))
+                    # print(data.roi.name, data.frame, self.class_names[max_index], max_score)
+                    Results().save(project, run, data.roi, data.frame, prediction, self.class_names)
                 else:
                     for i in range(seqlen):
-                        max_score, max_index = max((value, index) for index, value in enumerate(prediction[i]))
-                        print(rd.roi.name, rd.frame + i, self.class_names[max_index], max_score)
-
-    def predict_off(self):
-        """
-        Method launching the plugin. This may encapsulate (as it is the case here) the call to a GUI or some domain
-        functionalities run directly without any further interface.
-        """
-        module = self.gui.network.currentData()
-        print(module.__name__)
-        model = module.load_model(load_weights=False)
-        print('Loading weights')
-        weights = self.gui.weights.currentData()
-        if weights:
-            module.loadWeights(model, filename=self.gui.weights.currentData())
-
-        print('Compiling model')
-        model.compile(
-            optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
-            loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-            metrics=["accuracy"],
-        )
-        input_shape = model.layers[0].output.shape
-        batch_size = self.gui.batch_size.value()
-        fov_names = [index.data() for index in self.gui.selection_model.selectedRows(0)]
-        z_comb = [self.gui.red_channel.currentIndex(),
-                  self.gui.green_channel.currentIndex(),
-                  self.gui.blue_channel.currentIndex()]
-        with (pydetecdiv_project(PyDetecDiv().project_name) as project):
-            print('Saving run')
-            run = self.save_run(project, 'predict', {'fov': fov_names,
-                                                     'network': module.__name__,
-                                                     'weights': weights,
-                                                     'class_names': self.class_names,
-                                                     'red': self.gui.red_channel.currentIndex(),
-                                                     'green': self.gui.green_channel.currentIndex(),
-                                                     'blue': self.gui.blue_channel.currentIndex()
-                                                     })
-            for fov_name in fov_names:
-                fov = project.get_named_object('FOV', fov_name)
-                print(f'Getting image data for FOV = {fov_name}')
-                imgdata = fov.image_resource().image_resource_data()
-                n_sections = np.max([int(len(fov.roi_list) // batch_size), 1])
-                print(f'ROI list in {n_sections} batches')
-                for batch in np.array_split(np.array(fov.roi_list), n_sections):
-                    if len(input_shape) == 4:
-                        x, y = input_shape[1:3]
-                        for t in range(imgdata.sizeT):
-                            roi_images = get_rgb_images_from_stacks(imgdata, batch, t, z=z_comb)
-                            img_array = tf.image.resize(roi_images, (y, x), method='nearest')
-                            predictions = model.predict(img_array)
-                            # print(predictions.shape)
-                            for roi, pred in zip(batch, predictions):
-                                Results().save(project, run, roi, t, pred[0, 0, ...], self.class_names)
-                    else:
-                        x, y = input_shape[2:4]
-                        seqlen = self.gui.seq_length.value()
-                        for t in range(0, imgdata.sizeT, seqlen):
-                            print(f'Sequence from {t} to {t + seqlen - 1}')
-                            print('Reading batch')
-                            roi_sequences = get_images_sequences(imgdata, batch, t, seqlen=seqlen, z=z_comb)
-                            print('Sequence loaded, resizing images')
-                            img_array = tf.convert_to_tensor(
-                                [tf.image.resize(i, (y, x), method='nearest') for i in roi_sequences])
-                            print('Classification')
-                            predictions = model.predict(img_array)
-                            # print(predictions.shape)
-                            print('Saving results')
-                            for roi, pred in zip(batch, predictions):
-                                for frame, scores in enumerate(pred):
-                                    Results().save(project, run, roi, t + frame, scores, self.class_names)
-            print('predictions OK')
+                        # max_score, max_index = max((value, index) for index, value in enumerate(prediction[i]))
+                        # print(data.roi.name, data.frame + i, self.class_names[max_index], max_score)
+                        Results().save(project, run, data.roi, data.frame + i, prediction[i], self.class_names)
+        print('predictions OK')
 
     def load_models(self, gui):
         """
