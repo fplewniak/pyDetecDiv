@@ -75,7 +75,7 @@ def prepare_data(data_list, seqlen=None, targets=True):
             annotation_indices = get_annotation(roi)
             for i in range(0, imgdata.sizeT, seqlen):
                 sequence = annotation_indices[i:i + seqlen]
-                if len(sequence) == seqlen and all([a > 0 for a in sequence]):
+                if len(sequence) == seqlen and all(a > 0 for a in sequence):
                     roi_data_list.extend([ROIdata(roi, imgdata, sequence, i)])
         else:
             roi_data_list.extend([ROIdata(roi, imgdata, None, frame) for frame in range(0, imgdata.sizeT, seqlen)])
@@ -217,7 +217,7 @@ class Plugin(plugins.Plugin):
         seqlen = self.gui.seq_length.value()
         fov_names = [index.data() for index in self.gui.selection_model.selectedRows(0)]
 
-        with (pydetecdiv_project(PyDetecDiv().project_name) as project):
+        with pydetecdiv_project(PyDetecDiv().project_name) as project:
             print('Saving run')
             run = self.save_run(project, 'predict', {'fov': fov_names,
                                                      'network': self.gui.network.currentData().__name__,
@@ -556,15 +556,15 @@ def get_rgb_images_from_stacks_memmap(imgdata, roi_list, t, z=None):
     roi_images = [
         Image.compose_channels([Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
                                                            sliceY=slice(roi.y, roi.y + roi.height),
-                                                           C=0, Z=z[0], T=0,
+                                                           C=0, Z=z[0], T=t,
                                                            drift=None)).stretch_contrast(),
                                 Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
                                                            sliceY=slice(roi.y, roi.y + roi.height),
-                                                           C=0, Z=z[1], T=0,
+                                                           C=0, Z=z[1], T=t,
                                                            drift=None)).stretch_contrast(),
                                 Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
                                                            sliceY=slice(roi.y, roi.y + roi.height),
-                                                           C=0, Z=z[2], T=0,
+                                                           C=0, Z=z[2], T=t,
                                                            drift=None)).stretch_contrast(),
                                 ]).as_tensor(ImgDType.float32) for roi in roi_list]
     return roi_images
