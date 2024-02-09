@@ -471,8 +471,8 @@ class Plugin(plugins.Plugin):
 
         # print(input_shape)
 
-        for r in training_dataset.__iter__():
-            print(r[0].shape, r[1].shape)
+        # for r in training_dataset.__iter__():
+        #     print(r[0].shape, r[1].shape)
 
         histories = {'Training': model.fit(training_dataset, epochs=epochs,
                                            # steps_per_epoch=num_training, #//batch_size,
@@ -481,18 +481,18 @@ class Plugin(plugins.Plugin):
                                            verbose=2,
                                            # workers=4, use_multiprocessing=True
                                            )}
-        print(histories)
-        tab = PyDetecDiv().main_window.add_tabbed_window(f'{module.__name__} / {PyDetecDiv().project_name}')
+        # print(histories)
+        tab = PyDetecDiv().main_window.add_tabbed_window(f'{PyDetecDiv().project_name} / {module.__name__}')
         tab.viewer.project_name = PyDetecDiv().project_name
-        PyDetecDiv().main_window.active_subwindow.addTab(plot_history(histories), 'Training')
-
+        history_plot = plot_history(histories)
+        tab.addTab(history_plot, 'Training')
+        tab.setCurrentWidget(history_plot)
         print('Not fully implemented')
 
 def plot_history(history):
     """
     Plots metrics histories: accuracy and loss for training and fine tuning.
     :param history: list of metrics histories to plot
-    :param fichier: file name to save the plot in
     """
     plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=2, rows=len(history))
     # fig, axs = plt.subplots(2, len(history))

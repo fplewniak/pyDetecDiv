@@ -1,6 +1,8 @@
 """
 Classes for persistent windows of the GUI
 """
+import random
+
 import numpy as np
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QCursor, QIcon, QPixmap, QImage
@@ -16,6 +18,7 @@ from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project, Drawing
 
 from pydetecdiv.app.gui.ImageViewer import ImageViewer
 from pydetecdiv.app.gui.Toolbox import ToolboxTreeView, ToolboxTreeModel
+from pydetecdiv.app.gui.ViewContainer import ViewContainer
 
 
 class MainWindow(QMainWindow):
@@ -76,29 +79,32 @@ class MainWindow(QMainWindow):
         """
         if title not in self.tabs:
             self.tabs[title] = TabbedViewer(title, self)
-            self.tabs[title].window = self.mdi_area.addSubWindow(self.tabs[title])
-            self.tabs[title].setMovable(True)
-            self.tabs[title].setTabsClosable(True)
-            self.tabs[title].tabCloseRequested.connect(self.tabs[title].close_tab)
-            self.tabs[title].show()
+            # self.tabs[title].window = self.mdi_area.addSubWindow(self.tabs[title])
+            # self.tabs[title].setMovable(True)
+            # self.tabs[title].setTabsClosable(True)
+            # self.tabs[title].tabCloseRequested.connect(self.tabs[title].close_tab)
+            # self.tabs[title].show()
         return self.tabs[title]
 
     def add_tabbed_window(self, title):
         """
-        Add a new Tabbed viewer to visualize a FOV and its related information and analyses
+        Add a new Tabbed Mdi subwindow to visualize related information and analyses
 
-        :param title: the title for the tabbed viewer window (i.e. Project/FOV/dataset
+        :param title: the title for the tabbed viewer window
         :type title: str
         :return: the new tabbed viewer widget
         :rtype: TabbedViewer
         """
         if title not in self.tabs:
             self.tabs[title] = TabbedWindow(title, self)
-            self.tabs[title].window = self.mdi_area.addSubWindow(self.tabs[title])
-            self.tabs[title].setMovable(True)
-            self.tabs[title].setTabsClosable(True)
-            self.tabs[title].tabCloseRequested.connect(self.tabs[title].close_tab)
-            self.tabs[title].show()
+            # self.tabs[title].window = self.mdi_area.addSubWindow(self.tabs[title])
+            # mdi_space = self.mdi_area.geometry()
+            # print(mdi_space)
+            # self.tabs[title].window.setGeometry(mdi_space.x(), mdi_space.y(), mdi_space.width()*0.8, mdi_space.height()*0.8)
+            # self.tabs[title].setMovable(True)
+            # self.tabs[title].setTabsClosable(True)
+            # self.tabs[title].tabCloseRequested.connect(self.tabs[title].close_tab)
+            # self.tabs[title].show()
         return self.tabs[title]
 
     def subwindow_activation(self, subwindow):
@@ -111,12 +117,13 @@ class MainWindow(QMainWindow):
         """
         if subwindow is not None:
             for c in subwindow.children():
-                if (c in self.tabs.values()) and c.viewer.project_name:
+                if (c in self.tabs.values()) and hasattr(c.viewer, 'project_name') and c.viewer.project_name:
                     PyDetecDiv().project_selected.emit(c.viewer.project_name)
-                    self.image_resource_selector.position_choice.setCurrentText(c.viewer.fov)
+                    PyDetecDiv().project_name = c.viewer.project_name
+                    if hasattr(c.viewer, 'fov'):
+                        self.image_resource_selector.position_choice.setCurrentText(c.viewer.fov)
                     # self.image_resource_selector.stage_choice.setCurrentText(c.viewer.stage)
                     # self.image_resource_selector.channel_choice.setCurrentText(str(c.viewer.C))
-                    PyDetecDiv().project_name = c.viewer.project_name
 
     @property
     def active_subwindow(self):
@@ -129,10 +136,20 @@ class MainWindow(QMainWindow):
 class TabbedWindow(QTabWidget):
     def __init__(self, title, parent=None):
         super().__init__()
-        self.viewer = ImageViewer()
+        self.viewer = ViewContainer()
         self.setWindowTitle(title)
         self.setDocumentMode(True)
         self.parent = parent
+
+        self.window = self.parent.mdi_area.addSubWindow(self)
+        mdi_space = self.parent.mdi_area.geometry()
+        xmax , ymax = mdi_space.width() * 0.20, mdi_space.height() * 0.20
+        x, y = random.uniform(0, xmax), random.uniform(0, ymax)
+        self.window.setGeometry(x, y, mdi_space.width() * 0.8, mdi_space.height() * 0.8)
+        self.setMovable(True)
+        self.setTabsClosable(True)
+        self.tabCloseRequested.connect(self.close_tab)
+        self.show()
 
     def closeEvent(self, _):
         """
