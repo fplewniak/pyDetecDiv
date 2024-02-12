@@ -487,6 +487,15 @@ class Plugin(plugins.Plugin):
         history_plot = plot_history(histories)
         tab.addTab(history_plot, 'Training')
         tab.setCurrentWidget(history_plot)
+
+        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            run = self.save_run(project, 'train_model', {'class_names': self.class_names,
+                                                         'seqlen': seqlen,
+                                                         'num_training': self.gui.training_data.value(),
+                                                         'num_validation': self.gui.validation_data.value(),
+                                                         'batch_size': batch_size,
+                                                         'epochs': epochs,
+                                                         })
         print('Not fully implemented')
 
 def plot_history(history):

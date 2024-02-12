@@ -10,6 +10,7 @@ import sys
 from PySide6.QtGui import QAction
 
 import pydetecdiv
+from pydetecdiv.domain.Run import Run
 from pydetecdiv.persistence.sqlalchemy.orm.RunDao import RunDao
 
 
@@ -50,14 +51,15 @@ class Plugin:
         return None
 
     def save_run(self, project, method, parameters):
-        run = RunDao(project.repository.session)
-        run.uuid = pydetecdiv.generate_uuid()
-        run.tool_name = self.id_
-        run.tool_version = self.version
-        run.is_plugin = True
-        run.command = method
-        run.parameters = parameters
-        project.repository.session.add(run)
+        record = {
+            'tool_name': self.id_,
+            'tool_version': self.version,
+            'is_plugin': True,
+            'command': method,
+            'parameters': parameters,
+            # 'uuid': self.uuid
+        }
+        run = Run(project=project, **record)
         project.commit()
         return run
 
