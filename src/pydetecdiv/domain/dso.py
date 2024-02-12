@@ -29,7 +29,7 @@ class DomainSpecificObject:
         else:
             self.id_ = kwargs['id_']
 
-        if 'uuid' not in kwargs:
+        if 'uuid' not in kwargs or kwargs['uuid'] is None:
             self.uuid = str(uuid.uuid4())
         else:
             self.uuid = kwargs['uuid']

@@ -8,6 +8,7 @@ import os.path
 import pkgutil
 import random
 import sys
+from datetime import datetime
 
 import numpy as np
 import sqlalchemy
@@ -27,6 +28,7 @@ from .gui import ROIclassification
 from . import models
 from .gui.annotate import open_annotator
 from ...app.gui.Windows import MatplotViewer
+from ...domain.Dataset import Dataset
 from ...settings import get_config_value
 
 Base = registry().generate_base()
@@ -496,6 +498,9 @@ class Plugin(plugins.Plugin):
                                                          'batch_size': batch_size,
                                                          'epochs': epochs,
                                                          })
+            training_ds = Dataset(project=project, name=f'train_{datetime.now().strftime("%Y%m%d-%H%M")}', type_='training', run=run.id_)
+            validation_ds = Dataset(project=project, name=f'val_{datetime.now().strftime("%Y%m%d-%H%M")}', type_='validation', run=run.id_)
+            test_ds = Dataset(project=project, name=f'test_{datetime.now().strftime("%Y%m%d-%H%M")}', type_='test', run=run.id_)
         print('Not fully implemented')
 
 def plot_history(history):
