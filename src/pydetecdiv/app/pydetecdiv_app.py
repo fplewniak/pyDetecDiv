@@ -21,6 +21,15 @@ def main_gui():
     """
     app = PyDetecDiv([])
 
+    style_sheet = """
+                *:disabled {
+                    color: gray; /* Set the text color to gray for disabled items */
+                }
+            """
+
+    # Apply the style sheet to the application
+    app.setStyleSheet(style_sheet)
+
     window_icon = QIcon(':icons/app_icon')
     app.setWindowIcon(window_icon)
     app.main_window = MainWindow()
