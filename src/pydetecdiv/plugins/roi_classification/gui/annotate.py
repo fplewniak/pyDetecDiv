@@ -167,14 +167,14 @@ class AnnotatorScene(QGraphicsScene):
         When the scene is in focus, then draw a larger frame around it to indicate its in-focus status
         :param event: the focusInEvent
         """
-        self.parent().ui.viewer.setLineWidth(3)
+        self.parent().ui.viewer.setStyleSheet("border: 2px solid green;")
 
     def focusOutEvent(self, event):
         """
         When the scene is out of focus, then draw a small frame around it to indicate its out-focus status
         :param event: the focusOutEvent
         """
-        self.parent().ui.viewer.setLineWidth(1)
+        self.parent().ui.viewer.setStyleSheet("border: 1px solid black;")
 
     def keyPressEvent(self, event):
         """
