@@ -480,7 +480,7 @@ class Plugin(plugins.Plugin):
             test_dataset = ROIDataset(roi_list[num_training + num_validation:], z_channels=z_channels, image_size=img_size,
                                       class_names=self.class_names, seqlen=seqlen, batch_size=batch_size)
 
-        display_dataset(training_dataset, sequences=len(input_shape) != 4)
+        # display_dataset(training_dataset, sequences=len(input_shape) != 4)
 
         histories = {'Training': model.fit(training_dataset, epochs=epochs,
                                            # steps_per_epoch=num_training, #//batch_size,
