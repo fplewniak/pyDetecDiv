@@ -195,7 +195,6 @@ class TabbedViewer(TabbedWindow):
         super().__init__(title, parent)
         self.viewer = ImageViewer()
         self.addTab(self.viewer, 'FOV')
-        self.window = None
         self.drift = None
 
     def show_image(self, data, title='Image', format_=QImage.Format_Grayscale16):
