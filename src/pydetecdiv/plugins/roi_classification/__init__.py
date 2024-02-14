@@ -100,6 +100,7 @@ def get_annotation(roi):
             roi_classes[annotation[1]] = class_names.index(annotation[2])
     return roi_classes
 
+
 class ROIdata:
     def __init__(self, roi, imgdata, target=None, frame=0):
         self.roi = roi
@@ -479,10 +480,7 @@ class Plugin(plugins.Plugin):
             test_dataset = ROIDataset(roi_list[num_training + num_validation:], z_channels=z_channels, image_size=img_size,
                                       class_names=self.class_names, seqlen=seqlen, batch_size=batch_size)
 
-        # print(input_shape)
-
-        # for r in training_dataset.__iter__():
-        #     print(r[0].shape, r[1].shape)
+        display_dataset(training_dataset, sequences=len(input_shape) != 4)
 
         histories = {'Training': model.fit(training_dataset, epochs=epochs,
                                            # steps_per_epoch=num_training, #//batch_size,
@@ -547,6 +545,8 @@ def plot_history(history):
             i += 1
     plot_viewer.canvas.draw()
     return plot_viewer
+
+
 def get_images_sequences(imgdata, roi_list, t, seqlen=None, z=None):
     """
     Get a sequence of seqlen images for each roi
@@ -656,3 +656,20 @@ def get_annotated_rois():
                 roi_ids.append(query.value('annotated_rois'))
             return project.get_objects('ROI', roi_ids)
         return []
+
+def display_dataset(dataset, sequences=False):
+    for ds in dataset.__iter__():
+        for data in ds[0]:
+            tab = PyDetecDiv().main_window.add_tabbed_window('Showing dataset')
+            if sequences is False:
+                plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=1, rows=1)
+            else:
+                plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=len(data), rows=1)
+            axs = plot_viewer.axes
+            tab.addTab(plot_viewer, 'training dataset')
+            if sequences is False:
+                axs.imshow(data)
+            else:
+                for i, img in enumerate(data):
+                    axs[i].imshow(img)
+        plot_viewer.canvas.draw()
