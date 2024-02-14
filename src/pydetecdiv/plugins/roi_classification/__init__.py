@@ -109,12 +109,14 @@ class ROIdata:
 
 
 class ROIDataset(tf.keras.utils.Sequence):
-    def __init__(self, roi_data_list, image_size=(60, 60), class_names=None, batch_size=32, seqlen=None):
+    def __init__(self, roi_data_list, image_size=(60, 60), class_names=None, batch_size=32, seqlen=None,
+                 z_channels=None):
         self.img_size = image_size
         self.class_names = class_names
         self.batch_size = batch_size
         self.roi_data_list = roi_data_list
         self.seqlen = seqlen
+        self.z_channels = z_channels
 
     def __len__(self):
         return math.ceil(len(self.roi_data_list) / self.batch_size)
@@ -129,12 +131,13 @@ class ROIDataset(tf.keras.utils.Sequence):
         batch_data = []
         for data in batch_roi:
             if self.seqlen is None:
-                roi_dataset = get_rgb_images_from_stacks_memmap(imgdata=data.imgdata, roi_list=[data.roi], t=data.frame)
+                roi_dataset = get_rgb_images_from_stacks_memmap(imgdata=data.imgdata, roi_list=[data.roi], t=data.frame,
+                                                                z=self.z_channels)
                 if data.target is not None:
                     batch_targets.append(data.target[0])
             else:
                 roi_dataset = get_images_sequences(imgdata=data.imgdata, roi_list=[data.roi], t=data.frame,
-                                                   seqlen=self.seqlen)
+                                                   seqlen=self.seqlen, z=self.z_channels)
                 if data.target is not None:
                     batch_targets.append(data.target)
             img_array = tf.convert_to_tensor([tf.image.resize(i, self.img_size, method='nearest') for i in roi_dataset])
@@ -218,6 +221,8 @@ class Plugin(plugins.Plugin):
         batch_size = self.gui.batch_size.value()
         seqlen = self.gui.seq_length.value()
         fov_names = [index.data() for index in self.gui.selection_model.selectedRows(0)]
+        z_channels = [self.gui.red_channel.currentIndex(), self.gui.green_channel.currentIndex(),
+                      self.gui.blue_channel.currentIndex()]
 
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             print('Saving run')
@@ -238,12 +243,12 @@ class Plugin(plugins.Plugin):
                 img_size = (input_shape[1], input_shape[2])
                 roi_data_list = prepare_data(roi_list, targets=False)
                 roi_dataset = ROIDataset(roi_data_list, image_size=img_size, class_names=self.class_names,
-                                         batch_size=batch_size)
+                                         batch_size=batch_size, z_channels=z_channels)
             else:
                 img_size = (input_shape[2], input_shape[3])
                 roi_data_list = prepare_data(roi_list, seqlen, targets=False)
                 roi_dataset = ROIDataset(roi_data_list, image_size=img_size, class_names=self.class_names,
-                                         seqlen=seqlen, batch_size=batch_size)
+                                         seqlen=seqlen, batch_size=batch_size, z_channels=z_channels)
 
             predictions = model.predict(roi_dataset)
 
@@ -417,6 +422,8 @@ class Plugin(plugins.Plugin):
         batch_size = self.gui.batch_size.value()
         seqlen = self.gui.seq_length.value()
         epochs = self.gui.epochs.value()
+        z_channels = [self.gui.red_channel.currentIndex(), self.gui.green_channel.currentIndex(),
+                      self.gui.blue_channel.currentIndex()]
 
         module = self.gui.network.currentData()
         print(module.__name__)
@@ -444,13 +451,14 @@ class Plugin(plugins.Plugin):
             num_validation = int(self.gui.validation_data.value() * len(roi_list))
 
             print('Training dataset')
-            training_dataset = ROIDataset(roi_list[:num_training],
+            training_dataset = ROIDataset(roi_list[:num_training], z_channels=z_channels,
                                           image_size=img_size, class_names=self.class_names, batch_size=batch_size)
             print('Validation dataset')
-            validation_dataset = ROIDataset(roi_list[num_training:num_training + num_validation],
+            validation_dataset = ROIDataset(roi_list[num_training:num_training + num_validation], z_channels=z_channels,
                                             image_size=img_size, class_names=self.class_names, batch_size=batch_size)
             print('Test dataset')
-            test_dataset = ROIDataset(roi_list[num_training + num_validation:], image_size=img_size,
+            test_dataset = ROIDataset(roi_list[num_training + num_validation:], z_channels=z_channels,
+                                      image_size=img_size,
                                       class_names=self.class_names, batch_size=batch_size)
         else:
             img_size = (input_shape[2], input_shape[3])
@@ -462,13 +470,13 @@ class Plugin(plugins.Plugin):
 
             print('Training dataset')
             training_dataset = ROIDataset(roi_list[:num_training], image_size=img_size, class_names=self.class_names,
-                                          seqlen=seqlen, batch_size=batch_size)
+                                          seqlen=seqlen, batch_size=batch_size, z_channels=z_channels,)
             print('Validation dataset')
             validation_dataset = ROIDataset(roi_list[num_training:num_training + num_validation],
                                             image_size=img_size, class_names=self.class_names, seqlen=seqlen,
-                                            batch_size=batch_size)
+                                            batch_size=batch_size, z_channels=z_channels,)
             print('Test dataset')
-            test_dataset = ROIDataset(roi_list[num_training + num_validation:], image_size=img_size,
+            test_dataset = ROIDataset(roi_list[num_training + num_validation:], z_channels=z_channels, image_size=img_size,
                                       class_names=self.class_names, seqlen=seqlen, batch_size=batch_size)
 
         # print(input_shape)
