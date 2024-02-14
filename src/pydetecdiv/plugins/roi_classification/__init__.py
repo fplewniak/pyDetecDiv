@@ -504,9 +504,12 @@ class Plugin(plugins.Plugin):
                                                          'batch_size': batch_size,
                                                          'epochs': epochs,
                                                          })
-            training_ds = Dataset(project=project, name=f'train_{datetime.now().strftime("%Y%m%d-%H%M")}', type_='training', run=run.id_)
-            validation_ds = Dataset(project=project, name=f'val_{datetime.now().strftime("%Y%m%d-%H%M")}', type_='validation', run=run.id_)
-            test_ds = Dataset(project=project, name=f'test_{datetime.now().strftime("%Y%m%d-%H%M")}', type_='test', run=run.id_)
+            training_ds = Dataset(project=project, name=f'train_{datetime.now().strftime("%Y%m%d-%H%M")}',
+                                  type_='training', run=run.id_)
+            validation_ds = Dataset(project=project, name=f'val_{datetime.now().strftime("%Y%m%d-%H%M")}',
+                                    type_='validation', run=run.id_)
+            test_ds = Dataset(project=project, name=f'test_{datetime.now().strftime("%Y%m%d-%H%M")}', type_='test',
+                              run=run.id_)
         print('Not fully implemented')
 
 def plot_history(history):
