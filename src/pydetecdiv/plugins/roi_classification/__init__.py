@@ -68,6 +68,35 @@ class Results(Base):
         project.repository.session.add(self)
 
 
+class TrainingData(Base):
+    """
+    The DAO defining and handling the table to store information about ROIs in training, validation and test datasets
+    """
+    __tablename__ = 'roi_class_datasets'
+    __table_args__ = {'extend_existing': True}
+    id_ = Column(Integer, primary_key=True, autoincrement='auto')
+    dataset = Column(Integer, nullable=False, index=True)
+    roi = Column(Integer, nullable=False, index=True)
+    t = Column(Integer, nullable=False, index=True)
+    target = Column(JSON)
+
+    def save(self, project, roi, t, target, dataset):
+        """
+        Save the results from a plugin run on a ROI at time t into the database
+        :param project: the current project
+        :param run: the current run
+        :param roi: the current ROI
+        :param t: the current frame
+        :param predictions: the list of prediction values
+        :param class_names: the class names
+        """
+        self.roi = roi.id_
+        self.t = t
+        self.target = target
+        self.dataset = dataset
+        project.repository.session.add(self)
+
+
 def prepare_data(data_list, seqlen=None, targets=True):
     roi_data_list = []
     for roi in data_list:
@@ -252,6 +281,7 @@ class Plugin(plugins.Plugin):
                                          seqlen=seqlen, batch_size=batch_size, z_channels=z_channels)
 
             predictions = model.predict(roi_dataset)
+            # display_dataset(roi_dataset, sequences=len(input_shape) != 4)
 
             for (prediction, data) in zip(np.squeeze(predictions), roi_data_list):
                 if len(input_shape) == 4:
@@ -466,21 +496,24 @@ class Plugin(plugins.Plugin):
 
             roi_list = prepare_data(get_annotated_rois(), seqlen)
             random.shuffle(roi_list)
-            num_training = int(self.gui.training_data.value() * len(roi_list))
-            num_validation = int(self.gui.validation_data.value() * len(roi_list))
+            num_training = round(self.gui.training_data.value() * len(roi_list))
+            num_validation = round(self.gui.validation_data.value() * len(roi_list))
 
             print('Training dataset')
             training_dataset = ROIDataset(roi_list[:num_training], image_size=img_size, class_names=self.class_names,
-                                          seqlen=seqlen, batch_size=batch_size, z_channels=z_channels,)
+                                          seqlen=seqlen, batch_size=batch_size, z_channels=z_channels, )
             print('Validation dataset')
             validation_dataset = ROIDataset(roi_list[num_training:num_training + num_validation],
                                             image_size=img_size, class_names=self.class_names, seqlen=seqlen,
-                                            batch_size=batch_size, z_channels=z_channels,)
+                                            batch_size=batch_size, z_channels=z_channels, )
             print('Test dataset')
-            test_dataset = ROIDataset(roi_list[num_training + num_validation:], z_channels=z_channels, image_size=img_size,
+            test_dataset = ROIDataset(roi_list[num_training + num_validation:], z_channels=z_channels,
+                                      image_size=img_size,
                                       class_names=self.class_names, seqlen=seqlen, batch_size=batch_size)
 
         # display_dataset(training_dataset, sequences=len(input_shape) != 4)
+
+        self.save_training_dataset(roi_list, seqlen, num_training, num_validation, epochs, batch_size)
 
         histories = {'Training': model.fit(training_dataset, epochs=epochs,
                                            # steps_per_epoch=num_training, #//batch_size,
@@ -496,6 +529,7 @@ class Plugin(plugins.Plugin):
         tab.addTab(history_plot, 'Training')
         tab.setCurrentWidget(history_plot)
 
+    def save_training_dataset(self, roi_list, seqlen, num_training, num_validation, epochs, batch_size,):
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             run = self.save_run(project, 'train_model', {'class_names': self.class_names,
                                                          'seqlen': seqlen,
@@ -510,7 +544,16 @@ class Plugin(plugins.Plugin):
                                     type_='validation', run=run.id_)
             test_ds = Dataset(project=project, name=f'test_{datetime.now().strftime("%Y%m%d-%H%M")}', type_='test',
                               run=run.id_)
-        print('Not fully implemented')
+
+            print(num_training, num_validation)
+            for data in roi_list[:num_training]:
+                TrainingData().save(project, data.roi, data.frame, data.target, training_ds.id_)
+
+            for data in roi_list[num_training:num_training + num_validation]:
+                TrainingData().save(project, data.roi, data.frame, data.target, validation_ds.id_)
+
+            for data in roi_list[num_training + num_validation:]:
+                TrainingData().save(project, data.roi, data.frame, data.target, test_ds.id_)
 
 def plot_history(history):
     """
@@ -660,9 +703,11 @@ def get_annotated_rois():
             return project.get_objects('ROI', roi_ids)
         return []
 
+
 def display_dataset(dataset, sequences=False):
-    for ds in dataset.__iter__():
-        for data in ds[0]:
+    for dset in dataset.__iter__():
+        ds = dset[0] if isinstance(dset, tuple) else dset
+        for data in ds:
             tab = PyDetecDiv().main_window.add_tabbed_window('Showing dataset')
             if sequences is False:
                 plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=1, rows=1)
