@@ -12,7 +12,7 @@ from PySide6.QtWidgets import QFrame, QFormLayout, QLabel, QComboBox, QDialogBut
     QDoubleSpinBox
 
 from pydetecdiv.utils import singleton
-from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
+from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
 
 
 @singleton
@@ -203,11 +203,15 @@ class ROIclassification(QDockWidget):
         Update the list of model weights associated with the currently selected network
         """
         model_path = self.network.currentData().__path__[0]
-        w_files = [f for f in os.listdir(model_path) if os.path.isfile(os.path.join(model_path, f))]
+        w_files = [os.path.join(model_path, f) for f in os.listdir(model_path)
+                   if os.path.isfile(os.path.join(model_path, f)) and f.endswith('.h5')]
+
+        user_path = os.path.join(get_plugins_dir(), 'roi_classification', 'models', self.network.currentText())
+        w_files.extend([os.path.join(user_path, f) for f in os.listdir(user_path)
+                        if os.path.isfile(os.path.join(user_path, f)) and f.endswith('.h5')])
+
         self.weights.clear()
-        for f in w_files:
-            if f.endswith('.h5'):
-                self.weights.addItem(f, userData=os.path.join(model_path, f))
+        _ = [self.weights.addItem(os.path.basename(f), userData=f) for f in w_files]
         self.weights.addItem('None', userData=None)
 
     def update_classes(self):

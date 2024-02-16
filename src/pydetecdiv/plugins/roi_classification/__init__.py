@@ -10,6 +10,7 @@ import random
 import sys
 from datetime import datetime
 
+import h5py
 import numpy as np
 import sqlalchemy
 from PySide6.QtGui import QAction, QColor, QPen
@@ -228,11 +229,12 @@ class Plugin(plugins.Plugin):
     def load_model(self):
         module = self.gui.network.currentData()
         print(module.__name__)
-        model = module.load_model(load_weights=False)
+        # model = module.load_model(load_weights=False)
+        model = module.model.create_model()
         print('Loading weights')
         weights = self.gui.weights.currentData()
         if weights:
-            module.loadWeights(model, filename=self.gui.weights.currentData())
+            loadWeights(model, filename=self.gui.weights.currentData())
 
         print('Compiling model')
         model.compile(
@@ -458,11 +460,12 @@ class Plugin(plugins.Plugin):
 
         module = self.gui.network.currentData()
         print(module.__name__)
-        model = module.load_model(load_weights=False)
+        # model = module.load_model(load_weights=False)
+        model = module.model.create_model()
         print('Loading weights')
         weights = self.gui.weights.currentData()
         if weights:
-            module.loadWeights(model, filename=self.gui.weights.currentData())
+            loadWeights(model, filename=self.gui.weights.currentData())
 
         print('Compiling model')
         model.compile(
@@ -513,11 +516,22 @@ class Plugin(plugins.Plugin):
 
         # display_dataset(training_dataset, sequences=len(input_shape) != 4)
 
-        self.save_training_dataset(roi_list, seqlen, num_training, num_validation, epochs, batch_size)
+        run_id = self.save_training_run(roi_list, seqlen, num_training, num_validation, epochs, batch_size)
+
+        checkpoint_filepath = os.path.join(get_plugins_dir(), 'roi_classification', 'models',
+                                           self.gui.network.currentText(),
+                                           f'weights_{PyDetecDiv().project_name}_{run_id}.h5')
+
+        model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+                                            filepath=checkpoint_filepath,
+                                            save_weights_only=True,
+                                            monitor='val_accuracy',
+                                            mode='max',
+                                            save_best_only=True)
 
         histories = {'Training': model.fit(training_dataset, epochs=epochs,
                                            # steps_per_epoch=num_training, #//batch_size,
-                                           # callbacks=callbacks,
+                                           callbacks=[model_checkpoint_callback],
                                            validation_data=validation_dataset,
                                            verbose=2,
                                            # workers=4, use_multiprocessing=True
@@ -529,7 +543,7 @@ class Plugin(plugins.Plugin):
         tab.addTab(history_plot, 'Training')
         tab.setCurrentWidget(history_plot)
 
-    def save_training_dataset(self, roi_list, seqlen, num_training, num_validation, epochs, batch_size,):
+    def save_training_run(self, roi_list, seqlen, num_training, num_validation, epochs, batch_size,):
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             run = self.save_run(project, 'train_model', {'class_names': self.class_names,
                                                          'seqlen': seqlen,
@@ -554,6 +568,7 @@ class Plugin(plugins.Plugin):
 
             for data in roi_list[num_training + num_validation:]:
                 TrainingData().save(project, data.roi, data.frame, data.target, test_ds.id_)
+        return run.id_
 
 def plot_history(history):
     """
@@ -721,3 +736,67 @@ def display_dataset(dataset, sequences=False):
                 for i, img in enumerate(data):
                     axs[i].imshow(img)
         plot_viewer.canvas.draw()
+
+def loadWeights(model, filename=os.path.join(__path__[0], "weights.h5"), debug=False):
+    with h5py.File(filename, 'r') as f:
+        if 'backend' in f.attrs:
+            # Keras-saved model weights, cannot be loaded as below
+            model.load_weights(filename)
+        else:
+            # Every layer is an h5 group. Ignore non-groups (such as /0)
+            for g in f:
+                if isinstance(f[g], h5py.Group):
+                    group = f[g]
+                    layerName = group.attrs['Name']
+                    numVars = int(group.attrs['NumVars'])
+                    if debug:
+                        print("layerName:", layerName)
+                        print("    numVars:", numVars)
+                    # Find the layer index from its namevar
+                    layerIdx = layerNum(model, layerName)
+                    layer = model.layers[layerIdx]
+                    if debug:
+                        print("    layerIdx=", layerIdx)
+                    # Every weight is an h5 dataset in the layer group. Read the weights
+                    # into a list in the correct order
+                    weightList = [0] * numVars
+                    for d in group:
+                        dataset = group[d]
+                        varName = dataset.attrs['Name']
+                        shp = intList(dataset.attrs['Shape'])
+                        weightNum = int(dataset.attrs['WeightNum'])
+                        # Read the weight and put it into the right position in the list
+                        if debug:
+                            print("    varName:", varName)
+                            print("        shp:", shp)
+                            print("        weightNum:", weightNum)
+                        weightList[weightNum] = tf.constant(dataset[()], shape=shp)
+                    # Assign the weights into the layer
+                    for w in range(numVars):
+                        if debug:
+                            print("Copying variable of shape:")
+                            print(weightList[w].shape)
+                        layer.variables[w].assign(weightList[w])
+                        if debug:
+                            print("Assignment successful.")
+                            print("Set variable value:")
+                            print(layer.variables[w])
+                    # Finalize layer state
+                    if hasattr(layer, 'finalize_state'):
+                        layer.finalize_state()
+
+def layerNum(model, layerName):
+    # Returns the index to the layer
+    layers = model.layers
+    for i in range(len(layers)):
+        if layerName == layers[i].name:
+            return i
+    print("")
+    print("WEIGHT LOADING FAILED. MODEL DOES NOT CONTAIN LAYER WITH NAME: ", layerName)
+    print("")
+    return -1
+
+
+def intList(myList):
+    # Converts a list of numbers into a list of ints.
+    return list(map(int, myList))
