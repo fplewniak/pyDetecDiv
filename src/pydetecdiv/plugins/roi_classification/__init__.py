@@ -336,6 +336,7 @@ class Plugin(plugins.Plugin):
             self.set_sequence_length(PyDetecDiv().project_name)
             PyDetecDiv().project_selected.connect(self.set_table_view)
             PyDetecDiv().project_selected.connect(self.set_sequence_length)
+            PyDetecDiv().project_selected.connect(self.create_table)
             PyDetecDiv().saved_rois.connect(self.set_table_view)
             # PyDetecDiv().main_window.active_subwindow.viewer.video_frame.connect(self.draw_annotated_rois)
             self.gui.button_box.accepted.connect(self.run)
