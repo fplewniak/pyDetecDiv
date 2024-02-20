@@ -134,7 +134,7 @@ class ROIclassification(QDockWidget):
         self.seq_length.setRange(1, 4096)
         self.seq_length.setSingleStep(1)
         self.seq_length.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
-        self.seq_length.setValue(10)
+        self.seq_length.setValue(50)
         self.misc_boxLayout.addRow(QLabel('Sequence length:'), self.seq_length)
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Close | QDialogButtonBox.Ok, self)
