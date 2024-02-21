@@ -11,6 +11,7 @@ from PySide6.QtWidgets import QMainWindow, QGraphicsScene, QGraphicsItem, QGraph
 import numpy as np
 import cv2 as cv
 from skimage.feature import peak_local_max
+import qimage2ndarray
 
 from pydetecdiv.app import WaitDialog, PyDetecDiv, DrawingTools, pydetecdiv_project
 from pydetecdiv.app.gui.ui.ImageViewer import Ui_ImageViewer
@@ -248,8 +249,12 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         if arr is not None:
             if self.crop is not None:
                 arr = arr[..., self.crop[1], self.crop[0]]
+            # if sys.byteorder=='big':  # Check if the machine is big endian
+            #     arr = arr.byteswap(True)  # Swap the byte order if necessary
             ny, nx = arr.shape
-            img = QImage(np.ascontiguousarray(arr), nx, ny, QImage.Format_Grayscale16)
+            # img = QImage(np.ascontiguousarray(arr).tobytes(), nx, ny, QImage.Format_Grayscale16)
+            # img = QImage(arr.flatten().tobytes(), nx, ny, QImage.Format_Grayscale16)
+            img = qimage2ndarray.array2qimage((arr/257).astype(np.uint8))
             self.pixmap.convertFromImage(img)
             self.pixmapItem.setPixmap(self.pixmap)
 
@@ -695,3 +700,5 @@ class ViewerScene(QGraphicsScene):
     def display_roi_size(self, roi):
         PyDetecDiv().main_window.drawing_tools.roi_width.setValue(roi.rect().width())
         PyDetecDiv().main_window.drawing_tools.roi_height.setValue(roi.rect().height())
+        pos = roi.pos()
+        PyDetecDiv().main_window.drawing_tools.roi_pos.setText(' '.join(map(str, [pos.x(), pos.y()])))
