@@ -477,7 +477,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         viewer.set_image_resource_data(self.image_resource_data, crop=crop)
         viewer.ui.view_name.setText(f'View: {viewer.image_source_ref.data(0)}')
         viewer.synchronize_with(self)
-        viewer.display()
+        # viewer.display()
         self.parent().parent().setCurrentWidget(viewer)
         PyDetecDiv().restoreOverrideCursor()
 
