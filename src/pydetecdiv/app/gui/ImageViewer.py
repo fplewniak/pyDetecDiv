@@ -700,5 +700,3 @@ class ViewerScene(QGraphicsScene):
     def display_roi_size(self, roi):
         PyDetecDiv().main_window.drawing_tools.roi_width.setValue(roi.rect().width())
         PyDetecDiv().main_window.drawing_tools.roi_height.setValue(roi.rect().height())
-        pos = roi.pos()
-        PyDetecDiv().main_window.drawing_tools.roi_pos.setText(' '.join(map(str, [pos.x(), pos.y()])))
