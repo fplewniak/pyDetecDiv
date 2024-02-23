@@ -9,8 +9,9 @@ from PySide6.QtCore import Qt
 from PySide6.QtSql import QSqlQueryModel, QSqlQuery, QSqlDatabase
 from PySide6.QtWidgets import QFrame, QFormLayout, QLabel, QComboBox, QDialogButtonBox, QDockWidget, \
     QTableView, QAbstractItemView, QVBoxLayout, QGroupBox, QSpinBox, QAbstractSpinBox, QLineEdit, QSizePolicy, \
-    QDoubleSpinBox
+    QDoubleSpinBox, QFileDialog
 
+from pydetecdiv.plugins.roi_classification.gui.ImportAnnotatedROIs import FOV2ROIlinks
 from pydetecdiv.utils import singleton
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
 
@@ -76,6 +77,13 @@ class ROIclassification(QDockWidget):
         self.roi_number.setSingleStep(1)
         self.roi_number.setValue(int(num_rois / 10))
         self.roi_sampleLayout.addRow(QLabel('ROI sample size:'), self.roi_number)
+
+        self.roi_import = QGroupBox(self.form)
+        self.roi_import.setTitle('Import annotated ROIs')
+        self.roi_importLayout = QFormLayout(self.roi_import)
+        self.roi_import_box = QDialogButtonBox(self.roi_import)
+        self.roi_import_box.addButton(QDialogButtonBox.Open)
+        self.roi_importLayout.addRow('Select annotation file:', self.roi_import_box)
 
         self.datasets = QGroupBox(self.form)
         self.datasets.setTitle('ROI dataset sizes')
@@ -145,12 +153,14 @@ class ROIclassification(QDockWidget):
         self.vert_layout.addWidget(self.preprocessing)
         self.vert_layout.addWidget(self.roi_selection)
         self.vert_layout.addWidget(self.roi_sample)
+        self.vert_layout.addWidget(self.roi_import)
         self.vert_layout.addWidget(self.datasets)
         self.vert_layout.addWidget(self.misc_box)
         self.vert_layout.addWidget(self.button_box)
 
         PyDetecDiv().project_selected.connect(lambda _: self.update_datasets())
         self.button_box.rejected.connect(self.close)
+        self.roi_import_box.accepted.connect(self.open_annoted_roi_file)
         self.form.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
         self.setWidget(self.form)
         parent.addDockWidget(Qt.LeftDockWidgetArea, self, Qt.Vertical)
@@ -260,3 +270,12 @@ class ROIclassification(QDockWidget):
                 "AND run.command='annotate_rois';",
                 db=db)
             return query.record().value('roi_count') if query.first() else 0
+
+    def open_annoted_roi_file(self):
+        filters = ["csv (*.csv)",]
+        files, _ = QFileDialog.getOpenFileNames(self, caption='Choose file with annotated ROIs',
+                                                dir='.',
+                                                filter=";;".join(filters),
+                                                selectedFilter=filters[0])
+        print(files)
+        linkROIs_to_FOVs = FOV2ROIlinks()

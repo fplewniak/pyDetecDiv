@@ -355,6 +355,7 @@ class Plugin(plugins.Plugin):
                 # Create new model
                 self.gui.roi_selection.hide()
                 self.gui.roi_sample.hide()
+                self.gui.roi_import.hide()
                 self.gui.classifier_selectionLayout.setRowVisible(1, False)
                 self.gui.preprocessing.show()
                 self.gui.misc_box.hide()
@@ -365,6 +366,7 @@ class Plugin(plugins.Plugin):
                 # Annotate ROIs
                 self.gui.roi_selection.hide()
                 self.gui.roi_sample.show()
+                self.gui.roi_import.show()
                 self.gui.classifier_selectionLayout.setRowVisible(1, False)
                 self.gui.preprocessing.hide()
                 self.gui.misc_box.hide()
@@ -375,6 +377,7 @@ class Plugin(plugins.Plugin):
                 # Train model
                 self.gui.roi_selection.hide()
                 self.gui.roi_sample.hide()
+                self.gui.roi_import.hide()
                 self.gui.classifier_selectionLayout.setRowVisible(1, True)
                 self.gui.preprocessing.show()
                 self.gui.misc_box.show()
@@ -386,6 +389,7 @@ class Plugin(plugins.Plugin):
                 # Classify ROIs
                 self.gui.roi_selection.show()
                 self.gui.roi_sample.hide()
+                self.gui.roi_import.hide()
                 self.gui.classifier_selectionLayout.setRowVisible(1, True)
                 self.gui.preprocessing.show()
                 self.gui.misc_box.show()
