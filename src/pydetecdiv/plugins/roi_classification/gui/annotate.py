@@ -93,7 +93,8 @@ class Annotator(ImageViewer):
             results = list(project.repository.session.execute(
                 sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,run.parameters ->> '$.annotator' as annotator "
                                 f"FROM run, roi_classification as rc "
-                                f"WHERE run.command='annotate_rois' and rc.run=run.id_ and rc.roi={self.roi.id_} "
+                                f"WHERE run.command='annotate_rois' OR run.command='import_annotated_rois' "
+                                f"AND rc.run=run.id_ and rc.roi={self.roi.id_} "
                                 f"AND annotator='{get_config_value('project', 'user')}' "
                                 f"ORDER BY rc.run ASC;")))
             for annotation in results:

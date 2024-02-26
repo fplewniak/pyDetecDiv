@@ -4,14 +4,17 @@ Dialog window handling the definition of patterns for FOV creation from raw data
 import random
 import re
 
+import numpy as np
 import pandas
-from PySide6.QtCore import Signal
+import pandas as pd
+from PySide6.QtCore import Signal, QThread
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QDialog, QColorDialog, QDialogButtonBox
 
+from pydetecdiv.domain.ROI import ROI
 from pydetecdiv.plugins.roi_classification.gui.ui.ImportAnnotatedROIs import Ui_FOV2ROIlinks
-from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
-
+from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, WaitDialog
+from pydetecdiv.settings import get_config_value
 
 class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
     """
@@ -20,22 +23,46 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
     finished = Signal(bool)
     progress = Signal(int)
 
-    def __init__(self):
+    def __init__(self, annotation_file, plugin):
         # Base class
         QDialog.__init__(self, PyDetecDiv().main_window)
 
         # Initialize the UI widgets
         self.ui = Ui_FOV2ROIlinks()
+        self.ui.setupUi(self)
+
+        self.plugin = plugin
+        self.annotation_file = annotation_file
+
         self.colours = {
-            'FOV': QColor.fromRgb(255, 125, 0, 255)
+            'FOV': QColor.fromRgb(0, 200, 0, 255)
         }
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            roi_names = [roi.name for roi in project.get_objects('ROI')]
-            self.ROIsamples_text = random.sample(roi_names, min([len(roi_names), 5]))
-        self.ROIsamples = []
-        self.ui.setupUi(self)
-        self.ROIsamples = [self.ui.sampleROI1, self.ui.sampleROI2, self.ui.sampleROI3, self.ui.sampleROI4, self.ui.sampleROI5][
-                       :min([len(roi_names), 5])]
+            fov_names = [fov.name for fov in project.get_objects('FOV')]
+            self.FOVsamples_text = random.sample(fov_names, min([len(fov_names), 5]))
+
+        self.FOVsamples = [self.ui.sampleFOV1, self.ui.sampleFOV2,
+                           self.ui.sampleFOV3, self.ui.sampleFOV4,
+                           self.ui.sampleFOV5][
+                          :min([len(fov_names), 5])]
+        for i, label_text in enumerate(self.FOVsamples_text):
+            self.FOVsamples[i].setText(label_text)
+
+        self.df = pd.read_csv(annotation_file)
+        self.df['frame'] -= 1
+        # self.class_index_mapping =  [-1] * len(self.plugin.class_names)
+        # self.class_index_mapping = {row.ann: self.plugin.class_names.index(row.class_name)
+        #                             for row in self.df.groupby(['ann', 'class_name']).size().
+        #                             reset_index(name='count').itertuples()}
+        # self.df['ann'] = self.df['ann'].replace(self.class_index_mapping)
+        # self.df['ann'] -= 1
+        self.ROIsamples = self.df['roi'].tolist()
+        self.ROIsamples_text = random.sample(self.ROIsamples, min([len(self.df), 5]))
+        self.ROIsamples = [self.ui.sampleROI1, self.ui.sampleROI2,
+                           self.ui.sampleROI3, self.ui.sampleROI4,
+                           self.ui.sampleROI5][
+                          :min([len(self.df), 5])]
+
         self.controls = {'FOV': self.ui.position,
                          }
         for i, label_text in enumerate(self.ROIsamples_text):
@@ -54,7 +81,7 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
         Reset the form with default patterns and colours
         """
         self.colours = {
-            'FOV': QColor.fromRgb(255, 125, 0, 255)
+            'FOV': QColor.fromRgb(0, 200, 0, 255)
         }
         self.ui.pos_left.setCurrentIndex(0)
         self.ui.pos_pattern.setCurrentIndex(0)
@@ -240,41 +267,59 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
         match clicked_button:
             case QDialogButtonBox.StandardButton.Ok:
                 pass
-                # regexes = self.get_regex()
-                # df = pandas.DataFrame.from_dict(self.get_match_spans(self.find_matches(self.samples_text, regexes), 0))
-                # regex = '.*'.join([regexes[col] for col in df.sort_values(0, axis=1, ascending=True).columns])
-                # wait_dialog = WaitDialog('Creating Fields of view', self, cancel_msg='Cancel FOV creation: please wait',
-                #                          progress_bar=True, )
-                # self.finished.connect(wait_dialog.close_window)
-                # self.progress.connect(wait_dialog.show_progress)
-                # with pydetecdiv_project(PyDetecDiv().project_name) as project:
-                #     project.raw_dataset.pattern = '.*'.join(
-                #         [regexes[col] for col in df.sort_values(0, axis=1, ascending=True).columns if col != 'FOV'])
-                #     project.save(project.raw_dataset)
-                # wait_dialog.wait_for(self.create_fov_annotate, regex)
-                # PyDetecDiv().project_selected.emit(project.dbname)
-                # self.close()
+                regexes = self.get_regex()
+                df = pandas.DataFrame.from_dict(
+                    self.get_match_spans(self.find_matches(self.ROIsamples_text, regexes), 0))
+                regex = '.*'.join([regexes[col] for col in df.sort_values(0, axis=1, ascending=True).columns])
+                wait_dialog = WaitDialog('Importing annotated ROIs', self,
+                                         cancel_msg='Cancel ROI creation: please wait',
+                                         progress_bar=True, )
+                self.finished.connect(wait_dialog.close_window)
+                self.progress.connect(wait_dialog.show_progress)
+                wait_dialog.wait_for(self.create_annotated_rois, regex)
+                PyDetecDiv().project_selected.emit(PyDetecDiv().project_name)
+                self.close()
             case QDialogButtonBox.StandardButton.Close:
                 self.close()
             case QDialogButtonBox.StandardButton.Reset:
                 self.reset()
 
-    def create_fov_annotate(self, regex):
+    def create_annotated_rois(self, regex):
         """
         The actual FOV creation and data annotation method
 
         :param regex: the regular expression to use for data annotation
         """
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            pass
+            run = self.plugin.save_run(project, 'import_annotated_rois',
+                                            {'class_names': self.plugin.class_names,
+                                             'annotator': get_config_value('project', 'user'),
+                                             'file_name': self.annotation_file
+                                             })
+
+            fov_list = {f.name: f for f in project.get_objects('FOV')}
+            new_roi_list = {}
+            for row in self.df.groupby(['roi', 'x', 'y', 'width', 'height']).size().reset_index(
+                    name='count').itertuples():
+                match = re.search(regex, row.roi)
+                new_roi_list[row.roi] = (ROI(project=project, name=row.roi, fov=fov_list[(match.group('FOV'))],
+                                             top_left=(row.x, row.y),
+                                             bottom_right=(row.x + row.width, row.y + row.height)))
+                self.progress.emit(100.0 * row.Index / len(self.df))
+                if QThread.currentThread().isInterruptionRequested():
+                    project.cancel()
+                    break
+
+            for row in self.df.itertuples():
+                self.plugin.save_results(project, run, new_roi_list[row.roi], row.frame, row.class_name)
+                # print(row.roi, row.frame, row.ann, row.class_name)
+                self.progress.emit(100.0 * row.Index / len(self.df))
+                if QThread.currentThread().isInterruptionRequested():
+                    project.cancel()
+                    break
+
             # columns = tuple(re.compile(regex).groupindex.keys())
-            # # fov_index = pattern.groupindex['FOV']
-            # # fov_pattern = ''.join(re.findall(r'\(.*?\)', regex)[fov_index - 2:fov_index + 1])
-            # # project.annotate(project.raw_dataset, 'url', tuple(pattern.groupindex.keys()), regex)
-            # # for i in project.create_fov_from_raw_data('url', fov_pattern):
             # for i in project.create_fov_from_raw_data(project.annotate(project.raw_dataset, 'url', columns, regex), multi=self.ui.multiple_files.isChecked()):
             #     self.progress.emit(i)
-            #     if QThread.currentThread().isInterruptionRequested():
-            #         project.cancel()
-            #         break
+
         self.finished.emit(True)

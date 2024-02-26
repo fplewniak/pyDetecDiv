@@ -15,7 +15,7 @@ import numpy as np
 import sqlalchemy
 from PySide6.QtGui import QAction, QColor, QPen
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
-from PySide6.QtWidgets import QGraphicsRectItem
+from PySide6.QtWidgets import QGraphicsRectItem, QFileDialog
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
@@ -25,7 +25,7 @@ from pydetecdiv import plugins
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
 from pydetecdiv.domain.Image import Image, ImgDType
 
-from .gui import ROIclassification
+from .gui import ROIclassification, FOV2ROIlinks
 from . import models
 from .gui.annotate import open_annotator
 from ...app.gui.Windows import MatplotViewer
@@ -338,6 +338,7 @@ class Plugin(plugins.Plugin):
             PyDetecDiv().project_selected.connect(self.set_sequence_length)
             PyDetecDiv().project_selected.connect(self.create_table)
             PyDetecDiv().saved_rois.connect(self.set_table_view)
+            self.gui.roi_import_box.accepted.connect(self.import_annotated_rois)
             # PyDetecDiv().main_window.active_subwindow.viewer.video_frame.connect(self.draw_annotated_rois)
             self.gui.button_box.accepted.connect(self.run)
             self.gui.network.currentIndexChanged.connect(self.update_class_names)
@@ -574,6 +575,17 @@ class Plugin(plugins.Plugin):
             for data in roi_list[num_training + num_validation:]:
                 TrainingData().save(project, data.roi, data.frame, data.target, test_ds.id_)
         return run.id_
+
+    def import_annotated_rois(self):
+        filters = ["csv (*.csv)", ]
+        annotation_file, _ = QFileDialog.getOpenFileName(self.gui, caption='Choose file with annotated ROIs',
+                                                         dir='.',
+                                                         filter=";;".join(filters),
+                                                         selectedFilter=filters[0])
+        FOV2ROIlinks(annotation_file, self)
+
+    def save_results(self, project, run, roi, frame, class_name):
+        Results().save(project, run, roi,  frame, np.array([1]), [class_name])
 
 def plot_history(history):
     """

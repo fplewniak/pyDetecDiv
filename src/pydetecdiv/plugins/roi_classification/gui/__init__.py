@@ -160,7 +160,6 @@ class ROIclassification(QDockWidget):
 
         PyDetecDiv().project_selected.connect(lambda _: self.update_datasets())
         self.button_box.rejected.connect(self.close)
-        self.roi_import_box.accepted.connect(self.open_annoted_roi_file)
         self.form.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
         self.setWidget(self.form)
         parent.addDockWidget(Qt.LeftDockWidgetArea, self, Qt.Vertical)
@@ -271,11 +270,11 @@ class ROIclassification(QDockWidget):
                 db=db)
             return query.record().value('roi_count') if query.first() else 0
 
-    def open_annoted_roi_file(self):
-        filters = ["csv (*.csv)",]
-        files, _ = QFileDialog.getOpenFileNames(self, caption='Choose file with annotated ROIs',
-                                                dir='.',
-                                                filter=";;".join(filters),
-                                                selectedFilter=filters[0])
-        print(files)
-        linkROIs_to_FOVs = FOV2ROIlinks()
+    # def open_annoted_roi_file(self):
+    #     filters = ["csv (*.csv)",]
+    #     annotation_file, _ = QFileDialog.getOpenFileName(self, caption='Choose file with annotated ROIs',
+    #                                             dir='.',
+    #                                             filter=";;".join(filters),
+    #                                             selectedFilter=filters[0])
+    #     print(annotation_file)
+    #     FOV2ROIlinks(annotation_file)
