@@ -302,9 +302,10 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
             for row in self.df.groupby(['roi', 'x', 'y', 'width', 'height']).size().reset_index(
                     name='count').itertuples():
                 match = re.search(regex, row.roi)
-                new_roi_list[row.roi] = (ROI(project=project, name=row.roi, fov=fov_list[(match.group('FOV'))],
-                                             top_left=(row.x, row.y),
-                                             bottom_right=(row.x + row.width, row.y + row.height)))
+                if match.group('FOV') in fov_list:
+                    new_roi_list[row.roi] = (ROI(project=project, name=row.roi, fov=fov_list[match.group('FOV')],
+                                                 top_left=(row.x, row.y),
+                                                 bottom_right=(row.x + row.width, row.y + row.height)))
                 self.progress.emit(100.0 * row.Index / len(self.df))
                 if QThread.currentThread().isInterruptionRequested():
                     project.cancel()
@@ -317,9 +318,5 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
                 if QThread.currentThread().isInterruptionRequested():
                     project.cancel()
                     break
-
-            # columns = tuple(re.compile(regex).groupindex.keys())
-            # for i in project.create_fov_from_raw_data(project.annotate(project.raw_dataset, 'url', columns, regex), multi=self.ui.multiple_files.isChecked()):
-            #     self.progress.emit(i)
 
         self.finished.emit(True)
