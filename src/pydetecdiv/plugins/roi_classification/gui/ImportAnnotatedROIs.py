@@ -312,7 +312,8 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
                     break
 
             for row in self.df.itertuples():
-                self.plugin.save_results(project, run, new_roi_list[row.roi], row.frame, row.class_name)
+                if row.roi in new_roi_list:
+                    self.plugin.save_results(project, run, new_roi_list[row.roi], row.frame, row.class_name)
                 # print(row.roi, row.frame, row.ann, row.class_name)
                 self.progress.emit(100.0 * row.Index / len(self.df))
                 if QThread.currentThread().isInterruptionRequested():
