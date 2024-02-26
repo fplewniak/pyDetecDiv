@@ -526,14 +526,14 @@ class Plugin(plugins.Plugin):
 
         checkpoint_filepath = os.path.join(get_plugins_dir(), 'roi_classification', 'models',
                                            self.gui.network.currentText(),
-                                           f'weights_{PyDetecDiv().project_name}_{run_id}.h5')
+                                           f'weights_{PyDetecDiv().project_name}_{run_id}_best.h5')
 
         model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-                                            filepath=checkpoint_filepath,
-                                            save_weights_only=True,
-                                            monitor='val_accuracy',
-                                            mode='max',
-                                            save_best_only=True)
+            filepath=checkpoint_filepath,
+            save_weights_only=True,
+            monitor='val_accuracy',
+            mode='max',
+            save_best_only=True)
 
         histories = {'Training': model.fit(training_dataset, epochs=epochs,
                                            # steps_per_epoch=num_training, #//batch_size,
@@ -542,6 +542,10 @@ class Plugin(plugins.Plugin):
                                            verbose=2,
                                            # workers=4, use_multiprocessing=True
                                            )}
+        model.save(os.path.join(get_plugins_dir(), 'roi_classification', 'models',
+                                self.gui.network.currentText(),
+                                f'weights_{PyDetecDiv().project_name}_{run_id}_last.h5'), overwrite=True,
+                   save_format='h5')
         # print(histories)
         tab = PyDetecDiv().main_window.add_tabbed_window(f'{PyDetecDiv().project_name} / {module.__name__}')
         tab.viewer.project_name = PyDetecDiv().project_name
@@ -549,7 +553,7 @@ class Plugin(plugins.Plugin):
         tab.addTab(history_plot, 'Training')
         tab.setCurrentWidget(history_plot)
 
-    def save_training_run(self, roi_list, seqlen, num_training, num_validation, epochs, batch_size,):
+    def save_training_run(self, roi_list, seqlen, num_training, num_validation, epochs, batch_size, ):
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             run = self.save_run(project, 'train_model', {'class_names': self.class_names,
                                                          'seqlen': seqlen,
@@ -585,7 +589,8 @@ class Plugin(plugins.Plugin):
         FOV2ROIlinks(annotation_file, self)
 
     def save_results(self, project, run, roi, frame, class_name):
-        Results().save(project, run, roi,  frame, np.array([1]), [class_name])
+        Results().save(project, run, roi, frame, np.array([1]), [class_name])
+
 
 def plot_history(history):
     """
@@ -754,6 +759,7 @@ def display_dataset(dataset, sequences=False):
                     axs[i].imshow(img)
         plot_viewer.canvas.draw()
 
+
 def loadWeights(model, filename=os.path.join(__path__[0], "weights.h5"), debug=False):
     with h5py.File(filename, 'r') as f:
         if 'backend' in f.attrs:
@@ -801,6 +807,7 @@ def loadWeights(model, filename=os.path.join(__path__[0], "weights.h5"), debug=F
                     # Finalize layer state
                     if hasattr(layer, 'finalize_state'):
                         layer.finalize_state()
+
 
 def layerNum(model, layerName):
     # Returns the index to the layer
