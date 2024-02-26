@@ -122,7 +122,8 @@ def get_annotation(roi):
                             f"run.parameters ->> '$.annotator' as annotator, "
                             f"run.parameters ->> '$.class_names' as class_names "
                             f"FROM run, roi_classification as rc "
-                            f"WHERE run.command='annotate_rois' and rc.run=run.id_ and rc.roi={roi.id_} "
+                            f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+                            f"AND rc.run=run.id_ and rc.roi={roi.id_} "
                             f"AND annotator='{get_config_value('project', 'user')}' "
                             f"ORDER BY rc.run ASC;")))
         class_names = json.loads(results[0][4])
@@ -730,7 +731,7 @@ def get_annotated_rois():
         query = QSqlQuery(
             "SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
             "WHERE run.id_=roi_classification.run "
-            "AND run.command='annotate_rois';",
+            "AND (run.command='annotate_rois' OR run.command='import_annotated_rois');",
             db=db)
         query.exec()
         if query.first():
