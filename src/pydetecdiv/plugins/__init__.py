@@ -60,7 +60,7 @@ class Plugin:
             # 'uuid': self.uuid
         }
         run = Run(project=project, **record)
-        project.commit()
+        # project.commit()
         return run
 
 def get_plugins_dir():
