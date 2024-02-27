@@ -465,6 +465,8 @@ class Plugin(plugins.Plugin):
         z_channels = [self.gui.red_channel.currentIndex(), self.gui.green_channel.currentIndex(),
                       self.gui.blue_channel.currentIndex()]
 
+        run = self.save_training_run(seqlen, epochs, batch_size)
+
         module = self.gui.network.currentData()
         print(module.__name__)
         # model = module.load_model(load_weights=False)
@@ -523,11 +525,11 @@ class Plugin(plugins.Plugin):
 
         # display_dataset(training_dataset, sequences=len(input_shape) != 4)
 
-        run_id = self.save_training_run(roi_list, seqlen, num_training, num_validation, epochs, batch_size)
+        self.save_training_datasets(run, roi_list, num_training, num_validation)
 
         checkpoint_filepath = os.path.join(get_plugins_dir(), 'roi_classification', 'models',
                                            self.gui.network.currentText(),
-                                           f'weights_{PyDetecDiv().project_name}_{run_id}_best.h5')
+                                           f'weights_{PyDetecDiv().project_name}_{run.id_}_best.h5')
 
         model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
             filepath=checkpoint_filepath,
@@ -545,7 +547,7 @@ class Plugin(plugins.Plugin):
                                            )}
         model.save(os.path.join(get_plugins_dir(), 'roi_classification', 'models',
                                 self.gui.network.currentText(),
-                                f'weights_{PyDetecDiv().project_name}_{run_id}_last.h5'), overwrite=True,
+                                f'weights_{PyDetecDiv().project_name}_{run.id_}_last.h5'), overwrite=True,
                    save_format='h5')
         # print(histories)
         tab = PyDetecDiv().main_window.add_tabbed_window(f'{PyDetecDiv().project_name} / {module.__name__}')
@@ -554,32 +556,36 @@ class Plugin(plugins.Plugin):
         tab.addTab(history_plot, 'Training')
         tab.setCurrentWidget(history_plot)
 
-    def save_training_run(self, roi_list, seqlen, num_training, num_validation, epochs, batch_size, ):
+    def save_training_run(self, seqlen, epochs, batch_size, ):
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            run = self.save_run(project, 'train_model', {'class_names': self.class_names,
-                                                         'seqlen': seqlen,
-                                                         'num_training': self.gui.training_data.value(),
-                                                         'num_validation': self.gui.validation_data.value(),
-                                                         'batch_size': batch_size,
-                                                         'epochs': epochs,
-                                                         })
-            training_ds = Dataset(project=project, name=f'train_{datetime.now().strftime("%Y%m%d-%H%M")}',
-                                  type_='training', run=run.id_)
-            validation_ds = Dataset(project=project, name=f'val_{datetime.now().strftime("%Y%m%d-%H%M")}',
-                                    type_='validation', run=run.id_)
-            test_ds = Dataset(project=project, name=f'test_{datetime.now().strftime("%Y%m%d-%H%M")}', type_='test',
-                              run=run.id_)
+            return self.save_run(project, 'train_model', {'class_names': self.class_names,
+                                                          'seqlen': seqlen,
+                                                          'num_training': self.gui.training_data.value(),
+                                                          'num_validation': self.gui.validation_data.value(),
+                                                          'batch_size': batch_size,
+                                                          'epochs': epochs,
+                                                          })
 
-            print(num_training, num_validation)
-            for data in roi_list[:num_training]:
-                TrainingData().save(project, data.roi, data.frame, data.target, training_ds.id_)
+    def save_training_datasets(self, run, roi_list, num_training, num_validation):
+        # with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        #     print(project, roi_list[0].roi.project)
+        project = roi_list[0].roi.project
+        training_ds = Dataset(project=project, name=f'train_{datetime.now().strftime("%Y%m%d-%H%M")}',
+                              type_='training', run=run.id_)
+        validation_ds = Dataset(project=project, name=f'val_{datetime.now().strftime("%Y%m%d-%H%M")}',
+                                type_='validation', run=run.id_)
+        test_ds = Dataset(project=project, name=f'test_{datetime.now().strftime("%Y%m%d-%H%M")}', type_='test',
+                          run=run.id_)
 
-            for data in roi_list[num_training:num_training + num_validation]:
-                TrainingData().save(project, data.roi, data.frame, data.target, validation_ds.id_)
+        print(num_training, num_validation)
+        for data in roi_list[:num_training]:
+            TrainingData().save(project, data.roi, data.frame, data.target, training_ds.id_)
 
-            for data in roi_list[num_training + num_validation:]:
-                TrainingData().save(project, data.roi, data.frame, data.target, test_ds.id_)
-        return run.id_
+        for data in roi_list[num_training:num_training + num_validation]:
+            TrainingData().save(project, data.roi, data.frame, data.target, validation_ds.id_)
+
+        for data in roi_list[num_training + num_validation:]:
+            TrainingData().save(project, data.roi, data.frame, data.target, test_ds.id_)
 
     def import_annotated_rois(self):
         filters = ["csv (*.csv)", ]
