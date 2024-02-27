@@ -16,6 +16,7 @@ from pydetecdiv.plugins.roi_classification.gui.ui.ImportAnnotatedROIs import Ui_
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, WaitDialog
 from pydetecdiv.settings import get_config_value
 
+
 class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
     """
     A class extending the QDialog and the Ui_RawData2FOV classes. Ui_RawData2FOV was created using QTDesigner
@@ -266,7 +267,7 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
         clicked_button = button.parent().standardButton(button)
         match clicked_button:
             case QDialogButtonBox.StandardButton.Ok:
-                pass
+                run = self.save_run()
                 regexes = self.get_regex()
                 df = pandas.DataFrame.from_dict(
                     self.get_match_spans(self.find_matches(self.ROIsamples_text, regexes), 0))
@@ -276,7 +277,7 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
                                          progress_bar=True, )
                 self.finished.connect(wait_dialog.close_window)
                 self.progress.connect(wait_dialog.show_progress)
-                wait_dialog.wait_for(self.create_annotated_rois, regex)
+                wait_dialog.wait_for(self.create_annotated_rois, regex, run)
                 PyDetecDiv().project_selected.emit(PyDetecDiv().project_name)
                 self.close()
             case QDialogButtonBox.StandardButton.Close:
@@ -284,36 +285,38 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
             case QDialogButtonBox.StandardButton.Reset:
                 self.reset()
 
-    def create_annotated_rois(self, regex):
+    def save_run(self):
+        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            return self.plugin.save_run(project, 'import_annotated_rois',
+                                        {'class_names': self.plugin.class_names,
+                                         'annotator': get_config_value('project', 'user'),
+                                         'file_name': self.annotation_file
+                                         })
+
+    def create_annotated_rois(self, regex, run):
         """
         The actual FOV creation and data annotation method
 
         :param regex: the regular expression to use for data annotation
         """
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            run = self.plugin.save_run(project, 'import_annotated_rois',
-                                            {'class_names': self.plugin.class_names,
-                                             'annotator': get_config_value('project', 'user'),
-                                             'file_name': self.annotation_file
-                                             })
-
-            fov_list = {f.name: f for f in project.get_objects('FOV')}
-            new_roi_list = {}
+            fov_list = {f.name: f.id_ for f in project.get_objects('FOV')}
+            roi_list = {roi.name: roi for roi in project.get_objects('ROI')}
             for row in self.df.groupby(['roi', 'x', 'y', 'width', 'height']).size().reset_index(
                     name='count').itertuples():
-                match = re.search(regex, row.roi)
-                if match.group('FOV') in fov_list:
-                    new_roi_list[row.roi] = (ROI(project=project, name=row.roi, fov=fov_list[match.group('FOV')],
-                                                 top_left=(row.x, row.y),
-                                                 bottom_right=(row.x + row.width, row.y + row.height)))
+                fov = re.search(regex, row.roi).group('FOV')
+                if (fov in fov_list) and (row.roi not in roi_list):
+                    roi_list[row.roi] = ROI(project=project, name=row.roi, fov=fov_list[fov],
+                                            top_left=(row.x, row.y),
+                                            bottom_right=(row.x + row.width, row.y + row.height))
                 self.progress.emit(100.0 * row.Index / len(self.df))
                 if QThread.currentThread().isInterruptionRequested():
                     project.cancel()
                     break
 
             for row in self.df.itertuples():
-                if row.roi in new_roi_list:
-                    self.plugin.save_results(project, run, new_roi_list[row.roi], row.frame, row.class_name)
+                if row.roi in roi_list:
+                    self.plugin.save_results(project, run, roi_list[row.roi], row.frame, row.class_name)
                 # print(row.roi, row.frame, row.ann, row.class_name)
                 self.progress.emit(100.0 * row.Index / len(self.df))
                 if QThread.currentThread().isInterruptionRequested():
