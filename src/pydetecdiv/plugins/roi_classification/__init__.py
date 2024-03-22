@@ -586,6 +586,7 @@ class Plugin(plugins.Plugin):
 
         for data in roi_list[num_training + num_validation:]:
             TrainingData().save(project, data.roi, data.frame, data.target, test_ds.id_)
+        project.commit()
 
     def import_annotated_rois(self):
         filters = ["csv (*.csv)", ]
