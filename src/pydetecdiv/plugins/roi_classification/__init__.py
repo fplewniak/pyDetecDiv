@@ -465,10 +465,11 @@ class Plugin(plugins.Plugin):
         z_channels = [self.gui.red_channel.currentIndex(), self.gui.green_channel.currentIndex(),
                       self.gui.blue_channel.currentIndex()]
 
-        run = self.save_training_run(seqlen, epochs, batch_size)
-
         module = self.gui.network.currentData()
         print(module.__name__)
+
+        run = self.save_training_run(seqlen, epochs, batch_size, module)
+
         # model = module.load_model(load_weights=False)
         model = module.model.create_model()
         print('Loading weights')
@@ -556,9 +557,10 @@ class Plugin(plugins.Plugin):
         tab.addTab(history_plot, 'Training')
         tab.setCurrentWidget(history_plot)
 
-    def save_training_run(self, seqlen, epochs, batch_size, ):
+    def save_training_run(self, seqlen, epochs, batch_size, module):
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            return self.save_run(project, 'train_model', {'class_names': self.class_names,
+            return self.save_run(project, 'train_model', {'model': module.__name__,
+                                                          'class_names': self.class_names,
                                                           'seqlen': seqlen,
                                                           'num_training': self.gui.training_data.value(),
                                                           'num_validation': self.gui.validation_data.value(),
