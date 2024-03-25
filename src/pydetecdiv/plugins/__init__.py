@@ -105,12 +105,12 @@ class PluginList:
         :param name: the module name
         :return: the plugin module
         """
-        # loader = finder.find_module(name)
-        # spec = importlib.util.spec_from_file_location(name, loader.path)
-        # module = importlib.util.module_from_spec(spec)
-        module = importlib.import_module(name)
+        loader = finder.find_module(name)
+        spec = importlib.util.spec_from_file_location(name, loader.path)
+        module = importlib.util.module_from_spec(spec)
+        # module = importlib.import_module(name)
         sys.modules[name] = module
-        # spec.loader.exec_module(module)
+        spec.loader.exec_module(module)
         if module.Plugin.category not in self.categories:
             self.categories.append(module.Plugin.category)
         self.plugins_dict[module.Plugin.id_] = module.Plugin()
