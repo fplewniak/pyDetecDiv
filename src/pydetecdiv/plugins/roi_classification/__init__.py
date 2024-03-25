@@ -483,7 +483,10 @@ class Plugin(plugins.Plugin):
             loss=tf.keras.losses.SparseCategoricalCrossentropy(),
             metrics=["accuracy"],
         )
+        # print(model.summary())
         input_shape = model.layers[0].output.shape
+        # print(input_shape)
+        # print(seqlen)
         # print(model.layers[-1].output.shape)
 
         if len(input_shape) == 4:
