@@ -6,6 +6,7 @@ The central class for keeping track of all available objects in a project.
 import os
 import itertools
 from collections import defaultdict
+import weakref
 
 from pydetecdiv.domain.ImageResource import ImageResource
 from pydetecdiv.settings import get_config_value
@@ -234,7 +235,7 @@ class Project:
         """
         id_ = self.repository.save_object(dso.__class__.__name__, dso.record())
         if (dso.__class__.__name__, id_) not in self.pool:
-            self.pool[(dso.__class__.__name__, id_)] = dso
+            self.pool[(dso.__class__.__name__, id_)] = weakref.ref(dso)
         return id_
 
     def delete(self, dso):
