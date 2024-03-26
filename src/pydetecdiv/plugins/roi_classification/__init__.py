@@ -542,6 +542,10 @@ class Plugin(plugins.Plugin):
             mode='max',
             save_best_only=True)
 
+        training_early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', start_from_epoch=10, min_delta=0,
+                                                                   patience=3, verbose=1, mode='auto', baseline=None,
+                                                                   restore_best_weights=True)
+
         histories = {'Training': model.fit(training_dataset, epochs=epochs,
                                            # steps_per_epoch=num_training, #//batch_size,
                                            callbacks=[model_checkpoint_callback],
