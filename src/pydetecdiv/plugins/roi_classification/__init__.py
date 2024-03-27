@@ -548,14 +548,10 @@ class Plugin(plugins.Plugin):
                                                                    patience=3, verbose=1, mode='auto', baseline=None,
                                                                    restore_best_weights=True)
 
-        histories = {'Training': model.fit(training_dataset, epochs=epochs,
-                                           # steps_per_epoch=num_training, #//batch_size,
-                                           callbacks=[model_checkpoint_callback],
-                                           validation_data=validation_dataset,
-                                           verbose=2,
-                                           # workers=4, use_multiprocessing=True
-                                           )}
-        model.save(os.path.join(get_plugins_dir(), 'roi_classification', 'models',
+        history = model.fit(training_dataset, epochs=epochs, callbacks=[model_checkpoint_callback],
+                            validation_data=validation_dataset, verbose=2,)
+
+        model.save_weights(os.path.join(get_plugins_dir(), 'roi_classification', 'models',
                                 self.gui.network.currentText(),
                                 f'weights_{PyDetecDiv().project_name}_{run.id_}_last.h5'),
                    overwrite=True, save_format='h5')
