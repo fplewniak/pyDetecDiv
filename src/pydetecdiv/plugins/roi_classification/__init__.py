@@ -21,6 +21,8 @@ from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
 import tensorflow as tf
 
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
 from pydetecdiv import plugins
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
 from pydetecdiv.domain.Image import Image, ImgDType
@@ -481,7 +483,7 @@ class Plugin(plugins.Plugin):
         model.compile(
             optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
             loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-            metrics=["accuracy"],
+            metrics=['accuracy'],
         )
         # print(model.summary())
         input_shape = model.layers[0].output.shape
@@ -555,14 +557,26 @@ class Plugin(plugins.Plugin):
                                            )}
         model.save(os.path.join(get_plugins_dir(), 'roi_classification', 'models',
                                 self.gui.network.currentText(),
-                                f'weights_{PyDetecDiv().project_name}_{run.id_}_last.h5'), overwrite=True,
-                   save_format='h5')
-        # print(histories)
+                                f'weights_{PyDetecDiv().project_name}_{run.id_}_last.h5'),
+                   overwrite=True, save_format='h5')
+
+        evaluation = {metrics: value for metrics, value in zip(model.metrics_names, model.evaluate(test_dataset))}
+
+        ground_truth = [label for batch in [y for x, y in test_dataset] for label in batch]
+        if len(input_shape) == 4:
+            predictions = model.predict(test_dataset).argmax(axis=1)
+        else:
+            predictions = [label for seq in model.predict(test_dataset).argmax(axis=2) for label in seq]
+            ground_truth = [label for seq in ground_truth for label in seq]
+
         tab = PyDetecDiv().main_window.add_tabbed_window(f'{PyDetecDiv().project_name} / {module.__name__}')
         tab.viewer.project_name = PyDetecDiv().project_name
-        history_plot = plot_history(histories)
+        history_plot = plot_history(history, evaluation)
         tab.addTab(history_plot, 'Training')
         tab.setCurrentWidget(history_plot)
+
+        confusion_matrix_plot = plot_confusion_matrix(ground_truth, predictions, self.class_names)
+        tab.addTab(confusion_matrix_plot, 'Confusion matrix')
 
     def save_training_run(self, seqlen, epochs, batch_size, module):
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
@@ -609,43 +623,34 @@ class Plugin(plugins.Plugin):
         Results().save(project, run, roi, frame, np.array([1]), [class_name])
 
 
-def plot_history(history):
+def plot_history(history, evaluation):
     """
-    Plots metrics histories: accuracy and loss for training and fine tuning.
-    :param history: list of metrics histories to plot
+    Plots metrics history.
+    :param history: metrics history to plot
+    :param evaluation: metrics from model evaluation on test dataset, shown as horizontal dashed lines on the plots
     """
-    plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=2, rows=len(history))
-    # fig, axs = plt.subplots(2, len(history))
+    plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=2, rows=1)
     axs = plot_viewer.axes
-    # fig.suptitle('Model accuracy')
-    if len(history) == 1:
-        for k in history:
-            axs[0].plot(history[k].history['accuracy'])
-            axs[0].plot(history[k].history['val_accuracy'])
-            axs[0].set_ylabel('accuracy')
-            axs[0].set_xlabel('epoch')
-            axs[0].legend(['train', 'val'], loc='lower right')
-            axs[1].plot(history[k].history['loss'])
-            axs[1].plot(history[k].history['val_loss'])
-            axs[1].legend(['train', 'val'], loc='upper right')
-            axs[1].set_ylabel('loss')
-    else:
-        i = 0
-        for k in history:
-            axs[0, i].plot(history[k].history['accuracy'])
-            axs[0, i].plot(history[k].history['val_accuracy'])
-            axs[0, i].set_title(k)
-            axs[0, i].set_ylabel('accuracy')
-            axs[0, i].set_xlabel('epoch')
-            axs[0, i].legend(['train', 'val'], loc='lower right')
-            axs[1, i].plot(history[k].history['loss'])
-            axs[1, i].plot(history[k].history['val_loss'])
-            axs[1, i].legend(['train', 'val'], loc='upper right')
-            axs[1, i].set_ylabel('loss')
-            i += 1
+    axs[0].plot(history.history['accuracy'])
+    axs[0].plot(history.history['val_accuracy'])
+    axs[0].axhline(evaluation['accuracy'], color='red', linestyle='--')
+    axs[0].set_ylabel('accuracy')
+    axs[0].set_xlabel('epoch')
+    axs[0].legend(['train', 'val'], loc='lower right')
+    axs[1].plot(history.history['loss'])
+    axs[1].plot(history.history['val_loss'])
+    axs[1].axhline(evaluation['loss'], color='red', linestyle='--')
+    axs[1].legend(['train', 'val'], loc='upper right')
+    axs[1].set_ylabel('loss')
+
     plot_viewer.canvas.draw()
     return plot_viewer
 
+def plot_confusion_matrix(ground_truth, predictions, class_names):
+    cm = confusion_matrix(ground_truth, predictions, labels=list(range(len(class_names))))
+    plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=1, rows=1)
+    ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names).plot(ax=plot_viewer.axes)
+    return plot_viewer
 
 def get_images_sequences(imgdata, roi_list, t, seqlen=None, z=None):
     """
