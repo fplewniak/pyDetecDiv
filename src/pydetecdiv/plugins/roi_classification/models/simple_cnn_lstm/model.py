@@ -18,6 +18,7 @@ def create_model():
     flatten_1 = keras.layers.Flatten()(dropout_2)
     dense_1 = keras.layers.Dense(720, activation='relu')(flatten_1)
     dropout_3 = keras.layers.Dropout(0.2)(dense_1)
+    # unfolding layer should be the same size as the output from the previous block
     unfold = SequenceUnfoldingLayer((1,1,720))(dropout_3, fold_miniBatchSize)
     unfoldperm = layers.TimeDistributed(layers.Permute((3,2,1)))(unfold)
     flatten = layers.TimeDistributed(layers.Flatten())(unfoldperm)
