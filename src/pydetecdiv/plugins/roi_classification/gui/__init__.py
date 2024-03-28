@@ -215,9 +215,12 @@ class ROIclassification(QDockWidget):
         w_files = [os.path.join(model_path, f) for f in os.listdir(model_path)
                    if os.path.isfile(os.path.join(model_path, f)) and f.endswith('.h5')]
 
-        user_path = os.path.join(get_plugins_dir(), 'roi_classification', 'models', self.network.currentText())
-        w_files.extend([os.path.join(user_path, f) for f in os.listdir(user_path)
-                        if os.path.isfile(os.path.join(user_path, f)) and f.endswith('.h5')])
+        try:
+            user_path = os.path.join(get_plugins_dir(), 'roi_classification', 'models', self.network.currentText())
+            w_files.extend([os.path.join(user_path, f) for f in os.listdir(user_path)
+                            if os.path.isfile(os.path.join(user_path, f)) and f.endswith('.h5')])
+        except FileNotFoundError:
+            pass
 
         self.weights.clear()
         _ = [self.weights.addItem(os.path.basename(f), userData=f) for f in w_files]
