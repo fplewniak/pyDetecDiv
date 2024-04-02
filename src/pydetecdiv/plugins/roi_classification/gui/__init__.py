@@ -9,7 +9,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtSql import QSqlQueryModel, QSqlQuery, QSqlDatabase
 from PySide6.QtWidgets import QFrame, QFormLayout, QLabel, QComboBox, QDialogButtonBox, QDockWidget, \
     QTableView, QAbstractItemView, QVBoxLayout, QGroupBox, QSpinBox, QAbstractSpinBox, QLineEdit, QSizePolicy, \
-    QDoubleSpinBox, QFileDialog
+    QDoubleSpinBox, QDialog
 
 from pydetecdiv.plugins.roi_classification.gui.ImportAnnotatedROIs import FOV2ROIlinks
 from pydetecdiv.utils import singleton
@@ -26,6 +26,21 @@ class ROIclassification(QDockWidget):
 
     def __init__(self, parent):
         super().__init__(parent)
+        groupBox_styleSheet = """
+                QGroupBox {
+                    border: 1px solid lightgray;
+                    border-radius: 3px;
+                    padding-top: 0.5em;
+                    padding-bottom: 0.5em;
+                    margin-top: 0.5em;
+                    font-weight: bold;
+                }
+                QGroupBox::title {
+                    subcontrol-origin: margin;
+                    subcontrol-position: top center;
+                }
+                """
+
         self.setWindowTitle('ROI class prediction (Deep Learning)')
         self.setObjectName('ROIclassPrediction')
 
@@ -34,9 +49,10 @@ class ROIclassification(QDockWidget):
         self.vert_layout = QVBoxLayout(self.form)
 
         self.classifier_selection = QGroupBox(self.form)
+
         self.classifier_selection.setTitle('Select classifier')
         self.classifier_selectionLayout = QFormLayout(self.classifier_selection)
-
+        self.classifier_selection.setStyleSheet(groupBox_styleSheet)
         self.network = QComboBox(self.classifier_selection)
         self.classifier_selectionLayout.addRow(QLabel('Network:'), self.network)
         self.weights = QComboBox(self.classifier_selection)
@@ -47,12 +63,14 @@ class ROIclassification(QDockWidget):
         self.network.currentIndexChanged.connect(self.update_classes)
 
         self.controller = QGroupBox(self.form)
+        self.controller.setStyleSheet(groupBox_styleSheet)
         self.controller.setTitle('Choose action')
         self.actionLayout = QFormLayout(self.controller)
         self.action_menu = QComboBox(self.controller)
         self.actionLayout.addRow(QLabel('Action:'), self.action_menu)
 
         self.roi_selection = QGroupBox(self.form)
+        self.roi_selection.setStyleSheet(groupBox_styleSheet)
         self.roi_selection.setTitle('Select ROIs')
         self.roi_selectionLayout = QFormLayout(self.roi_selection)
 
@@ -66,6 +84,7 @@ class ROIclassification(QDockWidget):
         self.roi_selectionLayout.addRow(self.table)
 
         self.roi_sample = QGroupBox(self.form)
+        self.roi_sample.setStyleSheet(groupBox_styleSheet)
         self.roi_sample.setTitle('Sample ROIs')
         self.roi_sampleLayout = QFormLayout(self.roi_sample)
 
@@ -79,6 +98,7 @@ class ROIclassification(QDockWidget):
         self.roi_sampleLayout.addRow(QLabel('ROI sample size:'), self.roi_number)
 
         self.roi_import = QGroupBox(self.form)
+        self.roi_import.setStyleSheet(groupBox_styleSheet)
         self.roi_import.setTitle('Import annotated ROIs')
         self.roi_importLayout = QFormLayout(self.roi_import)
         self.roi_import_box = QDialogButtonBox(self.roi_import)
@@ -86,6 +106,7 @@ class ROIclassification(QDockWidget):
         self.roi_importLayout.addRow('Select annotation file:', self.roi_import_box)
 
         self.datasets = QGroupBox(self.form)
+        self.datasets.setStyleSheet(groupBox_styleSheet)
         self.datasets.setTitle('ROI dataset sizes')
         self.datasetsLayout = QFormLayout(self.datasets)
 
@@ -107,6 +128,7 @@ class ROIclassification(QDockWidget):
         self.datasetsLayout.addRow(QLabel('Test dataset:'), self.test_data)
 
         self.preprocessing = QGroupBox(self.form)
+        self.preprocessing.setStyleSheet(groupBox_styleSheet)
         self.preprocessing.setTitle('Preprocessing')
         self.preprocessingLayout = QFormLayout(self.preprocessing)
 
@@ -122,6 +144,8 @@ class ROIclassification(QDockWidget):
         self.preprocessingLayout.addRow(self.channels)
 
         self.misc_box = QGroupBox(self.form)
+        self.misc_box.setStyleSheet(groupBox_styleSheet)
+        self.misc_box.setTitle('Miscellaneous')
         self.misc_boxLayout = QFormLayout(self.misc_box)
 
         self.epochs = QSpinBox(self.misc_box)
@@ -161,6 +185,7 @@ class ROIclassification(QDockWidget):
         PyDetecDiv().project_selected.connect(lambda _: self.update_datasets())
         self.button_box.rejected.connect(self.close)
         self.form.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
+        # self.setLayout(self.vert_layout)
         self.setWidget(self.form)
         parent.addDockWidget(Qt.LeftDockWidgetArea, self, Qt.Vertical)
         self.setFloating(True)
