@@ -109,7 +109,7 @@ def prepare_data(data_list, seqlen=None, targets=True):
             annotation_indices = get_annotation(roi)
             for i in range(0, imgdata.sizeT, seqlen):
                 sequence = annotation_indices[i:i + seqlen]
-                if len(sequence) == seqlen and all(a > 0 for a in sequence):
+                if len(sequence) == seqlen and all(a >= 0 for a in sequence):
                     roi_data_list.extend([ROIdata(roi, imgdata, sequence, i)])
         else:
             roi_data_list.extend([ROIdata(roi, imgdata, None, frame) for frame in range(0, imgdata.sizeT, seqlen)])
