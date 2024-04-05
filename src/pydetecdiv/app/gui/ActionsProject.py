@@ -125,7 +125,6 @@ class ProjectDialog(QDialog):
             case _:
                 return
 
-        print(f'{msg} bis')
         self.wait = WaitDialog(msg, self)
         self.finished.connect(self.wait.close_window)
         self.finished.connect(self.hide)
