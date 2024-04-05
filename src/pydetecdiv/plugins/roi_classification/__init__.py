@@ -552,6 +552,8 @@ class Plugin(plugins.Plugin):
                                                                    patience=3, verbose=1, mode='auto', baseline=None,
                                                                    restore_best_weights=True)
 
+        learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_exp_decay, verbose=0)
+
         history = model.fit(training_dataset, epochs=epochs, callbacks=[model_checkpoint_callback],
                             validation_data=validation_dataset, verbose=2,)
 
@@ -657,6 +659,11 @@ def get_lr_metric(optimizer):
         return optimizer.lr
     return lr
 
+def lr_exp_decay(epoch, lr):
+    k = 0.1
+    if epoch == 0:
+        return lr
+    return lr * math.exp(-k)
 def get_images_sequences(imgdata, roi_list, t, seqlen=None, z=None):
     """
     Get a sequence of seqlen images for each roi
