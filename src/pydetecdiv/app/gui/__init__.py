@@ -11,7 +11,7 @@ from PySide6.QtWidgets import QToolBar, QStatusBar, QMenu, QApplication, QDialog
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 from pydetecdiv.app.gui import ActionsSettings, ActionsProject, ActionsData
-import pydetecdiv.app.gui.resources
+import pydetecdiv.app.gui.resources_rc
 
 
 class FileMenu(QMenu):
@@ -24,6 +24,7 @@ class FileMenu(QMenu):
         menu = parent.menuBar().addMenu("&File")
         ActionsProject.OpenProject(menu).setShortcut("Ctrl+O")
         ActionsProject.NewProject(menu).setShortcut("Ctrl+N")
+        ActionsProject.DeleteProject(menu).setShortcut("Ctrl+D")
         menu.addSeparator()
         ActionsSettings.Settings(menu)
         menu.addSeparator()
@@ -68,6 +69,7 @@ class MainToolBar(QToolBar):
         self.setObjectName('Main toolbar')
         ActionsProject.OpenProject(self)
         ActionsProject.NewProject(self)
+        ActionsProject.DeleteProject(self)
         Quit(self)
         Help(self)
 

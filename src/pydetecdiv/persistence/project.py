@@ -4,6 +4,8 @@
 Project persistence management for persistence layer
 """
 import glob
+import os
+import shutil
 
 from pydetecdiv.exceptions import UnknownRepositoryTypeError
 from pydetecdiv.utils.path import stem
@@ -50,3 +52,21 @@ def list_projects(dbms: str = None):
         case _:
             raise UnknownRepositoryTypeError(f'{dbms} is not implemented')
     return project_list
+
+def delete_project(dbname: str = None, dbms: str = None):
+    """
+    Deletes the project from its name
+
+    :param dbms: the dbms
+    :type dbms: str
+    """
+    dbms = get_config_value('project', 'dbms') if dbms is None else dbms
+    project_list = list_projects()
+    match dbms:
+        case 'SQLite3':
+            workspace = get_config_value('project', 'workspace')
+            if dbname in project_list:
+                os.remove(os.path.join(workspace, f'{dbname}.db'))
+                shutil.rmtree(os.path.join(workspace, dbname))
+        case _:
+            raise UnknownRepositoryTypeError(f'{dbms} is not implemented')

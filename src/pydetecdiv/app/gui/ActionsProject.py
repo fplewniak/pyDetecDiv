@@ -1,14 +1,20 @@
 """
 Handling actions to open, create and interact with projects
 """
+from enum import Enum
+
 from PySide6.QtCore import Qt, QRegularExpression, Slot, Signal
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QLabel, QVBoxLayout, QLineEdit, QDialogButtonBox, QComboBox, QMessageBox, QDialog,)
 from pydetecdiv.app import PyDetecDiv, project_list, WaitDialog, pydetecdiv_project
 from pydetecdiv.app import MessageDialog
-
+from pydetecdiv.persistence.project import delete_project
 from pydetecdiv.exceptions import OpenProjectError, UnknownRepositoryTypeError
 
+class ProjectAction(Enum):
+    New = 1
+    Open = 2
+    Delete = 3
 
 class ProjectDialog(QDialog):
     """
@@ -16,25 +22,30 @@ class ProjectDialog(QDialog):
     """
     finished = Signal(bool, name='projectOpen')
 
-    def __init__(self, project_list, new_project_dialog=False):
+    def __init__(self, project_list, project_action=ProjectAction.Open):
         super().__init__(PyDetecDiv().main_window)
         self.wait = None
-        self.new_project_dialog = new_project_dialog
+        self.project_action = project_action
         self.setWindowModality(Qt.WindowModal)
         self.layout = QVBoxLayout(self)
 
-        if self.new_project_dialog:
-            self.setWindowTitle('Create project')
-            self.label = QLabel('Enter a name for your new project:')
-            self.project_name = QLineEdit('MyProject')
-            self.project_name.textChanged.connect(self.project_name_changed)
-        else:
-            self.setWindowTitle('Open project')
-            self.label = QLabel('Select a project name:')
-            self.project_name = QComboBox()
-            self.project_name.addItems(sorted(project_list))
-            self.project_name.setEditable(True)
-            self.project_name.editTextChanged.connect(self.project_name_changed)
+        match self.project_action:
+            case ProjectAction.New:
+                self.setWindowTitle('Create project')
+                self.label = QLabel('Enter a name for your new project:')
+                self.project_name = QLineEdit('MyProject')
+                self.project_name.textChanged.connect(self.project_name_changed)
+            case ProjectAction.Open | ProjectAction.Delete:
+                self.label = QLabel('Select a project name:')
+                self.project_name = QComboBox()
+                self.project_name.addItems(sorted(project_list))
+                match self.project_action:
+                    case ProjectAction.Open:
+                        self.setWindowTitle('Open project')
+                        self.project_name.setEditable(True)
+                        self.project_name.editTextChanged.connect(self.project_name_changed)
+                    case ProjectAction.Delete:
+                        self.setWindowTitle('Delete project')
 
         self.project_name.setValidator(self.project_name_validator())
 
@@ -83,7 +94,7 @@ class ProjectDialog(QDialog):
         :return: the project name
         :rtype: str
         """
-        if self.new_project_dialog:
+        if self.project_action == ProjectAction.New:
             return self.project_name.text()
         return self.project_name.currentText()
 
@@ -94,19 +105,31 @@ class ProjectDialog(QDialog):
         the project name is empty.
         """
         p_name = self.get_project_name()
-        if self.new_project_dialog:
-            if p_name in project_list():
-                error_msg = QMessageBox(self)
-                error_msg.setText(f'Error: {p_name} project already exists!!!')
-                error_msg.exec()
+
+        match self.project_action:
+            case ProjectAction.Delete:
+                msg = f'Deleting {p_name}, please wait.'
+                action_method = self.delete_project
+            case ProjectAction.New:
+                if p_name in project_list():
+                    error_msg = QMessageBox(self)
+                    error_msg.setText(f'Error: {p_name} project already exists!!!')
+                    error_msg.exec()
+                    return
+                else:
+                    msg = f'Creating {p_name}, please wait.'
+                    action_method = self.open_create_project
+            case ProjectAction.Open:
+                msg =f'Opening {p_name}, please wait.'
+                action_method = self.open_create_project
+            case _:
                 return
-            else:
-                self.wait = WaitDialog(f'Creating {p_name}, please wait.', self)
-        else:
-            self.wait = WaitDialog(f'Opening {p_name}, please wait.', self)
+
+        print(f'{msg} bis')
+        self.wait = WaitDialog(msg, self)
         self.finished.connect(self.wait.close_window)
         self.finished.connect(self.hide)
-        self.wait.wait_for(self.open_create_project, project_name=p_name)
+        self.wait.wait_for(action_method, project_name=p_name)
 
     def open_create_project(self, project_name):
         """
@@ -126,6 +149,10 @@ class ProjectDialog(QDialog):
             self.finished.emit(True)
             MessageDialog(e.message)
 
+    def delete_project(self, project_name):
+        delete_project(project_name)
+        self.finished.emit(True)
+
 class NewProject(QAction):
     """
     Action to open a for project creation
@@ -139,7 +166,7 @@ class NewProject(QAction):
 
     def create_project(self):
         try:
-            ProjectDialog(project_list(), new_project_dialog=True)
+            ProjectDialog(project_list(), project_action=ProjectAction.New)
         except UnknownRepositoryTypeError as e:
             MessageDialog(e.message)
 
@@ -156,7 +183,22 @@ class OpenProject(QAction):
 
     def open_project(self):
         try:
-            ProjectDialog(project_list())
+            ProjectDialog(project_list(), project_action=ProjectAction.Open)
         except UnknownRepositoryTypeError as e:
             MessageDialog(e.message)
 
+class DeleteProject(QAction):
+    """
+    Action to open a project chooser window
+    """
+
+    def __init__(self, parent):
+        super().__init__(QIcon(":icons/delete_project"), "&Delete project", parent)
+        self.triggered.connect(self.delete_project)
+        parent.addAction(self)
+
+    def delete_project(self):
+        try:
+            ProjectDialog(project_list(), project_action=ProjectAction.Delete)
+        except UnknownRepositoryTypeError as e:
+            MessageDialog(e.message)
