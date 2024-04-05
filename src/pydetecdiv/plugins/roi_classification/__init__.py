@@ -480,10 +480,14 @@ class Plugin(plugins.Plugin):
             loadWeights(model, filename=self.gui.weights.currentData())
 
         print('Compiling model')
+        learning_rate = 0.001
+        optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+        lr_metric = get_lr_metric(optimizer)
+
         model.compile(
-            optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+            optimizer=optimizer,
             loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-            metrics=['accuracy'],
+            metrics=['accuracy', lr_metric],
         )
         # print(model.summary())
         input_shape = model.layers[0].output.shape
@@ -647,6 +651,11 @@ def plot_confusion_matrix(ground_truth, predictions, class_names):
     plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=1, rows=1)
     ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names).plot(ax=plot_viewer.axes)
     return plot_viewer
+
+def get_lr_metric(optimizer):
+    def lr(y_true, y_pred):
+        return optimizer.lr
+    return lr
 
 def get_images_sequences(imgdata, roi_list, t, seqlen=None, z=None):
     """
