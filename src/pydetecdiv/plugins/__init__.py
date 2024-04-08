@@ -111,10 +111,12 @@ class PluginList:
         # module = importlib.import_module(name)
         sys.modules[name] = module
         spec.loader.exec_module(module)
-        if module.Plugin.category not in self.categories:
-            self.categories.append(module.Plugin.category)
-        self.plugins_dict[module.Plugin.id_] = module.Plugin()
-        return module
+        if hasattr(module, 'Plugin'):
+            if module.Plugin.category not in self.categories:
+                self.categories.append(module.Plugin.category)
+            self.plugins_dict[module.Plugin.id_] = module.Plugin()
+            return module
+        return None
 
     @property
     def len(self):
