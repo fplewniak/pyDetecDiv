@@ -12,6 +12,7 @@ from PySide6.QtGui import QAction
 import pydetecdiv
 from pydetecdiv.domain.Run import Run
 from pydetecdiv.persistence.sqlalchemy.orm.RunDao import RunDao
+from pydetecdiv.plugins.gui import Dialog
 
 
 class Plugin:
@@ -26,6 +27,7 @@ class Plugin:
 
     def __init__(self):
         self.gui = None
+        self.new_gui = None
 
     def addActions(self, menu):
         """

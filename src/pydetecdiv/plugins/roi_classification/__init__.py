@@ -15,7 +15,7 @@ import numpy as np
 import sqlalchemy
 from PySide6.QtGui import QAction, QColor, QPen
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
-from PySide6.QtWidgets import QGraphicsRectItem, QFileDialog
+from PySide6.QtWidgets import QGraphicsRectItem, QFileDialog, QAbstractSpinBox
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
@@ -27,7 +27,7 @@ from pydetecdiv import plugins
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
 from pydetecdiv.domain.Image import Image, ImgDType
 
-from .gui import ROIclassification, FOV2ROIlinks
+from .gui import FOV2ROIlinks, ROIclassificationDialog
 from . import models
 from .gui.annotate import open_annotator
 from ...app.gui.Windows import MatplotViewer
@@ -320,90 +320,108 @@ class Plugin(plugins.Plugin):
         Run the action selected in the GUI (create new model, annotate ROIs, train model, classify ROIs)
         """
         self.gui.action_menu.currentData()()
+        # self.new_gui.action_menu.currentData()()
 
     def launch(self):
         """
         Display the ROI classification docked GUI window
         """
         if self.gui is None:
-            self.create_table()
-            self.gui = ROIclassification(PyDetecDiv().main_window)
+            print('Initialize new gui')
+            self.gui = ROIclassificationDialog(self)
             self.load_models(self.gui)
             self.gui.update_model_weights()
-            self.gui.action_menu.addItem('Create new model', userData=self.create_model)
-            self.gui.action_menu.addItem('Annotate ROIs', userData=self.annotate_rois)
-            self.gui.action_menu.addItem('Train model', userData=self.train_model)
-            self.gui.action_menu.addItem('Classify ROIs', userData=self.predict)
-            self.update_class_names()
-            self.set_table_view(PyDetecDiv().project_name)
-            self.set_sequence_length(PyDetecDiv().project_name)
-            PyDetecDiv().project_selected.connect(self.set_table_view)
-            PyDetecDiv().project_selected.connect(self.set_sequence_length)
-            PyDetecDiv().project_selected.connect(self.create_table)
-            PyDetecDiv().saved_rois.connect(self.set_table_view)
-            self.gui.roi_import_box.accepted.connect(self.import_annotated_rois)
-            # PyDetecDiv().main_window.active_subwindow.viewer.video_frame.connect(self.draw_annotated_rois)
-            self.gui.button_box.accepted.connect(self.run)
-            self.gui.network.currentIndexChanged.connect(self.update_class_names)
-            self.gui.action_menu.currentIndexChanged.connect(self.adapt_gui)
-            self.gui.action_menu.setCurrentIndex(3)
+            self.gui.update_classes()
+            self.gui.set_table_view(PyDetecDiv().project_name)
+            self.gui.set_sequence_length(PyDetecDiv().project_name)
+
+            with pydetecdiv_project(PyDetecDiv().project_name) as project:
+                num_rois = project.count_objects('ROI')
+            self.gui.roi_number.setRange(1, num_rois)
+            self.gui.roi_number.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
+            self.gui.roi_number.setSingleStep(1)
+            self.gui.roi_number.setValue(int(num_rois / 10))
         self.gui.setVisible(True)
+
+        # if self.gui is None:
+        #     self.create_table()
+        #     self.gui = ROIclassification(PyDetecDiv().main_window)
+        #     self.load_models(self.gui)
+        #     self.gui.update_model_weights()
+        #     self.gui.action_menu.addItem('Create new model', userData=self.create_model)
+        #     self.gui.action_menu.addItem('Annotate ROIs', userData=self.annotate_rois)
+        #     self.gui.action_menu.addItem('Train model', userData=self.train_model)
+        #     self.gui.action_menu.addItem('Classify ROIs', userData=self.predict)
+        #     self.update_class_names()
+        #     self.set_table_view(PyDetecDiv().project_name)
+        #     self.set_sequence_length(PyDetecDiv().project_name)
+        #     PyDetecDiv().project_selected.connect(self.set_table_view)
+        #     PyDetecDiv().project_selected.connect(self.set_sequence_length)
+        #     PyDetecDiv().project_selected.connect(self.create_table)
+        #     PyDetecDiv().saved_rois.connect(self.set_table_view)
+        #     self.gui.roi_import_box.accepted.connect(self.import_annotated_rois)
+        #     # PyDetecDiv().main_window.active_subwindow.viewer.video_frame.connect(self.draw_annotated_rois)
+        #     self.gui.button_box.accepted.connect(self.run)
+        #     self.gui.network.currentIndexChanged.connect(self.update_class_names)
+        #     self.gui.action_menu.currentIndexChanged.connect(self.adapt_gui)
+        #     self.gui.action_menu.setCurrentIndex(3)
+        # self.gui.setVisible(True)
         # self.draw_annotated_rois()
 
-    def adapt_gui(self):
-        """
-        Modify the appearance of the GUI according to the selected action
-        """
-        match (self.gui.action_menu.currentIndex()):
-            case 0:
-                # Create new model
-                self.gui.roi_selection.hide()
-                self.gui.roi_sample.hide()
-                self.gui.roi_import.hide()
-                self.gui.classifier_selectionLayout.setRowVisible(1, False)
-                self.gui.preprocessing.show()
-                self.gui.misc_box.hide()
-                self.gui.network.setEditable(True)
-                self.gui.classes.setReadOnly(False)
-                self.gui.datasets.hide()
-            case 1:
-                # Annotate ROIs
-                self.gui.roi_selection.hide()
-                self.gui.roi_sample.show()
-                self.gui.roi_import.show()
-                self.gui.classifier_selectionLayout.setRowVisible(1, False)
-                self.gui.preprocessing.hide()
-                self.gui.misc_box.hide()
-                self.gui.network.setEditable(False)
-                self.gui.classes.setReadOnly(True)
-                self.gui.datasets.hide()
-            case 2:
-                # Train model
-                self.gui.roi_selection.hide()
-                self.gui.roi_sample.hide()
-                self.gui.roi_import.hide()
-                self.gui.classifier_selectionLayout.setRowVisible(1, True)
-                self.gui.preprocessing.show()
-                self.gui.misc_box.show()
-                self.gui.misc_boxLayout.setRowVisible(self.gui.epochs, True)
-                self.gui.network.setEditable(False)
-                self.gui.classes.setReadOnly(True)
-                self.gui.datasets.show()
-            case 3:
-                # Classify ROIs
-                self.gui.roi_selection.show()
-                self.gui.roi_sample.hide()
-                self.gui.roi_import.hide()
-                self.gui.classifier_selectionLayout.setRowVisible(1, True)
-                self.gui.preprocessing.show()
-                self.gui.misc_box.show()
-                self.gui.misc_boxLayout.setRowVisible(self.gui.epochs, False)
-                self.gui.network.setEditable(False)
-                self.gui.classes.setReadOnly(True)
-                self.gui.datasets.hide()
-            case _:
-                pass
-        self.gui.resize(self.gui.form.sizeHint())
+    # def adapt_gui(self):
+    #     """
+    #     Modify the appearance of the GUI according to the selected action
+    #     """
+    #     match (self.gui.action_menu.currentIndex()):
+    #         case 0:
+    #             # Create new model
+    #             self.gui.roi_selection.hide()
+    #             self.gui.roi_sample.hide()
+    #             self.gui.roi_import.hide()
+    #             self.gui.classifier_selectionLayout.setRowVisible(1, False)
+    #             self.gui.preprocessing.show()
+    #             self.gui.misc_box.hide()
+    #             self.gui.network.setEditable(True)
+    #             self.gui.classes.setReadOnly(False)
+    #             self.gui.datasets.hide()
+    #         case 1:
+    #             # Annotate ROIs
+    #             self.gui.roi_selection.hide()
+    #             self.gui.roi_sample.show()
+    #             self.gui.roi_import.show()
+    #             self.gui.classifier_selectionLayout.setRowVisible(1, False)
+    #             self.gui.preprocessing.hide()
+    #             self.gui.misc_box.hide()
+    #             self.gui.network.setEditable(False)
+    #             self.gui.classes.setReadOnly(True)
+    #             self.gui.datasets.hide()
+    #         case 2:
+    #             # Train model
+    #             self.gui.roi_selection.hide()
+    #             self.gui.roi_sample.hide()
+    #             self.gui.roi_import.hide()
+    #             self.gui.classifier_selectionLayout.setRowVisible(1, True)
+    #             self.gui.preprocessing.show()
+    #             self.gui.misc_box.show()
+    #             self.gui.misc_boxLayout.setRowVisible(self.gui.epochs, True)
+    #             self.gui.network.setEditable(False)
+    #             self.gui.classes.setReadOnly(True)
+    #             self.gui.datasets.show()
+    #         case 3:
+    #             # Classify ROIs
+    #             self.gui.roi_selection.show()
+    #             self.gui.roi_sample.hide()
+    #             self.gui.roi_import.hide()
+    #             self.gui.classifier_selectionLayout.setRowVisible(1, True)
+    #             self.gui.preprocessing.show()
+    #             self.gui.misc_box.show()
+    #             self.gui.misc_boxLayout.setRowVisible(self.gui.epochs, False)
+    #             self.gui.network.setEditable(False)
+    #             self.gui.classes.setReadOnly(True)
+    #             self.gui.datasets.hide()
+    #         case _:
+    #             pass
+    #     self.gui.resize(self.gui.form.sizeHint())
 
     def annotate_rois(self):
         """
@@ -613,13 +631,13 @@ class Plugin(plugins.Plugin):
             TrainingData().save(project, data.roi, data.frame, data.target, test_ds.id_)
         project.commit()
 
-    def import_annotated_rois(self):
-        filters = ["csv (*.csv)", ]
-        annotation_file, _ = QFileDialog.getOpenFileName(self.gui, caption='Choose file with annotated ROIs',
-                                                         dir='.',
-                                                         filter=";;".join(filters),
-                                                         selectedFilter=filters[0])
-        FOV2ROIlinks(annotation_file, self)
+    # def import_annotated_rois(self):
+    #     filters = ["csv (*.csv)", ]
+    #     annotation_file, _ = QFileDialog.getOpenFileName(self.gui, caption='Choose file with annotated ROIs',
+    #                                                      dir='.',
+    #                                                      filter=";;".join(filters),
+    #                                                      selectedFilter=filters[0])
+    #     FOV2ROIlinks(annotation_file, self)
 
     def save_results(self, project, run, roi, frame, class_name):
         Results().save(project, run, roi, frame, np.array([1]), [class_name])
