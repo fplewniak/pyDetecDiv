@@ -89,7 +89,6 @@ class ROIclassificationDialog(Dialog):
         self.roi_import_box.accepted.connect(self.import_annotated_rois)
         self.button_box.accepted.connect(self.plugin.run)
         self.network.currentIndexChanged.connect(self.update_classes)
-        self.classes.textChanged.connect(self.plugin.update_class_names)
         self.network.currentIndexChanged.connect(self.update_model_weights)
         self.action_menu.currentIndexChanged.connect(self.adapt)
         self.training_data.valueChanged.connect(lambda _: self.update_datasets(self.training_data))
@@ -242,7 +241,6 @@ class ROIclassificationDialog(Dialog):
         Update the classes associated with the currently selected model
         """
         self.classes.setText(json.dumps(self.network.currentData().class_names))
-        self.plugin.update_class_names()
 
     def update_datasets(self, changed_dataset=None):
         if changed_dataset:

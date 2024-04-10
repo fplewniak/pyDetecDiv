@@ -193,8 +193,11 @@ class Plugin(plugins.Plugin):
     def __init__(self):
         super().__init__()
         self.menu = None
-        self.class_names = []
         self.gui = None
+
+    @property
+    def class_names(self):
+        return json.loads(self.gui.classes.text())
 
     def create_table(self):
         """
@@ -333,7 +336,6 @@ class Plugin(plugins.Plugin):
             with pydetecdiv_project(PyDetecDiv().project_name) as project:
                 self.gui.update_num_rois(project)
         self.gui.setVisible(True)
-        self.update_class_names()
 
     def annotate_rois(self):
         """
@@ -354,13 +356,6 @@ class Plugin(plugins.Plugin):
             for t, class_name in enumerate(roi_classes):
                 if class_name != '-':
                     Results().save(project, run, roi, t, np.array([1]), [class_name])
-
-    def update_class_names(self):
-        """
-        Gets the names of classes from the GUI
-        """
-        if self.gui:
-            self.class_names = json.loads(self.gui.classes.text())
 
     def set_sequence_length(self, project_name):
         """
