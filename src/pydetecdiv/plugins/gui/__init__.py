@@ -2,6 +2,7 @@ from PySide6.QtSql import QSqlQueryModel
 from PySide6.QtWidgets import QDialog, QFrame, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox, \
     QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView, QAbstractItemView
 
+
 class Dialog(QDialog):
     groupBox_styleSheet = """
                                     QGroupBox {
@@ -19,7 +20,7 @@ class Dialog(QDialog):
                                     }
                                     """
 
-    def __init__(self, plugin):
+    def __init__(self, plugin, title=None):
         super().__init__()
         self.form = QFrame()
         self.form.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
@@ -27,7 +28,8 @@ class Dialog(QDialog):
         self.form.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
         self.setLayout(self.vert_layout)
         self.plugin = plugin
-        self.ok = False
+        if title is not None:
+            self.setWindowTitle(title)
 
     def addGroupBox(self, title):
         group_box = GroupBox(self.form)
@@ -35,7 +37,7 @@ class Dialog(QDialog):
         group_box.setStyleSheet(self.groupBox_styleSheet)
         return group_box
 
-    def addButtonBox(self, buttons=QDialogButtonBox.Ok|QDialogButtonBox.Close, centered=True):
+    def addButtonBox(self, buttons=QDialogButtonBox.Ok | QDialogButtonBox.Close, centered=True):
         button_box = QDialogButtonBox(buttons, self)
         button_box.setCenterButtons(centered)
         return button_box
@@ -103,6 +105,7 @@ class DoubleSpinBox(QDoubleSpinBox):
             self.setValue(value)
         self.setEnabled(enabled)
 
+
 class TableView(QTableView):
     def __init__(self, parent, multiselection=True, behavior='rows'):
         super().__init__(parent)
@@ -119,7 +122,8 @@ class TableView(QTableView):
     def setQuery(self, query):
         self.model.setQuery(query)
 
+
 class DialogButtonBox(QDialogButtonBox):
-    def __init__(self, parent, buttons=QDialogButtonBox.Ok|QDialogButtonBox.Close):
+    def __init__(self, parent, buttons=QDialogButtonBox.Ok | QDialogButtonBox.Close):
         super().__init__(parent)
         self.addButton(buttons)

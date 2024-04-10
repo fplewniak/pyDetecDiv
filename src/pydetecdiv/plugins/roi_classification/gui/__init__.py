@@ -5,11 +5,8 @@ plugin
 import json
 import os
 
-from PySide6.QtCore import Qt
-from PySide6.QtSql import QSqlQueryModel, QSqlQuery, QSqlDatabase
-from PySide6.QtWidgets import QFrame, QFormLayout, QLabel, QComboBox, QDialogButtonBox, QDockWidget, \
-    QTableView, QAbstractItemView, QVBoxLayout, QGroupBox, QSpinBox, QAbstractSpinBox, QLineEdit, QSizePolicy, \
-    QDoubleSpinBox, QDialog, QFileDialog
+from PySide6.QtSql import QSqlQuery, QSqlDatabase
+from PySide6.QtWidgets import QFileDialog
 
 from pydetecdiv.utils import singleton
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
@@ -17,305 +14,11 @@ from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
 from pydetecdiv.plugins.gui import *
 from pydetecdiv.plugins.roi_classification.gui.ImportAnnotatedROIs import FOV2ROIlinks
 
-# @singleton
-# class ROIclassification(QDockWidget):
-#     """
-#     A DockWidget to host the GUI for ROI classification plugin
-#     This is a singleton to avoid creating more than one window, but this is not compulsory and there may be several
-#     instance of such a window for a single plugin if needed.
-#     """
-#
-#     def __init__(self, parent):
-#         super().__init__(parent)
-#         groupBox_styleSheet = """
-#                 QGroupBox {
-#                     border: 1px solid lightgray;
-#                     border-radius: 3px;
-#                     padding-top: 0.5em;
-#                     padding-bottom: 0.5em;
-#                     margin-top: 0.5em;
-#                     font-weight: bold;
-#                 }
-#                 QGroupBox::title {
-#                     subcontrol-origin: margin;
-#                     subcontrol-position: top center;
-#                 }
-#                 """
-#
-#         self.setWindowTitle('ROI class prediction (Deep Learning)')
-#         self.setObjectName('ROIclassPrediction')
-#
-#         self.form = QFrame()
-#         self.form.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
-#         self.vert_layout = QVBoxLayout(self.form)
-#
-#         self.classifier_selection = QGroupBox(self.form)
-#
-#         self.classifier_selection.setTitle('Select classifier')
-#         self.classifier_selectionLayout = QFormLayout(self.classifier_selection)
-#         self.classifier_selection.setStyleSheet(groupBox_styleSheet)
-#         self.network = QComboBox(self.classifier_selection)
-#         self.classifier_selectionLayout.addRow(QLabel('Network:'), self.network)
-#         self.weights = QComboBox(self.classifier_selection)
-#         self.network.currentIndexChanged.connect(self.update_model_weights)
-#         self.classifier_selectionLayout.addRow(QLabel('Weights:'), self.weights)
-#         self.classes = QLineEdit(self.classifier_selection)
-#         self.classifier_selectionLayout.addRow(QLabel('Classes:'), self.classes)
-#         self.network.currentIndexChanged.connect(self.update_classes)
-#
-#         self.controller = QGroupBox(self.form)
-#         self.controller.setStyleSheet(groupBox_styleSheet)
-#         self.controller.setTitle('Choose action')
-#         self.actionLayout = QFormLayout(self.controller)
-#         self.action_menu = QComboBox(self.controller)
-#         self.actionLayout.addRow(QLabel('Action:'), self.action_menu)
-#
-#         self.roi_selection = QGroupBox(self.form)
-#         self.roi_selection.setStyleSheet(groupBox_styleSheet)
-#         self.roi_selection.setTitle('Select ROIs')
-#         self.roi_selectionLayout = QFormLayout(self.roi_selection)
-#
-#         self.table = QTableView(self.roi_selection)
-#         self.model = QSqlQueryModel()
-#         self.table.setModel(self.model)
-#
-#         self.table.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
-#         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-#         self.selection_model = self.table.selectionModel()
-#         self.roi_selectionLayout.addRow(self.table)
-#
-#         self.roi_sample = QGroupBox(self.form)
-#         self.roi_sample.setStyleSheet(groupBox_styleSheet)
-#         self.roi_sample.setTitle('Sample ROIs')
-#         self.roi_sampleLayout = QFormLayout(self.roi_sample)
-#
-#         self.roi_number = QSpinBox(self.roi_sample)
-#         with pydetecdiv_project(PyDetecDiv().project_name) as project:
-#             num_rois = project.count_objects('ROI')
-#         self.roi_number.setRange(1, num_rois)
-#         self.roi_number.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
-#         self.roi_number.setSingleStep(1)
-#         self.roi_number.setValue(int(num_rois / 10))
-#         self.roi_sampleLayout.addRow(QLabel('ROI sample size:'), self.roi_number)
-#
-#         self.roi_import = QGroupBox(self.form)
-#         self.roi_import.setStyleSheet(groupBox_styleSheet)
-#         self.roi_import.setTitle('Import annotated ROIs')
-#         self.roi_importLayout = QFormLayout(self.roi_import)
-#         self.roi_import_box = QDialogButtonBox(self.roi_import)
-#         self.roi_import_box.addButton(QDialogButtonBox.Open)
-#         self.roi_importLayout.addRow('Select annotation file:', self.roi_import_box)
-#
-#         self.datasets = QGroupBox(self.form)
-#         self.datasets.setStyleSheet(groupBox_styleSheet)
-#         self.datasets.setTitle('ROI dataset sizes')
-#         self.datasetsLayout = QFormLayout(self.datasets)
-#
-#         self.training_data = QDoubleSpinBox(self.datasets)
-#         self.validation_data = QDoubleSpinBox(self.datasets)
-#         self.test_data = QDoubleSpinBox(self.datasets)
-#         self.training_data.setDecimals(2)
-#         self.validation_data.setDecimals(2)
-#         self.test_data.setDecimals(2)
-#         self.training_data.setSingleStep(0.1)
-#         self.validation_data.setSingleStep(0.1)
-#         self.test_data.setSingleStep(0.1)
-#         self.update_datasets()
-#         self.training_data.valueChanged.connect(lambda _: self.update_datasets(self.training_data))
-#         self.validation_data.valueChanged.connect(lambda _: self.update_datasets(self.validation_data))
-#         self.test_data.setEnabled(False)
-#         self.datasetsLayout.addRow(QLabel('Training dataset:'), self.training_data)
-#         self.datasetsLayout.addRow(QLabel('Validation dataset:'), self.validation_data)
-#         self.datasetsLayout.addRow(QLabel('Test dataset:'), self.test_data)
-#
-#         self.preprocessing = QGroupBox(self.form)
-#         self.preprocessing.setStyleSheet(groupBox_styleSheet)
-#         self.preprocessing.setTitle('Preprocessing')
-#         self.preprocessingLayout = QFormLayout(self.preprocessing)
-#
-#         self.channels = QFrame(self.preprocessing)
-#         self.channels.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
-#         self.channelsLayout = QFormLayout(self.channels)
-#         self.red_channel = QComboBox(self.channels)
-#         self.green_channel = QComboBox(self.channels)
-#         self.blue_channel = QComboBox(self.channels)
-#         self.channelsLayout.addRow(QLabel('Red'), self.red_channel)
-#         self.channelsLayout.addRow(QLabel('Green'), self.green_channel)
-#         self.channelsLayout.addRow(QLabel('Blue'), self.blue_channel)
-#         self.preprocessingLayout.addRow(self.channels)
-#
-#         self.misc_box = QGroupBox(self.form)
-#         self.misc_box.setStyleSheet(groupBox_styleSheet)
-#         self.misc_box.setTitle('Miscellaneous')
-#         self.misc_boxLayout = QFormLayout(self.misc_box)
-#
-#         self.epochs = QSpinBox(self.misc_box)
-#         self.epochs.setRange(1, 4096)
-#         self.epochs.setSingleStep(1)
-#         self.epochs.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
-#         self.epochs.setValue(16)
-#         self.misc_boxLayout.addRow(QLabel('Epochs:'), self.epochs)
-#
-#         self.batch_size = QSpinBox(self.misc_box)
-#         self.batch_size.setRange(2, 4096)
-#         self.batch_size.setSingleStep(2)
-#         self.batch_size.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
-#         self.batch_size.setValue(128)
-#         self.misc_boxLayout.addRow(QLabel('Batch size:'), self.batch_size)
-#
-#         self.seq_length = QSpinBox(self.misc_box)
-#         self.seq_length.setRange(1, 4096)
-#         self.seq_length.setSingleStep(1)
-#         self.seq_length.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
-#         self.seq_length.setValue(50)
-#         self.misc_boxLayout.addRow(QLabel('Sequence length:'), self.seq_length)
-#
-#         self.button_box = QDialogButtonBox(QDialogButtonBox.Close | QDialogButtonBox.Ok, self)
-#         self.button_box.setCenterButtons(True)
-#
-#         self.vert_layout.addWidget(self.controller)
-#         self.vert_layout.addWidget(self.classifier_selection)
-#         self.vert_layout.addWidget(self.preprocessing)
-#         self.vert_layout.addWidget(self.roi_selection)
-#         self.vert_layout.addWidget(self.roi_sample)
-#         self.vert_layout.addWidget(self.roi_import)
-#         self.vert_layout.addWidget(self.datasets)
-#         self.vert_layout.addWidget(self.misc_box)
-#         self.vert_layout.addWidget(self.button_box)
-#
-#         PyDetecDiv().project_selected.connect(lambda _: self.update_datasets())
-#         self.button_box.rejected.connect(self.close)
-#         self.form.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
-#         # self.setLayout(self.vert_layout)
-#         self.setWidget(self.form)
-#         parent.addDockWidget(Qt.LeftDockWidgetArea, self, Qt.Vertical)
-#         self.setFloating(True)
-#
-#     def update_list(self, project):
-#         """
-#         Update the list of FOVs and the number of corresponding ROIs
-#         :param project: the current project
-#         """
-#         db = QSqlDatabase("QSQLITE")
-#         db.setDatabaseName(project.repository.name)
-#         db.open()
-#         query = QSqlQuery(
-#             "SELECT FOV.name as 'FOV name', count(ROI.id_) as 'ROIs', ImageResource.tdim as 'frames',"
-#             "ImageResource.zdim as 'layers', ImageResource.cdim as 'channels'"
-#             " FROM FOV, ImageResource "
-#             "JOIN ROI ON ROI.fov == FOV.id_ "
-#             "WHERE FOV.id_ == ImageResource.fov "
-#             "GROUP BY FOV.id_",
-#             db=db)
-#         self.model.setQuery(query)
-#         self.table.resizeColumnsToContents()
-#         n_layers = project.get_object('ImageResource', 1).zdim if project.get_object('ImageResource', 1) else 0
-#         self.red_channel.clear()
-#         self.green_channel.clear()
-#         self.blue_channel.clear()
-#         self.red_channel.addItems([str(i) for i in range(n_layers)])
-#         self.green_channel.addItems([str(i) for i in range(n_layers)])
-#         self.blue_channel.addItems([str(i) for i in range(n_layers)])
-#         self.green_channel.setCurrentIndex(1)
-#         self.blue_channel.setCurrentIndex(2)
-#
-#     def update_sequence_length(self, project):
-#         """
-#         Update the maximum value for image sequence according to the umber of frames in the dataset
-#         :param project: the current project
-#         """
-#         db = QSqlDatabase("QSQLITE")
-#         db.setDatabaseName(project.repository.name)
-#         db.open()
-#         query = QSqlQuery(
-#             "SELECT min(tdim) from ImageResource",
-#             db=db)
-#         if query.first() and query.record().value('min(tdim)'):
-#             self.seq_length.setRange(1, query.record().value('min(tdim)'))
-#
-#     def update_model_weights(self):
-#         """
-#         Update the list of model weights associated with the currently selected network
-#         """
-#         model_path = self.network.currentData().__path__[0]
-#         w_files = [os.path.join(model_path, f) for f in os.listdir(model_path)
-#                    if os.path.isfile(os.path.join(model_path, f)) and f.endswith('.h5')]
-#
-#         try:
-#             user_path = os.path.join(get_plugins_dir(), 'roi_classification', 'models', self.network.currentText())
-#             w_files.extend([os.path.join(user_path, f) for f in os.listdir(user_path)
-#                             if os.path.isfile(os.path.join(user_path, f)) and f.endswith('.h5')])
-#         except FileNotFoundError:
-#             pass
-#
-#         self.weights.clear()
-#         _ = [self.weights.addItem(os.path.basename(f), userData=f) for f in w_files]
-#         self.weights.addItem('None', userData=None)
-#
-#     def update_classes(self):
-#         """
-#         Update the classes associated with the currently selected model
-#         """
-#         self.classes.setText(json.dumps(self.network.currentData().class_names))
-#
-#     def update_datasets(self, changed_dataset=None):
-#         if changed_dataset:
-#             self.test_data.setValue(1.0 - (self.training_data.value() + self.validation_data.value()))
-#             total = self.training_data.value() + self.validation_data.value() + self.test_data.value()
-#             if total > 1.0:
-#                 changed_dataset.setValue(changed_dataset.value() - total + 1.0)
-#         else:
-#             self.training_data.setRange(0.1, 1.0)
-#             self.training_data.setValue(0.60)
-#             self.validation_data.setRange(0.1, 1.0)
-#             self.validation_data.setValue(0.20)
-#             self.test_data.setRange(0.0, 1.0)
-#             self.test_data.setValue(1 - self.training_data.value() - self.validation_data.value())
-#
-#     # def update_datasets(self, changed_dataset=None):
-#     #     annotated_rois_count = self.count_annotated_rois()
-#     #     if changed_dataset:
-#     #         self.test_data.setValue(annotated_rois_count - (self.training_data.value() + self.validation_data.value()))
-#     #         total = self.training_data.value() + self.validation_data.value() + self.test_data.value()
-#     #         if total > annotated_rois_count:
-#     #             changed_dataset.setValue(changed_dataset.value() - total + annotated_rois_count)
-#     #     else:
-#     #         self.training_data.setRange(1, annotated_rois_count)
-#     #         self.training_data.setValue(int(0.6 * annotated_rois_count))
-#     #         self.validation_data.setRange(1, annotated_rois_count)
-#     #         self.validation_data.setValue(int(0.2 * annotated_rois_count))
-#     #         self.test_data.setRange(0, annotated_rois_count)
-#     #         self.test_data.setValue(annotated_rois_count - self.training_data.value() - self.validation_data.value())
-#
-#     def count_annotated_rois(self):
-#         with pydetecdiv_project(PyDetecDiv().project_name) as project:
-#             db = QSqlDatabase("QSQLITE")
-#             db.setDatabaseName(project.repository.name)
-#             db.open()
-#             query = QSqlQuery(
-#                 "SELECT COUNT(DISTINCT(roi)) as roi_count FROM roi_classification, run "
-#                 "WHERE run.id_=roi_classification.run "
-#                 "AND run.command='annotate_rois';",
-#                 db=db)
-#             return query.record().value('roi_count') if query.first() else 0
-#
-#     # def open_annoted_roi_file(self):
-#     #     filters = ["csv (*.csv)",]
-#     #     annotation_file, _ = QFileDialog.getOpenFileName(self, caption='Choose file with annotated ROIs',
-#     #                                             dir='.',
-#     #                                             filter=";;".join(filters),
-#     #                                             selectedFilter=filters[0])
-#     #     print(annotation_file)
-#     #     FOV2ROIlinks(annotation_file)
-
 
 @singleton
 class ROIclassificationDialog(Dialog):
-    def __init__(self, plugin):
-        super().__init__(plugin)
-
-        self.setWindowTitle('ROI class prediction (Deep Learning)')
-        self.setObjectName('ROIclassPrediction')
+    def __init__(self, plugin, title=None):
+        super().__init__(plugin, title=title)
 
         self.classifier_selection = self.addGroupBox('Select classifier')
         self.network = self.classifier_selection.addOption('Network:', ComboBox)
@@ -329,7 +32,7 @@ class ROIclassificationDialog(Dialog):
             'Annotate ROIs': self.plugin.annotate_rois,
             'Train model': self.plugin.train_model,
             'Classify ROIs': self.plugin.predict
-            })
+        })
         self.action_menu.setCurrentIndex(3)
 
         self.roi_selection = self.addGroupBox('Select ROIs')
@@ -340,7 +43,8 @@ class ROIclassificationDialog(Dialog):
         self.roi_number = self.roi_sample.addOption('ROI sample size:', SpinBox, adaptive=True)
 
         self.roi_import = self.addGroupBox('Import annotated ROIs')
-        self.roi_import_box = self.roi_import.addOption('Select annotation file:', DialogButtonBox, buttons=QDialogButtonBox.Open)
+        self.roi_import_box = self.roi_import.addOption('Select annotation file:', DialogButtonBox,
+                                                        buttons=QDialogButtonBox.Open)
         # self.roi_import_box.addButton(QDialogButtonBox.Open)
 
         self.datasets = self.addGroupBox('ROI dataset sizes')
@@ -378,24 +82,30 @@ class ROIclassificationDialog(Dialog):
             self.button_box
         ])
 
-        PyDetecDiv().project_selected.connect(self.set_table_view)
-        PyDetecDiv().project_selected.connect(self.set_sequence_length)
-        PyDetecDiv().project_selected.connect(self.plugin.create_table)
+        PyDetecDiv().project_selected.connect(self.update_all)
         PyDetecDiv().saved_rois.connect(self.set_table_view)
 
         self.button_box.rejected.connect(self.close)
         self.roi_import_box.accepted.connect(self.import_annotated_rois)
         self.button_box.accepted.connect(self.plugin.run)
         self.network.currentIndexChanged.connect(self.update_classes)
-        self.network.currentIndexChanged.connect(self.plugin.update_class_names)
+        self.classes.textChanged.connect(self.plugin.update_class_names)
         self.network.currentIndexChanged.connect(self.update_model_weights)
         self.action_menu.currentIndexChanged.connect(self.adapt)
         self.training_data.valueChanged.connect(lambda _: self.update_datasets(self.training_data))
         self.validation_data.valueChanged.connect(lambda _: self.update_datasets(self.validation_data))
 
-        self.update_datasets()
-
+        self.plugin.load_models(self)
+        self.update_all()
         self.adapt()
+
+    def update_all(self):
+        self.update_datasets()
+        self.set_table_view(PyDetecDiv().project_name)
+        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            self.update_list(project)
+            self.update_sequence_length(project)
+            self.update_num_rois(project)
 
     def adapt(self):
         """
@@ -489,6 +199,11 @@ class ROIclassificationDialog(Dialog):
         self.green_channel.setCurrentIndex(1)
         self.blue_channel.setCurrentIndex(2)
 
+    def update_num_rois(self, project):
+        num_rois = project.count_objects('ROI')
+        self.roi_number.setRange(1, num_rois)
+        self.roi_number.setValue(int(num_rois / 10))
+
     def update_sequence_length(self, project):
         """
         Update the maximum value for image sequence according to the umber of frames in the dataset
@@ -527,6 +242,7 @@ class ROIclassificationDialog(Dialog):
         Update the classes associated with the currently selected model
         """
         self.classes.setText(json.dumps(self.network.currentData().class_names))
+        self.plugin.update_class_names()
 
     def update_datasets(self, changed_dataset=None):
         if changed_dataset:
@@ -535,11 +251,6 @@ class ROIclassificationDialog(Dialog):
             if total > 1.0:
                 changed_dataset.setValue(changed_dataset.value() - total + 1.0)
         else:
-            # self.training_data.setRange(0.1, 1.0)
-            # self.training_data.setValue(0.60)
-            # self.validation_data.setRange(0.1, 1.0)
-            # self.validation_data.setValue(0.20)
-            # self.test_data.setRange(0.0, 1.0)
             self.test_data.setValue(1 - self.training_data.value() - self.validation_data.value())
 
     def set_sequence_length(self, project_name):

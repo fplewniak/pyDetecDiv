@@ -13,9 +13,9 @@ from datetime import datetime
 import h5py
 import numpy as np
 import sqlalchemy
-from PySide6.QtGui import QAction, QColor, QPen
+from PySide6.QtGui import QAction, QColor
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
-from PySide6.QtWidgets import QGraphicsRectItem, QFileDialog, QAbstractSpinBox
+from PySide6.QtWidgets import QGraphicsRectItem
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
@@ -232,7 +232,6 @@ class Plugin(plugins.Plugin):
     def load_model(self):
         module = self.gui.network.currentData()
         print(module.__name__)
-        # model = module.load_model(load_weights=False)
         model = module.model.create_model()
         print('Loading weights')
         weights = self.gui.weights.currentData()
@@ -314,13 +313,13 @@ class Plugin(plugins.Plugin):
             sys.modules[name] = module
             spec.loader.exec_module(module)
             gui.network.addItem(name, userData=module)
+        gui.update()
 
     def run(self):
         """
         Run the action selected in the GUI (create new model, annotate ROIs, train model, classify ROIs)
         """
         self.gui.action_menu.currentData()()
-        # self.new_gui.action_menu.currentData()()
 
     def launch(self):
         """
@@ -328,100 +327,13 @@ class Plugin(plugins.Plugin):
         """
         if self.gui is None:
             print('Initialize new gui')
-            self.gui = ROIclassificationDialog(self)
-            self.load_models(self.gui)
-            self.gui.update_model_weights()
-            self.gui.update_classes()
-            self.gui.set_table_view(PyDetecDiv().project_name)
-            self.gui.set_sequence_length(PyDetecDiv().project_name)
-
+            self.create_table()
+            PyDetecDiv().project_selected.connect(self.create_table)
+            self.gui = ROIclassificationDialog(self, title='ROI class prediction (Deep Learning)')
             with pydetecdiv_project(PyDetecDiv().project_name) as project:
-                num_rois = project.count_objects('ROI')
-            self.gui.roi_number.setRange(1, num_rois)
-            self.gui.roi_number.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
-            self.gui.roi_number.setSingleStep(1)
-            self.gui.roi_number.setValue(int(num_rois / 10))
+                self.gui.update_num_rois(project)
         self.gui.setVisible(True)
-
-        # if self.gui is None:
-        #     self.create_table()
-        #     self.gui = ROIclassification(PyDetecDiv().main_window)
-        #     self.load_models(self.gui)
-        #     self.gui.update_model_weights()
-        #     self.gui.action_menu.addItem('Create new model', userData=self.create_model)
-        #     self.gui.action_menu.addItem('Annotate ROIs', userData=self.annotate_rois)
-        #     self.gui.action_menu.addItem('Train model', userData=self.train_model)
-        #     self.gui.action_menu.addItem('Classify ROIs', userData=self.predict)
-        #     self.update_class_names()
-        #     self.set_table_view(PyDetecDiv().project_name)
-        #     self.set_sequence_length(PyDetecDiv().project_name)
-        #     PyDetecDiv().project_selected.connect(self.set_table_view)
-        #     PyDetecDiv().project_selected.connect(self.set_sequence_length)
-        #     PyDetecDiv().project_selected.connect(self.create_table)
-        #     PyDetecDiv().saved_rois.connect(self.set_table_view)
-        #     self.gui.roi_import_box.accepted.connect(self.import_annotated_rois)
-        #     # PyDetecDiv().main_window.active_subwindow.viewer.video_frame.connect(self.draw_annotated_rois)
-        #     self.gui.button_box.accepted.connect(self.run)
-        #     self.gui.network.currentIndexChanged.connect(self.update_class_names)
-        #     self.gui.action_menu.currentIndexChanged.connect(self.adapt_gui)
-        #     self.gui.action_menu.setCurrentIndex(3)
-        # self.gui.setVisible(True)
-        # self.draw_annotated_rois()
-
-    # def adapt_gui(self):
-    #     """
-    #     Modify the appearance of the GUI according to the selected action
-    #     """
-    #     match (self.gui.action_menu.currentIndex()):
-    #         case 0:
-    #             # Create new model
-    #             self.gui.roi_selection.hide()
-    #             self.gui.roi_sample.hide()
-    #             self.gui.roi_import.hide()
-    #             self.gui.classifier_selectionLayout.setRowVisible(1, False)
-    #             self.gui.preprocessing.show()
-    #             self.gui.misc_box.hide()
-    #             self.gui.network.setEditable(True)
-    #             self.gui.classes.setReadOnly(False)
-    #             self.gui.datasets.hide()
-    #         case 1:
-    #             # Annotate ROIs
-    #             self.gui.roi_selection.hide()
-    #             self.gui.roi_sample.show()
-    #             self.gui.roi_import.show()
-    #             self.gui.classifier_selectionLayout.setRowVisible(1, False)
-    #             self.gui.preprocessing.hide()
-    #             self.gui.misc_box.hide()
-    #             self.gui.network.setEditable(False)
-    #             self.gui.classes.setReadOnly(True)
-    #             self.gui.datasets.hide()
-    #         case 2:
-    #             # Train model
-    #             self.gui.roi_selection.hide()
-    #             self.gui.roi_sample.hide()
-    #             self.gui.roi_import.hide()
-    #             self.gui.classifier_selectionLayout.setRowVisible(1, True)
-    #             self.gui.preprocessing.show()
-    #             self.gui.misc_box.show()
-    #             self.gui.misc_boxLayout.setRowVisible(self.gui.epochs, True)
-    #             self.gui.network.setEditable(False)
-    #             self.gui.classes.setReadOnly(True)
-    #             self.gui.datasets.show()
-    #         case 3:
-    #             # Classify ROIs
-    #             self.gui.roi_selection.show()
-    #             self.gui.roi_sample.hide()
-    #             self.gui.roi_import.hide()
-    #             self.gui.classifier_selectionLayout.setRowVisible(1, True)
-    #             self.gui.preprocessing.show()
-    #             self.gui.misc_box.show()
-    #             self.gui.misc_boxLayout.setRowVisible(self.gui.epochs, False)
-    #             self.gui.network.setEditable(False)
-    #             self.gui.classes.setReadOnly(True)
-    #             self.gui.datasets.hide()
-    #         case _:
-    #             pass
-    #     self.gui.resize(self.gui.form.sizeHint())
+        self.update_class_names()
 
     def annotate_rois(self):
         """
@@ -448,16 +360,7 @@ class Plugin(plugins.Plugin):
         Gets the names of classes from the GUI
         """
         if self.gui:
-            self.class_names = self.gui.network.currentData().class_names
-
-    def set_table_view(self, project_name):
-        """
-        Set the content of the Table view to display the available ROIs to classify
-        :param project_name: the name of the project
-        """
-        if project_name:
-            with pydetecdiv_project(project_name) as project:
-                self.gui.update_list(project)
+            self.class_names = json.loads(self.gui.classes.text())
 
     def set_sequence_length(self, project_name):
         """
@@ -490,7 +393,6 @@ class Plugin(plugins.Plugin):
 
         run = self.save_training_run(seqlen, epochs, batch_size, module)
 
-        # model = module.load_model(load_weights=False)
         model = module.model.create_model()
         print('Loading weights')
         weights = self.gui.weights.currentData()
@@ -573,12 +475,12 @@ class Plugin(plugins.Plugin):
         learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_exp_decay, verbose=0)
 
         history = model.fit(training_dataset, epochs=epochs, callbacks=[model_checkpoint_callback],
-                            validation_data=validation_dataset, verbose=2,)
+                            validation_data=validation_dataset, verbose=2, )
 
         model.save_weights(os.path.join(get_plugins_dir(), 'roi_classification', 'models',
-                                self.gui.network.currentText(),
-                                f'weights_{PyDetecDiv().project_name}_{run.id_}_last.h5'),
-                   overwrite=True, save_format='h5')
+                                        self.gui.network.currentText(),
+                                        f'weights_{PyDetecDiv().project_name}_{run.id_}_last.h5'),
+                           overwrite=True, save_format='h5')
 
         evaluation = {metrics: value for metrics, value in zip(model.metrics_names, model.evaluate(test_dataset))}
 
@@ -598,6 +500,8 @@ class Plugin(plugins.Plugin):
         confusion_matrix_plot = plot_confusion_matrix(ground_truth, predictions, self.class_names)
         tab.addTab(confusion_matrix_plot, 'Confusion matrix')
 
+        self.gui.update_model_weights()
+
     def save_training_run(self, seqlen, epochs, batch_size, module):
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             return self.save_run(project, 'train_model', {'model': module.__name__,
@@ -610,8 +514,6 @@ class Plugin(plugins.Plugin):
                                                           })
 
     def save_training_datasets(self, run, roi_list, num_training, num_validation):
-        # with pydetecdiv_project(PyDetecDiv().project_name) as project:
-        #     print(project, roi_list[0].roi.project)
         project = roi_list[0].roi.project
         training_ds = Dataset(project=project, name=f'train_{datetime.now().strftime("%Y%m%d-%H%M")}',
                               type_='training', run=run.id_)
@@ -630,14 +532,6 @@ class Plugin(plugins.Plugin):
         for data in roi_list[num_training + num_validation:]:
             TrainingData().save(project, data.roi, data.frame, data.target, test_ds.id_)
         project.commit()
-
-    # def import_annotated_rois(self):
-    #     filters = ["csv (*.csv)", ]
-    #     annotation_file, _ = QFileDialog.getOpenFileName(self.gui, caption='Choose file with annotated ROIs',
-    #                                                      dir='.',
-    #                                                      filter=";;".join(filters),
-    #                                                      selectedFilter=filters[0])
-    #     FOV2ROIlinks(annotation_file, self)
 
     def save_results(self, project, run, roi, frame, class_name):
         Results().save(project, run, roi, frame, np.array([1]), [class_name])
@@ -666,22 +560,28 @@ def plot_history(history, evaluation):
     plot_viewer.canvas.draw()
     return plot_viewer
 
+
 def plot_confusion_matrix(ground_truth, predictions, class_names):
     cm = confusion_matrix(ground_truth, predictions, labels=list(range(len(class_names))))
     plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=1, rows=1)
     ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names).plot(ax=plot_viewer.axes)
     return plot_viewer
 
+
 def get_lr_metric(optimizer):
     def lr(y_true, y_pred):
         return optimizer.lr
+
     return lr
+
 
 def lr_exp_decay(epoch, lr):
     k = 0.1
     if epoch == 0:
         return lr
     return lr * math.exp(-k)
+
+
 def get_images_sequences(imgdata, roi_list, t, seqlen=None, z=None):
     """
     Get a sequence of seqlen images for each roi
@@ -738,14 +638,11 @@ def get_rgb_images_from_stacks(imgdata, roi_list, t, z=None):
     """
     if z is None:
         z = [0, 0, 0]
-        # z = [self.gui.red_channel.currentIndex(),
-        #      self.gui.green_channel.currentIndex(),
-        #      self.gui.blue_channel.currentIndex()]
+
     image1 = Image(imgdata.image(T=t, Z=z[0]))
     image2 = Image(imgdata.image(T=t, Z=z[1]))
     image3 = Image(imgdata.image(T=t, Z=z[2]))
 
-    # print(f'Composing for frame {t}')
     roi_images = [Image.compose_channels([image1.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
                                           image2.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
                                           image3.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast()
