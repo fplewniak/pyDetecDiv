@@ -329,12 +329,10 @@ class Plugin(plugins.Plugin):
         Display the ROI classification docked GUI window
         """
         if self.gui is None:
-            print('Initialize new gui')
             self.create_table()
             PyDetecDiv().project_selected.connect(self.create_table)
             self.gui = ROIclassificationDialog(self, title='ROI class prediction (Deep Learning)')
-            with pydetecdiv_project(PyDetecDiv().project_name) as project:
-                self.gui.update_num_rois(project)
+            self.gui.update_all()
         self.gui.setVisible(True)
 
     def annotate_rois(self):
@@ -357,14 +355,14 @@ class Plugin(plugins.Plugin):
                 if class_name != '-':
                     Results().save(project, run, roi, t, np.array([1]), [class_name])
 
-    def set_sequence_length(self, project_name):
-        """
-        Set the maximum value for sequence length
-        :param project_name: the name of the project
-        """
-        if project_name:
-            with pydetecdiv_project(project_name) as project:
-                self.gui.update_sequence_length(project)
+    # def set_sequence_length(self, project_name):
+    #     """
+    #     Set the maximum value for sequence length
+    #     :param project_name: the name of the project
+    #     """
+    #     if project_name:
+    #         with pydetecdiv_project(project_name) as project:
+    #             self.gui.update_sequence_length(project)
 
     def create_model(self):
         """
