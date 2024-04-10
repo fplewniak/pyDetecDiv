@@ -38,7 +38,7 @@ class Dialog(QDialog):
         return group_box
 
     def addButtonBox(self, buttons=QDialogButtonBox.Ok | QDialogButtonBox.Close, centered=True):
-        button_box = QDialogButtonBox(buttons, self)
+        button_box = DialogButtonBox(self, buttons=buttons)
         button_box.setCenterButtons(centered)
         return button_box
 
@@ -72,6 +72,14 @@ class ComboBox(QComboBox):
         for label, data in options.items():
             self.addItem(label, userData=data)
 
+    @property
+    def selected(self):
+        return self.currentIndexChanged
+
+    @property
+    def changed(self):
+        return self.currentTextChanged
+
 
 class LineEdit(QLineEdit):
     def __init__(self, parent):
@@ -90,6 +98,10 @@ class SpinBox(QSpinBox):
         else:
             self.setValue(value)
 
+    @property
+    def changed(self):
+        return self.valueChanged
+
 
 class DoubleSpinBox(QDoubleSpinBox):
     def __init__(self, parent, range=(0.1, 1.0), decimals=2, single_step=0.1, adaptive=False, value=0.1, enabled=True):
@@ -105,6 +117,9 @@ class DoubleSpinBox(QDoubleSpinBox):
             self.setValue(value)
         self.setEnabled(enabled)
 
+    @property
+    def changed(self):
+        return self.valueChanged
 
 class TableView(QTableView):
     def __init__(self, parent, multiselection=True, behavior='rows'):
@@ -124,6 +139,29 @@ class TableView(QTableView):
 
 
 class DialogButtonBox(QDialogButtonBox):
-    def __init__(self, parent, buttons=QDialogButtonBox.Ok | QDialogButtonBox.Close):
+    def __init__(self, parent, buttons=(QDialogButtonBox.Ok, QDialogButtonBox.Close)):
         super().__init__(parent)
-        self.addButton(buttons)
+        for button in buttons:
+            self.addButton(button)
+
+    def connect_to(self, connections=None):
+        if connections is not None:
+            for signal, slot in connections.items():
+                match signal:
+                    case 'accept':
+                        self.accepted.connect(slot)
+                    case 'reject':
+                        self.rejected.connect(slot)
+                    case 'click':
+                        self.clicked.connect(slot)
+                    case 'help':
+                        self.helpRequested.connect(slot)
+
+
+def set_connections(connections):
+    for signal, slot in connections.items():
+        if isinstance(slot, list):
+            for s in slot:
+                signal.connect(s)
+        else:
+            signal.connect(slot)

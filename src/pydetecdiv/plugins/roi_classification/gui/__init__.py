@@ -45,7 +45,6 @@ class ROIclassificationDialog(Dialog):
         self.roi_import = self.addGroupBox('Import annotated ROIs')
         self.roi_import_box = self.roi_import.addOption('Select annotation file:', DialogButtonBox,
                                                         buttons=QDialogButtonBox.Open)
-        # self.roi_import_box.addButton(QDialogButtonBox.Open)
 
         self.datasets = self.addGroupBox('ROI dataset sizes')
         self.training_data = self.datasets.addOption('Training dataset:', DoubleSpinBox, value=0.6)
@@ -82,17 +81,16 @@ class ROIclassificationDialog(Dialog):
             self.button_box
         ])
 
-        PyDetecDiv().project_selected.connect(self.update_all)
-        PyDetecDiv().saved_rois.connect(self.set_table_view)
-
-        self.button_box.rejected.connect(self.close)
-        self.roi_import_box.accepted.connect(self.import_annotated_rois)
-        self.button_box.accepted.connect(self.plugin.run)
-        self.network.currentIndexChanged.connect(self.update_classes)
-        self.network.currentIndexChanged.connect(self.update_model_weights)
-        self.action_menu.currentIndexChanged.connect(self.adapt)
-        self.training_data.valueChanged.connect(lambda _: self.update_datasets(self.training_data))
-        self.validation_data.valueChanged.connect(lambda _: self.update_datasets(self.validation_data))
+        set_connections({self.button_box.accepted: self.plugin.run,
+                         self.button_box.rejected: self.close,
+                         self.roi_import_box.accepted: self.import_annotated_rois,
+                         self.network.selected: [self.update_classes, self.update_model_weights],
+                         self.action_menu.selected: self.adapt,
+                         self.training_data.changed: lambda _: self.update_datasets(self.training_data),
+                         self.validation_data.changed: lambda _: self.update_datasets(self.validation_data),
+                         PyDetecDiv().project_selected: self.update_all,
+                         PyDetecDiv().saved_rois: self.set_table_view,
+                         })
 
         self.plugin.load_models(self)
         self.update_all()
