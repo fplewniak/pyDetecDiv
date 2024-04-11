@@ -299,7 +299,8 @@ class Plugin(plugins.Plugin):
                     for i in range(seqlen):
                         # max_score, max_index = max((value, index) for index, value in enumerate(prediction[i]))
                         # print(data.roi.name, data.frame + i, self.class_names[max_index], max_score)
-                        Results().save(project, run, data.roi, data.frame + i, prediction[i], self.class_names)
+                        if (data.frame + i) < data.imgdata.sizeT:
+                            Results().save(project, run, data.roi, data.frame + i, prediction[i], self.class_names)
         print('predictions OK')
 
     def load_models(self, gui):
@@ -579,6 +580,9 @@ def get_images_sequences(imgdata, roi_list, t, seqlen=None, z=None):
     roi_sequences = tf.stack(
         [get_rgb_images_from_stacks_memmap(imgdata, roi_list, f, z=z) for f in range(t, maxt)],
         axis=1)
+    if roi_sequences.shape[1] < seqlen:
+        padding_config = [[0, 0], [seqlen - roi_sequences.shape[1], 0], [0, 0], [0, 0], [0, 0]]
+        roi_sequences = tf.pad(roi_sequences, padding_config, mode='CONSTANT', constant_values=0.0)
     # print('roi sequence', roi_sequences.shape)
     return roi_sequences
 
