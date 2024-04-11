@@ -355,15 +355,6 @@ class Plugin(plugins.Plugin):
                 if class_name != '-':
                     Results().save(project, run, roi, t, np.array([1]), [class_name])
 
-    # def set_sequence_length(self, project_name):
-    #     """
-    #     Set the maximum value for sequence length
-    #     :param project_name: the name of the project
-    #     """
-    #     if project_name:
-    #         with pydetecdiv_project(project_name) as project:
-    #             self.gui.update_sequence_length(project)
-
     def create_model(self):
         """
         Launch model creation.

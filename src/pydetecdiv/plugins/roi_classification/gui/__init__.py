@@ -249,15 +249,6 @@ class ROIclassificationDialog(Dialog):
         else:
             self.test_data.setValue(1 - self.training_data.value() - self.validation_data.value())
 
-    def set_sequence_length(self, project_name):
-        """
-        Set the maximum value for sequence length
-        :param project_name: the name of the project
-        """
-        if project_name:
-            with pydetecdiv_project(project_name) as project:
-                self.update_sequence_length(project)
-
     def import_annotated_rois(self):
         filters = ["csv (*.csv)", ]
         annotation_file, _ = QFileDialog.getOpenFileName(self, caption='Choose file with annotated ROIs',
