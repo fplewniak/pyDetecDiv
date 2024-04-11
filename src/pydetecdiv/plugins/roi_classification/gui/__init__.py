@@ -6,12 +6,13 @@ import json
 import os
 
 from PySide6.QtSql import QSqlQuery, QSqlDatabase
-from PySide6.QtWidgets import QFileDialog
+from PySide6.QtWidgets import QFileDialog, QDialogButtonBox
 
 from pydetecdiv.utils import singleton
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
 
-from pydetecdiv.plugins.gui import *
+from pydetecdiv.plugins.gui import Dialog, DialogButtonBox, GroupBox, ComboBox, SpinBox, DoubleSpinBox, LineEdit, \
+    TableView, set_connections
 from pydetecdiv.plugins.roi_classification.gui.ImportAnnotatedROIs import FOV2ROIlinks
 
 
