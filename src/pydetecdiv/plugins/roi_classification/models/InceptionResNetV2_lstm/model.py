@@ -16,7 +16,7 @@ def create_model():
     plugout = keras.layers.GlobalAveragePooling2D()(central_block)
 
     # unfolding layer should be the same size as the output from the previous block
-    unfold = SequenceUnfoldingLayer((1,1,1536))(plugout, fold_miniBatchSize)
+    unfold = SequenceUnfoldingLayer((1,1,plugout.shape[1]))(plugout, fold_miniBatchSize)
     unfoldperm = layers.TimeDistributed(layers.Permute((3,2,1)))(unfold)
     flatten = layers.TimeDistributed(layers.Flatten())(unfoldperm)
     flatten_bilstm_input = flatten
