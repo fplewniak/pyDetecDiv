@@ -26,6 +26,12 @@
         <file alias="draw_ROI">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/layer.png</file>
         <file alias="duplicate_ROI">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/layers-stack-arrange.png</file>
 
+        <file alias="expand">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/control.png</file>
+        <file alias="collapse">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/control-270.png</file>
+
+        <file alias="show">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/plus-small.png</file>
+        <file alias="hide">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/minus-small.png</file>
+
         <file alias="app_icon">/home/fred/PycharmProjects/pyDetecDiv/detecDiv_icon.png</file>
     </qresource>
 </RCC>
