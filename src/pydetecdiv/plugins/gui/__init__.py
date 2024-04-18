@@ -3,23 +3,25 @@ from PySide6.QtWidgets import QDialog, QFrame, QVBoxLayout, QGroupBox, QFormLayo
     QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView, QAbstractItemView
 
 
-class Dialog(QDialog):
-    groupBox_styleSheet = """
-                                    QGroupBox {
-                                        border: 1px solid lightgray;
-                                        border-radius: 3px;
-                                        padding-top: 0.5em;
-               
-                                        padding-bottom: 0.5em;
-                                        margin-top: 0.5em;
-                                        font-weight: bold;
-                                    }
-                                    QGroupBox::title {
-                                        subcontrol-origin: margin;
-                                        subcontrol-position: top center;
-                                    }
-                                    """
+class StyleSheets:
+    groupBox = """
+                QGroupBox {
+                    border: 1px solid lightgray;
+                    border-radius: 3px;
+                    padding-top: 0.5em;
 
+                    padding-bottom: 0.5em;
+                    margin-top: 0.5em;
+                    font-weight: bold;
+                }
+                QGroupBox::title {
+                    subcontrol-origin: margin;
+                    subcontrol-position: top center;
+                }
+                """
+
+
+class Dialog(QDialog):
     def __init__(self, plugin, title=None):
         super().__init__()
         self.form = QFrame()
@@ -34,7 +36,7 @@ class Dialog(QDialog):
     def addGroupBox(self, title):
         group_box = GroupBox(self.form)
         group_box.setTitle(title)
-        group_box.setStyleSheet(self.groupBox_styleSheet)
+        group_box.setStyleSheet(StyleSheets.groupBox)
         return group_box
 
     def addButtonBox(self, buttons=QDialogButtonBox.Ok | QDialogButtonBox.Close, centered=True):
@@ -120,6 +122,7 @@ class DoubleSpinBox(QDoubleSpinBox):
     @property
     def changed(self):
         return self.valueChanged
+
 
 class TableView(QTableView):
     def __init__(self, parent, multiselection=True, behavior='rows'):
