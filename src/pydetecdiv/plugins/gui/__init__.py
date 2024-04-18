@@ -30,9 +30,10 @@ class GroupBox(QGroupBox):
 
 
 class FormGroupBox(GroupBox):
-    def __init__(self, parent, title=None):
+    def __init__(self, parent, title=None, show=True):
         super().__init__(parent, title)
         self.layout = QFormLayout(self)
+        self.setVisible(show)
 
     def addOption(self, label=None, widget=None, **kwargs):
         option = widget(self, **kwargs)
@@ -69,11 +70,12 @@ class LineEdit(QLineEdit):
 
 
 class PushButton(QPushButton):
-    def __init__(self, parent, text, icon=None):
+    def __init__(self, parent, text, icon=None, flat=False):
         if icon is None:
             super().__init__(text, parent)
         else:
             super().__init__(icon, text, parent)
+        self.setFlat(flat)
 
 
 class SpinBox(QSpinBox):
@@ -171,6 +173,12 @@ class Dialog(QDialog):
         button_box = DialogButtonBox(self, buttons=buttons)
         button_box.setCenterButtons(centered)
         return button_box
+
+    def addButton(self, widget, text=None, icon=None, flat=False):
+        button = widget(text, icon)
+        if flat:
+            button.setFlat(True)
+        return button
 
     def arrangeWidgets(self, widget_list):
         for widget in widget_list:

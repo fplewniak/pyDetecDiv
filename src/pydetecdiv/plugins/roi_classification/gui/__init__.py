@@ -5,6 +5,7 @@ plugin
 import json
 import os
 
+from PySide6.QtGui import QIcon
 from PySide6.QtSql import QSqlQuery, QSqlDatabase
 from PySide6.QtWidgets import QFileDialog, QDialogButtonBox
 
@@ -12,7 +13,7 @@ from pydetecdiv.utils import singleton
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
 
 from pydetecdiv.plugins.gui import Dialog, DialogButtonBox, FormGroupBox, ComboBox, SpinBox, DoubleSpinBox, LineEdit, \
-    TableView, set_connections
+    TableView, set_connections, GroupBox, PushButton
 from pydetecdiv.plugins.roi_classification.gui.ImportAnnotatedROIs import FOV2ROIlinks
 
 
@@ -47,10 +48,13 @@ class ROIclassificationDialog(Dialog):
         self.roi_import_box = self.roi_import.addOption('Select annotation file:', DialogButtonBox,
                                                         buttons=QDialogButtonBox.Open)
 
-        self.datasets = self.addGroupBox('ROI dataset sizes')
+        self.datasets = self.addGroupBox('ROI datasets')
         self.training_data = self.datasets.addOption('Training dataset:', DoubleSpinBox, value=0.6)
         self.validation_data = self.datasets.addOption('Validation dataset:', DoubleSpinBox, value=0.2)
         self.test_data = self.datasets.addOption('Test dataset:', DoubleSpinBox, value=0.2, enabled=False)
+        self.datasets_advanced_button = self.datasets.addOption(None, PushButton, text='Advanced options', icon=QIcon(':icons/show'), flat=True)
+        self.datasets_advanced = self.datasets.addOption(None, FormGroupBox, show=False)
+        self.datasets_seed = self.datasets_advanced.addOption('Random seed:', SpinBox, value=42)
 
         self.preprocessing = self.addGroupBox('Preprocessing')
         self.channels = self.preprocessing.addOption(None, FormGroupBox)
@@ -89,6 +93,7 @@ class ROIclassificationDialog(Dialog):
                          self.action_menu.selected: self.adapt,
                          self.training_data.changed: lambda _: self.update_datasets(self.training_data),
                          self.validation_data.changed: lambda _: self.update_datasets(self.validation_data),
+                         self.datasets_advanced_button.clicked: lambda _: self.toggleVisibility(self.datasets_advanced, self.datasets_advanced_button),
                          PyDetecDiv().project_selected: self.update_all,
                          PyDetecDiv().saved_rois: self.set_table_view,
                          })
@@ -105,6 +110,14 @@ class ROIclassificationDialog(Dialog):
             self.update_sequence_length(project)
             self.update_num_rois(project)
 
+    def toggleVisibility(self, group_box, button):
+        if group_box.isVisible():
+            button.setIcon(QIcon(':icons/show'))
+            group_box.setVisible(False)
+        else:
+            button.setIcon(QIcon(':icons/hide'))
+            group_box.setVisible(True)
+        self.adapt()
     def adapt(self):
         """
         Modify the appearance of the GUI according to the selected action
