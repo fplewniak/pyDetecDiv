@@ -11,7 +11,7 @@ from PySide6.QtWidgets import QFileDialog, QDialogButtonBox
 from pydetecdiv.utils import singleton
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
 
-from pydetecdiv.plugins.gui import Dialog, DialogButtonBox, GroupBox, ComboBox, SpinBox, DoubleSpinBox, LineEdit, \
+from pydetecdiv.plugins.gui import Dialog, DialogButtonBox, FormGroupBox, ComboBox, SpinBox, DoubleSpinBox, LineEdit, \
     TableView, set_connections
 from pydetecdiv.plugins.roi_classification.gui.ImportAnnotatedROIs import FOV2ROIlinks
 
@@ -53,7 +53,7 @@ class ROIclassificationDialog(Dialog):
         self.test_data = self.datasets.addOption('Test dataset:', DoubleSpinBox, value=0.2, enabled=False)
 
         self.preprocessing = self.addGroupBox('Preprocessing')
-        self.channels = self.preprocessing.addOption(None, GroupBox)
+        self.channels = self.preprocessing.addOption(None, FormGroupBox)
         # self.channels.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
 
         self.red_channel = self.channels.addOption('Red', ComboBox)

@@ -1,6 +1,7 @@
 from PySide6.QtSql import QSqlQueryModel
 from PySide6.QtWidgets import QDialog, QFrame, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox, \
-    QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView, QAbstractItemView
+    QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView, QAbstractItemView, \
+    QPushButton
 
 
 class StyleSheets:
@@ -21,37 +22,16 @@ class StyleSheets:
                 """
 
 
-class Dialog(QDialog):
-    def __init__(self, plugin, title=None):
-        super().__init__()
-        self.form = QFrame()
-        self.form.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
-        self.vert_layout = QVBoxLayout(self.form)
-        self.form.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
-        self.setLayout(self.vert_layout)
-        self.plugin = plugin
-        if title is not None:
-            self.setWindowTitle(title)
-
-    def addGroupBox(self, title):
-        group_box = GroupBox(self.form)
-        group_box.setTitle(title)
-        group_box.setStyleSheet(StyleSheets.groupBox)
-        return group_box
-
-    def addButtonBox(self, buttons=QDialogButtonBox.Ok | QDialogButtonBox.Close, centered=True):
-        button_box = DialogButtonBox(self, buttons=buttons)
-        button_box.setCenterButtons(centered)
-        return button_box
-
-    def arrangeWidgets(self, widget_list):
-        for widget in widget_list:
-            self.vert_layout.addWidget(widget)
-
-
 class GroupBox(QGroupBox):
-    def __init__(self, parent):
+    def __init__(self, parent, title=None):
         super().__init__(parent)
+        if title is not None:
+            self.setTitle(title)
+
+
+class FormGroupBox(GroupBox):
+    def __init__(self, parent, title=None):
+        super().__init__(parent, title)
         self.layout = QFormLayout(self)
 
     def addOption(self, label=None, widget=None, **kwargs):
@@ -86,6 +66,14 @@ class ComboBox(QComboBox):
 class LineEdit(QLineEdit):
     def __init__(self, parent):
         super().__init__(parent)
+
+
+class PushButton(QPushButton):
+    def __init__(self, parent, text, icon=None):
+        if icon is None:
+            super().__init__(text, parent)
+        else:
+            super().__init__(icon, text, parent)
 
 
 class SpinBox(QSpinBox):
@@ -159,6 +147,34 @@ class DialogButtonBox(QDialogButtonBox):
                         self.clicked.connect(slot)
                     case 'help':
                         self.helpRequested.connect(slot)
+
+
+class Dialog(QDialog):
+    def __init__(self, plugin, title=None):
+        super().__init__()
+        self.frame = QFrame()
+        self.frame.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
+        self.vert_layout = QVBoxLayout(self.frame)
+        self.frame.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
+        self.setLayout(self.vert_layout)
+        self.plugin = plugin
+        if title is not None:
+            self.setWindowTitle(title)
+
+    def addGroupBox(self, title, widget=FormGroupBox):
+        group_box = widget(self.frame)
+        group_box.setTitle(title)
+        group_box.setStyleSheet(StyleSheets.groupBox)
+        return group_box
+
+    def addButtonBox(self, buttons=QDialogButtonBox.Ok | QDialogButtonBox.Close, centered=True):
+        button_box = DialogButtonBox(self, buttons=buttons)
+        button_box.setCenterButtons(centered)
+        return button_box
+
+    def arrangeWidgets(self, widget_list):
+        for widget in widget_list:
+            self.vert_layout.addWidget(widget)
 
 
 def set_connections(connections):
