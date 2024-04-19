@@ -5,15 +5,16 @@ plugin
 import json
 import os
 
+import keras.optimizers
 from PySide6.QtGui import QIcon
 from PySide6.QtSql import QSqlQuery, QSqlDatabase
-from PySide6.QtWidgets import QFileDialog, QDialogButtonBox
+from PySide6.QtWidgets import QFileDialog, QDialogButtonBox, QSizePolicy, QApplication
 
 from pydetecdiv.utils import singleton
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
 
 from pydetecdiv.plugins.gui import Dialog, DialogButtonBox, FormGroupBox, ComboBox, SpinBox, DoubleSpinBox, LineEdit, \
-    TableView, set_connections, GroupBox, PushButton
+    TableView, set_connections, GroupBox, PushButton, AdvancedButton
 from pydetecdiv.plugins.roi_classification.gui.ImportAnnotatedROIs import FOV2ROIlinks
 
 
@@ -21,11 +22,6 @@ from pydetecdiv.plugins.roi_classification.gui.ImportAnnotatedROIs import FOV2RO
 class ROIclassificationDialog(Dialog):
     def __init__(self, plugin, title=None):
         super().__init__(plugin, title=title)
-
-        self.classifier_selection = self.addGroupBox('Select classifier')
-        self.network = self.classifier_selection.addOption('Network:', ComboBox)
-        self.weights = self.classifier_selection.addOption('Weights:', ComboBox)
-        self.classes = self.classifier_selection.addOption('Classes:', LineEdit)
 
         self.controller = self.addGroupBox('Choose action')
         self.action_menu = self.controller.addOption('Action:', ComboBox)
@@ -36,6 +32,27 @@ class ROIclassificationDialog(Dialog):
             'Classify ROIs': self.plugin.predict
         })
         self.action_menu.setCurrentIndex(3)
+
+        self.classifier_selection = self.addGroupBox('Select classifier')
+        self.network = self.classifier_selection.addOption('Network:', ComboBox)
+        self.weights = self.classifier_selection.addOption('Weights:', ComboBox)
+        self.classes = self.classifier_selection.addOption('Classes:', LineEdit)
+        self.training_advanced = self.classifier_selection.addOption(None, AdvancedButton)
+        self.training_advanced.linkGroupBox(self.classifier_selection.addOption(None, FormGroupBox, show=False))
+        self.weight_seed = self.training_advanced.group_box.addOption('Random seed:', SpinBox, value=42)
+        self.optimizer = self.training_advanced.group_box.addOption('Optimizer:', ComboBox)
+        self.optimizer.addItemDict({
+            'SGD': keras.optimizers.SGD,
+            'Adam': keras.optimizers.Adam,
+            'Adadelta': keras.optimizers.Adadelta,
+            'Adamax': keras.optimizers.Adamax,
+            'Nadam': keras.optimizers.Nadam,
+        })
+        self.learning_rate = self.training_advanced.group_box.addOption('Learning rate:', DoubleSpinBox,
+                                                                        range=(0.00001, 1.0), decimals=4, value=0.001)
+        self.decay_rate = self.training_advanced.group_box.addOption('Decay rate:', DoubleSpinBox, value=0.95)
+        self.decay_freq = self.training_advanced.group_box.addOption('Decay frequency:', SpinBox, value=2)
+        self.momentum = self.training_advanced.group_box.addOption('Momentum:', DoubleSpinBox, value=0.9)
 
         self.roi_selection = self.addGroupBox('Select ROIs')
         self.table = self.roi_selection.addOption(None, TableView, multiselection=True, behavior='rows')
@@ -52,12 +69,12 @@ class ROIclassificationDialog(Dialog):
         self.training_data = self.datasets.addOption('Training dataset:', DoubleSpinBox, value=0.6)
         self.validation_data = self.datasets.addOption('Validation dataset:', DoubleSpinBox, value=0.2)
         self.test_data = self.datasets.addOption('Test dataset:', DoubleSpinBox, value=0.2, enabled=False)
-        self.datasets_advanced_button = self.datasets.addOption(None, PushButton, text='Advanced options', icon=QIcon(':icons/show'), flat=True)
-        self.datasets_advanced = self.datasets.addOption(None, FormGroupBox, show=False)
-        self.datasets_seed = self.datasets_advanced.addOption('Random seed:', SpinBox, value=42)
+        self.datasets_advanced = self.datasets.addOption(None, AdvancedButton)
+        self.datasets_advanced.linkGroupBox(self.datasets.addOption(None, FormGroupBox, show=False))
+        self.datasets_seed = self.datasets_advanced.group_box.addOption('Random seed:', SpinBox, value=42)
 
         self.preprocessing = self.addGroupBox('Preprocessing')
-        self.channels = self.preprocessing.addOption(None, FormGroupBox)
+        self.channels = self.preprocessing.addOption(None, FormGroupBox, title='z to channel')
         # self.channels.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
 
         self.red_channel = self.channels.addOption('Red', ComboBox)
@@ -93,7 +110,6 @@ class ROIclassificationDialog(Dialog):
                          self.action_menu.selected: self.adapt,
                          self.training_data.changed: lambda _: self.update_datasets(self.training_data),
                          self.validation_data.changed: lambda _: self.update_datasets(self.validation_data),
-                         self.datasets_advanced_button.clicked: lambda _: self.toggleVisibility(self.datasets_advanced, self.datasets_advanced_button),
                          PyDetecDiv().project_selected: self.update_all,
                          PyDetecDiv().saved_rois: self.set_table_view,
                          })
@@ -110,14 +126,10 @@ class ROIclassificationDialog(Dialog):
             self.update_sequence_length(project)
             self.update_num_rois(project)
 
-    def toggleVisibility(self, group_box, button):
-        if group_box.isVisible():
-            button.setIcon(QIcon(':icons/show'))
-            group_box.setVisible(False)
-        else:
-            button.setIcon(QIcon(':icons/hide'))
-            group_box.setVisible(True)
+    def toggleAdvanced(self, button):
+        button.toggle()
         self.adapt()
+
     def adapt(self):
         """
         Modify the appearance of the GUI according to the selected action
@@ -129,6 +141,7 @@ class ROIclassificationDialog(Dialog):
                 self.roi_sample.hide()
                 self.roi_import.hide()
                 self.classifier_selection.setRowVisible(1, False)
+                self.training_advanced.hide()
                 self.preprocessing.show()
                 self.misc_box.hide()
                 self.network.setEditable(True)
@@ -140,6 +153,7 @@ class ROIclassificationDialog(Dialog):
                 self.roi_sample.show()
                 self.roi_import.show()
                 self.classifier_selection.setRowVisible(1, False)
+                self.training_advanced.hide()
                 self.preprocessing.hide()
                 self.misc_box.hide()
                 self.network.setEditable(False)
@@ -151,6 +165,7 @@ class ROIclassificationDialog(Dialog):
                 self.roi_sample.hide()
                 self.roi_import.hide()
                 self.classifier_selection.setRowVisible(1, True)
+                self.training_advanced.show()
                 self.preprocessing.show()
                 self.misc_box.show()
                 self.misc_box.setRowVisible(self.epochs, True)
@@ -163,6 +178,7 @@ class ROIclassificationDialog(Dialog):
                 self.roi_sample.hide()
                 self.roi_import.hide()
                 self.classifier_selection.setRowVisible(1, True)
+                self.training_advanced.hide()
                 self.preprocessing.show()
                 self.misc_box.show()
                 self.misc_box.setRowVisible(self.epochs, False)
@@ -171,7 +187,7 @@ class ROIclassificationDialog(Dialog):
                 self.datasets.hide()
             case _:
                 pass
-        self.adjustSize()
+        self.fit_to_contents()
 
     def set_table_view(self, project_name):
         """

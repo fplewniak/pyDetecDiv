@@ -362,6 +362,11 @@ class Plugin(plugins.Plugin):
         """
         print('Not implemented')
 
+    def lr_decay(self, epoch, lr):
+        if (epoch != 0) & (epoch % self.gui.decay_freq.value() == 0):
+            return lr * self.gui.decay_rate.value()
+        return lr
+
     def train_model(self):
         """
         Launch training a model: select the network, load weights (optional), define the training, validation
@@ -385,8 +390,12 @@ class Plugin(plugins.Plugin):
             loadWeights(model, filename=self.gui.weights.currentData())
 
         print('Compiling model')
-        learning_rate = 0.001
-        optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+        learning_rate = self.gui.learning_rate.value()
+        if self.gui.optimizer.currentText() in ['SGD']:
+            optimizer = self.gui.optimizer.currentData()(learning_rate=learning_rate,
+                                                         momentum=self.gui.momentum.value())
+        else:
+            optimizer = self.gui.optimizer.currentData()(learning_rate=learning_rate)
         lr_metric = get_lr_metric(optimizer)
 
         model.compile(
@@ -457,9 +466,10 @@ class Plugin(plugins.Plugin):
                                                                    patience=3, verbose=1, mode='auto', baseline=None,
                                                                    restore_best_weights=True)
 
-        learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_exp_decay, verbose=0)
+        learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(self.lr_decay, verbose=0)
 
-        history = model.fit(training_dataset, epochs=epochs, callbacks=[model_checkpoint_callback],
+        history = model.fit(training_dataset, epochs=epochs,
+                            callbacks=[model_checkpoint_callback, learning_rate_scheduler],
                             validation_data=validation_dataset, verbose=2, )
 
         model.save_weights(os.path.join(get_plugins_dir(), 'roi_classification', 'models',
