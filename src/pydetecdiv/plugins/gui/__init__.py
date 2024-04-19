@@ -1,7 +1,8 @@
+from PySide6.QtGui import QIcon
 from PySide6.QtSql import QSqlQueryModel
 from PySide6.QtWidgets import QDialog, QFrame, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox, \
     QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView, QAbstractItemView, \
-    QPushButton
+    QPushButton, QApplication
 
 
 class StyleSheets:
@@ -27,6 +28,7 @@ class GroupBox(QGroupBox):
         super().__init__(parent)
         if title is not None:
             self.setTitle(title)
+        self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
 
 
 class FormGroupBox(GroupBox):
@@ -76,6 +78,30 @@ class PushButton(QPushButton):
         else:
             super().__init__(icon, text, parent)
         self.setFlat(flat)
+
+
+class AdvancedButton(PushButton):
+    def __init__(self, parent):
+        super().__init__(parent, text='Advanced options', icon=QIcon(':icons/show'), flat=True)
+        self.group_box = None
+        self.clicked.connect(self.toggle)
+
+    def hide(self):
+        super().hide()
+        self.setIcon(QIcon(':icons/show'))
+        self.group_box.setVisible(False)
+
+    def linkGroupBox(self, group_box):
+        self.group_box = group_box
+
+    def toggle(self):
+        if self.group_box.isVisible():
+            self.setIcon(QIcon(':icons/show'))
+            self.group_box.setVisible(False)
+        else:
+            self.setIcon(QIcon(':icons/hide'))
+            self.group_box.setVisible(True)
+        self.parent().parent().fit_to_contents()
 
 
 class SpinBox(QSpinBox):
@@ -154,17 +180,19 @@ class DialogButtonBox(QDialogButtonBox):
 class Dialog(QDialog):
     def __init__(self, plugin, title=None):
         super().__init__()
-        self.frame = QFrame()
-        self.frame.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
-        self.vert_layout = QVBoxLayout(self.frame)
-        self.frame.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
+        self.vert_layout = QVBoxLayout(self)
         self.setLayout(self.vert_layout)
         self.plugin = plugin
         if title is not None:
             self.setWindowTitle(title)
+        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
+
+    def fit_to_contents(self):
+        QApplication.processEvents()
+        self.adjustSize()
 
     def addGroupBox(self, title, widget=FormGroupBox):
-        group_box = widget(self.frame)
+        group_box = widget(self)
         group_box.setTitle(title)
         group_box.setStyleSheet(StyleSheets.groupBox)
         return group_box
