@@ -110,6 +110,7 @@ class ROIclassificationDialog(Dialog):
                          self.action_menu.selected: self.adapt,
                          self.training_data.changed: lambda _: self.update_datasets(self.training_data),
                          self.validation_data.changed: lambda _: self.update_datasets(self.validation_data),
+                         self.optimizer.changed: self.update_optimizer_options,
                          PyDetecDiv().project_selected: self.update_all,
                          PyDetecDiv().saved_rois: self.set_table_view,
                          })
@@ -279,6 +280,12 @@ class ROIclassificationDialog(Dialog):
         else:
             self.test_data.setValue(1 - self.training_data.value() - self.validation_data.value())
 
+    def update_optimizer_options(self):
+        match self.optimizer.currentText():
+            case 'SGD':
+                self.training_advanced.group_box.setRowVisible(self.momentum, True)
+            case _:
+                self.training_advanced.group_box.setRowVisible(self.momentum, False)
     def import_annotated_rois(self):
         filters = ["csv (*.csv)", ]
         annotation_file, _ = QFileDialog.getOpenFileName(self, caption='Choose file with annotated ROIs',
