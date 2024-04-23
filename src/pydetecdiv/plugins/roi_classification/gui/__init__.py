@@ -6,15 +6,14 @@ import json
 import os
 
 import keras.optimizers
-from PySide6.QtGui import QIcon
 from PySide6.QtSql import QSqlQuery, QSqlDatabase
-from PySide6.QtWidgets import QFileDialog, QDialogButtonBox, QSizePolicy, QApplication
+from PySide6.QtWidgets import QFileDialog, QDialogButtonBox
 
 from pydetecdiv.utils import singleton
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
 
 from pydetecdiv.plugins.gui import Dialog, DialogButtonBox, FormGroupBox, ComboBox, SpinBox, DoubleSpinBox, LineEdit, \
-    TableView, set_connections, GroupBox, PushButton, AdvancedButton
+    TableView, set_connections, AdvancedButton
 from pydetecdiv.plugins.roi_classification.gui.ImportAnnotatedROIs import FOV2ROIlinks
 
 
@@ -53,6 +52,11 @@ class ROIclassificationDialog(Dialog):
         self.decay_rate = self.training_advanced.group_box.addOption('Decay rate:', DoubleSpinBox, value=0.95)
         self.decay_freq = self.training_advanced.group_box.addOption('Decay frequency:', SpinBox, value=2)
         self.momentum = self.training_advanced.group_box.addOption('Momentum:', DoubleSpinBox, value=0.9)
+        self.checkpoint_monitor = self.training_advanced.group_box.addOption('Checkpoint metric:', ComboBox)
+        self.checkpoint_monitor.addItemDict({
+            'Loss': 'val_loss',
+            'Accuracy': 'val_accuracy',
+        })
 
         self.roi_selection = self.addGroupBox('Select ROIs')
         self.table = self.roi_selection.addOption(None, TableView, multiselection=True, behavior='rows')

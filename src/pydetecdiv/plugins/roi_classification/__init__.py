@@ -451,15 +451,18 @@ class Plugin(plugins.Plugin):
 
         self.save_training_datasets(run, roi_list, num_training, num_validation)
 
+        checkpoint_monitor_metric = self.gui.checkpoint_monitor.currentData()
+        best_checkpoint_filename = f'weights_{PyDetecDiv().project_name}_{run.id_}_best_{checkpoint_monitor_metric}.h5'
         checkpoint_filepath = os.path.join(get_plugins_dir(), 'roi_classification', 'models',
                                            self.gui.network.currentText(),
-                                           f'weights_{PyDetecDiv().project_name}_{run.id_}_best.h5')
+                                           f'{best_checkpoint_filename}')
 
         model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
             filepath=checkpoint_filepath,
             save_weights_only=True,
-            monitor='val_accuracy',
-            mode='max',
+            monitor=checkpoint_monitor_metric,
+            mode='auto',
+            verbose=1,
             save_best_only=True)
 
         training_early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', start_from_epoch=10, min_delta=0,
