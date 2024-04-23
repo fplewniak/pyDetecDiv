@@ -2,7 +2,7 @@ from PySide6.QtGui import QIcon
 from PySide6.QtSql import QSqlQueryModel
 from PySide6.QtWidgets import QDialog, QFrame, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox, \
     QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView, QAbstractItemView, \
-    QPushButton, QApplication
+    QPushButton, QApplication, QRadioButton
 
 
 class StyleSheets:
@@ -103,6 +103,10 @@ class AdvancedButton(PushButton):
             self.group_box.setVisible(True)
         self.parent().parent().fit_to_contents()
 
+class RadioButton(QRadioButton):
+    def __init__(self, parent, exclusive=True):
+        super().__init__(None, parent)
+        self.setAutoExclusive(exclusive)
 
 class SpinBox(QSpinBox):
     def __init__(self, parent, range=(1, 4096), single_step=1, adaptive=False, value=None):
