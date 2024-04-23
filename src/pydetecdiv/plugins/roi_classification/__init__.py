@@ -465,14 +465,19 @@ class Plugin(plugins.Plugin):
             verbose=1,
             save_best_only=True)
 
-        training_early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', start_from_epoch=10, min_delta=0,
-                                                                   patience=3, verbose=1, mode='auto', baseline=None,
+        training_early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', start_from_epoch=1, min_delta=0,
+                                                                   patience=5, verbose=1, mode='auto', baseline=None,
                                                                    restore_best_weights=True)
 
         learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(self.lr_decay, verbose=0)
 
+        callbacks = [model_checkpoint_callback, learning_rate_scheduler]
+
+        if self.gui.early_stopping.isChecked():
+            callbacks += [training_early_stopping]
+
         history = model.fit(training_dataset, epochs=epochs,
-                            callbacks=[model_checkpoint_callback, learning_rate_scheduler],
+                            callbacks=callbacks,
                             validation_data=validation_dataset, verbose=2, )
 
         model.save_weights(os.path.join(get_plugins_dir(), 'roi_classification', 'models',
@@ -486,10 +491,16 @@ class Plugin(plugins.Plugin):
         if len(input_shape) == 4:
             predictions = model.predict(test_dataset).argmax(axis=1)
             model.load_weights(checkpoint_filepath)
+            model.compile(optimizer=optimizer,
+                            loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+                            metrics=['accuracy', lr_metric],)
             best_predictions = model.predict(test_dataset).argmax(axis=1)
         else:
             predictions = [label for seq in model.predict(test_dataset).argmax(axis=2) for label in seq]
             model.load_weights(checkpoint_filepath)
+            model.compile(optimizer=optimizer,
+                            loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+                            metrics=['accuracy', lr_metric],)
             best_predictions = [label for seq in model.predict(test_dataset).argmax(axis=2) for label in seq]
             ground_truth = [label for seq in ground_truth for label in seq]
 
@@ -503,7 +514,7 @@ class Plugin(plugins.Plugin):
         tab.addTab(confusion_matrix_plot, 'Confusion matrix (last epoch)')
 
         confusion_matrix_plot = plot_confusion_matrix(ground_truth, best_predictions, self.class_names)
-        tab.addTab(confusion_matrix_plot, 'Confusion matrix (best epoch)')
+        tab.addTab(confusion_matrix_plot, 'Confusion matrix (best checkpoint)')
 
         self.gui.update_model_weights()
 

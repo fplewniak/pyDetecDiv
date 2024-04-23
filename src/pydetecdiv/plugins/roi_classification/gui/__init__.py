@@ -13,7 +13,7 @@ from pydetecdiv.utils import singleton
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
 
 from pydetecdiv.plugins.gui import Dialog, DialogButtonBox, FormGroupBox, ComboBox, SpinBox, DoubleSpinBox, LineEdit, \
-    TableView, set_connections, AdvancedButton
+    TableView, set_connections, AdvancedButton, RadioButton
 from pydetecdiv.plugins.roi_classification.gui.ImportAnnotatedROIs import FOV2ROIlinks
 
 
@@ -57,6 +57,7 @@ class ROIclassificationDialog(Dialog):
             'Loss': 'val_loss',
             'Accuracy': 'val_accuracy',
         })
+        self.early_stopping = self.training_advanced.group_box.addOption('Early stopping:', RadioButton)
 
         self.roi_selection = self.addGroupBox('Select ROIs')
         self.table = self.roi_selection.addOption(None, TableView, multiselection=True, behavior='rows')
