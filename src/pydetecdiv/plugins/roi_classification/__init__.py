@@ -485,8 +485,12 @@ class Plugin(plugins.Plugin):
         ground_truth = [label for batch in [y for x, y in test_dataset] for label in batch]
         if len(input_shape) == 4:
             predictions = model.predict(test_dataset).argmax(axis=1)
+            model.load_weights(checkpoint_filepath)
+            best_predictions = model.predict(test_dataset).argmax(axis=1)
         else:
             predictions = [label for seq in model.predict(test_dataset).argmax(axis=2) for label in seq]
+            model.load_weights(checkpoint_filepath)
+            best_predictions = [label for seq in model.predict(test_dataset).argmax(axis=2) for label in seq]
             ground_truth = [label for seq in ground_truth for label in seq]
 
         tab = PyDetecDiv().main_window.add_tabbed_window(f'{PyDetecDiv().project_name} / {module.__name__}')
@@ -496,7 +500,10 @@ class Plugin(plugins.Plugin):
         tab.setCurrentWidget(history_plot)
 
         confusion_matrix_plot = plot_confusion_matrix(ground_truth, predictions, self.class_names)
-        tab.addTab(confusion_matrix_plot, 'Confusion matrix')
+        tab.addTab(confusion_matrix_plot, 'Confusion matrix (last epoch)')
+
+        confusion_matrix_plot = plot_confusion_matrix(ground_truth, best_predictions, self.class_names)
+        tab.addTab(confusion_matrix_plot, 'Confusion matrix (best epoch)')
 
         self.gui.update_model_weights()
 
@@ -560,11 +567,14 @@ def plot_history(history, evaluation):
 
 
 def plot_confusion_matrix(ground_truth, predictions, class_names):
-    cm = confusion_matrix(ground_truth, predictions, labels=list(range(len(class_names))))
-    plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=1, rows=1)
-    ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names).plot(ax=plot_viewer.axes)
+    plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=2, rows=1)
+    plot_viewer.axes[0].set_title('Normalized by row')
+    ConfusionMatrixDisplay.from_predictions(ground_truth, predictions, labels=list(range(len(class_names))),
+                                            display_labels=class_names, normalize='true', ax=plot_viewer.axes[0])
+    plot_viewer.axes[1].set_title('Normalized by column')
+    ConfusionMatrixDisplay.from_predictions(ground_truth, predictions, labels=list(range(len(class_names))),
+                                            display_labels=class_names, normalize='pred', ax=plot_viewer.axes[1])
     return plot_viewer
-
 
 def get_lr_metric(optimizer):
     def lr(y_true, y_pred):
