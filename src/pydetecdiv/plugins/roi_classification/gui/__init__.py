@@ -19,6 +19,9 @@ from pydetecdiv.plugins.roi_classification.gui.ImportAnnotatedROIs import FOV2RO
 
 @singleton
 class ROIclassificationDialog(Dialog):
+    """
+    Dialog window to handle the options Form for ROI classiification plugin
+    """
     def __init__(self, plugin, title=None):
         super().__init__(plugin, title=title)
 
@@ -123,6 +126,9 @@ class ROIclassificationDialog(Dialog):
         self.adapt()
 
     def update_all(self):
+        """
+        Update all portions of the options Form GUI
+        """
         self.update_datasets()
         self.set_table_view(PyDetecDiv().project_name)
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
@@ -131,6 +137,10 @@ class ROIclassificationDialog(Dialog):
             self.update_num_rois(project)
 
     def toggleAdvanced(self, button):
+        """
+        Toggle the advanced button between + (expand) and - (collapse) to show or hide advanced options
+        :param button:
+        """
         button.toggle()
         self.adapt()
 
@@ -227,6 +237,10 @@ class ROIclassificationDialog(Dialog):
         self.blue_channel.setCurrentIndex(2)
 
     def update_num_rois(self, project):
+        """
+        Update the maximum value for image sequence according to the umber of frames in the dataset
+        :param project: the current project
+        """
         num_rois = project.count_objects('ROI')
         self.roi_number.setRange(1, num_rois)
         self.roi_number.setValue(int(num_rois / 10))
@@ -271,6 +285,11 @@ class ROIclassificationDialog(Dialog):
         self.classes.setText(json.dumps(self.network.currentData().class_names))
 
     def update_datasets(self, changed_dataset=None):
+        """
+        Update the proportion of data to dispatch in training, validation and test datasets. The total must sum to 1 and
+        the modifications are constrained to ensure it is the case.
+        :param changed_dataset: the dataset that has just been changed
+        """
         if changed_dataset:
             self.test_data.setValue(1.0 - (self.training_data.value() + self.validation_data.value()))
             total = self.training_data.value() + self.validation_data.value() + self.test_data.value()
@@ -280,6 +299,9 @@ class ROIclassificationDialog(Dialog):
             self.test_data.setValue(1 - self.training_data.value() - self.validation_data.value())
 
     def update_optimizer_options(self):
+        """
+        Adapt the optimizer's available options to the currently selected optimizer
+        """
         match self.optimizer.currentText():
             case 'SGD':
                 self.training_advanced.group_box.setRowVisible(self.momentum, True)
@@ -287,6 +309,10 @@ class ROIclassificationDialog(Dialog):
                 self.training_advanced.group_box.setRowVisible(self.momentum, False)
 
     def import_annotated_rois(self):
+        """
+        Select a csv file containing ROI frames annotations and open a FOV2ROIlinks window to load the data it contains
+        into the database as FOVs and ROIs with annotations.
+        """
         filters = ["csv (*.csv)", ]
         annotation_file, _ = QFileDialog.getOpenFileName(self, caption='Choose file with annotated ROIs',
                                                          dir='.',

@@ -86,6 +86,10 @@ def get_config_value(section: str, key: str):
 
 
 def get_appdata_dir():
+    """
+    get the local Application directory (.local/share/pyDetecDiv on Linux, AppData\pyDetecDiv on Windows)
+    :return: the path to the local application directory
+    """
     if not get_config().has_option('paths', 'appdata'):
         return xdg.BaseDirectory.save_data_path('pyDetecDiv')
     return get_config_value('paths', 'appdata')

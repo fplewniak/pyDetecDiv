@@ -2,8 +2,6 @@
 Generic classes to discover and handle plugins
 """
 import importlib
-import json
-import os
 import pkgutil
 import sys
 
@@ -12,7 +10,6 @@ from PySide6.QtGui import QAction
 import pydetecdiv
 from pydetecdiv.settings import get_plugins_dir
 from pydetecdiv.domain.Run import Run
-from pydetecdiv.persistence.sqlalchemy.orm.RunDao import RunDao
 from pydetecdiv.plugins.gui import Dialog
 
 
@@ -49,11 +46,23 @@ class Plugin:
 
     @property
     def parent_plugin(self):
+        """
+        return the parent plugin of the current plugin. This may be used to add functionalities to plugins without
+        having to modify the original code
+        :return: None or the parent plugin
+        """
         if self.parent in pydetecdiv.app.PyDetecDiv().plugin_list.plugins_dict:
             return pydetecdiv.app.PyDetecDiv().plugin_list.plugins_dict[self.parent]
         return None
 
     def save_run(self, project, method, parameters):
+        """
+        Save the current Run
+        :param project: the current project
+        :param method: the plugin method that was executed for the current run
+        :param parameters: the parameters that were passed to the method
+        :return: the saved Run instance
+        """
         record = {
             'tool_name': self.id_,
             'tool_version': self.version,
@@ -90,6 +99,10 @@ class PluginList:
 
     @property
     def plugins(self):
+        """
+        return the mist of available plugins
+        :return:
+        """
         return self.plugins_dict.values()
 
     def load(self):

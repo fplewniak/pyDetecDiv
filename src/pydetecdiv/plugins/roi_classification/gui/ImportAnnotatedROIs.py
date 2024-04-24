@@ -4,8 +4,6 @@ Dialog window handling the definition of patterns for FOV creation from raw data
 import random
 import re
 
-import numpy as np
-import pandas
 import pandas as pd
 from PySide6.QtCore import Signal, QThread
 from PySide6.QtGui import QColor
@@ -160,7 +158,7 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
 
         :param matches: the list of matches to colourize
         """
-        df = pandas.DataFrame.from_dict(self.get_match_spans(matches, 0))
+        df = pd.DataFrame.from_dict(self.get_match_spans(matches, 0))
         columns = set(df.columns)
         conflicting_columns = set()
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(True)
@@ -181,7 +179,7 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
             #                     conflicting_columns.add(col1)
             #                     conflicting_columns.add(col2)
             #                     self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
-            df = pandas.DataFrame.from_dict(self.get_match_spans(matches, 2))
+            df = pd.DataFrame.from_dict(self.get_match_spans(matches, 2))
             for col in df.sort_values(0, axis=1, ascending=False):
                 if col not in conflicting_columns:
                     r, g, b, _ = self.colours[col].getRgb()
@@ -269,7 +267,7 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
             case QDialogButtonBox.StandardButton.Ok:
                 run = self.save_run()
                 regexes = self.get_regex()
-                df = pandas.DataFrame.from_dict(
+                df = pd.DataFrame.from_dict(
                     self.get_match_spans(self.find_matches(self.ROIsamples_text, regexes), 0))
                 regex = '.*'.join([regexes[col] for col in df.sort_values(0, axis=1, ascending=True).columns])
                 wait_dialog = WaitDialog('Importing annotated ROIs', self,
@@ -286,6 +284,10 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
                 self.reset()
 
     def save_run(self):
+        """
+        Save current run
+        :return: the Run instance
+        """
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             return self.plugin.save_run(project, 'import_annotated_rois',
                                         {'class_names': self.plugin.class_names,

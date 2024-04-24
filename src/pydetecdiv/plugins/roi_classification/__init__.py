@@ -102,6 +102,13 @@ class TrainingData(Base):
 
 
 def prepare_data(data_list, seqlen=None, targets=True):
+    """
+    Prepare the data from a list of ROI object as a list of ROIData objects to build the ROIDataset instance
+    :param data_list: the ROI list
+    :param seqlen: the length of the frame sequence
+    :param targets: should targets be included in the dataset or not
+    :return: the ROIData list
+    """
     roi_data_list = []
     for roi in data_list:
         imgdata = roi.fov.image_resource().image_resource_data()
@@ -118,6 +125,11 @@ def prepare_data(data_list, seqlen=None, targets=True):
 
 
 def get_annotation(roi):
+    """
+    Get the annotations for a ROI
+    :param roi: the ROI
+    :return: the list of annotated classes by frame
+    """
     roi_classes = [-1] * roi.fov.image_resource().image_resource_data().sizeT
     with pydetecdiv_project(PyDetecDiv().project_name) as project:
         results = list(project.repository.session.execute(
@@ -136,6 +148,9 @@ def get_annotation(roi):
 
 
 class ROIdata:
+    """
+    ROI data, linking ROI object, the corresponding image data, target (class), and frame
+    """
     def __init__(self, roi, imgdata, target=None, frame=0):
         self.roi = roi
         self.imgdata = imgdata
@@ -144,6 +159,9 @@ class ROIdata:
 
 
 class ROIDataset(tf.keras.utils.Sequence):
+    """
+    ROI dataset that can be used to feed the model for training, evaluation or prediction
+    """
     def __init__(self, roi_data_list, image_size=(60, 60), class_names=None, batch_size=32, seqlen=None,
                  z_channels=None):
         self.img_size = image_size
@@ -198,6 +216,10 @@ class Plugin(plugins.Plugin):
 
     @property
     def class_names(self):
+        """
+        return the classes
+        :return: the class list
+        """
         return json.loads(self.gui.classes.text())
 
     def create_table(self):
@@ -234,6 +256,10 @@ class Plugin(plugins.Plugin):
                     annotate.triggered.connect(lambda _: open_annotator(self, roi_list))
 
     def load_model(self):
+        """
+        Load the model
+        :return: the model
+        """
         module = self.gui.network.currentData()
         print(module.__name__)
         model = module.model.create_model()
@@ -273,10 +299,14 @@ class Plugin(plugins.Plugin):
                                                      'green': self.gui.green_channel.currentIndex(),
                                                      'blue': self.gui.blue_channel.currentIndex()
                                                      })
-            roi_list = np.ndarray.flatten(np.array([roi for roi in [fov.roi_list for fov in
+            # roi_list = np.ndarray.flatten(np.array([roi for roi in [fov.roi_list for fov in
+            #                                                         [project.get_named_object('FOV', fov_name) for
+            #                                                          fov_name in
+            #                                                          fov_names]]]))
+            roi_list = np.ndarray.flatten(np.array(list([fov.roi_list for fov in
                                                                     [project.get_named_object('FOV', fov_name) for
                                                                      fov_name in
-                                                                     fov_names]]]))
+                                                                     fov_names]])))
 
             if len(input_shape) == 4:
                 img_size = (input_shape[1], input_shape[2])
@@ -365,6 +395,12 @@ class Plugin(plugins.Plugin):
         print('Not implemented')
 
     def lr_decay(self, epoch, lr):
+        """
+        Learning rate scheduler
+        :param epoch: the current epoch
+        :param lr: the current learning rate
+        :return: the new learning rate
+        """
         if (epoch != 0) & (epoch % self.gui.decay_freq.value() == 0):
             return lr * self.gui.decay_rate.value()
         return lr
@@ -487,7 +523,8 @@ class Plugin(plugins.Plugin):
                                         f'weights_{run.id_}_last.h5'),
                            overwrite=True, save_format='h5')
 
-        evaluation = {metrics: value for metrics, value in zip(model.metrics_names, model.evaluate(test_dataset))}
+        # evaluation = {metrics: value for metrics, value in zip(model.metrics_names, model.evaluate(test_dataset))}
+        evaluation = dict(zip(model.metrics_names, model.evaluate(test_dataset)))
 
         ground_truth = [label for batch in [y for x, y in test_dataset] for label in batch]
         if len(input_shape) == 4:
@@ -521,6 +558,14 @@ class Plugin(plugins.Plugin):
         self.gui.update_model_weights()
 
     def save_training_run(self, seqlen, epochs, batch_size, module):
+        """
+        save the current training Run
+        :param seqlen: the sequence length
+        :param epochs: the number of epochs
+        :param batch_size: the batch size
+        :param module: the module name (i.e. the network that was trained)
+        :return: the current Run instance
+        """
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             return self.save_run(project, 'train_model', {'model': module.__name__,
                                                           'class_names': self.class_names,
@@ -532,6 +577,13 @@ class Plugin(plugins.Plugin):
                                                           })
 
     def save_training_datasets(self, run, roi_list, num_training, num_validation):
+        """
+        save the datasets used for training and evaluation in the database
+        :param run: the current run
+        :param roi_list: the list of ROI/frames
+        :param num_training: the number of training data
+        :param num_validation: the number of validation data
+        """
         project = roi_list[0].roi.project
         training_ds = Dataset(project=project, name=f'train_{datetime.now().strftime("%Y%m%d-%H%M")}',
                               type_='training', run=run.id_)
@@ -552,6 +604,14 @@ class Plugin(plugins.Plugin):
         project.commit()
 
     def save_results(self, project, run, roi, frame, class_name):
+        """
+        Save the results in database
+        :param project: the current project
+        :param run: the current run
+        :param roi: the current ROI
+        :param frame: the current frame
+        :param class_name: the class name
+        """
         Results().save(project, run, roi, frame, np.array([1]), [class_name])
 
 
@@ -580,6 +640,13 @@ def plot_history(history, evaluation):
 
 
 def plot_confusion_matrix(ground_truth, predictions, class_names):
+    """
+    Plot the confusion matrix normalized i) by rows (recall in diagonals) and ii) by columns (precision in diagonals)
+    :param ground_truth: the ground truth index values
+    :param predictions: the predicted index values
+    :param class_names: the class names
+    :return: the plot viewer where the confusion matrix is plotted
+    """
     plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=2, rows=1)
     plot_viewer.axes[0].set_title('Normalized by row')
     ConfusionMatrixDisplay.from_predictions(ground_truth, predictions, labels=list(range(len(class_names))),
@@ -590,6 +657,11 @@ def plot_confusion_matrix(ground_truth, predictions, class_names):
     return plot_viewer
 
 def get_lr_metric(optimizer):
+    """
+    Get the learning rate metric for optimizer for use during training to monitor the learning rate
+    :param optimizer: the optimizer
+    :return: the learning rate function
+    """
     def lr(y_true, y_pred):
         return optimizer.lr
 
@@ -597,6 +669,12 @@ def get_lr_metric(optimizer):
 
 
 def lr_exp_decay(epoch, lr):
+    """
+    Learning rate scheduler for exponential decay
+    :param epoch: the current epoch
+    :param lr: the current learning rate
+    :return: the new learning rate
+    """
     k = 0.1
     if epoch == 0:
         return lr
@@ -675,6 +753,9 @@ def get_rgb_images_from_stacks(imgdata, roi_list, t, z=None):
 
 
 def draw_annotated_rois():
+    """
+    Draw annotated ROIs as rectangles coloured according to the class
+    """
     colours = [
         QColor(255, 0, 0, 64),
         QColor(0, 255, 0, 64),
@@ -696,6 +777,10 @@ def draw_annotated_rois():
 
 
 def get_annotated_rois():
+    """
+    Get a list of annotated ROI frames
+    :return: the list of annotated ROI frames
+    """
     with pydetecdiv_project(PyDetecDiv().project_name) as project:
         db = QSqlDatabase("QSQLITE")
         db.setDatabaseName(project.repository.name)
@@ -715,6 +800,11 @@ def get_annotated_rois():
 
 
 def display_dataset(dataset, sequences=False):
+    """
+    Display a dataset in plot viewer
+    :param dataset: the dataset to display
+    :param sequences: whether or not to show frame sequences
+    """
     for dset in dataset.__iter__():
         ds = dset[0] if isinstance(dset, tuple) else dset
         for data in ds:
@@ -734,6 +824,12 @@ def display_dataset(dataset, sequences=False):
 
 
 def loadWeights(model, filename=os.path.join(__path__[0], "weights.h5"), debug=False):
+    """
+    load the weights into the model
+    :param model: the model
+    :param filename: the H5 file name containing the weights
+    :param debug: debug mode
+    """
     with h5py.File(filename, 'r') as f:
         if 'backend' in f.attrs:
             # Keras-saved model weights, cannot be loaded as below
@@ -783,7 +879,12 @@ def loadWeights(model, filename=os.path.join(__path__[0], "weights.h5"), debug=F
 
 
 def layerNum(model, layerName):
-    # Returns the index to the layer
+    """
+    Returns the index to the layer
+    :param model: the model
+    :param layerName: the name of the layer
+    :return: the index of the layer
+    """
     layers = model.layers
     for i in range(len(layers)):
         if layerName == layers[i].name:
@@ -795,5 +896,9 @@ def layerNum(model, layerName):
 
 
 def intList(myList):
-    # Converts a list of numbers into a list of ints.
+    """
+    Converts a list of numbers into a list of ints.
+    :param myList: the list to be converted
+    :return: the converted list
+    """
     return list(map(int, myList))
