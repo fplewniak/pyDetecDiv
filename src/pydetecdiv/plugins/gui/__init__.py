@@ -50,8 +50,12 @@ class FormGroupBox(GroupBox):
 
 
 class ComboBox(QComboBox):
-    def __init__(self, parent):
+    def __init__(self, parent, items=None, selected=None):
         super().__init__(parent)
+        if items is not None:
+            self.addItemDict(items)
+        if selected is not None:
+            self.setCurrentText(selected)
 
     def addItemDict(self, options):
         for label, data in options.items():

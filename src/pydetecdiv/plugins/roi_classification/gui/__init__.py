@@ -23,14 +23,12 @@ class ROIclassificationDialog(Dialog):
         super().__init__(plugin, title=title)
 
         self.controller = self.addGroupBox('Choose action')
-        self.action_menu = self.controller.addOption('Action:', ComboBox)
-        self.action_menu.addItemDict({
-            'Create new model': self.plugin.create_model,
-            'Annotate ROIs': self.plugin.annotate_rois,
-            'Train model': self.plugin.train_model,
-            'Classify ROIs': self.plugin.predict
-        })
-        self.action_menu.setCurrentIndex(3)
+        self.action_menu = self.controller.addOption('Action:', ComboBox,
+                                                     items={  # 'Create new model': self.plugin.create_model,
+                                                         'Annotate ROIs': self.plugin.annotate_rois,
+                                                         'Train model': self.plugin.train_model,
+                                                         'Classify ROIs': self.plugin.predict},
+                                                     selected='Classify ROIs')
 
         self.classifier_selection = self.addGroupBox('Select classifier')
         self.network = self.classifier_selection.addOption('Network:', ComboBox)
@@ -39,24 +37,24 @@ class ROIclassificationDialog(Dialog):
         self.training_advanced = self.classifier_selection.addOption(None, AdvancedButton)
         self.training_advanced.linkGroupBox(self.classifier_selection.addOption(None, FormGroupBox, show=False))
         self.weight_seed = self.training_advanced.group_box.addOption('Random seed:', SpinBox, value=42)
-        self.optimizer = self.training_advanced.group_box.addOption('Optimizer:', ComboBox)
-        self.optimizer.addItemDict({
-            'SGD': keras.optimizers.SGD,
-            'Adam': keras.optimizers.Adam,
-            'Adadelta': keras.optimizers.Adadelta,
-            'Adamax': keras.optimizers.Adamax,
-            'Nadam': keras.optimizers.Nadam,
-        })
+        self.optimizer = self.training_advanced.group_box.addOption('Optimizer:', ComboBox,
+                                                                    items={'SGD': keras.optimizers.SGD,
+                                                                           'Adam': keras.optimizers.Adam,
+                                                                           'Adadelta': keras.optimizers.Adadelta,
+                                                                           'Adamax': keras.optimizers.Adamax,
+                                                                           'Nadam': keras.optimizers.Nadam, },
+                                                                    selected='SGD')
+
         self.learning_rate = self.training_advanced.group_box.addOption('Learning rate:', DoubleSpinBox,
                                                                         range=(0.00001, 1.0), decimals=4, value=0.001)
         self.decay_rate = self.training_advanced.group_box.addOption('Decay rate:', DoubleSpinBox, value=0.95)
         self.decay_freq = self.training_advanced.group_box.addOption('Decay frequency:', SpinBox, value=2)
         self.momentum = self.training_advanced.group_box.addOption('Momentum:', DoubleSpinBox, value=0.9)
-        self.checkpoint_monitor = self.training_advanced.group_box.addOption('Checkpoint metric:', ComboBox)
-        self.checkpoint_monitor.addItemDict({
-            'Loss': 'val_loss',
-            'Accuracy': 'val_accuracy',
-        })
+        self.checkpoint_monitor = self.training_advanced.group_box.addOption('Checkpoint metric:', ComboBox,
+                                                                             items={'Loss': 'val_loss',
+                                                                                    'Accuracy': 'val_accuracy', },
+                                                                             selected='Loss')
+
         self.early_stopping = self.training_advanced.group_box.addOption('Early stopping:', RadioButton)
 
         self.roi_selection = self.addGroupBox('Select ROIs')
@@ -140,9 +138,8 @@ class ROIclassificationDialog(Dialog):
         """
         Modify the appearance of the GUI according to the selected action
         """
-        match (self.action_menu.currentIndex()):
-            case 0:
-                # Create new model
+        match (self.action_menu.currentText()):
+            case 'Create new model':
                 self.roi_selection.hide()
                 self.roi_sample.hide()
                 self.roi_import.hide()
@@ -153,8 +150,7 @@ class ROIclassificationDialog(Dialog):
                 self.network.setEditable(True)
                 self.classes.setReadOnly(False)
                 self.datasets.hide()
-            case 1:
-                # Annotate ROIs
+            case 'Annotate ROIs':
                 self.roi_selection.hide()
                 self.roi_sample.show()
                 self.roi_import.show()
@@ -165,8 +161,7 @@ class ROIclassificationDialog(Dialog):
                 self.network.setEditable(False)
                 self.classes.setReadOnly(True)
                 self.datasets.hide()
-            case 2:
-                # Train model
+            case 'Train model':
                 self.roi_selection.hide()
                 self.roi_sample.hide()
                 self.roi_import.hide()
@@ -178,8 +173,7 @@ class ROIclassificationDialog(Dialog):
                 self.network.setEditable(False)
                 self.classes.setReadOnly(True)
                 self.datasets.show()
-            case 3:
-                # Classify ROIs
+            case 'Classify ROIs':
                 self.roi_selection.show()
                 self.roi_sample.hide()
                 self.roi_import.hide()
@@ -291,6 +285,7 @@ class ROIclassificationDialog(Dialog):
                 self.training_advanced.group_box.setRowVisible(self.momentum, True)
             case _:
                 self.training_advanced.group_box.setRowVisible(self.momentum, False)
+
     def import_annotated_rois(self):
         filters = ["csv (*.csv)", ]
         annotation_file, _ = QFileDialog.getOpenFileName(self, caption='Choose file with annotated ROIs',
