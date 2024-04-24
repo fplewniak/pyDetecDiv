@@ -24,7 +24,8 @@ import tensorflow as tf
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 from pydetecdiv import plugins
-from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
+from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir
+from pydetecdiv.settings import get_plugins_dir
 from pydetecdiv.domain.Image import Image, ImgDType
 
 from .gui import FOV2ROIlinks, ROIclassificationDialog
@@ -238,6 +239,7 @@ class Plugin(plugins.Plugin):
         model = module.model.create_model()
         print('Loading weights')
         weights = self.gui.weights.currentData()
+        print(weights)
         if weights:
             loadWeights(model, filename=self.gui.weights.currentData())
 
@@ -452,8 +454,8 @@ class Plugin(plugins.Plugin):
         self.save_training_datasets(run, roi_list, num_training, num_validation)
 
         checkpoint_monitor_metric = self.gui.checkpoint_monitor.currentData()
-        best_checkpoint_filename = f'weights_{PyDetecDiv().project_name}_{run.id_}_best_{checkpoint_monitor_metric}.h5'
-        checkpoint_filepath = os.path.join(get_plugins_dir(), 'roi_classification', 'models',
+        best_checkpoint_filename = f'weights_{run.id_}_best_{checkpoint_monitor_metric}.h5'
+        checkpoint_filepath = os.path.join(get_project_dir(), 'roi_classification', 'models',
                                            self.gui.network.currentText(),
                                            f'{best_checkpoint_filename}')
 
@@ -480,9 +482,9 @@ class Plugin(plugins.Plugin):
                             callbacks=callbacks,
                             validation_data=validation_dataset, verbose=2, )
 
-        model.save_weights(os.path.join(get_plugins_dir(), 'roi_classification', 'models',
+        model.save_weights(os.path.join(get_project_dir(), 'roi_classification', 'models',
                                         self.gui.network.currentText(),
-                                        f'weights_{PyDetecDiv().project_name}_{run.id_}_last.h5'),
+                                        f'weights_{run.id_}_last.h5'),
                            overwrite=True, save_format='h5')
 
         evaluation = {metrics: value for metrics, value in zip(model.metrics_names, model.evaluate(test_dataset))}

@@ -89,3 +89,15 @@ def get_appdata_dir():
     if not get_config().has_option('paths', 'appdata'):
         return xdg.BaseDirectory.save_data_path('pyDetecDiv')
     return get_config_value('paths', 'appdata')
+
+
+def get_plugins_dir():
+    """
+    Get the user directory where plugins are installed. The directory is created if it does not exist
+    :return: the user plugin path
+    :rtype: Path
+    """
+    plugins_path = os.path.join(get_appdata_dir(), 'plugins')
+    if not os.path.exists(plugins_path):
+        os.mkdir(plugins_path)
+    return plugins_path

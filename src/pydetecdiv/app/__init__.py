@@ -12,7 +12,7 @@ from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout, QProgr
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal
 
 from pydetecdiv import plugins
-from pydetecdiv.settings import get_config_file, get_appdata_dir
+from pydetecdiv.settings import get_config_file, get_appdata_dir, get_config_value
 from pydetecdiv.persistence.project import list_projects
 from pydetecdiv.domain.Project import Project
 from pydetecdiv.utils import singleton
@@ -228,17 +228,20 @@ def get_settings():
     return settings
 
 
-def get_plugins_dir():
-    """
-    Get the user directory where plugins are installed. The directory is created if it does not exist
-    :return: the user plugin path
-    :rtype: Path
-    """
-    plugins_path = os.path.join(get_appdata_dir(), 'plugins')
-    if not os.path.exists(plugins_path):
-        os.mkdir(plugins_path)
-    return plugins_path
+# def get_plugins_dir():
+#     """
+#     Get the user directory where plugins are installed. The directory is created if it does not exist
+#     :return: the user plugin path
+#     :rtype: Path
+#     """
+#     plugins_path = os.path.join(get_appdata_dir(), 'plugins')
+#     if not os.path.exists(plugins_path):
+#         os.mkdir(plugins_path)
+#     return plugins_path
 
+def get_project_dir():
+    workspace_dir = get_config_value('project', 'workspace')
+    return os.path.join(workspace_dir, PyDetecDiv().project_name)
 
 def project_list():
     """

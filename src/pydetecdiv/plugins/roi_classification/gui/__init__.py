@@ -10,7 +10,7 @@ from PySide6.QtSql import QSqlQuery, QSqlDatabase
 from PySide6.QtWidgets import QFileDialog, QDialogButtonBox
 
 from pydetecdiv.utils import singleton
-from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_plugins_dir
+from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir
 
 from pydetecdiv.plugins.gui import Dialog, DialogButtonBox, FormGroupBox, ComboBox, SpinBox, DoubleSpinBox, LineEdit, \
     TableView, set_connections, AdvancedButton, RadioButton
@@ -260,7 +260,7 @@ class ROIclassificationDialog(Dialog):
                    if os.path.isfile(os.path.join(model_path, f)) and f.endswith('.h5')]
 
         try:
-            user_path = os.path.join(get_plugins_dir(), 'roi_classification', 'models', self.network.currentText())
+            user_path = os.path.join(get_project_dir(), 'roi_classification', 'models', self.network.currentText())
             w_files.extend([os.path.join(user_path, f) for f in os.listdir(user_path)
                             if os.path.isfile(os.path.join(user_path, f)) and f.endswith('.h5')])
         except FileNotFoundError:
