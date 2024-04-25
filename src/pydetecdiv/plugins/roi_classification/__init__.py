@@ -422,7 +422,7 @@ class Plugin(plugins.Plugin):
         module = self.gui.network.currentData()
         print(module.__name__)
 
-        run = self.save_training_run(seqlen, epochs, batch_size, module)
+        run = self.save_training_run(module)
 
         model = module.model.create_model()
         print('Loading weights')
@@ -560,7 +560,7 @@ class Plugin(plugins.Plugin):
 
         self.gui.update_model_weights()
 
-    def save_training_run(self, seqlen, epochs, batch_size, module):
+    def save_training_run(self, module):
         """
         save the current training Run
         :param seqlen: the sequence length

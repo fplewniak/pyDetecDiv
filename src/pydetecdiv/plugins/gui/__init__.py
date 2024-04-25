@@ -10,22 +10,41 @@ from PySide6.QtWidgets import QDialog, QFrame, QVBoxLayout, QGroupBox, QFormLayo
     QPushButton, QApplication, QRadioButton
 
 class Parameters:
+    """
+    A class to handle plugin parameters from a Form gui
+    """
     def __init__(self):
         self.param_groups = {}
 
-    def set(self, param_dict):
-        self.param_groups = param_dict
-
     def add_groups(self, groups):
+        """
+        Add empty groups of parameters
+        :param groups: the list of groups
+        """
         for group in groups:
             self.add_group(group)
     def add_group(self, group, param_dict=None):
+        """
+        Add a new group of parameters (in a dictionary)
+        :param group: the group to create
+        :param param_dict: the dictionary of parameters
+        """
         self.param_groups[group] = param_dict if param_dict is not None else {}
 
     def add(self, group, param_dict):
+        """
+        Add parameters (in a dictionary) to an existing group of parameters
+        :param group: the group of parameters to expand
+        :param param_dict: the parameters
+        """
         self.param_groups[group].update(param_dict)
 
     def get_values(self, group):
+        """
+        Get a dictionary containing all parameters key/values for a given group
+        :param group: the requested parameter group
+        :return: a dictionary of parameters
+        """
         return {name: widget.value() for name, widget in self.param_groups[group].items()}
 
 class StyleSheets:
@@ -61,6 +80,10 @@ class GroupBox(QGroupBox):
 
     @property
     def plugin(self):
+        """
+        Property returning the plugin from the top parent of the current widget
+        :return: the plugin module or None if it was not found
+        """
         parent = self.parent()
         while parent:
             if hasattr(parent, 'plugin'):
@@ -145,6 +168,10 @@ class ComboBox(QComboBox):
         return self.currentTextChanged
 
     def value(self):
+        """
+        method to standardize the way widget values from a form are returned
+        :return: the current data (if it can be json serialized) or the current text of the selected item
+        """
         if self.currentData() is not None:
             try:
                 _ = json.dumps(self.currentData())
@@ -162,6 +189,10 @@ class LineEdit(QLineEdit):
         super().__init__(parent)
 
     def value(self):
+        """
+        method to standardize the way widget values from a form are returned
+        :return: the text in LineEdit
+        """
         return self.text()
 
 
@@ -223,6 +254,10 @@ class RadioButton(QRadioButton):
         self.setAutoExclusive(exclusive)
 
     def value(self):
+        """
+        method to standardize the way widget values from a form are returned
+        :return: boolean, True if button is checked, False otherwise
+        """
         return self.isChecked()
 
 
@@ -270,6 +305,10 @@ class DoubleSpinBox(QDoubleSpinBox):
 
     @property
     def changed(self):
+        """
+        method returning whether the spinbox value has been changed
+        :return: boolean, True if the value was changed, False otherwise
+        """
         return self.valueChanged
 
 
