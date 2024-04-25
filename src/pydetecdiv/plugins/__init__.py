@@ -10,7 +10,7 @@ from PySide6.QtGui import QAction
 import pydetecdiv
 from pydetecdiv.settings import get_plugins_dir
 from pydetecdiv.domain.Run import Run
-from pydetecdiv.plugins.gui import Dialog
+from pydetecdiv.plugins.gui import Parameters, Dialog
 
 
 class Plugin:
@@ -25,7 +25,7 @@ class Plugin:
 
     def __init__(self):
         self.gui = None
-        self.new_gui = None
+        self.parameters = Parameters()
 
     def addActions(self, menu):
         """

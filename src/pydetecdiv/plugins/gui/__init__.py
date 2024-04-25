@@ -1,12 +1,32 @@
 """
 Module defining widgets and other utilities for creating windows/forms with a minimum of code
 """
+import json
+
 from PySide6.QtGui import QIcon
 from PySide6.QtSql import QSqlQueryModel
 from PySide6.QtWidgets import QDialog, QFrame, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox, \
     QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView, QAbstractItemView, \
     QPushButton, QApplication, QRadioButton
 
+class Parameters:
+    def __init__(self):
+        self.param_groups = {}
+
+    def set(self, param_dict):
+        self.param_groups = param_dict
+
+    def add_groups(self, groups):
+        for group in groups:
+            self.add_group(group)
+    def add_group(self, group, param_dict=None):
+        self.param_groups[group] = param_dict if param_dict is not None else {}
+
+    def add(self, group, param_dict):
+        self.param_groups[group].update(param_dict)
+
+    def get_values(self, group):
+        return {name: widget.value() for name, widget in self.param_groups[group].items()}
 
 class StyleSheets:
     """
@@ -39,6 +59,14 @@ class GroupBox(QGroupBox):
             self.setTitle(title)
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
 
+    @property
+    def plugin(self):
+        parent = self.parent()
+        while parent:
+            if hasattr(parent, 'plugin'):
+                return parent.plugin
+        return None
+
 
 class FormGroupBox(GroupBox):
     """
@@ -49,7 +77,7 @@ class FormGroupBox(GroupBox):
         self.layout = QFormLayout(self)
         self.setVisible(show)
 
-    def addOption(self, label=None, widget=None, **kwargs):
+    def addOption(self, label=None, widget=None, parameter=None, **kwargs):
         """
         add an option to the current Form
         :param label: the label for the option
@@ -58,6 +86,13 @@ class FormGroupBox(GroupBox):
         :return: the option widget
         """
         option = widget(self, **kwargs)
+        if parameter is not None:
+            groups, param = parameter
+            if not isinstance(groups, list):
+                groups = [groups]
+            for group in groups:
+                self.plugin.parameters.add(group, {param: option})
+
         if label is None:
             self.layout.addRow(option)
         else:
@@ -109,6 +144,15 @@ class ComboBox(QComboBox):
         """
         return self.currentTextChanged
 
+    def value(self):
+        if self.currentData() is not None:
+            try:
+                _ = json.dumps(self.currentData())
+                return self.currentData()
+            except TypeError:
+                pass
+        return self.currentText()
+
 
 class LineEdit(QLineEdit):
     """
@@ -116,6 +160,9 @@ class LineEdit(QLineEdit):
     """
     def __init__(self, parent):
         super().__init__(parent)
+
+    def value(self):
+        return self.text()
 
 
 class PushButton(QPushButton):
@@ -174,6 +221,9 @@ class RadioButton(QRadioButton):
     def __init__(self, parent, exclusive=True):
         super().__init__(None, parent)
         self.setAutoExclusive(exclusive)
+
+    def value(self):
+        return self.isChecked()
 
 
 class SpinBox(QSpinBox):
