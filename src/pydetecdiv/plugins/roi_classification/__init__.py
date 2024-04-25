@@ -291,14 +291,17 @@ class Plugin(plugins.Plugin):
 
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
             print('Saving run')
-            run = self.save_run(project, 'predict', {'fov': fov_names,
-                                                     'network': self.gui.network.currentData().__name__,
-                                                     'weights': self.gui.weights.currentData(),
-                                                     'class_names': self.class_names,
-                                                     'red': self.gui.red_channel.currentIndex(),
-                                                     'green': self.gui.green_channel.currentIndex(),
-                                                     'blue': self.gui.blue_channel.currentIndex()
-                                                     })
+            parameters = {'fov': fov_names}
+            parameters.update(self.parameters.get_values('classify'))
+            run = self.save_run(project, 'predict', parameters)
+            # run = self.save_run(project, 'predict', {'fov': fov_names,
+            #                                          'network': self.gui.network.currentData().__name__,
+            #                                          'weights': self.gui.weights.currentData(),
+            #                                          'class_names': self.class_names,
+            #                                          'red': self.gui.red_channel.currentIndex(),
+            #                                          'green': self.gui.green_channel.currentIndex(),
+            #                                          'blue': self.gui.blue_channel.currentIndex()
+            #                                          })
             # roi_list = np.ndarray.flatten(np.array([roi for roi in [fov.roi_list for fov in
             #                                                         [project.get_named_object('FOV', fov_name) for
             #                                                          fov_name in
@@ -489,7 +492,7 @@ class Plugin(plugins.Plugin):
 
         self.save_training_datasets(run, roi_list, num_training, num_validation)
 
-        checkpoint_monitor_metric = self.gui.checkpoint_monitor.currentData()
+        checkpoint_monitor_metric = self.gui.checkpoint_metric.currentData()
         best_checkpoint_filename = f'weights_{run.id_}_best_{checkpoint_monitor_metric}.h5'
         checkpoint_filepath = os.path.join(get_project_dir(), 'roi_classification', 'models',
                                            self.gui.network.currentText(),
@@ -566,15 +569,10 @@ class Plugin(plugins.Plugin):
         :param module: the module name (i.e. the network that was trained)
         :return: the current Run instance
         """
+        parameters = {'model': module.__name__}
+        parameters.update(self.parameters.get_values('training'))
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            return self.save_run(project, 'train_model', {'model': module.__name__,
-                                                          'class_names': self.class_names,
-                                                          'seqlen': seqlen,
-                                                          'num_training': self.gui.training_data.value(),
-                                                          'num_validation': self.gui.validation_data.value(),
-                                                          'batch_size': batch_size,
-                                                          'epochs': epochs,
-                                                          })
+            return self.save_run(project, 'train_model', parameters)
 
     def save_training_datasets(self, run, roi_list, num_training, num_validation):
         """

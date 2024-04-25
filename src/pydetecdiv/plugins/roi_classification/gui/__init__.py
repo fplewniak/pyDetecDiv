@@ -20,10 +20,11 @@ from pydetecdiv.plugins.roi_classification.gui.ImportAnnotatedROIs import FOV2RO
 @singleton
 class ROIclassificationDialog(Dialog):
     """
-    Dialog window to handle the options Form for ROI classiification plugin
+    Dialog window to handle the options Form for ROI classification plugin
     """
     def __init__(self, plugin, title=None):
         super().__init__(plugin, title=title)
+        self.plugin.parameters.add_groups(['training', 'classify', 'annotate', 'create'])
 
         self.controller = self.addGroupBox('Choose action')
         self.action_menu = self.controller.addOption('Action:', ComboBox,
@@ -34,66 +35,87 @@ class ROIclassificationDialog(Dialog):
                                                      selected='Classify ROIs')
 
         self.classifier_selection = self.addGroupBox('Select classifier')
-        self.network = self.classifier_selection.addOption('Network:', ComboBox)
-        self.weights = self.classifier_selection.addOption('Weights:', ComboBox)
-        self.classes = self.classifier_selection.addOption('Classes:', LineEdit)
+        self.network = self.classifier_selection.addOption('Network:', ComboBox,
+                                                           parameter=(['training', 'classify'], 'model'))
+        self.weights = self.classifier_selection.addOption('Weights:', ComboBox,
+                                                           parameter=(['training', 'classify'], 'weights'))
+        self.classes = self.classifier_selection.addOption('Classes:', LineEdit, parameter=(
+        ['training', 'classify', 'annotate'], 'class_names'))
         self.training_advanced = self.classifier_selection.addOption(None, AdvancedButton)
         self.training_advanced.linkGroupBox(self.classifier_selection.addOption(None, FormGroupBox, show=False))
-        self.weight_seed = self.training_advanced.group_box.addOption('Random seed:', SpinBox, value=42)
+        self.weight_seed = self.training_advanced.group_box.addOption('Random seed:', SpinBox, value=42,
+                                                                      parameter=(['training'], 'seed'))
         self.optimizer = self.training_advanced.group_box.addOption('Optimizer:', ComboBox,
                                                                     items={'SGD': keras.optimizers.SGD,
                                                                            'Adam': keras.optimizers.Adam,
                                                                            'Adadelta': keras.optimizers.Adadelta,
                                                                            'Adamax': keras.optimizers.Adamax,
                                                                            'Nadam': keras.optimizers.Nadam, },
-                                                                    selected='SGD')
+                                                                    selected='SGD',
+                                                                    parameter=(['training'], 'optimizer'))
 
         self.learning_rate = self.training_advanced.group_box.addOption('Learning rate:', DoubleSpinBox,
-                                                                        range=(0.00001, 1.0), decimals=4, value=0.001)
-        self.decay_rate = self.training_advanced.group_box.addOption('Decay rate:', DoubleSpinBox, value=0.95)
-        self.decay_freq = self.training_advanced.group_box.addOption('Decay frequency:', SpinBox, value=2)
-        self.momentum = self.training_advanced.group_box.addOption('Momentum:', DoubleSpinBox, value=0.9)
-        self.checkpoint_monitor = self.training_advanced.group_box.addOption('Checkpoint metric:', ComboBox,
-                                                                             items={'Loss': 'val_loss',
+                                                                        range=(0.00001, 1.0), decimals=4, value=0.001,
+                                                                        parameter=(['training'], 'learning_rate'))
+        self.decay_rate = self.training_advanced.group_box.addOption('Decay rate:', DoubleSpinBox, value=0.95,
+                                                                     parameter=(['training'], 'decay_rate'))
+        self.decay_freq = self.training_advanced.group_box.addOption('Decay period:', SpinBox, value=2,
+                                                                     parameter=(['training'], 'decay_period'))
+        self.momentum = self.training_advanced.group_box.addOption('Momentum:', DoubleSpinBox, value=0.9,
+                                                                   parameter=(['training'], 'momentum'))
+        self.checkpoint_metric = self.training_advanced.group_box.addOption('Checkpoint metric:', ComboBox,
+                                                                            items={'Loss': 'val_loss',
                                                                                     'Accuracy': 'val_accuracy', },
-                                                                             selected='Loss')
+                                                                            selected='Loss',
+                                                                            parameter=(['training'],
+                                                                                       'checkpoint_metric'))
 
-        self.early_stopping = self.training_advanced.group_box.addOption('Early stopping:', RadioButton)
+        self.early_stopping = self.training_advanced.group_box.addOption('Early stopping:', RadioButton,
+                                                                         parameter=(['training'], 'early_stopping'))
 
         self.roi_selection = self.addGroupBox('Select ROIs')
         self.table = self.roi_selection.addOption(None, TableView, multiselection=True, behavior='rows')
         self.selection_model = self.table.selectionModel()
 
         self.roi_sample = self.addGroupBox('Sample ROIs')
-        self.roi_number = self.roi_sample.addOption('ROI sample size:', SpinBox, adaptive=True)
+        self.roi_number = self.roi_sample.addOption('ROI sample size:', SpinBox, adaptive=True,
+                                                    parameter=(['annotate'], 'roi_number'))
 
         self.roi_import = self.addGroupBox('Import annotated ROIs')
         self.roi_import_box = self.roi_import.addOption('Select annotation file:', DialogButtonBox,
                                                         buttons=QDialogButtonBox.Open)
 
         self.datasets = self.addGroupBox('ROI datasets')
-        self.training_data = self.datasets.addOption('Training dataset:', DoubleSpinBox, value=0.6)
-        self.validation_data = self.datasets.addOption('Validation dataset:', DoubleSpinBox, value=0.2)
+        self.training_data = self.datasets.addOption('Training dataset:', DoubleSpinBox, value=0.6,
+                                                     parameter=(['training'], 'num_training'))
+        self.validation_data = self.datasets.addOption('Validation dataset:', DoubleSpinBox, value=0.2,
+                                                       parameter=(['training'], 'num_validation'))
         self.test_data = self.datasets.addOption('Test dataset:', DoubleSpinBox, value=0.2, enabled=False)
         self.datasets_advanced = self.datasets.addOption(None, AdvancedButton)
         self.datasets_advanced.linkGroupBox(self.datasets.addOption(None, FormGroupBox, show=False))
-        self.datasets_seed = self.datasets_advanced.group_box.addOption('Random seed:', SpinBox, value=42)
+        self.datasets_seed = self.datasets_advanced.group_box.addOption('Random seed:', SpinBox, value=42,
+                                                                        parameter=(['training'], 'dataset_seed'))
 
         self.preprocessing = self.addGroupBox('Preprocessing')
         self.channels = self.preprocessing.addOption(None, FormGroupBox, title='z to channel')
         # self.channels.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
 
-        self.red_channel = self.channels.addOption('Red', ComboBox)
-        self.green_channel = self.channels.addOption('Green', ComboBox)
-        self.blue_channel = self.channels.addOption('Blue', ComboBox)
+        self.red_channel = self.channels.addOption('Red', ComboBox, parameter=(['training', 'classify'], 'red_channel'))
+        self.green_channel = self.channels.addOption('Green', ComboBox,
+                                                     parameter=(['training', 'classify'], 'green_channel'))
+        self.blue_channel = self.channels.addOption('Blue', ComboBox,
+                                                    parameter=(['training', 'classify'], 'blue_channel'))
 
         self.misc_box = self.addGroupBox('Miscellaneous')
 
-        self.epochs = self.misc_box.addOption('Epochs:', SpinBox, value=16, adaptive=True)
+        self.epochs = self.misc_box.addOption('Epochs:', SpinBox, value=16, adaptive=True,
+                                              parameter=(['training'], 'epochs'))
 
-        self.batch_size = self.misc_box.addOption('Batch size:', SpinBox, range=(2, 4096), value=128, adaptive=True)
+        self.batch_size = self.misc_box.addOption('Batch size:', SpinBox, range=(2, 4096), value=128, adaptive=True,
+                                                  parameter=(['training', 'classify'], 'batch_size'))
 
-        self.seq_length = self.misc_box.addOption('Sequence length:', SpinBox, value=50, adaptive=True)
+        self.seq_length = self.misc_box.addOption('Sequence length:', SpinBox, value=50, adaptive=True,
+                                                  parameter=(['training', 'classify'], 'seqlen'))
 
         self.button_box = self.addButtonBox()
 

@@ -150,12 +150,15 @@ class Annotator(ImageViewer):
         """
         Save the current ROI annotation process in the database
         """
+        parameters = {'annotator': get_config_value('project', 'user'),}
+        parameters.update(self.plugin.parameters.get_values('annotate'))
         with pydetecdiv_project(PyDetecDiv().project_name) as project:
-            self.run = self.plugin.save_run(project, 'annotate_rois',
-                                            {'class_names': self.plugin.class_names,
-                                             'annotator': get_config_value('project', 'user'),
-                                             'roi_num': self.plugin.gui.roi_number.value(),
-                                             })
+            self.run = self.plugin.save_run(project, 'annotate_rois', parameters)
+            # self.run = self.plugin.save_run(project, 'annotate_rois',
+            #                                 {'class_names': self.plugin.class_names,
+            #                                  'annotator': get_config_value('project', 'user'),
+            #                                  'roi_num': self.plugin.gui.roi_number.value(),
+            #                                  })
 
 
 class AnnotatorScene(QGraphicsScene):
