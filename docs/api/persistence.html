@@ -1,21 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Persistence layer &mdash; pyDetecDiv 0.2.0 documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <title>Persistence layer &mdash; pyDetecDiv 0.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/doctools.js"></script>
-        <script src="../_static/sphinx_highlight.js"></script>
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=e259d695"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -35,7 +37,7 @@
             pyDetecDiv
           </a>
               <div class="version">
-                0.2.0
+                0.3.0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -58,6 +60,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#module-pydetecdiv.persistence.project">pydetecdiv.persistence.project</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.persistence.project.open_project"><code class="docutils literal notranslate"><span class="pre">open_project()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.persistence.project.list_projects"><code class="docutils literal notranslate"><span class="pre">list_projects()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.persistence.project.delete_project"><code class="docutils literal notranslate"><span class="pre">delete_project()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#module-pydetecdiv.persistence.repository">pydetecdiv.persistence.repository</a><ul>
@@ -84,6 +87,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="gui.html">Graphical user interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins.html">Plugins</a></li>
 </ul>
 </li>
 </ul>
@@ -114,13 +118,13 @@
            <div itemprop="articleBody">
              
   <section id="persistence-layer">
-<h1>Persistence layer<a class="headerlink" href="#persistence-layer" title="Permalink to this heading"></a></h1>
+<h1>Persistence layer<a class="headerlink" href="#persistence-layer" title="Link to this heading"></a></h1>
 <section id="module-pydetecdiv.persistence.project">
-<span id="pydetecdiv-persistence-project"></span><h2>pydetecdiv.persistence.project<a class="headerlink" href="#module-pydetecdiv.persistence.project" title="Permalink to this heading"></a></h2>
+<span id="pydetecdiv-persistence-project"></span><h2>pydetecdiv.persistence.project<a class="headerlink" href="#module-pydetecdiv.persistence.project" title="Link to this heading"></a></h2>
 <p>Project persistence management for persistence layer</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.project.open_project">
-<span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.project.</span></span><span class="sig-name descname"><span class="pre">open_project</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dbname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pydetecdiv.persistence.repository.ShallowDb" title="pydetecdiv.persistence.repository.ShallowDb"><span class="pre">ShallowDb</span></a></span></span><a class="headerlink" href="#pydetecdiv.persistence.project.open_project" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.project.</span></span><span class="sig-name descname"><span class="pre">open_project</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dbname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pydetecdiv.persistence.repository.ShallowDb" title="pydetecdiv.persistence.repository.ShallowDb"><span class="pre">ShallowDb</span></a></span></span><a class="headerlink" href="#pydetecdiv.persistence.project.open_project" title="Link to this definition"></a></dt>
 <dd><p>A function to open a shallow persistence from its name. The default type of persistence is defined in the [project]
 sections of the configuration file settings.ini</p>
 <dl class="field-list simple">
@@ -138,7 +142,7 @@ sections of the configuration file settings.ini</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.project.list_projects">
-<span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.project.</span></span><span class="sig-name descname"><span class="pre">list_projects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dbms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.project.list_projects" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.project.</span></span><span class="sig-name descname"><span class="pre">list_projects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dbms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.project.list_projects" title="Link to this definition"></a></dt>
 <dd><p>Return a list of projects corresponding to a given database manager system</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -153,67 +157,81 @@ sections of the configuration file settings.ini</p>
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="pydetecdiv.persistence.project.delete_project">
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.project.</span></span><span class="sig-name descname"><span class="pre">delete_project</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dbname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.project.delete_project" title="Link to this definition"></a></dt>
+<dd><p>Deletes the project from its name</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dbms</strong> (<em>str</em>) – the dbms</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 <section id="module-pydetecdiv.persistence.repository">
-<span id="pydetecdiv-persistence-repository"></span><h2>pydetecdiv.persistence.repository<a class="headerlink" href="#module-pydetecdiv.persistence.repository" title="Permalink to this heading"></a></h2>
+<span id="pydetecdiv-persistence-repository"></span><h2>pydetecdiv.persistence.repository<a class="headerlink" href="#module-pydetecdiv.persistence.repository" title="Link to this heading"></a></h2>
 <p>Definition of the Repository interface accessible from the Business-logic layer and that must be implemented by
 concrete repositories.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.repository.ShallowDb">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.repository.</span></span><span class="sig-name descname"><span class="pre">ShallowDb</span></span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.repository.</span></span><span class="sig-name descname"><span class="pre">ShallowDb</span></span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
 <p>Abstract class used as an interface to encapsulate project persistence access</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.repository.ShallowDb.create">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.create" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.create" title="Link to this definition"></a></dt>
 <dd><p>Abstract method enforcing the implementation in all shallow persistence connectors of a create() method for
 creating the database if it does not exist</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.repository.ShallowDb.commit">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">commit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.commit" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">commit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.commit" title="Link to this definition"></a></dt>
 <dd><p>Abstract method enforcing the implementation of a method to save creations and updates of objects in repository
 on disk</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.repository.ShallowDb.rollback">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rollback</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.rollback" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rollback</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.rollback" title="Link to this definition"></a></dt>
 <dd><p>Abstract method enforcing the implementation of a method cancelling operations that have not been committed</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.repository.ShallowDb.close">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.close" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.close" title="Link to this definition"></a></dt>
 <dd><p>Abstract method enforcing the implementation of a close() method in all shallow persistence connectors</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.repository.ShallowDb.import_images">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">import_images</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">author</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'now'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_place</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'imagetiff'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.import_images" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">import_images</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">author</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'now'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_place</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'imagetiff'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.import_images" title="Link to this definition"></a></dt>
 <dd><p>Import images specified in a list of files into a destination</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>image_files</strong> – list of image files to import</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image_files</strong> (<em>list</em><em> of </em><em>str</em>) – list of image files to import</p></li>
+<li><p><strong>data_dir_path</strong> (<em>path</em><em> or </em><em>str</em>) – path for the current project raw data directory</p></li>
+<li><p><strong>destination</strong> (<em>str</em>) – destination directory to import files into</p></li>
+<li><p><strong>author</strong> (<em>str</em>) – the user importing the data</p></li>
+<li><p><strong>date</strong> (<em>str</em>) – the date of import</p></li>
+<li><p><strong>in_place</strong> (<em>bool</em>) – boolean indicating whether image files should be copied (False) or kept in place (True)</p></li>
+<li><p><strong>img_format</strong> (<em>str</em>) – the file format</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the list of imported files. This list can be used to roll the copy back if needed</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of str</p>
 </dd>
 </dl>
-<p>:type image_files:list of str
-:param destination: destination directory to import files into
-:type destination: str
-:param author: the user importing the data
-:type author: str
-:param date: the date of import
-:type date: str
-:param format: the file format
-:type format: str
-:return: the list of imported files. This list can be used to roll the copy back if needed
-:rtype: list of str</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.repository.ShallowDb.save_object">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">save_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">record</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.save_object" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">save_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">record</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.save_object" title="Link to this definition"></a></dt>
 <dd><p>Abstract method enforcing the implementation of a save_object() method in all shallow persistence connectors</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -227,7 +245,7 @@ on disk</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.repository.ShallowDb.delete_object">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">delete_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.delete_object" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">delete_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.delete_object" title="Link to this definition"></a></dt>
 <dd><p>Abstract method enforcing the implementation of a delete_object() method in all shallow persistence connectors</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -240,8 +258,25 @@ on disk</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.persistence.repository.ShallowDb.count_records">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">count_records</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.count_records" title="Link to this definition"></a></dt>
+<dd><p>Get the number of objects of a given class in the current project</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>class_name</strong> (<em>str</em>) – the class name of the objects whose count will be returned</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the number of objects</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.repository.ShallowDb.get_dataframe">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.get_dataframe" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.get_dataframe" title="Link to this definition"></a></dt>
 <dd><p>Abstract method enforcing the implementation of a method returning a pandas DataFrame containing the list of
 objects of a given class in the current project whose id is in id_list</p>
 <dl class="field-list simple">
@@ -262,7 +297,7 @@ objects of a given class in the current project whose id is in id_list</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.repository.ShallowDb.get_record">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.get_record" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.get_record" title="Link to this definition"></a></dt>
 <dd><p>Abstract method enforcing the implementation of a method returning an object record of a given
 class whose id is <a href="#id1"><span class="problematic" id="id2">id_</span></a></p>
 <dl class="field-list simple">
@@ -283,7 +318,7 @@ class whose id is <a href="#id1"><span class="problematic" id="id2">id_</span></
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.repository.ShallowDb.get_records">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_records</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.get_records" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_records</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.get_records" title="Link to this definition"></a></dt>
 <dd><p>Abstract method enforcing the implementation of a method returning the list of all object records of a given
 class specified by its name or a list of objects whose id is in id_list</p>
 <dl class="field-list simple">
@@ -304,7 +339,7 @@ class specified by its name or a list of objects whose id is in id_list</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.repository.ShallowDb.get_linked_records">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_linked_records</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_cls_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.get_linked_records" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_linked_records</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_cls_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.get_linked_records" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
 <dt>Abstract method enforcing the implementation of a method returning the list of records for all objects of class</dt><dd><p>defined by class_name that are linked to object of class parent_class_name with <a href="#id3"><span class="problematic" id="id4">id_</span></a> = parent_id</p>
 </dd>
@@ -328,7 +363,7 @@ class specified by its name or a list of objects whose id is in id_list</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.repository.ShallowDb.link">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class1_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class2_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.link" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class1_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class2_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.link" title="Link to this definition"></a></dt>
 <dd><p>Create a link between two domain-specific objects. There must be a direct link defined in Linker class,
 otherwise, the link cannot be created.</p>
 <dl class="field-list simple">
@@ -345,7 +380,7 @@ otherwise, the link cannot be created.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.repository.ShallowDb.unlink">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">unlink</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class1_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class2_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.unlink" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">unlink</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class1_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class2_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.repository.ShallowDb.unlink" title="Link to this definition"></a></dt>
 <dd><p>Remove the link between two domain-specific objects. There must be a direct link defined in Linker class,
 otherwise, the link cannot be removed.</p>
 <dl class="field-list simple">
@@ -364,16 +399,16 @@ otherwise, the link cannot be removed.</p>
 
 </section>
 <section id="module-pydetecdiv.persistence.sqlalchemy.repositories">
-<span id="pydetecdiv-persistence-sqlalchemy"></span><h2>pydetecdiv.persistence.sqlalchemy<a class="headerlink" href="#module-pydetecdiv.persistence.sqlalchemy.repositories" title="Permalink to this heading"></a></h2>
+<span id="pydetecdiv-persistence-sqlalchemy"></span><h2>pydetecdiv.persistence.sqlalchemy<a class="headerlink" href="#module-pydetecdiv.persistence.sqlalchemy.repositories" title="Link to this heading"></a></h2>
 <p>Concrete Repositories using a SQL database with the sqlalchemy toolkit</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.repositories.</span></span><span class="sig-name descname"><span class="pre">ShallowSQLite3</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dbname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.repositories.</span></span><span class="sig-name descname"><span class="pre">ShallowSQLite3</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dbname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pydetecdiv.persistence.repository.ShallowDb" title="pydetecdiv.persistence.repository.ShallowDb"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShallowDb</span></code></a></p>
 <p>A concrete shallow SQLite3 persistence inheriting ShallowDb and implementing SQLite3-specific engine</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.session">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">session</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.session" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">session</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.session" title="Link to this definition"></a></dt>
 <dd><p>Property returning the sqlalchemy Session object attached to the repository</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -384,19 +419,19 @@ otherwise, the link cannot be removed.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.commit">
-<span class="sig-name descname"><span class="pre">commit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.commit" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">commit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.commit" title="Link to this definition"></a></dt>
 <dd><p>Commit the current transaction</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.rollback">
-<span class="sig-name descname"><span class="pre">rollback</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.rollback" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">rollback</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.rollback" title="Link to this definition"></a></dt>
 <dd><p>Rollback the current transaction</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.executescript">
-<span class="sig-name descname"><span class="pre">executescript</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">script</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.executescript" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">executescript</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">script</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.executescript" title="Link to this definition"></a></dt>
 <dd><p>Reads a string containing several SQL statements in a free format</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -407,58 +442,67 @@ otherwise, the link cannot be removed.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.create">
-<span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.create" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.create" title="Link to this definition"></a></dt>
 <dd><p>Gets SqlAlchemy classes defining the project database schema and creates the database if it does not exist.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.close">
-<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.close" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.close" title="Link to this definition"></a></dt>
 <dd><p>Close the current connexion</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.import_images">
-<span class="sig-name descname"><span class="pre">import_images</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">author</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'now'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_place</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'imagetiff'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.import_images" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">import_images</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">author</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'now'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_place</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'imagetiff'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.import_images" title="Link to this definition"></a></dt>
 <dd><p>Import images specified in a list of files into a destination</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>image_files</strong> – list of image files to import</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image_files</strong> (<em>list</em><em> of </em><em>str</em>) – list of image files to import</p></li>
+<li><p><strong>data_dir_path</strong> (<em>path</em><em> or </em><em>str</em>) – path for the current project raw data directory</p></li>
+<li><p><strong>destination</strong> (<em>str</em>) – destination directory to import files into</p></li>
+<li><p><strong>author</strong> (<em>str</em>) – the user importing the data</p></li>
+<li><p><strong>date</strong> (<em>str</em>) – the date of import</p></li>
+<li><p><strong>in_place</strong> (<em>bool</em>) – boolean indicating whether image files should be copied (False) or kept in place (True)</p></li>
+<li><p><strong>img_format</strong> (<em>str</em>) – the file format</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the list of imported files. This list can be used to roll the copy back if needed</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of str</p>
 </dd>
 </dl>
-<p>:type image_files:list of str
-:param destination: destination directory to import files into
-:type destination: str
-:param author: the user importing the data
-:type author: str
-:param date: the date of import
-:type date: str
-:param format: the file format
-:type format: str
-:return: the list of imported files. This list can be used to roll the copy back if needed
-:rtype: list of str</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.annotate_data">
-<span class="sig-name descname"><span class="pre">annotate_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.annotate_data" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">annotate_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.annotate_data" title="Link to this definition"></a></dt>
 <dd><p>Method to annotate data files in a dataset according to a regular expression applied to a source. The resulting
-key-value pairs are placed in a key_val column.
-:param dataset: the dataset whose data should be annotated
-:type dataset: Dataset object
-:param source: the database field or combination of fields to apply the regular expression to
-:type source: str or callable returning a str
-:param <a href="#id5"><span class="problematic" id="id6">keys_</span></a>: the list of classes created objects belong to
-:type <a href="#id7"><span class="problematic" id="id8">keys_</span></a>: tuple of str
-:param regex: regular expression defining the annotations
-:type regex: regular expression str
-:return: list of annotated Data records in a dataframe
-:rtype: pandas.DataFrame</p>
+key-value pairs are placed in a key_val column.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> (<em>Dataset object</em>) – the dataset whose data should be annotated</p></li>
+<li><p><strong>source</strong> (<em>str</em><em> or </em><em>callable returning a str</em>) – the database field or combination of fields to apply the regular expression to</p></li>
+<li><p><strong>keys</strong> (<em>tuple</em><em> of </em><em>str</em>) – the list of classes created objects belong to</p></li>
+<li><p><strong>regex</strong> (<em>regular expression str</em>) – regular expression defining the annotations</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of annotated Data records in a dataframe</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.save_object">
-<span class="sig-name descname"><span class="pre">save_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">record</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.save_object" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">save_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">record</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.save_object" title="Link to this definition"></a></dt>
 <dd><p>Save the object represented by the record</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -478,8 +522,8 @@ key-value pairs are placed in a key_val column.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.delete_object">
-<span class="sig-name descname"><span class="pre">delete_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.delete_object" title="Permalink to this definition"></a></dt>
-<dd><p>Delete an object of class name = class_name with id = <a href="#id9"><span class="problematic" id="id10">id_</span></a></p>
+<span class="sig-name descname"><span class="pre">delete_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.delete_object" title="Link to this definition"></a></dt>
+<dd><p>Delete an object of class name = class_name with id = <a href="#id5"><span class="problematic" id="id6">id_</span></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -491,8 +535,25 @@ key-value pairs are placed in a key_val column.
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.count_records">
+<span class="sig-name descname"><span class="pre">count_records</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.count_records" title="Link to this definition"></a></dt>
+<dd><p>Get the number of objects of a given class in the current project</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>class_name</strong> (<em>str</em>) – the class name of the objects whose count will be returned</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the number of objects</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.get_dataframe">
-<span class="sig-name descname"><span class="pre">get_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.get_dataframe" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.get_dataframe" title="Link to this definition"></a></dt>
 <dd><p>Get a DataFrame containing the list of all domain objects of a given class in the current project</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -512,7 +573,7 @@ key-value pairs are placed in a key_val column.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.get_record">
-<span class="sig-name descname"><span class="pre">get_record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uuid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.get_record" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uuid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.get_record" title="Link to this definition"></a></dt>
 <dd><p>A method returning an object record of a given class from its id</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -532,7 +593,7 @@ key-value pairs are placed in a key_val column.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.get_record_by_name">
-<span class="sig-name descname"><span class="pre">get_record_by_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.get_record_by_name" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_record_by_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.get_record_by_name" title="Link to this definition"></a></dt>
 <dd><p>Return a record from its name</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -552,7 +613,7 @@ key-value pairs are placed in a key_val column.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.get_records">
-<span class="sig-name descname"><span class="pre">get_records</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.get_records" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_records</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.get_records" title="Link to this definition"></a></dt>
 <dd><p>A method returning the list of all object records of a given class or select those whose id is in id_list</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -572,9 +633,9 @@ key-value pairs are placed in a key_val column.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.get_linked_records">
-<span class="sig-name descname"><span class="pre">get_linked_records</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_cls_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.get_linked_records" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_linked_records</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_cls_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.get_linked_records" title="Link to this definition"></a></dt>
 <dd><p>A method returning the list of records for all objects of class defined by cls_name that are linked to object
-of class parent_cls_name with <a href="#id11"><span class="problematic" id="id12">id_</span></a> = parent_id</p>
+of class parent_cls_name with <a href="#id7"><span class="problematic" id="id8">id_</span></a> = parent_id</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -594,7 +655,7 @@ of class parent_cls_name with <a href="#id11"><span class="problematic" id="id12
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.link">
-<span class="sig-name descname"><span class="pre">link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class1_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class2_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.link" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class1_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class2_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.link" title="Link to this definition"></a></dt>
 <dd><p>Create a link between two domain-specific objects. There must be a direct link defined in Linker class,
 otherwise, the link cannot be created.</p>
 <dl class="field-list simple">
@@ -611,7 +672,7 @@ otherwise, the link cannot be created.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.unlink">
-<span class="sig-name descname"><span class="pre">unlink</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class1_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class2_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.unlink" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">unlink</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class1_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class2_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.repositories.ShallowSQLite3.unlink" title="Link to this definition"></a></dt>
 <dd><p>Remove the link between two domain-specific objects. There must be a direct link defined in Linker class,
 otherwise, the link cannot be removed.</p>
 <dl class="field-list simple">
@@ -630,19 +691,19 @@ otherwise, the link cannot be removed.</p>
 
 </section>
 <section id="module-pydetecdiv.persistence.sqlalchemy.orm.main">
-<span id="pydetecdiv-persistence-sqlalchemy-orm"></span><h2>pydetecdiv.persistence.sqlalchemy.orm<a class="headerlink" href="#module-pydetecdiv.persistence.sqlalchemy.orm.main" title="Permalink to this heading"></a></h2>
+<span id="pydetecdiv-persistence-sqlalchemy-orm"></span><h2>pydetecdiv.persistence.sqlalchemy.orm<a class="headerlink" href="#module-pydetecdiv.persistence.sqlalchemy.orm.main" title="Link to this heading"></a></h2>
 <p>Creation of global mapper_registry and Base class for database access.
 Main DAO class for accessing data in SQL Tables. Subclasses are responsible for providing the domain layer with lists
 of compatible records for the creation of domain-specific objects.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.main.DAO">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.main.</span></span><span class="sig-name descname"><span class="pre">DAO</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.main.</span></span><span class="sig-name descname"><span class="pre">DAO</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Data Access Object class defining methods common to all DAOs. This class is not meant to be used directly.
 Actual DAOs should inherit of this class first in order to inherit the __init__ method.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.main.DAO.insert">
-<span class="sig-name descname"><span class="pre">insert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rec</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO.insert" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">insert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rec</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO.insert" title="Link to this definition"></a></dt>
 <dd><p>Inserts data in SQL database for a newly created object</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -659,7 +720,7 @@ Actual DAOs should inherit of this class first in order to inherit the __init__ 
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.main.DAO.update">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rec</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO.update" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rec</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO.update" title="Link to this definition"></a></dt>
 <dd><p>Updates data in SQL database for the object corresponding to the record, which should contain the id of the
 modified object</p>
 <dl class="field-list simple">
@@ -677,10 +738,10 @@ modified object</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.main.DAO.get_records">
-<span class="sig-name descname"><span class="pre">get_records</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">where_clause</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO.get_records" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_records</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">where_clause</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO.get_records" title="Link to this definition"></a></dt>
 <dd><p>A method to get from the SQL database, all records verifying the specified where clause
 Example of use:
-roi_records = roidao.get_records((ROIdao.fov == <a href="#id13"><span class="problematic" id="id14">FOVdao.id_</span></a>) &amp; (FOVdao.name == ‘fov1’)) retrieves all ROI records
+roi_records = roidao.get_records((ROIdao.fov == <a href="#id9"><span class="problematic" id="id10">FOVdao.id_</span></a>) &amp; (FOVdao.name == ‘fov1’)) retrieves all ROI records
 associated with FOV whose name is ‘fov1’</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -697,7 +758,7 @@ associated with FOV whose name is ‘fov1’</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.main.DAO.translate_record">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">translate_record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">translate</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO.translate_record" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">translate_record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">translate</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO.translate_record" title="Link to this definition"></a></dt>
 <dd><p>The actual translation engine reading the record fields and translating or excluding them if they occur in the
 translate or exclude variables</p>
 <dl class="field-list simple">
@@ -719,7 +780,7 @@ translate or exclude variables</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.main.DAO.record">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO.record" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO.record" title="Link to this definition"></a></dt>
 <dd><p>Template for method converting a DAO row dictionary into a DSO record</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -733,22 +794,22 @@ translate or exclude variables</p>
 
 </dd></dl>
 
-<span class="target" id="module-pydetecdiv.persistence.sqlalchemy.orm.FOVdao"></span><p>Access to FOV data</p>
+<p id="module-pydetecdiv.persistence.sqlalchemy.orm.FOVdao">Access to FOV data</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.FOVdao.</span></span><span class="sig-name descname"><span class="pre">FOVdao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.FOVdao.</span></span><span class="sig-name descname"><span class="pre">FOVdao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO" title="pydetecdiv.persistence.sqlalchemy.orm.main.DAO"><code class="xref py py-class docutils literal notranslate"><span class="pre">DAO</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></p>
 <p>DAO class for access to FOV records from the SQL database</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao.image_resources">
-<span class="sig-name descname"><span class="pre">image_resources</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fov_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao.image_resources" title="Permalink to this definition"></a></dt>
-<dd><p>A method returning the list of Data records whose parent Dataset has <a href="#id15"><span class="problematic" id="id16">id_</span></a> == dataset_id</p>
+<span class="sig-name descname"><span class="pre">image_resources</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fov_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao.image_resources" title="Link to this definition"></a></dt>
+<dd><p>A method returning the list of ImageResource records whose parent FOV has <a href="#id11"><span class="problematic" id="id12">id_</span></a> == fov_id</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>dataset_id</strong> (<em>str</em>) – the id of the Dataset</p>
+<dd class="field-odd"><p><strong>fov_id</strong> (<em>str</em>) – the id of the FOV</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>a list of Data records whose parent Dataset has <a href="#id17"><span class="problematic" id="id18">id_</span></a> == dataset_id</p>
+<dd class="field-even"><p>a list of ImageResource records whose parent FOV has <a href="#id13"><span class="problematic" id="id14">id_</span></a> == fov_id</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>list of dict</p>
@@ -758,7 +819,7 @@ translate or exclude variables</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao.record">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao.record" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao.record" title="Link to this definition"></a></dt>
 <dd><p>A method creating a DAO record dictionary from a fov row dictionary. This method is used to convert the SQL
 table columns into the FOV record fields expected by the domain layer</p>
 <dl class="field-list simple">
@@ -772,25 +833,8 @@ table columns into the FOV record fields expected by the domain layer</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao.data">
-<span class="sig-name descname"><span class="pre">data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fov_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao.data" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a list of DataDao objects linked to the FOVdao object with the specified <a href="#id19"><span class="problematic" id="id20">id_</span></a></p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>fov_id</strong> (<em>int</em>) – the <a href="#id21"><span class="problematic" id="id22">id_</span></a> of the FOV</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>the list of Data records linked to the FOV</p>
-</dd>
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list of dict</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao.roi_list">
-<span class="sig-name descname"><span class="pre">roi_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fov_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao.roi_list" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">roi_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fov_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.FOVdao.FOVdao.roi_list" title="Link to this definition"></a></dt>
 <dd><p>A method returning the list of ROI records whose parent FOV has id == fov_id</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -807,15 +851,15 @@ table columns into the FOV record fields expected by the domain layer</p>
 
 </dd></dl>
 
-<span class="target" id="module-pydetecdiv.persistence.sqlalchemy.orm.ROIdao"></span><p>Access to ROI data</p>
+<p id="module-pydetecdiv.persistence.sqlalchemy.orm.ROIdao">Access to ROI data</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.ROIdao.ROIdao">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.ROIdao.</span></span><span class="sig-name descname"><span class="pre">ROIdao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ROIdao.ROIdao" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.ROIdao.</span></span><span class="sig-name descname"><span class="pre">ROIdao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ROIdao.ROIdao" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO" title="pydetecdiv.persistence.sqlalchemy.orm.main.DAO"><code class="xref py py-class docutils literal notranslate"><span class="pre">DAO</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></p>
 <p>DAO class for access to ROI records from the SQL database</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.ROIdao.ROIdao.record">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ROIdao.ROIdao.record" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ROIdao.ROIdao.record" title="Link to this definition"></a></dt>
 <dd><p>A method creating a record dictionary from a roi row dictionary. This method is used to convert the SQL
 table columns into the ROI record fields expected by the domain layer</p>
 <dl class="field-list simple">
@@ -830,11 +874,11 @@ table columns into the ROI record fields expected by the domain layer</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.ROIdao.ROIdao.data">
-<span class="sig-name descname"><span class="pre">data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">roi_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ROIdao.ROIdao.data" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a list of DataDao objects linked to the ROIdao object with the specified <a href="#id23"><span class="problematic" id="id24">id_</span></a></p>
+<span class="sig-name descname"><span class="pre">data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">roi_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ROIdao.ROIdao.data" title="Link to this definition"></a></dt>
+<dd><p>Returns a list of DataDao objects linked to the ROIdao object with the specified <a href="#id15"><span class="problematic" id="id16">id_</span></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>roi_id</strong> (<em>int</em>) – the <a href="#id25"><span class="problematic" id="id26">id_</span></a> of the ROI</p>
+<dd class="field-odd"><p><strong>roi_id</strong> (<em>int</em>) – the <a href="#id17"><span class="problematic" id="id18">id_</span></a> of the ROI</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>the list of Data records linked to the ROI</p>
@@ -847,15 +891,15 @@ table columns into the ROI record fields expected by the domain layer</p>
 
 </dd></dl>
 
-<span class="target" id="module-pydetecdiv.persistence.sqlalchemy.orm.DataDao"></span><p>Access to data relative to Data file (images, tables, etc.)</p>
+<p id="module-pydetecdiv.persistence.sqlalchemy.orm.DataDao">Access to data relative to Data file (images, tables, etc.)</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.DataDao.</span></span><span class="sig-name descname"><span class="pre">DataDao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.DataDao.</span></span><span class="sig-name descname"><span class="pre">DataDao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO" title="pydetecdiv.persistence.sqlalchemy.orm.main.DAO"><code class="xref py py-class docutils literal notranslate"><span class="pre">DAO</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></p>
 <p>DAO class for access to data records from the SQL database</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao.record">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao.record" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao.record" title="Link to this definition"></a></dt>
 <dd><p>A method creating a record dictionary from a data row dictionary. This method is used to convert the SQL
 table columns into the data record fields expected by the domain layer</p>
 <dl class="field-list simple">
@@ -870,14 +914,14 @@ table columns into the data record fields expected by the domain layer</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao.fov_list">
-<span class="sig-name descname"><span class="pre">fov_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao.fov_list" title="Permalink to this definition"></a></dt>
-<dd><p>A method returning the list of FOV records whose parent Data has <a href="#id27"><span class="problematic" id="id28">id_</span></a> == data_id</p>
+<span class="sig-name descname"><span class="pre">fov_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao.fov_list" title="Link to this definition"></a></dt>
+<dd><p>A method returning the list of FOV records whose parent Data has <a href="#id19"><span class="problematic" id="id20">id_</span></a> == data_id</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>data_id</strong> (<em>str</em>) – the id of the Data</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>a list of FOV records with parent Data has <a href="#id29"><span class="problematic" id="id30">id_</span></a> == data_id</p>
+<dd class="field-even"><p>a list of FOV records with parent Data has <a href="#id21"><span class="problematic" id="id22">id_</span></a> == data_id</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>list of dict</p>
@@ -887,14 +931,14 @@ table columns into the data record fields expected by the domain layer</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao.roi_list">
-<span class="sig-name descname"><span class="pre">roi_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao.roi_list" title="Permalink to this definition"></a></dt>
-<dd><p>A method returning the list of FOV records whose parent Data has <a href="#id31"><span class="problematic" id="id32">id_</span></a> == data_id</p>
+<span class="sig-name descname"><span class="pre">roi_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.DataDao.DataDao.roi_list" title="Link to this definition"></a></dt>
+<dd><p>A method returning the list of FOV records whose parent Data has <a href="#id23"><span class="problematic" id="id24">id_</span></a> == data_id</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>data_id</strong> (<em>str</em>) – the id of the Data</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>a list of FOV records with parent Data has <a href="#id33"><span class="problematic" id="id34">id_</span></a> == data_id</p>
+<dd class="field-even"><p>a list of FOV records with parent Data has <a href="#id25"><span class="problematic" id="id26">id_</span></a> == data_id</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>list of dict</p>
@@ -904,22 +948,22 @@ table columns into the data record fields expected by the domain layer</p>
 
 </dd></dl>
 
-<span class="target" id="module-pydetecdiv.persistence.sqlalchemy.orm.DatasetDao"></span><p>Access to Dataset data</p>
+<p id="module-pydetecdiv.persistence.sqlalchemy.orm.DatasetDao">Access to Dataset data</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.DatasetDao.DatasetDao">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.DatasetDao.</span></span><span class="sig-name descname"><span class="pre">DatasetDao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.DatasetDao.DatasetDao" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.DatasetDao.</span></span><span class="sig-name descname"><span class="pre">DatasetDao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.DatasetDao.DatasetDao" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO" title="pydetecdiv.persistence.sqlalchemy.orm.main.DAO"><code class="xref py py-class docutils literal notranslate"><span class="pre">DAO</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></p>
 <p>DAO class for access to dataset records from the SQL database</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.DatasetDao.DatasetDao.data_list">
-<span class="sig-name descname"><span class="pre">data_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.DatasetDao.DatasetDao.data_list" title="Permalink to this definition"></a></dt>
-<dd><p>A method returning the list of Data records whose parent Dataset has <a href="#id35"><span class="problematic" id="id36">id_</span></a> == dataset_id</p>
+<span class="sig-name descname"><span class="pre">data_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.DatasetDao.DatasetDao.data_list" title="Link to this definition"></a></dt>
+<dd><p>A method returning the list of Data records whose parent Dataset has <a href="#id27"><span class="problematic" id="id28">id_</span></a> == dataset_id</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>dataset_id</strong> (<em>str</em>) – the id of the Dataset</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>a list of Data records whose parent Dataset has <a href="#id37"><span class="problematic" id="id38">id_</span></a> == dataset_id</p>
+<dd class="field-even"><p>a list of Data records whose parent Dataset has <a href="#id29"><span class="problematic" id="id30">id_</span></a> == dataset_id</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>list of dict</p>
@@ -929,7 +973,7 @@ table columns into the data record fields expected by the domain layer</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.DatasetDao.DatasetDao.record">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.DatasetDao.DatasetDao.record" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.DatasetDao.DatasetDao.record" title="Link to this definition"></a></dt>
 <dd><p>A method creating a record dictionary from a dataset row dictionary. This method is used to convert the SQL
 table columns into the dataset record fields expected by the domain layer</p>
 <dl class="field-list simple">
@@ -944,22 +988,22 @@ table columns into the dataset record fields expected by the domain layer</p>
 
 </dd></dl>
 
-<span class="target" id="module-pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao"></span><p>Access to ImageResourceData data</p>
+<p id="module-pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao">Access to ImageResourceData data</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao.ImageResourceDao">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao.</span></span><span class="sig-name descname"><span class="pre">ImageResourceDao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao.ImageResourceDao" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao.</span></span><span class="sig-name descname"><span class="pre">ImageResourceDao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao.ImageResourceDao" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO" title="pydetecdiv.persistence.sqlalchemy.orm.main.DAO"><code class="xref py py-class docutils literal notranslate"><span class="pre">DAO</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></p>
 <p>DAO class for access to ImageResource records from the SQL database</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao.ImageResourceDao.data_list">
-<span class="sig-name descname"><span class="pre">data_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_res_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao.ImageResourceDao.data_list" title="Permalink to this definition"></a></dt>
-<dd><p>A method returning the list of Data records whose parent Dataset has <a href="#id39"><span class="problematic" id="id40">id_</span></a> == dataset_id</p>
+<span class="sig-name descname"><span class="pre">data_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_res_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao.ImageResourceDao.data_list" title="Link to this definition"></a></dt>
+<dd><p>A method returning the list of Data records whose parent Dataset has <a href="#id31"><span class="problematic" id="id32">id_</span></a> == dataset_id</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>dataset_id</strong> (<em>str</em>) – the id of the Dataset</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>a list of Data records whose parent Dataset has <a href="#id41"><span class="problematic" id="id42">id_</span></a> == dataset_id</p>
+<dd class="field-even"><p>a list of Data records whose parent Dataset has <a href="#id33"><span class="problematic" id="id34">id_</span></a> == dataset_id</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>list of dict</p>
@@ -969,7 +1013,7 @@ table columns into the dataset record fields expected by the domain layer</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao.ImageResourceDao.record">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao.ImageResourceDao.record" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ImageResourceDao.ImageResourceDao.record" title="Link to this definition"></a></dt>
 <dd><p>A method creating a DAO record dictionary from a fov row dictionary. This method is used to convert the SQL
 table columns into the FOV record fields expected by the domain layer</p>
 <dl class="field-list simple">
@@ -984,15 +1028,15 @@ table columns into the FOV record fields expected by the domain layer</p>
 
 </dd></dl>
 
-<span class="target" id="module-pydetecdiv.persistence.sqlalchemy.orm.RunDao"></span><p>Access to ROI data</p>
+<p id="module-pydetecdiv.persistence.sqlalchemy.orm.RunDao">Access to ROI data</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.RunDao.RunDao">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.RunDao.</span></span><span class="sig-name descname"><span class="pre">RunDao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.RunDao.RunDao" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.RunDao.</span></span><span class="sig-name descname"><span class="pre">RunDao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.RunDao.RunDao" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO" title="pydetecdiv.persistence.sqlalchemy.orm.main.DAO"><code class="xref py py-class docutils literal notranslate"><span class="pre">DAO</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></p>
 <p>DAO class for access to Run records from the SQL database</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.RunDao.RunDao.record">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.RunDao.RunDao.record" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.RunDao.RunDao.record" title="Link to this definition"></a></dt>
 <dd><p>A method creating a record dictionary from a dataset row dictionary. This method is used to convert the SQL
 table columns into the dataset record fields expected by the domain layer</p>
 <dl class="field-list simple">
@@ -1007,15 +1051,15 @@ table columns into the dataset record fields expected by the domain layer</p>
 
 </dd></dl>
 
-<span class="target" id="module-pydetecdiv.persistence.sqlalchemy.orm.ExperimentDao"></span><p>Access to ROI data</p>
+<p id="module-pydetecdiv.persistence.sqlalchemy.orm.ExperimentDao">Access to ROI data</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.ExperimentDao.ExperimentDao">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.ExperimentDao.</span></span><span class="sig-name descname"><span class="pre">ExperimentDao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ExperimentDao.ExperimentDao" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.ExperimentDao.</span></span><span class="sig-name descname"><span class="pre">ExperimentDao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ExperimentDao.ExperimentDao" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pydetecdiv.persistence.sqlalchemy.orm.main.DAO" title="pydetecdiv.persistence.sqlalchemy.orm.main.DAO"><code class="xref py py-class docutils literal notranslate"><span class="pre">DAO</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></p>
 <p>DAO class for access to Experiment records from the SQL database</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.ExperimentDao.ExperimentDao.record">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ExperimentDao.ExperimentDao.record" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.ExperimentDao.ExperimentDao.record" title="Link to this definition"></a></dt>
 <dd><p>A method creating a record dictionary from a data row dictionary. This method is used to convert the SQL
 table columns into the data record fields expected by the domain layer</p>
 <dl class="field-list simple">
@@ -1030,15 +1074,15 @@ table columns into the data record fields expected by the domain layer</p>
 
 </dd></dl>
 
-<span class="target" id="module-pydetecdiv.persistence.sqlalchemy.orm.associations"></span><p>ORM classes describing associations between DAOs/tables</p>
+<p id="module-pydetecdiv.persistence.sqlalchemy.orm.associations">ORM classes describing associations between DAOs/tables</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.associations.Linker">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.associations.</span></span><span class="sig-name descname"><span class="pre">Linker</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.Linker" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.associations.</span></span><span class="sig-name descname"><span class="pre">Linker</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.Linker" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A class providing methods for linking two Data access objects.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.associations.Linker.association">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">association</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class1_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class2_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.Linker.association" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">association</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class1_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class2_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.Linker.association" title="Link to this definition"></a></dt>
 <dd><p>Defines the possible associations between DAO classes and returns the one corresponding to the classes passed
 as arguments.</p>
 <dl class="field-list simple">
@@ -1050,7 +1094,7 @@ as arguments.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.associations.Linker.link">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obj2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.Linker.link" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obj2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.Linker.link" title="Link to this definition"></a></dt>
 <dd><p>Creates a link between the specified objects, calling the appropriate association object link method, as
 provided by the associations() method above.</p>
 <dl class="field-list simple">
@@ -1067,12 +1111,12 @@ provided by the associations() method above.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.associations.ROIdata">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.associations.</span></span><span class="sig-name descname"><span class="pre">ROIdata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.ROIdata" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.persistence.sqlalchemy.orm.associations.</span></span><span class="sig-name descname"><span class="pre">ROIdata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.ROIdata" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></p>
 <p>Association many to many between ROI and Image data</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.associations.ROIdata.roi_to_data">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">roi_to_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.ROIdata.roi_to_data" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">roi_to_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.ROIdata.roi_to_data" title="Link to this definition"></a></dt>
 <dd><p>Defines and returns the relationship from ROI to ImageData tables</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -1086,7 +1130,7 @@ provided by the associations() method above.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.associations.ROIdata.data_to_roi">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data_to_roi</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.ROIdata.data_to_roi" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data_to_roi</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.ROIdata.data_to_roi" title="Link to this definition"></a></dt>
 <dd><p>Defines and returns the relationship from ImageData to ROI tables</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -1100,7 +1144,7 @@ provided by the associations() method above.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.associations.ROIdata.link">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obj2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.ROIdata.link" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obj2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.ROIdata.link" title="Link to this definition"></a></dt>
 <dd><p>Checks there the existence of a link between the specified ROIdao and DataDao objects and creates a link
 (calling the _link method) only if there is no preexisting link.</p>
 <dl class="field-list simple">
@@ -1115,7 +1159,7 @@ provided by the associations() method above.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.persistence.sqlalchemy.orm.associations.ROIdata.record">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.ROIdata.record" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">record</span></span><a class="headerlink" href="#pydetecdiv.persistence.sqlalchemy.orm.associations.ROIdata.record" title="Link to this definition"></a></dt>
 <dd><p>A method creating a record dictionary from a ROIdata row dictionary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
