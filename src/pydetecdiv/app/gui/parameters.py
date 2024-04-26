@@ -5,11 +5,10 @@ from PySide6.QtWidgets import QFrame, QLabel, QLineEdit, QSpinBox, QDoubleSpinBo
     QListWidget, QAbstractItemView
 
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
-from pydetecdiv.utils import singleton
+from pydetecdiv.utils import Singleton
 
 
-@singleton
-class ParameterWidgetFactory:
+class ParameterWidgetFactory(Singleton):
     """
     A factory to create widgets ToolForm for tool parameters according to the tool XML configuration file.
     """

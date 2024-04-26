@@ -23,6 +23,20 @@ def singleton(class_):
 
     return getinstance
 
+class Singleton:
+    instance = None
+    initialized = False
+
+    def __new__(cls, *args, **kwargs):
+        if cls.instance is None:
+            cls.instance = super(Singleton, cls).__new__(cls)
+        return cls.instance
+
+    def __init__(self, *args, **kwargs):
+        if self.initialized:
+            return
+        self.initialized = True
+
 
 def round_to_even(value, ceil=True):
     """

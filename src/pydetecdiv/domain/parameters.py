@@ -1,11 +1,10 @@
 """
 Parameter types classes for validation, pre and post-processing of parameters
 """
-from pydetecdiv.utils import singleton
+from pydetecdiv.utils import Singleton
 
 
-@singleton
-class ParameterFactory:
+class ParameterFactory(Singleton):
     """
     A factory to create tool parameters objects as defined in the tool XML configuration file.
     """
