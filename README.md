@@ -4,7 +4,6 @@ Porting DetecDiv to Python
 * [pyDetecDiv](#pydetecdiv)
   * [Getting started](#getting-started)
     * [Known issue](#known-issue)
-    * [Easy installation (Linux)](#easy-installation-linux)
     * [Installation from source distribution](#installation-from-source-distribution)
       * [Installing in a miniconda environment](#installing-in-a-miniconda-environment)
 <!-- TOC -->
@@ -22,13 +21,6 @@ This may be due to a missing xcb library that can be identified by issuing the f
 
 Then install the missing library (for example, libxcb-cursor0 on a Ubuntu 22.04 installation):
 `sudo apt install libxcb-cursor0`
-
-### Easy installation (Linux)
-The easiest way to install pyDetecDiv on a Linux box is to download the [pydetecdiv-0.3.0-linux64.tar.gz](https://github.com/fplewniak/pyDetecDiv/releases/download/v0.2.0/pydetecdiv-0.2.0-linux64.tar.gz). 
-Then unpack it in a place of your choice and run the pydetecdiv executable you will find in the pydetecdiv directory.
-For a more convenient usage, you may place a link or a copy of the executable in your favourite PATH directory.
-
-Support for easy installation on other operating systems will also be available in the future.
 
 ### Installation from source distribution
 It is recommended to install pyDetecDiv in a conda environment (miniconda) to avoid conflicts.
