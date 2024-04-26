@@ -48,6 +48,9 @@ class DataMenu(QMenu):
 
 
 class PluginMenu(QMenu):
+    """
+    Plugin menus
+    """
     def __init__(self, parent, *args, **kwargs):
         if PyDetecDiv().plugin_list.len:
             super().__init__(*args, **kwargs)

@@ -21,8 +21,10 @@ class ROIclassificationDialog(Dialog, Singleton):
     """
     Dialog window to handle the options Form for ROI classification plugin
     """
+
     def __init__(self, plugin, title=None):
         super().__init__(plugin, title=title)
+        print('initializing Dialog')
         self.plugin.parameters.add_groups(['training', 'classify', 'annotate', 'create'])
 
         self.controller = self.addGroupBox('Choose action')
@@ -39,7 +41,7 @@ class ROIclassificationDialog(Dialog, Singleton):
         self.weights = self.classifier_selection.addOption('Weights:', ComboBox,
                                                            parameter=(['training', 'classify'], 'weights'))
         self.classes = self.classifier_selection.addOption('Classes:', LineEdit, parameter=(
-        ['training', 'classify', 'annotate'], 'class_names'))
+            ['training', 'classify', 'annotate'], 'class_names'))
         self.training_advanced = self.classifier_selection.addOption(None, AdvancedButton)
         self.training_advanced.linkGroupBox(self.classifier_selection.addOption(None, FormGroupBox, show=False))
         self.weight_seed = self.training_advanced.group_box.addOption('Random seed:', SpinBox, value=42,
@@ -64,7 +66,7 @@ class ROIclassificationDialog(Dialog, Singleton):
                                                                    parameter=(['training'], 'momentum'))
         self.checkpoint_metric = self.training_advanced.group_box.addOption('Checkpoint metric:', ComboBox,
                                                                             items={'Loss': 'val_loss',
-                                                                                    'Accuracy': 'val_accuracy', },
+                                                                                   'Accuracy': 'val_accuracy', },
                                                                             selected='Loss',
                                                                             parameter=(['training'],
                                                                                        'checkpoint_metric'))
@@ -160,6 +162,7 @@ class ROIclassificationDialog(Dialog, Singleton):
     def toggleAdvanced(self, button):
         """
         Toggle the advanced button between + (expand) and - (collapse) to show or hide advanced options
+
         :param button:
         """
         button.toggle()
@@ -223,6 +226,7 @@ class ROIclassificationDialog(Dialog, Singleton):
     def set_table_view(self, project_name):
         """
         Set the content of the Table view to display the available ROIs to classify
+
         :param project_name: the name of the project
         """
         if project_name:
@@ -232,6 +236,7 @@ class ROIclassificationDialog(Dialog, Singleton):
     def update_list(self, project):
         """
         Update the list of FOVs and the number of corresponding ROIs
+
         :param project: the current project
         """
         db = QSqlDatabase("QSQLITE")
@@ -260,6 +265,7 @@ class ROIclassificationDialog(Dialog, Singleton):
     def update_num_rois(self, project):
         """
         Update the maximum value for image sequence according to the umber of frames in the dataset
+
         :param project: the current project
         """
         num_rois = project.count_objects('ROI')
@@ -269,6 +275,7 @@ class ROIclassificationDialog(Dialog, Singleton):
     def update_sequence_length(self, project):
         """
         Update the maximum value for image sequence according to the umber of frames in the dataset
+
         :param project: the current project
         """
         db = QSqlDatabase("QSQLITE")
@@ -309,6 +316,7 @@ class ROIclassificationDialog(Dialog, Singleton):
         """
         Update the proportion of data to dispatch in training, validation and test datasets. The total must sum to 1 and
         the modifications are constrained to ensure it is the case.
+
         :param changed_dataset: the dataset that has just been changed
         """
         if changed_dataset:

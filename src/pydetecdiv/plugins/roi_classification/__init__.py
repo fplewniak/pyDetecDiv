@@ -1,5 +1,5 @@
 """
-An example plugin showing how to interact with database
+An plugin for deep-learning ROI classification
 """
 import importlib
 import json
@@ -55,6 +55,7 @@ class Results(Base):
     def save(self, project, run, roi, t, predictions, class_names):
         """
         Save the results from a plugin run on a ROI at time t into the database
+
         :param project: the current project
         :param run: the current run
         :param roi: the current ROI
@@ -87,6 +88,7 @@ class TrainingData(Base):
     def save(self, project, roi, t, target, dataset):
         """
         Save the results from a plugin run on a ROI at time t into the database
+
         :param project: the current project
         :param run: the current run
         :param roi: the current ROI
@@ -104,6 +106,7 @@ class TrainingData(Base):
 def prepare_data(data_list, seqlen=None, targets=True):
     """
     Prepare the data from a list of ROI object as a list of ROIData objects to build the ROIDataset instance
+
     :param data_list: the ROI list
     :param seqlen: the length of the frame sequence
     :param targets: should targets be included in the dataset or not
@@ -127,6 +130,7 @@ def prepare_data(data_list, seqlen=None, targets=True):
 def get_annotation(roi):
     """
     Get the annotations for a ROI
+
     :param roi: the ROI
     :return: the list of annotated classes by frame
     """
@@ -218,6 +222,7 @@ class Plugin(plugins.Plugin):
     def class_names(self):
         """
         return the classes
+
         :return: the class list
         """
         return json.loads(self.gui.classes.text())
@@ -232,6 +237,7 @@ class Plugin(plugins.Plugin):
     def addActions(self, menu):
         """
         Overrides the addActions method in order to create a submenu with several actions for the same menu
+
         :param menu: the parent menu
         :type menu: QMenu
         """
@@ -244,6 +250,7 @@ class Plugin(plugins.Plugin):
     def add_context_action(self, data):
         """
         Add an action to annotate the ROI from the FOV viewer
+
         :param data: the data sent by the PyDetecDiv().viewer_roi_click signal
         """
         if self.gui:
@@ -258,6 +265,7 @@ class Plugin(plugins.Plugin):
     def load_model(self):
         """
         Load the model
+
         :return: the model
         """
         module = self.gui.network.currentData()
@@ -341,6 +349,7 @@ class Plugin(plugins.Plugin):
     def load_models(self, gui):
         """
         Load available models (modules)
+
         :param gui: the GUI
         """
         for _, name, _ in pkgutil.iter_modules(models.__path__):
@@ -382,6 +391,7 @@ class Plugin(plugins.Plugin):
     def save_annotations(self, roi, roi_classes, run):
         """
         Save manual annotation into the database
+
         :param roi: the annotated ROI
         :param roi_classes: the classes along time
         :param run: the annotation run
@@ -400,6 +410,7 @@ class Plugin(plugins.Plugin):
     def lr_decay(self, epoch, lr):
         """
         Learning rate scheduler
+
         :param epoch: the current epoch
         :param lr: the current learning rate
         :return: the new learning rate
@@ -563,6 +574,7 @@ class Plugin(plugins.Plugin):
     def save_training_run(self, module):
         """
         save the current training Run
+
         :param seqlen: the sequence length
         :param epochs: the number of epochs
         :param batch_size: the batch size
@@ -577,6 +589,7 @@ class Plugin(plugins.Plugin):
     def save_training_datasets(self, run, roi_list, num_training, num_validation):
         """
         save the datasets used for training and evaluation in the database
+
         :param run: the current run
         :param roi_list: the list of ROI/frames
         :param num_training: the number of training data
@@ -604,6 +617,7 @@ class Plugin(plugins.Plugin):
     def save_results(self, project, run, roi, frame, class_name):
         """
         Save the results in database
+
         :param project: the current project
         :param run: the current run
         :param roi: the current ROI
@@ -616,6 +630,7 @@ class Plugin(plugins.Plugin):
 def plot_history(history, evaluation):
     """
     Plots metrics history.
+
     :param history: metrics history to plot
     :param evaluation: metrics from model evaluation on test dataset, shown as horizontal dashed lines on the plots
     """
@@ -640,6 +655,7 @@ def plot_history(history, evaluation):
 def plot_confusion_matrix(ground_truth, predictions, class_names):
     """
     Plot the confusion matrix normalized i) by rows (recall in diagonals) and ii) by columns (precision in diagonals)
+
     :param ground_truth: the ground truth index values
     :param predictions: the predicted index values
     :param class_names: the class names
@@ -657,6 +673,7 @@ def plot_confusion_matrix(ground_truth, predictions, class_names):
 def get_lr_metric(optimizer):
     """
     Get the learning rate metric for optimizer for use during training to monitor the learning rate
+
     :param optimizer: the optimizer
     :return: the learning rate function
     """
@@ -669,6 +686,7 @@ def get_lr_metric(optimizer):
 def lr_exp_decay(epoch, lr):
     """
     Learning rate scheduler for exponential decay
+
     :param epoch: the current epoch
     :param lr: the current learning rate
     :return: the new learning rate
@@ -682,6 +700,7 @@ def lr_exp_decay(epoch, lr):
 def get_images_sequences(imgdata, roi_list, t, seqlen=None, z=None):
     """
     Get a sequence of seqlen images for each roi
+
     :param imgdata: the image data resource
     :param roi_list: the list of ROIs
     :param t: the starting time point (index of frame)
@@ -702,6 +721,7 @@ def get_images_sequences(imgdata, roi_list, t, seqlen=None, z=None):
 def get_rgb_images_from_stacks_memmap(imgdata, roi_list, t, z=None):
     """
     Combine 3 z-layers of a grayscale image resource into a RGB image where each of the z-layer is a channel
+
     :param imgdata: the image data resource
     :param roi_list: the list of ROIs
     :param t: the frame index
@@ -730,6 +750,7 @@ def get_rgb_images_from_stacks_memmap(imgdata, roi_list, t, z=None):
 def get_rgb_images_from_stacks(imgdata, roi_list, t, z=None):
     """
     Combine 3 z-layers of a grayscale image resource into a RGB image where each of the z-layer is a channel
+
     :param imgdata: the image data resource
     :param roi_list: the list of ROIs
     :param t: the frame index
@@ -777,6 +798,7 @@ def draw_annotated_rois():
 def get_annotated_rois():
     """
     Get a list of annotated ROI frames
+
     :return: the list of annotated ROI frames
     """
     with pydetecdiv_project(PyDetecDiv().project_name) as project:
@@ -800,6 +822,7 @@ def get_annotated_rois():
 def display_dataset(dataset, sequences=False):
     """
     Display a dataset in plot viewer
+
     :param dataset: the dataset to display
     :param sequences: whether or not to show frame sequences
     """
@@ -824,6 +847,7 @@ def display_dataset(dataset, sequences=False):
 def loadWeights(model, filename=os.path.join(__path__[0], "weights.h5"), debug=False):
     """
     load the weights into the model
+
     :param model: the model
     :param filename: the H5 file name containing the weights
     :param debug: debug mode
@@ -879,6 +903,7 @@ def loadWeights(model, filename=os.path.join(__path__[0], "weights.h5"), debug=F
 def layerNum(model, layerName):
     """
     Returns the index to the layer
+
     :param model: the model
     :param layerName: the name of the layer
     :return: the index of the layer
@@ -896,6 +921,7 @@ def layerNum(model, layerName):
 def intList(myList):
     """
     Converts a list of numbers into a list of ints.
+
     :param myList: the list to be converted
     :return: the converted list
     """

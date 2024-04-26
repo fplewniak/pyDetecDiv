@@ -19,6 +19,7 @@ class Parameters:
     def add_groups(self, groups):
         """
         Add empty groups of parameters
+
         :param groups: the list of groups
         """
         for group in groups:
@@ -26,6 +27,7 @@ class Parameters:
     def add_group(self, group, param_dict=None):
         """
         Add a new group of parameters (in a dictionary)
+
         :param group: the group to create
         :param param_dict: the dictionary of parameters
         """
@@ -34,6 +36,7 @@ class Parameters:
     def add(self, group, param_dict):
         """
         Add parameters (in a dictionary) to an existing group of parameters
+
         :param group: the group of parameters to expand
         :param param_dict: the parameters
         """
@@ -42,6 +45,7 @@ class Parameters:
     def get_values(self, group):
         """
         Get a dictionary containing all parameters key/values for a given group
+
         :param group: the requested parameter group
         :return: a dictionary of parameters
         """
@@ -82,6 +86,7 @@ class GroupBox(QGroupBox):
     def plugin(self):
         """
         Property returning the plugin from the top parent of the current widget
+
         :return: the plugin module or None if it was not found
         """
         parent = self.parent()
@@ -103,6 +108,7 @@ class FormGroupBox(GroupBox):
     def addOption(self, label=None, widget=None, parameter=None, **kwargs):
         """
         add an option to the current Form
+
         :param label: the label for the option
         :param widget: the widget to specify the option value, etc
         :param kwargs: extra args passed to the widget
@@ -125,6 +131,7 @@ class FormGroupBox(GroupBox):
     def setRowVisible(self, index, on=True):
         """
         set the row defined by index or widget visible or invisible in the form layout
+
         :param index: the row index or the widget in that row
         :param on: whether the row should be visible or not
         """
@@ -145,6 +152,7 @@ class ComboBox(QComboBox):
     def addItemDict(self, options):
         """
         add items to the ComboBox as a dictionary
+
         :param options: dictionary of options specifying labels and corresponding user data {label: userData, ...}
         """
         for label, data in options.items():
@@ -154,6 +162,7 @@ class ComboBox(QComboBox):
     def selected(self):
         """
         return property telling whether the current index of this ComboBox has changed
+
         :return: boolean indication whether the current index has changed (i.e. new selection)
         """
         return self.currentIndexChanged
@@ -163,6 +172,7 @@ class ComboBox(QComboBox):
         """
         return property telling whether the current text of this ComboBox has changed. This overwrites the Pyside
         equivalent method in order to have the same method name for all widgets
+
         :return: boolean indication whether the current text has changed (i.e. new selection)
         """
         return self.currentTextChanged
@@ -170,6 +180,7 @@ class ComboBox(QComboBox):
     def value(self):
         """
         method to standardize the way widget values from a form are returned
+
         :return: the current data (if it can be json serialized) or the current text of the selected item
         """
         if self.currentData() is not None:
@@ -191,6 +202,7 @@ class LineEdit(QLineEdit):
     def value(self):
         """
         method to standardize the way widget values from a form are returned
+
         :return: the text in LineEdit
         """
         return self.text()
@@ -198,7 +210,7 @@ class LineEdit(QLineEdit):
 
 class PushButton(QPushButton):
     """
-    an axtension of QPushButton class
+    an extension of QPushButton class
     """
     def __init__(self, parent, text, icon=None, flat=False):
         if icon is None:
@@ -228,6 +240,7 @@ class AdvancedButton(PushButton):
     def linkGroupBox(self, group_box):
         """
         link this advanced button to a group box whose expansion or collapse should be controlled by this button
+
         :param group_box: the group box to link to this button
         """
         self.group_box = group_box
@@ -256,6 +269,7 @@ class RadioButton(QRadioButton):
     def value(self):
         """
         method to standardize the way widget values from a form are returned
+
         :return: boolean, True if button is checked, False otherwise
         """
         return self.isChecked()
@@ -281,6 +295,7 @@ class SpinBox(QSpinBox):
         """
         return property telling whether the spinbox value has changed. This overwrites the Pyside equivalent method in
          order to have the same method name for all widgets
+
         :return: boolean indication whether the value has changed
         """
         return self.valueChanged
@@ -307,6 +322,7 @@ class DoubleSpinBox(QDoubleSpinBox):
     def changed(self):
         """
         method returning whether the spinbox value has been changed
+
         :return: boolean, True if the value was changed, False otherwise
         """
         return self.valueChanged
@@ -331,6 +347,7 @@ class TableView(QTableView):
     def setQuery(self, query):
         """
         set the SQL query used to feed the model of the table view
+
         :param query: the query
         """
         self.model.setQuery(query)
@@ -348,6 +365,7 @@ class DialogButtonBox(QDialogButtonBox):
     def connect_to(self, connections=None):
         """
         Specify the connections between the signal from this button box and slots specified in a directory
+
         :param connections: the dictionary linking signals to slots
         """
         if connections is not None:
@@ -386,6 +404,7 @@ class Dialog(QDialog):
     def addGroupBox(self, title, widget=FormGroupBox):
         """
         Add a group box to the Dialog window
+
         :param title: the title of the group box to add
         :param widget: the class of group box
         :return: the group box
@@ -398,6 +417,7 @@ class Dialog(QDialog):
     def addButtonBox(self, buttons=QDialogButtonBox.Ok | QDialogButtonBox.Close, centered=True):
         """
         Add a button box to the Dialog window
+
         :param buttons: the buttons to add to the button box
         :param centered: should the buttons be centred
         :return: the button box
@@ -409,6 +429,7 @@ class Dialog(QDialog):
     def addButton(self, widget, text=None, icon=None, flat=False):
         """
         Add a button to the Dialog window
+
         :param widget: the type of button to add
         :param text: the text
         :param icon: the icon
@@ -423,6 +444,7 @@ class Dialog(QDialog):
     def arrangeWidgets(self, widget_list):
         """
         Arrange the widgets in the Dialog window vertical layout
+
         :param widget_list: the list of widgets to add to the vertical layout
         """
         for widget in widget_list:
@@ -432,6 +454,7 @@ class Dialog(QDialog):
 def set_connections(connections):
     """
     connect a signal to a slot or a list of slots, as defined in a dictionary
+
     :param connections: the dictionary {signal: slot,...} or {signal: [slot1, slot2,...],...} containing the connections
      to create
     """

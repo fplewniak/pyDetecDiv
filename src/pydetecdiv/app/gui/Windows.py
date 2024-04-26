@@ -113,7 +113,7 @@ class MainWindow(QMainWindow):
         corresponding image resource information(FOV name, stage dataset, channel)
 
         :param subwindow: the activated sub-window
-        :type subwindow:QMdiArea
+        :type subwindow: QMdiArea
         """
         if subwindow is not None:
             for c in subwindow.children():

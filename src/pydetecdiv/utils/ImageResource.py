@@ -1,9 +1,11 @@
 """
-Util classes and function to manipulate Image resources
+Utility classes to manipulate Image resources
 """
 
 class Dimension:
-
+    """
+    A utility class to handle Image resource dimension in ImageResourceDAO ORM objects
+    """
     def __init__(self, x, y, z=1, c=1, t=1):
         self.x = x
         self.y = y
@@ -29,7 +31,9 @@ class Dimension:
         return not self.__eq__(other)
 
 class Shape:
-
+    """
+    A utility class to handle Image resource shape in ImageResourceDAO ORM objects
+    """
     def __init__(self, x, y):
         self.x = x
         self.y = y
@@ -50,7 +54,9 @@ class Shape:
 
 
 class Image:
-
+    """
+    A utility class to handle 2D Image in ImageResourceDAO ORM objects
+    """
     def __init__(self, z=0, c=0, t=0):
         self.c = c
         self.z = z

@@ -35,11 +35,11 @@ class FOVdao(DAO, Base):
 
     def image_resources(self, fov_id):
         """
-        A method returning the list of Data records whose parent Dataset has id_ == dataset_id
+        A method returning the list of ImageResource records whose parent FOV has id_ == fov_id
 
-        :param dataset_id: the id of the Dataset
-        :type dataset_id: str
-        :return: a list of Data records whose parent Dataset has id_ == dataset_id
+        :param fov_id: the id of the FOV
+        :type fov_id: str
+        :return: a list of ImageResource records whose parent FOV has id_ == fov_id
         :rtype: list of dict
         """
         if self.session.query(FOVdao).filter(FOVdao.id_ == fov_id).first() is not None:

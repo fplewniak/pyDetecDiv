@@ -45,15 +45,19 @@ class ShallowDb(abc.ABC):
         Import images specified in a list of files into a destination
 
         :param image_files: list of image files to import
-        :type image_files:list of str
+        :type image_files: list of str
+        :param data_dir_path: path for the current project raw data directory
+        :type data_dir_path: path or str
         :param destination: destination directory to import files into
         :type destination: str
         :param author: the user importing the data
         :type author: str
         :param date: the date of import
         :type date: str
-        :param format: the file format
-        :type format: str
+        :param in_place: boolean indicating whether image files should be copied (False) or kept in place (True)
+        :type in_place: bool
+        :param img_format: the file format
+        :type img_format: str
         :return: the list of imported files. This list can be used to roll the copy back if needed
         :rtype: list of str
         """

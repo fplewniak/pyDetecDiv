@@ -119,15 +119,19 @@ class ShallowSQLite3(ShallowDb):
         Import images specified in a list of files into a destination
 
         :param image_files: list of image files to import
-        :type image_files:list of str
+        :type image_files: list of str
+        :param data_dir_path: path for the current project raw data directory
+        :type data_dir_path: path or str
         :param destination: destination directory to import files into
         :type destination: str
         :param author: the user importing the data
         :type author: str
         :param date: the date of import
         :type date: str
-        :param format: the file format
-        :type format: str
+        :param in_place: boolean indicating whether image files should be copied (False) or kept in place (True)
+        :type in_place: bool
+        :param img_format: the file format
+        :type img_format: str
         :return: the list of imported files. This list can be used to roll the copy back if needed
         :rtype: list of str
         """
@@ -162,6 +166,7 @@ class ShallowSQLite3(ShallowDb):
         """
         Method to annotate data files in a dataset according to a regular expression applied to a source. The resulting
         key-value pairs are placed in a key_val column.
+
         :param dataset: the dataset whose data should be annotated
         :type dataset: Dataset object
         :param source: the database field or combination of fields to apply the regular expression to

@@ -31,6 +31,7 @@ class Plugin:
         """
         Method to add an action to a menu. This action triggers the launch method. If a submenu needs to be implemented
         or if arguments need to be passed to the launch method, this method may be overriden
+
         :param menu:
         """
         action = QAction(self.name, menu)
@@ -49,6 +50,7 @@ class Plugin:
         """
         return the parent plugin of the current plugin. This may be used to add functionalities to plugins without
         having to modify the original code
+
         :return: None or the parent plugin
         """
         if self.parent in pydetecdiv.app.PyDetecDiv().plugin_list.plugins_dict:
@@ -58,6 +60,7 @@ class Plugin:
     def save_run(self, project, method, parameters):
         """
         Save the current Run
+
         :param project: the current project
         :param method: the plugin method that was executed for the current run
         :param parameters: the parameters that were passed to the method
@@ -117,6 +120,7 @@ class PluginList:
     def load_plugin(self, finder, name):
         """
         Load a plugin given a finder and its module name
+
         :param finder: the module finder
         :param name: the module name
         :return: the plugin module
@@ -138,6 +142,7 @@ class PluginList:
     def len(self):
         """
         The number of discovered plugins
+
         :return: how many plugins have been discovered
         :rtype: int
         """

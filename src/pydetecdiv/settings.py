@@ -88,6 +88,7 @@ def get_config_value(section: str, key: str):
 def get_appdata_dir():
     """
     get the local Application directory (.local/share/pyDetecDiv on Linux, AppData\pyDetecDiv on Windows)
+
     :return: the path to the local application directory
     """
     if not get_config().has_option('paths', 'appdata'):
@@ -98,6 +99,7 @@ def get_appdata_dir():
 def get_plugins_dir():
     """
     Get the user directory where plugins are installed. The directory is created if it does not exist
+
     :return: the user plugin path
     :rtype: Path
     """
