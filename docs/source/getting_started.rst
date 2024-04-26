@@ -31,7 +31,7 @@ Then install the missing library (for example, libxcb-cursor0 on a Ubuntu 22.04 
 Easy installation (Linux)
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The easiest way to install pyDetecDiv on a Linux box is to download the [pydetecdiv-0.2.0-linux64.tar.gz](https://github.com/fplewniak/pyDetecDiv/releases/download/v0.2.0/pydetecdiv-0.2.0-linux64.tar.gz).
+The easiest way to install pyDetecDiv on a Linux box is to download the [pydetecdiv-0.3.0-linux64.tar.gz](https://github.com/fplewniak/pyDetecDiv/releases/download/v0.3.0/pydetecdiv-0.3.0-linux64.tar.gz).
 Then unpack it in a place of your choice and run the pydetecdiv executable you will find in the pydetecdiv directory.
 For a more convenient usage, you may place a link or a copy of the executable in your favourite PATH directory.
 
