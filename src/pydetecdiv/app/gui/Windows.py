@@ -49,7 +49,7 @@ class MainWindow(QMainWindow):
         self.analysis_tools = AnalysisToolsTree(self)
         self.addDockWidget(Qt.RightDockWidgetArea, self.analysis_tools, Qt.Vertical)
         self.mdi_area.subWindowActivated.connect(self.subwindow_activation)
-        PyDetecDiv().project_selected.connect(self.setWindowTitle)
+        PyDetecDiv.app.project_selected.connect(self.setWindowTitle)
 
         settings = get_settings()
         self.restoreGeometry(settings.value("geometry"))
@@ -118,8 +118,8 @@ class MainWindow(QMainWindow):
         if subwindow is not None:
             for c in subwindow.children():
                 if (c in self.tabs.values()) and hasattr(c.viewer, 'project_name') and c.viewer.project_name:
-                    PyDetecDiv().project_selected.emit(c.viewer.project_name)
-                    PyDetecDiv().project_name = c.viewer.project_name
+                    PyDetecDiv.app.project_selected.emit(c.viewer.project_name)
+                    PyDetecDiv.project_name = c.viewer.project_name
                     if hasattr(c.viewer, 'fov'):
                         self.image_resource_selector.position_choice.setCurrentText(c.viewer.fov)
                     # self.image_resource_selector.stage_choice.setCurrentText(c.viewer.stage)
@@ -129,7 +129,7 @@ class MainWindow(QMainWindow):
     def active_subwindow(self):
         active_subwindow = self.mdi_area.activeSubWindow()
         if active_subwindow:
-            return [tab for tab in PyDetecDiv().main_window.tabs.values() if tab.window == active_subwindow][0]
+            return [tab for tab in PyDetecDiv.main_window.tabs.values() if tab.window == active_subwindow][0]
         return None
 
 
@@ -294,7 +294,7 @@ class ImageResourceChooser(QDockWidget):
 
         self.setWidget(self.form)
 
-        PyDetecDiv().project_selected.connect(self.set_choice)
+        PyDetecDiv.app.project_selected.connect(self.set_choice)
         self.OK_button.accepted.connect(self.accept)
 
     def set_choice(self, p_name):
@@ -313,22 +313,22 @@ class ImageResourceChooser(QDockWidget):
         """
         When the OK button is clicked, then open a new TabbedViewer window and display the selected Image resource
         """
-        PyDetecDiv().setOverrideCursor(QCursor(Qt.WaitCursor))
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        PyDetecDiv.app.setOverrideCursor(QCursor(Qt.WaitCursor))
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
             fov = project.get_named_object('FOV', self.position_choice.currentText())
             roi_list = fov.roi_list
             image_resource = fov.image_resource('data').image_resource_data()
-        tab_key = f'{PyDetecDiv().project_name}/{fov.name}'
+        tab_key = f'{PyDetecDiv.project_name}/{fov.name}'
         tab = self.parent().add_tabbed_viewer(tab_key)
         tab.setWindowTitle(tab_key)
         tab.viewer.set_image_resource_data(image_resource)
         tab.viewer.set_channel(0)
         tab.viewer.display()
         tab.viewer.draw_saved_rois(roi_list)
-        tab.viewer.project_name = PyDetecDiv().project_name
+        tab.viewer.project_name = PyDetecDiv.project_name
         tab.viewer.fov = fov.name
         tab.viewer.stage = 'data'
-        PyDetecDiv().restoreOverrideCursor()
+        PyDetecDiv.app.restoreOverrideCursor()
 
 
 class DrawingToolsPalette(QDockWidget):
@@ -408,10 +408,10 @@ class DrawingToolsPalette(QDockWidget):
         return None
 
     def set_ROI_width(self, width):
-        PyDetecDiv().main_window.active_subwindow.viewer.scene.set_ROI_width(width)
+        PyDetecDiv.main_window.active_subwindow.viewer.scene.set_ROI_width(width)
 
     def set_ROI_height(self, height):
-        PyDetecDiv().main_window.active_subwindow.viewer.scene.set_ROI_height(height)
+        PyDetecDiv.main_window.active_subwindow.viewer.scene.set_ROI_height(height)
 
 
 class Cursor(QToolButton):
@@ -427,7 +427,7 @@ class Cursor(QToolButton):
         self.setCheckable(True)
         self.clicked.connect(self.select_tool)
         self.setChecked(True)
-        PyDetecDiv().current_drawing_tool = DrawingTools.Cursor
+        PyDetecDiv.current_drawing_tool = DrawingTools.Cursor
 
     def select_tool(self):
         """
@@ -435,7 +435,7 @@ class Cursor(QToolButton):
         """
         self.parent.unset_tools()
         self.setChecked(True)
-        PyDetecDiv().current_drawing_tool = DrawingTools.Cursor
+        PyDetecDiv.current_drawing_tool = DrawingTools.Cursor
 
 
 class DrawROI(QToolButton):
@@ -457,7 +457,7 @@ class DrawROI(QToolButton):
         """
         self.parent.unset_tools()
         self.setChecked(True)
-        PyDetecDiv().current_drawing_tool = DrawingTools.DrawROI
+        PyDetecDiv.current_drawing_tool = DrawingTools.DrawROI
 
 
 class DuplicateROI(QToolButton):
@@ -479,7 +479,7 @@ class DuplicateROI(QToolButton):
         """
         self.parent.unset_tools()
         self.setChecked(True)
-        PyDetecDiv().current_drawing_tool = DrawingTools.DuplicateROI
+        PyDetecDiv.current_drawing_tool = DrawingTools.DuplicateROI
 
 
 class AnalysisToolsTree(QDockWidget):

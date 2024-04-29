@@ -140,8 +140,8 @@ class ROIclassificationDialog(Dialog, Singleton):
                          self.training_data.changed: lambda _: self.update_datasets(self.training_data),
                          self.validation_data.changed: lambda _: self.update_datasets(self.validation_data),
                          self.optimizer.changed: self.update_optimizer_options,
-                         PyDetecDiv().project_selected: self.update_all,
-                         PyDetecDiv().saved_rois: self.set_table_view,
+                         PyDetecDiv.app.project_selected: self.update_all,
+                         PyDetecDiv.app.saved_rois: self.set_table_view,
                          })
 
         self.plugin.load_models(self)
@@ -153,8 +153,8 @@ class ROIclassificationDialog(Dialog, Singleton):
         Update all portions of the options Form GUI
         """
         self.update_datasets()
-        self.set_table_view(PyDetecDiv().project_name)
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        self.set_table_view(PyDetecDiv.project_name)
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
             self.update_list(project)
             self.update_sequence_length(project)
             self.update_num_rois(project)

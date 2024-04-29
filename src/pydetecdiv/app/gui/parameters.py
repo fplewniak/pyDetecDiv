@@ -80,7 +80,7 @@ class Options:
             self.data_type = options.attrib['from_data_table']
             columns = self.get_columns(options)
             if columns:
-                with pydetecdiv_project(PyDetecDiv().project_name) as project:
+                with pydetecdiv_project(PyDetecDiv.project_name) as project:
                     dso_list = project.get_objects(self.data_type)
                     return {dso.record()[columns['value']]: Option(dso.record()[columns['value']]) for dso in dso_list}
         else:
@@ -316,7 +316,7 @@ class FovParameterWidget(ParameterWidget):
             self.fov_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         else:
             self.fov_list = QComboBox(parent=self)
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
             if project.count_objects('FOV'):
                 fov_list = [fov.name for fov in project.get_objects('FOV')]
                 self.fov_list.addItems(sorted(fov_list))
@@ -347,7 +347,7 @@ class RoiParameterWidget(ParameterWidget):
             self.roi_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         else:
             self.roi_list = QComboBox(parent=self)
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
             if project.count_objects('ROI'):
                 roi_list = [roi.name for roi in project.get_objects('ROI')]
                 self.roi_list.addItems(sorted(roi_list))

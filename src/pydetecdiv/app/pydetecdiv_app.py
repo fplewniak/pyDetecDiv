@@ -8,18 +8,20 @@ import os
 
 from PySide6.QtGui import QIcon
 
-from pydetecdiv.app import PyDetecDiv
+from pydetecdiv.app import create_app
 from pydetecdiv.app.gui.Windows import MainWindow
 
 if '_PYIBoot_SPLASH' in os.environ and importlib.util.find_spec("pyi_splash"):
     import pyi_splash
+
     pyi_splash.close()
+
 
 def main_gui():
     """
     Main function for GUI application
     """
-    app = PyDetecDiv([])
+    app = create_app()
 
     style_sheet = """
                 *:disabled {
@@ -32,8 +34,7 @@ def main_gui():
 
     window_icon = QIcon(':icons/app_icon')
     app.setWindowIcon(window_icon)
-    app.main_window = MainWindow()
-    app.main_window.show()
+    app.set_main_window(MainWindow())
 
     app.exec()
 

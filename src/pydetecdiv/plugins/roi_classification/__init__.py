@@ -21,7 +21,7 @@ from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
 import tensorflow as tf
 
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import ConfusionMatrixDisplay
 
 from pydetecdiv import plugins
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir
@@ -134,7 +134,7 @@ def get_annotation(roi):
     :return: the list of annotated classes by frame
     """
     roi_classes = [-1] * roi.fov.image_resource().image_resource_data().sizeT
-    with pydetecdiv_project(PyDetecDiv().project_name) as project:
+    with pydetecdiv_project(PyDetecDiv.project_name) as project:
         results = list(project.repository.session.execute(
             sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,"
                             f"run.parameters ->> '$.annotator' as annotator, "
@@ -230,7 +230,7 @@ class Plugin(plugins.Plugin):
         """
         Create the table to save results if it does not exist yet
         """
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
             Base.metadata.create_all(project.repository.engine)
 
     def addActions(self, menu):
@@ -244,7 +244,7 @@ class Plugin(plugins.Plugin):
         action_launch = QAction("ROI classification", self.menu)
         action_launch.triggered.connect(self.launch)
         self.menu.addAction(action_launch)
-        PyDetecDiv().viewer_roi_click.connect(self.add_context_action)
+        PyDetecDiv.app.viewer_roi_click.connect(self.add_context_action)
 
     def add_context_action(self, data):
         """
@@ -254,7 +254,7 @@ class Plugin(plugins.Plugin):
         """
         if self.gui:
             r, menu = data
-            with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            with pydetecdiv_project(PyDetecDiv.project_name) as project:
                 selected_roi = project.get_named_object('ROI', r.data(0))
                 if selected_roi:
                     roi_list = [selected_roi]
@@ -296,7 +296,7 @@ class Plugin(plugins.Plugin):
         z_channels = [self.gui.red_channel.currentIndex(), self.gui.green_channel.currentIndex(),
                       self.gui.blue_channel.currentIndex()]
 
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
             print('Saving run')
             parameters = {'fov': fov_names}
             parameters.update(self.parameters.get_values('classify'))
@@ -374,7 +374,7 @@ class Plugin(plugins.Plugin):
         """
         if self.gui is None:
             self.create_table()
-            PyDetecDiv().project_selected.connect(self.create_table)
+            PyDetecDiv.app.project_selected.connect(self.create_table)
             self.gui = ROIclassificationDialog(self, title='ROI class prediction (Deep Learning)')
             self.gui.update_all()
         self.gui.setVisible(True)
@@ -383,7 +383,7 @@ class Plugin(plugins.Plugin):
         """
         Launch the annotator GUI for ROI annotation
         """
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
             selected_rois = random.sample(project.get_objects('ROI'), self.gui.roi_number.value())
         open_annotator(self, selected_rois)
 
@@ -395,7 +395,7 @@ class Plugin(plugins.Plugin):
         :param roi_classes: the classes along time
         :param run: the annotation run
         """
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
             for t, class_name in enumerate(roi_classes):
                 if class_name != '-':
                     Results().save(project, run, roi, t, np.array([1]), [class_name])
@@ -556,8 +556,8 @@ class Plugin(plugins.Plugin):
             best_predictions = [label for seq in model.predict(test_dataset).argmax(axis=2) for label in seq]
             ground_truth = [label for seq in ground_truth for label in seq]
 
-        tab = PyDetecDiv().main_window.add_tabbed_window(f'{PyDetecDiv().project_name} / {module.__name__}')
-        tab.viewer.project_name = PyDetecDiv().project_name
+        tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {module.__name__}')
+        tab.viewer.project_name = PyDetecDiv.project_name
         history_plot = plot_history(history, evaluation)
         tab.addTab(history_plot, 'Training')
         tab.setCurrentWidget(history_plot)
@@ -582,7 +582,7 @@ class Plugin(plugins.Plugin):
         """
         parameters = {'model': module.__name__}
         parameters.update(self.parameters.get_values('training'))
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
             return self.save_run(project, 'train_model', parameters)
 
     def save_training_datasets(self, run, roi_list, num_training, num_validation):
@@ -633,7 +633,7 @@ def plot_history(history, evaluation):
     :param history: metrics history to plot
     :param evaluation: metrics from model evaluation on test dataset, shown as horizontal dashed lines on the plots
     """
-    plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=2, rows=1)
+    plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=2, rows=1)
     axs = plot_viewer.axes
     axs[0].plot(history.history['accuracy'])
     axs[0].plot(history.history['val_accuracy'])
@@ -660,7 +660,7 @@ def plot_confusion_matrix(ground_truth, predictions, class_names):
     :param class_names: the class names
     :return: the plot viewer where the confusion matrix is plotted
     """
-    plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=2, rows=1)
+    plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=2, rows=1)
     plot_viewer.axes[0].set_title('Normalized by row')
     ConfusionMatrixDisplay.from_predictions(ground_truth, predictions, labels=list(range(len(class_names))),
                                             display_labels=class_names, normalize='true', ax=plot_viewer.axes[0])
@@ -786,11 +786,11 @@ def draw_annotated_rois():
         QColor(128, 64, 0, 64),
         QColor(0, 64, 128, 64),
     ]
-    rec_items = {item.data(0): item for item in PyDetecDiv().main_window.active_subwindow.viewer.scene.items() if
+    rec_items = {item.data(0): item for item in PyDetecDiv.main_window.active_subwindow.viewer.scene.items() if
                  isinstance(item, QGraphicsRectItem)}
     for roi in get_annotated_rois():
         if roi.name in rec_items:
-            annotation = get_annotation(roi)[PyDetecDiv().main_window.active_subwindow.viewer.T]
+            annotation = get_annotation(roi)[PyDetecDiv.main_window.active_subwindow.viewer.T]
             rec_items[roi.name].setBrush(colours[annotation])
 
 
@@ -800,7 +800,7 @@ def get_annotated_rois():
 
     :return: the list of annotated ROI frames
     """
-    with pydetecdiv_project(PyDetecDiv().project_name) as project:
+    with pydetecdiv_project(PyDetecDiv.project_name) as project:
         db = QSqlDatabase("QSQLITE")
         db.setDatabaseName(project.repository.name)
         db.open()
@@ -828,11 +828,11 @@ def display_dataset(dataset, sequences=False):
     for dset in dataset.__iter__():
         ds = dset[0] if isinstance(dset, tuple) else dset
         for data in ds:
-            tab = PyDetecDiv().main_window.add_tabbed_window('Showing dataset')
+            tab = PyDetecDiv.main_window.add_tabbed_window('Showing dataset')
             if sequences is False:
-                plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=1, rows=1)
+                plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=1, rows=1)
             else:
-                plot_viewer = MatplotViewer(PyDetecDiv().main_window.active_subwindow, columns=len(data), rows=1)
+                plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=len(data), rows=1)
             axs = plot_viewer.axes
             tab.addTab(plot_viewer, 'training dataset')
             if sequences is False:

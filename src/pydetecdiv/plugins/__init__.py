@@ -53,8 +53,8 @@ class Plugin:
 
         :return: None or the parent plugin
         """
-        if self.parent in pydetecdiv.app.PyDetecDiv().plugin_list.plugins_dict:
-            return pydetecdiv.app.PyDetecDiv().plugin_list.plugins_dict[self.parent]
+        if self.parent in pydetecdiv.app.PyDetecDiv.plugin_list.plugins_dict:
+            return pydetecdiv.app.PyDetecDiv.plugin_list.plugins_dict[self.parent]
         return None
 
     def save_run(self, project, method, parameters):

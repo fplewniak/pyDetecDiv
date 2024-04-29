@@ -91,8 +91,8 @@ class ImportDataDialog(QDialog):
     finished = Signal(bool)
 
     def __init__(self):
-        super().__init__(PyDetecDiv().main_window)
-        self.project_path = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv().project_name)
+        super().__init__(PyDetecDiv.main_window)
+        self.project_path = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv.project_name)
         self.setWindowModality(Qt.WindowModal)
         self.setMinimumWidth(450)
         self.current_dir = '.'
@@ -249,7 +249,7 @@ class ImportDataDialog(QDialog):
         """
         Import files whose list is defined by the sources in self.list_model
         """
-        wait_dialog = WaitDialog(f'Importing data into {PyDetecDiv().project_name}', self,
+        wait_dialog = WaitDialog(f'Importing data into {PyDetecDiv.project_name}', self,
                                  cancel_msg='Rollback of image import: please wait', progress_bar=True, )
         self.finished.connect(wait_dialog.close_window)
         self.progress.connect(wait_dialog.show_progress)
@@ -272,7 +272,7 @@ class ImportDataDialog(QDialog):
             MessageDialog('No data file to import in specified directories')
         else:
             n_files_to_copy = 0 if in_place else len(file_list)
-            with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            with pydetecdiv_project(PyDetecDiv.project_name) as project:
                 initial_files = {d.url for d in project.get_objects('Data')}
                 n_files0 = sum(1 for item in os.listdir(destination) if os.path.isfile(os.path.join(destination, item)))
                 n_dso0 = project.count_objects('Data')
@@ -299,7 +299,7 @@ class ImportDataDialog(QDialog):
                     self.progress.emit(int(100 * (n_files + n_dso) / (len(file_list) + n_files_to_copy)))
                 n_raw_data_files = project.count_objects('Data')
             self.finished.emit(True)
-            PyDetecDiv().raw_data_counted.emit(n_raw_data_files)
+            PyDetecDiv.app.raw_data_counted.emit(n_raw_data_files)
 
     def count_imported_files(self, destination, n_start):
         """
@@ -452,7 +452,7 @@ class CreateFOV(QAction):
 
         :param raw_data_count: the number of files in raw dataset
         """
-        if PyDetecDiv().project_name and (raw_data_count > 0):
+        if PyDetecDiv.project_name and (raw_data_count > 0):
             self.setEnabled(True)
         else:
             self.setEnabled(False)

@@ -327,7 +327,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         values
         """
         self.apply_drift = self.ui.actionApply_correction.isChecked()
-        PyDetecDiv().setOverrideCursor(QCursor(Qt.WaitCursor))
+        PyDetecDiv.app.setOverrideCursor(QCursor(Qt.WaitCursor))
         if self.image_source_ref and self.parent_viewer:
             data, crop = self.parent_viewer.get_roi_data(self.image_source_ref)
             self.set_image_resource_data(self.parent_viewer.image_resource_data, crop=crop)
@@ -335,14 +335,14 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
             # image_resource=self.image_resource_data.image_resource), crop=crop,
             # T=self.T, C=self.C, Z=self.Z)
         self.display()
-        PyDetecDiv().restoreOverrideCursor()
+        PyDetecDiv.app.restoreOverrideCursor()
 
     def load_drift_file(self):
         """
         Load a CSV file containing (x, y) drift values
         """
         drift_filename, _ = QFileDialog.getOpenFileName(
-            dir=os.path.join(get_config_value('project', 'workspace'), PyDetecDiv().project_name),
+            dir=os.path.join(get_config_value('project', 'workspace'), PyDetecDiv.project_name),
             filter='*.csv')
         if os.path.isfile(drift_filename):
             self.parent().parent().drift = pd.read_csv(drift_filename)
@@ -357,7 +357,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         Save (x, y) drift values to a file
         """
         drift_filename, _ = QFileDialog.getSaveFileName(
-            dir=os.path.join(get_config_value('project', 'workspace'), PyDetecDiv().project_name),
+            dir=os.path.join(get_config_value('project', 'workspace'), PyDetecDiv.project_name),
             filter='*.csv')
         if drift_filename:
             self.parent().parent().drift.to_csv(drift_filename, index=False)
@@ -473,7 +473,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         :param selected_roi:
         """
         viewer = ImageViewer()
-        PyDetecDiv().setOverrideCursor(QCursor(Qt.WaitCursor))
+        PyDetecDiv.app.setOverrideCursor(QCursor(Qt.WaitCursor))
         viewer.image_source_ref = selected_roi if selected_roi else self.scene.get_selected_ROI()
         viewer.parent_viewer = self
         data, crop = self.get_roi_data(viewer.image_source_ref)
@@ -484,14 +484,14 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         viewer.synchronize_with(self)
         # viewer.display()
         self.parent().parent().setCurrentWidget(viewer)
-        PyDetecDiv().restoreOverrideCursor()
+        PyDetecDiv.app.restoreOverrideCursor()
 
     def save_rois(self):
         """
         Save the areas as ROIs
         """
         rois = [item for item in self.scene.items() if isinstance(item, QGraphicsRectItem)]
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
             roi_list = [r.name for r in self.image_resource_data.fov.roi_list]
             for i, rect_item in enumerate(sorted(rois, key=lambda x: x.scenePos().toPoint().toTuple())):
                 x, y = rect_item.scenePos().toPoint().toTuple()
@@ -501,7 +501,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
                     new_roi = ROI(project=project, name=new_roi_name, fov=self.image_resource_data.fov,
                                   top_left=(x, y), bottom_right=(int(x) + w, int(y) + h))
                     rect_item.setData(0, new_roi.name)
-        PyDetecDiv().saved_rois.emit(PyDetecDiv().project_name)
+        PyDetecDiv().saved_rois.emit(PyDetecDiv.project_name)
         self.fixate_saved_rois()
 
     def fixate_saved_rois(self):
@@ -538,7 +538,7 @@ class ViewerScene(QGraphicsScene):
         r = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
         if isinstance(r, QGraphicsRectItem):
             view_in_new_tab.triggered.connect(lambda _: self.parent().view_roi_image(r))
-            PyDetecDiv().viewer_roi_click.emit((r, menu))
+            PyDetecDiv.app.viewer_roi_click.emit((r, menu))
             menu.exec(event.screenPos())
 
     def keyPressEvent(self, event):
@@ -562,7 +562,7 @@ class ViewerScene(QGraphicsScene):
         :type event: QGraphicsSceneMouseEvent
         """
         if event.button() == Qt.LeftButton:
-            match PyDetecDiv().current_drawing_tool:
+            match PyDetecDiv.current_drawing_tool:
                 case DrawingTools.Cursor:
                     self.select_ROI(event)
                 case DrawingTools.DrawROI:
@@ -630,7 +630,7 @@ class ViewerScene(QGraphicsScene):
         :type event: QGraphicsSceneMouseEvent
         """
         if event.button() == Qt.NoButton:
-            match PyDetecDiv().current_drawing_tool, event.modifiers():
+            match PyDetecDiv.current_drawing_tool, event.modifiers():
                 case DrawingTools.Cursor, Qt.NoModifier:
                     self.move_ROI(event)
                 case DrawingTools.Cursor, Qt.ControlModifier:
@@ -698,5 +698,5 @@ class ViewerScene(QGraphicsScene):
             roi.setRect(rect)
 
     def display_roi_size(self, roi):
-        PyDetecDiv().main_window.drawing_tools.roi_width.setValue(roi.rect().width())
-        PyDetecDiv().main_window.drawing_tools.roi_height.setValue(roi.rect().height())
+        PyDetecDiv.main_window.drawing_tools.roi_width.setValue(roi.rect().width())
+        PyDetecDiv.main_window.drawing_tools.roi_height.setValue(roi.rect().height())

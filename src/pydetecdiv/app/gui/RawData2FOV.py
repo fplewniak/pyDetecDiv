@@ -22,7 +22,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
 
     def __init__(self):
         # Base class
-        QDialog.__init__(self, PyDetecDiv().main_window)
+        QDialog.__init__(self, PyDetecDiv.main_window)
 
         # Initialize the UI widgets
         self.ui = Ui_RawData2FOV()
@@ -32,7 +32,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
             'T': QColor.fromRgb(0, 255, 255, 255),
             'Z': QColor.fromRgb(255, 255, 0, 255),
         }
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
             raw_data_urls = [d.url for d in project.get_objects('Data')]
             self.samples_text = random.sample(raw_data_urls, min([len(raw_data_urls), 5]))
         self.samples = []
@@ -326,12 +326,12 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
                                          progress_bar=True, )
                 self.finished.connect(wait_dialog.close_window)
                 self.progress.connect(wait_dialog.show_progress)
-                with pydetecdiv_project(PyDetecDiv().project_name) as project:
+                with pydetecdiv_project(PyDetecDiv.project_name) as project:
                     project.raw_dataset.pattern = '.*'.join(
                         [regexes[col] for col in df.sort_values(0, axis=1, ascending=True).columns if col != 'FOV'])
                     project.save(project.raw_dataset)
                 wait_dialog.wait_for(self.create_fov_annotate, regex)
-                PyDetecDiv().project_selected.emit(project.dbname)
+                PyDetecDiv.app.project_selected.emit(project.dbname)
                 self.close()
             case QDialogButtonBox.StandardButton.Close:
                 self.close()
@@ -344,7 +344,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
 
         :param regex: the regular expression to use for data annotation
         """
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
             columns = tuple(re.compile(regex).groupindex.keys())
             # fov_index = pattern.groupindex['FOV']
             # fov_pattern = ''.join(re.findall(r'\(.*?\)', regex)[fov_index - 2:fov_index + 1])

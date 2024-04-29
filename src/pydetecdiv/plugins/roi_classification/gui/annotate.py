@@ -17,7 +17,7 @@ def open_annotator(plugin, roi_selection):
     :param plugin: the plugin instance
     :param roi_selection: the list of ROIs to annotate
     """
-    project_window = PyDetecDiv().main_window.active_subwindow
+    project_window = PyDetecDiv.main_window.active_subwindow
     viewer = Annotator()
     viewer.set_plugin(plugin)
     viewer.ui.zoom_value.setMaximum(400)
@@ -68,7 +68,7 @@ class Annotator(ImageViewer):
         """
         try:
             self.roi = next(self.roi_list)
-            with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            with pydetecdiv_project(PyDetecDiv.project_name) as project:
                 image_resource = project.get_linked_objects('FOV', self.roi)[0].image_resource()
                 x1, x2 = self.roi.top_left[0], self.roi.bottom_right[0] + 1
                 y1, y2 = self.roi.top_left[1], self.roi.bottom_right[1] + 1
@@ -80,7 +80,7 @@ class Annotator(ImageViewer):
                 self.video_frame.emit(0)
                 self.ui.t_slider.setSliderPosition(0)
                 self.ui.view_name.setText(f'ROI: {self.roi.name}')
-                PyDetecDiv().main_window.active_subwindow.setCurrentWidget(self)
+                PyDetecDiv.main_window.active_subwindow.setCurrentWidget(self)
         except StopIteration:
             pass
 
@@ -89,7 +89,7 @@ class Annotator(ImageViewer):
         Retrieve from the database the manual annotations for a ROI
         """
         self.roi_classes = ['-'] * self.image_resource_data.sizeT
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
             results = list(project.repository.session.execute(
                 sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,run.parameters ->> '$.annotator' as annotator "
                                 f"FROM run, roi_classification as rc "
@@ -152,7 +152,7 @@ class Annotator(ImageViewer):
         """
         parameters = {'annotator': get_config_value('project', 'user'),}
         parameters.update(self.plugin.parameters.get_values('annotate'))
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
             self.run = self.plugin.save_run(project, 'annotate_rois', parameters)
             # self.run = self.plugin.save_run(project, 'annotate_rois',
             #                                 {'class_names': self.plugin.class_names,

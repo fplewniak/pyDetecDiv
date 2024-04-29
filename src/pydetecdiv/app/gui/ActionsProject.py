@@ -23,7 +23,7 @@ class ProjectDialog(QDialog):
     finished = Signal(bool, name='projectOpen')
 
     def __init__(self, project_list, project_action=ProjectAction.Open):
-        super().__init__(PyDetecDiv().main_window)
+        super().__init__(PyDetecDiv.main_window)
         self.wait = None
         self.project_action = project_action
         self.setWindowModality(Qt.WindowModal)
@@ -141,8 +141,8 @@ class ProjectDialog(QDialog):
 
         try:
             with pydetecdiv_project(project_name) as project:
-                PyDetecDiv().project_selected.emit(project.dbname)
-                PyDetecDiv().raw_data_counted.emit(project.count_objects('Data'))
+                PyDetecDiv.app.project_selected.emit(project.dbname)
+                PyDetecDiv.app.raw_data_counted.emit(project.count_objects('Data'))
             self.finished.emit(True)
         except OpenProjectError as e:
             self.finished.emit(True)

@@ -7,7 +7,7 @@ import os.path
 from contextlib import contextmanager
 from enum import StrEnum
 
-from PySide6.QtGui import QCursor
+from PySide6.QtGui import QCursor, QGuiApplication
 from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal
 
@@ -15,7 +15,6 @@ from pydetecdiv import plugins
 from pydetecdiv.settings import get_config_file, get_appdata_dir, get_config_value
 from pydetecdiv.persistence.project import list_projects
 from pydetecdiv.domain import Project
-from pydetecdiv.utils import singleton
 
 
 class DrawingTools(StrEnum):
@@ -27,7 +26,6 @@ class DrawingTools(StrEnum):
     DuplicateROI = 'Duplicate selected ROI'
 
 
-@singleton
 class PyDetecDiv(QApplication):
     """
     PyDetecDiv application class extending QApplication to keep track of the current project and main window
@@ -37,13 +35,16 @@ class PyDetecDiv(QApplication):
     saved_rois = Signal(str)
     viewer_roi_click = Signal(tuple)
 
+    version = '0.4.0'
+    project_name = None
+    main_window = None
+    current_drawing_tool = None
+    plugin_list = None
+    app = None
+
     def __init__(self, *args):
         super().__init__(*args)
         self.setApplicationName('pyDetecDiv')
-        self.version = '0.4.0'
-        self.project_name = None
-        self.main_window = None
-        self.current_drawing_tool = None
         self.load_plugins()
 
     def load_plugins(self):
@@ -52,6 +53,11 @@ class PyDetecDiv(QApplication):
         """
         self.plugin_list = plugins.PluginList()
         self.plugin_list.load()
+
+    @staticmethod
+    def set_main_window(main_window):
+        PyDetecDiv.main_window = main_window
+        PyDetecDiv.main_window.show()
 
 
 @contextmanager
@@ -62,7 +68,7 @@ def pydetecdiv_project(project_name):
     :param project_name: the project name
     :type project_name: str
     """
-    PyDetecDiv().project_name = project_name
+    PyDetecDiv.project_name = project_name
     project = Project(project_name)
     try:
         yield project
@@ -151,7 +157,7 @@ class WaitDialog(QDialog):
         :param args: positional arguments for the function
         :param kwargs: keyword arguments for the function
         """
-        PyDetecDiv().setOverrideCursor(QCursor(Qt.WaitCursor))
+        PyDetecDiv.app.setOverrideCursor(QCursor(Qt.WaitCursor))
         self.pdd_thread.set_function(func, *args, **kwargs)
         self.pdd_thread.start()
         self.exec()
@@ -161,7 +167,7 @@ class WaitDialog(QDialog):
         Hide and destroy the Wait dialog window. The cursor is also set back to its normal aspect.
         """
         self.hide()
-        PyDetecDiv().restoreOverrideCursor()
+        PyDetecDiv.app.restoreOverrideCursor()
         self.destroy()
 
     def cancel(self):
@@ -242,7 +248,8 @@ def get_settings():
 
 def get_project_dir():
     workspace_dir = get_config_value('project', 'workspace')
-    return os.path.join(workspace_dir, PyDetecDiv().project_name)
+    return os.path.join(workspace_dir, PyDetecDiv.project_name)
+
 
 def project_list():
     """
@@ -252,3 +259,7 @@ def project_list():
     :rtype: list of str
     """
     return list_projects()
+
+def create_app():
+    PyDetecDiv.app = PyDetecDiv([])
+    return PyDetecDiv.app
