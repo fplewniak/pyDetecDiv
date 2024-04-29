@@ -10,7 +10,7 @@ from pydetecdiv.app.gui.parameters import ParameterWidgetFactory
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, WaitDialog
 from pydetecdiv.app.gui.Trees import TreeDictModel, TreeItem
-from pydetecdiv.domain.Run import Run
+from pydetecdiv.domain import Run
 from pydetecdiv.domain.CommandLineTool import list_tools
 
 

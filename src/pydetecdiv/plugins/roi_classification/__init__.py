@@ -26,14 +26,13 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from pydetecdiv import plugins
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir
 from pydetecdiv.settings import get_plugins_dir
-from pydetecdiv.domain.Image import Image, ImgDType
+from pydetecdiv.domain import Image, Dataset, ImgDType
+from pydetecdiv.app.gui.Windows import MatplotViewer
+from pydetecdiv.settings import get_config_value
 
 from .gui import FOV2ROIlinks, ROIclassificationDialog
 from . import models
 from .gui.annotate import open_annotator
-from ...app.gui.Windows import MatplotViewer
-from ...domain.Dataset import Dataset
-from ...settings import get_config_value
 
 Base = registry().generate_base()
 

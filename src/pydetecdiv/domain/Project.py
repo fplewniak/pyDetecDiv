@@ -11,13 +11,7 @@ from pydetecdiv.domain.ImageResource import ImageResource
 from pydetecdiv.settings import get_config_value
 from pydetecdiv.persistence.project import open_project
 from pydetecdiv.domain.dso import DomainSpecificObject
-from pydetecdiv.domain.ROI import ROI
-from pydetecdiv.domain.FOV import FOV
-from pydetecdiv.domain.Experiment import Experiment
-from pydetecdiv.domain.Data import Data
-from pydetecdiv.domain.Run import Run
-from pydetecdiv.domain.Dataset import Dataset
-from pydetecdiv.domain.ImageResourceData import ImageResourceData
+from pydetecdiv.domain import ROI, FOV, Experiment, Data, Run, Dataset, ImageResourceData
 
 
 class Project:

@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from tifffile import tifffile
 import cv2
-from pydetecdiv.domain.ImageResourceData import ImageResourceData
+from pydetecdiv.domain import ImageResourceData
 
 
 def aics_indexer(path, pattern):

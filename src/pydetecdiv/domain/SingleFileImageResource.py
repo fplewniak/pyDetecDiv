@@ -8,7 +8,7 @@ from tifffile import tifffile
 import numpy as np
 import cv2
 
-from pydetecdiv.domain.ImageResourceData import ImageResourceData
+from pydetecdiv.domain import ImageResourceData
 
 
 class SingleFileImageResource(ImageResourceData):

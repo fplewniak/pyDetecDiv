@@ -14,7 +14,7 @@ from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal
 from pydetecdiv import plugins
 from pydetecdiv.settings import get_config_file, get_appdata_dir, get_config_value
 from pydetecdiv.persistence.project import list_projects
-from pydetecdiv.domain.Project import Project
+from pydetecdiv.domain import Project
 from pydetecdiv.utils import singleton
 
 

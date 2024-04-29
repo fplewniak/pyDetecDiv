@@ -9,7 +9,7 @@ from PySide6.QtCore import QTimer, QRect
 from PySide6.QtGui import QAction, QIcon, QFont
 from PySide6.QtWidgets import QToolBar, QStatusBar, QMenu, QApplication, QDialog, QDialogButtonBox, QSizePolicy, QLabel
 
-from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
+from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui import ActionsSettings, ActionsProject, ActionsData
 import pydetecdiv.app.gui.resources_rc
 

@@ -11,7 +11,7 @@ from aicsimageio import AICSImage
 
 from pydetecdiv.domain.dso import NamedDSO
 from pydetecdiv.settings import get_config_value
-from pydetecdiv.domain.ImageResource import ImageResource
+from pydetecdiv.domain import ImageResource
 
 
 class Data(NamedDSO):

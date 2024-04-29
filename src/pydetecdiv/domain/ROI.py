@@ -5,7 +5,7 @@
 """
 from pydetecdiv.exceptions import JuttingError
 from pydetecdiv.domain.dso import NamedDSO, BoxedDSO
-from pydetecdiv.domain.FOV import FOV
+from pydetecdiv.domain import FOV
 
 
 class ROI(NamedDSO, BoxedDSO):

@@ -9,7 +9,7 @@ from PySide6.QtGui import QAction
 
 import pydetecdiv
 from pydetecdiv.settings import get_plugins_dir
-from pydetecdiv.domain.Run import Run
+from pydetecdiv.domain import Run
 from pydetecdiv.plugins.gui import Parameters, Dialog
 
 

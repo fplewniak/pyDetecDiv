@@ -15,7 +15,7 @@ import qimage2ndarray
 
 from pydetecdiv.app import WaitDialog, PyDetecDiv, DrawingTools, pydetecdiv_project
 from pydetecdiv.app.gui.ui.ImageViewer import Ui_ImageViewer
-from pydetecdiv.domain.ROI import ROI
+from pydetecdiv.domain import ROI
 from pydetecdiv.settings import get_config_value
 from pydetecdiv.utils import round_to_even
 

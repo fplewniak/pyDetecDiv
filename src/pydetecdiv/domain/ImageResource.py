@@ -7,12 +7,8 @@ import numpy as np
 from PIL import Image
 from aicsimageio.dimensions import Dimensions
 
-from pydetecdiv.domain.MultiFileImageResource import MultiFileImageResource
-from pydetecdiv.domain.SingleFileImageResource import SingleFileImageResource
+from pydetecdiv.domain import MultiFileImageResource, SingleFileImageResource, FOV, Dataset
 from pydetecdiv.domain.dso import DomainSpecificObject
-from pydetecdiv.domain.FOV import FOV
-from pydetecdiv.domain.Dataset import Dataset
-
 
 class ImageResource(DomainSpecificObject):
     """
