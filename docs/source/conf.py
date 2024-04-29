@@ -22,8 +22,8 @@ copyright = '2024, Frédéric PLEWNIAK'
 author = 'Frédéric PLEWNIAK'
 
 # The full version, including alpha/beta/rc tags
-version = '0.3.0'
-release = '0.3.0'
+version = '0.4.0'
+release = '0.4.0'
 
 
 # -- General configuration ---------------------------------------------------

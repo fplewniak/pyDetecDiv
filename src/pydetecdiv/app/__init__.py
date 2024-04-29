@@ -40,6 +40,7 @@ class PyDetecDiv(QApplication):
     def __init__(self, *args):
         super().__init__(*args)
         self.setApplicationName('pyDetecDiv')
+        self.version = '0.4.0'
         self.project_name = None
         self.main_window = None
         self.current_drawing_tool = None
