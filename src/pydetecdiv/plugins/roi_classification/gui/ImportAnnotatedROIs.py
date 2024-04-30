@@ -276,7 +276,7 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
                 self.finished.connect(wait_dialog.close_window)
                 self.progress.connect(wait_dialog.show_progress)
                 wait_dialog.wait_for(self.create_annotated_rois, regex, run)
-                PyDetecDiv.project_selected.emit(PyDetecDiv().project_name)
+                PyDetecDiv.app.project_selected.emit(PyDetecDiv.project_name)
                 self.close()
             case QDialogButtonBox.StandardButton.Close:
                 self.close()
