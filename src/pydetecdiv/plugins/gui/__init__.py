@@ -148,12 +148,14 @@ class ComboBox(QComboBox):
     """
     an extension of the QComboBox class
     """
-    def __init__(self, parent, items=None, selected=None):
+
+    def __init__(self, parent, items=None, selected=None, editable=False):
         super().__init__(parent)
         if items is not None:
             self.addItemDict(items)
         if selected is not None:
             self.setCurrentText(selected)
+        self.setEditable(editable)
 
     def addItemDict(self, options):
         """
