@@ -9,10 +9,12 @@ from PySide6.QtWidgets import QDialog, QFrame, QVBoxLayout, QGroupBox, QFormLayo
     QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView, QAbstractItemView, \
     QPushButton, QApplication, QRadioButton
 
+
 class Parameters:
     """
     A class to handle plugin parameters from a Form gui
     """
+
     def __init__(self):
         self.param_groups = {}
 
@@ -24,6 +26,7 @@ class Parameters:
         """
         for group in groups:
             self.add_group(group)
+
     def add_group(self, group, param_dict=None):
         """
         Add a new group of parameters (in a dictionary)
@@ -51,6 +54,7 @@ class Parameters:
         """
         return {name: widget.value() for name, widget in self.param_groups[group].items()}
 
+
 class StyleSheets:
     """
     Style sheets for the widgets
@@ -76,6 +80,7 @@ class GroupBox(QGroupBox):
     """
     an extension of QGroupBox class
     """
+
     def __init__(self, parent, title=None):
         super().__init__(parent)
         if title is not None:
@@ -100,6 +105,7 @@ class FormGroupBox(GroupBox):
     """
     an extension of GroupBox class to handle Forms
     """
+
     def __init__(self, parent, title=None, show=True):
         super().__init__(parent, title)
         self.layout = QFormLayout(self)
@@ -196,6 +202,7 @@ class LineEdit(QLineEdit):
     """
     an extension of QLineEdit class
     """
+
     def __init__(self, parent):
         super().__init__(parent)
 
@@ -205,13 +212,25 @@ class LineEdit(QLineEdit):
 
         :return: the text in LineEdit
         """
-        return self.text()
+        try:
+            return json.loads(self.text())
+        except json.decoder.JSONDecodeError:
+            return self.text()
+
+    @property
+    def changed(self):
+        return self.textChanged
+
+    @property
+    def edited(self):
+        return self.editingFinished
 
 
 class PushButton(QPushButton):
     """
     an extension of QPushButton class
     """
+
     def __init__(self, parent, text, icon=None, flat=False):
         if icon is None:
             super().__init__(text, parent)
@@ -224,6 +243,7 @@ class AdvancedButton(PushButton):
     """
     an extension of PushButton class to control collapsible group boxes for advanced options
     """
+
     def __init__(self, parent):
         super().__init__(parent, text='Advanced options', icon=QIcon(':icons/show'), flat=True)
         self.group_box = None
@@ -262,6 +282,7 @@ class RadioButton(QRadioButton):
     """
     an extension of the QRadioButton class
     """
+
     def __init__(self, parent, exclusive=True):
         super().__init__(None, parent)
         self.setAutoExclusive(exclusive)
@@ -279,6 +300,7 @@ class SpinBox(QSpinBox):
     """
     an extension of the QSpinBox class
     """
+
     def __init__(self, parent, range=(1, 4096), single_step=1, adaptive=False, value=None):
         super().__init__(parent)
         self.setRange(*range[0:2])
@@ -305,6 +327,7 @@ class DoubleSpinBox(QDoubleSpinBox):
     """
     an extension of the QDoubleSpinBox class
     """
+
     def __init__(self, parent, range=(0.1, 1.0), decimals=2, single_step=0.1, adaptive=False, value=0.1, enabled=True):
         super().__init__(parent)
         self.setRange(*range[0:2])
@@ -332,6 +355,7 @@ class TableView(QTableView):
     """
     an extension of the QTableView widget
     """
+
     def __init__(self, parent, multiselection=True, behavior='rows'):
         super().__init__(parent)
         self.model = QSqlQueryModel()
@@ -357,6 +381,7 @@ class DialogButtonBox(QDialogButtonBox):
     """
     A extension of QDialogButtonBox to add a button box
     """
+
     def __init__(self, parent, buttons=(QDialogButtonBox.Ok, QDialogButtonBox.Close)):
         super().__init__(parent)
         for button in buttons:
@@ -385,6 +410,7 @@ class Dialog(QDialog):
     """
     An extension of QDialog to define forms that may be used to specify plugin options
     """
+
     def __init__(self, plugin, title=None):
         super().__init__()
         self.vert_layout = QVBoxLayout(self)
