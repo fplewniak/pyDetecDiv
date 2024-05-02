@@ -126,11 +126,13 @@ def prepare_data(data_list, seqlen=None, targets=True):
     return roi_data_list
 
 
-def get_annotation(roi):
+def get_annotation(roi, as_index=True):
     """
     Get the annotations for a ROI
 
     :param roi: the ROI
+    :param as_index: bool set to True to return annotations as indices of class_names list, set to False to return
+    annotations as class names
     :return: the list of annotated classes by frame
     """
     roi_classes = [-1] * roi.fov.image_resource().image_resource_data().sizeT
@@ -145,8 +147,12 @@ def get_annotation(roi):
                             f"AND annotator='{get_config_value('project', 'user')}' "
                             f"ORDER BY rc.run ASC;")))
         class_names = json.loads(results[0][4])
-        for annotation in results:
-            roi_classes[annotation[1]] = class_names.index(annotation[2])
+        if as_index:
+            for annotation in results:
+                roi_classes[annotation[1]] = class_names.index(annotation[2])
+        else:
+            for annotation in results:
+                roi_classes[annotation[1]] = annotation[2]
     return roi_classes
 
 
