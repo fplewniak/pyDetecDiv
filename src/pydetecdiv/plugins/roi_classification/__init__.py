@@ -429,6 +429,7 @@ class Plugin(plugins.Plugin):
         Launch training a model: select the network, load weights (optional), define the training, validation
         and test sets, then run the training using training and validation sets and the evaluation on the test set.
         """
+        tf.keras.utils.set_random_seed(self.gui.weight_seed.value())
         batch_size = self.gui.batch_size.value()
         seqlen = self.gui.seq_length.value()
         epochs = self.gui.epochs.value()
@@ -470,6 +471,7 @@ class Plugin(plugins.Plugin):
             img_size = (input_shape[1], input_shape[2])
 
             roi_list = prepare_data(get_annotated_rois())
+            random.seed(self.gui.datasets_seed.value())
             random.shuffle(roi_list)
             num_training = int(self.gui.training_data.value() * len(roi_list))
             num_validation = int(self.gui.validation_data.value() * len(roi_list))
@@ -488,6 +490,7 @@ class Plugin(plugins.Plugin):
             img_size = (input_shape[2], input_shape[3])
 
             roi_list = prepare_data(get_annotated_rois(), seqlen)
+            random.seed(self.gui.datasets_seed.value())
             random.shuffle(roi_list)
             num_training = round(self.gui.training_data.value() * len(roi_list))
             num_validation = round(self.gui.validation_data.value() * len(roi_list))
