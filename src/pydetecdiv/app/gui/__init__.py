@@ -156,7 +156,7 @@ class Help(QAction):
         label_5 = QLabel(about_dialog)
         label_5.setGeometry(QRect(130, 190, 131, 16))
         label.setText('pyDetecDiv')
-        label_2.setText('version 0.3.0')
+        label_2.setText('version 0.3.1')
         label_3.setText('CeCILL FREE SOFTWARE LICENSE AGREEMENT v2.1 (2013-06-21)')
         label_4.setText('https://github.com/fplewniak/pyDetecDiv')
         label_5.setText('f.plewniak@unistra.fr')
