@@ -441,7 +441,7 @@ class CreateFOV(QAction):
     """
 
     def __init__(self, parent):
-        super().__init__(QIcon(":icons/import_images"), "Create &FOV from raw data", parent)
+        super().__init__(QIcon(":icons/import_images"), "Build &Image resources from raw data", parent)
         self.triggered.connect(RawData2FOV)
         self.setEnabled(False)
         parent.addAction(self)

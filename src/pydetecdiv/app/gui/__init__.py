@@ -42,7 +42,7 @@ class DataMenu(QMenu):
         import_data = ActionsData.ImportData(menu)
         import_data.setShortcut("Ctrl+I")
         create_fovs = ActionsData.CreateFOV(menu)
-        create_fovs.setShortcut("Ctrl+Alt+F")
+        create_fovs.setShortcut("Ctrl+Alt+I")
         PyDetecDiv.app.project_selected.connect(lambda e: import_data.setEnabled(True))
         PyDetecDiv.app.raw_data_counted.connect(create_fovs.enable)
 

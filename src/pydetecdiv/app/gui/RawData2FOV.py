@@ -46,7 +46,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
                          }
         for i, label_text in enumerate(self.samples_text):
             self.samples[i].setText(label_text)
-        self.setWindowTitle('Create FOVs from raw data files')
+        self.setWindowTitle('Build Image resources from raw data files')
         self.ui.pos_left.addItems(['position', 'Pos', ''])
         self.ui.c_left.addItems(['channel', 'c', 'C', ''])
         self.ui.t_left.addItems(['time', 'frame', 't', 'T', ''])
@@ -322,7 +322,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
                 regexes = self.get_regex()
                 df = pandas.DataFrame.from_dict(self.get_match_spans(self.find_matches(self.samples_text, regexes), 0))
                 regex = '.*'.join([regexes[col] for col in df.sort_values(0, axis=1, ascending=True).columns])
-                wait_dialog = WaitDialog('Creating Fields of view', self, cancel_msg='Cancel FOV creation: please wait',
+                wait_dialog = WaitDialog('Building Image resources', self, cancel_msg='Cancel Image resource creation: please wait',
                                          progress_bar=True, )
                 self.finished.connect(wait_dialog.close_window)
                 self.progress.connect(wait_dialog.show_progress)
