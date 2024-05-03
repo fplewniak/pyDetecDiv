@@ -187,7 +187,8 @@ class ROIDataset(tf.keras.utils.Sequence):
     """
 
     def __init__(self, roi_data_list, image_size=(60, 60), class_names=None, batch_size=32, seqlen=None,
-                 z_channels=None):
+                 z_channels=None, **kwargs):
+        super().__init__(**kwargs)
         self.img_size = image_size
         self.class_names = class_names
         self.batch_size = batch_size
@@ -527,7 +528,7 @@ class Plugin(plugins.Plugin):
         self.save_training_datasets(run, roi_list, num_training, num_validation)
 
         checkpoint_monitor_metric = self.gui.checkpoint_metric.currentData()
-        best_checkpoint_filename = f'weights_{run.id_}_best_{checkpoint_monitor_metric}.h5'
+        best_checkpoint_filename = f'{run.id_}_best_{checkpoint_monitor_metric}.weights.h5'
         checkpoint_filepath = os.path.join(get_project_dir(), 'roi_classification', 'models',
                                            self.gui.network.currentText(),
                                            f'{best_checkpoint_filename}')
@@ -554,12 +555,12 @@ class Plugin(plugins.Plugin):
         # class_weights = compute_class_weights() if self.gui.class_weights.isChecked() else {k: 1.0 for k in range(len(self.class_names))}
 
         history = model.fit(training_dataset, epochs=epochs,
-                            callbacks=callbacks, validation_data=validation_dataset, verbose=2,)
+                            callbacks=callbacks, validation_data=validation_dataset, verbose=2, )
 
         model.save_weights(os.path.join(get_project_dir(), 'roi_classification', 'models',
                                         self.gui.network.currentText(),
-                                        f'weights_{run.id_}_last.h5'),
-                           overwrite=True, save_format='h5')
+                                        f'{run.id_}_last.weights.h5'),
+                           overwrite=True)
 
         # evaluation = {metrics: value for metrics, value in zip(model.metrics_names, model.evaluate(test_dataset))}
         evaluation = dict(zip(model.metrics_names, model.evaluate(test_dataset)))
@@ -704,7 +705,7 @@ def get_lr_metric(optimizer):
     """
 
     def lr(y_true, y_pred):
-        return optimizer.lr
+        return optimizer.learning_rate
 
     return lr
 
