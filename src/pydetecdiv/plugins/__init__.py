@@ -125,8 +125,9 @@ class PluginList:
         :param name: the module name
         :return: the plugin module
         """
-        loader = finder.find_module(name)
-        spec = importlib.util.spec_from_file_location(name, loader.path)
+        # loader = finder.find_module(name)
+        # spec = importlib.util.spec_from_file_location(name, loader.path)
+        spec = finder.find_spec(name)
         module = importlib.util.module_from_spec(spec)
         # module = importlib.import_module(name)
         sys.modules[name] = module
