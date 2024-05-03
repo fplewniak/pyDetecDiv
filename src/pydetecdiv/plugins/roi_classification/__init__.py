@@ -8,6 +8,7 @@ import os.path
 import pkgutil
 import random
 import sys
+from collections import Counter
 from datetime import datetime
 
 import h5py
@@ -126,6 +127,18 @@ def prepare_data(data_list, seqlen=None, targets=True):
     return roi_data_list
 
 
+def compute_class_weights():
+    class_counts = dict(Counter([x for roi in get_annotated_rois() for x in get_annotation(roi) if x >= 0]))
+    print(class_counts)
+    n = len(class_counts)
+    total = sum([v for c, v in class_counts.items()])
+    weights = {k: total / (n * class_counts[k]) for k in class_counts.keys()}
+    for k in range(n):
+        if k not in weights:
+            weights[k] = 0.00
+    return weights
+
+
 def get_annotation(roi, as_index=True):
     """
     Get the annotations for a ROI
@@ -160,6 +173,7 @@ class ROIdata:
     """
     ROI data, linking ROI object, the corresponding image data, target (class), and frame
     """
+
     def __init__(self, roi, imgdata, target=None, frame=0):
         self.roi = roi
         self.imgdata = imgdata
@@ -171,6 +185,7 @@ class ROIDataset(tf.keras.utils.Sequence):
     """
     ROI dataset that can be used to feed the model for training, evaluation or prediction
     """
+
     def __init__(self, roi_data_list, image_size=(60, 60), class_names=None, batch_size=32, seqlen=None,
                  z_channels=None):
         self.img_size = image_size
@@ -320,9 +335,9 @@ class Plugin(plugins.Plugin):
             #                                                          fov_name in
             #                                                          fov_names]]]))
             roi_list = np.ndarray.flatten(np.array(list([fov.roi_list for fov in
-                                                                    [project.get_named_object('FOV', fov_name) for
-                                                                     fov_name in
-                                                                     fov_names]])))
+                                                         [project.get_named_object('FOV', fov_name) for
+                                                          fov_name in
+                                                          fov_names]])))
 
             if len(input_shape) == 4:
                 img_size = (input_shape[1], input_shape[2])
@@ -536,9 +551,10 @@ class Plugin(plugins.Plugin):
         if self.gui.early_stopping.isChecked():
             callbacks += [training_early_stopping]
 
+        # class_weights = compute_class_weights() if self.gui.class_weights.isChecked() else {k: 1.0 for k in range(len(self.class_names))}
+
         history = model.fit(training_dataset, epochs=epochs,
-                            callbacks=callbacks,
-                            validation_data=validation_dataset, verbose=2, )
+                            callbacks=callbacks, validation_data=validation_dataset, verbose=2,)
 
         model.save_weights(os.path.join(get_project_dir(), 'roi_classification', 'models',
                                         self.gui.network.currentText(),
@@ -553,15 +569,15 @@ class Plugin(plugins.Plugin):
             predictions = model.predict(test_dataset).argmax(axis=1)
             model.load_weights(checkpoint_filepath)
             model.compile(optimizer=optimizer,
-                            loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-                            metrics=['accuracy', lr_metric],)
+                          loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+                          metrics=['accuracy', lr_metric], )
             best_predictions = model.predict(test_dataset).argmax(axis=1)
         else:
             predictions = [label for seq in model.predict(test_dataset).argmax(axis=2) for label in seq]
             model.load_weights(checkpoint_filepath)
             model.compile(optimizer=optimizer,
-                            loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-                            metrics=['accuracy', lr_metric],)
+                          loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+                          metrics=['accuracy', lr_metric], )
             best_predictions = [label for seq in model.predict(test_dataset).argmax(axis=2) for label in seq]
             ground_truth = [label for seq in ground_truth for label in seq]
 
@@ -678,6 +694,7 @@ def plot_confusion_matrix(ground_truth, predictions, class_names):
                                             display_labels=class_names, normalize='pred', ax=plot_viewer.axes[1])
     return plot_viewer
 
+
 def get_lr_metric(optimizer):
     """
     Get the learning rate metric for optimizer for use during training to monitor the learning rate
@@ -685,6 +702,7 @@ def get_lr_metric(optimizer):
     :param optimizer: the optimizer
     :return: the learning rate function
     """
+
     def lr(y_true, y_pred):
         return optimizer.lr
 

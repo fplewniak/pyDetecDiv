@@ -73,6 +73,8 @@ class ROIclassificationDialog(Dialog, Singleton):
 
         self.early_stopping = self.training_advanced.group_box.addOption('Early stopping:', RadioButton,
                                                                          parameter=(['training'], 'early_stopping'))
+        # self.class_weights = self.training_advanced.group_box.addOption('Class weights:', RadioButton,
+        #                                                                  parameter=(['training'], 'class_weights'))
 
         self.roi_selection = self.addGroupBox('Select ROIs')
         self.table = self.roi_selection.addOption(None, TableView, multiselection=True, behavior='rows')
