@@ -1,6 +1,6 @@
 from tensorflow import keras
 
-def create_model():
+def create_model(n_classes):
     model = keras.Sequential()
 
     model.add(keras.layers.Input((60, 60, 3)))
@@ -17,6 +17,6 @@ def create_model():
     model.add(keras.layers.Flatten())
     model.add(keras.layers.Dense(512, activation='relu'))
     model.add(keras.layers.Dropout(0.2))
-    model.add(keras.layers.Dense(6, name="new_fc_"))
+    model.add(keras.layers.Dense(n_classes, name="new_fc_"))
     model.add(keras.layers.Softmax())
     return model

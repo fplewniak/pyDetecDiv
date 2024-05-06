@@ -312,7 +312,8 @@ class ROIclassificationDialog(Dialog, Singleton):
         """
         Update the classes associated with the currently selected model
         """
-        self.classes.setText(json.dumps(self.network.currentData().class_names))
+        from pydetecdiv.plugins.roi_classification import get_class_names
+        self.classes.setText(json.dumps(get_class_names()))
 
     def update_datasets(self, changed_dataset=None):
         """

@@ -168,6 +168,23 @@ def get_annotation(roi, as_index=True):
                 roi_classes[annotation[1]] = annotation[2]
     return roi_classes
 
+def get_class_names():
+    """
+    Get the class names for a project
+
+    :return: the list of classes from the last annotation run for this project
+    """
+    with pydetecdiv_project(PyDetecDiv.project_name) as project:
+        results = list(project.repository.session.execute(
+            sqlalchemy.text(f"SELECT "
+                            f"run.parameters ->> '$.annotator' as annotator, "
+                            f"run.parameters ->> '$.class_names' as class_names "
+                            f"FROM run "
+                            f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+                            f"AND annotator='{get_config_value('project', 'user')}' "
+                            f"ORDER BY run.id_ DESC;")))
+        class_names = set([json.loads(row[1]) for row in results])[-1]
+    return class_names
 
 class ROIdata:
     """
@@ -291,7 +308,7 @@ class Plugin(plugins.Plugin):
         """
         module = self.gui.network.currentData()
         print(module.__name__)
-        model = module.model.create_model()
+        model = module.model.create_model(len(self.class_names))
         print('Loading weights')
         weights = self.gui.weights.currentData()
         print(weights)
@@ -457,7 +474,7 @@ class Plugin(plugins.Plugin):
 
         run = self.save_training_run(module)
 
-        model = module.model.create_model()
+        model = module.model.create_model(len(self.class_names))
         print('Loading weights')
         weights = self.gui.weights.currentData()
         if weights:

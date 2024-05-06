@@ -6,7 +6,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
-def create_model():
+def create_model(n_classes):
     input = keras.Input(shape=(None,60,60,3))
     fold_out, fold_miniBatchSize = SequenceFoldingLayer((60,60,3))(input)
     conv2d_1 = keras.layers.Conv2D(8, (3, 3), activation='relu', padding='same')(fold_out)
@@ -25,7 +25,7 @@ def create_model():
     flatten_bilstm_input = flatten
     bilstm = layers.Bidirectional(layers.LSTM(150, activation='tanh', recurrent_activation='sigmoid', return_sequences=True, return_state=False), name="bilstm_")(flatten_bilstm_input)
     drop = layers.Dropout(0.500000)(bilstm)
-    fc = layers.Dense(6, name="fc_")(drop)
+    fc = layers.Dense(n_classes, name="fc_")(drop)
     softmax = layers.Softmax()(fc)
     classification = softmax
 
