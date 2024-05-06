@@ -183,7 +183,7 @@ def get_class_names():
                             f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
                             f"AND annotator='{get_config_value('project', 'user')}' "
                             f"ORDER BY run.id_ DESC;")))
-        class_names = set([json.loads(row[1]) for row in results])[-1]
+        class_names = json.loads(results[-1][1])
     return class_names
 
 class ROIdata:
