@@ -35,13 +35,13 @@ class ROIclassificationDialog(Dialog, Singleton):
                                                          'Classify ROIs': self.plugin.predict},
                                                      selected='Classify ROIs')
 
-        self.classifier_selection = self.addGroupBox('Select classifier')
+        self.classifier_selection = self.addGroupBox('Classifier')
         self.network = self.classifier_selection.addOption('Network:', ComboBox,
                                                            parameter=(['training', 'classify'], 'model'))
         self.weights = self.classifier_selection.addOption('Weights:', ComboBox,
                                                            parameter=(['training', 'classify'], 'weights'))
         self.classes = self.classifier_selection.addOption('Classes:', LineEdit, parameter=(
-            ['training', 'classify', 'annotate'], 'class_names'))
+            ['training', 'classify', 'annotate'], 'class_names'), editable=True)
         self.training_advanced = self.classifier_selection.addOption(None, AdvancedButton)
         self.training_advanced.linkGroupBox(self.classifier_selection.addOption(None, FormGroupBox, show=False))
         self.weight_seed = self.training_advanced.group_box.addOption('Random seed:', SpinBox, value=42,
@@ -190,18 +190,20 @@ class ROIclassificationDialog(Dialog, Singleton):
                 self.roi_selection.hide()
                 self.roi_sample.show()
                 self.roi_import.show()
-                self.classifier_selection.setRowVisible(1, False)
+                self.classifier_selection.setRowVisible(self.network, False)
+                self.classifier_selection.setRowVisible(self.weights, False)
                 self.training_advanced.hide()
                 self.preprocessing.hide()
                 self.misc_box.hide()
                 self.network.setEditable(False)
-                self.classes.setReadOnly(True)
+                self.classes.setReadOnly(False)
                 self.datasets.hide()
             case 'Train model':
                 self.roi_selection.hide()
                 self.roi_sample.hide()
                 self.roi_import.hide()
-                self.classifier_selection.setRowVisible(1, True)
+                self.classifier_selection.setRowVisible(self.network, True)
+                self.classifier_selection.setRowVisible(self.weights, True)
                 self.training_advanced.show()
                 self.preprocessing.show()
                 self.misc_box.show()
@@ -213,7 +215,8 @@ class ROIclassificationDialog(Dialog, Singleton):
                 self.roi_selection.show()
                 self.roi_sample.hide()
                 self.roi_import.hide()
-                self.classifier_selection.setRowVisible(1, True)
+                self.classifier_selection.setRowVisible(self.network, True)
+                self.classifier_selection.setRowVisible(self.weights, True)
                 self.training_advanced.hide()
                 self.preprocessing.show()
                 self.misc_box.show()

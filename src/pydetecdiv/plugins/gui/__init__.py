@@ -205,8 +205,9 @@ class LineEdit(QLineEdit):
     an extension of QLineEdit class
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent, editable=True):
         super().__init__(parent)
+        self.setReadOnly(not editable)
 
     def value(self):
         """
