@@ -207,7 +207,7 @@ class LineEdit(QLineEdit):
 
     def __init__(self, parent, editable=True):
         super().__init__(parent)
-        self.setReadOnly(not editable)
+        self.setEditable(editable)
 
     def value(self):
         """
@@ -227,6 +227,9 @@ class LineEdit(QLineEdit):
     @property
     def edited(self):
         return self.editingFinished
+
+    def setEditable(self, editable=True):
+        self.setReadOnly(not editable)
 
 
 class PushButton(QPushButton):

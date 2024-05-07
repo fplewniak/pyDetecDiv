@@ -184,7 +184,7 @@ class ROIclassificationDialog(Dialog, Singleton):
                 self.preprocessing.show()
                 self.misc_box.hide()
                 self.network.setEditable(True)
-                self.classes.setReadOnly(False)
+                self.classes.setEditable(False)
                 self.datasets.hide()
             case 'Annotate ROIs':
                 self.roi_selection.hide()
@@ -196,7 +196,7 @@ class ROIclassificationDialog(Dialog, Singleton):
                 self.preprocessing.hide()
                 self.misc_box.hide()
                 self.network.setEditable(False)
-                self.classes.setReadOnly(False)
+                self.classes.setEditable(False)
                 self.datasets.hide()
             case 'Train model':
                 self.roi_selection.hide()
@@ -209,7 +209,7 @@ class ROIclassificationDialog(Dialog, Singleton):
                 self.misc_box.show()
                 self.misc_box.setRowVisible(self.epochs, True)
                 self.network.setEditable(False)
-                self.classes.setReadOnly(True)
+                self.classes.setEditable(True)
                 self.datasets.show()
             case 'Classify ROIs':
                 self.roi_selection.show()
@@ -222,7 +222,7 @@ class ROIclassificationDialog(Dialog, Singleton):
                 self.misc_box.show()
                 self.misc_box.setRowVisible(self.epochs, False)
                 self.network.setEditable(False)
-                self.classes.setReadOnly(True)
+                self.classes.setEditable(True)
                 self.datasets.hide()
             case _:
                 pass
