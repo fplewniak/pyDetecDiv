@@ -166,6 +166,15 @@ class ComboBox(QComboBox):
         for label, data in options.items():
             self.addItem(label, userData=data)
 
+    def setText(self, text):
+        if self.findText(text) != -1:
+            self.setCurrentText(text)
+        else:
+            self.addItem(text)
+
+    def text(self):
+        return self.currentText()
+
     @property
     def selected(self):
         """
@@ -197,7 +206,10 @@ class ComboBox(QComboBox):
                 return self.currentData()
             except TypeError:
                 pass
-        return self.currentText()
+        try:
+            return json.loads(self.currentText())
+        except json.decoder.JSONDecodeError:
+            return self.currentText()
 
 
 class LineEdit(QLineEdit):
