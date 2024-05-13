@@ -89,16 +89,19 @@ class Annotator(ImageViewer):
         Retrieve from the database the manual annotations for a ROI
         """
         self.roi_classes = ['-'] * self.image_resource_data.sizeT
-        with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            results = list(project.repository.session.execute(
-                sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,run.parameters ->> '$.annotator' as annotator "
-                                f"FROM run, roi_classification as rc "
-                                f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
-                                f"AND rc.run=run.id_ and rc.roi={self.roi.id_} "
-                                f"AND annotator='{get_config_value('project', 'user')}' "
-                                f"ORDER BY rc.run ASC;")))
-            for annotation in results:
-                self.roi_classes[annotation[1]] = annotation[2]
+        for frame, annotation in enumerate(self.plugin.get_annotation(self.roi, as_index=False)):
+            if annotation != -1:
+                self.roi_classes[frame] = annotation
+        # with pydetecdiv_project(PyDetecDiv.project_name) as project:
+        #     results = list(project.repository.session.execute(
+        #         sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,run.parameters ->> '$.annotator' as annotator "
+        #                         f"FROM run, roi_classification as rc "
+        #                         f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+        #                         f"AND rc.run=run.id_ and rc.roi={self.roi.id_} "
+        #                         f"AND annotator='{get_config_value('project', 'user')}' "
+        #                         f"ORDER BY rc.run ASC;")))
+        #     for annotation in results:
+        #         self.roi_classes[annotation[1]] = annotation[2]
 
     def annotate_current(self, class_name=None):
         """

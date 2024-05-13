@@ -103,72 +103,6 @@ class TrainingData(Base):
         project.repository.session.add(self)
 
 
-def prepare_data(data_list, seqlen=None, targets=True):
-    """
-    Prepare the data from a list of ROI object as a list of ROIData objects to build the ROIDataset instance
-
-    :param data_list: the ROI list
-    :param seqlen: the length of the frame sequence
-    :param targets: should targets be included in the dataset or not
-    :return: the ROIData list
-    """
-    roi_data_list = []
-    for roi in data_list:
-        imgdata = roi.fov.image_resource().image_resource_data()
-        seqlen = seqlen if seqlen else 1
-        if targets:
-            annotation_indices = get_annotation(roi)
-            for i in range(0, imgdata.sizeT, seqlen):
-                sequence = annotation_indices[i:i + seqlen]
-                if len(sequence) == seqlen and all(a >= 0 for a in sequence):
-                    roi_data_list.extend([ROIdata(roi, imgdata, sequence, i)])
-        else:
-            roi_data_list.extend([ROIdata(roi, imgdata, None, frame) for frame in range(0, imgdata.sizeT, seqlen)])
-    return roi_data_list
-
-
-def compute_class_weights():
-    class_counts = dict(Counter([x for roi in get_annotated_rois() for x in get_annotation(roi) if x >= 0]))
-    print(class_counts)
-    n = len(class_counts)
-    total = sum([v for c, v in class_counts.items()])
-    weights = {k: total / (n * class_counts[k]) for k in class_counts.keys()}
-    for k in range(n):
-        if k not in weights:
-            weights[k] = 0.00
-    return weights
-
-
-def get_annotation(roi, as_index=True):
-    """
-    Get the annotations for a ROI
-
-    :param roi: the ROI
-    :param as_index: bool set to True to return annotations as indices of class_names list, set to False to return
-    annotations as class names
-    :return: the list of annotated classes by frame
-    """
-    roi_classes = [-1] * roi.fov.image_resource().image_resource_data().sizeT
-    with pydetecdiv_project(PyDetecDiv.project_name) as project:
-        results = list(project.repository.session.execute(
-            sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,"
-                            f"run.parameters ->> '$.annotator' as annotator, "
-                            f"run.parameters ->> '$.class_names' as class_names "
-                            f"FROM run, roi_classification as rc "
-                            f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
-                            f"AND rc.run=run.id_ and rc.roi={roi.id_} "
-                            f"AND annotator='{get_config_value('project', 'user')}' "
-                            f"ORDER BY rc.run ASC;")))
-        class_names = json.loads(results[0][4])
-        if as_index:
-            for annotation in results:
-                roi_classes[annotation[1]] = class_names.index(annotation[2])
-        else:
-            for annotation in results:
-                roi_classes[annotation[1]] = annotation[2]
-    return roi_classes
-
-
 class ROIdata:
     """
     ROI data, linking ROI object, the corresponding image data, target (class), and frame
@@ -342,12 +276,12 @@ class Plugin(plugins.Plugin):
 
             if len(input_shape) == 4:
                 img_size = (input_shape[1], input_shape[2])
-                roi_data_list = prepare_data(roi_list, targets=False)
+                roi_data_list = self.prepare_data(roi_list, targets=False)
                 roi_dataset = ROIDataset(roi_data_list, image_size=img_size, class_names=self.class_names,
                                          batch_size=batch_size, z_channels=z_channels)
             else:
                 img_size = (input_shape[2], input_shape[3])
-                roi_data_list = prepare_data(roi_list, seqlen, targets=False)
+                roi_data_list = self.prepare_data(roi_list, seqlen, targets=False)
                 roi_dataset = ROIDataset(roi_data_list, image_size=img_size, class_names=self.class_names,
                                          seqlen=seqlen, batch_size=batch_size, z_channels=z_channels)
 
@@ -422,6 +356,96 @@ class Plugin(plugins.Plugin):
                 if class_name != '-':
                     Results().save(project, run, roi, t, np.array([1]), [class_name])
 
+    def get_annotated_rois(self):
+        """
+        Get a list of annotated ROI frames
+
+        :return: the list of annotated ROI frames
+        """
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            db = QSqlDatabase("QSQLITE")
+            db.setDatabaseName(project.repository.name)
+            db.open()
+            query = QSqlQuery(
+                f"SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
+                f"WHERE run.id_=roi_classification.run "
+                f"AND (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+                f"AND run.parameters ->> '$.class_names'='{self.gui.classes.text()}' ;",
+                db=db)
+            query.exec()
+            if query.first():
+                roi_ids = [query.value('annotated_rois')]
+                while query.next():
+                    roi_ids.append(query.value('annotated_rois'))
+                return project.get_objects('ROI', roi_ids)
+            return []
+
+    def get_annotation(self, roi, as_index=True):
+        """
+        Get the annotations for a ROI
+
+        :param roi: the ROI
+        :param as_index: bool set to True to return annotations as indices of class_names list, set to False to return
+        annotations as class names
+        :return: the list of annotated classes by frame
+        """
+        roi_classes = [-1] * roi.fov.image_resource().image_resource_data().sizeT
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            results = list(project.repository.session.execute(
+                sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,"
+                                f"run.parameters ->> '$.annotator' as annotator, "
+                                f"run.parameters ->> '$.class_names' as class_names "
+                                f"FROM run, roi_classification as rc "
+                                f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+                                f"AND rc.run=run.id_ and rc.roi={roi.id_} "
+                                f"AND annotator='{get_config_value('project', 'user')}' "
+                                f"AND run.parameters ->> '$.class_names'='{self.gui.classes.text()}' "
+                                f"ORDER BY rc.run ASC;")))
+            if results:
+                class_names = json.loads(results[0][4])
+                if as_index:
+                    for annotation in results:
+                        roi_classes[annotation[1]] = class_names.index(annotation[2])
+                else:
+                    for annotation in results:
+                        roi_classes[annotation[1]] = annotation[2]
+        return roi_classes
+
+    def prepare_data(self, data_list, seqlen=None, targets=True):
+        """
+        Prepare the data from a list of ROI object as a list of ROIData objects to build the ROIDataset instance
+
+        :param data_list: the ROI list
+        :param seqlen: the length of the frame sequence
+        :param targets: should targets be included in the dataset or not
+        :return: the ROIData list
+        """
+        roi_data_list = []
+        for roi in data_list:
+            imgdata = roi.fov.image_resource().image_resource_data()
+            seqlen = seqlen if seqlen else 1
+            if targets:
+                annotation_indices = self.get_annotation(roi)
+                for i in range(0, imgdata.sizeT, seqlen):
+                    sequence = annotation_indices[i:i + seqlen]
+                    if len(sequence) == seqlen and all(a >= 0 for a in sequence):
+                        roi_data_list.extend([ROIdata(roi, imgdata, sequence, i)])
+            else:
+                roi_data_list.extend([ROIdata(roi, imgdata, None, frame) for frame in range(0, imgdata.sizeT, seqlen)])
+        return roi_data_list
+
+    def compute_class_weights(self):
+        class_counts = dict(
+            Counter([x for roi in self.get_annotated_rois() for x in self.get_annotation(roi) if x >= 0]))
+        print(class_counts)
+        n = len(class_counts)
+        total = sum([v for c, v in class_counts.items()])
+        weights = {k: total / (n * class_counts[k]) for k in class_counts.keys()}
+        for k in range(n):
+            if k not in weights:
+                weights[k] = 0.00
+        return weights
+
     def create_model(self):
         """
         Launch model creation.
@@ -486,7 +510,7 @@ class Plugin(plugins.Plugin):
         if len(input_shape) == 4:
             img_size = (input_shape[1], input_shape[2])
 
-            roi_list = prepare_data(get_annotated_rois())
+            roi_list = self.prepare_data(self.get_annotated_rois())
             random.seed(self.gui.datasets_seed.value())
             random.shuffle(roi_list)
             num_training = int(self.gui.training_data.value() * len(roi_list))
@@ -505,7 +529,7 @@ class Plugin(plugins.Plugin):
         else:
             img_size = (input_shape[2], input_shape[3])
 
-            roi_list = prepare_data(get_annotated_rois(), seqlen)
+            roi_list = self.prepare_data(self.get_annotated_rois(), seqlen)
             random.seed(self.gui.datasets_seed.value())
             random.shuffle(roi_list)
             num_training = round(self.gui.training_data.value() * len(roi_list))
@@ -557,10 +581,12 @@ class Plugin(plugins.Plugin):
         history = model.fit(training_dataset, epochs=epochs,
                             callbacks=callbacks, validation_data=validation_dataset, verbose=2, )
 
+        last_weights_filename = f'{run.id_}_last.weights.h5'
         model.save_weights(os.path.join(get_project_dir(), 'roi_classification', 'models',
-                                        self.gui.network.currentText(),
-                                        f'{run.id_}_last.weights.h5'),
-                           overwrite=True)
+                                        self.gui.network.currentText(), last_weights_filename), overwrite=True)
+
+        run.parameters.update({'last_weights': last_weights_filename, 'best_weights': best_checkpoint_filename})
+        run.validate().commit()
 
         # evaluation = {metrics: value for metrics, value in zip(model.metrics_names, model.evaluate(test_dataset))}
         evaluation = dict(zip(model.metrics_names, model.evaluate(test_dataset)))
@@ -650,6 +676,29 @@ class Plugin(plugins.Plugin):
         :param class_name: the class name
         """
         Results().save(project, run, roi, frame, np.array([1]), [class_name])
+
+    def draw_annotated_rois(self):
+        """
+        Draw annotated ROIs as rectangles coloured according to the class
+        """
+        colours = [
+            QColor(255, 0, 0, 64),
+            QColor(0, 255, 0, 64),
+            QColor(0, 0, 255, 64),
+            QColor(255, 255, 0, 64),
+            QColor(0, 255, 255, 64),
+            QColor(255, 0, 255, 64),
+            QColor(64, 128, 0, 64),
+            QColor(64, 0, 128, 64),
+            QColor(128, 64, 0, 64),
+            QColor(0, 64, 128, 64),
+        ]
+        rec_items = {item.data(0): item for item in PyDetecDiv.main_window.active_subwindow.viewer.scene.items() if
+                     isinstance(item, QGraphicsRectItem)}
+        for roi in self.get_annotated_rois():
+            if roi.name in rec_items:
+                annotation = self.get_annotation(roi)[PyDetecDiv.main_window.active_subwindow.viewer.T]
+                rec_items[roi.name].setBrush(colours[annotation])
 
 
 def plot_history(history, evaluation):
@@ -796,54 +845,6 @@ def get_rgb_images_from_stacks(imgdata, roi_list, t, z=None):
                                           image3.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast()
                                           ]).as_tensor(ImgDType.float32) for roi in roi_list]
     return roi_images
-
-
-def draw_annotated_rois():
-    """
-    Draw annotated ROIs as rectangles coloured according to the class
-    """
-    colours = [
-        QColor(255, 0, 0, 64),
-        QColor(0, 255, 0, 64),
-        QColor(0, 0, 255, 64),
-        QColor(255, 255, 0, 64),
-        QColor(0, 255, 255, 64),
-        QColor(255, 0, 255, 64),
-        QColor(64, 128, 0, 64),
-        QColor(64, 0, 128, 64),
-        QColor(128, 64, 0, 64),
-        QColor(0, 64, 128, 64),
-    ]
-    rec_items = {item.data(0): item for item in PyDetecDiv.main_window.active_subwindow.viewer.scene.items() if
-                 isinstance(item, QGraphicsRectItem)}
-    for roi in get_annotated_rois():
-        if roi.name in rec_items:
-            annotation = get_annotation(roi)[PyDetecDiv.main_window.active_subwindow.viewer.T]
-            rec_items[roi.name].setBrush(colours[annotation])
-
-
-def get_annotated_rois():
-    """
-    Get a list of annotated ROI frames
-
-    :return: the list of annotated ROI frames
-    """
-    with pydetecdiv_project(PyDetecDiv.project_name) as project:
-        db = QSqlDatabase("QSQLITE")
-        db.setDatabaseName(project.repository.name)
-        db.open()
-        query = QSqlQuery(
-            "SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
-            "WHERE run.id_=roi_classification.run "
-            "AND (run.command='annotate_rois' OR run.command='import_annotated_rois');",
-            db=db)
-        query.exec()
-        if query.first():
-            roi_ids = [query.value('annotated_rois')]
-            while query.next():
-                roi_ids.append(query.value('annotated_rois'))
-            return project.get_objects('ROI', roi_ids)
-        return []
 
 
 def display_dataset(dataset, sequences=False):
