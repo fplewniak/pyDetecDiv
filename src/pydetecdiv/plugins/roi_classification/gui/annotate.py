@@ -3,7 +3,7 @@ ROI annotation for image classification
 """
 import sqlalchemy
 from PySide6.QtCore import Qt, QRectF
-from PySide6.QtWidgets import QGraphicsTextItem, QGraphicsScene
+from PySide6.QtWidgets import QGraphicsTextItem, QGraphicsScene, QDialogButtonBox
 import numpy as np
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
@@ -17,12 +17,14 @@ def open_annotator(plugin, roi_selection):
     :param plugin: the plugin instance
     :param roi_selection: the list of ROIs to annotate
     """
-    project_window = PyDetecDiv.main_window.active_subwindow
+    tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / ROI annotation')
+    tab.viewer.project_name = PyDetecDiv.project_name
     viewer = Annotator()
     viewer.set_plugin(plugin)
-    viewer.ui.zoom_value.setMaximum(400)
-    project_window.addTab(viewer, 'ROI annotation')
+    tab.addTab(viewer, 'Annotation run')
+    tab.tabCloseRequested.connect(viewer.close_event)
     plugin.gui.classes.setEnabled(False)
+    plugin.gui.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
     viewer.set_roi_list(roi_selection)
     viewer.next_roi()
 
@@ -49,12 +51,19 @@ class Annotator(ImageViewer):
         self.plugin = None
         self.scene.addItem(self.class_item)
 
+    def close_event(self):
+        self.plugin.gui.classes.setEnabled(True)
+        self.plugin.gui.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+
     def set_plugin(self, plugin):
         """
         Define the plugin instance to enable the annotator to access some data
         :param plugin: the plugin instance
         """
         self.plugin = plugin
+
+    def set_title(self, title):
+        self.parent().parent().setTabText(self.parent().parent().currentIndex(), title)
 
     def set_roi_list(self, roi_selection):
         """
@@ -84,6 +93,7 @@ class Annotator(ImageViewer):
                 PyDetecDiv.main_window.active_subwindow.setCurrentWidget(self)
         except StopIteration:
             self.plugin.gui.classes.setEnabled(True)
+            self.plugin.gui.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
             pass
 
     def get_roi_annotations(self):
@@ -155,7 +165,7 @@ class Annotator(ImageViewer):
         """
         Save the current ROI annotation process in the database
         """
-        parameters = {'annotator': get_config_value('project', 'user'),}
+        parameters = {'annotator': get_config_value('project', 'user'), }
         parameters.update(self.plugin.parameters.get_values('annotate'))
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             self.run = self.plugin.save_run(project, 'annotate_rois', parameters)
@@ -212,6 +222,7 @@ class AnnotatorScene(QGraphicsScene):
             self.parent().class_item.setDefaultTextColor('black')
             if self.parent().run is None:
                 self.parent().save_run()
+            self.parent().set_title(f'Annotation run {self.parent().run.id_}')
             self.parent().plugin.save_annotations(self.parent().roi, self.parent().roi_classes, self.parent().run)
             self.parent().next_roi()
         elif event.key() == Qt.Key_Escape:
