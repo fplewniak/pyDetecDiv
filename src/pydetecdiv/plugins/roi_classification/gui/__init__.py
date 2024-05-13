@@ -3,11 +3,13 @@ GUI for deep-learning ROI classification plugin
 """
 import json
 import os
+import sqlalchemy
 
 import keras.optimizers
 from PySide6.QtSql import QSqlQuery, QSqlDatabase
 from PySide6.QtWidgets import QFileDialog, QDialogButtonBox
 
+from pydetecdiv.settings import get_config_value
 from pydetecdiv.utils import Singleton
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir
 
@@ -40,7 +42,7 @@ class ROIclassificationDialog(Dialog, Singleton):
                                                            parameter=(['training', 'classify'], 'model'))
         self.weights = self.classifier_selection.addOption('Weights:', ComboBox,
                                                            parameter=(['training', 'classify'], 'weights'))
-        self.classes = self.classifier_selection.addOption('Classes:', LineEdit, parameter=(
+        self.classes = self.classifier_selection.addOption('Classes:', ComboBox, parameter=(
             ['training', 'classify', 'annotate'], 'class_names'), editable=True)
         self.training_advanced = self.classifier_selection.addOption(None, AdvancedButton)
         self.training_advanced.linkGroupBox(self.classifier_selection.addOption(None, FormGroupBox, show=False))
@@ -138,7 +140,7 @@ class ROIclassificationDialog(Dialog, Singleton):
                          self.button_box.rejected: self.close,
                          self.roi_import_box.accepted: self.import_annotated_rois,
                          self.network.selected: [self.update_classes, self.update_model_weights],
-                         self.action_menu.selected: self.adapt,
+                         self.action_menu.selected: [self.adapt, self.update_classes, self.update_model_weights],
                          self.training_data.changed: lambda _: self.update_datasets(self.training_data),
                          self.validation_data.changed: lambda _: self.update_datasets(self.validation_data),
                          self.optimizer.changed: self.update_optimizer_options,
@@ -196,7 +198,7 @@ class ROIclassificationDialog(Dialog, Singleton):
                 self.preprocessing.hide()
                 self.misc_box.hide()
                 self.network.setEditable(False)
-                self.classes.setEditable(False)
+                self.classes.setEditable(True)
                 self.datasets.hide()
             case 'Train model':
                 self.roi_selection.hide()
@@ -209,8 +211,8 @@ class ROIclassificationDialog(Dialog, Singleton):
                 self.misc_box.show()
                 self.misc_box.setRowVisible(self.epochs, True)
                 self.network.setEditable(False)
-                self.classes.setEditable(True)
                 self.datasets.show()
+                self.classes.setEditable(False)
             case 'Classify ROIs':
                 self.roi_selection.show()
                 self.roi_sample.hide()
@@ -222,8 +224,8 @@ class ROIclassificationDialog(Dialog, Singleton):
                 self.misc_box.show()
                 self.misc_box.setRowVisible(self.epochs, False)
                 self.network.setEditable(False)
-                self.classes.setEditable(True)
                 self.datasets.hide()
+                self.classes.setEditable(False)
             case _:
                 pass
         self.fit_to_contents()
@@ -308,15 +310,22 @@ class ROIclassificationDialog(Dialog, Singleton):
             pass
 
         self.weights.clear()
-        _ = [self.weights.addItem(os.path.basename(f), userData=f) for f in w_files]
-        self.weights.addItem('None', userData=None)
+        # _ = [self.weights.addItem(os.path.basename(f), userData=f) for f in w_files]
+        weights = {os.path.basename(f): f for f in w_files}
+        self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+        if self.action_menu.currentText() != 'Classify ROIs':
+            self.weights.addItem('None', userData=None)
+        elif len(w_files) == 0:
+            self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+        self.weights.addItemDict(weights)
 
     def update_classes(self):
         """
         Update the classes associated with the currently selected model
         """
-        from pydetecdiv.plugins.roi_classification import get_class_names
-        self.classes.setText(json.dumps(get_class_names()))
+        # self.classes.setText(json.dumps(get_class_names()))
+        self.classes.clear()
+        self.classes.addItemDict(get_class_names())
 
     def update_datasets(self, changed_dataset=None):
         """
@@ -354,3 +363,22 @@ class ROIclassificationDialog(Dialog, Singleton):
                                                          filter=";;".join(filters),
                                                          selectedFilter=filters[0])
         FOV2ROIlinks(annotation_file, self.plugin)
+
+def get_class_names():
+    """
+    Get the class names for a project
+
+    :return: the list of classes from the last annotation run for this project
+    """
+    with pydetecdiv_project(PyDetecDiv.project_name) as project:
+        results = list(project.repository.session.execute(
+            sqlalchemy.text(f"SELECT "
+                            f"run.parameters ->> '$.annotator' as annotator, "
+                            f"run.parameters ->> '$.class_names' as class_names "
+                            f"FROM run "
+                            f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+                            f"AND annotator='{get_config_value('project', 'user')}' "
+                            f"ORDER BY run.id_ DESC;")))
+        # class_names = json.loads(results[-1][1])
+        class_names = {r[1]: None for r in results}
+    return class_names
