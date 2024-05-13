@@ -22,6 +22,7 @@ def open_annotator(plugin, roi_selection):
     viewer.set_plugin(plugin)
     viewer.ui.zoom_value.setMaximum(400)
     project_window.addTab(viewer, 'ROI annotation')
+    plugin.gui.classes.setEnabled(False)
     viewer.set_roi_list(roi_selection)
     viewer.next_roi()
 
@@ -82,6 +83,7 @@ class Annotator(ImageViewer):
                 self.ui.view_name.setText(f'ROI: {self.roi.name}')
                 PyDetecDiv.main_window.active_subwindow.setCurrentWidget(self)
         except StopIteration:
+            self.plugin.gui.classes.setEnabled(True)
             pass
 
     def get_roi_annotations(self):
