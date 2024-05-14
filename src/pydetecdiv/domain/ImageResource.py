@@ -15,7 +15,7 @@ class ImageResource(DomainSpecificObject):
     A business-logic class defining valid operations and attributes of Image resources
     """
 
-    def __init__(self, dataset, fov, multi,
+    def __init__(self, dataset, fov, multi, key_val=None,
                  xdim=-1, ydim=-1, zdim=-1, cdim=-1, tdim=-1,
                  xyscale=1, tscale=1, zscale=1,
                  xyunit=1e-6, zunit=1e-6, tunit=60,
@@ -40,6 +40,7 @@ class ImageResource(DomainSpecificObject):
         self.image_files = self._image_files
         self.pattern = self._pattern
         self.fov = self._fov
+        self.key_val = key_val
 
     @property
     def dataset(self):
@@ -281,7 +282,8 @@ class ImageResource(DomainSpecificObject):
             'tunit': self.tunit,
             'fov': self.fov_id,
             'multi': self.multi,
-            'uuid': self.uuid
+            'uuid': self.uuid,
+            'key_val': self.key_val,
         }
         if not no_id:
             record['id_'] = self.id_

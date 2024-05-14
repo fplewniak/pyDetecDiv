@@ -23,6 +23,7 @@ class RunDao(DAO, Base):
     is_plugin = Column(Boolean, nullable=False)
     command = Column(String)
     parameters = Column(JSON)
+    key_val = Column(JSON)
 
     @property
     def record(self):
@@ -39,5 +40,6 @@ class RunDao(DAO, Base):
                 'tool_version': self.tool_version,
                 'is_plugin': self.is_plugin,
                 'command': self.command,
-                'parameters': self.parameters
+                'parameters': self.parameters,
+                'key_val': self.key_val,
                 }

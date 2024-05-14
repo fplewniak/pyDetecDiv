@@ -11,9 +11,10 @@ class FOV(NamedDSO, BoxedDSO):
     A business-logic class defining valid operations and attributes of Fields of view (FOV)
     """
 
-    def __init__(self, comments=None, **kwargs):
+    def __init__(self, comments=None, key_val=None, **kwargs):
         super().__init__(**kwargs)
         self._comments = comments
+        self.key_val = key_val
         self.validate(updated=False)
 
     def delete(self):
@@ -36,10 +37,8 @@ class FOV(NamedDSO, BoxedDSO):
         record = {
             'name': self.name,
             'comments': self.comments,
-            # 'top_left': self.top_left,
-            # 'bottom_right': self.bottom_right,
-            # 'size': self.size,
-            'uuid': self.uuid
+            'uuid': self.uuid,
+            'key_val': self.key_val,
         }
         if not no_id:
             record['id_'] = self.id_

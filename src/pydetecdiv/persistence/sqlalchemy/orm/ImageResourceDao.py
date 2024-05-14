@@ -4,6 +4,7 @@
 Access to ImageResourceData data
 """
 from sqlalchemy import Column, Integer, Float, Boolean, String, text, ForeignKey
+from sqlalchemy.types import JSON
 from sqlalchemy.orm import relationship, joinedload, composite
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 import pydetecdiv.utils.ImageResource as ImageResource
@@ -40,6 +41,8 @@ class ImageResourceDao(DAO, Base):
     dataset = Column(Integer, ForeignKey('dataset.id_'), nullable=False, index=True)
 
     multi = Column(Boolean, nullable=False)
+
+    key_val = Column(JSON)
 
     data_list_ = relationship('DataDao')
 
@@ -88,4 +91,5 @@ class ImageResourceDao(DAO, Base):
                 'fov': self.fov,
                 'dataset': self.dataset,
                 'multi': self.multi,
+                'key_val': self.key_val,
                 }

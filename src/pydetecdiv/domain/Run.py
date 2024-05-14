@@ -42,7 +42,8 @@ class Run(DomainSpecificObject):
             'command': self.command,
             # 'parameters': json.dumps({name: param.value for name, param in self.parameters.items()}),
             'parameters': self.parameters,
-            'uuid': self.uuid
+            'uuid': self.uuid,
+            'key_val': self.key_val,
         }
         if not no_id:
             record['id_'] = self.id_

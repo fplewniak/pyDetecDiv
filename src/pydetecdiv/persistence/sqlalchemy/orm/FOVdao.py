@@ -5,6 +5,7 @@ Access to FOV data
 """
 import itertools
 from sqlalchemy import Column, Integer, String, text, select
+from sqlalchemy.types import JSON
 from sqlalchemy.orm import relationship, joinedload
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 from pydetecdiv.persistence.sqlalchemy.orm import dao
@@ -24,6 +25,8 @@ class FOVdao(DAO, Base):
     uuid = Column(String(36))
     name = Column(String, unique=True, nullable=False)
     comments = Column(String)
+    key_val = Column(JSON)
+
     # xsize = Column(Integer, nullable=False, server_default=text('1000'))
     # ysize = Column(Integer, nullable=False, server_default=text('1000'))
 
@@ -64,10 +67,8 @@ class FOVdao(DAO, Base):
         return {'id_': self.id_,
                 'name': self.name,
                 'comments': self.comments,
-                # 'top_left': (0, 0),
-                # 'bottom_right': (self.xsize - 1, self.ysize - 1),
-                # 'size': (self.xsize, self.ysize),
-                'uuid': self.uuid
+                'uuid': self.uuid,
+                'key_val': self.key_val,
                 }
 
     # def data(self, fov_id):

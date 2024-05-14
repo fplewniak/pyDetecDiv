@@ -14,12 +14,13 @@ class Dataset(NamedDSO):
     A business-logic class defining valid operations and attributes of data
     """
 
-    def __init__(self, url='', type_=None, run=None, pattern=None, **kwargs):
+    def __init__(self, url='', type_=None, run=None, pattern=None, key_val=None, **kwargs):
         super().__init__(**kwargs)
         self.url_ = url
         self.type_ = type_
         self.run = run
         self.pattern = pattern
+        self.key_val = key_val
         self.validate(updated=False)
 
     @property
@@ -59,7 +60,8 @@ class Dataset(NamedDSO):
             'type_': self.type_,
             'run': self.run,
             'pattern': self.pattern,
-            'uuid': self.uuid
+            'uuid': self.uuid,
+            'key_val': self.key_val,
         }
         if not no_id:
             record['id_'] = self.id_
