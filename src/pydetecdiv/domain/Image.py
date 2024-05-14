@@ -77,30 +77,30 @@ class Image():
     def _rgb_to_gray(self):
         return tf.image.rgb_to_grayscale(self.tensor)
 
-    def resize(self, shape=None, method='nearest'):
+    def resize(self, shape=None, method='nearest', antialias=True):
         """
+        Resize image to the defined shape with the defined method.
 
-        * bilinear: Bilinear interpolation. If antialias is true, becomes a hat/tent filter function with radius 1
-          when downsampling.
-        * lanczos3: Lanczos kernel with radius 3. High-quality practical filter but may have some ringing, especially on
-          synthetic images.
-        * lanczos5: Lanczos kernel with radius 5. Very-high-quality filter but may have stronger ringing.
-        * bicubic: Cubic interpolant of Keys. Equivalent to Catmull-Rom kernel. Reasonably good quality and faster than
-        * Lanczos3Kernel, particularly when upsampling.
-        * gaussian: Gaussian kernel with radius 3, sigma = 1.5 / 3.0.
-        * nearest: Nearest neighbor interpolation. antialias has no effect when used with nearest neighbor
-          interpolation.
-        * area: Anti-aliased resampling with area interpolation. antialias has no effect when used with area
-          interpolation; it always anti-aliases.
-        * mitchellcubic: Mitchell-Netravali Cubic non-interpolating filter. For synthetic images (especially those
-          lacking proper prefiltering), less ringing than Keys cubic kernel but less sharp.
-
-        :param shape:
-        :param method:
-        :return:
+        :param shape: the target shape
+        :param method: the resizing method
+            * bilinear: Bilinear interpolation. If antialias is true, becomes a hat/tent filter function with radius 1
+              when downsampling.
+            * lanczos3: Lanczos kernel with radius 3. High-quality practical filter but may have some ringing,
+              especially on synthetic images.
+            * lanczos5: Lanczos kernel with radius 5. Very-high-quality filter but may have stronger ringing.
+            * bicubic: Cubic interpolant of Keys. Equivalent to Catmull-Rom kernel. Reasonably good quality and faster
+              than Lanczos3Kernel, particularly when upsampling.
+            * gaussian: Gaussian kernel with radius 3, sigma = 1.5 / 3.0.
+            * nearest: (default) Nearest neighbour interpolation. antialias has no effect when used with nearest
+              neighbour interpolation.
+            * area: Anti-aliased resampling with area interpolation. antialias has no effect when used with area
+              interpolation; it always anti-aliases.
+            * mitchellcubic: Mitchell-Netravali Cubic non-interpolating filter. For synthetic images (especially those
+              lacking proper prefiltering), less ringing than Keys cubic kernel but less sharp.
+        :return: the resized Image object
         """
         tensor = tf.expand_dims(self.tensor, axis=-1) if len(self.shape) == 2 else self.tensor
-        return Image(tf.squeeze(tf.image.resize(tensor, shape, method='nearest')))
+        return Image(tf.squeeze(tf.image.resize(tensor, shape, method=method)))
 
     def show(self, ax, grayscale=False, **kwargs):
         ax.imshow(self.as_array(ImgDType.uint8, grayscale), **kwargs)
