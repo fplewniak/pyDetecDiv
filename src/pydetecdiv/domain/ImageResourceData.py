@@ -152,11 +152,19 @@ class ImageResourceData(abc.ABC):
         """
         match (method):
             case 'phase correlation':
-                return self.compute_drift_phase_correlation_cv2(**kwargs)
+                drift = self.compute_drift_phase_correlation_cv2(**kwargs)
             case 'vidstab':
-                return self.compute_drift_vidstab(**kwargs)
+                drift = self.compute_drift_vidstab(**kwargs)
             case _:
-                return pd.DataFrame([[0, 0]] * self.sizeT, columns=['dy', 'dx'])
+                drift = pd.DataFrame([[0, 0]] * self.sizeT, columns=['dy', 'dx'])
+        image_resource = self.fov.image_resource()
+        if image_resource.key_val is None:
+            image_resource.key_val = {}
+        drift_list = [[0, 0]] + [[x, y] for x, y in zip(drift.dx, drift.dy)]
+        image_resource.key_val.update({'drift': drift_list, 'drift method': method})
+        image_resource.validate()
+        image_resource.project.commit()
+        return drift
 
     def compute_drift_phase_correlation_cv2(self, Z=0, C=0, thread=None):
         """
@@ -180,7 +188,7 @@ class ImageResourceData(abc.ABC):
                 return None
         return df.cumsum(axis=0)
 
-    def compute_drift_vidstab(self, Z=0, C=0, thread=None):
+    def compute_drift_vidstab(self, Z=0, C=0, thread=None, smoothing_window=1):
         """
         Compute the cumulative transforms (dx, dy, dr) to apply in order to stabilize the time series and correct drift
 
@@ -196,7 +204,7 @@ class ImageResourceData(abc.ABC):
         stabilizer = VidStab()
         for frame in range(0, self.sizeT):
             _ = stabilizer.stabilize_frame(
-                input_frame=np.uint8(np.array(self.image(T=frame, Z=Z, C=C)) / 65535 * 255), smoothing_window=1)
+                input_frame=np.uint8(np.array(self.image(T=frame, Z=Z, C=C)) / 65535 * 255), smoothing_window=smoothing_window)
             self.refresh()
             if thread and thread.isInterruptionRequested():
                 return None
