@@ -52,7 +52,6 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.C = 0
         self.T = 0
         self.Z = 0
-        self.drift = None
         self.parent_viewer = None
         self.image_source_ref = None
         # self.drift = None
@@ -278,55 +277,12 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         """
         self.parent().parent().window.close()
 
-    def compute_and_plot_drift(self, method='vidstab'):
-        """
-        Slot to compute the drift correction from the image resource displayed in this viewer, then plot the (x,y) drift
-        against frame index. This slot runs compute_drift() with the requested method, launches a message dialog window
-        and waits for completion before displaying the plot
-        """
-        self.wait = WaitDialog('Computing drift, please wait.', self, cancel_msg='Cancel drift computation please wait')
-        self.finished.connect(self.wait.close_window)
-        self.wait.wait_for(self.compute_drift, method=method)
-        if self.drift is not None:
-            for viewer in self.parent().parent().get_image_viewers():
-                viewer.ui.actionPlot.setEnabled(True)
-                viewer.ui.actionApply_correction.setEnabled(True)
-                viewer.ui.actionSave_to_file.setEnabled(True)
-            self.plot_drift(method)
-
-    def plot_drift(self, method):
-        """
-        Open a MatplotViewer tab and plot the (x,y) drift against frame index
-        """
-        self.parent().parent().show_plot(self.parent().parent().drift, f'Drift - {method}')
-
-    def compute_drift(self, method='vidstab'):
-        """
-        Computation and update of the drift values. When the computation is over, this method emits a finished signal
-        """
-        self.drift = self.image_resource_data.compute_drift(Z=self.Z, C=self.C, method=method,
-                                                            thread=self.wait.pdd_thread)
-        self.parent().parent().drift = self.drift if self.drift is not None else self.parent().parent().drift
-        self.finished.emit(True)
-
-    def compute_drift_vidstab(self):
-        """
-        Computation and update of the drift values using the 'Vidstab' package method
-        """
-        self.compute_and_plot_drift()
-
-    def compute_drift_phase_correlation(self):
-        """
-        Computation and update of the drift values using the 'phase correlation' method from OpenCV package
-        """
-        self.compute_and_plot_drift(method='phase correlation')
-
     def apply_drift_correction(self):
         """
         Apply the drift correction to the display and reload the image data with extra margins according to the drift
         values
         """
-        self.apply_drift = self.ui.actionApply_correction.isChecked()
+        self.apply_drift = PyDetecDiv.app.apply_drift
         PyDetecDiv.app.setOverrideCursor(QCursor(Qt.WaitCursor))
         if self.image_source_ref and self.parent_viewer:
             data, crop = self.parent_viewer.get_roi_data(self.image_source_ref)
@@ -337,30 +293,6 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.display()
         PyDetecDiv.app.restoreOverrideCursor()
 
-    def load_drift_file(self):
-        """
-        Load a CSV file containing (x, y) drift values
-        """
-        drift_filename, _ = QFileDialog.getOpenFileName(
-            dir=os.path.join(get_config_value('project', 'workspace'), PyDetecDiv.project_name),
-            filter='*.csv')
-        if os.path.isfile(drift_filename):
-            self.parent().parent().drift = pd.read_csv(drift_filename)
-            self.ui.actionPlot.setEnabled(True)
-            self.ui.actionApply_correction.setEnabled(True)
-            self.ui.actionSave_to_file.setEnabled(True)
-        else:
-            self.parent().parent().drift = None
-
-    def save_drift_file(self):
-        """
-        Save (x, y) drift values to a file
-        """
-        drift_filename, _ = QFileDialog.getSaveFileName(
-            dir=os.path.join(get_config_value('project', 'workspace'), PyDetecDiv.project_name),
-            filter='*.csv')
-        if drift_filename:
-            self.parent().parent().drift.to_csv(drift_filename, index=False)
 
     def set_roi_template(self):
         """

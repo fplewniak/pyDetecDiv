@@ -17,6 +17,14 @@ class ImageResourceData(abc.ABC):
     image_resource = None
 
     @property
+    def drift(self):
+        return self.fov.image_resource().drift
+
+    @property
+    def drift_method(self):
+        return self.fov.image_resource().drift_method
+
+    @property
     @abc.abstractmethod
     def shape(self):
         """

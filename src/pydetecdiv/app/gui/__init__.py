@@ -43,9 +43,13 @@ class DataMenu(QMenu):
         import_data.setShortcut("Ctrl+I")
         create_fovs = ActionsData.CreateFOV(menu)
         create_fovs.setShortcut("Ctrl+Alt+I")
+        compute_drift = ActionsData.ComputeDrift(menu)
+        apply_drift = ActionsData.ApplyDrift(menu)
         PyDetecDiv.app.project_selected.connect(lambda e: import_data.setEnabled(True))
         PyDetecDiv.app.raw_data_counted.connect(create_fovs.enable)
-
+        PyDetecDiv.app.project_selected.connect(compute_drift.enable)
+        PyDetecDiv.app.project_selected.connect(apply_drift.enable)
+        apply_drift.triggered.connect(lambda b: PyDetecDiv.app.set_apply_drift(b))
 
 class PluginMenu(QMenu):
     """

@@ -42,6 +42,8 @@ class PyDetecDiv(QApplication):
     plugin_list = None
     app = None
 
+    apply_drift = False
+
     def __init__(self, *args):
         super().__init__(*args)
         self.setApplicationName('pyDetecDiv')
@@ -58,6 +60,9 @@ class PyDetecDiv(QApplication):
     def set_main_window(main_window):
         PyDetecDiv.main_window = main_window
         PyDetecDiv.main_window.show()
+
+    def set_apply_drift(self, apply_drift):
+        self.apply_drift = apply_drift
 
 
 @contextmanager

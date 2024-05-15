@@ -15,10 +15,10 @@ class ImageResource(DomainSpecificObject):
     A business-logic class defining valid operations and attributes of Image resources
     """
 
-    def __init__(self, dataset, fov, multi, key_val=None,
+    def __init__(self, dataset, fov, multi,
                  xdim=-1, ydim=-1, zdim=-1, cdim=-1, tdim=-1,
                  xyscale=1, tscale=1, zscale=1,
-                 xyunit=1e-6, zunit=1e-6, tunit=60,
+                 xyunit=1e-6, zunit=1e-6, tunit=60, key_val=None,
                  **kwargs):
         super().__init__(**kwargs)
         self._dataset = dataset.id_ if isinstance(dataset, Dataset) else dataset
@@ -35,12 +35,13 @@ class ImageResource(DomainSpecificObject):
         self.zunit = zunit
         self.tscale = tscale
         self.tunit = tunit
+        self.key_val = key_val
         self.validate(updated=False)
+
         self.image_files_5d = self._image_files_5d
         self.image_files = self._image_files
         self.pattern = self._pattern
         self.fov = self._fov
-        self.key_val = key_val
 
     @property
     def dataset(self):
@@ -55,6 +56,18 @@ class ImageResource(DomainSpecificObject):
         the FOV corresponding to this image resource
         """
         return self.project.get_object('FOV', self.fov_id)
+
+    @property
+    def drift(self):
+        if self.key_val is not None and 'drift' in  self.key_val:
+            return self.key_val['drift']
+        return None
+
+    @property
+    def drift_method(self):
+        if self.key_val is not None and 'drift_method' in self.key_val:
+            return self.key_val['drift_method']
+        return None
 
     @property
     def data_list(self):

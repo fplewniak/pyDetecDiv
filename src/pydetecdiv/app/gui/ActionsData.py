@@ -12,12 +12,15 @@ from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGrou
                                QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView,
                                QRadioButton, QButtonGroup)
 from pydetecdiv.app import PyDetecDiv, WaitDialog, pydetecdiv_project, MessageDialog
+
 from pydetecdiv.settings import get_config_value
 from pydetecdiv import delete_files
 from pydetecdiv.app.gui.RawData2FOV import RawData2FOV
+import pydetecdiv.plugins.gui as gui
+from pydetecdiv.utils import Singleton
 
 
-class ListView(QListView):
+class FileListView(QListView):
     """
     A class extending QListView to display source for image data. Defines a context menu to clear or toggle selection,
     remove selected sources, clear list
@@ -113,7 +116,7 @@ class ImportDataDialog(QDialog):
         self.default_extension = QComboBox(extension_widget)
         self.default_extension.addItems(['*.tif', '*.tiff', '*.jpg', '*.jpeg', '*.png', '*', ])
 
-        list_view = ListView(source_group_box)
+        list_view = FileListView(source_group_box)
         self.list_model = QStringListModel()
         list_view.setModel(self.list_model)
 
@@ -454,5 +457,132 @@ class CreateFOV(QAction):
         """
         if PyDetecDiv.project_name and (raw_data_count > 0):
             self.setEnabled(True)
+        else:
+            self.setEnabled(False)
+
+
+class ComputeDriftDialog(gui.Dialog):
+    """
+    A dialog window to run drift correction computations for a selection of FOVs
+    """
+    progress = Signal(int)
+    finished = Signal(bool)
+
+    def __init__(self, title=None):
+        super().__init__(title=title)
+
+        self.drift = {}
+
+        self.select_FOV = self.addGroupBox('Select FOV')
+        self.fov_list = self.select_FOV.addOption(None, widget=gui.ListView, multiselection=True,
+                                                  items=self.update_fov_list(PyDetecDiv.project_name),
+                                                  height=75)
+
+        self.method_box = self.addGroupBox('Method')
+        self.method = self.method_box.addOption(None, widget=gui.ComboBox,
+                                                items={'vidstab': None, 'phase correlation': None},
+                                                selected='vidstab')
+
+        self.button_box = self.addButtonBox()
+
+        self.arrangeWidgets([
+            self.select_FOV,
+            self.method_box,
+            self.button_box
+        ])
+
+        gui.set_connections({self.button_box.accepted: self.accept,
+                             self.button_box.rejected: self.close,
+                             PyDetecDiv.app.project_selected: self.update_fov_list,
+                             })
+
+        self.exec()
+        for child in self.children():
+            child.deleteLater()
+        self.destroy(True)
+
+    def update_fov_list(self, project_name):
+        with pydetecdiv_project(project_name) as project:
+            return {fov.name: fov for fov in project.get_objects('FOV')}
+
+    def accept(self):
+        self.wait = WaitDialog('Computing drift, please wait.', self,
+                               cancel_msg='Cancel drift computation please wait')
+        self.finished.connect(self.wait.close_window)
+        self.wait.wait_for(self.compute_drift, Z=0, C=0)
+
+        tab = PyDetecDiv.main_window.add_tabbed_window(
+            f'{PyDetecDiv.project_name} / Drift correction ({self.method.value()})')
+        tab.viewer.project_name = PyDetecDiv.project_name
+        for fov in self.fov_list.selection():
+            tab.show_plot(self.drift[fov.name], title=fov.name)
+
+    def compute_drift(self, Z=0, C=0):
+        for fov in self.fov_list.selection():
+            self.drift[fov.name] = fov.image_resource().image_resource_data().compute_drift(Z=Z, C=C,
+                                                                                            method=self.method.value())
+        self.finished.emit(True)
+
+
+class ComputeDrift(QAction):
+    """
+    Action to compute drift correction
+    """
+
+    def __init__(self, parent):
+        super().__init__("Compute drift", parent)
+        self.triggered.connect(self.open_dialog)
+        self.setEnabled(False)
+        parent.addAction(self)
+
+    def enable(self, project_name):
+        """
+        Enable or disable this action in the Data menu whether there are raw data or not.
+
+        :param raw_data_count: the number of files in raw dataset
+        """
+        if project_name:
+            with pydetecdiv_project(project_name) as project:
+                if project.count_objects('FOV'):
+                    self.setEnabled(True)
+                else:
+                    self.setEnabled(False)
+        else:
+            self.setEnabled(False)
+
+    def open_dialog(self):
+        gui = ComputeDriftDialog(title='Compute drift')
+
+class ApplyDrift(QAction):
+    """
+    Action to set or unset drift correction
+    """
+
+    def __init__(self, parent):
+        super().__init__("Apply drift", parent)
+        # self.triggered.connect(self.)
+        self.setCheckable(True)
+        self.setChecked(False)
+        self.setEnabled(False)
+        parent.addAction(self)
+
+    def enable(self, project_name):
+        """
+        Enable or disable this action in the Data menu whether there are raw data or not.
+
+        :param raw_data_count: the number of files in raw dataset
+        """
+        if project_name:
+            with pydetecdiv_project(project_name) as project:
+                if project.count_objects('FOV'):
+                    self.setEnabled(True)
+                else:
+                    self.setEnabled(False)
+                # # The following should allow to enable drift correction if there is drift information in the database
+                # # but it may be quite time-consuming if there are many FOVs
+                # if any([fov.image_resource().drift is not None for fov in project.get_objects('FOV')]):
+                #     self.setEnabled(True)
+                # else:
+                #     self.setEnabled(False)
         else:
             self.setEnabled(False)

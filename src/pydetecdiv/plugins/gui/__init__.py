@@ -3,11 +3,12 @@ Module defining widgets and other utilities for creating windows/forms with a mi
 """
 import json
 
+from PySide6.QtCore import Qt, QStringListModel, QItemSelection, QItemSelectionModel
 from PySide6.QtGui import QIcon
 from PySide6.QtSql import QSqlQueryModel
 from PySide6.QtWidgets import QDialog, QFrame, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox, \
     QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView, QAbstractItemView, \
-    QPushButton, QApplication, QRadioButton
+    QPushButton, QApplication, QRadioButton, QListWidget, QListView
 
 
 class Parameters:
@@ -210,6 +211,69 @@ class ComboBox(QComboBox):
             return json.loads(self.currentText())
         except json.decoder.JSONDecodeError:
             return self.currentText()
+
+
+class ListView(QListView):
+    """
+    an extension of the QComboBox class
+    """
+
+    def __init__(self, parent, items=None, height=None, multiselection=False, **kwargs):
+        super().__init__(parent, **kwargs)
+        if multiselection:
+            self.setSelectionMode(QAbstractItemView.MultiSelection)
+        if height is not None:
+            self.setFixedHeight(height)
+        self.setModel(QStringListModel())
+        self.items = items
+        if items is not None:
+            self.addItemDict(items)
+
+    def addItemDict(self, options):
+        """
+        add items to the ComboBox as a dictionary
+
+        :param options: dictionary of options specifying labels and corresponding user data {label: userData, ...}
+        """
+        self.items = options
+        self.model().setStringList(list(options.keys()))
+
+    # def setText(self, text):
+    #     if self.findText(text) != -1:
+    #         self.setCurrentText(text)
+    #     else:
+    #         self.addItem(text)
+    #
+    # def text(self):
+    #     return self.currentText()
+    #
+    # @property
+    # def selected(self):
+    #     """
+    #     return property telling whether the current index of this ComboBox has changed
+    #
+    #     :return: boolean indication whether the current index has changed (i.e. new selection)
+    #     """
+    #     return self.currentIndexChanged
+    #
+    # @property
+    # def changed(self):
+    #     """
+    #     return property telling whether the current text of this ComboBox has changed. This overwrites the Pyside
+    #     equivalent method in order to have the same method name for all widgets
+    #
+    #     :return: boolean indication whether the current text has changed (i.e. new selection)
+    #     """
+    #     return self.currentTextChanged
+    #
+    def selection(self):
+        """
+        method to standardize the way widget values from a form are returned
+
+        :return: the current data (if it is defined) or the current text of the selected item
+        """
+        return [self.items[self.model().data(idx)] for idx in
+                sorted(self.selectedIndexes(), key=lambda x: x.row(), reverse=False)]
 
 
 class LineEdit(QLineEdit):
@@ -429,8 +493,8 @@ class Dialog(QDialog):
     An extension of QDialog to define forms that may be used to specify plugin options
     """
 
-    def __init__(self, plugin, title=None):
-        super().__init__()
+    def __init__(self, plugin=None, title=None, **kwargs):
+        super().__init__(**kwargs)
         self.vert_layout = QVBoxLayout(self)
         self.setLayout(self.vert_layout)
         self.plugin = plugin
