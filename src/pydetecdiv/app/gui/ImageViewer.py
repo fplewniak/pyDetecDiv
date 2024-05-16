@@ -240,19 +240,12 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         C = self.C if C is None else C
         T = self.T if T is None else T
         Z = self.Z if Z is None else Z
-        if PyDetecDiv.app.apply_drift and self.image_resource_data.drift is not None:
-            idx = T if T < len(self.image_resource_data.drift) else T - 1
-            arr = self.image_resource_data.image(C=C, T=T, Z=Z, drift=self.image_resource_data.drift.iloc[idx])
-        else:
-            arr = self.image_resource_data.image(C=C, T=T, Z=Z)
+
+        arr = self.image_resource_data.image(C=C, T=T, Z=Z, drift=PyDetecDiv.app.apply_drift)
         if arr is not None:
             if self.crop is not None:
                 arr = arr[..., self.crop[1], self.crop[0]]
-            # if sys.byteorder=='big':  # Check if the machine is big endian
-            #     arr = arr.byteswap(True)  # Swap the byte order if necessary
-            ny, nx = arr.shape
-            # img = QImage(np.ascontiguousarray(arr).tobytes(), nx, ny, QImage.Format_Grayscale16)
-            # img = QImage(arr.flatten().tobytes(), nx, ny, QImage.Format_Grayscale16)
+
             img = qimage2ndarray.array2qimage((arr/257).astype(np.uint8))
             self.pixmap.convertFromImage(img)
             self.pixmapItem.setPixmap(self.pixmap)

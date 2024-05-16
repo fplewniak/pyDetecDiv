@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ImageViewer.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.6.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (QApplication, QFrame, QGraphicsView, QGroupBox,
     QHBoxLayout, QLabel, QMainWindow, QMenu,
     QMenuBar, QSizePolicy, QSlider, QSpinBox,
     QToolButton, QVBoxLayout, QWidget)
+import pydetecdiv.app.gui.resources_rc
 
 class Ui_ImageViewer(object):
     def setupUi(self, ImageViewer):
@@ -78,7 +79,7 @@ class Ui_ImageViewer(object):
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.viewer = QGraphicsView(self.centralwidget)
         self.viewer.setObjectName(u"viewer")
-        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.viewer.sizePolicy().hasHeightForWidth())
@@ -96,7 +97,7 @@ class Ui_ImageViewer(object):
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
         self.controls = QGroupBox(self.frame)
         self.controls.setObjectName(u"controls")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.controls.sizePolicy().hasHeightForWidth())
@@ -140,7 +141,7 @@ class Ui_ImageViewer(object):
 
         self.t_slider = QSlider(self.controls)
         self.t_slider.setObjectName(u"t_slider")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         sizePolicy2.setHorizontalStretch(0)
         sizePolicy2.setVerticalStretch(0)
         sizePolicy2.setHeightForWidth(self.t_slider.sizePolicy().hasHeightForWidth())
@@ -158,7 +159,7 @@ class Ui_ImageViewer(object):
 
         self.t_step = QSpinBox(self.controls)
         self.t_step.setObjectName(u"t_step")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         sizePolicy3.setHorizontalStretch(0)
         sizePolicy3.setVerticalStretch(0)
         sizePolicy3.setHeightForWidth(self.t_step.sizePolicy().hasHeightForWidth())
@@ -293,12 +294,6 @@ class Ui_ImageViewer(object):
         self.menuResource = QMenu(self.menuBar)
         self.menuResource.setObjectName(u"menuResource")
         self.menuResource.setTitle(u"Resource")
-        self.menuDrift = QMenu(self.menuResource)
-        self.menuDrift.setObjectName(u"menuDrift")
-        self.menuDrift.setTitle(u"Drift")
-        self.menuCompute_and_plot = QMenu(self.menuDrift)
-        self.menuCompute_and_plot.setObjectName(u"menuCompute_and_plot")
-        self.menuCompute_and_plot.setTitle(u"Compute and plot")
         self.menuROI = QMenu(self.menuBar)
         self.menuROI.setObjectName(u"menuROI")
         self.menuROI.setTitle(u"ROI")
@@ -306,17 +301,7 @@ class Ui_ImageViewer(object):
 
         self.menuBar.addAction(self.menuResource.menuAction())
         self.menuBar.addAction(self.menuROI.menuAction())
-        self.menuResource.addAction(self.menuDrift.menuAction())
         self.menuResource.addSeparator()
-        self.menuDrift.addAction(self.menuCompute_and_plot.menuAction())
-        self.menuDrift.addAction(self.actionLoad_file)
-        self.menuDrift.addSeparator()
-        self.menuDrift.addAction(self.actionSave_to_file)
-        self.menuDrift.addAction(self.actionPlot)
-        self.menuDrift.addSeparator()
-        self.menuDrift.addAction(self.actionApply_correction)
-        self.menuCompute_and_plot.addAction(self.actionVidstab)
-        self.menuCompute_and_plot.addAction(self.actionPhase_correlation)
         self.menuROI.addSeparator()
         self.menuROI.addAction(self.actionSet_template)
         self.menuROI.addAction(self.actionLoad_template)
@@ -335,17 +320,11 @@ class Ui_ImageViewer(object):
         self.zoom_fit_btn.clicked.connect(ImageViewer.zoom_fit)
         self.video_forward.clicked.connect(ImageViewer.play_video)
         self.actionClose_window.triggered.connect(ImageViewer.close_window)
-        self.actionApply_correction.triggered.connect(ImageViewer.apply_drift_correction)
-        # self.actionPlot.triggered.connect(ImageViewer.plot_drift)
         self.actionSet_template.triggered.connect(ImageViewer.set_roi_template)
         self.actionLoad_template.triggered.connect(ImageViewer.load_roi_template)
         self.actionIdentify_ROIs.triggered.connect(ImageViewer.identify_rois)
         self.actionView_template.triggered.connect(ImageViewer.view_template)
         self.actionSave_ROIs.triggered.connect(ImageViewer.save_rois)
-        # self.actionVidstab.triggered.connect(ImageViewer.compute_drift_vidstab)
-        # self.actionPhase_correlation.triggered.connect(ImageViewer.compute_drift_phase_correlation)
-        # self.actionSave_to_file.triggered.connect(ImageViewer.save_drift_file)
-        # self.actionLoad_file.triggered.connect(ImageViewer.load_drift_file)
         self.c_slider.valueChanged.connect(ImageViewer.change_channel)
 
         QMetaObject.connectSlotsByName(ImageViewer)

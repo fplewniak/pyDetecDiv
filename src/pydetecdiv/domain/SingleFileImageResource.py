@@ -75,7 +75,7 @@ class SingleFileImageResource(ImageResourceData):
         """
         return self.img_reader.dims.X
 
-    def _image(self, C=0, Z=0, T=0, drift=None):
+    def _image(self, C=0, Z=0, T=0, drift=False):
         """
         A 2D grayscale image (on frame, one channel and one layer)
 
@@ -85,28 +85,30 @@ class SingleFileImageResource(ImageResourceData):
         :type Z: int
         :param T: the frame index
         :type T: int
+        :param drift: True if the drift correction should be applied
+        :type drift: bool
         :return: a 2D data array
         :rtype: 2D numpy.array
         """
         s = self.shape
         data = np.expand_dims(self._memmap, axis=tuple(i for i in range(len(s)) if s[i] == 1))[T, C, Z, ...]
 
-        if drift is not None:
+        if drift and self.drift is not None:
             data = cv2.warpAffine(np.array(data),
                                   np.float32(
-                                      [[1, 0, -drift.dx],
-                                       [0, 1, -drift.dy]]),
+                                      [[1, 0, -self.drift.iloc[T].dx],
+                                       [0, 1, -self.drift.iloc[T].dy]]),
                                   (data.shape[1], data.shape[0]))
         data = tf.image.convert_image_dtype(data, dtype=tf.uint16, saturate=False).numpy()
         return data
 
-    def _image_memmap(self,  sliceX=None, sliceY=None, C=0, Z=0, T=0, drift=None):
+    def _image_memmap(self,  sliceX=None, sliceY=None, C=0, Z=0, T=0, drift=False):
         if sliceX is None:
             sliceX = slice(0, self.sizeX)
         if sliceY is None:
             sliceY = slice(0, self.sizeX)
-        deltaX = 0 if drift is None else drift.dx
-        deltaY = 0 if drift is None else drift.dy
+        deltaX = 0 if drift and self.drift is not None else self.drift.iloc[T].dx
+        deltaY = 0 if drift and self.drift is not None else self.drift.iloc[T].dy
 
         sliceX = slice(sliceX.start - deltaX, sliceX.stop - deltaX)
         sliceY = slice(sliceY.start - deltaY, sliceY.stop - deltaY)
