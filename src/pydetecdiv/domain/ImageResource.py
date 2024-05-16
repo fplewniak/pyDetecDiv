@@ -4,6 +4,7 @@
  A class defining the business logic methods that can be applied to Fields Of View
 """
 import numpy as np
+import pandas
 from PIL import Image
 from aicsimageio.dimensions import Dimensions
 
@@ -60,7 +61,7 @@ class ImageResource(DomainSpecificObject):
     @property
     def drift(self):
         if self.key_val is not None and 'drift' in  self.key_val:
-            return self.key_val['drift']
+            return pandas.DataFrame(self.key_val['drift'], columns=['dx', 'dy'])
         return None
 
     @property

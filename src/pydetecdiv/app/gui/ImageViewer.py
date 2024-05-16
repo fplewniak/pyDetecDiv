@@ -240,9 +240,9 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         C = self.C if C is None else C
         T = self.T if T is None else T
         Z = self.Z if Z is None else Z
-        if self.apply_drift:
-            idx = T if T < len(self.parent().parent().drift) else T - 1
-            arr = self.image_resource_data.image(C=C, T=T, Z=Z, drift=self.parent().parent().drift.iloc[idx])
+        if PyDetecDiv.app.apply_drift and self.image_resource_data.drift is not None:
+            idx = T if T < len(self.image_resource_data.drift) else T - 1
+            arr = self.image_resource_data.image(C=C, T=T, Z=Z, drift=self.image_resource_data.drift.iloc[idx])
         else:
             arr = self.image_resource_data.image(C=C, T=T, Z=Z)
         if arr is not None:
