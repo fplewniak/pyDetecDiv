@@ -40,6 +40,7 @@ class MultiFileImageResource(ImageResourceData):
         self.max_mem = max_mem
         self._shape = image_resource.shape
         self._dims = image_resource.dims
+        self._drift = image_resource.drift
 
         # print(f'Multiple file image resource: {self.dims}')
 
@@ -125,8 +126,8 @@ class MultiFileImageResource(ImageResourceData):
             sliceX = slice(0, self.sizeX)
         if sliceY is None:
             sliceY = slice(0, self.sizeX)
-        deltaX = 0 if drift and self.drift is not None else self.drift.iloc[T].dx
-        deltaY = 0 if drift and self.drift is not None else self.drift.iloc[T].dy
+        deltaX = 0 if not drift or self.drift is None else int(round(self.drift.iloc[T].dx))
+        deltaY = 0 if not drift or self.drift is None else int(round(self.drift.iloc[T].dy))
 
         sliceX = slice(sliceX.start - deltaX, sliceX.stop - deltaX)
         sliceY = slice(sliceY.start - deltaY, sliceY.stop - deltaY)

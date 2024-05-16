@@ -18,7 +18,8 @@ class ImageResourceData(abc.ABC):
 
     @property
     def drift(self):
-        return self.fov.image_resource().drift
+        return self._drift
+        # return self.fov.image_resource().drift
 
     @property
     def drift_method(self):

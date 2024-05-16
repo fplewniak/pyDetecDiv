@@ -17,13 +17,15 @@ class Run(DomainSpecificObject):
     A business-logic class defining valid operations and attributes of data
     """
 
-    def __init__(self, tool_name=None, tool_version=None, is_plugin=False, command=None, parameters=None, **kwargs):
+    def __init__(self, tool_name=None, tool_version=None, is_plugin=False, command=None, parameters=None, key_val=None,
+                 **kwargs):
         super().__init__(**kwargs)
         self.tool_name = tool_name
         self.tool_version = tool_version
         self.is_plugin = is_plugin
         self.command = command
         self.parameters = parameters
+        self.key_val = key_val
         self.validate()
 
     def record(self, no_id=False):

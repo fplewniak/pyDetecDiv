@@ -647,11 +647,11 @@ class Plugin(plugins.Plugin):
         :param num_validation: the number of validation data
         """
         project = roi_list[0].roi.project
-        training_ds = Dataset(project=project, name=f'train_{datetime.now().strftime("%Y%m%d-%H%M")}',
+        training_ds = Dataset(project=project, name=f'train_{datetime.now().strftime("%Y%m%d-%H%M%S")}',
                               type_='training', run=run.id_)
-        validation_ds = Dataset(project=project, name=f'val_{datetime.now().strftime("%Y%m%d-%H%M")}',
+        validation_ds = Dataset(project=project, name=f'val_{datetime.now().strftime("%Y%m%d-%H%M%S")}',
                                 type_='validation', run=run.id_)
-        test_ds = Dataset(project=project, name=f'test_{datetime.now().strftime("%Y%m%d-%H%M")}', type_='test',
+        test_ds = Dataset(project=project, name=f'test_{datetime.now().strftime("%Y%m%d-%H%M%S")}', type_='test',
                           run=run.id_)
 
         print(num_training, num_validation)
@@ -810,15 +810,15 @@ def get_rgb_images_from_stacks_memmap(imgdata, roi_list, t, z=None):
         Image.compose_channels([Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
                                                            sliceY=slice(roi.y, roi.y + roi.height),
                                                            C=0, Z=z[0], T=t,
-                                                           drift=None)).stretch_contrast(),
+                                                           drift=PyDetecDiv.app.apply_drift)).stretch_contrast(),
                                 Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
                                                            sliceY=slice(roi.y, roi.y + roi.height),
                                                            C=0, Z=z[1], T=t,
-                                                           drift=None)).stretch_contrast(),
+                                                           drift=PyDetecDiv.app.apply_drift)).stretch_contrast(),
                                 Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
                                                            sliceY=slice(roi.y, roi.y + roi.height),
                                                            C=0, Z=z[2], T=t,
-                                                           drift=None)).stretch_contrast(),
+                                                           drift=PyDetecDiv.app.apply_drift)).stretch_contrast(),
                                 ]).as_tensor(ImgDType.float32) for roi in roi_list]
     return roi_images
 
@@ -836,9 +836,9 @@ def get_rgb_images_from_stacks(imgdata, roi_list, t, z=None):
     if z is None:
         z = [0, 0, 0]
 
-    image1 = Image(imgdata.image(T=t, Z=z[0]))
-    image2 = Image(imgdata.image(T=t, Z=z[1]))
-    image3 = Image(imgdata.image(T=t, Z=z[2]))
+    image1 = Image(imgdata.image(T=t, Z=z[0], drift=PyDetecDiv.app.apply_drift))
+    image2 = Image(imgdata.image(T=t, Z=z[1], drift=PyDetecDiv.app.apply_drift))
+    image3 = Image(imgdata.image(T=t, Z=z[2], drift=PyDetecDiv.app.apply_drift))
 
     roi_images = [Image.compose_channels([image1.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
                                           image2.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
