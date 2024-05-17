@@ -270,21 +270,21 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         """
         self.parent().parent().window.close()
 
-    def apply_drift_correction(self):
-        """
-        Apply the drift correction to the display and reload the image data with extra margins according to the drift
-        values
-        """
-        self.apply_drift = PyDetecDiv.app.apply_drift
-        PyDetecDiv.app.setOverrideCursor(QCursor(Qt.WaitCursor))
-        if self.image_source_ref and self.parent_viewer:
-            data, crop = self.parent_viewer.get_roi_data(self.image_source_ref)
-            self.set_image_resource_data(self.parent_viewer.image_resource_data, crop=crop)
-            # self.set_image_resource_data(ArrayImageResource(data=data, fov=self.image_resource_data.fov,
-            # image_resource=self.image_resource_data.image_resource), crop=crop,
-            # T=self.T, C=self.C, Z=self.Z)
-        self.display()
-        PyDetecDiv.app.restoreOverrideCursor()
+    # def apply_drift_correction(self):
+    #     """
+    #     Apply the drift correction to the display and reload the image data with extra margins according to the drift
+    #     values
+    #     """
+    #     self.apply_drift = PyDetecDiv.app.apply_drift
+    #     PyDetecDiv.app.setOverrideCursor(QCursor(Qt.WaitCursor))
+    #     if self.image_source_ref and self.parent_viewer:
+    #         data, crop = self.parent_viewer.get_roi_data(self.image_source_ref)
+    #         self.set_image_resource_data(self.parent_viewer.image_resource_data, crop=crop)
+    #         # self.set_image_resource_data(ArrayImageResource(data=data, fov=self.image_resource_data.fov,
+    #         # image_resource=self.image_resource_data.image_resource), crop=crop,
+    #         # T=self.T, C=self.C, Z=self.Z)
+    #     self.display()
+    #     PyDetecDiv.app.restoreOverrideCursor()
 
 
     def set_roi_template(self):
