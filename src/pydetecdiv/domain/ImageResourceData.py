@@ -25,7 +25,7 @@ class ImageResourceData(abc.ABC):
     @property
     def drift(self):
         if self._drift is None:
-            self._drift = self.fov.image_resource().drift
+            self._drift = self.fov.project.get_object('ImageResource', self.image_resource, use_pool=False).drift
         return self._drift
 
     @property

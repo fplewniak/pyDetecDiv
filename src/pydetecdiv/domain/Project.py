@@ -241,7 +241,7 @@ class Project:
         del self.pool[dso.__class__.__name__, dso.id_]
         self.repository.delete_object(dso.__class__.__name__, dso.id_)
 
-    def get_object(self, class_name, id_=None, uuid=None) -> DomainSpecificObject:
+    def get_object(self, class_name, id_=None, uuid=None, use_pool=True) -> DomainSpecificObject:
         """
         Get an object referenced by its id
 
@@ -252,7 +252,7 @@ class Project:
         :return: the desired object
         :rtype: object (DomainSpecificObject)
         """
-        return self.build_dso(class_name, self.repository.get_record(class_name, id_, uuid))
+        return self.build_dso(class_name, self.repository.get_record(class_name, id_, uuid), use_pool)
 
     def get_named_object(self, class_name, name=None) -> DomainSpecificObject:
         """
@@ -384,7 +384,7 @@ class Project:
         """
         self.repository.unlink(dso1.__class__.__name__, dso1.id_, dso2.__class__.__name__, dso2.id_, )
 
-    def build_dso(self, class_name, rec):
+    def build_dso(self, class_name, rec, use_pool=True):
         """
         factory method to build a dso of class class_ from record rec or return the pooled object if it was already
         created. Note that if the object was already in the pool, values in the record are not used to update the
@@ -403,7 +403,8 @@ class Project:
         if rec is None:
             return None
         if 'id_' in rec and (class_name, rec['id_']) in self.pool:
-            return self.pool[(class_name, rec['id_'])]
+            if use_pool:
+                return self.pool[(class_name, rec['id_'])]
         obj = Project.classes[class_name](project=self, **rec)
         self.pool[(class_name, obj.id_)] = obj
         return obj
