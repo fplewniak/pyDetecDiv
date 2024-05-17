@@ -3,11 +3,15 @@
 """
  Class to manipulate Image resources: loading data from files, etc
 """
+import os
+
 import numpy as np
 import pandas as pd
 import cv2 as cv
 from vidstab import VidStab
 import abc
+
+from pydetecdiv.settings import get_config_value
 
 
 class ImageResourceData(abc.ABC):
@@ -15,11 +19,14 @@ class ImageResourceData(abc.ABC):
     An abstract class to access image resources (files) on disk without having to load whole time series into memory
     """
     image_resource = None
+    fov = None
+    _drift = None
 
     @property
     def drift(self):
+        if self._drift is None:
+            self._drift = self.fov.image_resource().drift
         return self._drift
-        # return self.fov.image_resource().drift
 
     @property
     def drift_method(self):
@@ -161,16 +168,21 @@ class ImageResourceData(abc.ABC):
         """
         match (method):
             case 'phase correlation':
-                drift = self.compute_drift_phase_correlation_cv2(**kwargs)
+                drift = pd.concat([pd.DataFrame([[0,0]],columns=['dx', 'dy']),
+                                  self.compute_drift_phase_correlation_cv2(**kwargs)], ignore_index=True)
             case 'vidstab':
-                drift = self.compute_drift_vidstab(**kwargs)
+                drift = pd.concat([pd.DataFrame([[0,0]],columns=['dx', 'dy']),
+                                  self.compute_drift_vidstab(**kwargs)], ignore_index=True)
             case _:
-                drift = pd.DataFrame([[0, 0]] * self.sizeT, columns=['dy', 'dx'])
+                drift = pd.DataFrame([[0, 0]] * self.sizeT, columns=['dx', 'dy'])
         image_resource = self.fov.image_resource()
         if image_resource.key_val is None:
             image_resource.key_val = {}
-        drift_list = [[0, 0]] + [[x, y] for x, y in zip(drift.dx, drift.dy)]
-        image_resource.key_val.update({'drift': drift_list, 'drift method': method})
+        drift_file = f'{self.fov.name}_drift_data.csv'
+        drift_path = os.path.join(get_config_value('project', 'workspace'),
+                                  self.fov.project.dbname, drift_file)
+        drift.to_csv(drift_path, float_format='%.3f', columns=['dx', 'dy'], index=False)
+        image_resource.key_val.update({'drift': drift_file, 'drift method': method})
         image_resource.validate()
         image_resource.project.commit()
         return drift
@@ -217,7 +229,7 @@ class ImageResourceData(abc.ABC):
             self.refresh()
             if thread and thread.isInterruptionRequested():
                 return None
-        return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)
+        return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)[['dx', 'dy']]
 
     def refresh(self):
         pass

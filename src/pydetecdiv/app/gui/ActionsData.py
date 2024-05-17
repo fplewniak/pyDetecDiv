@@ -465,7 +465,7 @@ class ComputeDriftDialog(gui.Dialog):
     """
     A dialog window to run drift correction computations for a selection of FOVs
     """
-    progress = Signal(int)
+    # progress = Signal(int)
     finished = Signal(bool)
 
     def __init__(self, title=None):

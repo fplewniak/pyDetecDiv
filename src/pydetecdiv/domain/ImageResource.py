@@ -3,6 +3,8 @@
 """
  A class defining the business logic methods that can be applied to Fields Of View
 """
+import os
+
 import numpy as np
 import pandas
 from PIL import Image
@@ -10,6 +12,8 @@ from aicsimageio.dimensions import Dimensions
 
 from pydetecdiv.domain import MultiFileImageResource, SingleFileImageResource, FOV, Dataset
 from pydetecdiv.domain.dso import DomainSpecificObject
+from pydetecdiv.settings import get_config_value
+
 
 class ImageResource(DomainSpecificObject):
     """
@@ -60,8 +64,10 @@ class ImageResource(DomainSpecificObject):
 
     @property
     def drift(self):
-        if self.key_val is not None and 'drift' in  self.key_val:
-            return pandas.DataFrame(self.key_val['drift'], columns=['dx', 'dy'])
+        if self.key_val is not None and 'drift' in self.key_val:
+            drift_path = os.path.join(get_config_value('project', 'workspace'),
+                                  self.fov.project.dbname, self.key_val['drift'])
+            return pandas.read_csv(drift_path)
         return None
 
     @property
