@@ -14,13 +14,14 @@ from skimage.feature import peak_local_max
 import qimage2ndarray
 
 from pydetecdiv.app import WaitDialog, PyDetecDiv, DrawingTools, pydetecdiv_project
+from pydetecdiv.app.gui.ViewContainer import ViewContainer
 from pydetecdiv.app.gui.ui.ImageViewer import Ui_ImageViewer
 from pydetecdiv.domain import ROI
 from pydetecdiv.settings import get_config_value
 from pydetecdiv.utils import round_to_even
 
 
-class ImageViewer(QMainWindow, Ui_ImageViewer):
+class ImageViewer(ViewContainer, Ui_ImageViewer):
     """
     Class to view and manipulate an Image resource
     """
@@ -30,7 +31,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
     finished = Signal(bool)
 
     def __init__(self, **kwargs):
-        QMainWindow.__init__(self)
+        ViewContainer.__init__(self)
         self.ui = Ui_ImageViewer()
         self.setWindowTitle('Image viewer')
         self.ui.setupUi(self)
@@ -48,7 +49,7 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         self.ui.viewer.setScene(self.scene)
         self.fov = None
         self.stage = None
-        self.project_name = None
+        # self.project_name = None
         self.C = 0
         self.T = 0
         self.Z = 0
@@ -264,11 +265,11 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
             rect_item.setFlags(QGraphicsItem.ItemIsSelectable)
             rect_item.setData(0, roi.name)
 
-    def close_window(self):
-        """
-        Close the Tabbed viewer containing this Image viewer
-        """
-        self.parent().parent().window.close()
+    # def close_window(self):
+    #     """
+    #     Close the Tabbed viewer containing this Image viewer
+    #     """
+    #     self.parent().parent().window.close()
 
     # def apply_drift_correction(self):
     #     """
