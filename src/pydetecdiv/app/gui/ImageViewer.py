@@ -267,21 +267,6 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         """
         self.parent().parent().window.close()
 
-    # def apply_drift_correction(self):
-    #     """
-    #     Apply the drift correction to the display and reload the image data with extra margins according to the drift
-    #     values
-    #     """
-    #     self.apply_drift = PyDetecDiv.app.apply_drift
-    #     PyDetecDiv.app.setOverrideCursor(QCursor(Qt.WaitCursor))
-    #     if self.image_source_ref and self.parent_viewer:
-    #         data, crop = self.parent_viewer.get_roi_data(self.image_source_ref)
-    #         self.set_image_resource_data(self.parent_viewer.image_resource_data, crop=crop)
-    #         # self.set_image_resource_data(ArrayImageResource(data=data, fov=self.image_resource_data.fov,
-    #         # image_resource=self.image_resource_data.image_resource), crop=crop,
-    #         # T=self.T, C=self.C, Z=self.Z)
-    #     self.display()
-    #     PyDetecDiv.app.restoreOverrideCursor()
 
     def set_roi_template(self):
         """
@@ -324,28 +309,6 @@ class ImageViewer(QMainWindow, Ui_ImageViewer):
         x1, x2 = int(pos.x()), w + int(pos.x())
         y1, y2 = int(pos.y()), h + int(pos.y())
         crop = (slice(x1, x2), slice(y1, y2))
-        # if self.parent().parent().drift is not None:
-        #     max_shift_x = np.max(np.abs(self.parent().parent().drift.dx))
-        #     max_shift_y = np.max(np.abs(self.parent().parent().drift.dy))
-        #     x1, x2 = round_to_even(x1 - max_shift_x, ceil=False), round_to_even(x2 + max_shift_x)
-        #     y1, y2 = round_to_even(y1 - max_shift_y, ceil=False), round_to_even(y2 + max_shift_y)
-        #     x, y = round_to_even(max_shift_x, ceil=False), round_to_even(max_shift_y, ceil=False)
-        #     crop = [slice(x, x + w), slice(y, y + h)]
-
-        # min_shift_x, max_shift_x = np.min(self.drift.dx), np.max(self.drift.dx)
-        # min_shift_y, max_shift_y = np.min(self.drift.dy), np.max(self.drift.dy)
-        # print(min_shift_x, max_shift_x, min_shift_y, max_shift_y)
-        # print(f'without margins: ({x1}, {y1}) - ({x2}, {y2}) [{x2 - x1}, {y2 - y1}]')
-        # x1 = round_to_even(np.min([x1 + min_shift_x, x1]), ceil=False)
-        # x2 = round_to_even(np.max([x2 + max_shift_x, x2]))
-        # y1 = round_to_even(np.min([y1 + min_shift_y, y1]), ceil=False)
-        # y2 = round_to_even(np.max([y2 + max_shift_y, y2]))
-        # print(f'   with margins: ({x1}, {y1}) - ({x2}, {y2}) [{x2 - x1}, {y2 - y1}]')
-        # x = round_to_even(max_shift_x, ceil=False) if max_shift_x > 0 else 0
-        # y = round_to_even(max_shift_y, ceil=False) if max_shift_y > 0 else 0
-        # crop = [slice(x, x+w), slice(y, y+h)]
-        # print(f'should crop to {x}, {y}, {x+w}, {y+h} - {self.crop} - {w}, {h}')
-        # return self.image_resource_data.data_sample(X=slice(x1, x2), Y=slice(y1, y2)), crop
         return self.image_resource_data, crop
 
     def load_roi_template(self):

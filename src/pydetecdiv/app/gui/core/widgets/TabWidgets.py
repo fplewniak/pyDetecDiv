@@ -1,9 +1,8 @@
 import random
 
-from PySide6.QtWidgets import QTabWidget, QMainWindow, QWidget
+from PySide6.QtWidgets import QTabWidget
 
 from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.app.gui.ImageViewer import ImageViewer
 from pydetecdiv.app.gui.core.widgets.Viewer import MatplotViewer
 
 
@@ -27,17 +26,6 @@ class TabbedWindow(QTabWidget):
 
     def set_top_tab(self, widget, title):
         self.top_widget = self.widget(self.addTab(widget, title))
-
-    # def buildContainer(self, title):
-    #     container = TabContainer()
-    #     container.setCentralWidget(QWidget(self))
-    #     self.addTab(container, title)
-    #     return container.centralWidget()
-
-    # def addTab(self, widget, title):
-    #     container = widget if isinstance(widget, TabContainer) else TabContainer(widget)
-    #     super().addTab(container, title)
-    #     return container
 
     def closeEvent(self, _):
         """
@@ -72,40 +60,3 @@ class TabbedWindow(QTabWidget):
         df.plot(ax=plot_viewer.axes)
         plot_viewer.canvas.draw()
         self.setCurrentWidget(plot_viewer)
-
-
-# class TabbedViewer(TabbedWindow):
-#     """
-#     A tabbed widget to hold the FOV main viewer and all related viewers (plots, image resources, etc.)
-#     This is a legacy widget that will be removed when the ImageViewer class has been replaced with a VideoPlayer class
-#     implementing the simplified GUI API.
-#     """
-#
-#     def __init__(self, title):
-#         super().__init__(title)
-#         self.viewer = ImageViewer()
-#         self.top_widget = self.widget(self.addTab(self.viewer, title))
-#
-#     def close_tab(self, index):
-#         """
-#         Close the tab with the specified index
-#
-#         :param index: the index of the tab to close
-#         :type index: int
-#         """
-#         if self.widget(index) != self.top_widget:
-#             self.removeTab(index)
-
-
-# class TabContainer(QMainWindow):
-#     def __init__(self, widget=None, **kwargs):
-#         super().__init__()
-#         if widget:
-#             self.setCentralWidget(widget)
-#             widget.setParent(self)
-#
-#     def close_window(self):
-#         """
-#         Close the Tabbed viewer containing this Image viewer
-#         """
-#         self.parent().parent().window.close()

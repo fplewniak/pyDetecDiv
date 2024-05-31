@@ -28,7 +28,6 @@ from pydetecdiv import plugins
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir
 from pydetecdiv.settings import get_plugins_dir
 from pydetecdiv.domain import Image, Dataset, ImgDType
-# from pydetecdiv.app.gui.Windows import MatplotViewer
 from pydetecdiv.app.gui.core.widgets.Viewer import MatplotViewer
 from pydetecdiv.settings import get_config_value
 
