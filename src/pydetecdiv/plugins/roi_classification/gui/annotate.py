@@ -18,7 +18,7 @@ def open_annotator(plugin, roi_selection):
     :param roi_selection: the list of ROIs to annotate
     """
     tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / ROI annotation')
-    tab.viewer.project_name = PyDetecDiv.project_name
+    tab.project_name = PyDetecDiv.project_name
     viewer = Annotator()
     viewer.set_plugin(plugin)
     tab.addTab(viewer, 'Annotation run')

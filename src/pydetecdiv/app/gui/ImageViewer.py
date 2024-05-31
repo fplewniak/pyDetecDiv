@@ -2,9 +2,7 @@
 Image viewer to display and interact with an Image resource (5D image data)
 """
 
-import os
 import time
-import pandas as pd
 from PySide6.QtCore import Signal, Qt, QRect, QPoint, QTimer
 from PySide6.QtGui import QPixmap, QImage, QPen, QTransform, QKeySequence, QCursor
 from PySide6.QtWidgets import QMainWindow, QGraphicsScene, QGraphicsItem, QGraphicsRectItem, QFileDialog, QMenu
@@ -13,15 +11,13 @@ import cv2 as cv
 from skimage.feature import peak_local_max
 import qimage2ndarray
 
-from pydetecdiv.app import WaitDialog, PyDetecDiv, DrawingTools, pydetecdiv_project
-from pydetecdiv.app.gui.ViewContainer import ViewContainer
+from pydetecdiv.app import PyDetecDiv, DrawingTools, pydetecdiv_project
 from pydetecdiv.app.gui.ui.ImageViewer import Ui_ImageViewer
 from pydetecdiv.domain import ROI
-from pydetecdiv.settings import get_config_value
 from pydetecdiv.utils import round_to_even
 
 
-class ImageViewer(ViewContainer, Ui_ImageViewer):
+class ImageViewer(QMainWindow, Ui_ImageViewer):
     """
     Class to view and manipulate an Image resource
     """
@@ -31,7 +27,7 @@ class ImageViewer(ViewContainer, Ui_ImageViewer):
     finished = Signal(bool)
 
     def __init__(self, **kwargs):
-        ViewContainer.__init__(self)
+        QMainWindow.__init__(self)
         self.ui = Ui_ImageViewer()
         self.setWindowTitle('Image viewer')
         self.ui.setupUi(self)
@@ -247,7 +243,7 @@ class ImageViewer(ViewContainer, Ui_ImageViewer):
             if self.crop is not None:
                 arr = arr[..., self.crop[1], self.crop[0]]
 
-            img = qimage2ndarray.array2qimage((arr/257).astype(np.uint8))
+            img = qimage2ndarray.array2qimage((arr / 257).astype(np.uint8))
             self.pixmap.convertFromImage(img)
             self.pixmapItem.setPixmap(self.pixmap)
 
@@ -265,11 +261,11 @@ class ImageViewer(ViewContainer, Ui_ImageViewer):
             rect_item.setFlags(QGraphicsItem.ItemIsSelectable)
             rect_item.setData(0, roi.name)
 
-    # def close_window(self):
-    #     """
-    #     Close the Tabbed viewer containing this Image viewer
-    #     """
-    #     self.parent().parent().window.close()
+    def close_window(self):
+        """
+        Close the Tabbed viewer containing this Image viewer
+        """
+        self.parent().parent().window.close()
 
     # def apply_drift_correction(self):
     #     """
@@ -286,7 +282,6 @@ class ImageViewer(ViewContainer, Ui_ImageViewer):
     #         # T=self.T, C=self.C, Z=self.Z)
     #     self.display()
     #     PyDetecDiv.app.restoreOverrideCursor()
-
 
     def set_roi_template(self):
         """

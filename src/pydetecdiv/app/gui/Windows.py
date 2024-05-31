@@ -1,14 +1,11 @@
 """
 Classes for persistent windows of the GUI
 """
-import random
 
-import numpy as np
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QCursor, QIcon, QPixmap, QImage
-from PySide6.QtWidgets import QMainWindow, QMdiArea, QTabWidget, QDockWidget, QFormLayout, QLabel, QComboBox, \
-    QDialogButtonBox, QWidget, QFrame, QVBoxLayout, QGridLayout, QToolButton, \
-    QGraphicsView, QGraphicsScene, QSpinBox, QGroupBox, QHBoxLayout
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QCursor, QIcon
+from PySide6.QtWidgets import QMainWindow, QMdiArea, QDockWidget, QFormLayout, QLabel, QComboBox, \
+    QDialogButtonBox, QWidget, QFrame, QVBoxLayout, QGridLayout, QToolButton, QSpinBox, QGroupBox, QHBoxLayout
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
@@ -18,7 +15,7 @@ from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project, Drawing
 
 from pydetecdiv.app.gui.ImageViewer import ImageViewer
 from pydetecdiv.app.gui.Toolbox import ToolboxTreeView, ToolboxTreeModel
-from pydetecdiv.app.gui.ViewContainer import ViewContainer
+from pydetecdiv.app.gui.core.widgets.TabWidgets import TabbedWindow
 
 
 class MainWindow(QMainWindow):
@@ -78,7 +75,9 @@ class MainWindow(QMainWindow):
         :rtype: TabbedViewer
         """
         if title not in self.tabs:
-            self.tabs[title] = TabbedViewer(title, self)
+            self.tabs[title] = TabbedWindow(title)
+            self.tabs[title].set_top_tab(ImageViewer(), title)
+            # self.tabs[title] = TabbedViewer(title)
             # self.tabs[title].window = self.mdi_area.addSubWindow(self.tabs[title])
             # self.tabs[title].setMovable(True)
             # self.tabs[title].setTabsClosable(True)
@@ -96,7 +95,7 @@ class MainWindow(QMainWindow):
         :rtype: TabbedViewer
         """
         if title not in self.tabs:
-            self.tabs[title] = TabbedWindow(title, self)
+            self.tabs[title] = TabbedWindow(title)
             # self.tabs[title].window = self.mdi_area.addSubWindow(self.tabs[title])
             # mdi_space = self.mdi_area.geometry()
             # print(mdi_space)
@@ -117,13 +116,11 @@ class MainWindow(QMainWindow):
         """
         if subwindow is not None:
             for c in subwindow.children():
-                if (c in self.tabs.values()) and hasattr(c.viewer, 'project_name') and c.viewer.project_name:
-                    PyDetecDiv.app.project_selected.emit(c.viewer.project_name)
-                    PyDetecDiv.project_name = c.viewer.project_name
-                    if hasattr(c.viewer, 'fov'):
-                        self.image_resource_selector.position_choice.setCurrentText(c.viewer.fov)
-                    # self.image_resource_selector.stage_choice.setCurrentText(c.viewer.stage)
-                    # self.image_resource_selector.channel_choice.setCurrentText(str(c.viewer.C))
+                if (c in self.tabs.values()) and hasattr(c, 'project_name') and c.project_name:
+                    PyDetecDiv.app.project_selected.emit(c.project_name)
+                    PyDetecDiv.project_name = c.project_name
+                    if hasattr(c.top_widget, 'fov'):
+                        self.image_resource_selector.position_choice.setCurrentText(c.top_widget.fov)
 
     @property
     def active_subwindow(self):
@@ -133,110 +130,116 @@ class MainWindow(QMainWindow):
         return None
 
 
-class TabbedWindow(QTabWidget):
-    def __init__(self, title, parent=None):
-        super().__init__()
-        self.viewer = ViewContainer()
-        self.setWindowTitle(title)
-        self.setDocumentMode(True)
-        self.parent = parent
+# class TabbedWindow(QTabWidget):
+#     def __init__(self, title, parent=None):
+#         super().__init__()
+#         self.viewer = None
+#         self.setWindowTitle(title)
+#         self.setDocumentMode(True)
+#         self.parent = parent
+#
+#         self.window = self.parent.mdi_area.addSubWindow(self)
+#         mdi_space = self.parent.mdi_area.geometry()
+#         xmax, ymax = mdi_space.width() * 0.20, mdi_space.height() * 0.20
+#         x, y = random.uniform(0, xmax), random.uniform(0, ymax)
+#         self.window.setGeometry(x, y, mdi_space.width() * 0.8, mdi_space.height() * 0.8)
+#         self.setMovable(True)
+#         self.setTabsClosable(True)
+#         self.tabCloseRequested.connect(self.close_tab)
+#         self.show()
+#
+#     def addViewContainer(self, title):
+#         self.viewer = ViewContainer()
+#         self.viewer.setCentralWidget(QWidget(self))
+#         self.addTab(self.viewer, title)
+#         return self.viewer.centralWidget()
+#
+#     def closeEvent(self, _):
+#         """
+#         Close the current tabbed widget window
+#
+#         :param event: the close event
+#         :type event: QCloseEvent
+#         """
+#         del self.parent.tabs[self.windowTitle()]
+#
+#     def show_plot(self, df, title='Plot'):
+#         """
+#         Open a viewer tab to plot a graphic from a pandas dataframe
+#
+#         :param df: the data to plot
+#         :type df: pandas DataFrame
+#         :param title: the title for the plot tab
+#         :type title: str
+#         """
+#         plot_viewer = MatplotViewer(self)
+#         self.addTab(plot_viewer, title)
+#         df.plot(ax=plot_viewer.axes)
+#         plot_viewer.canvas.draw()
+#         self.setCurrentWidget(plot_viewer)
+#
+#     def close_tab(self, index):
+#         """
+#         Close the tab with the specified index
+#
+#         :param index: the index of the tab to close
+#         :type index: int
+#         """
+#         if self.widget(index) != self.viewer:
+#             self.removeTab(index)
 
-        self.window = self.parent.mdi_area.addSubWindow(self)
-        mdi_space = self.parent.mdi_area.geometry()
-        xmax , ymax = mdi_space.width() * 0.20, mdi_space.height() * 0.20
-        x, y = random.uniform(0, xmax), random.uniform(0, ymax)
-        self.window.setGeometry(x, y, mdi_space.width() * 0.8, mdi_space.height() * 0.8)
-        self.setMovable(True)
-        self.setTabsClosable(True)
-        self.tabCloseRequested.connect(self.close_tab)
-        self.show()
 
-    def closeEvent(self, _):
-        """
-        Close the current tabbed widget window
-
-        :param event: the close event
-        :type event: QCloseEvent
-        """
-        del self.parent.tabs[self.windowTitle()]
-
-    def show_plot(self, df, title='Plot'):
-        """
-        Open a viewer tab to plot a graphic from a pandas dataframe
-
-        :param df: the data to plot
-        :type df: pandas DataFrame
-        :param title: the title for the plot tab
-        :type title: str
-        """
-        plot_viewer = MatplotViewer(self)
-        self.addTab(plot_viewer, title)
-        df.plot(ax=plot_viewer.axes)
-        plot_viewer.canvas.draw()
-        self.setCurrentWidget(plot_viewer)
-
-    def close_tab(self, index):
-        """
-        Close the tab with the specified index
-
-        :param index: the index of the tab to close
-        :type index: int
-        """
-        if self.widget(index) != self.viewer:
-            self.removeTab(index)
-
-
-class TabbedViewer(TabbedWindow):
-    """
-    A tabbed widget to hold the FOV main viewer and all related viewers (plots, image resources, etc.)
-    """
-
-    def __init__(self, title, parent=None):
-        super().__init__(title, parent)
-        self.viewer = ImageViewer()
-        self.addTab(self.viewer, 'FOV')
-        self.drift = None
-
-    def show_image(self, data, title='Image', format_=QImage.Format_Grayscale16):
-        """
-        Display a 2D image
-
-        :param data: the 2D image data
-        :type data: ndarray
-        :param title: the title of the tab
-        :type title: str
-        :param format: the image format
-        :type format: QImage.Format
-        """
-        viewer = QGraphicsView(self)
-        scene = QGraphicsScene()
-        pixmap = QPixmap()
-        pixmapItem = scene.addPixmap(pixmap)
-        match format_:
-            case QImage.Format_Grayscale16 | QImage.Format_Grayscale8:
-                # print('Grayscale')
-                ny, nx = data.shape
-                img = QImage(np.ascontiguousarray(data), nx, ny, format_)
-            case QImage.Format_RGB888:
-                # print('RGB888')
-                ny, nx, nc = data.shape
-                img = QImage(np.ascontiguousarray(data), nx, ny, nc * nx, format_)
-            case _:
-                ...
-        pixmap.convertFromImage(img)
-        pixmapItem.setPixmap(pixmap)
-        viewer.setScene(scene)
-        self.addTab(viewer, title)
-        self.setCurrentWidget(viewer)
-
-    def get_image_viewers(self):
-        """
-        Get the list of image viewers in the current Tabbed viewer
-
-        :return: the list of image viewers
-        :rtype: list of ImageViewer widgets
-        """
-        return [self.widget(i) for i in range(self.count()) if isinstance(self.widget(i), ImageViewer)]
+# class TabbedViewer(TabbedWindow):
+#     """
+#     A tabbed widget to hold the FOV main viewer and all related viewers (plots, image resources, etc.)
+#     """
+#
+#     def __init__(self, title, parent=None):
+#         super().__init__(title, parent)
+#         self.viewer = ImageViewer()
+#         self.addTab(self.viewer, 'FOV')
+#         self.drift = None
+#
+#     def show_image(self, data, title='Image', format_=QImage.Format_Grayscale16):
+#         """
+#         Display a 2D image
+#
+#         :param data: the 2D image data
+#         :type data: ndarray
+#         :param title: the title of the tab
+#         :type title: str
+#         :param format: the image format
+#         :type format: QImage.Format
+#         """
+#         viewer = QGraphicsView(self)
+#         scene = QGraphicsScene()
+#         pixmap = QPixmap()
+#         pixmapItem = scene.addPixmap(pixmap)
+#         match format_:
+#             case QImage.Format_Grayscale16 | QImage.Format_Grayscale8:
+#                 # print('Grayscale')
+#                 ny, nx = data.shape
+#                 img = QImage(np.ascontiguousarray(data), nx, ny, format_)
+#             case QImage.Format_RGB888:
+#                 # print('RGB888')
+#                 ny, nx, nc = data.shape
+#                 img = QImage(np.ascontiguousarray(data), nx, ny, nc * nx, format_)
+#             case _:
+#                 ...
+#         pixmap.convertFromImage(img)
+#         pixmapItem.setPixmap(pixmap)
+#         viewer.setScene(scene)
+#         self.addTab(viewer, title)
+#         self.setCurrentWidget(viewer)
+#
+#     def get_image_viewers(self):
+#         """
+#         Get the list of image viewers in the current Tabbed viewer
+#
+#         :return: the list of image viewers
+#         :rtype: list of ImageViewer widgets
+#         """
+#         return [self.widget(i) for i in range(self.count()) if isinstance(self.widget(i), ImageViewer)]
 
 
 class MatplotViewer(QWidget):
@@ -321,13 +324,13 @@ class ImageResourceChooser(QDockWidget):
         tab_key = f'{PyDetecDiv.project_name}/{fov.name}'
         tab = self.parent().add_tabbed_viewer(tab_key)
         tab.setWindowTitle(tab_key)
-        tab.viewer.set_image_resource_data(image_resource)
-        tab.viewer.set_channel(0)
-        tab.viewer.display()
-        tab.viewer.draw_saved_rois(roi_list)
-        tab.viewer.project_name = PyDetecDiv.project_name
-        tab.viewer.fov = fov.name
-        tab.viewer.stage = 'data'
+        tab.top_widget.set_image_resource_data(image_resource)
+        tab.top_widget.set_channel(0)
+        tab.top_widget.display()
+        tab.top_widget.draw_saved_rois(roi_list)
+        tab.project_name = PyDetecDiv.project_name
+        tab.top_widget.fov = fov.name
+        tab.top_widget.stage = 'data'
         PyDetecDiv.app.restoreOverrideCursor()
 
 
@@ -408,10 +411,10 @@ class DrawingToolsPalette(QDockWidget):
         return None
 
     def set_ROI_width(self, width):
-        PyDetecDiv.main_window.active_subwindow.viewer.scene.set_ROI_width(width)
+        PyDetecDiv.main_window.active_subwindow.top_widget.scene.set_ROI_width(width)
 
     def set_ROI_height(self, height):
-        PyDetecDiv.main_window.active_subwindow.viewer.scene.set_ROI_height(height)
+        PyDetecDiv.main_window.active_subwindow.top_widget.scene.set_ROI_height(height)
 
 
 class Cursor(QToolButton):

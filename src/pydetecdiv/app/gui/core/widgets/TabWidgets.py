@@ -1,0 +1,111 @@
+import random
+
+from PySide6.QtWidgets import QTabWidget, QMainWindow, QWidget
+
+from pydetecdiv.app import PyDetecDiv
+from pydetecdiv.app.gui.ImageViewer import ImageViewer
+from pydetecdiv.app.gui.core.widgets.Viewer import MatplotViewer
+
+
+class TabbedWindow(QTabWidget):
+    def __init__(self, title):
+        super().__init__()
+        self.project_name = None
+        self.top_widget = None
+        self.setWindowTitle(title)
+        self.setDocumentMode(True)
+
+        self.window = PyDetecDiv.main_window.mdi_area.addSubWindow(self)
+        mdi_space = PyDetecDiv.main_window.mdi_area.geometry()
+        xmax, ymax = mdi_space.width() * 0.20, mdi_space.height() * 0.20
+        x, y = random.uniform(0, xmax), random.uniform(0, ymax)
+        self.window.setGeometry(x, y, mdi_space.width() * 0.8, mdi_space.height() * 0.8)
+        self.setMovable(True)
+        self.setTabsClosable(True)
+        self.tabCloseRequested.connect(self.close_tab)
+        self.show()
+
+    def set_top_tab(self, widget, title):
+        self.top_widget = self.widget(self.addTab(widget, title))
+
+    # def buildContainer(self, title):
+    #     container = TabContainer()
+    #     container.setCentralWidget(QWidget(self))
+    #     self.addTab(container, title)
+    #     return container.centralWidget()
+
+    # def addTab(self, widget, title):
+    #     container = widget if isinstance(widget, TabContainer) else TabContainer(widget)
+    #     super().addTab(container, title)
+    #     return container
+
+    def closeEvent(self, _):
+        """
+        Close the current tabbed widget window
+
+        :param event: the close event
+        :type event: QCloseEvent
+        """
+        del PyDetecDiv.main_window.tabs[self.windowTitle()]
+
+    def close_tab(self, index):
+        """
+        Close the tab with the specified index
+
+        :param index: the index of the tab to close
+        :type index: int
+        """
+        if self.widget(index) != self.top_widget:
+            self.removeTab(index)
+
+    def show_plot(self, df, title='Plot'):
+        """
+        Open a viewer tab to plot a graphic from a pandas dataframe
+
+        :param df: the data to plot
+        :type df: pandas DataFrame
+        :param title: the title for the plot tab
+        :type title: str
+        """
+        plot_viewer = MatplotViewer(self)
+        self.addTab(plot_viewer, title)
+        df.plot(ax=plot_viewer.axes)
+        plot_viewer.canvas.draw()
+        self.setCurrentWidget(plot_viewer)
+
+
+# class TabbedViewer(TabbedWindow):
+#     """
+#     A tabbed widget to hold the FOV main viewer and all related viewers (plots, image resources, etc.)
+#     This is a legacy widget that will be removed when the ImageViewer class has been replaced with a VideoPlayer class
+#     implementing the simplified GUI API.
+#     """
+#
+#     def __init__(self, title):
+#         super().__init__(title)
+#         self.viewer = ImageViewer()
+#         self.top_widget = self.widget(self.addTab(self.viewer, title))
+#
+#     def close_tab(self, index):
+#         """
+#         Close the tab with the specified index
+#
+#         :param index: the index of the tab to close
+#         :type index: int
+#         """
+#         if self.widget(index) != self.top_widget:
+#             self.removeTab(index)
+
+
+# class TabContainer(QMainWindow):
+#     def __init__(self, widget=None, **kwargs):
+#         super().__init__()
+#         if widget:
+#             self.setCentralWidget(widget)
+#             widget.setParent(self)
+#
+#     def close_window(self):
+#         """
+#         Close the Tabbed viewer containing this Image viewer
+#         """
+#         self.parent().parent().window.close()

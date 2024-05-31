@@ -28,7 +28,8 @@ from pydetecdiv import plugins
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir
 from pydetecdiv.settings import get_plugins_dir
 from pydetecdiv.domain import Image, Dataset, ImgDType
-from pydetecdiv.app.gui.Windows import MatplotViewer
+# from pydetecdiv.app.gui.Windows import MatplotViewer
+from pydetecdiv.app.gui.core.widgets.Viewer import MatplotViewer
 from pydetecdiv.settings import get_config_value
 
 from .gui import FOV2ROIlinks, ROIclassificationDialog
@@ -609,7 +610,7 @@ class Plugin(plugins.Plugin):
             ground_truth = [label for seq in ground_truth for label in seq]
 
         tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {module.__name__}')
-        tab.viewer.project_name = PyDetecDiv.project_name
+        tab.project_name = PyDetecDiv.project_name
         history_plot = plot_history(history, evaluation)
         tab.addTab(history_plot, 'Training')
         tab.setCurrentWidget(history_plot)

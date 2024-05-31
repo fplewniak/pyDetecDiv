@@ -513,7 +513,7 @@ class ComputeDriftDialog(gui.Dialog):
 
         tab = PyDetecDiv.main_window.add_tabbed_window(
             f'{PyDetecDiv.project_name} / Drift correction ({self.method.value()})')
-        tab.viewer.project_name = PyDetecDiv.project_name
+        tab.project_name = PyDetecDiv.project_name
         for fov in self.fov_list.selection():
             tab.show_plot(self.drift[fov.name], title=fov.name)
 
