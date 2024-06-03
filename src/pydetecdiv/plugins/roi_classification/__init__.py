@@ -722,7 +722,7 @@ def plot_history(history, evaluation):
     axs[1].legend(['train', 'val'], loc='upper right')
     axs[1].set_ylabel('loss')
 
-    plot_viewer.canvas.draw()
+    plot_viewer.show()
     return plot_viewer
 
 
@@ -869,7 +869,7 @@ def display_dataset(dataset, sequences=False):
             else:
                 for i, img in enumerate(data):
                     axs[i].imshow(img)
-        plot_viewer.canvas.draw()
+        plot_viewer.show()
 
 
 def loadWeights(model, filename=os.path.join(__path__[0], "weights.h5"), debug=False):

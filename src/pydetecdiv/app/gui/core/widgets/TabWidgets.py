@@ -58,5 +58,5 @@ class TabbedWindow(QTabWidget):
         plot_viewer = MatplotViewer(self)
         self.addTab(plot_viewer, title)
         df.plot(ax=plot_viewer.axes)
-        plot_viewer.canvas.draw()
+        plot_viewer.show()
         self.setCurrentWidget(plot_viewer)
