@@ -3,7 +3,7 @@ import random
 from PySide6.QtWidgets import QTabWidget
 
 from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.app.gui.core.widgets.Viewer import MatplotViewer
+from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer
 
 
 class TabbedWindow(QTabWidget):
