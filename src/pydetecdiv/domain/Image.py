@@ -167,3 +167,17 @@ class Image():
     @staticmethod
     def compose_channels(channels):
         return Image(tf.stack([c.as_tensor() for c in channels], axis=-1))
+
+    @staticmethod
+    def auto_channels(image_resource_data, C=0, T=0, Z=0, crop=None, drift=False):
+        img = None
+        if crop is None:
+            crop = (None, None)
+        if isinstance(C, int):
+            if isinstance(Z, (tuple, list)):
+                img = Image.compose_channels([Image(image_resource_data.image(C=C, T=T, Z=c, sliceX=crop[0], sliceY=crop[1], drift=drift)) for c in Z])
+            else:
+                img = Image(image_resource_data.image(C=C, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift))
+        elif isinstance(C, (tuple, list)):
+            img = Image.compose_channels([Image(image_resource_data.image(C=c, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift)) for c in C])
+        return img
