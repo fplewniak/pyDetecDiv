@@ -13,32 +13,24 @@ from pydetecdiv.domain import Image, ImgDType
 class ImageViewer(GraphicsView):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.backgroundImage = None
+        self.layers = []
+        self.background = self.addLayer(background=True)
 
     def setBackgroundImage(self, image_resource_data, C=0, T=0, Z=0, crop=None):
-        self.backgroundImage = ImageItem(image_resource_data, C=C, T=T, Z=Z, crop=crop)
-        self.scene().addItem(self.backgroundImage)
+        return self.background.addImage(image_resource_data, C=C, T=T, Z=Z, crop=crop)
 
-    def display(self, C=None, T=None, Z=None):
-        C = self.backgroundImage.C if C is None else C
-        T = self.backgroundImage.T if T is None else T
-        Z = self.backgroundImage.Z if Z is None else Z
-
-        arr = Image.auto_channels(self.backgroundImage.image_resource_data, C=C, T=T, Z=Z,
-                                  drift=PyDetecDiv.apply_drift).as_array(np.float64)
-
-        if arr is not None:
-            if self.backgroundImage.crop is not None:
-                arr = arr[..., self.backgroundImage.crop[1], self.backgroundImage.crop[0]]
-
-        arr *= 255.0 / arr.max()
-        img = qimage2ndarray.array2qimage(arr.astype(np.uint8))
-        self.backgroundImage.setPixmap(QPixmap.fromImage(img, Qt.AutoColor))
-
-    def addLayer(self):
-        layer = ImageLayer(self)
+    def addLayer(self, background=False):
+        layer = BackgroundLayer(self) if background else ImageLayer(self)
         self.scene().addItem(layer)
+        layer.setZValue(len(self.layers))
+        self.layers.append(layer)
         return layer
+
+    def move_layer(self, origin, destination):
+        layer = self.layers.pop(origin)
+        self.layers.insert(min(len(self.layers), max(1, destination)), layer)
+        for i, l in enumerate(self.layers):
+            l.zIndex = i
 
 
 class ImageLayer(QGraphicsItem):
@@ -47,10 +39,26 @@ class ImageLayer(QGraphicsItem):
         self.T = 0
         self.viewer = viewer
 
+    @property
+    def zIndex(self):
+        return int(self.zValue())
+
+    @zIndex.setter
+    def zIndex(self, zIndex: int):
+        zIndex = min(len(self.viewer.layers), max(1, zIndex))
+        self.setZValue(zIndex)
+
+    def move_up(self):
+        self.viewer.move_layer(self.zIndex, self.zIndex + 1)
+
+    def move_down(self):
+        self.viewer.move_layer(self.zIndex, self.zIndex - 1)
+
     def toggleVisibility(self):
         self.setVisible(not self.isVisible())
 
     def addImage(self, image_resource_data, C=0, T=0, Z=0, crop=None, transparent=None, alpha=False):
+        self.T = T
         return ImageItem(image_resource_data, C=C, T=T, Z=Z, crop=crop, transparent=transparent, parent=self,
                          alpha=alpha)
 
@@ -65,6 +73,18 @@ class ImageLayer(QGraphicsItem):
 
     def paint(self, painter, option, widget=...):
         pass
+
+
+class BackgroundLayer(ImageLayer):
+
+    @property
+    def zIndex(self):
+        return int(self.zValue())
+
+    @zIndex.setter
+    def zIndex(self, zIndex: int):
+        zIndex = 0
+        self.setZValue(zIndex)
 
 
 class ImageItem(QGraphicsPixmapItem):
@@ -86,6 +106,16 @@ class ImageItem(QGraphicsPixmapItem):
 
     def setMask(self, mask):
         self.pixmap().setMask(QBitmap.fromPixmap(mask))
+
+    def display(self, C=None, T=None, Z=None, alpha=False, transparent=None):
+        C = self.C if C is None else C
+        T = self.T if T is None else T
+        Z = self.Z if Z is None else Z
+
+        pixmap = ImageItem.get_pixmap(self.image_resource_data, C=C, T=T, Z=Z, crop=self.crop, alpha=alpha)
+        if transparent:
+            pixmap.setMask(pixmap.createMaskFromColor(transparent, Qt.MaskInColor))
+        self.setPixmap(pixmap)
 
     @staticmethod
     def get_pixmap(image_resource_data, C=0, T=0, Z=0, crop=None, alpha=False):
