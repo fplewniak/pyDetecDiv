@@ -120,12 +120,11 @@ class ImageItem(QGraphicsPixmapItem):
     @staticmethod
     def get_pixmap(image_resource_data, C=0, T=0, Z=0, crop=None, alpha=False):
         arr = Image.auto_channels(image_resource_data, C=C, T=T, Z=Z, crop=crop,
-                                  drift=PyDetecDiv.apply_drift).as_array(np.float64)
-        arr = (arr * 255.0)
+                                  drift=PyDetecDiv.apply_drift).as_array(np.uint8)
         if alpha:
             if len(arr.shape) == 2:
-                arr = np.dstack((arr, arr, arr))
-            alpha_channel = np.sum(arr, axis=2, dtype=np.float64)
-            alpha_channel = 255.0 * alpha_channel / alpha_channel.max()
-            arr = np.dstack((arr, alpha_channel))
-        return QPixmap.fromImage(qimage2ndarray.array2qimage(arr.astype(np.uint8)), Qt.AutoColor)
+                arr = np.dstack((arr, arr, arr, arr))
+            else:
+                alpha_channel = np.max(arr, axis=2)
+                arr = np.dstack((arr, alpha_channel))
+        return QPixmap.fromImage(qimage2ndarray.array2qimage(arr), Qt.AutoColor)
