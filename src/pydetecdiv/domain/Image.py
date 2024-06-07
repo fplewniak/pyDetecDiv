@@ -165,19 +165,22 @@ class Image():
         return images[0]
 
     @staticmethod
-    def compose_channels(channels):
+    def compose_channels(channels, alpha=None):
+        if alpha:
+            channels.append(Image(tf.math.maximum(tf.math.maximum(channels[0].as_tensor(), channels[1].as_tensor()),
+                                                  channels[2].as_tensor())))
         return Image(tf.stack([c.as_tensor() for c in channels], axis=-1))
 
     @staticmethod
-    def auto_channels(image_resource_data, C=0, T=0, Z=0, crop=None, drift=False):
+    def auto_channels(image_resource_data, C=0, T=0, Z=0, crop=None, drift=False, alpha=None):
         img = None
         if crop is None:
             crop = (None, None)
         if isinstance(C, int):
             if isinstance(Z, (tuple, list)):
-                img = Image.compose_channels([Image(image_resource_data.image(C=C, T=T, Z=c, sliceX=crop[0], sliceY=crop[1], drift=drift)) for c in Z])
+                img = Image.compose_channels([Image(image_resource_data.image(C=C, T=T, Z=c, sliceX=crop[0], sliceY=crop[1], drift=drift)) for c in Z], alpha=alpha)
             else:
                 img = Image(image_resource_data.image(C=C, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift))
         elif isinstance(C, (tuple, list)):
-            img = Image.compose_channels([Image(image_resource_data.image(C=c, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift)) for c in C])
+            img = Image.compose_channels([Image(image_resource_data.image(C=c, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift)) for c in C], alpha=alpha)
         return img
