@@ -32,12 +32,18 @@ class ImageViewer(GraphicsView):
         for i, l in enumerate(self.layers):
             l.zIndex = i
 
+    def display(self, T=None):
+        for layer in self.layers:
+            if layer.image:
+                layer.image.display(T=T)
+
 
 class ImageLayer(QGraphicsItem):
     def __init__(self, viewer, **kwargs):
         super().__init__(**kwargs)
         self.T = 0
         self.viewer = viewer
+        self.image = None
 
     @property
     def zIndex(self):
@@ -45,8 +51,7 @@ class ImageLayer(QGraphicsItem):
 
     @zIndex.setter
     def zIndex(self, zIndex: int):
-        zIndex = min(len(self.viewer.layers), max(1, zIndex))
-        self.setZValue(zIndex)
+        self.setZValue(min(len(self.viewer.layers), max(1, zIndex)))
 
     def move_up(self):
         self.viewer.move_layer(self.zIndex, self.zIndex + 1)
@@ -59,8 +64,9 @@ class ImageLayer(QGraphicsItem):
 
     def addImage(self, image_resource_data, C=0, T=0, Z=0, crop=None, transparent=None, alpha=False):
         self.T = T
-        return ImageItem(image_resource_data, C=C, T=T, Z=Z, crop=crop, transparent=transparent, parent=self,
+        self.image = ImageItem(image_resource_data, C=C, T=T, Z=Z, crop=crop, transparent=transparent, parent=self,
                          alpha=alpha)
+        return self.image
 
     def addItem(self, item):
         item.setParentItem(self)
@@ -100,6 +106,7 @@ class ImageItem(QGraphicsPixmapItem):
         self.C = C
         self.T = T
         self.Z = Z
+        self.alpha = alpha
         self.crop = crop
         if crop is not None:
             self.setOffset(crop[0].start, crop[1].start)
@@ -107,15 +114,46 @@ class ImageItem(QGraphicsPixmapItem):
     def setMask(self, mask):
         self.pixmap().setMask(QBitmap.fromPixmap(mask))
 
-    def display(self, C=None, T=None, Z=None, alpha=False, transparent=None):
+    def display(self, C=None, T=None, Z=None, transparent=None):
         C = self.C if C is None else C
         T = self.T if T is None else T
         Z = self.Z if Z is None else Z
 
-        pixmap = ImageItem.get_pixmap(self.image_resource_data, C=C, T=T, Z=Z, crop=self.crop, alpha=alpha)
+        pixmap = ImageItem.get_pixmap(self.image_resource_data, C=C, T=T, Z=Z, crop=self.crop, alpha=self.alpha)
         if transparent:
             pixmap.setMask(pixmap.createMaskFromColor(transparent, Qt.MaskInColor))
         self.setPixmap(pixmap)
+
+    def set_channel(self, C):
+        """
+        Sets the current channel
+        TODO: allow specification of channel by name, this method should set the self.C field to the index corresponding
+        TODO: to the requested name if the C argument is a str
+
+        :param C: index of the current channel
+        :type C: int or tuple(int, int, int) for RGB or tuple(int, int, int, int) for RGBA
+        """
+        self.C = C
+
+    def set_Z(self, Z=0):
+        """
+        Set the layer to the specified value and refresh the display
+
+        :param Z: the Z layer index
+        :type Z: int
+        """
+        if self.Z != Z:
+            self.Z = Z
+            self.display()
+
+    def change_frame(self, T=0):
+        """
+        Change the current frame to the specified time index and refresh the display
+
+        :param T:
+        """
+        if self.T != T:
+            self.T = T
 
     @staticmethod
     def get_pixmap(image_resource_data, C=0, T=0, Z=0, crop=None, alpha=False):
