@@ -15,6 +15,7 @@ class ImageViewer(GraphicsView):
         super().__init__(**kwargs)
         self.layers = []
         self.background = self.addLayer(background=True)
+        self.scale_value = 100
 
     def setBackgroundImage(self, image_resource_data, C=0, T=0, Z=0, crop=None):
         return self.background.addImage(image_resource_data, C=C, T=T, Z=Z, crop=crop)
@@ -36,6 +37,17 @@ class ImageViewer(GraphicsView):
         for layer in self.layers:
             if layer.image:
                 layer.image.display(T=T)
+
+    def zoom_set_value(self, value):
+        self.scale(value / self.scale_value, value / self.scale_value)
+        self.scale_value = value
+
+    def zoom_fit(self):
+        """
+        Set the zoom value to fit the image in the viewer
+        """
+        self.fitInView(self.background.image, Qt.KeepAspectRatio)
+        self.scale_value = int(100 * np.around(self.transform().m11(), 2))
 
 
 class ImageLayer(QGraphicsItem):
