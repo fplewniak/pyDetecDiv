@@ -6,32 +6,22 @@ from PySide6.QtWidgets import QGraphicsItem, QGraphicsPixmapItem
 from sklearn.preprocessing import minmax_scale
 
 from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.app.gui.core.widgets.viewers import GraphicsView
+from pydetecdiv.app.gui.core.widgets.viewers import GraphicsView, Layer, BackgroundLayer
 from pydetecdiv.domain import Image, ImgDType
 
 
 class ImageViewer(GraphicsView):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.layers = []
-        self.background = self.addLayer(background=True)
         self.scale_value = 100
+
+    def _create_layer(self, background=False):
+        if background:
+            return BackgroundImageLayer(self)
+        return ImageLayer(self)
 
     def setBackgroundImage(self, image_resource_data, C=0, T=0, Z=0, crop=None):
         return self.background.addImage(image_resource_data, C=C, T=T, Z=Z, crop=crop)
-
-    def addLayer(self, background=False):
-        layer = BackgroundLayer(self) if background else ImageLayer(self)
-        self.scene().addItem(layer)
-        layer.setZValue(len(self.layers))
-        self.layers.append(layer)
-        return layer
-
-    def move_layer(self, origin, destination):
-        layer = self.layers.pop(origin)
-        self.layers.insert(min(len(self.layers), max(1, destination)), layer)
-        for i, l in enumerate(self.layers):
-            l.zIndex = i
 
     def display(self, T=None):
         for layer in self.layers:
@@ -50,59 +40,22 @@ class ImageViewer(GraphicsView):
         self.scale_value = int(100 * np.around(self.transform().m11(), 2))
 
 
-class ImageLayer(QGraphicsItem):
+class ImageLayer(Layer):
     def __init__(self, viewer, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(viewer, **kwargs)
         self.T = 0
-        self.viewer = viewer
         self.image = None
-
-    @property
-    def zIndex(self):
-        return int(self.zValue())
-
-    @zIndex.setter
-    def zIndex(self, zIndex: int):
-        self.setZValue(min(len(self.viewer.layers), max(1, zIndex)))
-
-    def move_up(self):
-        self.viewer.move_layer(self.zIndex, self.zIndex + 1)
-
-    def move_down(self):
-        self.viewer.move_layer(self.zIndex, self.zIndex - 1)
-
-    def toggleVisibility(self):
-        self.setVisible(not self.isVisible())
 
     def addImage(self, image_resource_data, C=0, T=0, Z=0, crop=None, transparent=None, alpha=False):
         self.T = T
         self.image = ImageItem(image_resource_data, C=C, T=T, Z=Z, crop=crop, transparent=transparent, parent=self,
-                         alpha=alpha)
+                               alpha=alpha)
         return self.image
 
-    def addItem(self, item):
-        item.setParentItem(self)
-        return item
 
-    def boundingRect(self):
-        if self.childItems():
-            return self.childrenBoundingRect()
-        return QRectF(0.0, 0.0, 0.0, 0.0)
-
-    def paint(self, painter, option, widget=...):
-        pass
-
-
-class BackgroundLayer(ImageLayer):
-
-    @property
-    def zIndex(self):
-        return int(self.zValue())
-
-    @zIndex.setter
-    def zIndex(self, zIndex: int):
-        zIndex = 0
-        self.setZValue(zIndex)
+class BackgroundImageLayer(BackgroundLayer, ImageLayer):
+    def __init__(self, viewer, **kwargs):
+        super().__init__(viewer, **kwargs)
 
 
 class ImageItem(QGraphicsPixmapItem):
