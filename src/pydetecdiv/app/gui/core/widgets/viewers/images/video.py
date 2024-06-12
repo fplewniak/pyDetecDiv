@@ -38,7 +38,7 @@ class VideoPlayer(QWidget):
         return self.viewer.scene()
 
     def setBackgroundImage(self, image_resource_data, C=0, Z=0, T=0, crop=None):
-        self.viewer.setBackgroundImage(image_resource_data, C=0, Z=0, T=0, crop=None)
+        self.viewer.setBackgroundImage(image_resource_data, C=C, Z=Z, T=T, crop=None)
         self.T = T
 
         self.control_panel.video_control.t_slider.setMinimum(0)
