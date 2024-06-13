@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QMainWindow, QMdiArea, QDockWidget, QFormLayout, Q
 
 from pydetecdiv.app.gui import MainToolBar, MainStatusBar, FileMenu, DataMenu, PluginMenu
 from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project, DrawingTools
+from pydetecdiv.app.gui.FOVmanager import FOVmanager
 
 from pydetecdiv.app.gui.ImageViewer import ImageViewer
 from pydetecdiv.app.gui.Toolbox import ToolboxTreeView, ToolboxTreeModel
@@ -165,7 +166,7 @@ class ImageResourceChooser(QDockWidget):
             fov = project.get_named_object('FOV', self.position_choice.currentText())
             roi_list = fov.roi_list
             image_resource = fov.image_resource('data').image_resource_data()
-        tab_key = f'{PyDetecDiv.project_name}/{fov.name}'
+        tab_key = f'{PyDetecDiv.project_name}/{fov.name} - current'
         tab = self.parent().add_tabbed_viewer(tab_key)
         tab.setWindowTitle(tab_key)
         tab.top_widget.set_image_resource_data(image_resource)
@@ -176,6 +177,13 @@ class ImageResourceChooser(QDockWidget):
         tab.top_widget.fov = fov.name
         tab.top_widget.stage = 'data'
         PyDetecDiv.app.restoreOverrideCursor()
+
+        tab_key = f'{PyDetecDiv.project_name}/{fov.name}'
+        tab = self.parent().add_tabbed_window(tab_key)
+        self.parent().tabs[tab_key].set_top_tab(FOVmanager(), 'FOV')
+        tab.top_widget.setBackgroundImage(image_resource)
+        tab.top_widget.draw_saved_rois(roi_list)
+
 
 
 class DrawingToolsPalette(QDockWidget):
@@ -196,8 +204,8 @@ class DrawingToolsPalette(QDockWidget):
         self.formLayout.setObjectName("drawingToolsLayout")
 
         self.cursor_button = Cursor(self)
-        self.draw_ROI_button = DrawROI(self)
-        self.create_ROIs_button = DuplicateROI(self)
+        self.draw_ROI_button = DrawRect(self)
+        self.create_ROIs_button = DuplicateItem(self)
         self.tools = [self.cursor_button, self.draw_ROI_button, self.create_ROIs_button]
 
         self.formLayout.addWidget(self.cursor_button, 0, 0)
@@ -255,10 +263,10 @@ class DrawingToolsPalette(QDockWidget):
         return None
 
     def set_ROI_width(self, width):
-        PyDetecDiv.main_window.active_subwindow.top_widget.scene.set_ROI_width(width)
+        PyDetecDiv.main_window.active_subwindow.top_widget.scene.set_Item_width(width)
 
     def set_ROI_height(self, height):
-        PyDetecDiv.main_window.active_subwindow.top_widget.scene.set_ROI_height(height)
+        PyDetecDiv.main_window.active_subwindow.top_widget.scene.set_Item_height(height)
 
 
 class Cursor(QToolButton):
@@ -285,7 +293,7 @@ class Cursor(QToolButton):
         PyDetecDiv.current_drawing_tool = DrawingTools.Cursor
 
 
-class DrawROI(QToolButton):
+class DrawRect(QToolButton):
     """
     A QToolButton to activate the tool for drawing a ROI
     """
@@ -293,21 +301,21 @@ class DrawROI(QToolButton):
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
-        self.setIcon(QIcon(":icons/draw_ROI"))
-        self.setToolTip(DrawingTools.DrawROI)
+        self.setIcon(QIcon(":icons/draw_Rect"))
+        self.setToolTip(DrawingTools.DrawRect)
         self.setCheckable(True)
         self.clicked.connect(self.select_tool)
 
     def select_tool(self):
         """
-        Select the DrawROI tool
+        Select the DrawRect tool
         """
         self.parent.unset_tools()
         self.setChecked(True)
-        PyDetecDiv.current_drawing_tool = DrawingTools.DrawROI
+        PyDetecDiv.current_drawing_tool = DrawingTools.DrawRect
 
 
-class DuplicateROI(QToolButton):
+class DuplicateItem(QToolButton):
     """
     A QToolButton to activate the tool for duplicating a ROI
     """
@@ -315,18 +323,18 @@ class DuplicateROI(QToolButton):
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
-        self.setIcon(QIcon(":icons/duplicate_ROI"))
-        self.setToolTip(DrawingTools.DuplicateROI)
+        self.setIcon(QIcon(":icons/duplicate_Item"))
+        self.setToolTip(DrawingTools.DuplicateItem)
         self.setCheckable(True)
         self.clicked.connect(self.select_tool)
 
     def select_tool(self):
         """
-        Select the DuplicateROI tool
+        Select the DuplicateItem tool
         """
         self.parent.unset_tools()
         self.setChecked(True)
-        PyDetecDiv.current_drawing_tool = DrawingTools.DuplicateROI
+        PyDetecDiv.current_drawing_tool = DrawingTools.DuplicateItem
 
 
 class AnalysisToolsTree(QDockWidget):

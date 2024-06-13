@@ -449,9 +449,9 @@ class ViewerScene(QGraphicsScene):
             match PyDetecDiv.current_drawing_tool:
                 case DrawingTools.Cursor:
                     self.select_ROI(event)
-                case DrawingTools.DrawROI:
+                case DrawingTools.DrawRect:
                     self.select_ROI(event)
-                case DrawingTools.DuplicateROI:
+                case DrawingTools.DuplicateItem:
                     self.duplicate_selected_ROI(event)
 
     def select_ROI(self, event):
@@ -519,11 +519,11 @@ class ViewerScene(QGraphicsScene):
                     self.move_ROI(event)
                 case DrawingTools.Cursor, Qt.ControlModifier:
                     self.draw_ROI(event)
-                case DrawingTools.DrawROI, Qt.NoModifier:
+                case DrawingTools.DrawRect, Qt.NoModifier:
                     self.draw_ROI(event)
-                case DrawingTools.DrawROI, Qt.ControlModifier:
+                case DrawingTools.DrawRect, Qt.ControlModifier:
                     self.move_ROI(event)
-                case DrawingTools.DuplicateROI, Qt.NoModifier:
+                case DrawingTools.DuplicateItem, Qt.NoModifier:
                     self.move_ROI(event)
 
     def move_ROI(self, event):
@@ -575,12 +575,21 @@ class ViewerScene(QGraphicsScene):
             rect = QRect(0, 0, width, roi.rect().height())
             roi.setRect(rect)
 
+    def set_Item_width(self, width):
+        self.set_ROI_width(width)
+
     def set_ROI_height(self, height):
         roi = self.get_selected_ROI()
         if roi and (roi.flags() & QGraphicsItem.ItemIsMovable):
             rect = QRect(0, 0, roi.rect().width(), height)
             roi.setRect(rect)
 
+    def set_Item_height(self, height):
+        self.set_ROI_height(height)
+
     def display_roi_size(self, roi):
         PyDetecDiv.main_window.drawing_tools.roi_width.setValue(roi.rect().width())
         PyDetecDiv.main_window.drawing_tools.roi_height.setValue(roi.rect().height())
+
+    def display_Item_size(self, item):
+        self.display_roi_size(item)

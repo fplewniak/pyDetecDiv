@@ -22,8 +22,8 @@ class DrawingTools(StrEnum):
     Enumeration of available drawing tools
     """
     Cursor = 'Select/move'
-    DrawROI = 'Draw ROI'
-    DuplicateROI = 'Duplicate selected ROI'
+    DrawRect = 'Draw Rectangle'
+    DuplicateItem = 'Duplicate selected Item'
 
 
 class PyDetecDiv(QApplication):

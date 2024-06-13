@@ -1,23 +1,33 @@
 import numpy as np
 from PySide6.QtCore import Qt, QPoint, QRect, QRectF
 from PySide6.QtGui import QKeySequence, QTransform, QPen
-from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsRectItem, QGraphicsItem
+from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsRectItem, QGraphicsItem, QGraphicsPixmapItem
 
 from pydetecdiv.app import PyDetecDiv, DrawingTools
 from pydetecdiv.utils import round_to_even
 
 
 class GraphicsView(QGraphicsView):
-    def __init__(self, parent=None, **kwargs):
+    def __init__(self, parent=None, scene_class=None, **kwargs):
         super().__init__(parent, **kwargs)
-        self.setScene(Scene())
+        if scene_class is None:
+            self.setScene(Scene())
+        else:
+            self.setScene(scene_class())
         self.layers = []
-        self.background = self.addLayer(background=True)
+        self.background = None
         # sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         # sizePolicy.setHorizontalStretch(0)
         # sizePolicy.setVerticalStretch(0)
         # sizePolicy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
         # self.setSizePolicy(sizePolicy)
+
+    def setup(self, scene=None):
+        if scene is None:
+            self.setScene(Scene())
+        else:
+            self.setScene(scene)
+        self.background = self.addLayer(background=True)
 
     def _create_layer(self, background=False):
         if background:
@@ -41,9 +51,6 @@ class Scene(QGraphicsScene):
     def __init__(self, **kwargs):
         super().__init__()
         self.pen = QPen(Qt.GlobalColor.cyan, 2)
-        self.match_pen = QPen(Qt.GlobalColor.yellow, 2)
-        self.saved_pen = QPen(Qt.GlobalColor.green, 2)
-        self.warning_pen = QPen(Qt.GlobalColor.red, 2)
 
     def keyPressEvent(self, event):
         """
@@ -69,9 +76,9 @@ class Scene(QGraphicsScene):
             match PyDetecDiv.current_drawing_tool:
                 case DrawingTools.Cursor:
                     self.select_Item(event)
-                case DrawingTools.DrawROI:
+                case DrawingTools.DrawRect:
                     self.select_Item(event)
-                case DrawingTools.DuplicateROI:
+                case DrawingTools.DuplicateItem:
                     self.duplicate_selected_Item(event)
 
     def mouseMoveEvent(self, event):
@@ -88,11 +95,11 @@ class Scene(QGraphicsScene):
                     self.move_Item(event)
                 case DrawingTools.Cursor, Qt.ControlModifier:
                     self.draw_Item(event)
-                case DrawingTools.DrawROI, Qt.NoModifier:
+                case DrawingTools.DrawRect, Qt.NoModifier:
                     self.draw_Item(event)
-                case DrawingTools.DrawROI, Qt.ControlModifier:
+                case DrawingTools.DrawRect, Qt.ControlModifier:
                     self.move_Item(event)
-                case DrawingTools.DuplicateROI, Qt.NoModifier:
+                case DrawingTools.DuplicateItem, Qt.NoModifier:
                     self.move_Item(event)
 
     def select_Item(self, event):
@@ -104,8 +111,8 @@ class Scene(QGraphicsScene):
         """
         _ = [r.setSelected(False) for r in self.items()]
         r = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
-        if not isinstance(r, Layer):
-            r.setSelected(True)
+        r.setSelected(True)
+        if hasattr(r, 'rect'):
             self.display_Item_size(r)
 
     def get_selected_Item(self):
@@ -140,11 +147,7 @@ class Scene(QGraphicsScene):
             item.setData(0, f'Region{len(self.items())}')
             item.setZValue(10)
             self.select_Item(event)
-
-            # if [r for r in item.collidingItems(Qt.IntersectsItemBoundingRect) if isinstance(r, QGraphicsRectItem)]:
-            #     item.setPen(self.warning_pen)
-            # else:
-            #     item.setPen(self.pen)
+            return item
 
     def move_Item(self, event):
         """
@@ -157,10 +160,7 @@ class Scene(QGraphicsScene):
         if item and (item.flags() & QGraphicsItem.ItemIsMovable):
             pos = event.scenePos()
             item.moveBy(pos.x() - event.lastScenePos().x(), pos.y() - event.lastScenePos().y())
-            # if [r for r in item.collidingItems(Qt.IntersectsItemBoundingRect) if isinstance(r, QGraphicsRectItem)]:
-            #     item.setPen(self.warning_pen)
-            # else:
-            #     item.setPen(self.pen)
+        return item
 
     def draw_Item(self, event):
         """
@@ -184,14 +184,9 @@ class Scene(QGraphicsScene):
             item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
             item.setData(0, f'Region{len(self.items())}')
             item.setZValue(10)
-            # self.select_Item(event)
             item.setSelected(True)
-
-        # if [r for r in item.collidingItems(Qt.IntersectsItemBoundingRect) if isinstance(r, QGraphicsRectItem)]:
-        #     item.setPen(self.warning_pen)
-        # else:
-        #     item.setPen(self.pen)
         self.display_Item_size(item)
+        return item
 
     def set_Item_width(self, width):
         item = self.get_selected_Item()
@@ -199,17 +194,11 @@ class Scene(QGraphicsScene):
             rect = QRect(0, 0, width, item.rect().height())
             item.setRect(rect)
 
-    def set_ROI_width(self, width):
-        self.set_Item_width(width)
-
     def set_Item_height(self, height):
         item = self.get_selected_Item()
         if item and (item.flags() & QGraphicsItem.ItemIsMovable):
             rect = QRect(0, 0, item.rect().width(), height)
             item.setRect(rect)
-
-    def set_ROI_height(self, height):
-        self.set_Item_height(height)
 
     def display_Item_size(self, item):
         PyDetecDiv.main_window.drawing_tools.roi_width.setValue(item.rect().width())

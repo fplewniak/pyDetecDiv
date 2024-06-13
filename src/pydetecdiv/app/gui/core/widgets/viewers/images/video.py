@@ -22,16 +22,23 @@ class VideoPlayer(QWidget):
         self.start = 0
         self.first_frame = self.T
         self.video_playing = False
+        self.viewer = None
+        self.control_panel = None
 
+        # self.viewer.setViewportUpdateMode(QGraphicsView.NoViewportUpdate)
+
+    def _create_viewer(self):
+        viewer = ImageViewer()
+        viewer.setup()
+        return viewer
+
+    def setup(self):
         layout = QVBoxLayout(self)
-        self.viewer = ImageViewer()
+        self.viewer = self._create_viewer()
         self.control_panel = VideoControlPanel(self)
-
         layout.addWidget(self.viewer)
         layout.addWidget(self.control_panel)
         self.setLayout(layout)
-
-        # self.viewer.setViewportUpdateMode(QGraphicsView.NoViewportUpdate)
 
     @property
     def scene(self):
@@ -174,7 +181,7 @@ class VideoControl(QFrame):
 
         self.video_forward = QToolButton(self)
         icon2 = QIcon()
-        icon2.addFile(u":/icons/video_forward", QSize(), QIcon.Normal, QIcon.Off)
+        icon2.addFile(u":/icons/video_play", QSize(), QIcon.Normal, QIcon.Off)
         self.video_forward.setIcon(icon2)
 
         layout.addWidget(self.video_forward)
