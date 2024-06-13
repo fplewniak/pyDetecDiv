@@ -3,8 +3,7 @@ import time
 import numpy as np
 from PySide6.QtCore import QTimer, Signal, QSize, Qt
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFrame, QGraphicsView, QToolButton, \
-    QLabel, QSlider, QSpinBox
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFrame, QToolButton, QLabel, QSlider, QSpinBox
 
 from pydetecdiv.app.gui.core.widgets.viewers.images import ImageViewer
 
@@ -24,6 +23,7 @@ class VideoPlayer(QWidget):
         self.video_playing = False
         self.viewer = None
         self.control_panel = None
+        self.menubar = None
 
         # self.viewer.setViewportUpdateMode(QGraphicsView.NoViewportUpdate)
 
@@ -32,8 +32,11 @@ class VideoPlayer(QWidget):
         viewer.setup()
         return viewer
 
-    def setup(self):
+    def setup(self, menubar=None):
         layout = QVBoxLayout(self)
+        if menubar:
+            self.menubar = menubar
+            layout.addWidget(self.menubar)
         self.viewer = self._create_viewer()
         self.control_panel = VideoControlPanel(self)
         layout.addWidget(self.viewer)
@@ -45,7 +48,7 @@ class VideoPlayer(QWidget):
         return self.viewer.scene()
 
     def setBackgroundImage(self, image_resource_data, C=0, Z=0, T=0, crop=None):
-        self.viewer.setBackgroundImage(image_resource_data, C=C, Z=Z, T=T, crop=None)
+        self.viewer.setBackgroundImage(image_resource_data, C=C, Z=Z, T=T, crop=crop)
         self.T = T
 
         self.control_panel.video_control.t_slider.setMinimum(0)

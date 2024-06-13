@@ -13,6 +13,7 @@ from pydetecdiv.domain import Image, ImgDType
 class ImageViewer(GraphicsView):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.image_resource_data = None
         self.scale_value = 100
 
     def _create_layer(self, background=False):
@@ -21,6 +22,7 @@ class ImageViewer(GraphicsView):
         return ImageLayer(self)
 
     def setBackgroundImage(self, image_resource_data, C=0, T=0, Z=0, crop=None):
+        self.image_resource_data = image_resource_data
         return self.background.addImage(image_resource_data, C=C, T=T, Z=Z, crop=crop)
 
     def display(self, T=None):
@@ -80,11 +82,11 @@ class ImageItem(QGraphicsPixmapItem):
         self.pixmap().setMask(QBitmap.fromPixmap(mask))
 
     def display(self, C=None, T=None, Z=None, transparent=None):
-        C = self.C if C is None else C
-        T = self.T if T is None else T
-        Z = self.Z if Z is None else Z
+        self.C = self.C if C is None else C
+        self.T = self.T if T is None else T
+        self.Z = self.Z if Z is None else Z
 
-        pixmap = ImageItem.get_pixmap(self.image_resource_data, C=C, T=T, Z=Z, crop=self.crop, alpha=self.alpha)
+        pixmap = ImageItem.get_pixmap(self.image_resource_data, C=self.C, T=self.T, Z=self.Z, crop=self.crop, alpha=self.alpha)
         if transparent:
             pixmap.setMask(pixmap.createMaskFromColor(transparent, Qt.MaskInColor))
         self.setPixmap(pixmap)

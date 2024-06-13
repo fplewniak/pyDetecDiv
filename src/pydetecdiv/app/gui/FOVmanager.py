@@ -3,14 +3,16 @@ Image viewer to display and interact with an Image resource (5D image data)
 """
 
 from PySide6.QtCore import Signal, Qt, QRect, QPoint, QTimer
-from PySide6.QtGui import QPen
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QFileDialog
+from PySide6.QtGui import QPen, QAction
+from PySide6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QFileDialog, QMenu, QMainWindow, QMenuBar
 import numpy as np
 import cv2 as cv
 
+from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui.core.widgets.viewers import Scene
 from pydetecdiv.app.gui.core.widgets.viewers.images import ImageViewer
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer
+from pydetecdiv.domain import Image
 
 
 class FOVmanager(VideoPlayer):
@@ -21,12 +23,25 @@ class FOVmanager(VideoPlayer):
     def __init__(self, parent=None, **kwargs):
         super().__init__(parent, **kwargs)
         self.fov = None
-        self.setup()
+        self.menuROI = None
+        self.setup(menubar=self._create_menu_bar())
+
+    def _create_menu_bar(self):
+        menubar = QMenuBar()
+        self.menuROI = menubar.addMenu('ROI')
+        self.actionSet_template = QAction('Selection as template')
+        self.menuROI.addAction(self.actionSet_template)
+        self.actionSet_template.triggered.connect(self.set_roi_template)
+        return menubar
 
     def _create_viewer(self):
         viewer = ImageViewer()
         viewer.setup(FOVScene())
         return viewer
+
+    def setImageResource(self, image_resource_data):
+        # self.image_resource_data = image_resource_data
+        self.setBackgroundImage(image_resource_data)
 
     def synchronize_with(self, other):
         """
@@ -53,6 +68,22 @@ class FOVmanager(VideoPlayer):
             rect_item.setFlags(QGraphicsItem.ItemIsSelectable)
             rect_item.setData(0, roi.name)
 
+    def get_roi_image(self, roi):
+        w, h = roi.rect().toRect().size().toTuple()
+        pos = roi.pos()
+        x1, x2 = int(pos.x()), w + int(pos.x())
+        y1, y2 = int(pos.y()), h + int(pos.y())
+        return Image.auto_channels(self.viewer.image_resource_data, C=0, T=0, Z=0, crop=(slice(x1, x2), slice(y1, y2)),
+                                  drift=PyDetecDiv.apply_drift, alpha=False).as_array(np.uint8)
+
+    def set_roi_template(self):
+        """
+        Set the currently selected area as a template to define other ROIs
+        """
+        roi = self.scene.get_selected_Item()
+        if roi:
+            PyDetecDiv.roi_template = self.get_roi_image(roi)
+
     def load_roi_template(self):
         """
         Load ROI template from a file.
@@ -60,7 +91,7 @@ class FOVmanager(VideoPlayer):
         filename = QFileDialog.getOpenFileName(self, "Open Image", "", "Image Files (*.tif *.tiff)")[0]
         img = cv.imread(filename, cv.IMREAD_GRAYSCALE)
         self.roi_template = np.uint8(np.array(img / np.max(img) * 255))
-        self.ui.actionIdentify_ROIs.setEnabled(True)
+        # self.ui.actionIdentify_ROIs.setEnabled(True)
 
 
 class FOVScene(Scene):

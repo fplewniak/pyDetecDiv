@@ -42,6 +42,7 @@ class PyDetecDiv(QApplication):
     plugin_list = None
     app = None
 
+    roi_template = None
     apply_drift = False
 
     def __init__(self, *args):

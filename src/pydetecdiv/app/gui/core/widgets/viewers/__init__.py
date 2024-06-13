@@ -52,6 +52,13 @@ class Scene(QGraphicsScene):
         super().__init__()
         self.pen = QPen(Qt.GlobalColor.cyan, 2)
 
+    @property
+    def viewer(self):
+        return self.view()
+
+    def view(self, index=0):
+        return self.views()[index]
+
     def keyPressEvent(self, event):
         """
         Detect when a key is pressed and perform the corresponding action:
