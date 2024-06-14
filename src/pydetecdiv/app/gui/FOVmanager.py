@@ -56,6 +56,9 @@ class FOVmanager(VideoPlayer):
     def _create_viewer(self):
         viewer = ImageViewer()
         viewer.setup(FOVScene())
+        viewer.scene().roi_selected.connect(self.actionSet_template.setEnabled)
+        # viewer.scene().roi_selected.connect(self.actionIdentify_ROIs.setEnabled)
+        viewer.scene().not_saved_rois.connect(self.actionSave_ROIs.setEnabled)
         return viewer
 
     def setImageResource(self, image_resource_data):
@@ -167,11 +170,29 @@ class FOVmanager(VideoPlayer):
 
 
 class FOVScene(Scene):
+    roi_selected = Signal(bool)
+    not_saved_rois = Signal(bool)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.match_pen = QPen(Qt.GlobalColor.yellow, 2)
         self.saved_pen = QPen(Qt.GlobalColor.green, 2)
         self.warning_pen = QPen(Qt.GlobalColor.red, 2)
+
+    def removeItem(self, item):
+        super().removeItem(item)
+        self.not_saved_rois.emit(self.check_not_saved_rois())
+
+    def select_Item(self, event):
+        """
+        Select the current area/Item
+
+        :param event: the mouse press event
+        :type event: QGraphicsSceneMouseEvent
+        """
+        super().select_Item(event)
+        self.not_saved_rois.emit(self.check_not_saved_rois())
+        self.roi_selected.emit(self.get_selected_Item() is not None)
 
     def duplicate_selected_Item(self, event):
         """
@@ -183,6 +204,8 @@ class FOVScene(Scene):
         item = super().duplicate_selected_Item(event)
         if item:
             self.check_is_colliding(item)
+            self.roi_selected.emit(self.get_selected_Item() is not None)
+        self.not_saved_rois.emit(self.check_not_saved_rois())
         return item
 
     def move_Item(self, event):
@@ -195,12 +218,15 @@ class FOVScene(Scene):
         item = super().move_Item(event)
         if item and (item.flags() & QGraphicsItem.ItemIsMovable):
             self.check_is_colliding(item)
+            self.roi_selected.emit(self.get_selected_Item() is not None)
         return item
 
     def draw_Item(self, event):
         item = super().draw_Item(event)
         item.setPen(self.warning_pen)
         self.check_is_colliding(item)
+        self.roi_selected.emit(self.get_selected_Item() is not None)
+        self.not_saved_rois.emit(self.check_not_saved_rois())
         return item
 
     def check_is_colliding(self, item):
@@ -208,3 +234,6 @@ class FOVScene(Scene):
             item.setPen(self.warning_pen)
         else:
             item.setPen(self.pen)
+
+    def check_not_saved_rois(self):
+        return any([item.pen() in [self.pen, self.match_pen] for item in self.items() if isinstance(item, QGraphicsRectItem)])
