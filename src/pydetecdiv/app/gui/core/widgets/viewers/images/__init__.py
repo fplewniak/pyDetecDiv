@@ -78,6 +78,9 @@ class ImageItem(QGraphicsPixmapItem):
         if crop is not None:
             self.setOffset(crop[0].start, crop[1].start)
 
+    def get_CTZ(self):
+        return (self.C, self.T, self.Z)
+
     def setMask(self, mask):
         self.pixmap().setMask(QBitmap.fromPixmap(mask))
 
@@ -86,7 +89,8 @@ class ImageItem(QGraphicsPixmapItem):
         self.T = self.T if T is None else T
         self.Z = self.Z if Z is None else Z
 
-        pixmap = ImageItem.get_pixmap(self.image_resource_data, C=self.C, T=self.T, Z=self.Z, crop=self.crop, alpha=self.alpha)
+        pixmap = ImageItem.get_pixmap(self.image_resource_data, C=self.C, T=self.T, Z=self.Z, crop=self.crop,
+                                      alpha=self.alpha)
         if transparent:
             pixmap.setMask(pixmap.createMaskFromColor(transparent, Qt.MaskInColor))
         self.setPixmap(pixmap)

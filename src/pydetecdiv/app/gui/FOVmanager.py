@@ -3,10 +3,11 @@ Image viewer to display and interact with an Image resource (5D image data)
 """
 
 from PySide6.QtCore import Signal, Qt, QRect, QPoint, QTimer
-from PySide6.QtGui import QPen, QAction
+from PySide6.QtGui import QPen, QAction, QTransform
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QFileDialog, QMenu, QMainWindow, QMenuBar
 import numpy as np
 import cv2 as cv
+from skimage.feature import peak_local_max
 
 from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui.core.widgets.viewers import Scene
@@ -31,7 +32,14 @@ class FOVmanager(VideoPlayer):
         self.menuROI = menubar.addMenu('ROI')
         self.actionSet_template = QAction('Selection as template')
         self.menuROI.addAction(self.actionSet_template)
+        # self.actionSet_template.setEnabled(False)
         self.actionSet_template.triggered.connect(self.set_roi_template)
+
+        self.actionIdentify_ROIs = QAction('Detect ROIs')
+        self.menuROI.addAction(self.actionIdentify_ROIs)
+        # self.actionIdentify_ROIs.setEnabled(False)
+        self.actionIdentify_ROIs.triggered.connect(self.identify_rois)
+
         return menubar
 
     def _create_viewer(self):
@@ -73,8 +81,9 @@ class FOVmanager(VideoPlayer):
         pos = roi.pos()
         x1, x2 = int(pos.x()), w + int(pos.x())
         y1, y2 = int(pos.y()), h + int(pos.y())
-        return Image.auto_channels(self.viewer.image_resource_data, C=0, T=0, Z=0, crop=(slice(x1, x2), slice(y1, y2)),
-                                  drift=PyDetecDiv.apply_drift, alpha=False).as_array(np.uint8)
+        (C, T, Z) = self.viewer.background.image.get_CTZ()
+        return Image.auto_channels(self.viewer.image_resource_data, C=C, T=T, Z=Z, crop=(slice(x1, x2), slice(y1, y2)),
+                                   drift=PyDetecDiv.apply_drift, alpha=False).as_array(np.uint8)
 
     def set_roi_template(self):
         """
@@ -90,8 +99,30 @@ class FOVmanager(VideoPlayer):
         """
         filename = QFileDialog.getOpenFileName(self, "Open Image", "", "Image Files (*.tif *.tiff)")[0]
         img = cv.imread(filename, cv.IMREAD_GRAYSCALE)
-        self.roi_template = np.uint8(np.array(img / np.max(img) * 255))
+        PyDetecDiv.roi_template = np.uint8(np.array(img / np.max(img) * 255))
         # self.ui.actionIdentify_ROIs.setEnabled(True)
+
+    def identify_rois(self):
+        """
+        Identify ROIs in an image using the ROI template as a model and the matchTemplate function from OpenCV
+        """
+        threshold = 0.3
+        (C, T, Z) = self.viewer.background.image.get_CTZ()
+        img = Image.auto_channels(self.viewer.image_resource_data, C=C, Z=Z, T=T, alpha=False).as_array(np.uint8)
+        res = cv.matchTemplate(img, PyDetecDiv.roi_template, cv.TM_CCOEFF_NORMED)
+        xy = peak_local_max(res, threshold_abs=threshold, exclude_border=False)
+        w, h = PyDetecDiv.roi_template.shape[::-1]
+        for pt in xy:
+            x, y = pt[1], pt[0]
+            if not isinstance(self.scene.itemAt(QPoint(x, y), QTransform().scale(1, 1)), QGraphicsRectItem):
+                rect_item = self.scene.addRect(QRect(0, 0, w, h))
+                rect_item.setPos(x, y)
+                if [r for r in rect_item.collidingItems(Qt.IntersectsItemBoundingRect) if
+                    isinstance(r, QGraphicsRectItem)]:
+                    self.scene.removeItem(rect_item)
+                else:
+                    rect_item.setPen(self.scene.match_pen)
+                    rect_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
 
 
 class FOVScene(Scene):
