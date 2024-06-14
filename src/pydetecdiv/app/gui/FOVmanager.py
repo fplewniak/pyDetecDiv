@@ -163,7 +163,7 @@ class FOVScene(Scene):
         return item
 
     def check_is_colliding(self, item):
-        if [r for r in item.collidingItems(Qt.IntersectsItemBoundingRect) if isinstance(r, QGraphicsRectItem)]:
+        if self.get_colliding_ShapeItems(item):
             item.setPen(self.warning_pen)
         else:
             item.setPen(self.pen)

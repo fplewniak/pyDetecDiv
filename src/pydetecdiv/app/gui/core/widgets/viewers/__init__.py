@@ -1,7 +1,8 @@
 import numpy as np
 from PySide6.QtCore import Qt, QPoint, QRect, QRectF
 from PySide6.QtGui import QKeySequence, QTransform, QPen
-from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsRectItem, QGraphicsItem, QGraphicsPixmapItem
+from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsRectItem, QGraphicsItem, QGraphicsPixmapItem, \
+    QAbstractGraphicsShapeItem
 
 from pydetecdiv.app import PyDetecDiv, DrawingTools
 from pydetecdiv.utils import round_to_even
@@ -46,6 +47,7 @@ class GraphicsView(QGraphicsView):
         self.layers.insert(min(len(self.layers), max(1, destination)), layer)
         for i, l in enumerate(self.layers):
             l.zIndex = i
+
 
 class Scene(QGraphicsScene):
     def __init__(self, **kwargs):
@@ -155,6 +157,9 @@ class Scene(QGraphicsScene):
             item.setZValue(10)
             self.select_Item(event)
             return item
+
+    def get_colliding_ShapeItems(self, item):
+        return [r for r in item.collidingItems(Qt.IntersectsItemBoundingRect) if isinstance(r, QAbstractGraphicsShapeItem)]
 
     def move_Item(self, event):
         """
