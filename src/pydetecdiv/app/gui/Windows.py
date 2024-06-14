@@ -180,7 +180,7 @@ class ImageResourceChooser(QDockWidget):
 
         tab_key = f'{PyDetecDiv.project_name}/{fov.name}'
         tab = self.parent().add_tabbed_window(tab_key)
-        self.parent().tabs[tab_key].set_top_tab(FOVmanager(), 'FOV')
+        self.parent().tabs[tab_key].set_top_tab(FOVmanager(fov=fov), 'FOV')
         tab.top_widget.setImageResource(image_resource)
         tab.top_widget.draw_saved_rois(roi_list)
 

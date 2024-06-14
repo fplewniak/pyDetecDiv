@@ -9,11 +9,11 @@ import numpy as np
 import cv2 as cv
 from skimage.feature import peak_local_max
 
-from pydetecdiv.app import PyDetecDiv
+from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 from pydetecdiv.app.gui.core.widgets.viewers import Scene
 from pydetecdiv.app.gui.core.widgets.viewers.images import ImageViewer
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer
-from pydetecdiv.domain import Image
+from pydetecdiv.domain import Image, ROI
 
 
 class FOVmanager(VideoPlayer):
@@ -21,9 +21,9 @@ class FOVmanager(VideoPlayer):
     Class to view and manage a FOV
     """
 
-    def __init__(self, parent=None, **kwargs):
+    def __init__(self, fov=None, parent=None, **kwargs):
         super().__init__(parent, **kwargs)
-        self.fov = None
+        self.fov = fov
         self.menuROI = None
         self.setup(menubar=self._create_menu_bar())
 
@@ -40,6 +40,10 @@ class FOVmanager(VideoPlayer):
         # self.actionIdentify_ROIs.setEnabled(False)
         self.actionIdentify_ROIs.triggered.connect(self.identify_rois)
 
+        self.actionSave_ROIs = QAction('Save ROIs')
+        self.menuROI.addAction(self.actionSave_ROIs)
+        # self.actionSave_ROIs.setEnabled(False)
+        self.actionSave_ROIs.triggered.connect(self.save_rois)
         return menubar
 
     def _create_viewer(self):
@@ -123,6 +127,33 @@ class FOVmanager(VideoPlayer):
                 else:
                     rect_item.setPen(self.scene.match_pen)
                     rect_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
+
+    def save_rois(self):
+        """
+        Save the areas as ROIs
+        """
+        print(self.fov)
+        rois = [item for item in self.scene.items() if isinstance(item, QGraphicsRectItem)]
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            roi_list = [r.name for r in self.fov.roi_list]
+            for i, rect_item in enumerate(sorted(rois, key=lambda x: x.scenePos().toPoint().toTuple())):
+                x, y = rect_item.scenePos().toPoint().toTuple()
+                w, h = rect_item.rect().toRect().getCoords()[2:]
+                new_roi_name = f'{self.fov.name}_{x}_{y}_{w}_{h}'
+                if new_roi_name not in roi_list:
+                    new_roi = ROI(project=project, name=new_roi_name, fov=self.fov,
+                                  top_left=(x, y), bottom_right=(int(x) + w, int(y) + h))
+                    rect_item.setData(0, new_roi.name)
+        PyDetecDiv.app.saved_rois.emit(PyDetecDiv.project_name)
+        self.fixate_saved_rois()
+
+    def fixate_saved_rois(self):
+        """
+        Disable the possibility to move ROIs once they have been saved
+        """
+        for r in [item for item in self.scene.items() if isinstance(item, QGraphicsRectItem)]:
+            r.setPen(self.scene.saved_pen)
+            r.setFlag(QGraphicsItem.ItemIsMovable, False)
 
 
 class FOVScene(Scene):
