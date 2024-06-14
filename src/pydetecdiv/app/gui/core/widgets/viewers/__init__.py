@@ -17,6 +17,7 @@ class GraphicsView(QGraphicsView):
             self.setScene(scene_class())
         self.layers = []
         self.background = None
+        self.scale_value = 100
         # sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         # sizePolicy.setHorizontalStretch(0)
         # sizePolicy.setVerticalStretch(0)
@@ -29,6 +30,18 @@ class GraphicsView(QGraphicsView):
         else:
             self.setScene(scene)
         self.background = self.addLayer(background=True)
+
+    def zoom_set_value(self, value):
+        self.scale(value / self.scale_value, value / self.scale_value)
+        self.scale_value = value
+
+    def zoom_fit(self):
+        """
+        Set the zoom value to fit the image in the viewer
+        """
+        # self.fitInView(self.scene().sceneRect(), Qt.KeepAspectRatio)
+        self.fitInView(self.scene().itemsBoundingRect(), Qt.KeepAspectRatio)
+        self.scale_value = int(100 * np.around(self.transform().m11(), 2))
 
     def _create_layer(self, background=False):
         if background:
@@ -47,7 +60,6 @@ class GraphicsView(QGraphicsView):
         self.layers.insert(min(len(self.layers), max(1, destination)), layer)
         for i, l in enumerate(self.layers):
             l.zIndex = i
-
 
 class Scene(QGraphicsScene):
     def __init__(self, **kwargs):
