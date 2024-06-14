@@ -217,17 +217,16 @@ class ImageResourceChooser(QDockWidget):
             fov = project.get_named_object('FOV', self.position_choice.currentText())
             roi_list = fov.roi_list
             image_resource = fov.image_resource('data').image_resource_data()
-        tab_key = f'{PyDetecDiv.project_name}/{fov.name} - current'
-        tab = self.parent().add_tabbed_viewer(tab_key)
-        tab.setWindowTitle(tab_key)
-        tab.top_widget.set_image_resource_data(image_resource)
-        tab.top_widget.set_channel(0)
-        tab.top_widget.display()
-        tab.top_widget.draw_saved_rois(roi_list)
-        tab.project_name = PyDetecDiv.project_name
-        tab.top_widget.fov = fov.name
-        tab.top_widget.stage = 'data'
-        PyDetecDiv.app.restoreOverrideCursor()
+        # tab_key = f'{PyDetecDiv.project_name}/{fov.name} - current'
+        # tab = self.parent().add_tabbed_viewer(tab_key)
+        # tab.setWindowTitle(tab_key)
+        # tab.top_widget.set_image_resource_data(image_resource)
+        # tab.top_widget.set_channel(0)
+        # tab.top_widget.display()
+        # tab.top_widget.draw_saved_rois(roi_list)
+        # tab.project_name = PyDetecDiv.project_name
+        # tab.top_widget.fov = fov.name
+        # tab.top_widget.stage = 'data'
 
         tab_key = f'{PyDetecDiv.project_name}/{fov.name}'
         tab = self.parent().add_tabbed_window(tab_key)
@@ -263,7 +262,7 @@ class ImageResourceChooser(QDockWidget):
                                             )
 
         tab.top_widget.draw_saved_rois(roi_list)
-
+        PyDetecDiv.app.restoreOverrideCursor()
 
 class DrawingToolsPalette(QDockWidget):
     """
