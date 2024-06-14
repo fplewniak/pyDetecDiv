@@ -121,9 +121,10 @@ class Scene(QGraphicsScene):
         # _ = [r.setSelected(False) for r in self.items()]
         _ = [r.setSelected(False) for r in self.selectedItems()]
         r = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
-        r.setSelected(True)
-        if hasattr(r, 'rect'):
-            self.display_Item_size(r)
+        if r is not None:
+            r.setSelected(True)
+            if hasattr(r, 'rect'):
+                self.display_Item_size(r)
 
     def get_selected_Item(self):
         """
