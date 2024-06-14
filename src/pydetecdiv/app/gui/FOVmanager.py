@@ -61,9 +61,9 @@ class FOVmanager(VideoPlayer):
         viewer.scene().not_saved_rois.connect(self.actionSave_ROIs.setEnabled)
         return viewer
 
-    def setImageResource(self, image_resource_data):
+    def setImageResource(self, image_resource_data, C=0, Z=0, T=0):
         # self.image_resource_data = image_resource_data
-        self.setBackgroundImage(image_resource_data)
+        self.setBackgroundImage(image_resource_data, C=C, Z=Z, T=T)
 
     def synchronize_with(self, other):
         """

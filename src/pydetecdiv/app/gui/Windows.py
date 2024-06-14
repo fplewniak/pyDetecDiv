@@ -5,7 +5,8 @@ Classes for persistent windows of the GUI
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCursor, QIcon
 from PySide6.QtWidgets import QMainWindow, QMdiArea, QDockWidget, QFormLayout, QLabel, QComboBox, \
-    QDialogButtonBox, QFrame, QVBoxLayout, QGridLayout, QToolButton, QSpinBox, QGroupBox, QHBoxLayout
+    QDialogButtonBox, QFrame, QVBoxLayout, QGridLayout, QToolButton, QSpinBox, QGroupBox, QHBoxLayout, QWidget, \
+    QCheckBox
 
 from pydetecdiv.app.gui import MainToolBar, MainStatusBar, FileMenu, DataMenu, PluginMenu
 from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project, DrawingTools
@@ -135,8 +136,39 @@ class ImageResourceChooser(QDockWidget):
         self.position_choice.setObjectName("position_choice")
         self.formLayout.addRow(self.position_label, self.position_choice)
 
+        self.image_choice = QWidget(self.form)
+        layout = QGridLayout(self.image_choice)
+
+        self.bright_field = QCheckBox('Bright field image', self.image_choice)
+        self.bright_field_C = QComboBox(self.image_choice)
+        self.bright_field_Z = QComboBox(self.image_choice)
+        layout.addWidget(self.bright_field, 0, 0)
+        layout.addWidget(QLabel('C'), 0, 1)
+        layout.addWidget(self.bright_field_C, 0, 2, 1, 2)
+        layout.addWidget(QLabel('Z'), 1, 1)
+        layout.addWidget(self.bright_field_Z, 1, 2, 1, 2)
+
+        self.fluorescence = QCheckBox('Fluorescence image', self.image_choice)
+        self.fluorescence_red = QComboBox(self.image_choice)
+        self.fluorescence_red_Z = QComboBox(self.image_choice)
+        self.fluorescence_green = QComboBox(self.image_choice)
+        self.fluorescence_green_Z = QComboBox(self.image_choice)
+        self.fluorescence_blue = QComboBox(self.image_choice)
+        self.fluorescence_blue_Z = QComboBox(self.image_choice)
+        layout.addWidget(self.fluorescence, 2, 0)
+        layout.addWidget(QLabel('R'), 2, 1)
+        layout.addWidget(self.fluorescence_red, 2, 2)
+        layout.addWidget(QLabel('G'), 3, 1)
+        layout.addWidget(self.fluorescence_green, 3, 2)
+        layout.addWidget(QLabel('B'), 4, 1)
+        layout.addWidget(self.fluorescence_blue, 4, 2)
+        layout.addWidget(self.fluorescence_red_Z, 2, 3)
+        layout.addWidget(self.fluorescence_green_Z, 3, 3)
+        layout.addWidget(self.fluorescence_blue_Z, 4, 3)
+        self.image_choice.setLayout(layout)
+        self.formLayout.addWidget(self.image_choice)
+
         self.OK_button = QDialogButtonBox(self.form)
-        self.OK_button.setObjectName("run_button")
         self.OK_button.setStandardButtons(QDialogButtonBox.Ok)
         self.formLayout.addWidget(self.OK_button)
 
@@ -154,8 +186,27 @@ class ImageResourceChooser(QDockWidget):
         """
         with pydetecdiv_project(p_name) as project:
             self.position_choice.clear()
+            self.bright_field_C.clear()
+            self.bright_field_Z.clear()
+            self.fluorescence_red.clear()
+            self.fluorescence_green.clear()
+            self.fluorescence_blue.clear()
+            self.fluorescence_red_Z.clear()
+            self.fluorescence_green_Z.clear()
+            self.fluorescence_blue_Z.clear()
             if project.count_objects('FOV'):
                 self.position_choice.addItems(sorted([fov.name for fov in project.get_objects('FOV')]))
+                fov = project.get_object('FOV', 1)
+                channel_list = [None] + [str(c) for c in range(fov.image_resource().sizeC)]
+                stack_list = [None] + [str(z) for z in range(fov.image_resource().sizeZ)]
+                self.bright_field_C.addItems(channel_list)
+                self.bright_field_Z.addItems(stack_list)
+                self.fluorescence_red.addItems(channel_list)
+                self.fluorescence_green.addItems(channel_list)
+                self.fluorescence_blue.addItems(channel_list)
+                self.fluorescence_red_Z.addItems(stack_list)
+                self.fluorescence_green_Z.addItems(stack_list)
+                self.fluorescence_blue_Z.addItems(stack_list)
 
     def accept(self):
         """
@@ -181,9 +232,37 @@ class ImageResourceChooser(QDockWidget):
         tab_key = f'{PyDetecDiv.project_name}/{fov.name}'
         tab = self.parent().add_tabbed_window(tab_key)
         self.parent().tabs[tab_key].set_top_tab(FOVmanager(fov=fov), 'FOV')
-        tab.top_widget.setImageResource(image_resource)
-        tab.top_widget.draw_saved_rois(roi_list)
+        C_bright_field = int(self.bright_field_C.currentText()) if self.bright_field_C.currentText() != '' else None
+        Z_bright_field = int(self.bright_field_Z.currentText()) if self.bright_field_Z.currentText() != '' else None
+        red_channel = int(self.fluorescence_red.currentText()) if self.fluorescence_red.currentText() != '' else None
+        green_channel = int(self.fluorescence_green.currentText()) if self.fluorescence_green.currentText() != '' else None
+        blue_channel = int(self.fluorescence_blue.currentText()) if self.fluorescence_blue.currentText() != '' else None
+        z_fluo = int(self.fluorescence_red_Z.currentText()) if self.fluorescence_red_Z.currentText() != '' else None
+        if self.bright_field.isChecked():
+            tab.top_widget.setImageResource(image_resource,
+                                            C=C_bright_field,
+                                            Z=Z_bright_field
+                                            )
+            if self.fluorescence.isChecked():
+                tab.top_widget.addLayer().addImage(image_resource,
+                                                 C=(red_channel,
+                                                    green_channel,
+                                                    blue_channel),
+                                                 Z=z_fluo,
+                                                 alpha=True)
+        elif self.fluorescence.isChecked():
+            tab.top_widget.setImageResource(image_resource,
+                                             C=(red_channel,
+                                                green_channel,
+                                                blue_channel),
+                                             Z=z_fluo)
+        else:
+            tab.top_widget.setImageResource(image_resource,
+                                            C=0,
+                                            Z=0
+                                            )
 
+        tab.top_widget.draw_saved_rois(roi_list)
 
 
 class DrawingToolsPalette(QDockWidget):
