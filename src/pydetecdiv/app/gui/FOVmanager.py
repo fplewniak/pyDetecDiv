@@ -99,6 +99,19 @@ class FOVmanager(VideoPlayer):
         return Image.auto_channels(self.viewer.image_resource_data, C=C, T=T, Z=Z, crop=(slice(x1, x2), slice(y1, y2)),
                                    drift=PyDetecDiv.apply_drift, alpha=False).as_array(np.uint8)
 
+    def view_in_new_tab(self, rect):
+        video_player = PyDetecDiv.main_window.active_subwindow.widget(
+            PyDetecDiv.main_window.active_subwindow.addTab(VideoPlayer(), rect.data(0)))
+        video_player.setup()
+        w, h = rect.rect().toRect().size().toTuple()
+        pos = rect.pos()
+        x1, x2 = int(pos.x()), w + int(pos.x())
+        y1, y2 = int(pos.y()), h + int(pos.y())
+        (C, T, Z) = self.viewer.background.image.get_CTZ()
+        video_player.setBackgroundImage(self.viewer.image_resource_data, C=C, Z=Z, T=T,
+                                        crop=(slice(x1, x2), slice(y1, y2)))
+        PyDetecDiv.main_window.active_subwindow.setCurrentWidget(video_player)
+
     def set_roi_template(self):
         """
         Set the currently selected area as a template to define other ROIs
@@ -229,6 +242,22 @@ class FOVScene(Scene):
         self.not_saved_rois.emit(self.check_not_saved_rois())
         return item
 
+    def contextMenuEvent(self, event):
+        """
+        The context menu for area manipulation
+
+        :param event:
+        """
+        menu = QMenu()
+        view_in_new_tab = menu.addAction("View in new tab")
+        roi = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
+        if isinstance(roi, QGraphicsRectItem):
+            # view_in_new_tab.triggered.connect(lambda _: self.parent().view_roi_image(r))
+            view_in_new_tab.triggered.connect(
+                lambda _: PyDetecDiv.main_window.active_subwindow.top_widget.view_in_new_tab(roi))
+            PyDetecDiv.app.viewer_roi_click.emit((roi, menu))
+            menu.exec(event.screenPos())
+
     def check_is_colliding(self, item):
         if self.get_colliding_ShapeItems(item):
             item.setPen(self.warning_pen)
@@ -236,4 +265,5 @@ class FOVScene(Scene):
             item.setPen(self.pen)
 
     def check_not_saved_rois(self):
-        return any([item.pen() in [self.pen, self.match_pen] for item in self.items() if isinstance(item, QGraphicsRectItem)])
+        return any(
+            [item.pen() in [self.pen, self.match_pen] for item in self.items() if isinstance(item, QGraphicsRectItem)])

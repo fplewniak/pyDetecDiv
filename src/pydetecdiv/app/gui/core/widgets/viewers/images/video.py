@@ -54,6 +54,7 @@ class VideoPlayer(QWidget):
         self.control_panel.video_control.t_slider.setMinimum(0)
         self.control_panel.video_control.t_slider.setMaximum(image_resource_data.sizeT - 1)
         self.control_panel.video_control.t_slider.setEnabled(True)
+        self.control_panel.video_control.t_slider.setValue(self.T)
         self.control_panel.video_control.t_step.setMaximum(image_resource_data.sizeT - 1)
 
     def addLayer(self):
