@@ -32,17 +32,24 @@ class FOVmanager(VideoPlayer):
         self.menuROI = menubar.addMenu('ROI')
         self.actionSet_template = QAction('Selection as template')
         self.menuROI.addAction(self.actionSet_template)
-        # self.actionSet_template.setEnabled(False)
+        self.actionSet_template.setEnabled(False)
         self.actionSet_template.triggered.connect(self.set_roi_template)
+
+        self.actionLoad_template = QAction('Load template')
+        self.menuROI.addAction(self.actionLoad_template)
+        self.actionLoad_template.setEnabled(True)
+        self.actionLoad_template.triggered.connect(self.load_roi_template)
+
+        self.menuROI.addSeparator()
 
         self.actionIdentify_ROIs = QAction('Detect ROIs')
         self.menuROI.addAction(self.actionIdentify_ROIs)
-        # self.actionIdentify_ROIs.setEnabled(False)
+        self.actionIdentify_ROIs.setEnabled(False)
         self.actionIdentify_ROIs.triggered.connect(self.identify_rois)
 
         self.actionSave_ROIs = QAction('Save ROIs')
         self.menuROI.addAction(self.actionSave_ROIs)
-        # self.actionSave_ROIs.setEnabled(False)
+        self.actionSave_ROIs.setEnabled(False)
         self.actionSave_ROIs.triggered.connect(self.save_rois)
         return menubar
 
@@ -96,6 +103,7 @@ class FOVmanager(VideoPlayer):
         roi = self.scene.get_selected_Item()
         if roi:
             PyDetecDiv.roi_template = self.get_roi_image(roi)
+            self.actionIdentify_ROIs.setEnabled(True)
 
     def load_roi_template(self):
         """
@@ -104,7 +112,7 @@ class FOVmanager(VideoPlayer):
         filename = QFileDialog.getOpenFileName(self, "Open Image", "", "Image Files (*.tif *.tiff)")[0]
         img = cv.imread(filename, cv.IMREAD_GRAYSCALE)
         PyDetecDiv.roi_template = np.uint8(np.array(img / np.max(img) * 255))
-        # self.ui.actionIdentify_ROIs.setEnabled(True)
+        self.actionIdentify_ROIs.setEnabled(True)
 
     def identify_rois(self):
         """
@@ -127,6 +135,7 @@ class FOVmanager(VideoPlayer):
                 else:
                     rect_item.setPen(self.scene.match_pen)
                     rect_item.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
+        self.actionSave_ROIs.setEnabled(True)
 
     def save_rois(self):
         """
@@ -146,6 +155,7 @@ class FOVmanager(VideoPlayer):
                     rect_item.setData(0, new_roi.name)
         PyDetecDiv.app.saved_rois.emit(PyDetecDiv.project_name)
         self.fixate_saved_rois()
+        self.actionSave_ROIs.setEnabled(False)
 
     def fixate_saved_rois(self):
         """

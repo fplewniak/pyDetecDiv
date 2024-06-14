@@ -118,7 +118,8 @@ class Scene(QGraphicsScene):
         :param event: the mouse press event
         :type event: QGraphicsSceneMouseEvent
         """
-        _ = [r.setSelected(False) for r in self.items()]
+        # _ = [r.setSelected(False) for r in self.items()]
+        _ = [r.setSelected(False) for r in self.selectedItems()]
         r = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
         r.setSelected(True)
         if hasattr(r, 'rect'):
