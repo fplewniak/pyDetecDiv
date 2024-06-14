@@ -38,7 +38,8 @@ class ImageViewer(GraphicsView):
         """
         Set the zoom value to fit the image in the viewer
         """
-        self.fitInView(self.scene().sceneRect(), Qt.KeepAspectRatio)
+        # self.fitInView(self.scene().sceneRect(), Qt.KeepAspectRatio)
+        self.fitInView(self.scene().itemsBoundingRect(), Qt.KeepAspectRatio)
         self.scale_value = int(100 * np.around(self.transform().m11(), 2))
 
 

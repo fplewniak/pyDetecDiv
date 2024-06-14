@@ -241,7 +241,7 @@ class ZoomControl(QFrame):
         # sizePolicy3.setHeightForWidth(self.zoom_value.sizePolicy().hasHeightForWidth())
         # self.zoom_value.setSizePolicy(sizePolicy3)
         self.zoom_value.setMinimum(10)
-        self.zoom_value.setMaximum(200)
+        self.zoom_value.setMaximum(1000)
         self.zoom_value.setValue(100)
         self.zoom_value.setOrientation(Qt.Horizontal)
 
