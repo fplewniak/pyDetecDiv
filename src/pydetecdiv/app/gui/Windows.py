@@ -247,8 +247,8 @@ class ImageResourceChooser(QDockWidget):
             tab.setTabText(tab.currentIndex(), 'FOV fluorescence')
         else:
             current_widget.setImageResource(image_resource,
-                                            C=0,
-                                            Z=0
+                                            C=C_bright_field,
+                                            Z=Z_bright_field
                                             )
             tab.setTabText(tab.currentIndex(), 'FOV bright field')
 
