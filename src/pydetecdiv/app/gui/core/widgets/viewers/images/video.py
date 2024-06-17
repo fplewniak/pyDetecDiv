@@ -1,3 +1,6 @@
+"""
+Module defining classes for building a video player
+"""
 import time
 
 import numpy as np
@@ -9,6 +12,9 @@ from pydetecdiv.app.gui.core.widgets.viewers.images import ImageViewer
 
 
 class VideoPlayer(QWidget):
+    """
+    A class defining a video player
+    """
     video_frame = Signal(int)
     video_channel = Signal(int)
     video_Z = Signal(int)
@@ -19,6 +25,8 @@ class VideoPlayer(QWidget):
 
         self.T = 0
         self.start = 0
+        self.timer = None
+        self.speed = 0
         self.first_frame = self.T
         self.video_playing = False
         self.viewer = None
@@ -28,11 +36,21 @@ class VideoPlayer(QWidget):
         # self.viewer.setViewportUpdateMode(QGraphicsView.NoViewportUpdate)
 
     def _create_viewer(self):
+        """
+        Create the viewer for this video player
+
+        :return: ImageViewer, the created viewer
+        """
         viewer = ImageViewer()
         viewer.setup()
         return viewer
 
     def setup(self, menubar=None):
+        """
+        Sets the video player up
+
+        :param menubar: whether a menubar should be added or not
+        """
         layout = QVBoxLayout(self)
         if menubar:
             self.menubar = menubar
@@ -45,9 +63,23 @@ class VideoPlayer(QWidget):
 
     @property
     def scene(self):
+        """
+        Convenience property returning the scene associated with the viewer in this video player
+
+        :return: the video player scene
+        """
         return self.viewer.scene()
 
     def setBackgroundImage(self, image_resource_data, C=0, Z=0, T=0, crop=None):
+        """
+        Sets the background image for this video player
+
+        :param image_resource_data: the Image resource data
+        :param C: the channel of tuple of channels
+        :param Z: the z-slice
+        :param T: the frame index
+        :param crop: the crop values
+        """
         self.viewer.setBackgroundImage(image_resource_data, C=C, Z=Z, T=T, crop=crop)
         self.T = T
 
@@ -58,6 +90,11 @@ class VideoPlayer(QWidget):
         self.control_panel.video_control.t_step.setMaximum(image_resource_data.sizeT - 1)
 
     def addLayer(self):
+        """
+        add a layer to the scene of the current Video player
+
+        :return: ImageLayer, the new layer
+        """
         return self.viewer.addLayer()
 
     def zoom_set_value(self, value):
@@ -145,6 +182,9 @@ class VideoPlayer(QWidget):
         self.control_panel.video_control.t_slider.setValue(0)
 
 class VideoControlPanel(QFrame):
+    """
+    A class defining the Video control panel (video control + zoom control)
+    """
     def __init__(self, parent=None, **kwargs):
         super().__init__(parent=parent, **kwargs)
         layout = QHBoxLayout(self)
@@ -166,6 +206,9 @@ class VideoControlPanel(QFrame):
         self.zoom_control.zoom_actual.clicked.connect(parent.zoom_reset)
 
 class VideoControl(QFrame):
+    """
+    A class defining the frame Controls (frame, frame rate, play, pause, etc.) of a VideoPlayer
+    """
     def __init__(self, parent=None, **kwargs):
         super().__init__(parent=parent, **kwargs)
         layout = QHBoxLayout(self)
@@ -178,14 +221,14 @@ class VideoControl(QFrame):
 
         self.pauseButton = QToolButton(self)
         icon1 = QIcon()
-        icon1.addFile(u":/icons/video_pause", QSize(), QIcon.Normal, QIcon.Off)
+        icon1.addFile(':/icons/video_pause', QSize(), QIcon.Normal, QIcon.Off)
         self.pauseButton.setIcon(icon1)
 
         layout.addWidget(self.pauseButton)
 
         self.video_forward = QToolButton(self)
         icon2 = QIcon()
-        icon2.addFile(u":/icons/video_play", QSize(), QIcon.Normal, QIcon.Off)
+        icon2.addFile(':/icons/video_play', QSize(), QIcon.Normal, QIcon.Off)
         self.video_forward.setIcon(icon2)
 
         layout.addWidget(self.video_forward)
@@ -219,6 +262,9 @@ class VideoControl(QFrame):
         layout.addWidget(self.t_step)
 
 class ZoomControl(QFrame):
+    """
+    A class defining a QFrame widget for controlling Zoom in a VideoPlayer
+    """
     def __init__(self, parent=None, **kwargs):
         super().__init__(parent=parent, **kwargs)
         layout = QHBoxLayout(self)

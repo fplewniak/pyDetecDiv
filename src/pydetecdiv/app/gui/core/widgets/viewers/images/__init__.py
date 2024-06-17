@@ -1,9 +1,11 @@
+"""
+A module defining classes to view Images in a layered viewer
+"""
 import qimage2ndarray
 import numpy as np
-from PySide6.QtCore import Qt, QRectF
-from PySide6.QtGui import QPixmap, QImage, QPen, QBitmap
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsPixmapItem
-from sklearn.preprocessing import minmax_scale
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QPixmap, QBitmap
+from PySide6.QtWidgets import QGraphicsPixmapItem
 
 from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui.core.widgets.viewers import GraphicsView, Layer, BackgroundLayer
@@ -11,44 +13,72 @@ from pydetecdiv.domain import Image, ImgDType
 
 
 class ImageViewer(GraphicsView):
+    """
+    A class defining an Image viewer
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.image_resource_data = None
 
     def _create_layer(self, background=False):
+        """
+        Create a new layer
+
+        :param background: if True, the created layer is a BackgroundLayer
+        :return: the created layer
+        """
         if background:
             return BackgroundImageLayer(self)
         return ImageLayer(self)
 
     def setBackgroundImage(self, image_resource_data, C=0, T=0, Z=0, crop=None):
+        """
+        Sets the background image
+
+        :param image_resource_data: the image resource data
+        :param C: the channel or tuple of channels
+        :param T: the frame index
+        :param Z: the Z-slice
+        :param crop: the crop values
+        :return: the background image
+        """
         self.image_resource_data = image_resource_data
         return self.background.addImage(image_resource_data, C=C, T=T, Z=Z, crop=crop)
 
     def display(self, T=None):
+        """
+        Display the viewer at a given time frame
+
+        :param T: the time frame index
+        """
         for layer in self.layers:
             if layer.image:
                 layer.image.display(T=T)
 
-    # def zoom_set_value(self, value):
-    #     self.scale(value / self.scale_value, value / self.scale_value)
-    #     self.scale_value = value
-    #
-    # def zoom_fit(self):
-    #     """
-    #     Set the zoom value to fit the image in the viewer
-    #     """
-    #     # self.fitInView(self.scene().sceneRect(), Qt.KeepAspectRatio)
-    #     self.fitInView(self.scene().itemsBoundingRect(), Qt.KeepAspectRatio)
-    #     self.scale_value = int(100 * np.around(self.transform().m11(), 2))
-
 
 class ImageLayer(Layer):
+    """
+    A class defining an Image layer
+    """
     def __init__(self, viewer, **kwargs):
         super().__init__(viewer, **kwargs)
         self.T = 0
         self.image = None
 
     def addImage(self, image_resource_data, C=0, T=0, Z=0, crop=None, transparent=None, alpha=False):
+        """
+        Adds an image to the current layer
+
+        :param image_resource_data: the image resource data
+        :param C: the channel or tuple of channels
+        :param T: the time frame index
+        :param Z: the Z-slice
+        :param crop: the crop values
+        :param transparent: a transparency mask (where black is transparent)
+        :param alpha: if True, the image is set to RGBA
+        :return: the image item
+        """
         self.T = T
         self.image = ImageItem(image_resource_data, C=C, T=T, Z=Z, crop=crop, transparent=transparent, parent=self,
                                alpha=alpha)
@@ -56,11 +86,17 @@ class ImageLayer(Layer):
 
 
 class BackgroundImageLayer(BackgroundLayer, ImageLayer):
+    """
+    A class defining a background image
+    """
     def __init__(self, viewer, **kwargs):
         super().__init__(viewer, **kwargs)
 
 
 class ImageItem(QGraphicsPixmapItem):
+    """
+    A class defining an ImageItem
+    """
     def __init__(self, image_resource_data=None, C=0, T=0, Z=0, crop=None, transparent=None, alpha=False, parent=None):
         if image_resource_data:
             pixmap = ImageItem.get_pixmap(image_resource_data, C=C, T=T, Z=Z, crop=crop, alpha=alpha)
@@ -79,12 +115,30 @@ class ImageItem(QGraphicsPixmapItem):
             self.setOffset(crop[0].start, crop[1].start)
 
     def get_CTZ(self):
+        """
+        Gets the channel, current time frame and Z-slice of the current ImageItem
+
+        :return: a tiple with the values of C, T, Z
+        """
         return (self.C, self.T, self.Z)
 
     def setMask(self, mask):
+        """
+        Sets the transparency mask
+
+        :param mask: the transparency mask (black is transparent)
+        """
         self.pixmap().setMask(QBitmap.fromPixmap(mask))
 
     def display(self, C=None, T=None, Z=None, transparent=None):
+        """
+        Displays the ImageItem
+
+        :param C: the channel or tuple of channels
+        :param T: the time frame
+        :param Z: the z-slice
+        :param transparent: the transparency mask
+        """
         self.C = self.C if C is None else C
         self.T = self.T if T is None else T
         self.Z = self.Z if Z is None else Z
@@ -128,6 +182,17 @@ class ImageItem(QGraphicsPixmapItem):
 
     @staticmethod
     def get_pixmap(image_resource_data, C=0, T=0, Z=0, crop=None, alpha=False):
+        """
+        Gets a pixmap from image resource data
+
+        :param image_resource_data: image resource data
+        :param C: the channel or tuple of channels
+        :param T: the time frame
+        :param Z: the z-slice
+        :param crop: the crop values
+        :param alpha: True to request RGBA
+        :return: a QPixmap object
+        """
         arr = Image.auto_channels(image_resource_data, C=C, T=T, Z=Z, crop=crop,
                                   drift=PyDetecDiv.apply_drift, alpha=alpha).as_array(np.uint8)
         # if alpha:

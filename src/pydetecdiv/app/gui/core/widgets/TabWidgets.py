@@ -1,3 +1,8 @@
+#  CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21
+#  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
+"""
+Definition of widgets to display Tabs in a Tabbed window
+"""
 import random
 
 from PySide6.QtWidgets import QTabWidget
@@ -7,6 +12,9 @@ from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer
 
 
 class TabbedWindow(QTabWidget):
+    """
+    A class for tabbed windows. These windows are displayed in the MDI area of the main window.
+    """
     def __init__(self, title):
         super().__init__()
         self.project_name = None
@@ -25,6 +33,11 @@ class TabbedWindow(QTabWidget):
         self.show()
 
     def set_top_tab(self, widget, title):
+        """
+        Set the main tab for this tabbed window, i.e. the reference tab that cannot be closed
+        :param widget: the widget to display in the top tab
+        :param title: the title of the top tab
+        """
         if self.top_widget is None:
             self.top_widget = self.widget(self.addTab(widget, title))
         else:

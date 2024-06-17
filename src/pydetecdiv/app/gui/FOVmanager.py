@@ -2,9 +2,9 @@
 Image viewer to display and interact with an Image resource (5D image data)
 """
 
-from PySide6.QtCore import Signal, Qt, QRect, QPoint, QTimer
+from PySide6.QtCore import Signal, Qt, QRect, QPoint
 from PySide6.QtGui import QPen, QAction, QTransform
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QFileDialog, QMenu, QMainWindow, QMenuBar
+from PySide6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QFileDialog, QMenu, QMenuBar
 import numpy as np
 import cv2 as cv
 from skimage.feature import peak_local_max
@@ -28,6 +28,11 @@ class FOVmanager(VideoPlayer):
         self.setup(menubar=self._create_menu_bar())
 
     def _create_menu_bar(self):
+        """
+        Adds a menu bar to the current widget
+
+        :return: the menubar
+        """
         menubar = QMenuBar()
         self.menuROI = menubar.addMenu('ROI')
         self.actionSet_template = QAction('Selection as template')
@@ -54,6 +59,11 @@ class FOVmanager(VideoPlayer):
         return menubar
 
     def _create_viewer(self):
+        """
+        Creates a viewer with a FOVScene instead of a Scene
+
+        :return: the created viewer
+        """
         viewer = ImageViewer()
         viewer.setup(FOVScene())
         viewer.scene().roi_selected.connect(self.actionSet_template.setEnabled)
@@ -62,6 +72,14 @@ class FOVmanager(VideoPlayer):
         return viewer
 
     def setImageResource(self, image_resource_data, C=0, Z=0, T=0):
+        """
+        Sets the Image Resource
+
+        :param image_resource_data: the Image resource data
+        :param C: the channel or channel tuple to display
+        :param Z: the Z-slice (or tuple to combine z-slices as channels)
+        :param T: the initial time frame
+        """
         # self.image_resource_data = image_resource_data
         self.setBackgroundImage(image_resource_data, C=C, Z=Z, T=T)
 
@@ -69,6 +87,7 @@ class FOVmanager(VideoPlayer):
         """
         Synchronize the current viewer with another one. This is used to view a portion of an image in a new viewer
         with the same T coordinates as the original.
+
         :param other: the other viewer to synchronize with
         """
         if self.T != other.T:
@@ -91,6 +110,12 @@ class FOVmanager(VideoPlayer):
             rect_item.setData(0, roi.name)
 
     def get_roi_image(self, roi):
+        """
+        Get an Image of the defined ROI
+
+        :param roi: the ROI
+        :return: Image of the ROI
+        """
         w, h = roi.rect().toRect().size().toTuple()
         pos = roi.pos()
         x1, x2 = int(pos.x()), w + int(pos.x())
@@ -100,6 +125,11 @@ class FOVmanager(VideoPlayer):
                                    drift=PyDetecDiv.apply_drift, alpha=False).as_array(np.uint8)
 
     def view_in_new_tab(self, rect):
+        """
+        view a selection in a new tab
+
+        :param rect: the rectangular selection
+        """
         video_player = PyDetecDiv.main_window.active_subwindow.widget(
             PyDetecDiv.main_window.active_subwindow.addTab(VideoPlayer(), rect.data(0)))
         video_player.setup()
@@ -165,7 +195,7 @@ class FOVmanager(VideoPlayer):
         rois = [item for item in self.scene.items() if isinstance(item, QGraphicsRectItem)]
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             roi_list = [r.name for r in self.fov.roi_list]
-            for i, rect_item in enumerate(sorted(rois, key=lambda x: x.scenePos().toPoint().toTuple())):
+            for rect_item in sorted(rois, key=lambda x: x.scenePos().toPoint().toTuple()):
                 x, y = rect_item.scenePos().toPoint().toTuple()
                 w, h = rect_item.rect().toRect().getCoords()[2:]
                 new_roi_name = f'{self.fov.name}_{x}_{y}_{w}_{h}'
@@ -187,6 +217,9 @@ class FOVmanager(VideoPlayer):
 
 
 class FOVScene(Scene):
+    """
+    A class describing a Scene displaying a FOV
+    """
     roi_selected = Signal(bool)
     not_saved_rois = Signal(bool)
 
@@ -197,6 +230,11 @@ class FOVScene(Scene):
         self.warning_pen = QPen(Qt.GlobalColor.red, 2)
 
     def removeItem(self, item):
+        """
+        Remove the item from the Scene
+
+        :param item: the item to remove
+        """
         super().removeItem(item)
         self.not_saved_rois.emit(self.check_not_saved_rois())
 
@@ -263,11 +301,21 @@ class FOVScene(Scene):
             menu.exec(event.screenPos())
 
     def check_is_colliding(self, item):
+        """
+        Checks whether the item collides with another one. If it does, set its pen to warning pen
+
+        :param item: the item to check
+        """
         if self.get_colliding_ShapeItems(item):
             item.setPen(self.warning_pen)
         else:
             item.setPen(self.pen)
 
     def check_not_saved_rois(self):
+        """
+        Return True if there is at least one unsaved ROI
+
+        :return: bool
+        """
         return any(
             [item.pen() in [self.pen, self.match_pen] for item in self.items() if isinstance(item, QGraphicsRectItem)])
