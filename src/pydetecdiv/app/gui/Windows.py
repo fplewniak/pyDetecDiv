@@ -139,22 +139,23 @@ class ImageResourceChooser(QDockWidget):
         self.image_choice = QWidget(self.form)
         layout = QGridLayout(self.image_choice)
 
+
         self.bright_field = QCheckBox('Bright field image', self.image_choice)
         self.bright_field_C = QComboBox(self.image_choice)
         self.bright_field_Z = QComboBox(self.image_choice)
         layout.addWidget(self.bright_field, 0, 0)
         layout.addWidget(QLabel('C'), 0, 1)
-        layout.addWidget(self.bright_field_C, 0, 2, 1, 2)
+        layout.addWidget(self.bright_field_C, 0, 2)
         layout.addWidget(QLabel('Z'), 1, 1)
-        layout.addWidget(self.bright_field_Z, 1, 2, 1, 2)
+        layout.addWidget(self.bright_field_Z, 1, 2)
 
         self.fluorescence = QCheckBox('Fluorescence image', self.image_choice)
         self.fluorescence_red = QComboBox(self.image_choice)
-        self.fluorescence_red_Z = QComboBox(self.image_choice)
+        self.fluorescence_Z = QComboBox(self.image_choice)
         self.fluorescence_green = QComboBox(self.image_choice)
-        self.fluorescence_green_Z = QComboBox(self.image_choice)
+        # self.fluorescence_green_Z = QComboBox(self.image_choice)
         self.fluorescence_blue = QComboBox(self.image_choice)
-        self.fluorescence_blue_Z = QComboBox(self.image_choice)
+        # self.fluorescence_blue_Z = QComboBox(self.image_choice)
         layout.addWidget(self.fluorescence, 2, 0)
         layout.addWidget(QLabel('R'), 2, 1)
         layout.addWidget(self.fluorescence_red, 2, 2)
@@ -162,9 +163,10 @@ class ImageResourceChooser(QDockWidget):
         layout.addWidget(self.fluorescence_green, 3, 2)
         layout.addWidget(QLabel('B'), 4, 1)
         layout.addWidget(self.fluorescence_blue, 4, 2)
-        layout.addWidget(self.fluorescence_red_Z, 2, 3)
-        layout.addWidget(self.fluorescence_green_Z, 3, 3)
-        layout.addWidget(self.fluorescence_blue_Z, 4, 3)
+        layout.addWidget(QLabel('Z'), 5, 1)
+        layout.addWidget(self.fluorescence_Z, 5, 2)
+        # layout.addWidget(self.fluorescence_green_Z, 3, 3)
+        # layout.addWidget(self.fluorescence_blue_Z, 4, 3)
         self.image_choice.setLayout(layout)
         self.formLayout.addWidget(self.image_choice)
 
@@ -191,22 +193,20 @@ class ImageResourceChooser(QDockWidget):
             self.fluorescence_red.clear()
             self.fluorescence_green.clear()
             self.fluorescence_blue.clear()
-            self.fluorescence_red_Z.clear()
-            self.fluorescence_green_Z.clear()
-            self.fluorescence_blue_Z.clear()
+            self.fluorescence_Z.clear()
+            # self.fluorescence_green_Z.clear()
+            # self.fluorescence_blue_Z.clear()
             if project.count_objects('FOV'):
                 self.position_choice.addItems(sorted([fov.name for fov in project.get_objects('FOV')]))
                 fov = project.get_object('FOV', 1)
-                channel_list = [None] + [str(c) for c in range(fov.image_resource().sizeC)]
-                stack_list = [None] + [str(z) for z in range(fov.image_resource().sizeZ)]
+                channel_list = [str(c) for c in range(fov.image_resource().sizeC)]
+                stack_list = [str(z) for z in range(fov.image_resource().sizeZ)]
                 self.bright_field_C.addItems(channel_list)
                 self.bright_field_Z.addItems(stack_list)
-                self.fluorescence_red.addItems(channel_list)
-                self.fluorescence_green.addItems(channel_list)
-                self.fluorescence_blue.addItems(channel_list)
-                self.fluorescence_red_Z.addItems(stack_list)
-                self.fluorescence_green_Z.addItems(stack_list)
-                self.fluorescence_blue_Z.addItems(stack_list)
+                self.fluorescence_red.addItems(['n.a'] + channel_list)
+                self.fluorescence_green.addItems(['n.a'] + channel_list)
+                self.fluorescence_blue.addItems(['n.a'] + channel_list)
+                self.fluorescence_Z.addItems(['n.a'] + stack_list)
 
     def accept(self):
         """
@@ -231,12 +231,12 @@ class ImageResourceChooser(QDockWidget):
         tab_key = f'{PyDetecDiv.project_name}/{fov.name}'
         tab = self.parent().add_tabbed_window(tab_key)
         self.parent().tabs[tab_key].set_top_tab(FOVmanager(fov=fov), 'FOV')
-        C_bright_field = int(self.bright_field_C.currentText()) if self.bright_field_C.currentText() != '' else None
-        Z_bright_field = int(self.bright_field_Z.currentText()) if self.bright_field_Z.currentText() != '' else None
-        red_channel = int(self.fluorescence_red.currentText()) if self.fluorescence_red.currentText() != '' else None
-        green_channel = int(self.fluorescence_green.currentText()) if self.fluorescence_green.currentText() != '' else None
-        blue_channel = int(self.fluorescence_blue.currentText()) if self.fluorescence_blue.currentText() != '' else None
-        z_fluo = int(self.fluorescence_red_Z.currentText()) if self.fluorescence_red_Z.currentText() != '' else None
+        C_bright_field = int(self.bright_field_C.currentText()) if self.bright_field_C.currentText() != 'n.a' else None
+        Z_bright_field = int(self.bright_field_Z.currentText()) if self.bright_field_Z.currentText() != 'n.a' else None
+        red_channel = int(self.fluorescence_red.currentText()) if self.fluorescence_red.currentText() != 'n.a' else None
+        green_channel = int(self.fluorescence_green.currentText()) if self.fluorescence_green.currentText() != 'n.a' else None
+        blue_channel = int(self.fluorescence_blue.currentText()) if self.fluorescence_blue.currentText() != 'n.a' else None
+        z_fluo = int(self.fluorescence_Z.currentText()) if self.fluorescence_Z.currentText() != 'n.a' else None
         if self.bright_field.isChecked():
             tab.top_widget.setImageResource(image_resource,
                                             C=C_bright_field,
