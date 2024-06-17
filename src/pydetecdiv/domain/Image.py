@@ -204,13 +204,15 @@ class Image():
         self.tensor = tf.image.adjust_contrast(self.tensor, factor)
         return self
 
-    def stretch_contrast(self, q=[0.001, 0.999]):
+    def stretch_contrast(self, q=None):
         """
         Stretches the contrast of the Image
 
         :param q: the quantile values for correction, the qlow will be set to 0 and the qhigh to 1
         :return: the current Image after correction
         """
+        if q is None:
+            q = [0.001, 0.999]
         img = self.as_array()
         qlow, qhi = np.quantile(img[img > 0.0], q)
         self.tensor = tf.convert_to_tensor(exposure.rescale_intensity(img, in_range=(qlow, qhi)))
