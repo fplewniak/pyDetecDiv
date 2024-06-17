@@ -110,6 +110,10 @@ class FOVmanager(VideoPlayer):
         (C, T, Z) = self.viewer.background.image.get_CTZ()
         video_player.setBackgroundImage(self.viewer.image_resource_data, C=C, Z=Z, T=T,
                                         crop=(slice(x1, x2), slice(y1, y2)))
+        for layer in self.viewer.layers[1:]:
+            (C, T, Z) = layer.image.get_CTZ()
+            video_player.addLayer().addImage(self.viewer.image_resource_data, C=C, Z=Z, T=T,
+                                             crop=(slice(x1, x2), slice(y1, y2)), alpha=True)
         PyDetecDiv.main_window.active_subwindow.setCurrentWidget(video_player)
 
     def set_roi_template(self):
@@ -254,7 +258,7 @@ class FOVScene(Scene):
         if isinstance(roi, QGraphicsRectItem):
             # view_in_new_tab.triggered.connect(lambda _: self.parent().view_roi_image(r))
             view_in_new_tab.triggered.connect(
-                lambda _: PyDetecDiv.main_window.active_subwindow.top_widget.view_in_new_tab(roi))
+                lambda _: PyDetecDiv.main_window.active_subwindow.currentWidget().view_in_new_tab(roi))
             PyDetecDiv.app.viewer_roi_click.emit((roi, menu))
             menu.exec(event.screenPos())
 
