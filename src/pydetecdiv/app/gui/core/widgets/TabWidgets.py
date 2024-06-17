@@ -25,7 +25,11 @@ class TabbedWindow(QTabWidget):
         self.show()
 
     def set_top_tab(self, widget, title):
-        self.top_widget = self.widget(self.addTab(widget, title))
+        if self.top_widget is None:
+            self.top_widget = self.widget(self.addTab(widget, title))
+        else:
+            new_tab = self.widget(self.addTab(widget, title))
+            self.setCurrentWidget(new_tab)
 
     def closeEvent(self, _):
         """
