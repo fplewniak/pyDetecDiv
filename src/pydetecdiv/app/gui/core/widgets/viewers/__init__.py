@@ -1,3 +1,6 @@
+"""
+Module defining classes for generic viewer API
+"""
 import numpy as np
 from PySide6.QtCore import Qt, QPoint, QRect, QRectF
 from PySide6.QtGui import QKeySequence, QTransform, QPen
@@ -9,6 +12,9 @@ from pydetecdiv.utils import round_to_even
 
 
 class GraphicsView(QGraphicsView):
+    """
+     A generic widget for graphics visualization (image, drawings, etc.) using layers
+    """
     def __init__(self, parent=None, scene_class=None, **kwargs):
         super().__init__(parent, **kwargs)
         if scene_class is None:
@@ -25,6 +31,11 @@ class GraphicsView(QGraphicsView):
         # self.setSizePolicy(sizePolicy)
 
     def setup(self, scene=None):
+        """
+        Sets up the GraphicsView, adding a scene and a background layer
+
+        :param scene: the scene to add to the GraphicsView. If None, then a generic Scene will be added
+        """
         if scene is None:
             self.setScene(Scene())
         else:
@@ -32,6 +43,11 @@ class GraphicsView(QGraphicsView):
         self.background = self.addLayer(background=True)
 
     def zoom_set_value(self, value):
+        """
+        Sets the zoom to the desired value
+
+        :param value: the value (integer, 100 representing 1:1)
+        """
         self.scale(value / self.scale_value, value / self.scale_value)
         self.scale_value = value
 
@@ -44,11 +60,23 @@ class GraphicsView(QGraphicsView):
         self.scale_value = int(100 * np.around(self.transform().m11(), 2))
 
     def _create_layer(self, background=False):
+        """
+        Creates a layer object to add to the scene
+
+        :param background: if True, the created layer is a background layer
+        :return: the created layer
+        """
         if background:
             return BackgroundLayer(self)
         return Layer(self)
 
     def addLayer(self, background=False):
+        """
+        Adds a layer item to the Scene
+
+        :param background: if True, the layer is a background layer
+        :return: the added layer
+        """
         layer = self._create_layer(background)
         self.scene().addItem(layer)
         layer.setZValue(len(self.layers))
@@ -56,21 +84,43 @@ class GraphicsView(QGraphicsView):
         return layer
 
     def move_layer(self, origin, destination):
+        """
+        Move layer from its current z position to another one
+
+        :param origin: the origin z position
+        :param destination: the destination z position
+        """
         layer = self.layers.pop(origin)
         self.layers.insert(min(len(self.layers), max(1, destination)), layer)
         for i, l in enumerate(self.layers):
             l.zIndex = i
 
+
 class Scene(QGraphicsScene):
-    def __init__(self, **kwargs):
+    """
+    A generic scene attached to a GraphicsView, containing graphics items, and reacting to user input
+    (key press, mouse,...)
+    """
+    def __init__(self):
         super().__init__()
         self.pen = QPen(Qt.GlobalColor.cyan, 2)
 
     @property
     def viewer(self):
+        """
+        A convenience property returning the scene's viewer
+
+        :return: the scene's viewer (GraphicsViewer)
+        """
         return self.view()
 
     def view(self, index=0):
+        """
+        A convenience method to return any view associated with the scene
+
+        :param index: the index of the view
+        :return: the requested view
+        """
         return self.views()[index]
 
     def keyPressEvent(self, event):
@@ -171,9 +221,17 @@ class Scene(QGraphicsScene):
             item.setZValue(10)
             self.select_Item(event)
             return item
+        return None
 
     def get_colliding_ShapeItems(self, item):
-        return [r for r in item.collidingItems(Qt.IntersectsItemBoundingRect) if isinstance(r, QAbstractGraphicsShapeItem)]
+        """
+        Retrieve all ShapeItems colliding with the item in this scene
+
+        :param item: the item to check
+        :return: a list of colliding items
+        """
+        return [r for r in item.collidingItems(Qt.IntersectsItemBoundingRect) if
+                isinstance(r, QAbstractGraphicsShapeItem)]
 
     def move_Item(self, event):
         """
@@ -215,29 +273,52 @@ class Scene(QGraphicsScene):
         return item
 
     def set_Item_width(self, width):
+        """
+        Sets the width of the selected item
+
+        :param width: the width value
+        """
         item = self.get_selected_Item()
         if item and (item.flags() & QGraphicsItem.ItemIsMovable):
             rect = QRect(0, 0, width, item.rect().height())
             item.setRect(rect)
 
     def set_Item_height(self, height):
+        """
+        Sets the height of the selected item
+
+        :param height: the height value
+        """
         item = self.get_selected_Item()
         if item and (item.flags() & QGraphicsItem.ItemIsMovable):
             rect = QRect(0, 0, item.rect().width(), height)
             item.setRect(rect)
 
     def display_Item_size(self, item):
+        """
+        Displays the item size in the Drawing tools palette
+
+        :param item: the item
+        """
         PyDetecDiv.main_window.drawing_tools.roi_width.setValue(item.rect().width())
         PyDetecDiv.main_window.drawing_tools.roi_height.setValue(item.rect().height())
 
 
 class Layer(QGraphicsItem):
+    """
+    A graphics item containing sub-items in order to define layer behaviour
+    """
     def __init__(self, viewer, **kwargs):
         super().__init__(**kwargs)
         self.viewer = viewer
 
     @property
     def zIndex(self):
+        """
+        A convenience method returning the Z index of the Layer
+
+        :return: the z index
+        """
         return int(self.zValue())
 
     @zIndex.setter
@@ -245,31 +326,62 @@ class Layer(QGraphicsItem):
         self.setZValue(min(len(self.viewer.layers), max(1, zIndex)))
 
     def move_up(self):
+        """
+        Moves the layer up one level
+        """
         self.viewer.move_layer(self.zIndex, self.zIndex + 1)
 
     def move_down(self):
+        """
+        Moves the layer down one level
+        """
         self.viewer.move_layer(self.zIndex, self.zIndex - 1)
 
     def toggleVisibility(self):
+        """
+        Toggles visibility of the layer
+        """
         self.setVisible(not self.isVisible())
 
     def addItem(self, item):
+        """
+        Adds an item to the layer
+
+        :param item: the added item
+        :return: the added item
+        """
         item.setParentItem(self)
         return item
 
     def boundingRect(self):
+        """
+        Returns the bounding rect of the layer, which contains all children
+
+        :return: the bounding rect of the layer
+        """
         if self.childItems():
             return self.childrenBoundingRect()
         return QRectF(0.0, 0.0, 0.0, 0.0)
 
     def paint(self, painter, option, widget=...):
+        """
+        Paint method added to comply with the implementation of abstract class
+        """
         pass
 
 
 class BackgroundLayer(Layer):
-
+    """
+    A particular layer that is always at the bottom of a scene
+    """
     @property
     def zIndex(self):
+        """
+        A convenience method returning the Z index of the Layer. As this is a background layer, the Z index
+        should always be 0
+
+        :return: the z index
+        """
         return int(self.zValue())
 
     @zIndex.setter
