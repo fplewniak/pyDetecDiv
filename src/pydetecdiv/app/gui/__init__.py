@@ -39,6 +39,8 @@ class DataMenu(QMenu):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(*args, **kwargs)
         menu = parent.menuBar().addMenu("Data")
+        import_metadata = ActionsData.ImportMetaData(menu)
+        import_metadata.setShortcut("Ctrl+M")
         import_data = ActionsData.ImportData(menu)
         import_data.setShortcut("Ctrl+I")
         create_fovs = ActionsData.CreateFOV(menu)
@@ -46,6 +48,7 @@ class DataMenu(QMenu):
         compute_drift = ActionsData.ComputeDrift(menu)
         apply_drift = ActionsData.ApplyDrift(menu)
         PyDetecDiv.app.project_selected.connect(lambda e: import_data.setEnabled(True))
+        PyDetecDiv.app.project_selected.connect(lambda e: import_metadata.setEnabled(True))
         PyDetecDiv.app.raw_data_counted.connect(create_fovs.enable)
         PyDetecDiv.app.project_selected.connect(compute_drift.enable)
         PyDetecDiv.app.project_selected.connect(apply_drift.enable)

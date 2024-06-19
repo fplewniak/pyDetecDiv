@@ -3,6 +3,7 @@
 """
 Concrete Repositories using a SQL database with the sqlalchemy toolkit
 """
+import json
 import os
 import re
 import sqlite3
@@ -135,7 +136,7 @@ class ShallowSQLite3(ShallowDb):
         :return: the list of imported files. This list can be used to roll the copy back if needed
         :rtype: list of str
         """
-        urls = []
+        # urls = []
         if destination:
             data_dir_path = os.path.join(data_dir_path, destination)
         try:
@@ -157,10 +158,77 @@ class ShallowSQLite3(ShallowDb):
                 with Image.open(record['url']) as img:
                     record['xdim'], record['ydim'] = img.size
                 self.save_object('Data', record)
-                urls.append(record['url'])
+                # urls.append(record['url'])
         except:
             raise ImportImagesError('Could not import images')
-        return urls, process
+        # return urls, process
+        return process
+
+    def import_images_from_metadata(self, metadata_file_name, data_dir_path, destination, author='', date='now',
+                                    in_place=True,
+                                    img_format='imagetiff'):
+        dirname = os.path.dirname(metadata_file_name)
+        dataset = self.get_record_by_name('Dataset', 'data')
+        with open(metadata_file_name) as metadata_file:
+            metadata = json.load(metadata_file)
+
+            image_res_record = {
+                'id_': None,
+                'xdim': -1,
+                'ydim': -1,
+                'zdim': metadata["Summary"]["Slices"],
+                'cdim': metadata["Summary"]["Channels"],
+                'tdim': -1,
+                'xyscale': 1,
+                'xyunit': 0.000001,
+                'zscale': metadata["Summary"]["z-step_um"],
+                'zunit': 0.000001,
+                'tscale': metadata["Summary"]["Interval_ms"],
+                'tunit': 0.000001,
+                'uuid': generate_uuid(),
+                'fov': None,
+                'dataset': dataset['id_'],
+                'multi': True,
+                # 'key_val': json.dumps({'channel_names': metadata["Summary"]["ChNames"]}),
+            }
+
+            positions = [d["Label"] for d in metadata["Summary"]["StagePositions"]]
+
+            for d in [v for k, v in metadata.items() if k.startswith('Metadata-')]:
+                if image_res_record['fov'] is None:
+                    fov_record = {
+                        'id_': None,
+                        'name': positions[d["PositionIndex"]],
+                        'uuid': generate_uuid(),
+                    }
+                    fov = self.save_object('FOV', fov_record)
+                    image_res_record['fov'] = fov
+                    image_res_record['xdim'] = d["Width"]
+                    image_res_record['ydim'] = d["Height"]
+                    image_res = self.save_object('ImageResource', image_res_record)
+
+                image_file = os.path.join(dirname, os.path.basename(d["FileName"]))
+
+                record = {
+                    'id_': None,
+                    'uuid': generate_uuid(),
+                    'name': os.path.basename(image_file),
+                    'dataset': dataset['id_'],
+                    'author': get_config_value('project', 'user') if author == '' else author,
+                    'date': datetime.now() if date == 'now' else datetime.fromisoformat(date),
+                    'url': image_file if in_place else os.path.join(destination, os.path.basename(image_file)),
+                    'format': img_format,
+                    'source_dir': os.path.dirname(image_file),
+                    'meta_data': '{}',
+                    'key_val': '{}',
+                    'xdim': d["Width"],
+                    'ydim': d['Height'],
+                    'z': d["SliceIndex"],
+                    'c': d["FrameIndex"],
+                    't': d["ChannelIndex"],
+                    'image_resource': image_res,
+                }
+                self.save_object('Data', record)
 
     def annotate_data(self, dataset, source, keys_, regex):
         """

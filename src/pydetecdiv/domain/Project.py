@@ -121,6 +121,21 @@ class Project:
         data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
         return self.repository.import_images(image_files, data_dir_path, destination, **kwargs)
 
+    def import_images_from_metadata(self, metadata_file, destination=None, **kwargs):
+        """
+        Import images specified in a list of files into a destination
+
+        :param metadata_files: list of metadata files to load and get information from for image import
+        :type metadata_files: list of str
+        :param destination: destination directory to import image files into
+        :type destination: str
+        :param kwargs: extra keyword arguments
+        :return: the list of imported files. This list can be used to roll the copy back if needed
+        :rtype: list of str
+        """
+        data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
+        return self.repository.import_images_from_metadata(metadata_file, data_dir_path, destination, **kwargs)
+
     def annotate(self, dataset, source, columns, regex):
         """
         Annotate data in a dataset using a regular expression applied to columns specified by source (column name or
