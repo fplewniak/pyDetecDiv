@@ -225,7 +225,9 @@ class ImportMetaDataDialog(QDialog):
                 i += 1.0
                 project.import_images_from_metadata(metadata_file_name)
                 self.progress.emit(100 * i / len(metadata_file_names))
+        project.commit()
         self.finished.emit(True)
+        PyDetecDiv.app.project_selected.emit(PyDetecDiv.project_name)
 
 
 class ImportDataDialog(QDialog):

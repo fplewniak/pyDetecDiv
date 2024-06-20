@@ -195,6 +195,7 @@ class ShallowSQLite3(ShallowDb):
             }
 
             positions = [d["Label"] for d in metadata["Summary"]["StagePositions"]]
+            sizeT = image_res_record['tdim']
 
             for d in [v for k, v in metadata.items() if k.startswith('Metadata-')]:
                 if image_res_record['fov'] is None:
@@ -226,11 +227,15 @@ class ShallowSQLite3(ShallowDb):
                     'xdim': d["Width"],
                     'ydim': d['Height'],
                     'z': d["SliceIndex"],
-                    'c': d["FrameIndex"],
-                    't': d["ChannelIndex"],
+                    't': d["FrameIndex"],
+                    'c': d["ChannelIndex"],
                     'image_resource': image_res,
                 }
+                maxT = max(sizeT, d["FrameIndex"])
                 self.save_object('Data', record)
+            image_res_record['id_'] = image_res
+            image_res_record['tdim'] = maxT + 1
+            image_res = self.save_object('ImageResource', image_res_record)
 
     def annotate_data(self, dataset, source, keys_, regex):
         """
