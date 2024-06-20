@@ -169,6 +169,8 @@ class ShallowSQLite3(ShallowDb):
                                     img_format='imagetiff'):
         dirname = os.path.dirname(metadata_file_name)
         dataset = self.get_record_by_name('Dataset', 'data')
+        author = get_config_value('project', 'user') if author == '' else author
+        date_time = datetime.now() if date == 'now' else datetime.fromisoformat(date)
         with open(metadata_file_name) as metadata_file:
             metadata = json.load(metadata_file)
 
@@ -214,8 +216,8 @@ class ShallowSQLite3(ShallowDb):
                     'uuid': generate_uuid(),
                     'name': os.path.basename(image_file),
                     'dataset': dataset['id_'],
-                    'author': get_config_value('project', 'user') if author == '' else author,
-                    'date': datetime.now() if date == 'now' else datetime.fromisoformat(date),
+                    'author': author,
+                    'date': date_time,
                     'url': image_file if in_place else os.path.join(destination, os.path.basename(image_file)),
                     'format': img_format,
                     'source_dir': os.path.dirname(image_file),
