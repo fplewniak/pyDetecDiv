@@ -189,7 +189,7 @@ class ShallowSQLite3(ShallowDb):
                 'fov': None,
                 'dataset': dataset['id_'],
                 'multi': True,
-                # 'key_val': json.dumps({'channel_names': metadata["Summary"]["ChNames"]}),
+                'key_val': {'channel_names': metadata["Summary"]["ChNames"]},
             }
 
             positions = [d["Label"] for d in metadata["Summary"]["StagePositions"]]
