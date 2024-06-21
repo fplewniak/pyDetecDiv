@@ -181,6 +181,18 @@ class VideoPlayer(QWidget):
         self.change_frame(T=0)
         self.control_panel.video_control.t_slider.setValue(0)
 
+    def synchronize_with(self, other):
+        """
+        Synchronize the current viewer with another one. This is used to view a portion of an image in a new viewer
+        with the same T coordinates as the original.
+
+        :param other: the other viewer to synchronize with
+        """
+        if self.T != other.T:
+            self.T = other.T
+            self.video_frame.emit(self.T)
+            self.control_panel.video_control.t_slider.setValue(self.T)
+        self.viewer.display(T=self.T)
 class VideoControlPanel(QFrame):
     """
     A class defining the Video control panel (video control + zoom control)

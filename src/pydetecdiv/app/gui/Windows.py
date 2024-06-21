@@ -212,8 +212,11 @@ class ImageResourceChooser(QDockWidget):
 
         tab_key = f'{PyDetecDiv.project_name}/{fov.name}'
         tab = PyDetecDiv.main_window.add_tabbed_window(tab_key)
+        last_widget = tab.currentWidget()
         tab.set_top_tab(FOVmanager(fov=fov), 'FOV')
         current_widget = tab.currentWidget()
+        # frame = last_widget.T if tab.count() > 1 else 0
+        frame=0
         C_bright_field = None if self.bright_field_C.currentText() == 'n.a' else self.bright_field_C.currentIndex()
         Z_bright_field = self.bright_field_Z.currentIndex()
         red_channel = None if self.fluo_red.currentText() == 'n.a' else (self.fluo_red.currentIndex() - 1)
@@ -223,33 +226,41 @@ class ImageResourceChooser(QDockWidget):
         if self.bright_field.isChecked():
             current_widget.setImageResource(image_resource,
                                             C=C_bright_field,
-                                            Z=Z_bright_field
+                                            Z=Z_bright_field,
+                                            T=frame,
                                             )
             tab.setTabText(tab.currentIndex(), 'FOV bright field')
             if self.fluorescence.isChecked():
                 current_widget.addLayer().addImage(image_resource,
-                                                 C=(red_channel,
-                                                    green_channel,
-                                                    blue_channel),
-                                                 Z=z_fluo,
-                                                 alpha=True)
+                                                   C=(red_channel,
+                                                      green_channel,
+                                                      blue_channel),
+                                                   Z=z_fluo,
+                                                   T=frame,
+                                                   alpha=True)
                 tab.setTabText(tab.currentIndex(), 'FOV bf + fluo')
         elif self.fluorescence.isChecked():
             current_widget.setImageResource(image_resource,
-                                             C=(red_channel,
-                                                green_channel,
-                                                blue_channel),
-                                             Z=z_fluo)
+                                            C=(red_channel,
+                                               green_channel,
+                                               blue_channel),
+                                            Z=z_fluo,
+                                            T=frame,
+                                            )
             tab.setTabText(tab.currentIndex(), 'FOV fluorescence')
         else:
             current_widget.setImageResource(image_resource,
                                             C=C_bright_field,
-                                            Z=Z_bright_field
+                                            Z=Z_bright_field,
+                                            T=frame,
                                             )
             tab.setTabText(tab.currentIndex(), 'FOV bright field')
 
+        if last_widget is not None:
+            current_widget.synchronize_with(last_widget)
         current_widget.draw_saved_rois(roi_list)
         PyDetecDiv.app.restoreOverrideCursor()
+
 
 class DrawingToolsPalette(QDockWidget):
     """

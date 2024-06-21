@@ -83,18 +83,6 @@ class FOVmanager(VideoPlayer):
         # self.image_resource_data = image_resource_data
         self.setBackgroundImage(image_resource_data, C=C, Z=Z, T=T)
 
-    def synchronize_with(self, other):
-        """
-        Synchronize the current viewer with another one. This is used to view a portion of an image in a new viewer
-        with the same T coordinates as the original.
-
-        :param other: the other viewer to synchronize with
-        """
-        if self.T != other.T:
-            self.T = other.T
-            self.video_frame.emit(self.T)
-        self.viewer.display()
-
     def draw_saved_rois(self, roi_list):
         """
         Draw saved ROIs as green rectangles that can be selected but not moved
