@@ -188,7 +188,7 @@ class ImageResourceChooser(QDockWidget):
                 self.position_choice.addItems(sorted([fov.name for fov in project.get_objects('FOV')]))
                 fov = project.get_object('FOV', 1)
                 kval = fov.image_resource().key_val
-                if 'channel_names' in kval:
+                if (kval is not None) and ('channel_names' in kval):
                     channel_list = [kval['channel_names'][c] for c in range(fov.image_resource().sizeC)]
                 else:
                     channel_list = [str(c) for c in range(fov.image_resource().sizeC)]
