@@ -187,14 +187,18 @@ class ImageResourceChooser(QDockWidget):
             if project.count_objects('FOV'):
                 self.position_choice.addItems(sorted([fov.name for fov in project.get_objects('FOV')]))
                 fov = project.get_object('FOV', 1)
-                channel_list = [str(c) for c in range(fov.image_resource().sizeC)]
+                kval = fov.image_resource().key_val
+                if 'channel_names' in kval:
+                    channel_list = [kval['channel_names'][c] for c in range(fov.image_resource().sizeC)]
+                else:
+                    channel_list = [str(c) for c in range(fov.image_resource().sizeC)]
                 stack_list = [str(z) for z in range(fov.image_resource().sizeZ)]
                 self.bright_field_C.addItems(channel_list)
                 self.bright_field_Z.addItems(stack_list)
                 self.fluo_red.addItems(['n.a'] + channel_list)
                 self.fluo_green.addItems(['n.a'] + channel_list)
                 self.fluo_blue.addItems(['n.a'] + channel_list)
-                self.fluo_Z.addItems(['n.a'] + stack_list)
+                self.fluo_Z.addItems(stack_list)
 
     def accept(self):
         """
@@ -210,12 +214,12 @@ class ImageResourceChooser(QDockWidget):
         tab = PyDetecDiv.main_window.add_tabbed_window(tab_key)
         tab.set_top_tab(FOVmanager(fov=fov), 'FOV')
         current_widget = tab.currentWidget()
-        C_bright_field = int(self.bright_field_C.currentText()) if self.bright_field_C.currentText() != 'n.a' else None
-        Z_bright_field = int(self.bright_field_Z.currentText()) if self.bright_field_Z.currentText() != 'n.a' else None
-        red_channel = int(self.fluo_red.currentText()) if self.fluo_red.currentText() != 'n.a' else None
-        green_channel = int(self.fluo_green.currentText()) if self.fluo_green.currentText() != 'n.a' else None
-        blue_channel = int(self.fluo_blue.currentText()) if self.fluo_blue.currentText() != 'n.a' else None
-        z_fluo = int(self.fluo_Z.currentText()) if self.fluo_Z.currentText() != 'n.a' else None
+        C_bright_field = None if self.bright_field_C.currentText() == 'n.a' else self.bright_field_C.currentIndex()
+        Z_bright_field = self.bright_field_Z.currentIndex()
+        red_channel = None if self.fluo_red.currentText() == 'n.a' else (self.fluo_red.currentIndex() - 1)
+        green_channel = None if self.fluo_green.currentText() == 'n.a' else (self.fluo_green.currentIndex() - 1)
+        blue_channel = None if self.fluo_blue.currentText() == 'n.a' else (self.fluo_blue.currentIndex() - 1)
+        z_fluo = self.fluo_Z.currentIndex()
         if self.bright_field.isChecked():
             current_widget.setImageResource(image_resource,
                                             C=C_bright_field,
