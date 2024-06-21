@@ -4,7 +4,7 @@ Module defining classes for building a video player
 import time
 
 import numpy as np
-from PySide6.QtCore import QTimer, Signal, QSize, Qt
+from PySide6.QtCore import QTimer, Signal, QSize, Qt, QRectF
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFrame, QToolButton, QLabel, QSlider, QSpinBox
 
@@ -193,10 +193,13 @@ class VideoPlayer(QWidget):
             self.video_frame.emit(self.T)
             self.control_panel.video_control.t_slider.setValue(self.T)
         self.viewer.display(T=self.T)
+
+
 class VideoControlPanel(QFrame):
     """
     A class defining the Video control panel (video control + zoom control)
     """
+
     def __init__(self, parent=None, **kwargs):
         super().__init__(parent=parent, **kwargs)
         layout = QHBoxLayout(self)
@@ -217,10 +220,12 @@ class VideoControlPanel(QFrame):
         self.zoom_control.zoom_fit_btn.clicked.connect(parent.zoom_fit)
         self.zoom_control.zoom_actual.clicked.connect(parent.zoom_reset)
 
+
 class VideoControl(QFrame):
     """
     A class defining the frame Controls (frame, frame rate, play, pause, etc.) of a VideoPlayer
     """
+
     def __init__(self, parent=None, **kwargs):
         super().__init__(parent=parent, **kwargs)
         layout = QHBoxLayout(self)
@@ -273,10 +278,12 @@ class VideoControl(QFrame):
 
         layout.addWidget(self.t_step)
 
+
 class ZoomControl(QFrame):
     """
     A class defining a QFrame widget for controlling Zoom in a VideoPlayer
     """
+
     def __init__(self, parent=None, **kwargs):
         super().__init__(parent=parent, **kwargs)
         layout = QHBoxLayout(self)
