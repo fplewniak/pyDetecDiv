@@ -5,13 +5,10 @@
 """
 import json
 import os
-import tifffile
-import numpy as np
-from aicsimageio import AICSImage
 
 from pydetecdiv.domain.dso import NamedDSO
 from pydetecdiv.settings import get_config_value
-from pydetecdiv.domain import ImageResource
+from pydetecdiv.domain import ImageResource, Dataset
 
 
 class Data(NamedDSO):
@@ -19,11 +16,11 @@ class Data(NamedDSO):
     A business-logic class defining valid operations and attributes of data
     """
 
-    def __init__(self, uuid, dataset, author, date, url, format_, source_dir, meta_data, key_val, image_resource,
-                 c=None, t=None, z=None, xdim=-1, ydim=-1, **kwargs):
+    def __init__(self, dataset, author, date, url, format_, source_dir, meta_data, key_val, image_resource,
+                 c=None, t=None, z=None, xdim=-1, ydim=-1, uuid=None, **kwargs):
         super().__init__(**kwargs)
         self.uuid = uuid
-        self.dataset_ = dataset
+        self.dataset_ = dataset.id_ if isinstance(dataset, Dataset) else dataset
         self.author = author
         self.date = date
         self.url_ = url
@@ -31,18 +28,13 @@ class Data(NamedDSO):
         self.source_dir = source_dir
         self.meta_data = meta_data
         self.key_val = key_val
-        self._image_resource = image_resource
+        self._image_resource = image_resource.id_ if isinstance(image_resource, ImageResource) else image_resource
         self.xdim = xdim
         self.ydim = ydim
         self.c = c
         self.t = t
         self.z = z
         self.validate(updated=False)
-
-    # def image_data(self, T=0, Z=0, C=0):
-    #     if self._memmap:
-    #         return self._memmap[T, C, Z, ...]
-    #     return AICSImage(self.url_).reader.get_image_dask_data('YX').compute()
 
     @property
     def image_resource(self):

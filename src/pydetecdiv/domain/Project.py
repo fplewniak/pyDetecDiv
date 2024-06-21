@@ -3,9 +3,11 @@
 """
 The central class for keeping track of all available objects in a project.
 """
+import json
 import os
 import itertools
 from collections import defaultdict
+from datetime import datetime
 
 from pydetecdiv.domain.ImageResource import ImageResource
 from pydetecdiv.settings import get_config_value
@@ -121,7 +123,7 @@ class Project:
         data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
         return self.repository.import_images(image_files, data_dir_path, destination, **kwargs)
 
-    def import_images_from_metadata(self, metadata_file, destination=None, **kwargs):
+    def import_images_from_metadata_off(self, metadata_file, destination=None, **kwargs):
         """
         Import images specified in a list of files into a destination
 
@@ -135,6 +137,44 @@ class Project:
         """
         data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
         return self.repository.import_images_from_metadata(metadata_file, data_dir_path, destination, **kwargs)
+
+    def import_images_from_metadata(self, metadata_files, destination=None, author='', date='now', in_place=True,
+                                    img_format='imagetiff', **kwargs):
+        # data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
+        dataset = self.get_named_object('Dataset', 'data')
+        author = get_config_value('project', 'user') if author == '' else author
+        date_time = datetime.now() if date == 'now' else datetime.fromisoformat(date)
+        dirname = os.path.dirname(metadata_files)
+
+        with open(metadata_files) as metadata_file:
+
+            metadata = json.load(metadata_file)
+            positions = [d["Label"] for d in metadata["Summary"]["StagePositions"]]
+            sizeT = -1
+            fov = None
+
+            for d in [v for k, v in metadata.items() if k.startswith('Metadata-')]:
+                if fov is None:
+                    fov = FOV(project=self, name=positions[d["PositionIndex"]])
+                    image_res = ImageResource(project=self, dataset=dataset, fov=fov, multi=True,
+                                              zdim=metadata["Summary"]["Slices"],
+                                              cdim=metadata["Summary"]["Channels"], tdim=-1,
+                                              tscale=metadata["Summary"]["Interval_ms"],
+                                              zscale=metadata["Summary"]["z-step_um"],
+                                              key_val={'channel_names': metadata["Summary"]["ChNames"]}, )
+
+                image_file = os.path.join(dirname, os.path.basename(d["FileName"]))
+                _ = Data(project=self, name=os.path.basename(image_file),
+                         dataset=dataset, author=author, date=date_time,
+                         url=image_file if in_place else os.path.join(destination, os.path.basename(image_file)),
+                         format_=img_format, source_dir=os.path.dirname(image_file), meta_data='{}',
+                         key_val='{}', image_resource=image_res,
+                         c=d["ChannelIndex"], t=d["FrameIndex"], z=d["SliceIndex"],
+                         xdim=d["Width"], ydim=d['Height'])
+                maxT = max(sizeT, d["FrameIndex"])
+
+            image_res.xdim, image_res.ydim, image_res.tdim = d["Width"], d['Height'], (maxT + 1)
+            image_res.validate()
 
     def annotate(self, dataset, source, columns, regex):
         """
