@@ -101,8 +101,8 @@ class Scene(QGraphicsScene):
     A generic scene attached to a GraphicsView, containing graphics items, and reacting to user input
     (key press, mouse,...)
     """
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None, **kwargs):
+        super().__init__(parent=parent, **kwargs)
         self.pen = QPen(Qt.GlobalColor.cyan, 2)
 
     @property

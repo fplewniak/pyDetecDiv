@@ -130,7 +130,7 @@ class FOVmanager(VideoPlayer):
                                         crop=(slice(x1, x2), slice(y1, y2)))
         for layer in self.viewer.layers[1:]:
             (C, T, Z) = layer.image.get_CTZ()
-            video_player.addLayer().addImage(self.viewer.image_resource_data, C=C, Z=Z, T=T,
+            video_player.addLayer().setImage(self.viewer.image_resource_data, C=C, Z=Z, T=T,
                                              crop=(slice(x1, x2), slice(y1, y2)), alpha=True)
         PyDetecDiv.main_window.active_subwindow.setCurrentWidget(video_player)
 

@@ -3,11 +3,15 @@ ROI annotation for image classification
 """
 import sqlalchemy
 from PySide6.QtCore import Qt, QRectF
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QGraphicsTextItem, QGraphicsScene, QDialogButtonBox
 import numpy as np
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
-from pydetecdiv.app.gui.ImageViewer import ImageViewer
+from pydetecdiv.app.gui.core.widgets.viewers import Scene
+from pydetecdiv.app.gui.core.widgets.viewers.images import ImageViewer, ImageItem
+# from pydetecdiv.app.gui.ImageViewer import ImageViewer
+from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer
 from pydetecdiv.settings import get_config_value
 
 
@@ -29,7 +33,7 @@ def open_annotator(plugin, roi_selection):
     viewer.next_roi()
 
 
-class Annotator(ImageViewer):
+class Annotator(VideoPlayer):
     """
     Annotator class extending the ImageViewer class to define functionalities specific to ROI image annotation
     """
@@ -39,17 +43,25 @@ class Annotator(ImageViewer):
         self.roi_list = None
         self.roi = None
         self.run = None
-        self.setObjectName('Annotator')
-        self.scene = AnnotatorScene()
-        self.pixmapItem = self.scene.addPixmap(self.pixmap)
-        self.ui.viewer.setScene(self.scene)
-        self.scene.setParent(self)
-        self.viewport_rect = None
-        self.zoom_set_value(200)
-        self.class_item = QGraphicsTextItem('-')
-        self.roi_classes = []
         self.plugin = None
-        self.scene.addItem(self.class_item)
+        self.viewport_rect = None
+        self.roi_classes = []
+        self.class_item = None  # QGraphicsTextItem('-')
+        self.setup()
+
+    def _create_viewer(self):
+        """
+        Creates a viewer with a AnnotatorScene instead of a Scene
+
+        :return: the created viewer
+        """
+        viewer = ImageViewer()
+        viewer.setup(AnnotatorScene(self))
+        return viewer
+
+    def setup(self, menubar=None):
+        super().setup(menubar=menubar)
+        self.zoom_set_value(200)
 
     def close_event(self):
         self.plugin.gui.classes.setEnabled(True)
@@ -83,13 +95,13 @@ class Annotator(ImageViewer):
                 x1, x2 = self.roi.top_left[0], self.roi.bottom_right[0] + 1
                 y1, y2 = self.roi.top_left[1], self.roi.bottom_right[1] + 1
                 crop = (slice(x1, x2), slice(y1, y2))
-                self.set_image_resource_data(image_resource.image_resource_data(), crop=crop)
-                self.display()
+                self.setBackgroundImage(image_resource.image_resource_data(), crop=crop)
+                self.viewer.display()
                 self.get_roi_annotations()
                 self.change_frame(0)
                 self.video_frame.emit(0)
-                self.ui.t_slider.setSliderPosition(0)
-                self.ui.view_name.setText(f'ROI: {self.roi.name}')
+                self.control_panel.video_control.t_slider.setSliderPosition(0)
+                # self.ui.view_name.setText(f'ROI: {self.roi.name}')
                 PyDetecDiv.main_window.active_subwindow.setCurrentWidget(self)
         except StopIteration:
             self.plugin.gui.classes.setEnabled(True)
@@ -100,20 +112,10 @@ class Annotator(ImageViewer):
         """
         Retrieve from the database the manual annotations for a ROI
         """
-        self.roi_classes = ['-'] * self.image_resource_data.sizeT
+        self.roi_classes = ['-'] * self.viewer.image_resource_data.sizeT
         for frame, annotation in enumerate(self.plugin.get_annotation(self.roi, as_index=False)):
             if annotation != -1:
                 self.roi_classes[frame] = annotation
-        # with pydetecdiv_project(PyDetecDiv.project_name) as project:
-        #     results = list(project.repository.session.execute(
-        #         sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,run.parameters ->> '$.annotator' as annotator "
-        #                         f"FROM run, roi_classification as rc "
-        #                         f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
-        #                         f"AND rc.run=run.id_ and rc.roi={self.roi.id_} "
-        #                         f"AND annotator='{get_config_value('project', 'user')}' "
-        #                         f"ORDER BY rc.run ASC;")))
-        #     for annotation in results:
-        #         self.roi_classes[annotation[1]] = annotation[2]
 
     def annotate_current(self, class_name=None):
         """
@@ -127,6 +129,8 @@ class Annotator(ImageViewer):
         Display the class name below the frame
         :param roi_class: the class name
         """
+        if self.class_item is None:
+            self.class_item = self.viewer.background.addItem(QGraphicsTextItem('-'))
         if self.roi_classes[self.T] == '-' and self.T > 0 and self.roi_classes[self.T - 1] != '-':
             roi_class = self.roi_classes[self.T - 1]
             self.class_item.setDefaultTextColor('red')
@@ -135,23 +139,14 @@ class Annotator(ImageViewer):
             self.class_item.setDefaultTextColor('black')
         self.class_item.setPlainText(roi_class)
         text_boundingRect = self.class_item.boundingRect()
-        frame_boundingRect = self.pixmapItem.boundingRect()
-        self.class_item.setPos((frame_boundingRect.width() - text_boundingRect.width()) / 2,
-                               frame_boundingRect.height())
-        self.viewport_rect = QRectF(min([self.class_item.x(), self.pixmapItem.x()]),
-                                    min([self.class_item.y(), self.pixmapItem.y()]) - 5,
+        frame_boundingRect = self.viewer.background.image.boundingRect()
+        self.class_item.setPos(frame_boundingRect.x() + (frame_boundingRect.width() - text_boundingRect.width()) / 2,
+                               frame_boundingRect.y() + frame_boundingRect.height())
+        self.viewport_rect = QRectF(min([self.class_item.x(), self.viewer.background.image.x()]),
+                                    min([self.class_item.y(), self.viewer.background.image.y()]) - 5,
                                     max([text_boundingRect.width(), frame_boundingRect.width()]),
                                     text_boundingRect.height() + frame_boundingRect.height() + 5,
                                     )
-
-    def zoom_fit(self):
-        """
-        Set the zoom value to fit the image in the viewer
-        """
-        self.ui.viewer.fitInView(self.viewport_rect, Qt.KeepAspectRatio)
-        self.scale = int(100 * np.around(self.ui.viewer.transform().m11(), 2))
-        self.ui.zoom_value.setSliderPosition(self.scale)
-        self.ui.scale_value.setText(f'Zoom: {self.scale}%')
 
     def change_frame(self, T=0):
         """
@@ -169,31 +164,29 @@ class Annotator(ImageViewer):
         parameters.update(self.plugin.parameters.get_values('annotate'))
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             self.run = self.plugin.save_run(project, 'annotate_rois', parameters)
-            # self.run = self.plugin.save_run(project, 'annotate_rois',
-            #                                 {'class_names': self.plugin.class_names,
-            #                                  'annotator': get_config_value('project', 'user'),
-            #                                  'roi_num': self.plugin.gui.roi_number.value(),
-            #                                  })
 
 
-class AnnotatorScene(QGraphicsScene):
+class AnnotatorScene(Scene):
     """
     The viewer scene where images and other items are drawn
     """
+
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
 
     def focusInEvent(self, event):
         """
         When the scene is in focus, then draw a larger frame around it to indicate its in-focus status
         :param event: the focusInEvent
         """
-        self.parent().ui.viewer.setStyleSheet("border: 2px solid green;")
+        self.viewer.setStyleSheet("border: 2px solid green;")
 
     def focusOutEvent(self, event):
         """
         When the scene is out of focus, then draw a small frame around it to indicate its out-focus status
         :param event: the focusOutEvent
         """
-        self.parent().ui.viewer.setStyleSheet("border: 1px solid black;")
+        self.viewer.setStyleSheet("border: 1px solid black;")
 
     def keyPressEvent(self, event):
         """
@@ -209,12 +202,12 @@ class AnnotatorScene(QGraphicsScene):
         """
         if event.text() in list('azertyuiop')[0:len(self.parent().plugin.class_names)]:
             self.parent().annotate_current(self.parent().plugin.class_names["azertyuiop".find(event.text())])
-            self.parent().change_frame(min(self.parent().T + 1, self.parent().image_resource_data.sizeT - 1))
+            self.parent().change_frame(min(self.parent().T + 1, self.viewer.image_resource_data.sizeT - 1))
         elif event.text() == ' ':
             self.parent().annotate_current(class_name=f'{self.parent().class_item.toPlainText()}')
-            self.parent().change_frame(min(self.parent().T + 1, self.parent().image_resource_data.sizeT - 1))
+            self.parent().change_frame(min(self.parent().T + 1, self.viewer.image_resource_data.sizeT - 1))
         elif event.key() == Qt.Key_Right:
-            self.parent().change_frame(min(self.parent().T + 1, self.parent().image_resource_data.sizeT - 1))
+            self.parent().change_frame(min(self.parent().T + 1, self.viewer.image_resource_data.sizeT - 1))
         elif event.key() == Qt.Key_Left:
             self.parent().change_frame(max(self.parent().T - 1, 0))
         elif event.key() == Qt.Key_Enter:

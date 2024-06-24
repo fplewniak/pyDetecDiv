@@ -231,7 +231,7 @@ class ImageResourceChooser(QDockWidget):
                                             )
             tab.setTabText(tab.currentIndex(), 'FOV bright field')
             if self.fluorescence.isChecked():
-                current_widget.addLayer().addImage(image_resource,
+                current_widget.addLayer().setImage(image_resource,
                                                    C=(red_channel,
                                                       green_channel,
                                                       blue_channel),

@@ -165,6 +165,7 @@ class VideoPlayer(QWidget):
         if self.T != T:
             self.T = T
             self.video_frame.emit(self.T)
+            self.control_panel.video_control.t_slider.setValue(self.T)
             self.viewer.display(T=self.T)
             # self.viewer.scene().update()
 

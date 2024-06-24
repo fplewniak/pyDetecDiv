@@ -44,7 +44,7 @@ class ImageViewer(GraphicsView):
         :return: the background image
         """
         self.image_resource_data = image_resource_data
-        return self.background.addImage(image_resource_data, C=C, T=T, Z=Z, crop=crop)
+        return self.background.setImage(image_resource_data, C=C, T=T, Z=Z, crop=crop)
 
     def display(self, T=None):
         """
@@ -66,7 +66,7 @@ class ImageLayer(Layer):
         self.T = 0
         self.image = None
 
-    def addImage(self, image_resource_data, C=0, T=0, Z=0, crop=None, transparent=None, alpha=False):
+    def setImage(self, image_resource_data, C=0, T=0, Z=0, crop=None, transparent=None, alpha=False):
         """
         Adds an image to the current layer
 
@@ -80,6 +80,7 @@ class ImageLayer(Layer):
         :return: the image item
         """
         self.T = T
+        self.scene().removeItem(self.image)
         self.image = ImageItem(image_resource_data, C=C, T=T, Z=Z, crop=crop, transparent=transparent, parent=self,
                                alpha=alpha)
         return self.image
@@ -104,15 +105,15 @@ class ImageItem(QGraphicsPixmapItem):
             pixmap = QPixmap()
         if transparent:
             pixmap.setMask(pixmap.createMaskFromColor(transparent, Qt.MaskInColor))
-        super().__init__(pixmap, parent)
+        super().__init__(pixmap, parent=parent)
         self.image_resource_data = image_resource_data
         self.C = C
         self.T = T
         self.Z = Z
         self.alpha = alpha
         self.crop = crop
-        if crop is not None:
-            self.setOffset(crop[0].start, crop[1].start)
+        # if crop is not None:
+        #     self.setOffset(crop[0].start, crop[1].start)
 
     def get_CTZ(self):
         """
