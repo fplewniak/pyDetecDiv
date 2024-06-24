@@ -80,7 +80,8 @@ class ImageLayer(Layer):
         :return: the image item
         """
         self.T = T
-        self.scene().removeItem(self.image)
+        if self.image is not None:
+            self.scene().removeItem(self.image)
         self.image = ImageItem(image_resource_data, C=C, T=T, Z=Z, crop=crop, transparent=transparent, parent=self,
                                alpha=alpha)
         return self.image
