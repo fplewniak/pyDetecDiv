@@ -220,3 +220,9 @@ class AnnotatorScene(Scene):
             self.parent().next_roi()
         elif event.key() == Qt.Key_Escape:
             self.parent().next_roi()
+
+    def mouseMoveEvent(self, event):
+        pass
+
+    def mousePressEvent(self, event):
+        pass
