@@ -266,10 +266,11 @@ class FOVScene(Scene):
 
     def draw_Item(self, event):
         item = super().draw_Item(event)
-        item.setPen(self.warning_pen)
-        self.check_is_colliding(item)
-        self.roi_selected.emit(self.get_selected_Item() is not None)
-        self.not_saved_rois.emit(self.check_not_saved_rois())
+        if item:
+            item.setPen(self.warning_pen)
+            self.check_is_colliding(item)
+            self.roi_selected.emit(self.get_selected_Item() is not None)
+            self.not_saved_rois.emit(self.check_not_saved_rois())
         return item
 
     def contextMenuEvent(self, event):

@@ -154,8 +154,6 @@ class ImageItem(QGraphicsPixmapItem):
     def set_channel(self, C):
         """
         Sets the current channel
-        TODO: allow specification of channel by name, this method should set the self.C field to the index corresponding
-        TODO: to the requested name if the C argument is a str
 
         :param C: index of the current channel
         :type C: int or tuple(int, int, int) for RGB or tuple(int, int, int, int) for RGBA

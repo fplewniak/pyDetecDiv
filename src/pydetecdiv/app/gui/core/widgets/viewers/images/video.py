@@ -1,12 +1,15 @@
 """
 Module defining classes for building a video player
 """
+import datetime
 import time
+import re
 
 import numpy as np
 from PySide6.QtCore import QTimer, Signal, QSize, Qt, QRectF
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFrame, QToolButton, QLabel, QSlider, QSpinBox
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFrame, QToolButton, QLabel, QSlider, QSpinBox, \
+    QLineEdit, QSizePolicy
 
 from pydetecdiv.app.gui.core.widgets.viewers.images import ImageViewer
 
@@ -61,6 +64,11 @@ class VideoPlayer(QWidget):
         layout.addWidget(self.control_panel)
         self.setLayout(layout)
 
+        # self.tscale = 1
+        # self.time_display = QLabel(datetime.time(second=0).isoformat(timespec='microseconds'), parent=self)
+        # self.time_display.setGeometry(20, 30, self.time_display.width(), self.time_display.height())
+        # self.time_display.setStyleSheet("color: yellow;")
+
     @property
     def scene(self):
         """
@@ -82,6 +90,7 @@ class VideoPlayer(QWidget):
         """
         self.viewer.setBackgroundImage(image_resource_data, C=C, Z=Z, T=T, crop=crop)
         self.T = T
+        # self.time_display.setText(datetime.time(second=self.T).isoformat(timespec='microseconds'))
 
         self.control_panel.video_control.t_slider.setMinimum(0)
         self.control_panel.video_control.t_slider.setMaximum(image_resource_data.sizeT - 1)
@@ -105,6 +114,7 @@ class VideoPlayer(QWidget):
         :type value: float
         """
         self.viewer.zoom_set_value(value)
+        self.control_panel.zoom_control.zoom_set.setText(f'{self.viewer.scale_value} %')
         # self.control_panel.zoom_control.zoom_value.setValue(value)
         # print(value)
         # self.scale_value.setText(f'Zoom: {self.scale}%')
@@ -113,7 +123,9 @@ class VideoPlayer(QWidget):
         """
         Reset the zoom to 1:1
         """
-        self.control_panel.zoom_control.zoom_value.setValue(100)
+        self.viewer.zoom_set_value(100)
+        # self.control_panel.zoom_control.zoom_value.setValue(100)
+        self.control_panel.zoom_control.zoom_set.setText('100 %')
         # self.zoom_set_value(100)
 
     def zoom_fit(self):
@@ -121,7 +133,8 @@ class VideoPlayer(QWidget):
         Set the zoom value to fit the image in the viewer
         """
         self.viewer.zoom_fit()
-        self.control_panel.zoom_control.zoom_value.setSliderPosition(self.viewer.scale_value)
+        # self.control_panel.zoom_control.zoom_value.setSliderPosition(self.viewer.scale_value)
+        self.control_panel.zoom_control.zoom_set.setText(f'{self.viewer.scale_value} %')
         # self.control_panel.zoom_control.scale_value.setText(f'Zoom: {self.scale}%')
 
     def play_video(self):
@@ -164,8 +177,10 @@ class VideoPlayer(QWidget):
         """
         if self.T != T:
             self.T = T
+            # self.time_display.setText(datetime.time(second=self.T).isoformat(timespec='microseconds'))
             self.video_frame.emit(self.T)
             self.control_panel.video_control.t_slider.setValue(self.T)
+            self.control_panel.video_control.t_set.setText(str(self.T))
             self.viewer.display(T=self.T)
             # self.viewer.scene().update()
 
@@ -189,11 +204,13 @@ class VideoPlayer(QWidget):
 
         :param other: the other viewer to synchronize with
         """
-        if self.T != other.T:
-            self.T = other.T
-            self.video_frame.emit(self.T)
-            self.control_panel.video_control.t_slider.setValue(self.T)
-        self.viewer.display(T=self.T)
+        self.change_frame(other.T)
+        # if self.T != other.T:
+        #     self.T = other.T
+        #     self.video_frame.emit(self.T)
+        #     self.control_panel.video_control.t_slider.setValue(self.T)
+        #     self.control_panel.video_control.t_set.setText(str(self.T))
+        # self.viewer.display(T=self.T)
 
 
 class VideoControlPanel(QFrame):
@@ -217,9 +234,12 @@ class VideoControlPanel(QFrame):
         self.video_control.pauseButton.clicked.connect(parent.pause_video)
         self.video_control.video_back_btn.clicked.connect(parent.video_back)
         self.video_control.t_slider.valueChanged.connect(parent.change_frame)
-        self.zoom_control.zoom_value.valueChanged.connect(parent.zoom_set_value)
+        self.video_control.t_set.returnPressed.connect(lambda: parent.change_frame(T=int(self.video_control.frame)))
+        # self.zoom_control.zoom_value.valueChanged.connect(parent.zoom_set_value)
         self.zoom_control.zoom_fit_btn.clicked.connect(parent.zoom_fit)
         self.zoom_control.zoom_actual.clicked.connect(parent.zoom_reset)
+        self.zoom_control.zoom_set.returnPressed.connect(lambda: parent.zoom_set_value(int(self.zoom_control.zoom)))
+        parent.viewer.zoom_value_changed.connect(lambda x: self.zoom_control.zoom_set.setText(f'{x} %'))
 
 
 class VideoControl(QFrame):
@@ -251,33 +271,31 @@ class VideoControl(QFrame):
 
         layout.addWidget(self.video_forward)
 
-        self.T = QLabel(self)
-
-        layout.addWidget(self.T)
+        self.t_set = QLineEdit(self)
+        self.t_set.setText(str(self.parent().parent().T))
+        self.t_set.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.t_set.setMaxLength(5)
+        self.t_set.setMaximumWidth(40)
+        self.t_set.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed))
+        layout.addWidget(self.t_set)
 
         self.t_slider = QSlider(self)
-        # sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        # sizePolicy2.setHorizontalStretch(0)
-        # sizePolicy2.setVerticalStretch(0)
-        # sizePolicy2.setHeightForWidth(self.t_slider.sizePolicy().hasHeightForWidth())
-        # self.t_slider.setSizePolicy(sizePolicy2)
         self.t_slider.setOrientation(Qt.Horizontal)
         self.t_slider.setTickPosition(QSlider.NoTicks)
         self.t_slider.setTickInterval(10)
 
         layout.addWidget(self.t_slider)
 
-        layout.addWidget(QLabel('step', self))
+        layout.addWidget(QLabel('step:', self))
 
         self.t_step = QSpinBox(self)
-        # sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        # sizePolicy3.setHorizontalStretch(0)
-        # sizePolicy3.setVerticalStretch(0)
-        # sizePolicy3.setHeightForWidth(self.t_step.sizePolicy().hasHeightForWidth())
-        # self.t_step.setSizePolicy(sizePolicy3)
         self.t_step.setMinimum(1)
 
         layout.addWidget(self.t_step)
+
+    @property
+    def frame(self):
+        return int(self.t_set.text())
 
 
 class ZoomControl(QFrame):
@@ -303,12 +321,24 @@ class ZoomControl(QFrame):
 
         layout.addWidget(self.zoom_fit_btn)
 
-        self.zoom_value = QSlider(self)
-        # sizePolicy3.setHeightForWidth(self.zoom_value.sizePolicy().hasHeightForWidth())
-        # self.zoom_value.setSizePolicy(sizePolicy3)
-        self.zoom_value.setMinimum(10)
-        self.zoom_value.setMaximum(1000)
-        self.zoom_value.setValue(100)
-        self.zoom_value.setOrientation(Qt.Horizontal)
+        self.zoom_set = QLineEdit(self)
+        self.zoom_set.setText('100 %')
+        self.zoom_set.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.zoom_set.setMaxLength(6)
+        self.zoom_set.setMaximumWidth(45)
+        self.zoom_set.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed))
+        layout.addWidget(self.zoom_set)
 
-        layout.addWidget(self.zoom_value)
+        # self.zoom_value = QSlider(self)
+        # # sizePolicy3.setHeightForWidth(self.zoom_value.sizePolicy().hasHeightForWidth())
+        # # self.zoom_value.setSizePolicy(sizePolicy3)
+        # self.zoom_value.setMinimum(10)
+        # self.zoom_value.setMaximum(1000)
+        # self.zoom_value.setValue(100)
+        # self.zoom_value.setOrientation(Qt.Horizontal)
+        #
+        # layout.addWidget(self.zoom_value)
+
+    @property
+    def zoom(self):
+        return int(re.match(r'\d+', self.zoom_set.text()).group(0))

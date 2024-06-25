@@ -2,7 +2,7 @@
 Module defining classes for generic viewer API
 """
 import numpy as np
-from PySide6.QtCore import Qt, QPoint, QRect, QRectF
+from PySide6.QtCore import Qt, QPoint, QRect, QRectF, Signal
 from PySide6.QtGui import QKeySequence, QTransform, QPen
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsRectItem, QGraphicsItem, QGraphicsPixmapItem, \
     QAbstractGraphicsShapeItem
@@ -15,6 +15,8 @@ class GraphicsView(QGraphicsView):
     """
      A generic widget for graphics visualization (image, drawings, etc.) using layers
     """
+    zoom_value_changed = Signal(int)
+
     def __init__(self, parent=None, scene_class=None, **kwargs):
         super().__init__(parent, **kwargs)
         if scene_class is None:
@@ -24,6 +26,7 @@ class GraphicsView(QGraphicsView):
         self.layers = []
         self.background = None
         self.scale_value = 100
+        # self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         # sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         # sizePolicy.setHorizontalStretch(0)
         # sizePolicy.setVerticalStretch(0)
@@ -50,6 +53,7 @@ class GraphicsView(QGraphicsView):
         """
         self.scale(value / self.scale_value, value / self.scale_value)
         self.scale_value = value
+        self.zoom_value_changed.emit(value)
 
     def zoom_fit(self):
         """
@@ -101,6 +105,7 @@ class Scene(QGraphicsScene):
     A generic scene attached to a GraphicsView, containing graphics items, and reacting to user input
     (key press, mouse,...)
     """
+
     def __init__(self, parent=None, **kwargs):
         super().__init__(parent=parent, **kwargs)
         self.pen = QPen(Qt.GlobalColor.cyan, 2)
@@ -172,6 +177,14 @@ class Scene(QGraphicsScene):
                     self.move_Item(event)
                 case DrawingTools.DuplicateItem, Qt.NoModifier:
                     self.move_Item(event)
+
+    def wheelEvent(self, event):
+        match event.modifiers():
+            case Qt.ControlModifier:
+                if event.delta() > 0:
+                    self.viewer.zoom_set_value(self.viewer.scale_value * 1.2)
+                elif event.delta() < 0:
+                    self.viewer.zoom_set_value(self.viewer.scale_value / 1.2)
 
     def select_Item(self, event):
         """
@@ -261,7 +274,7 @@ class Scene(QGraphicsScene):
                 [round_to_even(pos.y() - item_pos.y()), 5])
             rect = QRect(0, 0, w, h)
             item.setRect(rect)
-        else:
+        elif PyDetecDiv.current_drawing_tool == DrawingTools.DrawRect:
             item = self.addRect(QRect(0, 0, 5, 5))
             item.setPen(self.pen)
             item.setPos(QPoint(pos.x(), pos.y()))
@@ -269,7 +282,8 @@ class Scene(QGraphicsScene):
             item.setData(0, f'Region{len(self.items())}')
             item.setZValue(10)
             item.setSelected(True)
-        self.display_Item_size(item)
+        if item:
+            self.display_Item_size(item)
         return item
 
     def set_Item_width(self, width):
@@ -308,6 +322,7 @@ class Layer(QGraphicsItem):
     """
     A graphics item containing sub-items in order to define layer behaviour
     """
+
     def __init__(self, viewer, **kwargs):
         super().__init__(**kwargs)
         self.viewer = viewer
@@ -374,6 +389,7 @@ class BackgroundLayer(Layer):
     """
     A particular layer that is always at the bottom of a scene
     """
+
     @property
     def zIndex(self):
         """
