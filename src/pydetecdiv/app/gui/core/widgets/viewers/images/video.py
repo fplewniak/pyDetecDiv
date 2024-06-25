@@ -35,8 +35,19 @@ class VideoPlayer(QWidget):
         self.viewer = None
         self.control_panel = None
         self.menubar = None
+        self.tscale = 1
 
         # self.viewer.setViewportUpdateMode(QGraphicsView.NoViewportUpdate)
+    @property
+    def elapsed_time(self):
+        t = self.T * self.tscale
+        hours = int(t / 3600)
+        t = t - hours * 3600
+        minutes = int(t / 60)
+        t = t - minutes * 60
+        seconds = int(t)
+        ms = int(1000 * (t - seconds))
+        return f'{hours:02d}:{minutes:02d}:{seconds:02d}.{ms:04d}'
 
     def _create_viewer(self):
         """
@@ -64,10 +75,9 @@ class VideoPlayer(QWidget):
         layout.addWidget(self.control_panel)
         self.setLayout(layout)
 
-        # self.tscale = 1
-        # self.time_display = QLabel(datetime.time(second=0).isoformat(timespec='microseconds'), parent=self)
-        # self.time_display.setGeometry(20, 30, self.time_display.width(), self.time_display.height())
-        # self.time_display.setStyleSheet("color: yellow;")
+        self.time_display = QLabel(self.elapsed_time, parent=self)
+        self.time_display.setStyleSheet("color: green; font-size: 18px;")
+        self.time_display.setGeometry(20, 30, 140, self.time_display.height())
 
     @property
     def scene(self):
@@ -90,7 +100,7 @@ class VideoPlayer(QWidget):
         """
         self.viewer.setBackgroundImage(image_resource_data, C=C, Z=Z, T=T, crop=crop)
         self.T = T
-        # self.time_display.setText(datetime.time(second=self.T).isoformat(timespec='microseconds'))
+        self.time_display.setText(self.elapsed_time)
 
         self.control_panel.video_control.t_slider.setMinimum(0)
         self.control_panel.video_control.t_slider.setMaximum(image_resource_data.sizeT - 1)
@@ -177,7 +187,7 @@ class VideoPlayer(QWidget):
         """
         if self.T != T:
             self.T = T
-            # self.time_display.setText(datetime.time(second=self.T).isoformat(timespec='microseconds'))
+            self.time_display.setText(self.elapsed_time)
             self.video_frame.emit(self.T)
             self.control_panel.video_control.t_slider.setValue(self.T)
             self.control_panel.video_control.t_set.setText(str(self.T))

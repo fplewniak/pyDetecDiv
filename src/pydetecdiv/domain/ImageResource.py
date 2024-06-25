@@ -23,7 +23,7 @@ class ImageResource(DomainSpecificObject):
     def __init__(self, dataset, fov, multi,
                  xdim=-1, ydim=-1, zdim=-1, cdim=-1, tdim=-1,
                  xyscale=1, tscale=1, zscale=1,
-                 xyunit=1e-6, zunit=1e-6, tunit=1e-6, key_val=None,
+                 xyunit=1e-6, zunit=1e-6, tunit=1e-3, key_val=None,
                  **kwargs):
         super().__init__(**kwargs)
         self._dataset = dataset.id_ if isinstance(dataset, Dataset) else dataset
