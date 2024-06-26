@@ -345,14 +345,14 @@ class DrawingToolsPalette(QDockWidget):
         Sets the width of the currently selected item, using the spinbox in drawing tools
         :param width: the desired width
         """
-        PyDetecDiv.main_window.active_subwindow.top_widget.scene.set_Item_width(width)
+        PyDetecDiv.main_window.active_subwindow.currentWidget().scene.set_Item_width(width)
 
     def set_item_height(self, height):
         """
         Sets the height of the currently selected item, using the spinbox in drawing tools
         :param height: the desired height
         """
-        PyDetecDiv.main_window.active_subwindow.top_widget.scene.set_Item_height(height)
+        PyDetecDiv.main_window.active_subwindow.currentWidget().scene.set_Item_height(height)
 
 
 class Cursor(QToolButton):
