@@ -62,8 +62,9 @@ class PyDetecDiv(QApplication):
         PyDetecDiv.main_window = main_window
         PyDetecDiv.main_window.show()
 
-    def set_apply_drift(self, apply_drift):
-        self.apply_drift = apply_drift
+    @staticmethod
+    def set_apply_drift(apply_drift):
+        PyDetecDiv.apply_drift = apply_drift
 
 
 @contextmanager
