@@ -4,7 +4,7 @@ Module defining classes for generic viewer API
 import numpy as np
 from PySide6.QtCore import Qt, QPoint, QRect, QRectF, Signal
 from PySide6.QtGui import QKeySequence, QTransform, QPen
-from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsRectItem, QGraphicsItem, QGraphicsPixmapItem, \
+from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsRectItem, QGraphicsItem, \
     QAbstractGraphicsShapeItem
 
 from pydetecdiv.app import PyDetecDiv, DrawingTools
@@ -17,12 +17,12 @@ class GraphicsView(QGraphicsView):
     """
     zoom_value_changed = Signal(int)
 
-    def __init__(self, parent=None, scene_class=None, **kwargs):
+    def __init__(self, parent=None, **kwargs):
         super().__init__(parent, **kwargs)
-        if scene_class is None:
-            self.setScene(Scene())
-        else:
-            self.setScene(scene_class())
+        # if scene_class is None:
+        #     self.setScene(Scene())
+        # else:
+        #     self.setScene(scene_class())
         self.layers = []
         self.background = None
         self.scale_value = 100
