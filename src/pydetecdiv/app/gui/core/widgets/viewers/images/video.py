@@ -6,7 +6,7 @@ import time
 import re
 
 import numpy as np
-from PySide6.QtCore import QTimer, Signal, QSize, Qt, QRectF
+from PySide6.QtCore import QTimer, Signal, QSize, Qt, QRectF, QTimeLine
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFrame, QToolButton, QLabel, QSlider, QSpinBox, \
     QLineEdit, QSizePolicy
@@ -108,6 +108,12 @@ class VideoPlayer(QWidget):
         self.control_panel.video_control.t_slider.setValue(self.T)
         self.control_panel.video_control.t_set.setText(str(self.T))
         self.control_panel.video_control.t_step.setMaximum(image_resource_data.sizeT - 1)
+
+        # timeLine = QTimeLine(1000*image_resource_data.sizeT/20, self)
+        # timeLine.setFrameRange(0, image_resource_data.sizeT - 1)
+        # timeLine.frameChanged.connect(self.change_frame)
+        # # Clicking the push button will start the progress bar animation
+        # self.control_panel.video_control.video_forward.clicked.connect(timeLine.start)
 
     def addLayer(self):
         """
