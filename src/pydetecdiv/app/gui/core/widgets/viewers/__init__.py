@@ -2,7 +2,7 @@
 Module defining classes for generic viewer API
 """
 import numpy as np
-from PySide6.QtCore import Qt, QPoint, QRect, QRectF, Signal
+from PySide6.QtCore import Qt, QPoint, QRect, QRectF, Signal, QPointF
 from PySide6.QtGui import QKeySequence, QTransform, QPen
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsRectItem, QGraphicsItem, \
     QAbstractGraphicsShapeItem
@@ -19,14 +19,9 @@ class GraphicsView(QGraphicsView):
 
     def __init__(self, parent=None, **kwargs):
         super().__init__(parent, **kwargs)
-        # if scene_class is None:
-        #     self.setScene(Scene())
-        # else:
-        #     self.setScene(scene_class())
         self.layers = []
         self.background = None
         self.scale_value = 100
-        # self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         # sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         # sizePolicy.setHorizontalStretch(0)
         # sizePolicy.setVerticalStretch(0)
@@ -51,7 +46,9 @@ class GraphicsView(QGraphicsView):
 
         :param value: the value (integer, 100 representing 1:1)
         """
-        self.scale(value / self.scale_value, value / self.scale_value)
+        s = value / self.scale_value
+        scale = QTransform(s, 0, 0, 0, s, 0, 0, 0, 1)
+        self.setTransform(scale, combine=True)
         self.scale_value = value
         self.zoom_value_changed.emit(value)
 
@@ -165,7 +162,7 @@ class Scene(QGraphicsScene):
         :param event: the mouse move event
         :type event: QGraphicsSceneMouseEvent
         """
-        if event.button() == Qt.NoButton:
+        if event.buttons() == Qt.LeftButton:
             match PyDetecDiv.current_drawing_tool, event.modifiers():
                 case DrawingTools.Cursor, Qt.NoModifier:
                     self.move_Item(event)
@@ -181,10 +178,13 @@ class Scene(QGraphicsScene):
     def wheelEvent(self, event):
         match event.modifiers():
             case Qt.ControlModifier:
+                self.viewer.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
                 if event.delta() > 0:
                     self.viewer.zoom_set_value(self.viewer.scale_value * 1.2)
                 elif event.delta() < 0:
                     self.viewer.zoom_set_value(self.viewer.scale_value / 1.2)
+                event.accept()
+                self.viewer.setTransformationAnchor(QGraphicsView.ViewportAnchor.NoAnchor)
 
     def select_Item(self, event):
         """
@@ -193,9 +193,8 @@ class Scene(QGraphicsScene):
         :param event: the mouse press event
         :type event: QGraphicsSceneMouseEvent
         """
-        # _ = [r.setSelected(False) for r in self.items()]
         _ = [r.setSelected(False) for r in self.selectedItems()]
-        r = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
+        r = self.itemAt(event.scenePos(), self.viewer.transform())
         if r is not None:
             r.setSelected(True)
             if hasattr(r, 'rect'):
