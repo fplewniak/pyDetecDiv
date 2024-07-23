@@ -4,6 +4,7 @@
 Definition of global objects and methods for easy access from all parts of the application
 """
 import os.path
+from collections import defaultdict
 from contextlib import contextmanager
 from enum import StrEnum
 
@@ -12,6 +13,7 @@ from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout, QProgr
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal
 
 from pydetecdiv import plugins
+from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.settings import get_config_file, get_appdata_dir, get_config_value
 from pydetecdiv.persistence.project import list_projects
 from pydetecdiv.domain import Project
@@ -82,6 +84,7 @@ def pydetecdiv_project(project_name):
     finally:
         project.commit()
         project.repository.close()
+        project.pool = defaultdict(DomainSpecificObject)
 
 
 class PyDetecDivThread(QThread):
