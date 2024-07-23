@@ -881,11 +881,8 @@ def loadWeights(model, filename=os.path.join(__path__[0], "weights.h5"), debug=F
     :param debug: debug mode
     """
     with h5py.File(filename, 'r') as f:
-        if 'backend' in f.attrs:
-            # Keras-saved model weights, cannot be loaded as below
-            model.load_weights(filename)
-        else:
-            # Every layer is an h5 group. Ignore non-groups (such as /0)
+        # try to read model weights as available in HDF5 file from Matlab export
+        try:
             for g in f:
                 if isinstance(f[g], h5py.Group):
                     group = f[g]
@@ -926,6 +923,9 @@ def loadWeights(model, filename=os.path.join(__path__[0], "weights.h5"), debug=F
                     # Finalize layer state
                     if hasattr(layer, 'finalize_state'):
                         layer.finalize_state()
+        except:
+            # otherwise, load the weights directly using Keras API
+            model.load_weights(filename)
 
 
 def layerNum(model, layerName):
