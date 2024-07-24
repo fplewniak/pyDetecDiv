@@ -32,12 +32,13 @@ class VideoPlayer(QWidget):
         self.speed = 0
         self.first_frame = self.T
         self.video_playing = False
-        self.viewer = None
+        self.viewer_panel = None
         self.control_panel = None
         self.menubar = None
         self.tscale = 1
 
         # self.viewer.setViewportUpdateMode(QGraphicsView.NoViewportUpdate)
+
     @property
     def elapsed_time(self):
         t = self.T * self.tscale
@@ -49,15 +50,20 @@ class VideoPlayer(QWidget):
         ms = int(1000 * (t - seconds))
         return f'{hours:02d}:{minutes:02d}:{seconds:02d}.{ms:04d}'
 
-    def _create_viewer(self):
-        """
-        Create the viewer for this video player
+    @property
+    def viewer(self):
+        return self.viewer_panel.video_viewer
 
-        :return: ImageViewer, the created viewer
-        """
-        viewer = ImageViewer()
-        viewer.setup()
-        return viewer
+    # def _create_viewer(self):
+    #     """
+    #     Create the viewer for this video player
+    #
+    #     :return: ImageViewer, the created viewer
+    #     """
+    #     # viewer = ImageViewer()
+    #     # viewer.setup()
+    #     self.viewer_panel = VideoViewerPanel(self)
+    #     return self.viewer_panel.video_viewer
 
     def setup(self, menubar=None):
         """
@@ -69,9 +75,10 @@ class VideoPlayer(QWidget):
         if menubar:
             self.menubar = menubar
             layout.addWidget(self.menubar)
-        self.viewer = self._create_viewer()
+        # self._create_viewer()
+        self.viewer_panel = VideoViewerPanel(self)
         self.control_panel = VideoControlPanel(self)
-        layout.addWidget(self.viewer)
+        layout.addWidget(self.viewer_panel)
         layout.addWidget(self.control_panel)
         self.setLayout(layout)
 
@@ -228,6 +235,22 @@ class VideoPlayer(QWidget):
         #     self.control_panel.video_control.t_slider.setValue(self.T)
         #     self.control_panel.video_control.t_set.setText(str(self.T))
         # self.viewer.display(T=self.T)
+
+
+class VideoViewerPanel(QFrame):
+    """
+    A class defining the Video viewer panel (holding image viewer + any other viewer for graphs, etc...)
+    """
+
+    def __init__(self, parent=None, **kwargs):
+        super().__init__(parent=parent, **kwargs)
+        self.video_viewer = ImageViewer()
+
+    def setup(self, scene=None, **kwargs):
+        self.video_viewer.setup(scene)
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.video_viewer)
+        self.setLayout(layout)
 
 
 class VideoControlPanel(QFrame):

@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QGraphicsTextItem, QGraphicsScene, QDialogButtonBo
 import numpy as np
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
+from pydetecdiv.app.gui.FOVmanager import FOVScene
 from pydetecdiv.app.gui.core.widgets.viewers import Scene
 from pydetecdiv.app.gui.core.widgets.viewers.images import ImageViewer, ImageItem
 # from pydetecdiv.app.gui.ImageViewer import ImageViewer
@@ -61,6 +62,8 @@ class Annotator(VideoPlayer):
 
     def setup(self, menubar=None):
         super().setup(menubar=menubar)
+        self.viewer_panel.setup(scene=FOVScene())
+        self.viewer_panel.layout().addWidget(ImageViewer())
         self.zoom_set_value(200)
 
     def close_event(self):

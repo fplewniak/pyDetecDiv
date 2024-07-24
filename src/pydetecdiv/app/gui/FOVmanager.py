@@ -58,18 +58,24 @@ class FOVmanager(VideoPlayer):
         self.actionSave_ROIs.triggered.connect(self.save_rois)
         return menubar
 
-    def _create_viewer(self):
-        """
-        Creates a viewer with a FOVScene instead of a Scene
+    # def _create_viewer(self):
+    #     """
+    #     Creates a viewer with a FOVScene instead of a Scene
+    #
+    #     :return: the created viewer
+    #     """
+    #     viewer = ImageViewer()
+    #     viewer.setup(FOVScene())
+    #     viewer.scene().roi_selected.connect(self.actionSet_template.setEnabled)
+    #     # viewer.scene().roi_selected.connect(self.actionIdentify_ROIs.setEnabled)
+    #     viewer.scene().not_saved_rois.connect(self.actionSave_ROIs.setEnabled)
+    #     return viewer
 
-        :return: the created viewer
-        """
-        viewer = ImageViewer()
-        viewer.setup(FOVScene())
-        viewer.scene().roi_selected.connect(self.actionSet_template.setEnabled)
-        # viewer.scene().roi_selected.connect(self.actionIdentify_ROIs.setEnabled)
-        viewer.scene().not_saved_rois.connect(self.actionSave_ROIs.setEnabled)
-        return viewer
+    def setup(self, menubar=None):
+        super().setup()
+        self.viewer_panel.setup(scene=FOVScene())
+        self.viewer.scene().roi_selected.connect(self.actionSet_template.setEnabled)
+        self.viewer.scene().not_saved_rois.connect(self.actionSave_ROIs.setEnabled)
 
     def setImageResource(self, image_resource_data, C=0, Z=0, T=0):
         """
