@@ -9,7 +9,7 @@ import numpy as np
 from PySide6.QtCore import QTimer, Signal, QSize, Qt, QRectF, QTimeLine
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFrame, QToolButton, QLabel, QSlider, QSpinBox, \
-    QLineEdit, QSizePolicy
+    QLineEdit, QSizePolicy, QSplitter
 
 from pydetecdiv.app.gui.core.widgets.viewers.images import ImageViewer
 
@@ -237,7 +237,7 @@ class VideoPlayer(QWidget):
         # self.viewer.display(T=self.T)
 
 
-class VideoViewerPanel(QFrame):
+class VideoViewerPanel(QSplitter):
     """
     A class defining the Video viewer panel (holding image viewer + any other viewer for graphs, etc...)
     """

@@ -1,3 +1,5 @@
+from PySide6.QtCharts import QChartView, QLineSeries, QChart
+from PySide6.QtCore import QPointF
 from PySide6.QtWidgets import QWidget, QVBoxLayout
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -24,3 +26,23 @@ class MatplotViewer(QWidget):
 
     def show(self):
         self.canvas.draw()
+
+
+class ChartView(QChartView):
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.setChart(Chart())
+        self.chart().legend().hide()
+
+
+class Chart(QChart):
+    def __init__(self):
+        super().__init__()
+
+    def plot_line(self, series):
+        line_series = QLineSeries()
+        for row in series:
+            line_series.append(row[0], row[1])
+        self.addSeries(line_series)
+        self.createDefaultAxes()
+

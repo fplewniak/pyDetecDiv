@@ -1,18 +1,16 @@
 """
 ROI annotation for image classification
 """
-import sqlalchemy
+import pandas
 from PySide6.QtCore import Qt, QRectF
-from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QGraphicsTextItem, QGraphicsScene, QDialogButtonBox
-import numpy as np
+from PySide6.QtWidgets import QGraphicsTextItem, QDialogButtonBox
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 from pydetecdiv.app.gui.FOVmanager import FOVScene
 from pydetecdiv.app.gui.core.widgets.viewers import Scene
-from pydetecdiv.app.gui.core.widgets.viewers.images import ImageViewer, ImageItem
-# from pydetecdiv.app.gui.ImageViewer import ImageViewer
+from pydetecdiv.app.gui.core.widgets.viewers.images import ImageViewer
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer
+from pydetecdiv.app.gui.core.widgets.viewers.plots import ChartView
 from pydetecdiv.settings import get_config_value
 
 
@@ -31,7 +29,6 @@ def open_annotator(plugin, roi_selection):
     plugin.gui.classes.setEnabled(False)
     plugin.gui.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
     viewer.set_roi_list(roi_selection)
-    # with pydetecdiv_project(PyDetecDiv.project_name) as project:
     viewer.tscale = roi_selection[0].fov.tscale * roi_selection[0].fov.tunit
     viewer.next_roi()
 
@@ -50,6 +47,7 @@ class Annotator(VideoPlayer):
         self.viewport_rect = None
         self.roi_classes = []
         self.class_item = None  # QGraphicsTextItem('-')
+        self.annotation_chart_view = None
         self.setup()
 
     def _create_viewer(self):
@@ -65,7 +63,9 @@ class Annotator(VideoPlayer):
     def setup(self, menubar=None):
         super().setup(menubar=menubar)
         self.viewer_panel.setup(scene=FOVScene())
-        self.viewer_panel.layout().addWidget(ImageViewer())
+        self.viewer_panel.setOrientation(Qt.Vertical)
+        self.annotation_chart_view = AnnotationChartView()
+        self.viewer_panel.addWidget(self.annotation_chart_view)
         self.zoom_set_value(200)
 
     def close_event(self):
@@ -231,3 +231,14 @@ class AnnotatorScene(Scene):
 
     def mousePressEvent(self, event):
         pass
+
+
+class AnnotationChartView(ChartView):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        series = pandas.Series([(0, 6), (2, 4), (3, 8), (7, 4), (10, 5), (11, 1), (13, 3), (17, 6), (20, 2)])
+        self.chart().plot_line(series)
+        series = pandas.Series([(0, 1), (2, 2), (3, 3), (7, 4), (10, 5), (11, 6), (13, 7), (17, 8), (20, 9)])
+        self.chart().plot_line(series)
+        series = pandas.Series([(0, 0),(0, 9)])
+        self.chart().plot_line(series)
