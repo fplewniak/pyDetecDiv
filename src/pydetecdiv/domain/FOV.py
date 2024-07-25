@@ -111,7 +111,7 @@ Comments:             {self.comments}
 
     def image_resource(self, dataset='data'):
         """
-        Return the image resource (single multipage file of a series of files) corresponding to the FOV in a specific
+        Return the image resource (single multipage file or a series of files) corresponding to the FOV in a specific
          dataset
 
         :param dataset: the dataset name
@@ -122,6 +122,14 @@ Comments:             {self.comments}
         image_resource = \
         [ir for ir in self.project.get_linked_objects('ImageResource', self) if ir.dataset.name == dataset][0]
         return image_resource
+
+    @property
+    def tscale(self):
+        return self.image_resource().tscale
+
+    @property
+    def tunit(self):
+        return self.image_resource().tunit
 
     @property
     def size(self):

@@ -31,6 +31,8 @@ def open_annotator(plugin, roi_selection):
     plugin.gui.classes.setEnabled(False)
     plugin.gui.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
     viewer.set_roi_list(roi_selection)
+    # with pydetecdiv_project(PyDetecDiv.project_name) as project:
+    viewer.tscale = roi_selection[0].fov.tscale * roi_selection[0].fov.tunit
     viewer.next_roi()
 
 
