@@ -35,7 +35,7 @@ def open_annotator(plugin, roi_selection):
 
 class Annotator(VideoPlayer):
     """
-    Annotator class extending the ImageViewer class to define functionalities specific to ROI image annotation
+    Annotator class extending the VideoPlayer class to define functionalities specific to ROI image annotation
     """
 
     def __init__(self):
@@ -50,19 +50,9 @@ class Annotator(VideoPlayer):
         self.annotation_chart_view = None
         self.setup()
 
-    def _create_viewer(self):
-        """
-        Creates a viewer with a AnnotatorScene instead of a Scene
-
-        :return: the created viewer
-        """
-        viewer = ImageViewer()
-        viewer.setup(AnnotatorScene(self))
-        return viewer
-
     def setup(self, menubar=None):
         super().setup(menubar=menubar)
-        self.viewer_panel.setup(scene=FOVScene())
+        self.viewer_panel.setup(scene=AnnotatorScene())
         self.viewer_panel.setOrientation(Qt.Vertical)
         self.annotation_chart_view = AnnotationChartView()
         self.viewer_panel.addWidget(self.annotation_chart_view)
@@ -176,8 +166,12 @@ class AnnotatorScene(Scene):
     The viewer scene where images and other items are drawn
     """
 
-    def __init__(self, parent=None):
-        super().__init__(parent=parent)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    @property
+    def annotator(self):
+        return self.viewer.parent().parent()
 
     def focusInEvent(self, event):
         """
@@ -205,26 +199,26 @@ class AnnotatorScene(Scene):
         Escape key cancels annotations and jumps to the next ROI if there is one
         :param event: the keyPressEvent
         """
-        if event.text() in list('azertyuiop')[0:len(self.parent().plugin.class_names)]:
-            self.parent().annotate_current(self.parent().plugin.class_names["azertyuiop".find(event.text())])
-            self.parent().change_frame(min(self.parent().T + 1, self.viewer.image_resource_data.sizeT - 1))
+        if event.text() in list('azertyuiop')[0:len(self.annotator.plugin.class_names)]:
+            self.annotator.annotate_current(self.annotator.plugin.class_names["azertyuiop".find(event.text())])
+            self.annotator.change_frame(min(self.annotator.T + 1, self.viewer.image_resource_data.sizeT - 1))
         elif event.text() == ' ':
-            self.parent().annotate_current(class_name=f'{self.parent().class_item.toPlainText()}')
-            self.parent().change_frame(min(self.parent().T + 1, self.viewer.image_resource_data.sizeT - 1))
+            self.annotator.annotate_current(class_name=f'{self.annotator.class_item.toPlainText()}')
+            self.annotator.change_frame(min(self.annotator.T + 1, self.viewer.image_resource_data.sizeT - 1))
         elif event.key() == Qt.Key_Right:
-            self.parent().change_frame(min(self.parent().T + 1, self.viewer.image_resource_data.sizeT - 1))
+            self.annotator.change_frame(min(self.annotator.T + 1, self.viewer.image_resource_data.sizeT - 1))
         elif event.key() == Qt.Key_Left:
-            self.parent().change_frame(max(self.parent().T - 1, 0))
+            self.annotator.change_frame(max(self.annotator.T - 1, 0))
         elif event.key() == Qt.Key_Enter:
-            self.parent().annotate_current(class_name=f'{self.parent().class_item.toPlainText()}')
-            self.parent().class_item.setDefaultTextColor('black')
-            if self.parent().run is None:
-                self.parent().save_run()
-            self.parent().set_title(f'Annotation run {self.parent().run.id_}')
-            self.parent().plugin.save_annotations(self.parent().roi, self.parent().roi_classes, self.parent().run)
-            self.parent().next_roi()
+            self.annotator.annotate_current(class_name=f'{self.annotator.class_item.toPlainText()}')
+            self.annotator.class_item.setDefaultTextColor('black')
+            if self.annotator.run is None:
+                self.annotator.save_run()
+            self.annotator.set_title(f'Annotation run {self.annotator.run.id_}')
+            self.annotator.plugin.save_annotations(self.annotator.roi, self.annotator.roi_classes, self.annotator.run)
+            self.annotator.next_roi()
         elif event.key() == Qt.Key_Escape:
-            self.parent().next_roi()
+            self.annotator.next_roi()
 
     def mouseMoveEvent(self, event):
         pass
@@ -240,5 +234,5 @@ class AnnotationChartView(ChartView):
         self.chart().plot_line(series)
         series = pandas.Series([(0, 1), (2, 2), (3, 3), (7, 4), (10, 5), (11, 6), (13, 7), (17, 8), (20, 9)])
         self.chart().plot_line(series)
-        series = pandas.Series([(0, 0),(0, 9)])
+        series = pandas.Series([(0, 0), (0, 9)])
         self.chart().plot_line(series)
