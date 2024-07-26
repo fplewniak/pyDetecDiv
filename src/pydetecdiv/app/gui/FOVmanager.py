@@ -72,7 +72,7 @@ class FOVmanager(VideoPlayer):
     #     return viewer
 
     def setup(self, menubar=None):
-        super().setup()
+        super().setup(menubar=menubar)
         self.viewer_panel.setup(scene=FOVScene())
         self.viewer.scene().roi_selected.connect(self.actionSet_template.setEnabled)
         self.viewer.scene().not_saved_rois.connect(self.actionSave_ROIs.setEnabled)
