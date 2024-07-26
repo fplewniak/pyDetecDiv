@@ -170,7 +170,7 @@ class ImageResource(DomainSpecificObject):
         The image shape determined from first file
         """
         # with Image.open(self.project.get_linked_objects('Data', self)[0].url) as img:
-        with Image.open(self._image_files[0]) as img:
+        with Image.open(self.image_files[0]) as img:
             self._xdim, self._ydim = img.size
         self.project.save(self)
         return (self._ydim, self._xdim)
