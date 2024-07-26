@@ -17,8 +17,8 @@ class ImageViewer(GraphicsView):
     A class defining an Image viewer
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, parent=None, **kwargs):
+        super().__init__(parent=parent, **kwargs)
         self.image_resource_data = None
 
     def _create_layer(self, background=False):
