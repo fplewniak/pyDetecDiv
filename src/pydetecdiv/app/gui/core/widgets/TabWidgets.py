@@ -5,6 +5,8 @@ Definition of widgets to display Tabs in a Tabbed window
 """
 import random
 
+from PySide6.QtCore import QCoreApplication
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import QTabWidget
 
 from pydetecdiv.app import PyDetecDiv
@@ -51,6 +53,8 @@ class TabbedWindow(QTabWidget):
         :param event: the close event
         :type event: QCloseEvent
         """
+        for i in range(PyDetecDiv.main_window.tabs[self.windowTitle()].count()):
+            QCoreApplication.sendEvent(PyDetecDiv.main_window.tabs[self.windowTitle()].widget(i), QCloseEvent())
         del PyDetecDiv.main_window.tabs[self.windowTitle()]
 
     def close_tab(self, index):

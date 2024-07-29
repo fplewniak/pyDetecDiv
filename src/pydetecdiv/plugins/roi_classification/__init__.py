@@ -200,7 +200,7 @@ class Plugin(plugins.Plugin):
         action_launch = QAction("ROI classification", self.menu)
         action_launch.triggered.connect(self.launch)
         self.menu.addAction(action_launch)
-        PyDetecDiv.app.viewer_roi_click.connect(self.add_context_action)
+        # PyDetecDiv.app.viewer_roi_click.connect(self.add_context_action)
 
     def add_context_action(self, data):
         """

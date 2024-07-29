@@ -22,15 +22,16 @@ def open_annotator(plugin, roi_selection):
     """
     tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / ROI annotation')
     tab.project_name = PyDetecDiv.project_name
-    viewer = Annotator()
-    viewer.set_plugin(plugin)
-    tab.addTab(viewer, 'Annotation run')
-    tab.tabCloseRequested.connect(viewer.close_event)
+    annotator = Annotator()
+    annotator.set_plugin(plugin)
+    # tab.addTab(annotator, 'Annotation run')
+    tab.set_top_tab(annotator, 'Annotation run')
+    # tab.tabCloseRequested.connect(annotator.close)
     plugin.gui.classes.setEnabled(False)
     plugin.gui.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
-    viewer.set_roi_list(roi_selection)
-    viewer.tscale = roi_selection[0].fov.tscale * roi_selection[0].fov.tunit
-    viewer.next_roi()
+    annotator.set_roi_list(roi_selection)
+    annotator.tscale = roi_selection[0].fov.tscale * roi_selection[0].fov.tunit
+    annotator.next_roi()
 
 
 class Annotator(VideoPlayer):
@@ -58,7 +59,7 @@ class Annotator(VideoPlayer):
         self.viewer_panel.addWidget(self.annotation_chart_view)
         self.zoom_set_value(200)
 
-    def close_event(self):
+    def closeEvent(self, event):
         self.plugin.gui.classes.setEnabled(True)
         self.plugin.gui.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
 
