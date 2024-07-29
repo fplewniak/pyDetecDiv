@@ -4,6 +4,7 @@ ROI annotation for image classification
 import pandas
 from PySide6.QtCore import Qt, QRectF
 from PySide6.QtWidgets import QGraphicsTextItem, QDialogButtonBox
+import pyqtgraph as pg
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 from pydetecdiv.app.gui.FOVmanager import FOVScene
@@ -55,7 +56,7 @@ class Annotator(VideoPlayer):
         super().setup(menubar=menubar)
         self.viewer_panel.setup(scene=AnnotatorScene())
         self.viewer_panel.setOrientation(Qt.Vertical)
-        self.annotation_chart_view = AnnotationChartView()
+        self.annotation_chart_view = AnnotationChartView(annotator=self)
         self.viewer_panel.addWidget(self.annotation_chart_view)
         self.zoom_set_value(200)
 
@@ -93,7 +94,9 @@ class Annotator(VideoPlayer):
                 crop = (slice(x1, x2), slice(y1, y2))
                 self.setBackgroundImage(image_resource.image_resource_data(), crop=crop)
                 self.viewer.display()
-                self.get_roi_annotations()
+                self.roi_classes = self.get_roi_annotations()
+                self.annotation_chart_view.plot_roi_classes(self.get_roi_annotations(as_index=True))
+                # self.annotation_chart_view.plot_scatter_plot(self.get_roi_annotations(as_index=True), self.plugin.class_names)
                 self.change_frame(0)
                 self.video_frame.emit(0)
                 self.control_panel.video_control.t_slider.setSliderPosition(0)
@@ -104,14 +107,18 @@ class Annotator(VideoPlayer):
             self.plugin.gui.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
             pass
 
-    def get_roi_annotations(self):
+    def get_roi_annotations(self, as_index=False):
         """
         Retrieve from the database the manual annotations for a ROI
         """
-        self.roi_classes = ['-'] * self.viewer.image_resource_data.sizeT
-        for frame, annotation in enumerate(self.plugin.get_annotation(self.roi, as_index=False)):
+        if as_index:
+            roi_classes = [-1] * self.viewer.image_resource_data.sizeT
+        else:
+            roi_classes = ['-'] * self.viewer.image_resource_data.sizeT
+        for frame, annotation in enumerate(self.plugin.get_annotation(self.roi, as_index=as_index)):
             if annotation != -1:
-                self.roi_classes[frame] = annotation
+                roi_classes[frame] = annotation
+        return roi_classes
 
     def annotate_current(self, class_name=None):
         """
@@ -227,13 +234,24 @@ class AnnotatorScene(Scene):
     def mousePressEvent(self, event):
         pass
 
-
 class AnnotationChartView(ChartView):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        series = pandas.Series([(0, 6), (2, 4), (3, 8), (7, 4), (10, 5), (11, 1), (13, 3), (17, 6), (20, 2)])
-        self.chart().plot_line(series)
-        series = pandas.Series([(0, 1), (2, 2), (3, 3), (7, 4), (10, 5), (11, 6), (13, 7), (17, 8), (20, 9)])
-        self.chart().plot_line(series)
-        series = pandas.Series([(0, 0), (0, 9)])
-        self.chart().plot_line(series)
+    def __init__(self, parent=None, annotator=None):
+        super().__init__(parent=parent)
+        self.annotator = annotator
+
+    @property
+    def class_names(self):
+        return self.annotator.plugin.class_names
+
+    def plot_roi_classes(self, roi_classes):
+        self.chart().showAxes([True, True, True, True], [True, False, False, True])
+        ticks = [(-1, 'n.a.')] + [(i, name) for i, name in enumerate(self.class_names)]
+        left, right = self.chart().getAxis('left'), self.chart().getAxis('right')
+        left.setTicks([ticks])
+        right.setTicks([ticks])
+        left.setGrid(100)
+        self.addLinePlot(roi_classes, pen=pg.mkPen('k', width=1))
+        self.addScatterPlot(roi_classes, size=4, pen=pg.mkPen(None), brush=pg.mkBrush(255, 0, 0, 255))
+
+    def clicked(self, plot, points):
+        self.annotator.change_frame(int(points[0].pos().x()))

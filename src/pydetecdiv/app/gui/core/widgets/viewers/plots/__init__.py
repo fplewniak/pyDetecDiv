@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
+import pyqtgraph as pg
 
 class MatplotViewer(QWidget):
     """
@@ -28,21 +29,23 @@ class MatplotViewer(QWidget):
         self.canvas.draw()
 
 
-class ChartView(QChartView):
+class ChartView(pg.GraphicsLayoutWidget):
     def __init__(self, parent=None):
-        super().__init__(parent=parent)
-        self.setChart(Chart())
-        self.chart().legend().hide()
+        super().__init__(show=False, parent=parent)
+        self.addPlot()
 
+    def chart(self, row=0, col=0):
+        return self.getItem(row, col)
 
-class Chart(QChart):
-    def __init__(self):
-        super().__init__()
+    def addLinePlot(self, data, row=0, col=0, **kwargs):
+        self.chart(row, col).addItem(pg.PlotCurveItem(data, **kwargs))
 
-    def plot_line(self, series):
-        line_series = QLineSeries()
-        for row in series:
-            line_series.append(row[0], row[1])
-        self.addSeries(line_series)
-        self.createDefaultAxes()
+    def addScatterPlot(self, data, row=0, col=0, **kwargs):
+        scatter = pg.ScatterPlotItem(**kwargs)
+        spots = [(i, c) for i, c in enumerate(data)]
+        scatter.addPoints(pos=spots)
+        self.chart(row, col).addItem(scatter)
+        scatter.sigClicked.connect(self.clicked)
 
+    def clicked(self, plot, points):
+        pass

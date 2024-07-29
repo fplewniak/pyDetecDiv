@@ -11,6 +11,7 @@ from enum import StrEnum
 from PySide6.QtGui import QCursor, QGuiApplication
 from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal
+import pyqtgraph as pg
 
 from pydetecdiv import plugins
 from pydetecdiv.domain.dso import DomainSpecificObject
@@ -272,4 +273,5 @@ def project_list():
 
 def create_app():
     PyDetecDiv.app = PyDetecDiv([])
+    pg.setConfigOptions(antialias=True, background='w')
     return PyDetecDiv.app
