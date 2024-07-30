@@ -144,8 +144,10 @@ class Annotator(VideoPlayer):
         Display the class name below the frame
         :param roi_class: the class name
         """
-        if self.class_item is None:
-            self.class_item = self.viewer.background.addItem(QGraphicsTextItem('-'))
+        if self.class_item is not None:
+            self.scene.removeItem(self.class_item)
+        self.class_item = self.viewer.background.addItem(QGraphicsTextItem('-'))
+
         if self.roi_classes[self.T] == '-' and self.T > 0 and self.roi_classes[self.T - 1] != '-':
             roi_class = self.roi_classes[self.T - 1]
             self.class_item.setDefaultTextColor('red')
