@@ -47,5 +47,10 @@ class ChartView(pg.GraphicsLayoutWidget):
         self.chart(row, col).addItem(scatter)
         scatter.sigClicked.connect(self.clicked)
 
+    def addXline(self, x, row=0, col=0, **kwargs):
+        xline = pg.InfiniteLine(**kwargs)
+        xline.setPos([x,0])
+        self.chart(row, col).addItem(xline)
+
     def clicked(self, plot, points):
         pass

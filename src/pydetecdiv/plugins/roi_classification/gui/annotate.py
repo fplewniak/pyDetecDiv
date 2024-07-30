@@ -1,6 +1,7 @@
 """
 ROI annotation for image classification
 """
+import numpy as np
 import pandas
 from PySide6.QtCore import Qt, QRectF
 from PySide6.QtWidgets import QGraphicsTextItem, QDialogButtonBox
@@ -33,6 +34,7 @@ def open_annotator(plugin, roi_selection):
     annotator.set_roi_list(roi_selection)
     annotator.tscale = roi_selection[0].fov.tscale * roi_selection[0].fov.tunit
     annotator.next_roi()
+    annotator.setFocus()
 
 
 class Annotator(VideoPlayer):
@@ -51,6 +53,7 @@ class Annotator(VideoPlayer):
         self.class_item = None  # QGraphicsTextItem('-')
         self.annotation_chart_view = None
         self.setup()
+        self.video_frame.connect(self.plot_roi_classes)
 
     def setup(self, menubar=None):
         super().setup(menubar=menubar)
@@ -95,8 +98,8 @@ class Annotator(VideoPlayer):
                 self.setBackgroundImage(image_resource.image_resource_data(), crop=crop)
                 self.viewer.display()
                 self.roi_classes = self.get_roi_annotations()
-                self.annotation_chart_view.plot_roi_classes(self.get_roi_annotations(as_index=True))
-                # self.annotation_chart_view.plot_scatter_plot(self.get_roi_annotations(as_index=True), self.plugin.class_names)
+                self.roi_classes_idx = self.get_roi_annotations(as_index=True)
+                self.plot_roi_classes()
                 self.change_frame(0)
                 self.video_frame.emit(0)
                 self.control_panel.video_control.t_slider.setSliderPosition(0)
@@ -106,6 +109,13 @@ class Annotator(VideoPlayer):
             self.plugin.gui.classes.setEnabled(True)
             self.plugin.gui.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
             pass
+
+    def plot_roi_classes(self):
+        self.annotation_chart_view.plot_roi_classes(self.roi_classes_idx)
+
+    def update_roi_classes_plot(self):
+        self.annotation_chart_view.chart().clear()
+        self.plot_roi_classes()
 
     def get_roi_annotations(self, as_index=False):
         """
@@ -126,6 +136,8 @@ class Annotator(VideoPlayer):
         :param class_name: the class name
         """
         self.roi_classes[self.T] = class_name
+        self.roi_classes_idx[self.T] = self.plugin.class_names.index(class_name)
+        self.update_roi_classes_plot()
 
     def display_class_name(self, roi_class=None):
         """
@@ -168,6 +180,57 @@ class Annotator(VideoPlayer):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             self.run = self.plugin.save_run(project, 'annotate_rois', parameters)
 
+    # def focusInEvent(self, event):
+    #     """
+    #     When the scene is in focus, then draw a larger frame around it to indicate its in-focus status
+    #     :param event: the focusInEvent
+    #     """
+    #     print('Focus in Annotator')
+    #
+    # def focusOutEvent(self, event):
+    #     """
+    #     When the scene is out of focus, then draw a small frame around it to indicate its out-focus status
+    #     :param event: the focusOutEvent
+    #     """
+    #     print('Focus out Annotator')
+
+    def keyPressEvent(self, event):
+        """
+                Handle actions triggered by pressing keys when the scene is in focus.
+                Letters from azertyuiop assign a class to the current frame, and jumps to the next frame suggesting a class
+                Space bar validates the suggested assignation and jumps to the next frame
+                Right arrow moves one frame forward
+                Left arrow moves one frame backwards
+                Enter key validates the current suggestion, saves the annotations to the database and jumps to the nex ROI if
+                there is one
+                Escape key cancels annotations and jumps to the next ROI if there is one
+                :param event: the keyPressEvent
+                """
+        if event.text() in list('azertyuiop')[0:len(self.plugin.class_names)]:
+            self.annotate_current(self.plugin.class_names["azertyuiop".find(event.text())])
+            self.change_frame(min(self.T + 1, self.viewer.image_resource_data.sizeT - 1))
+        elif event.text() == ' ':
+            self.annotate_current(class_name=f'{self.class_item.toPlainText()}')
+            self.change_frame(min(self.T + 1, self.viewer.image_resource_data.sizeT - 1))
+        elif event.key() == Qt.Key_Right:
+            self.change_frame(min(self.T + 1, self.viewer.image_resource_data.sizeT - 1))
+        elif event.key() == Qt.Key_Left:
+            self.change_frame(max(self.T - 1, 0))
+        # elif event.key() == Qt.Key_Enter:
+        #     print('Enter')
+        # elif event.key() == Qt.Key_Return:
+        #     print('Return')
+        elif event.key() == Qt.Key_PageDown:
+            self.annotate_current(class_name=f'{self.class_item.toPlainText()}')
+            self.class_item.setDefaultTextColor('black')
+            if self.run is None:
+                self.save_run()
+            self.set_title(f'Annotation run {self.run.id_}')
+            self.plugin.save_annotations(self.roi, self.roi_classes, self.run)
+            self.next_roi()
+        elif event.key() == Qt.Key_Escape:
+            self.next_roi()
+
 
 class AnnotatorScene(Scene):
     """
@@ -181,58 +244,12 @@ class AnnotatorScene(Scene):
     def annotator(self):
         return self.viewer.parent().parent()
 
-    def focusInEvent(self, event):
-        """
-        When the scene is in focus, then draw a larger frame around it to indicate its in-focus status
-        :param event: the focusInEvent
-        """
-        self.viewer.setStyleSheet("border: 2px solid green;")
-
-    def focusOutEvent(self, event):
-        """
-        When the scene is out of focus, then draw a small frame around it to indicate its out-focus status
-        :param event: the focusOutEvent
-        """
-        self.viewer.setStyleSheet("border: 1px solid black;")
-
-    def keyPressEvent(self, event):
-        """
-        Handle actions triggered by pressing keys when the scene is in focus.
-        Letters from azertyuiop assign a class to the current frame, and jumps to the next frame suggesting a class
-        Space bar validates the suggested assignation and jumps to the next frame
-        Right arrow moves one frame forward
-        Left arrow moves one frame backwards
-        Enter key validates the current suggestion, saves the annotations to the database and jumps to the nex ROI if
-        there is one
-        Escape key cancels annotations and jumps to the next ROI if there is one
-        :param event: the keyPressEvent
-        """
-        if event.text() in list('azertyuiop')[0:len(self.annotator.plugin.class_names)]:
-            self.annotator.annotate_current(self.annotator.plugin.class_names["azertyuiop".find(event.text())])
-            self.annotator.change_frame(min(self.annotator.T + 1, self.viewer.image_resource_data.sizeT - 1))
-        elif event.text() == ' ':
-            self.annotator.annotate_current(class_name=f'{self.annotator.class_item.toPlainText()}')
-            self.annotator.change_frame(min(self.annotator.T + 1, self.viewer.image_resource_data.sizeT - 1))
-        elif event.key() == Qt.Key_Right:
-            self.annotator.change_frame(min(self.annotator.T + 1, self.viewer.image_resource_data.sizeT - 1))
-        elif event.key() == Qt.Key_Left:
-            self.annotator.change_frame(max(self.annotator.T - 1, 0))
-        elif event.key() == Qt.Key_Enter:
-            self.annotator.annotate_current(class_name=f'{self.annotator.class_item.toPlainText()}')
-            self.annotator.class_item.setDefaultTextColor('black')
-            if self.annotator.run is None:
-                self.annotator.save_run()
-            self.annotator.set_title(f'Annotation run {self.annotator.run.id_}')
-            self.annotator.plugin.save_annotations(self.annotator.roi, self.annotator.roi_classes, self.annotator.run)
-            self.annotator.next_roi()
-        elif event.key() == Qt.Key_Escape:
-            self.annotator.next_roi()
-
     def mouseMoveEvent(self, event):
         pass
 
     def mousePressEvent(self, event):
         pass
+
 
 class AnnotationChartView(ChartView):
     def __init__(self, parent=None, annotator=None):
@@ -243,15 +260,20 @@ class AnnotationChartView(ChartView):
     def class_names(self):
         return self.annotator.plugin.class_names
 
-    def plot_roi_classes(self, roi_classes):
+    def plot_roi_classes(self, roi_classes_idx):
+        self.chart().clear()
         self.chart().showAxes([True, True, True, True], [True, False, False, True])
         ticks = [(-1, 'n.a.')] + [(i, name) for i, name in enumerate(self.class_names)]
-        left, right = self.chart().getAxis('left'), self.chart().getAxis('right')
+        left, right, bottom = self.chart().getAxis('left'), self.chart().getAxis('right'), self.chart().getAxis('bottom')
+        bottom.setLabel(units='frames')
         left.setTicks([ticks])
+        self.chart().setLimits(xMin=0, xMax=len(roi_classes_idx), yMin=-1, yMax=len(self.class_names),
+                          minYRange=len(self.class_names)+1, maxYRange=len(self.class_names)+1)
         right.setTicks([ticks])
         left.setGrid(100)
-        self.addLinePlot(roi_classes, pen=pg.mkPen('k', width=1))
-        self.addScatterPlot(roi_classes, size=4, pen=pg.mkPen(None), brush=pg.mkBrush(255, 0, 0, 255))
+        self.addXline(self.annotator.T, angle=90, movable=False, pen=pg.mkPen('g', width=2))
+        self.addLinePlot(roi_classes_idx, pen=pg.mkPen('k', width=1))
+        self.addScatterPlot(roi_classes_idx, size=4, pen=pg.mkPen(None), brush=pg.mkBrush(255, 0, 0, 255))
 
     def clicked(self, plot, points):
         self.annotator.change_frame(int(points[0].pos().x()))
