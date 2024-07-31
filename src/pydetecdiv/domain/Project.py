@@ -8,6 +8,7 @@ import os
 import itertools
 from collections import defaultdict
 from datetime import datetime
+import pandas
 
 from pydetecdiv.domain.ImageResource import ImageResource
 from pydetecdiv.settings import get_config_value
@@ -336,6 +337,12 @@ class Project:
         if class_name == 'ROI':
             return self._get_rois(id_list)
         return [self.build_dso(class_name, rec) for rec in self.repository.get_records(class_name, id_list)]
+
+    def get_records(self, class_name, id_list=None):
+        return self.repository.get_records(class_name, id_list)
+
+    def get_dataframe(self, class_name, id_list=None):
+        return pandas.DataFrame.from_records(self.get_records(class_name, id_list))
 
     def count_objects(self, class_name):
         """
