@@ -57,8 +57,8 @@ class PyDetecDiv(QApplication):
         """
         Load the available plugins
         """
-        self.plugin_list = plugins.PluginList()
-        self.plugin_list.load()
+        PyDetecDiv.plugin_list = plugins.PluginList()
+        PyDetecDiv.plugin_list.load()
 
     @staticmethod
     def set_main_window(main_window):
