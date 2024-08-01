@@ -32,7 +32,7 @@ from pydetecdiv.settings import get_config_value
 
 from .gui import FOV2ROIlinks, ROIclassificationDialog
 from . import models
-from .gui.annotate import open_annotator
+from .gui.annotate import open_annotator, Annotator, AnnotationQualityCheck
 from ...app.gui.core.widgets.viewers.plots import MatplotViewer
 
 Base = registry().generate_base()
@@ -200,6 +200,9 @@ class Plugin(plugins.Plugin):
         action_launch = QAction("ROI classification", self.menu)
         action_launch.triggered.connect(self.launch)
         self.menu.addAction(action_launch)
+        quality_check = QAction("Classification quality control", self.menu)
+        quality_check.triggered.connect(lambda _: open_annotator(self, self.get_annotated_rois(), AnnotationQualityCheck()))
+        self.menu.addAction(quality_check)
         PyDetecDiv.app.viewer_roi_click.connect(self.add_context_action)
 
     def add_context_action(self, data):
@@ -215,7 +218,7 @@ class Plugin(plugins.Plugin):
                 if selected_roi:
                     roi_list = [selected_roi]
                     annotate = menu.addAction('Annotate region classes')
-                    annotate.triggered.connect(lambda _: open_annotator(self, roi_list))
+                    annotate.triggered.connect(lambda _: open_annotator(self, roi_list, AnnotationQualityCheck()))
 
     def load_model(self):
         """
@@ -341,7 +344,7 @@ class Plugin(plugins.Plugin):
         """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             selected_rois = random.sample(project.get_objects('ROI'), self.gui.roi_number.value())
-        open_annotator(self, selected_rois)
+        open_annotator(self, selected_rois, Annotator())
 
     def save_annotations(self, roi, roi_classes, run):
         """

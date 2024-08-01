@@ -328,7 +328,7 @@ class ROIclassificationDialog(Dialog, Singleton):
         # self.classes.setText(json.dumps(get_class_names()))
         self.classes.clear()
         if self.weights.currentText():
-            self.classes.addItemDict(get_class_names(self.weights.currentText()))
+            self.classes.addItemDict(self.get_class_names(self.weights.currentText()))
 
     def update_datasets(self, changed_dataset=None):
         """
@@ -367,27 +367,28 @@ class ROIclassificationDialog(Dialog, Singleton):
                                                          selectedFilter=filters[0])
         FOV2ROIlinks(annotation_file, self.plugin)
 
-def get_class_names(weight_file):
-    """
-    Get the class names for a project
+    @staticmethod
+    def get_class_names(weight_file):
+        """
+        Get the class names for a project
 
-    :return: the list of classes from the last annotation run for this project
-    """
-    if weight_file != 'None':
-        clause = f"(run.command='train_model') AND (best_weights='{weight_file}' OR last_weights='{weight_file}')"
-    else:
-        clause = (f"annotator='{get_config_value('project', 'user')}' "
-                  f"AND (run.command='annotate_rois' OR run.command='import_annotated_rois') ")
-    with pydetecdiv_project(PyDetecDiv.project_name) as project:
-        results = list(project.repository.session.execute(
-            sqlalchemy.text(f"SELECT "
-                            f"run.parameters ->> '$.annotator' as annotator, "
-                            f"run.parameters ->> '$.class_names' as class_names, "
-                            f"run.parameters ->> '$.best_weights' as best_weights, "
-                            f"run.parameters ->> '$.last_weights' as last_weights "
-                            f"FROM run "
-                            f"WHERE {clause} "
-                            f"ORDER BY run.id_ DESC;")))
-        # class_names = json.loads(results[-1][1])
-        class_names = {r[1]: None for r in results}
-    return class_names
+        :return: the list of classes from the last annotation run for this project
+        """
+        if weight_file != 'None':
+            clause = f"(run.command='train_model') AND (best_weights='{weight_file}' OR last_weights='{weight_file}')"
+        else:
+            clause = (f"annotator='{get_config_value('project', 'user')}' "
+                      f"AND (run.command='annotate_rois' OR run.command='import_annotated_rois') ")
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            results = list(project.repository.session.execute(
+                sqlalchemy.text(f"SELECT "
+                                f"run.parameters ->> '$.annotator' as annotator, "
+                                f"run.parameters ->> '$.class_names' as class_names, "
+                                f"run.parameters ->> '$.best_weights' as best_weights, "
+                                f"run.parameters ->> '$.last_weights' as last_weights "
+                                f"FROM run "
+                                f"WHERE {clause} "
+                                f"ORDER BY run.id_ DESC;")))
+            # class_names = json.loads(results[-1][1])
+            class_names = {r[1]: None for r in results}
+        return class_names

@@ -3,8 +3,9 @@ ROI annotation for image classification
 """
 import numpy as np
 import pandas
+import sqlalchemy
 from PySide6.QtCore import Qt, QRectF
-from PySide6.QtWidgets import QGraphicsTextItem, QDialogButtonBox
+from PySide6.QtWidgets import QGraphicsTextItem, QDialogButtonBox, QFrame, QHBoxLayout, QLabel
 import pyqtgraph as pg
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
@@ -13,10 +14,11 @@ from pydetecdiv.app.gui.core.widgets.viewers import Scene
 from pydetecdiv.app.gui.core.widgets.viewers.images import ImageViewer
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer
 from pydetecdiv.app.gui.core.widgets.viewers.plots import ChartView
+from pydetecdiv.plugins.gui import ComboBox
 from pydetecdiv.settings import get_config_value
 
 
-def open_annotator(plugin, roi_selection):
+def open_annotator(plugin, roi_selection, annotator):
     """
     Open an annotator instance with a selection of ROIs
     :param plugin: the plugin instance
@@ -24,8 +26,8 @@ def open_annotator(plugin, roi_selection):
     """
     tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / ROI annotation')
     tab.project_name = PyDetecDiv.project_name
-    annotator = Annotator()
-    annotator.set_plugin(plugin)
+    # annotator = Annotator()
+    annotator.setup(plugin=plugin)
     # tab.addTab(annotator, 'Annotation run')
     tab.set_top_tab(annotator, 'Annotation run')
     # tab.tabCloseRequested.connect(annotator.close)
@@ -52,17 +54,18 @@ class Annotator(VideoPlayer):
         self.roi_classes = []
         self.class_item = None  # QGraphicsTextItem('-')
         self.annotation_chart_view = None
-        self.setup()
-        self.video_frame.connect(self.plot_roi_classes)
+        # self.setup()
         self.show_predictions = False
 
-    def setup(self, menubar=None):
+    def setup(self, menubar=None, plugin=None):
         super().setup(menubar=menubar)
+        self.set_plugin(plugin)
         self.viewer_panel.setup(scene=AnnotatorScene())
         self.viewer_panel.setOrientation(Qt.Vertical)
         self.annotation_chart_view = AnnotationChartView(annotator=self)
         self.viewer_panel.addWidget(self.annotation_chart_view)
         self.zoom_set_value(200)
+        self.video_frame.connect(self.plot_roi_classes)
 
     def closeEvent(self, event):
         self.plugin.gui.classes.setEnabled(True)
@@ -269,11 +272,12 @@ class AnnotationChartView(ChartView):
         self.chart().clear()
         self.chart().showAxes([True, True, True, True], [True, False, False, True])
         ticks = [(-1, 'n.a.')] + [(i, name) for i, name in enumerate(self.class_names)]
-        left, right, bottom = self.chart().getAxis('left'), self.chart().getAxis('right'), self.chart().getAxis('bottom')
+        left, right, bottom = self.chart().getAxis('left'), self.chart().getAxis('right'), self.chart().getAxis(
+            'bottom')
         bottom.setLabel(units='frames')
         left.setTicks([ticks])
         self.chart().setLimits(xMin=0, xMax=len(roi_classes_idx), yMin=-1, yMax=len(self.class_names),
-                          minYRange=len(self.class_names)+1, maxYRange=len(self.class_names)+1)
+                               minYRange=len(self.class_names) + 1, maxYRange=len(self.class_names) + 1)
         right.setTicks([ticks])
         left.setGrid(100)
         self.addXline(self.annotator.T, angle=90, movable=False, pen=pg.mkPen('g', width=2))
@@ -282,3 +286,52 @@ class AnnotationChartView(ChartView):
 
     def clicked(self, plot, points):
         self.annotator.change_frame(int(points[0].pos().x()))
+
+
+class AnnotationQualityCheck(Annotator):
+    def setup(self, menubar=None, plugin=None):
+        super().setup(menubar=menubar, plugin=plugin)
+        self.control_panel.addWidget(AnnotationRunChooser(annotator=self))
+
+class AnnotationRunChooser(QFrame):
+    def __init__(self, parent=None, annotator=None):
+        super().__init__(parent=parent)
+        self.annotator = annotator
+        self.setLayout(QHBoxLayout(self))
+        self.layout().addWidget(QLabel('Run:'))
+        all_runs = self.get_annotation_runs()
+        all_runs.update(self.get_prediction_runs())
+        self.layout().addWidget(ComboBox(self, items=all_runs,))
+
+
+    def get_annotation_runs(self):
+        """
+       Get the class names for a project
+
+       :return: the list of classes from the last annotation run for this project
+       """
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            results = list(project.repository.session.execute(
+                sqlalchemy.text(f"SELECT "
+                                f"run.parameters ->> '$.annotator' as annotator, "
+                                f"run.parameters ->> '$.class_names' as class_names, "
+                                f"run.id_ "
+                                f"FROM run "
+                                f"WHERE annotator='{get_config_value('project', 'user')}' "
+                                f"AND (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+                                f"ORDER BY run.id_ DESC;")))
+            # class_names = json.loads(results[-1][1])
+            class_names_runs = {f'GT - {r[1]}': [rr[2] for rr in results if rr[1] == r[1]] for r in results}
+        return class_names_runs
+
+    def get_prediction_runs(self):
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            results = list(project.repository.session.execute(
+                sqlalchemy.text(f"SELECT "
+                                f"run.parameters ->> '$.class_names' as class_names, "
+                                f"run.id_ "
+                                f"FROM run "
+                                f"WHERE run.command='predict' "
+                                f"ORDER BY run.id_ DESC;")))
+            class_names_runs = {f'run {r[1]} {r[0]}': [] for r in results}
+        return class_names_runs
