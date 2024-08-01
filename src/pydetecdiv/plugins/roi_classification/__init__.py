@@ -200,7 +200,7 @@ class Plugin(plugins.Plugin):
         action_launch = QAction("ROI classification", self.menu)
         action_launch.triggered.connect(self.launch)
         self.menu.addAction(action_launch)
-        # PyDetecDiv.app.viewer_roi_click.connect(self.add_context_action)
+        PyDetecDiv.app.viewer_roi_click.connect(self.add_context_action)
 
     def add_context_action(self, data):
         """
@@ -214,7 +214,7 @@ class Plugin(plugins.Plugin):
                 selected_roi = project.get_named_object('ROI', r.data(0))
                 if selected_roi:
                     roi_list = [selected_roi]
-                    annotate = menu.addAction('Annotate region class')
+                    annotate = menu.addAction('Annotate region classes')
                     annotate.triggered.connect(lambda _: open_annotator(self, roi_list))
 
     def load_model(self):
@@ -356,7 +356,7 @@ class Plugin(plugins.Plugin):
                 if class_name != '-':
                     Results().save(project, run, roi, t, np.array([1]), [class_name])
 
-    def get_annotated_rois(self):
+    def get_annotated_rois(self, run=None):
         """
         Get a list of annotated ROI frames
 
@@ -366,12 +366,19 @@ class Plugin(plugins.Plugin):
             db = QSqlDatabase("QSQLITE")
             db.setDatabaseName(project.repository.name)
             db.open()
-            query = QSqlQuery(
-                f"SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
-                f"WHERE run.id_=roi_classification.run "
-                f"AND (run.command='annotate_rois' OR run.command='import_annotated_rois') "
-                f"AND run.parameters ->> '$.class_names'='{self.gui.classes.text()}' ;",
-                db=db)
+            if run is None:
+                query = QSqlQuery(
+                    f"SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
+                    f"WHERE run.id_=roi_classification.run "
+                    f"AND (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+                    f"AND run.parameters ->> '$.class_names'='{self.gui.classes.text()}' ;",
+                    db=db)
+            else:
+                query = QSqlQuery(
+                    f"SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
+                    f"WHERE run.id_=roi_classification.run "
+                    f"AND run.id_={run.id_} ;",
+                    db=db)
             query.exec()
             if query.first():
                 roi_ids = [query.value('annotated_rois')]
@@ -403,6 +410,33 @@ class Plugin(plugins.Plugin):
                                 f"ORDER BY rc.run ASC;")))
             if results:
                 class_names = json.loads(results[0][4])
+                if as_index:
+                    for annotation in results:
+                        roi_classes[annotation[1]] = class_names.index(annotation[2])
+                else:
+                    for annotation in results:
+                        roi_classes[annotation[1]] = annotation[2]
+        return roi_classes
+
+    def get_prediction(self, roi, run, as_index=True):
+        """
+        Get the predictions for a ROI
+
+        :param roi: the ROI
+        :param run: the prediction run
+        :param as_index: bool set to True to return annotations as indices of class_names list, set to False to return
+        annotations as class names
+        :return: the list of predicted classes by frame
+        """
+        roi_classes = [-1] * roi.fov.image_resource().image_resource_data().sizeT
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            results = list(project.repository.session.execute(
+                sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,"
+                                f"run.parameters ->> '$.class_names' as class_names "
+                                f"FROM run, roi_classification as rc "
+                                f"WHERE run.id_=rc.run and rc.run={run.id_} and rc.roi={roi.id_} ;")))
+            if results:
+                class_names = json.loads(results[0][3])
                 if as_index:
                     for annotation in results:
                         roi_classes[annotation[1]] = class_names.index(annotation[2])

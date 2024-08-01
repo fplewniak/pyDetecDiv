@@ -54,6 +54,7 @@ class Annotator(VideoPlayer):
         self.annotation_chart_view = None
         self.setup()
         self.video_frame.connect(self.plot_roi_classes)
+        self.show_predictions = False
 
     def setup(self, menubar=None):
         super().setup(menubar=menubar)
@@ -125,7 +126,9 @@ class Annotator(VideoPlayer):
             roi_classes = [-1] * self.viewer.image_resource_data.sizeT
         else:
             roi_classes = ['-'] * self.viewer.image_resource_data.sizeT
-        for frame, annotation in enumerate(self.plugin.get_annotation(self.roi, as_index=as_index)):
+        for frame, annotation in enumerate(self.plugin.get_prediction(self.roi, run=self.run, as_index=as_index)
+                                           if self.show_predictions
+                                           else self.plugin.get_annotation(self.roi, as_index=as_index)):
             if annotation != -1:
                 roi_classes[frame] = annotation
         return roi_classes
