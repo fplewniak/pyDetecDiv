@@ -281,6 +281,8 @@ class VideoControlPanel(QFrame):
         self.zoom_control.zoom_set.returnPressed.connect(lambda: parent.zoom_set_value(int(self.zoom_control.zoom)))
         parent.viewer.zoom_value_changed.connect(lambda x: self.zoom_control.zoom_set.setText(f'{x} %'))
 
+    def addWidget(self, widget):
+        self.layout().addWidget(widget)
 
 class VideoControl(QFrame):
     """
