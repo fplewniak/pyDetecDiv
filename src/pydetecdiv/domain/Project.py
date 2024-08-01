@@ -308,7 +308,7 @@ class Project:
         :return: the desired object
         :rtype: object (DomainSpecificObject)
         """
-        return self.build_dso(class_name, self.repository.get_record(class_name, id_, uuid), use_pool)
+        return self.build_dso(class_name, self.repository.get_record(class_name, int(id_), uuid), use_pool)
 
     def get_named_object(self, class_name, name=None) -> DomainSpecificObject:
         """
