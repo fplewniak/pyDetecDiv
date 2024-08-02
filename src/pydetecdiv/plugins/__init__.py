@@ -8,9 +8,12 @@ import sys
 from PySide6.QtGui import QAction
 
 import pydetecdiv
+from pydetecdiv.plugins.parameters import Parameters
 from pydetecdiv.settings import get_plugins_dir
 from pydetecdiv.domain import Run
-from pydetecdiv.plugins.gui import Parameters, Dialog
+from pydetecdiv.plugins.gui import ParameterWidgets, Dialog
+from PySide6.QtCore import Signal, QObject
+
 
 
 class Plugin:
@@ -25,7 +28,8 @@ class Plugin:
 
     def __init__(self):
         self.gui = None
-        self.parameters = Parameters()
+        self.parameter_widgets = ParameterWidgets()
+        self.parameters = Parameters(self)
 
     def addActions(self, menu):
         """
@@ -77,6 +81,7 @@ class Plugin:
         run = Run(project=project, **record)
         # project.commit()
         return run
+
 
 # def get_plugins_dir():
 #     """

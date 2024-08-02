@@ -258,7 +258,7 @@ class Plugin(plugins.Plugin):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             print('Saving run')
             parameters = {'fov': fov_names}
-            parameters.update(self.parameters.get_values('classify'))
+            parameters.update(self.parameter_widgets.get_values('classify'))
             run = self.save_run(project, 'predict', parameters)
             # run = self.save_run(project, 'predict', {'fov': fov_names,
             #                                          'network': self.gui.network.currentData().__name__,
@@ -670,7 +670,7 @@ class Plugin(plugins.Plugin):
         :return: the current Run instance
         """
         parameters = {'model': module.__name__}
-        parameters.update(self.parameters.get_values('training'))
+        parameters.update(self.parameter_widgets.get_values('training'))
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             return self.save_run(project, 'train_model', parameters)
 

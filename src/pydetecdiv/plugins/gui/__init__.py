@@ -11,7 +11,7 @@ from PySide6.QtWidgets import QDialog, QFrame, QVBoxLayout, QGroupBox, QFormLayo
     QPushButton, QApplication, QRadioButton, QListWidget, QListView
 
 
-class Parameters:
+class ParameterWidgets:
     """
     A class to handle plugin parameters from a Form gui
     """
@@ -54,6 +54,9 @@ class Parameters:
         :return: a dictionary of parameters
         """
         return {name: widget.value() for name, widget in self.param_groups[group].items()}
+
+    def get_value(self, name, group):
+        return self.get_values(group)[name]
 
 
 class StyleSheets:
@@ -127,7 +130,7 @@ class FormGroupBox(GroupBox):
             if not isinstance(groups, list):
                 groups = [groups]
             for group in groups:
-                self.plugin.parameters.add(group, {param: option})
+                self.plugin.parameter_widgets.add(group, {param: option})
 
         if label is None:
             self.layout.addRow(option)

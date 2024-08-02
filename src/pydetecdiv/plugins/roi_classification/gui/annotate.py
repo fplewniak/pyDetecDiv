@@ -184,7 +184,7 @@ class Annotator(VideoPlayer):
         Save the current ROI annotation process in the database
         """
         parameters = {'annotator': get_config_value('project', 'user'), }
-        parameters.update(self.plugin.parameters.get_values('annotate'))
+        parameters.update(self.plugin.parameter_widgets.get_values('annotate'))
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             self.run = self.plugin.save_run(project, 'annotate_rois', parameters)
 

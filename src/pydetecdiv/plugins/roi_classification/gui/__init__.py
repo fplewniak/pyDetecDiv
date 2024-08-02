@@ -26,7 +26,7 @@ class ROIclassificationDialog(Dialog, Singleton):
 
     def __init__(self, plugin, title=None):
         super().__init__(plugin, title=title)
-        self.plugin.parameters.add_groups(['training', 'classify', 'annotate', 'create'])
+        self.plugin.parameter_widgets.add_groups(['training', 'classify', 'annotate', 'create'])
 
         self.controller = self.addGroupBox('Choose action')
         self.action_menu = self.controller.addOption('Action:', ComboBox,
