@@ -11,7 +11,7 @@ import pydetecdiv
 from pydetecdiv.plugins.parameters import Parameters
 from pydetecdiv.settings import get_plugins_dir
 from pydetecdiv.domain import Run
-from pydetecdiv.plugins.gui import ParameterWidgets, Dialog
+from pydetecdiv.plugins.gui import Dialog
 from PySide6.QtCore import Signal, QObject
 
 
@@ -28,7 +28,7 @@ class Plugin:
 
     def __init__(self):
         self.gui = None
-        self.parameter_widgets = ParameterWidgets()
+        # self.parameter_widgets = ParameterWidgets()
         self.parameters = Parameters(self)
 
     def addActions(self, menu):

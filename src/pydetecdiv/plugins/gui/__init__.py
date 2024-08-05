@@ -3,60 +3,60 @@ Module defining widgets and other utilities for creating windows/forms with a mi
 """
 import json
 
-from PySide6.QtCore import Qt, QStringListModel, QItemSelection, QItemSelectionModel
+from PySide6.QtCore import QStringListModel
 from PySide6.QtGui import QIcon
 from PySide6.QtSql import QSqlQueryModel
-from PySide6.QtWidgets import QDialog, QFrame, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox, \
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox, \
     QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView, QAbstractItemView, \
-    QPushButton, QApplication, QRadioButton, QListWidget, QListView
+    QPushButton, QApplication, QRadioButton, QListView
 
 
-class ParameterWidgets:
-    """
-    A class to handle plugin parameters from a Form gui
-    """
-
-    def __init__(self):
-        self.param_groups = {}
-
-    def add_groups(self, groups):
-        """
-        Add empty groups of parameters
-
-        :param groups: the list of groups
-        """
-        for group in groups:
-            self.add_group(group)
-
-    def add_group(self, group, param_dict=None):
-        """
-        Add a new group of parameters (in a dictionary)
-
-        :param group: the group to create
-        :param param_dict: the dictionary of parameters
-        """
-        self.param_groups[group] = param_dict if param_dict is not None else {}
-
-    def add(self, group, param_dict):
-        """
-        Add parameters (in a dictionary) to an existing group of parameters
-
-        :param group: the group of parameters to expand
-        :param param_dict: the parameters
-        """
-        self.param_groups[group].update(param_dict)
-
-    def get_values(self, group):
-        """
-        Get a dictionary containing all parameters key/values for a given group
-
-        :param group: the requested parameter group
-        :return: a dictionary of parameters
-        """
-        return {name: widget.value() for name, widget in self.param_groups[group].items()}
-
-    def get_value(self, name, group):
-        return self.get_values(group)[name]
+# class ParameterWidgets:
+#     """
+#     A class to handle plugin parameters from a Form gui
+#     """
+#
+#     def __init__(self):
+#         self.param_groups = {}
+#
+#     def add_groups(self, groups):
+#         """
+#         Add empty groups of parameters
+#
+#         :param groups: the list of groups
+#         """
+#         for group in groups:
+#             self.add_group(group)
+#
+#     def add_group(self, group, parameters=None):
+#         """
+#         Add a new group of parameters (in a dictionary)
+#
+#         :param group: the group to create
+#         :param param_dict: the dictionary of parameters
+#         """
+#         self.param_groups[group] = parameters if parameters is not None else {}
+#
+#     def add(self, group, parameter):
+#         """
+#         Add parameters (in a dictionary) to an existing group of parameters
+#
+#         :param group: the group of parameters to expand
+#         :param param_dict: the parameters
+#         """
+#         self.param_groups[group].update(parameter)
+#
+#     def get_values(self, group):
+#         """
+#         Get a dictionary containing all parameters key/values for a given group
+#
+#         :param group: the requested parameter group
+#         :return: a dictionary of parameters
+#         """
+#         return {name: widget.value() for name, widget in self.param_groups[group].items()}
+#
+#     def get_value(self, name, group):
+#         return self.get_values(group)[name]
 
 
 class StyleSheets:
@@ -90,6 +90,7 @@ class GroupBox(QGroupBox):
         if title is not None:
             self.setTitle(title)
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
+        self.layout = self.layout()
 
     @property
     def plugin(self):
@@ -104,8 +105,13 @@ class GroupBox(QGroupBox):
                 return parent.plugin
         return None
 
+    def addSubBox(self, widget, **kwargs):
+        sub_box = widget(self, **kwargs)
+        self.layout.addWidget(sub_box)
+        return sub_box
 
-class FormGroupBox(GroupBox):
+
+class ParametersFormGroupBox(GroupBox):
     """
     an extension of GroupBox class to handle Forms
     """
@@ -113,7 +119,13 @@ class FormGroupBox(GroupBox):
     def __init__(self, parent, title=None, show=True):
         super().__init__(parent, title)
         self.layout = QFormLayout(self)
+        self.setLayout(self.layout)
         self.setVisible(show)
+
+    def addSubBox(self, widget, **kwargs):
+        sub_box = widget(self, **kwargs)
+        self.layout.addRow(sub_box)
+        return sub_box
 
     def addOption(self, label=None, widget=None, parameter=None, **kwargs):
         """
@@ -124,13 +136,19 @@ class FormGroupBox(GroupBox):
         :param kwargs: extra args passed to the widget
         :return: the option widget
         """
-        option = widget(self, **kwargs)
-        if parameter is not None:
-            groups, param = parameter
-            if not isinstance(groups, list):
-                groups = [groups]
-            for group in groups:
-                self.plugin.parameter_widgets.add(group, {param: option})
+        if issubclass(widget, (QPushButton, QDialogButtonBox)):
+            option = widget(self, **kwargs)
+        else:
+            option = widget(self, parameter, **kwargs)
+            option.changed.connect(parameter.set_value)
+            parameter.changed.connect(option.setValue)
+            parameter.reset()
+        # if parameter is not None:
+        #     groups, param = parameter
+        #     if not isinstance(groups, list):
+        #         groups = [groups]
+        #     for group in groups:
+        #         self.plugin.parameter_widgets.add(group, {parameter: option})
 
         if label is None:
             self.layout.addRow(option)
@@ -153,12 +171,10 @@ class ComboBox(QComboBox):
     an extension of the QComboBox class
     """
 
-    def __init__(self, parent, items=None, selected=None, editable=False):
+    def __init__(self, parent, parameter, editable=False):
         super().__init__(parent)
-        if items is not None:
-            self.addItemDict(items)
-        if selected is not None:
-            self.setCurrentText(selected)
+        if parameter.items is not None:
+            self.addItemDict(parameter.items)
         self.setEditable(editable)
 
     def addItemDict(self, options):
@@ -215,22 +231,25 @@ class ComboBox(QComboBox):
         except json.decoder.JSONDecodeError:
             return self.currentText()
 
+    def setValue(self, value):
+        self.setCurrentText(value)
+
 
 class ListView(QListView):
     """
     an extension of the QComboBox class
     """
 
-    def __init__(self, parent, items=None, height=None, multiselection=False, **kwargs):
+    def __init__(self, parent, parameter, height=None, multiselection=False, **kwargs):
         super().__init__(parent, **kwargs)
         if multiselection:
             self.setSelectionMode(QAbstractItemView.MultiSelection)
         if height is not None:
             self.setFixedHeight(height)
         self.setModel(QStringListModel())
-        self.items = items
-        if items is not None:
-            self.addItemDict(items)
+        self.items = parameter.items
+        if parameter.items is not None:
+            self.addItemDict(parameter.items)
 
     def addItemDict(self, options):
         """
@@ -284,7 +303,7 @@ class LineEdit(QLineEdit):
     an extension of QLineEdit class
     """
 
-    def __init__(self, parent, editable=True):
+    def __init__(self, parent, parameter, editable=True):
         super().__init__(parent)
         self.setEditable(editable)
 
@@ -298,6 +317,9 @@ class LineEdit(QLineEdit):
             return json.loads(self.text())
         except json.decoder.JSONDecodeError:
             return self.text()
+
+    def setValue(self, value):
+        self.setText(value)
 
     @property
     def changed(self):
@@ -368,7 +390,7 @@ class RadioButton(QRadioButton):
     an extension of the QRadioButton class
     """
 
-    def __init__(self, parent, exclusive=True):
+    def __init__(self, parent, parameter, exclusive=True):
         super().__init__(None, parent)
         self.setAutoExclusive(exclusive)
 
@@ -386,16 +408,13 @@ class SpinBox(QSpinBox):
     an extension of the QSpinBox class
     """
 
-    def __init__(self, parent, range=(1, 4096), single_step=1, adaptive=False, value=None):
+    def __init__(self, parent, parameter, range=(1, 4096), single_step=1, adaptive=False):
         super().__init__(parent)
         self.setRange(*range[0:2])
         self.setSingleStep(single_step)
         if adaptive:
             self.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
-        if value is None:
-            self.setValue(range[0])
-        else:
-            self.setValue(value)
+        self.setValue(parameter.value)
 
     @property
     def changed(self):
@@ -413,7 +432,8 @@ class DoubleSpinBox(QDoubleSpinBox):
     an extension of the QDoubleSpinBox class
     """
 
-    def __init__(self, parent, range=(0.1, 1.0), decimals=2, single_step=0.1, adaptive=False, value=0.1, enabled=True):
+    def __init__(self, parent, parameter, range=(0.1, 1.0), decimals=2, single_step=0.1, adaptive=False, value=0.1,
+                 enabled=True):
         super().__init__(parent)
         self.setRange(*range[0:2])
         self.setDecimals(decimals)
@@ -441,7 +461,7 @@ class TableView(QTableView):
     an extension of the QTableView widget
     """
 
-    def __init__(self, parent, multiselection=True, behavior='rows'):
+    def __init__(self, parent, parameter, multiselection=True, behavior='rows'):
         super().__init__(parent)
         self.model = QSqlQueryModel()
         self.setModel(self.model)
@@ -512,7 +532,7 @@ class Dialog(QDialog):
         QApplication.processEvents()
         self.adjustSize()
 
-    def addGroupBox(self, title, widget=FormGroupBox):
+    def addGroupBox(self, title, widget=ParametersFormGroupBox):
         """
         Add a group box to the Dialog window
 

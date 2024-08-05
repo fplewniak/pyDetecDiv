@@ -4,10 +4,10 @@ from PySide6.QtCore import QObject, Signal
 class Parameter(QObject):
     changed = Signal(object)
 
-    def __init__(self, name=None, ptype=None, label=None, default=None, validator=None):
+    def __init__(self, name=None, items=None, label=None, default=None, validator=None):
         super().__init__()
         self.name = name
-        self.ptype = ptype
+        self.items = items
         self.label = label
         self.default = default
         self.validator = validator
@@ -19,11 +19,10 @@ class Parameter(QObject):
 
     def set_value(self, value):
         self._value = value
-        print(f'GUI => parameter {self._value}')
 
     @value.setter
     def value(self, value):
-        if self.validator is None or self.validator(value):
+        if self.validate(value):
             self._value = value
             self.changed.emit(value)
 
@@ -35,7 +34,9 @@ class Parameter(QObject):
         Abstract method that needs to be implemented in each concrete Parameter implementation to for validation
         of the new value
         """
-        raise NotImplementedError
+        if self.items is not None:
+            return value in self.items
+        return self.validator is None or self.validator(value)
 
 
 class Parameters:
@@ -43,9 +44,9 @@ class Parameters:
     A class to handle plugin parameters
     """
 
-    def __init__(self, plugin, parameters=None):
-        self.plugin = plugin
-        self.param_groups = {} if parameters is None else parameters
+    def __init__(self, parameters=None):
+        # self.plugin = plugin
+        self.param_groups = {'default': {}} if parameters is None else parameters
 
     def add_groups(self, groups):
         """
@@ -66,7 +67,7 @@ class Parameters:
         """
         self.param_groups[group] = param_dict if param_dict is not None else {}
 
-    def add(self, group, params):
+    def add(self, params, group='default'):
         """
         Add parameters (in a dictionary) to an existing group of parameters
 
@@ -80,6 +81,11 @@ class Parameters:
         else:
             self._add_group(group, {p.name: p for p in params})
 
+    def reset(self):
+        for group in self.param_groups.keys():
+            for param in self.param_groups[group].values():
+                param.reset()
+
     def get_values(self, groups=None):
         """
         Get a dictionary containing all parameters key/values for a given group
@@ -88,13 +94,21 @@ class Parameters:
         :return: a dictionary of parameters
         """
         if groups is None:
-            groups = self.param_groups.keys()
+            groups = list(self.param_groups.keys())
+            if groups == ['default']:
+                return {name: param.value for name, param in self.param_groups['default'].items()}
         elif not isinstance(groups, list):
             groups = [groups]
         return {group: {name: param.value for name, param in self.param_groups[group].items()} for group in groups}
 
-    def get_value(self, name, group):
+    def get_value(self, name, group='default'):
         return self.get_values(group)[group][name]
 
     def __repr__(self):
         return f'{self.get_values()}'
+
+    def to_dict(self):
+        groups = list(self.param_groups.keys())
+        if groups == ['default']:
+                return {name: param for name, param in self.param_groups['default'].items()}
+        return {group: {name: param for name, param in self.param_groups[group].items()} for group in groups}

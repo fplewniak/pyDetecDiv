@@ -13,7 +13,7 @@ from pydetecdiv.settings import get_config_value
 from pydetecdiv.utils import Singleton
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir
 
-from pydetecdiv.plugins.gui import Dialog, DialogButtonBox, FormGroupBox, ComboBox, SpinBox, DoubleSpinBox, LineEdit, \
+from pydetecdiv.plugins.gui import Dialog, DialogButtonBox, ParametersFormGroupBox, ComboBox, SpinBox, DoubleSpinBox, LineEdit, \
     TableView, set_connections, AdvancedButton, RadioButton
 from pydetecdiv.plugins.roi_classification.gui.ImportAnnotatedROIs import FOV2ROIlinks
 
@@ -44,7 +44,7 @@ class ROIclassificationDialog(Dialog, Singleton):
         self.classes = self.classifier_selection.addOption('Classes:', ComboBox, parameter=(
             ['training', 'classify', 'annotate'], 'class_names'), editable=True)
         self.training_advanced = self.classifier_selection.addOption(None, AdvancedButton)
-        self.training_advanced.linkGroupBox(self.classifier_selection.addOption(None, FormGroupBox, show=False))
+        self.training_advanced.linkGroupBox(self.classifier_selection.addOption(None, ParametersFormGroupBox, show=False))
         self.weight_seed = self.training_advanced.group_box.addOption('Random seed:', SpinBox, value=42,
                                                                       parameter=(['training'], 'seed'))
         self.optimizer = self.training_advanced.group_box.addOption('Optimizer:', ComboBox,
@@ -96,12 +96,12 @@ class ROIclassificationDialog(Dialog, Singleton):
                                                        parameter=(['training'], 'num_validation'))
         self.test_data = self.datasets.addOption('Test dataset:', DoubleSpinBox, value=0.2, enabled=False)
         self.datasets_advanced = self.datasets.addOption(None, AdvancedButton)
-        self.datasets_advanced.linkGroupBox(self.datasets.addOption(None, FormGroupBox, show=False))
+        self.datasets_advanced.linkGroupBox(self.datasets.addOption(None, ParametersFormGroupBox, show=False))
         self.datasets_seed = self.datasets_advanced.group_box.addOption('Random seed:', SpinBox, value=42,
                                                                         parameter=(['training'], 'dataset_seed'))
 
         self.preprocessing = self.addGroupBox('Preprocessing')
-        self.channels = self.preprocessing.addOption(None, FormGroupBox, title='z to channel')
+        self.channels = self.preprocessing.addOption(None, ParametersFormGroupBox, title='z to channel')
         # self.channels.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
 
         self.red_channel = self.channels.addOption('Red', ComboBox, parameter=(['training', 'classify'], 'red_channel'))
