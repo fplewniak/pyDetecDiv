@@ -273,5 +273,6 @@ def project_list():
 
 def create_app():
     PyDetecDiv.app = PyDetecDiv([])
+    PyDetecDiv.plugin_list.register_all()
     pg.setConfigOptions(antialias=True, background='w')
     return PyDetecDiv.app
