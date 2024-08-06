@@ -10,6 +10,7 @@ import random
 import sys
 from collections import Counter
 from datetime import datetime
+import keras.optimizers
 
 import h5py
 import numpy as np
@@ -33,6 +34,7 @@ from pydetecdiv.settings import get_config_value
 from .gui import FOV2ROIlinks, ROIclassificationDialog
 from . import models
 from .gui.annotate import open_annotator, Annotator, AnnotationQualityCheck
+from ..parameters import Parameter
 from ...app.gui.core.widgets.viewers.plots import MatplotViewer
 
 Base = registry().generate_base()
@@ -171,7 +173,79 @@ class Plugin(plugins.Plugin):
     def __init__(self):
         super().__init__()
         self.menu = None
-        self.gui = None
+        # self.gui = None
+        self.parameters.parameter_list = [
+            Parameter(name='model', label='Network', groups=['training', 'classify'], default='ResNet50V2_lstm',
+                      updater=self.load_models),
+            Parameter(name='weights', label='Weights', groups=['training', 'classify'], default='None',
+                      updater=self.update_model_weights),
+            Parameter(name='class_names', label='Classes',
+                      groups=['training', 'classify', 'annotate', 'import_annotations'],
+                      updater=self.update_class_names),
+            Parameter(name='seed', label='Random seed', groups='training', default=42,
+                      validator=lambda x: isinstance(x, int)),
+            Parameter(name='optimizer', label='Optimizer', groups='training', default='SGD',
+                      items={'SGD': keras.optimizers.SGD,
+                             'Adam': keras.optimizers.Adam,
+                             'Adadelta': keras.optimizers.Adadelta,
+                             'Adamax': keras.optimizers.Adamax,
+                             'Nadam': keras.optimizers.Nadam, }),
+            Parameter(name='learning_rate', label='Learning rate', groups='training', default=0.001,
+                      range=(0.00001, 1.0), decimals=4,
+                      validator=lambda x: isinstance(x, float) & (0.00001 <= x <= 1.0)),
+            Parameter(name='decay_rate', label='Decay rate', groups='training', default=0.95,
+                      validator=lambda x: isinstance(x, float) & (0.0 < x < 1.0)),
+            Parameter(name='decay_period', label='Decay period', groups='training', default=2,
+                      validator=lambda x: isinstance(x, int) & x > 0),
+            Parameter(name='momentum', label='Momentum', groups='training', default=0.9,
+                      validator=lambda x: isinstance(x, float) & (0.0 < x < 1.0)),
+            Parameter(name='checkpoint_metric', label='Checkpoint metric', groups='training', default='Loss',
+                      items={'Loss': 'val_loss', 'Accuracy': 'val_accuracy', }),
+            Parameter(name='early_stopping', label='Early stopping', groups='training', default=False,
+                      validator=lambda x: isinstance(x, bool)),
+            Parameter(name='num_training', label='Training dataset', groups='training', default=0.6,
+                      range=(0.01, 0.99), decimals=2,
+                      validator=lambda x: isinstance(x, float) & (0.01 <= x <= 0.99)),
+            Parameter(name='num_validation', label='Validation dataset', groups='training', default=0.2,
+                      range=(0.01, 0.99), decimals=2,
+                      validator=lambda x: isinstance(x, float) & (0.01 <= x <= 0.99)),
+            Parameter(name='num_test', label='Test dataset', groups='training', default=0.2,
+                      range=(0.01, 0.99), decimals=2, enabled=False,
+                      validator=lambda x: isinstance(x, float) & (0.01 <= x <= 0.99)),
+            Parameter(name='dataset_seed', label='Random seed', groups='training', default=42,
+                      validator=lambda x: isinstance(x, int)),
+            Parameter(name='red_channel', label='Red', groups=['training', 'classify'], default=0,
+                      updater=self.update_channels),
+            Parameter(name='green_channel', label='Green', groups=['training', 'classify'], default=0,
+                      updater=self.update_channels),
+            Parameter(name='blue_channel', label='Blue', groups=['training', 'classify'], default=0,
+                      updater=self.update_channels),
+            Parameter(name='epochs', label='Epochs', groups=['training'], default=16,
+                      validator=lambda x: isinstance(x, int) & x > 0),
+            Parameter(name='batch_size', label='Batch size', groups=['training', 'classify'], default=128,
+                      validator=lambda x: isinstance(x, int) & x > 0, adaptive=True,),
+            Parameter(name='seqlen', label='Sequence length', groups=['training', 'classify'], default=50,
+                      validator=lambda x: isinstance(x, int) & x > 0, adaptive=True,),
+        ]
+
+    def register(self):
+        self.load_models()
+        self.update_model_weights()
+        self.update_class_names()
+        self.update_channels()
+        PyDetecDiv.app.project_selected.connect(self.update_parameters)
+        PyDetecDiv.app.viewer_roi_click.connect(self.add_context_action)
+
+    def update_parameters(self):
+        self.load_models()
+        self.update_model_weights()
+        self.update_class_names()
+        self.update_channels()
+        print(self.parameters.get('model').items.keys())
+        print(self.parameters.get('weights').items.keys())
+        print(self.parameters.get('class_names').items.keys())
+        print(self.parameters.get('red_channel').items.keys())
+        print(self.parameters.values())
 
     @property
     def class_names(self):
@@ -196,14 +270,26 @@ class Plugin(plugins.Plugin):
         :param menu: the parent menu
         :type menu: QMenu
         """
-        self.menu = menu
-        action_launch = QAction("ROI classification", self.menu)
-        action_launch.triggered.connect(self.launch)
-        self.menu.addAction(action_launch)
-        quality_check = QAction("Classification quality control", self.menu)
-        quality_check.triggered.connect(lambda _: open_annotator(self, self.get_annotated_rois(), AnnotationQualityCheck()))
-        self.menu.addAction(quality_check)
-        PyDetecDiv.app.viewer_roi_click.connect(self.add_context_action)
+        submenu = menu.addMenu(self.name)
+        # action_launch = QAction("Open global GUI", submenu)
+
+        annotation_menu = submenu.addMenu('ROI Annotations')
+        import_annoted_ROIs = QAction("Import annotations file", annotation_menu)
+        manual_annotation = QAction("Annotate ROIs", annotation_menu)
+        annotation_menu.addAction(import_annoted_ROIs)
+        annotation_menu.addAction(manual_annotation)
+
+        training_menu = submenu.addMenu('Train model')
+        train_model = QAction("Train a model", training_menu)
+        fine_tuning = QAction("Fine-tune training", training_menu)
+        training_menu.addAction(train_model)
+        training_menu.addAction(fine_tuning)
+
+        predict_menu = submenu.addMenu('Classification')
+        predict = QAction("Predict ROI classes", predict_menu)
+        edit_results = QAction("Check and edit classes", predict_menu)
+        predict_menu.addAction(predict)
+        predict_menu.addAction(edit_results)
 
     def add_context_action(self, data):
         """
@@ -211,14 +297,13 @@ class Plugin(plugins.Plugin):
 
         :param data: the data sent by the PyDetecDiv().viewer_roi_click signal
         """
-        if self.gui:
-            r, menu = data
-            with pydetecdiv_project(PyDetecDiv.project_name) as project:
-                selected_roi = project.get_named_object('ROI', r.data(0))
-                if selected_roi:
-                    roi_list = [selected_roi]
-                    annotate = menu.addAction('Annotate region classes')
-                    annotate.triggered.connect(lambda _: open_annotator(self, roi_list, AnnotationQualityCheck()))
+        r, menu = data
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            selected_roi = project.get_named_object('ROI', r.data(0))
+            if selected_roi:
+                roi_list = [selected_roi]
+                annotate = menu.addAction('Annotate region classes')
+                annotate.triggered.connect(lambda _: open_annotator(self, roi_list, AnnotationQualityCheck()))
 
     def load_model(self):
         """
@@ -304,22 +389,68 @@ class Plugin(plugins.Plugin):
                             Results().save(project, run, data.roi, data.frame + i, prediction[i], self.class_names)
         print('predictions OK')
 
-    def load_models(self, gui):
+    def load_models(self):
         """
         Load available models (modules)
 
         :param gui: the GUI
         """
         for _, name, _ in pkgutil.iter_modules(models.__path__):
-            gui.network.addItem(name, userData=importlib.import_module(f'.models.{name}', package=__package__))
+            self.parameters.get('model').add_item(
+                {name: importlib.import_module(f'.models.{name}', package=__package__)})
         for finder, name, _ in pkgutil.iter_modules([os.path.join(get_plugins_dir(), 'roi_classification/models')]):
             loader = finder.find_module(name)
             spec = importlib.util.spec_from_file_location(name, loader.path)
             module = importlib.util.module_from_spec(spec)
             sys.modules[name] = module
             spec.loader.exec_module(module)
-            gui.network.addItem(name, userData=module)
-        gui.update()
+            self.parameters.get('model').add_item({name: module})
+        # gui.update()
+
+    def update_model_weights(self):
+        """
+        Update the list of model weights associated with the currently selected network
+        """
+        model_path = self.parameters.get('model').item.__path__[0]
+        w_files = [os.path.join(model_path, f) for f in os.listdir(model_path)
+                   if os.path.isfile(os.path.join(model_path, f)) and f.endswith('.h5')]
+
+        if PyDetecDiv.project_name is not None:
+            try:
+                user_path = os.path.join(get_project_dir(), 'roi_classification', 'models',
+                                         self.parameters.get('model').value)
+                w_files.extend([os.path.join(user_path, f) for f in os.listdir(user_path)
+                                if os.path.isfile(os.path.join(user_path, f)) and f.endswith('.h5')])
+            except FileNotFoundError:
+                pass
+
+        self.parameters.get('weights').set_items({'None': None})
+        # _ = [self.weights.addItem(os.path.basename(f), userData=f) for f in w_files]
+        weights = {os.path.basename(f): f for f in w_files}
+        # self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+        # if self.action_menu.currentText() != 'Classify ROIs':
+        #     self.weights.addItem('None', userData=None)
+        # elif len(w_files) == 0:
+        #     self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+        self.parameters.get('weights').add_items(weights)
+
+    def update_class_names(self):
+        """
+        Update the classes associated with the currently selected model
+        """
+        # self.classes.setText(json.dumps(get_class_names()))
+        if self.parameters.get('weights').item != 'None':
+            self.parameters.get('class_names').set_items(self.get_class_names(self.parameters.get('weights').items))
+        else:
+            self.parameters.get('class_names').set_items(self.get_class_names())
+
+    def update_channels(self):
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            image_resource = project.get_object('ImageResource', 1)
+            n_layers = image_resource.zdim if image_resource else 0
+
+        for param in ['red_channel', 'green_channel', 'blue_channel']:
+            self.parameters.get(param).set_items([str(i) for i in range(n_layers)])
 
     def run(self):
         """
@@ -736,6 +867,32 @@ class Plugin(plugins.Plugin):
             if roi.name in rec_items:
                 annotation = self.get_annotation(roi)[PyDetecDiv.main_window.active_subwindow.viewer.T]
                 rec_items[roi.name].setBrush(colours[annotation])
+
+    @staticmethod
+    def get_class_names(weight_file=None):
+        """
+        Get the class names for a project
+
+        :return: the list of classes from the last annotation run for this project
+        """
+        if (weight_file != 'None') and (weight_file is not None):
+            clause = f"(run.command='train_model') AND (best_weights='{weight_file}' OR last_weights='{weight_file}')"
+        else:
+            clause = (f"annotator='{get_config_value('project', 'user')}' "
+                      f"AND (run.command='annotate_rois' OR run.command='import_annotated_rois') ")
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            results = list(project.repository.session.execute(
+                sqlalchemy.text(f"SELECT "
+                                f"run.parameters ->> '$.annotator' as annotator, "
+                                f"run.parameters ->> '$.class_names' as class_names, "
+                                f"run.parameters ->> '$.best_weights' as best_weights, "
+                                f"run.parameters ->> '$.last_weights' as last_weights "
+                                f"FROM run "
+                                f"WHERE {clause} "
+                                f"ORDER BY run.id_ DESC;")))
+            # class_names = json.loads(results[-1][1])
+            class_names = {r[1]: None for r in results}
+        return class_names
 
 
 def plot_history(history, evaluation):

@@ -29,7 +29,10 @@ class Plugin:
     def __init__(self):
         self.gui = None
         # self.parameter_widgets = ParameterWidgets()
-        self.parameters = Parameters(self)
+        self.parameters = Parameters([])
+
+    def register(self):
+        raise NotImplementedError
 
     def addActions(self, menu):
         """
@@ -143,6 +146,10 @@ class PluginList:
             self.plugins_dict[module.Plugin.id_] = module.Plugin()
             return module
         return None
+
+    def register_all(self):
+        for plugin in self.plugins_dict.values():
+            plugin.register()
 
     @property
     def len(self):
