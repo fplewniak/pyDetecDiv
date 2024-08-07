@@ -232,7 +232,7 @@ class Plugin(plugins.Plugin):
     def register(self):
         self.load_models()
         self.update_model_weights()
-        self.update_class_names()
+        # self.update_class_names()
         PyDetecDiv.app.project_selected.connect(self.update_parameters)
         PyDetecDiv.app.project_selected.connect(self.update_channels)
         PyDetecDiv.app.project_selected.connect(self.create_table)
