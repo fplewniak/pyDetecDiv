@@ -17,7 +17,7 @@ import numpy as np
 import sqlalchemy
 from PySide6.QtGui import QAction, QColor
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
-from PySide6.QtWidgets import QGraphicsRectItem
+from PySide6.QtWidgets import QGraphicsRectItem, QFileDialog
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
@@ -226,14 +226,16 @@ class Plugin(plugins.Plugin):
                       validator=lambda x: isinstance(x, int) & x > 0, adaptive=True,),
             Parameter(name='seqlen', label='Sequence length', groups=['training', 'classify'], default=50,
                       validator=lambda x: isinstance(x, int) & x > 0, adaptive=True,),
+            Parameter(name='annotation_file', label='Annotation file', groups=['annotate'],),
         ]
 
     def register(self):
         self.load_models()
         self.update_model_weights()
         self.update_class_names()
-        self.update_channels()
         PyDetecDiv.app.project_selected.connect(self.update_parameters)
+        PyDetecDiv.app.project_selected.connect(self.update_channels)
+        PyDetecDiv.app.project_selected.connect(self.create_table)
         PyDetecDiv.app.viewer_roi_click.connect(self.add_context_action)
 
     def update_parameters(self):
@@ -241,11 +243,6 @@ class Plugin(plugins.Plugin):
         self.update_model_weights()
         self.update_class_names()
         self.update_channels()
-        print(self.parameters.get('model').items.keys())
-        print(self.parameters.get('weights').items.keys())
-        print(self.parameters.get('class_names').items.keys())
-        print(self.parameters.get('red_channel').items.keys())
-        print(self.parameters.values())
 
     @property
     def class_names(self):
@@ -254,7 +251,8 @@ class Plugin(plugins.Plugin):
 
         :return: the class list
         """
-        return json.loads(self.gui.classes.text())
+        # return json.loads(self.parameters.get('class_names').value)
+        return self.parameters.get('class_names').value
 
     def create_table(self):
         """
@@ -271,13 +269,14 @@ class Plugin(plugins.Plugin):
         :type menu: QMenu
         """
         submenu = menu.addMenu(self.name)
-        # action_launch = QAction("Open global GUI", submenu)
 
         annotation_menu = submenu.addMenu('ROI Annotations')
         import_annoted_ROIs = QAction("Import annotations file", annotation_menu)
         manual_annotation = QAction("Annotate ROIs", annotation_menu)
         annotation_menu.addAction(import_annoted_ROIs)
         annotation_menu.addAction(manual_annotation)
+
+        import_annoted_ROIs.triggered.connect(self.import_annotated_rois)
 
         training_menu = submenu.addMenu('Train model')
         train_model = QAction("Train a model", training_menu)
@@ -304,6 +303,20 @@ class Plugin(plugins.Plugin):
                 roi_list = [selected_roi]
                 annotate = menu.addAction('Annotate region classes')
                 annotate.triggered.connect(lambda _: open_annotator(self, roi_list, AnnotationQualityCheck()))
+
+    def import_annotated_rois(self):
+        """
+        Select a csv file containing ROI frames annotations and open a FOV2ROIlinks window to load the data it contains
+        into the database as FOVs and ROIs with annotations.
+        """
+        filters = ["csv (*.csv)", "tsv (*.tsv)",]
+        annotation_file, _ = QFileDialog.getOpenFileName(PyDetecDiv.main_window, caption='Choose file with annotated ROIs',
+                                                         dir='.',
+                                                         filter=";;".join(filters),
+                                                         selectedFilter=filters[0])
+        if annotation_file:
+            self.parameters.get('annotation_file').set_value(annotation_file)
+            FOV2ROIlinks(annotation_file, self)
 
     def load_model(self):
         """
