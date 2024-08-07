@@ -4,12 +4,13 @@ from PySide6.QtCore import QObject, Signal
 class Parameter(QObject):
     changed = Signal(object)
 
-    def __init__(self, name=None, items=None, label=None, default=None, validator=None, groups=None, updater=None, **kwargs):
+    def __init__(self, name=None, items=None, label=None, default=None, validator=None, groups=None, updater=None,
+                 **kwargs):
         super().__init__()
         self.name = name
         self.items = {} if items is None else items
         self.label = label
-        self.default = default
+        self._default = default
         self.validator = validator
         self.updater = updater
         self.updater_kwargs = kwargs
@@ -17,17 +18,23 @@ class Parameter(QObject):
         self._value = default
 
     @property
+    def default(self):
+        if callable(self._default):
+            return self._default()
+        return self._default
+
+    @property
     def value(self):
         return self._value
 
     def set_value(self, value):
-        self._value = value
-
-    @value.setter
-    def value(self, value):
         if self.validate(value):
             self._value = value
             self.changed.emit(value)
+
+    @value.setter
+    def value(self, value):
+        self.set_value(value)
 
     @property
     def item(self):
@@ -37,6 +44,7 @@ class Parameter(QObject):
         return item
 
     def reset(self):
+        print(f'resetting {self.name} to {self.default}')
         self.value = self.default
 
     def update(self):
@@ -109,7 +117,6 @@ class Parameters:
 
     def to_dict(self):
         return {param.name: param for param in self.parameter_list}
-
 
     # def add_groups(self, groups):
     #     """
