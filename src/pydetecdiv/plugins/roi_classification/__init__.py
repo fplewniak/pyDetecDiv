@@ -244,14 +244,15 @@ class Plugin(plugins.Plugin):
         self.update_class_names()
         self.update_channels()
 
-    @property
-    def class_names(self):
+    def class_names(self, as_string=True):
         """
         return the classes
 
         :return: the class list
         """
         # return json.loads(self.parameters.get('class_names').value)
+        if as_string:
+            return json.dumps(self.parameters.get('class_names').value)
         return self.parameters.get('class_names').value
 
     def create_table(self):
@@ -277,6 +278,7 @@ class Plugin(plugins.Plugin):
         annotation_menu.addAction(manual_annotation)
 
         import_annoted_ROIs.triggered.connect(self.import_annotated_rois)
+        manual_annotation.triggered.connect(self.manual_annotation)
 
         training_menu = submenu.addMenu('Train model')
         train_model = QAction("Train a model", training_menu)
@@ -317,6 +319,70 @@ class Plugin(plugins.Plugin):
         if annotation_file:
             self.parameters.get('annotation_file').set_value(annotation_file)
             FOV2ROIlinks(annotation_file, self)
+
+    def manual_annotation(self):
+        annotation_runs = self.get_annotation_runs()
+        # print(annotation_runs)
+        if annotation_runs:
+            # print('Choose a set of classes:')
+            # for c in self.parameters.get('class_names').items:
+            #     print(c)
+            # print('Default: ', self.class_names())
+            tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / ROI annotation')
+            tab.project_name = PyDetecDiv.project_name
+            annotator = Annotator()
+            annotator.setup(plugin=self)
+            tab.set_top_tab(annotator, 'Manual annotation')
+            unannotated_rois, all_rois = self.get_unannotated_rois()
+            if unannotated_rois:
+                print(f'There are {len(unannotated_rois)} unannotated ROIs')
+                annotator.set_roi_list(unannotated_rois)
+                annotator.tscale = unannotated_rois[0].fov.tscale * unannotated_rois[0].fov.tunit
+            else:
+                print(f'All ROIs have been annotated already with {self.class_names()}')
+                annotator.set_roi_list(all_rois)
+                annotator.tscale = all_rois[0].fov.tscale * all_rois[0].fov.tunit
+            annotator.next_roi()
+            annotator.setFocus()
+        else:
+            print('Define classes')
+            print(f'Suggestions: {self.parameters.get("class_names").items}')
+            print(f'Suggestion: {dict({self.class_names(): self.class_names(as_string=False)})}')
+        # tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / ROI annotation')
+        # tab.project_name = PyDetecDiv.project_name
+        # annotator = Annotator()
+        # annotator.setup(plugin=self)
+        # # tab.addTab(annotator, 'Annotation run')
+        # tab.set_top_tab(annotator, 'Annotation run')
+        # # # tab.tabCloseRequested.connect(annotator.close)
+        # # plugin.gui.classes.setEnabled(False)
+        # # plugin.gui.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+        # unannotated_rois = self.get_unannotated_rois()
+        # annotator.set_roi_list(unannotated_rois)
+        # annotator.tscale = unannotated_rois[0].fov.tscale * unannotated_rois[0].fov.tunit
+        # annotator.next_roi()
+        # annotator.setFocus()
+
+    def get_annotation_runs(self):
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            results = list(project.repository.session.execute(
+                sqlalchemy.text(f"SELECT run.id_,"
+                                f"run.parameters ->> '$.annotator' as annotator, "
+                                f"run.parameters ->> '$.class_names' as class_names "
+                                f"FROM run "
+                                f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+                                f"AND annotator='{get_config_value('project', 'user')}' "
+                                f"ORDER BY run.id_ ASC;")))
+            runs = {}
+            if results:
+                for run in results:
+                    class_names = json.dumps(json.loads(run[2]))
+                    if class_names in runs:
+                        runs[class_names].append(run[0])
+                    else:
+                        runs[class_names] = [run[0]]
+                self.parameters.get('class_names').value = json.loads(class_names)
+        return runs
 
     def load_model(self):
         """
@@ -503,7 +569,7 @@ class Plugin(plugins.Plugin):
                 if class_name != '-':
                     Results().save(project, run, roi, t, np.array([1]), [class_name])
 
-    def get_annotated_rois(self, run=None):
+    def get_annotated_rois(self, run=None, ids_only=False):
         """
         Get a list of annotated ROI frames
 
@@ -518,7 +584,7 @@ class Plugin(plugins.Plugin):
                     f"SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
                     f"WHERE run.id_=roi_classification.run "
                     f"AND (run.command='annotate_rois' OR run.command='import_annotated_rois') "
-                    f"AND run.parameters ->> '$.class_names'='{self.gui.classes.text()}' ;",
+                    f"AND run.parameters ->> '$.class_names'=json('{self.class_names()}') ;",
                     db=db)
             else:
                 query = QSqlQuery(
@@ -531,8 +597,20 @@ class Plugin(plugins.Plugin):
                 roi_ids = [query.value('annotated_rois')]
                 while query.next():
                     roi_ids.append(query.value('annotated_rois'))
-                return project.get_objects('ROI', roi_ids)
+                if ids_only is False:
+                    return project.get_objects('ROI', roi_ids)
+                return roi_ids
             return []
+
+    def get_unannotated_rois(self):
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            all_roi_ids = [roi.id_ for roi in project.get_objects('ROI')]
+            print(f'All ROIs: {len(all_roi_ids)}')
+            annotated_rois = self.get_annotated_rois(ids_only=True)
+            print(f'Annotated ROIs: {len(annotated_rois)}')
+            unannotated_roi_ids = set(all_roi_ids).difference(set(annotated_rois))
+            print(f'Unannotated ROIs: {len(unannotated_roi_ids)}')
+            return project.get_objects('ROI', list(unannotated_roi_ids)), project.get_objects('ROI', list(all_roi_ids))
 
     def get_annotation(self, roi, as_index=True):
         """
@@ -553,7 +631,7 @@ class Plugin(plugins.Plugin):
                                 f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
                                 f"AND rc.run=run.id_ and rc.roi={roi.id_} "
                                 f"AND annotator='{get_config_value('project', 'user')}' "
-                                f"AND run.parameters ->> '$.class_names'='{self.gui.classes.text()}' "
+                                f"AND run.parameters ->> '$.class_names'=json('{self.class_names()}') "
                                 f"ORDER BY rc.run ASC;")))
             if results:
                 class_names = json.loads(results[0][4])
@@ -904,7 +982,8 @@ class Plugin(plugins.Plugin):
                                 f"WHERE {clause} "
                                 f"ORDER BY run.id_ DESC;")))
             # class_names = json.loads(results[-1][1])
-            class_names = {r[1]: None for r in results}
+            # class_names = {r[1]: None for r in results}
+            class_names = {json.dumps(json.loads(r[1])): json.loads(r[1]) for r in results}
         return class_names
 
 

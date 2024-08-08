@@ -31,8 +31,8 @@ def open_annotator(plugin, roi_selection, annotator):
     # tab.addTab(annotator, 'Annotation run')
     tab.set_top_tab(annotator, 'Annotation run')
     # tab.tabCloseRequested.connect(annotator.close)
-    plugin.gui.classes.setEnabled(False)
-    plugin.gui.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+    # plugin.gui.classes.setEnabled(False)
+    # plugin.gui.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
     annotator.set_roi_list(roi_selection)
     annotator.tscale = roi_selection[0].fov.tscale * roi_selection[0].fov.tunit
     annotator.next_roi()
@@ -67,9 +67,9 @@ class Annotator(VideoPlayer):
         self.zoom_set_value(200)
         self.video_frame.connect(self.plot_roi_classes)
 
-    def closeEvent(self, event):
-        self.plugin.gui.classes.setEnabled(True)
-        self.plugin.gui.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+    # def closeEvent(self, event):
+    #     self.plugin.gui.classes.setEnabled(True)
+    #     self.plugin.gui.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
 
     def set_plugin(self, plugin):
         """
@@ -110,8 +110,8 @@ class Annotator(VideoPlayer):
                 # self.ui.view_name.setText(f'ROI: {self.roi.name}')
                 PyDetecDiv.main_window.active_subwindow.setCurrentWidget(self)
         except StopIteration:
-            self.plugin.gui.classes.setEnabled(True)
-            self.plugin.gui.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+            # self.plugin.gui.classes.setEnabled(True)
+            # self.plugin.gui.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
             pass
 
     def plot_roi_classes(self):
@@ -266,7 +266,7 @@ class AnnotationChartView(ChartView):
 
     @property
     def class_names(self):
-        return self.annotator.plugin.class_names
+        return self.annotator.plugin.class_names(as_string=False)
 
     def plot_roi_classes(self, roi_classes_idx):
         self.chart().clear()
