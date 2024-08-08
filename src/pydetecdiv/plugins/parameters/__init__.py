@@ -51,7 +51,6 @@ class Parameter(QObject):
         return item
 
     def reset(self):
-        print(f'resetting {self.name} to {self.default}')
         self.value = self.default
 
     def update(self):
@@ -85,7 +84,10 @@ class Parameter(QObject):
         of the new value
         """
         if self.items != {}:
-            return value in self.items
+            # if isinstance(value, (list, dict)):
+            #     return json.dumps(value) in self.items
+            if not isinstance(value, (list, dict)):
+                return value in self.items
         return (self.validator is None) or self.validator(value)
 
 
