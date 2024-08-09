@@ -5,7 +5,8 @@ import numpy as np
 import pandas
 import sqlalchemy
 from PySide6.QtCore import Qt, QRectF
-from PySide6.QtWidgets import QGraphicsTextItem, QDialogButtonBox, QFrame, QHBoxLayout, QLabel
+from PySide6.QtGui import QAction
+from PySide6.QtWidgets import QGraphicsTextItem, QDialogButtonBox, QFrame, QHBoxLayout, QLabel, QMenuBar
 import pyqtgraph as pg
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
@@ -56,6 +57,10 @@ class Annotator(VideoPlayer):
         self.annotation_chart_view = None
         # self.setup()
         self.show_predictions = False
+
+    @property
+    def class_names(self):
+        return self.plugin.class_names(as_string=False)
 
     def setup(self, menubar=None, plugin=None):
         super().setup(menubar=menubar)
@@ -142,7 +147,7 @@ class Annotator(VideoPlayer):
         :param class_name: the class name
         """
         self.roi_classes[self.T] = class_name
-        self.roi_classes_idx[self.T] = self.plugin.class_names.index(class_name)
+        self.roi_classes_idx[self.T] = self.class_names.index(class_name)
         self.update_roi_classes_plot()
 
     def display_class_name(self, roi_class=None):
@@ -184,7 +189,8 @@ class Annotator(VideoPlayer):
         Save the current ROI annotation process in the database
         """
         parameters = {'annotator': get_config_value('project', 'user'), }
-        parameters.update(self.plugin.parameter_widgets.get_values('annotate'))
+        # parameters.update(self.plugin.parameter_widgets.get_values('annotate'))
+        parameters.update(self.plugin.parameters.values(groups='annotate'))
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             self.run = self.plugin.save_run(project, 'annotate_rois', parameters)
 
@@ -214,8 +220,8 @@ class Annotator(VideoPlayer):
                 Escape key cancels annotations and jumps to the next ROI if there is one
                 :param event: the keyPressEvent
                 """
-        if event.text() in list('azertyuiop')[0:len(self.plugin.class_names)]:
-            self.annotate_current(self.plugin.class_names["azertyuiop".find(event.text())])
+        if event.text() in list('azertyuiop')[0:len(self.class_names)]:
+            self.annotate_current(self.class_names["azertyuiop".find(event.text())])
             self.change_frame(min(self.T + 1, self.viewer.image_resource_data.sizeT - 1))
         elif event.text() == ' ':
             self.annotate_current(class_name=f'{self.class_item.toPlainText()}')
@@ -266,7 +272,8 @@ class AnnotationChartView(ChartView):
 
     @property
     def class_names(self):
-        return self.annotator.plugin.class_names(as_string=False)
+        return self.annotator.class_names
+        # return self.annotator.plugin.class_names(as_string=False)
 
     def plot_roi_classes(self, roi_classes_idx):
         self.chart().clear()
@@ -335,3 +342,25 @@ class AnnotationRunChooser(QFrame):
                                 f"ORDER BY run.id_ DESC;")))
             class_names_runs = {f'run {r[1]} {r[0]}': [] for r in results}
         return class_names_runs
+
+class AnnotationMenuBar(QMenuBar):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.menuROI = self.addMenu('ROI selection')
+        self.actionToggle_annotated = QAction('Annotated ROIs')
+        self.actionToggle_annotated.setCheckable(True)
+        self.actionToggle_annotated.changed.connect(self.toggle_selected_ROIs)
+        self.menuROI.addAction(self.actionToggle_annotated)
+
+    def toggle_selected_ROIs(self):
+        if self.actionToggle_annotated.isChecked():
+            annotated_rois = self.parent().plugin.get_annotated_rois()
+            self.parent().set_roi_list(annotated_rois)
+        else:
+            unannotated_rois, all_rois = self.parent().plugin.get_unannotated_rois()
+            if unannotated_rois:
+                self.parent().set_roi_list(unannotated_rois)
+            else:
+                self.parent().set_roi_list(all_rois)
+        self.parent().next_roi()
+

@@ -33,7 +33,7 @@ from pydetecdiv.settings import get_config_value
 
 from .gui import FOV2ROIlinks, ROIclassificationDialog
 from . import models
-from .gui.annotate import open_annotator, Annotator, AnnotationQualityCheck
+from .gui.annotate import open_annotator, Annotator, AnnotationQualityCheck, AnnotationMenuBar
 from ..parameters import Parameter
 from ...app.gui.core.widgets.viewers.plots import MatplotViewer
 
@@ -175,58 +175,58 @@ class Plugin(plugins.Plugin):
         self.menu = None
         # self.gui = None
         self.parameters.parameter_list = [
-            Parameter(name='model', label='Network', groups=['training', 'classify'], default='ResNet50V2_lstm',
+            Parameter(name='model', label='Network', groups={'training', 'classify'}, default='ResNet50V2_lstm',
                       updater=self.load_models),
-            Parameter(name='weights', label='Weights', groups=['training', 'classify'], default='None',
+            Parameter(name='weights', label='Weights', groups={'training', 'classify'}, default='None',
                       updater=self.update_model_weights),
             Parameter(name='class_names', label='Classes',
-                      groups=['training', 'classify', 'annotate', 'import_annotations'],
+                      groups={'training', 'classify', 'annotate', 'import_annotations'},
                       updater=self.update_class_names),
-            Parameter(name='seed', label='Random seed', groups='training', default=42,
+            Parameter(name='seed', label='Random seed', groups={'training'}, default=42,
                       validator=lambda x: isinstance(x, int)),
-            Parameter(name='optimizer', label='Optimizer', groups='training', default='SGD',
+            Parameter(name='optimizer', label='Optimizer', groups={'training'}, default='SGD',
                       items={'SGD': keras.optimizers.SGD,
                              'Adam': keras.optimizers.Adam,
                              'Adadelta': keras.optimizers.Adadelta,
                              'Adamax': keras.optimizers.Adamax,
                              'Nadam': keras.optimizers.Nadam, }),
-            Parameter(name='learning_rate', label='Learning rate', groups='training', default=0.001,
+            Parameter(name='learning_rate', label='Learning rate', groups={'training'}, default=0.001,
                       range=(0.00001, 1.0), decimals=4,
                       validator=lambda x: isinstance(x, float) & (0.00001 <= x <= 1.0)),
-            Parameter(name='decay_rate', label='Decay rate', groups='training', default=0.95,
+            Parameter(name='decay_rate', label='Decay rate', groups={'training'}, default=0.95,
                       validator=lambda x: isinstance(x, float) & (0.0 < x < 1.0)),
-            Parameter(name='decay_period', label='Decay period', groups='training', default=2,
+            Parameter(name='decay_period', label='Decay period', groups={'training'}, default=2,
                       validator=lambda x: isinstance(x, int) & x > 0),
-            Parameter(name='momentum', label='Momentum', groups='training', default=0.9,
+            Parameter(name='momentum', label='Momentum', groups={'training'}, default=0.9,
                       validator=lambda x: isinstance(x, float) & (0.0 < x < 1.0)),
-            Parameter(name='checkpoint_metric', label='Checkpoint metric', groups='training', default='Loss',
+            Parameter(name='checkpoint_metric', label='Checkpoint metric', groups={'training'}, default='Loss',
                       items={'Loss': 'val_loss', 'Accuracy': 'val_accuracy', }),
-            Parameter(name='early_stopping', label='Early stopping', groups='training', default=False,
+            Parameter(name='early_stopping', label='Early stopping', groups={'training'}, default=False,
                       validator=lambda x: isinstance(x, bool)),
-            Parameter(name='num_training', label='Training dataset', groups='training', default=0.6,
+            Parameter(name='num_training', label='Training dataset', groups={'training'}, default=0.6,
                       range=(0.01, 0.99), decimals=2,
                       validator=lambda x: isinstance(x, float) & (0.01 <= x <= 0.99)),
-            Parameter(name='num_validation', label='Validation dataset', groups='training', default=0.2,
+            Parameter(name='num_validation', label='Validation dataset', groups={'training'}, default=0.2,
                       range=(0.01, 0.99), decimals=2,
                       validator=lambda x: isinstance(x, float) & (0.01 <= x <= 0.99)),
-            Parameter(name='num_test', label='Test dataset', groups='training', default=0.2,
+            Parameter(name='num_test', label='Test dataset', groups={'training'}, default=0.2,
                       range=(0.01, 0.99), decimals=2, enabled=False,
                       validator=lambda x: isinstance(x, float) & (0.01 <= x <= 0.99)),
-            Parameter(name='dataset_seed', label='Random seed', groups='training', default=42,
+            Parameter(name='dataset_seed', label='Random seed', groups={'training'}, default=42,
                       validator=lambda x: isinstance(x, int)),
-            Parameter(name='red_channel', label='Red', groups=['training', 'classify'], default=0,
+            Parameter(name='red_channel', label='Red', groups={'training', 'classify'}, default=0,
                       updater=self.update_channels),
-            Parameter(name='green_channel', label='Green', groups=['training', 'classify'], default=0,
+            Parameter(name='green_channel', label='Green', groups={'training', 'classify'}, default=0,
                       updater=self.update_channels),
-            Parameter(name='blue_channel', label='Blue', groups=['training', 'classify'], default=0,
+            Parameter(name='blue_channel', label='Blue', groups={'training', 'classify'}, default=0,
                       updater=self.update_channels),
-            Parameter(name='epochs', label='Epochs', groups=['training'], default=16,
+            Parameter(name='epochs', label='Epochs', groups={'training'}, default=16,
                       validator=lambda x: isinstance(x, int) & x > 0),
-            Parameter(name='batch_size', label='Batch size', groups=['training', 'classify'], default=128,
+            Parameter(name='batch_size', label='Batch size', groups={'training', 'classify'}, default=128,
                       validator=lambda x: isinstance(x, int) & x > 0, adaptive=True,),
-            Parameter(name='seqlen', label='Sequence length', groups=['training', 'classify'], default=50,
+            Parameter(name='seqlen', label='Sequence length', groups={'training', 'classify'}, default=50,
                       validator=lambda x: isinstance(x, int) & x > 0, adaptive=True,),
-            Parameter(name='annotation_file', label='Annotation file', groups=['annotate'],),
+            Parameter(name='annotation_file', label='Annotation file', groups={'import_annotations'},),
         ]
 
     def register(self):
@@ -331,7 +331,7 @@ class Plugin(plugins.Plugin):
             tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / ROI annotation')
             tab.project_name = PyDetecDiv.project_name
             annotator = Annotator()
-            annotator.setup(plugin=self)
+            annotator.setup(plugin=self, menubar=AnnotationMenuBar(annotator))
             tab.set_top_tab(annotator, 'Manual annotation')
             unannotated_rois, all_rois = self.get_unannotated_rois()
             if unannotated_rois:
