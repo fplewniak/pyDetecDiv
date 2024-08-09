@@ -33,7 +33,7 @@ class Parameter(QObject):
             return self._value
 
     def set_value(self, value):
-        if self.validate(value):
+        if value != self._value and self.validate(value):
             if isinstance(value, (list, dict)):
                 value = json.dumps(value)
             self._value = value
