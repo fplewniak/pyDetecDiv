@@ -16,7 +16,7 @@ class Parameter(QObject):
         self.validator = validator
         self.updater = updater
         self.updater_kwargs = kwargs
-        self.groups = [] if groups is None else groups
+        self.groups = set() if groups is None else groups
         self._value = default
 
     @property
@@ -106,12 +106,24 @@ class Parameters:
         for parameter in self.parameter_list:
             parameter.reset()
 
-    def values(self, param_list=None):
-        param_list = self.parameter_list if param_list is None else param_list
+    def values(self, param_list=None, groups=None):
+        if groups is None:
+            if param_list is None:
+                param_list = self.parameter_list
+        else:
+            group_params = self.get_groups(groups)
+            if param_list is None:
+                param_list = group_params
+            else:
+                param_list = list(set(param_list).intersection(set(group_params)))
         return {param.name: param.value for param in param_list}
 
-    def get_group(self, group):
-        return [param for param in self.parameter_list if param.group == group]
+    def get_groups(self, groups):
+        if isinstance(groups, list):
+            groups = set(groups)
+        if isinstance(groups, str):
+            groups = {groups}
+        return [param for param in self.parameter_list if param.groups.intersection(groups)]
 
     def get_value(self, name):
         return self.values()[name]
