@@ -223,10 +223,10 @@ class Plugin(plugins.Plugin):
             Parameter(name='epochs', label='Epochs', groups={'training'}, default=16,
                       validator=lambda x: isinstance(x, int) & x > 0),
             Parameter(name='batch_size', label='Batch size', groups={'training', 'classify'}, default=128,
-                      validator=lambda x: isinstance(x, int) & x > 0, adaptive=True,),
+                      validator=lambda x: isinstance(x, int) & x > 0, adaptive=True, ),
             Parameter(name='seqlen', label='Sequence length', groups={'training', 'classify'}, default=50,
-                      validator=lambda x: isinstance(x, int) & x > 0, adaptive=True,),
-            Parameter(name='annotation_file', label='Annotation file', groups={'import_annotations'},),
+                      validator=lambda x: isinstance(x, int) & x > 0, adaptive=True, ),
+            Parameter(name='annotation_file', label='Annotation file', groups={'import_annotations'}, ),
         ]
 
     def register(self):
@@ -304,15 +304,16 @@ class Plugin(plugins.Plugin):
             if selected_roi:
                 roi_list = [selected_roi]
                 annotate = menu.addAction('Annotate region classes')
-                annotate.triggered.connect(lambda _: open_annotator(self, roi_list, AnnotationQualityCheck()))
+                annotate.triggered.connect(lambda _: self.manual_annotation(roi_selection=roi_list))
 
     def import_annotated_rois(self):
         """
         Select a csv file containing ROI frames annotations and open a FOV2ROIlinks window to load the data it contains
         into the database as FOVs and ROIs with annotations.
         """
-        filters = ["csv (*.csv)", "tsv (*.tsv)",]
-        annotation_file, _ = QFileDialog.getOpenFileName(PyDetecDiv.main_window, caption='Choose file with annotated ROIs',
+        filters = ["csv (*.csv)", "tsv (*.tsv)", ]
+        annotation_file, _ = QFileDialog.getOpenFileName(PyDetecDiv.main_window,
+                                                         caption='Choose file with annotated ROIs',
                                                          dir='.',
                                                          filter=";;".join(filters),
                                                          selectedFilter=filters[0])
@@ -320,7 +321,8 @@ class Plugin(plugins.Plugin):
             self.parameters.get('annotation_file').set_value(annotation_file)
             FOV2ROIlinks(annotation_file, self)
 
-    def manual_annotation(self):
+    def manual_annotation(self, arg=None, roi_selection=None):
+        print(arg)
         annotation_runs = self.get_annotation_runs()
         # print(annotation_runs)
         if annotation_runs:
@@ -333,36 +335,16 @@ class Plugin(plugins.Plugin):
             annotator = Annotator()
             annotator.setup(plugin=self, menubar=AnnotationMenuBar(annotator))
             tab.set_top_tab(annotator, 'Manual annotation')
-            annotator.update_class_names(self.class_names())
-            # unannotated_rois, all_rois = self.get_unannotated_rois()
-            # if unannotated_rois:
-            #     print(f'There are {len(unannotated_rois)} unannotated ROIs')
-            #     annotator.set_roi_list(unannotated_rois)
-            #     annotator.tscale = unannotated_rois[0].fov.tscale * unannotated_rois[0].fov.tunit
-            # else:
-            #     print(f'All ROIs have been annotated already with {self.class_names()}')
-            #     annotator.set_roi_list(all_rois)
-            #     annotator.tscale = all_rois[0].fov.tscale * all_rois[0].fov.tunit
-            # annotator.next_roi()
+            if roi_selection is None:
+                annotator.update_ROI_selection(self.class_names())
+            else:
+                annotator.set_roi_list(roi_selection)
+                annotator.next_roi()
             annotator.setFocus()
         else:
             print('Define classes')
             print(f'Suggestions: {self.parameters.get("class_names").items}')
             print(f'Suggestion: {dict({self.class_names(): self.class_names(as_string=False)})}')
-        # tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / ROI annotation')
-        # tab.project_name = PyDetecDiv.project_name
-        # annotator = Annotator()
-        # annotator.setup(plugin=self)
-        # # tab.addTab(annotator, 'Annotation run')
-        # tab.set_top_tab(annotator, 'Annotation run')
-        # # # tab.tabCloseRequested.connect(annotator.close)
-        # # plugin.gui.classes.setEnabled(False)
-        # # plugin.gui.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
-        # unannotated_rois = self.get_unannotated_rois()
-        # annotator.set_roi_list(unannotated_rois)
-        # annotator.tscale = unannotated_rois[0].fov.tscale * unannotated_rois[0].fov.tunit
-        # annotator.next_roi()
-        # annotator.setFocus()
 
     def get_annotation_runs(self):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:

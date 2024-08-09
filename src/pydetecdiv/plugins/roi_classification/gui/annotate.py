@@ -69,7 +69,7 @@ class Annotator(VideoPlayer):
         self.viewer_panel.setOrientation(Qt.Vertical)
         self.annotation_chart_view = AnnotationChartView(annotator=self)
         self.viewer_panel.addWidget(self.annotation_chart_view)
-        self.zoom_set_value(200)
+        self.zoom_set_value(100)
         self.video_frame.connect(self.plot_roi_classes)
 
         self.class_names_choice = []
@@ -83,7 +83,7 @@ class Annotator(VideoPlayer):
                 self.class_names_choice[-1].setChecked(True)
             self.class_names_group.addAction(self.class_names_choice[-1])
             self.menubar.menuClasses.addAction(self.class_names_choice[-1])
-        self.class_names_group.triggered.connect(lambda x: self.update_class_names(x.text()))
+        self.class_names_group.triggered.connect(lambda x: self.update_ROI_selection(x.text()))
 
     # def closeEvent(self, event):
     #     self.plugin.gui.classes.setEnabled(True)
@@ -105,6 +105,8 @@ class Annotator(VideoPlayer):
         :param roi_selection: the list of ROIs
         """
         self.roi_list = iter(roi_selection)
+        self.tscale = roi_selection[0].fov.tscale * roi_selection[0].fov.tunit
+
 
     def next_roi(self):
         """
@@ -112,6 +114,7 @@ class Annotator(VideoPlayer):
         """
         try:
             self.roi = next(self.roi_list)
+            self.set_title(f'ROI: {self.roi.name}')
             with pydetecdiv_project(PyDetecDiv.project_name) as project:
                 image_resource = project.get_linked_objects('FOV', self.roi)[0].image_resource()
                 x1, x2 = self.roi.top_left[0], self.roi.bottom_right[0] + 1
@@ -135,9 +138,9 @@ class Annotator(VideoPlayer):
     def plot_roi_classes(self):
         self.annotation_chart_view.plot_roi_classes(self.roi_classes_idx)
 
-    def update_class_names(self, class_names):
+    def update_ROI_selection(self, class_names):
         self.plugin.parameters.get('class_names').set_value(class_names)
-        self.menubar.toggle_selected_ROIs()
+        self.menubar.load_selected_ROIs()
 
     def update_roi_classes_plot(self):
         self.annotation_chart_view.chart().clear()
@@ -256,7 +259,7 @@ class Annotator(VideoPlayer):
             self.class_item.setDefaultTextColor('black')
             if self.run is None:
                 self.save_run()
-            self.set_title(f'Annotation run {self.run.id_}')
+            # self.set_title(f'Annotation run {self.run.id_}')
             self.plugin.save_annotations(self.roi, self.roi_classes, self.run)
             self.next_roi()
         elif event.key() == Qt.Key_Escape:
@@ -366,12 +369,12 @@ class AnnotationMenuBar(QMenuBar):
         self.menuROI = self.addMenu('ROI selection')
         self.actionToggle_annotated = QAction('Annotated ROIs')
         self.actionToggle_annotated.setCheckable(True)
-        self.actionToggle_annotated.changed.connect(self.toggle_selected_ROIs)
+        self.actionToggle_annotated.changed.connect(self.load_selected_ROIs)
         self.menuROI.addAction(self.actionToggle_annotated)
 
         self.menuClasses = self.addMenu('ROI classes')
 
-    def toggle_selected_ROIs(self):
+    def load_selected_ROIs(self):
         if self.actionToggle_annotated.isChecked():
             annotated_rois = self.parent().plugin.get_annotated_rois()
             self.parent().set_roi_list(annotated_rois)
