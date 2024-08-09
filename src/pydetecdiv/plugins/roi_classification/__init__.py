@@ -333,16 +333,17 @@ class Plugin(plugins.Plugin):
             annotator = Annotator()
             annotator.setup(plugin=self, menubar=AnnotationMenuBar(annotator))
             tab.set_top_tab(annotator, 'Manual annotation')
-            unannotated_rois, all_rois = self.get_unannotated_rois()
-            if unannotated_rois:
-                print(f'There are {len(unannotated_rois)} unannotated ROIs')
-                annotator.set_roi_list(unannotated_rois)
-                annotator.tscale = unannotated_rois[0].fov.tscale * unannotated_rois[0].fov.tunit
-            else:
-                print(f'All ROIs have been annotated already with {self.class_names()}')
-                annotator.set_roi_list(all_rois)
-                annotator.tscale = all_rois[0].fov.tscale * all_rois[0].fov.tunit
-            annotator.next_roi()
+            annotator.update_class_names(self.class_names())
+            # unannotated_rois, all_rois = self.get_unannotated_rois()
+            # if unannotated_rois:
+            #     print(f'There are {len(unannotated_rois)} unannotated ROIs')
+            #     annotator.set_roi_list(unannotated_rois)
+            #     annotator.tscale = unannotated_rois[0].fov.tscale * unannotated_rois[0].fov.tunit
+            # else:
+            #     print(f'All ROIs have been annotated already with {self.class_names()}')
+            #     annotator.set_roi_list(all_rois)
+            #     annotator.tscale = all_rois[0].fov.tscale * all_rois[0].fov.tunit
+            # annotator.next_roi()
             annotator.setFocus()
         else:
             print('Define classes')

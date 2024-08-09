@@ -5,7 +5,7 @@ import numpy as np
 import pandas
 import sqlalchemy
 from PySide6.QtCore import Qt, QRectF
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QActionGroup
 from PySide6.QtWidgets import QGraphicsTextItem, QDialogButtonBox, QFrame, QHBoxLayout, QLabel, QMenuBar
 import pyqtgraph as pg
 
@@ -72,6 +72,19 @@ class Annotator(VideoPlayer):
         self.zoom_set_value(200)
         self.video_frame.connect(self.plot_roi_classes)
 
+        self.class_names_choice = []
+        self.class_names_group = QActionGroup(self.menubar)
+        self.class_names_group.setExclusive(True)
+
+        for class_names in self.plugin.parameters.get('class_names').items:
+            self.class_names_choice.append(QAction(class_names))
+            self.class_names_choice[-1].setCheckable(True)
+            if class_names == self.plugin.class_names():
+                self.class_names_choice[-1].setChecked(True)
+            self.class_names_group.addAction(self.class_names_choice[-1])
+            self.menubar.menuClasses.addAction(self.class_names_choice[-1])
+        self.class_names_group.triggered.connect(lambda x: self.update_class_names(x.text()))
+
     # def closeEvent(self, event):
     #     self.plugin.gui.classes.setEnabled(True)
     #     self.plugin.gui.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
@@ -121,6 +134,10 @@ class Annotator(VideoPlayer):
 
     def plot_roi_classes(self):
         self.annotation_chart_view.plot_roi_classes(self.roi_classes_idx)
+
+    def update_class_names(self, class_names):
+        self.plugin.parameters.get('class_names').set_value(class_names)
+        self.menubar.toggle_selected_ROIs()
 
     def update_roi_classes_plot(self):
         self.annotation_chart_view.chart().clear()
@@ -351,6 +368,8 @@ class AnnotationMenuBar(QMenuBar):
         self.actionToggle_annotated.setCheckable(True)
         self.actionToggle_annotated.changed.connect(self.toggle_selected_ROIs)
         self.menuROI.addAction(self.actionToggle_annotated)
+
+        self.menuClasses = self.addMenu('ROI classes')
 
     def toggle_selected_ROIs(self):
         if self.actionToggle_annotated.isChecked():
