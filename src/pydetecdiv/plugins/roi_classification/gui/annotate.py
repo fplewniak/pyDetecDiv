@@ -364,7 +364,7 @@ class AnnotationRunChooser(QFrame):
         return class_names_runs
 
 class AnnotationMenuBar(QMenuBar):
-    def __init__(self, parent=None):
+    def __init__(self, parent):
         super().__init__(parent)
         self.menuROI = self.addMenu('ROI selection')
         self.actionToggle_annotated = QAction('Annotated ROIs')
@@ -386,3 +386,26 @@ class AnnotationMenuBar(QMenuBar):
                 self.parent().set_roi_list(all_rois)
         self.parent().next_roi()
 
+class ClassificationViewer(Annotator):
+    def __init__(self):
+        super().__init__()
+
+class ClassificationMenuBar(AnnotationMenuBar):
+    def __init__(self, parent):
+        super().__init__(parent)
+
+    def load_selected_ROIs(self):
+        runs = self.parent().plugin.get_prediction_runs()
+        classified_rois = self.parent().plugin.get_annotated_rois(runs[self.parent().plugin.class_names()][-1])
+        self.parent().set_roi_list(classified_rois)
+        self.parent().next_roi()
+        # if self.actionToggle_annotated.isChecked():
+        #     annotated_rois = self.parent().plugin.get_annotated_rois()
+        #     self.parent().set_roi_list(annotated_rois)
+        # else:
+        #     unannotated_rois, all_rois = self.parent().plugin.get_unannotated_rois()
+        #     if unannotated_rois:
+        #         self.parent().set_roi_list(unannotated_rois)
+        #     else:
+        #         self.parent().set_roi_list(all_rois)
+        # self.parent().next_roi()

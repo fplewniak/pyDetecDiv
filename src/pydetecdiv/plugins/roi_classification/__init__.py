@@ -33,7 +33,7 @@ from pydetecdiv.settings import get_config_value
 
 from .gui import FOV2ROIlinks, ROIclassificationDialog
 from . import models
-from .gui.annotate import open_annotator, Annotator, AnnotationQualityCheck, AnnotationMenuBar
+from .gui.annotate import open_annotator, Annotator, AnnotationMenuBar, ClassificationViewer, ClassificationMenuBar
 from ..parameters import Parameter
 from ...app.gui.core.widgets.viewers.plots import MatplotViewer
 
@@ -288,9 +288,11 @@ class Plugin(plugins.Plugin):
 
         predict_menu = submenu.addMenu('Classification')
         predict = QAction("Predict ROI classes", predict_menu)
-        edit_results = QAction("Check and edit classes", predict_menu)
+        edit_results = QAction("Check and edit predictions", predict_menu)
         predict_menu.addAction(predict)
         predict_menu.addAction(edit_results)
+
+        edit_results.triggered.connect(self.show_results)
 
     def add_context_action(self, data):
         """
@@ -346,6 +348,23 @@ class Plugin(plugins.Plugin):
             print(f'Suggestions: {self.parameters.get("class_names").items}')
             print(f'Suggestion: {dict({self.class_names(): self.class_names(as_string=False)})}')
 
+    def show_results(self, arg=None, roi_selection=None):
+        prediction_runs = self.get_prediction_runs()
+        if prediction_runs:
+            tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / ROI classification')
+            tab.project_name = PyDetecDiv.project_name
+            annotator = ClassificationViewer()
+            annotator.setup(plugin=self, menubar=ClassificationMenuBar(annotator))
+            tab.set_top_tab(annotator, 'Classification viewer')
+            if roi_selection is None:
+                annotator.update_ROI_selection(self.class_names())
+            else:
+                annotator.set_roi_list(roi_selection)
+                annotator.next_roi()
+            annotator.setFocus()
+        else:
+            print("Nothing to show")
+
     def get_annotation_runs(self):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             results = list(project.repository.session.execute(
@@ -366,6 +385,36 @@ class Plugin(plugins.Plugin):
                         runs[class_names] = [run[0]]
                 self.parameters.get('class_names').value = json.loads(class_names)
         return runs
+
+    def get_prediction_runs(self):
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            results = list(project.repository.session.execute(
+                sqlalchemy.text(f"SELECT run.id_,"
+                                f"run.parameters ->> '$.class_names' as class_names "
+                                f"FROM run "
+                                f"WHERE run.command='predict' "
+                                f"ORDER BY run.id_ ASC;")))
+            runs = {}
+            if results:
+                for run in results:
+                    class_names = json.dumps(json.loads(run[1]))
+                    if class_names in runs:
+                        runs[class_names].append(run[0])
+                    else:
+                        runs[class_names] = [run[0]]
+                self.parameters.get('class_names').value = json.loads(class_names)
+        return runs
+
+        # with pydetecdiv_project(PyDetecDiv.project_name) as project:
+        #     results = list(project.repository.session.execute(
+        #         sqlalchemy.text(f"SELECT "
+        #                         f"run.parameters ->> '$.class_names' as class_names, "
+        #                         f"run.id_ "
+        #                         f"FROM run "
+        #                         f"WHERE run.command='predict' "
+        #                         f"ORDER BY run.id_ DESC;")))
+        #     class_names_runs = {f'run {r[1]} {r[0]}': [] for r in results}
+        # return class_names_runs
 
     def load_model(self):
         """
@@ -570,6 +619,8 @@ class Plugin(plugins.Plugin):
                     f"AND run.parameters ->> '$.class_names'=json('{self.class_names()}') ;",
                     db=db)
             else:
+                if isinstance(run, int):
+                    run = project.get_object('Run', run)
                 query = QSqlQuery(
                     f"SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
                     f"WHERE run.id_=roi_classification.run "
