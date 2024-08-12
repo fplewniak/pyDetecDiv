@@ -33,7 +33,8 @@ from pydetecdiv.settings import get_config_value
 
 from .gui import FOV2ROIlinks, ROIclassificationDialog
 from . import models
-from .gui.annotate import open_annotator, Annotator, AnnotationMenuBar, ClassificationViewer, ClassificationMenuBar
+# from .gui.annotate import open_annotator, Annotator, AnnotationMenuBar, ClassificationViewer, ClassificationMenuBar
+from .gui.classification import ManualAnnotator, ClassificationViewer, ClassificationMenuBar
 from ..parameters import Parameter
 from ...app.gui.core.widgets.viewers.plots import MatplotViewer
 
@@ -288,7 +289,7 @@ class Plugin(plugins.Plugin):
 
         predict_menu = submenu.addMenu('Classification')
         predict = QAction("Predict ROI classes", predict_menu)
-        edit_results = QAction("Check and edit predictions", predict_menu)
+        edit_results = QAction("View classification results", predict_menu)
         predict_menu.addAction(predict)
         predict_menu.addAction(edit_results)
 
@@ -328,20 +329,24 @@ class Plugin(plugins.Plugin):
         annotation_runs = self.get_annotation_runs()
         # print(annotation_runs)
         if annotation_runs:
+            self.parameters.get('class_names').set_value(list(annotation_runs.keys())[0])
             # print('Choose a set of classes:')
             # for c in self.parameters.get('class_names').items:
             #     print(c)
             # print('Default: ', self.class_names())
             tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / ROI annotation')
             tab.project_name = PyDetecDiv.project_name
-            annotator = Annotator()
-            annotator.setup(plugin=self, menubar=AnnotationMenuBar(annotator))
+            # annotator = Annotator()
+            # annotator.setup(plugin=self, menubar=AnnotationMenuBar(annotator))
+            annotator = ManualAnnotator()
+            annotator.setup(plugin=self)
             tab.set_top_tab(annotator, 'Manual annotation')
             if roi_selection is None:
                 annotator.update_ROI_selection(self.class_names())
             else:
                 annotator.set_roi_list(roi_selection)
                 annotator.next_roi()
+            # print(annotator.parent().isActiveWindow(), annotator.isActiveWindow())
             annotator.setFocus()
         else:
             print('Define classes')
@@ -373,7 +378,6 @@ class Plugin(plugins.Plugin):
                                 f"run.parameters ->> '$.class_names' as class_names "
                                 f"FROM run "
                                 f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
-                                f"AND annotator='{get_config_value('project', 'user')}' "
                                 f"ORDER BY run.id_ ASC;")))
             runs = {}
             if results:
@@ -383,7 +387,7 @@ class Plugin(plugins.Plugin):
                         runs[class_names].append(run[0])
                     else:
                         runs[class_names] = [run[0]]
-                self.parameters.get('class_names').value = json.loads(class_names)
+                # self.parameters.get('class_names').value = json.loads(class_names)
         return runs
 
     def get_prediction_runs(self):
@@ -580,13 +584,13 @@ class Plugin(plugins.Plugin):
             self.gui.update_all()
         self.gui.setVisible(True)
 
-    def annotate_rois(self):
-        """
-        Launch the annotator GUI for ROI annotation
-        """
-        with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            selected_rois = random.sample(project.get_objects('ROI'), self.gui.roi_number.value())
-        open_annotator(self, selected_rois, Annotator())
+    # def annotate_rois(self):
+    #     """
+    #     Launch the annotator GUI for ROI annotation
+    #     """
+    #     with pydetecdiv_project(PyDetecDiv.project_name) as project:
+    #         selected_rois = random.sample(project.get_objects('ROI'), self.gui.roi_number.value())
+    #     open_annotator(self, selected_rois, Annotator())
 
     def save_annotations(self, roi, roi_classes, run):
         """
@@ -677,6 +681,35 @@ class Plugin(plugins.Plugin):
                         roi_classes[annotation[1]] = annotation[2]
         return roi_classes
 
+    def get_classifications(self, roi, run_list, as_index=True):
+        """
+        Get the annotations for a ROI as defined in a list of runs
+
+        :param roi: the ROI
+        :param run_list: the list of Runs where the ROI was annotated or classified
+        :param as_index: bool set to True to return annotations as indices of class_names list, set to False to return
+         annotations as class names
+        :return: the list of annotated classes by frame
+        """
+        roi_classes = [-1] * roi.fov.image_resource().image_resource_data().sizeT
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            results = list(project.repository.session.execute(
+                sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,"
+                                f"run.parameters ->> '$.class_names' as class_names, rc.run, run.id_ "
+                                f"FROM run, roi_classification as rc "
+                                f"WHERE rc.run IN ({','.join([str(i) for i in run_list])}) and rc.roi={roi.id_} "
+                                f"AND run.id_=rc.run "
+                                f"ORDER BY rc.run ASC;")))
+            if results:
+                class_names = json.loads(results[0][3])
+                if as_index:
+                    for annotation in results:
+                        roi_classes[annotation[1]] = class_names.index(annotation[2])
+                else:
+                    for annotation in results:
+                        roi_classes[annotation[1]] = annotation[2]
+        return roi_classes
+
     def get_prediction(self, roi, run, as_index=True):
         """
         Get the predictions for a ROI
@@ -730,7 +763,6 @@ class Plugin(plugins.Plugin):
     def compute_class_weights(self):
         class_counts = dict(
             Counter([x for roi in self.get_annotated_rois() for x in self.get_annotation(roi) if x >= 0]))
-        print(class_counts)
         n = len(class_counts)
         total = sum([v for c, v in class_counts.items()])
         weights = {k: total / (n * class_counts[k]) for k in class_counts.keys()}
