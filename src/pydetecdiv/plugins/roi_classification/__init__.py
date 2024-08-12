@@ -327,17 +327,10 @@ class Plugin(plugins.Plugin):
     def manual_annotation(self, arg=None, roi_selection=None):
         print(arg)
         annotation_runs = self.get_annotation_runs()
-        # print(annotation_runs)
         if annotation_runs:
             self.parameters.get('class_names').set_value(list(annotation_runs.keys())[0])
-            # print('Choose a set of classes:')
-            # for c in self.parameters.get('class_names').items:
-            #     print(c)
-            # print('Default: ', self.class_names())
             tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / ROI annotation')
             tab.project_name = PyDetecDiv.project_name
-            # annotator = Annotator()
-            # annotator.setup(plugin=self, menubar=AnnotationMenuBar(annotator))
             annotator = ManualAnnotator()
             annotator.setup(plugin=self)
             tab.set_top_tab(annotator, 'Manual annotation')
@@ -346,7 +339,6 @@ class Plugin(plugins.Plugin):
             else:
                 annotator.set_roi_list(roi_selection)
                 annotator.next_roi()
-            # print(annotator.parent().isActiveWindow(), annotator.isActiveWindow())
             annotator.setFocus()
         else:
             print('Define classes')
@@ -460,18 +452,6 @@ class Plugin(plugins.Plugin):
             parameters = {'fov': fov_names}
             parameters.update(self.parameter_widgets.get_values('classify'))
             run = self.save_run(project, 'predict', parameters)
-            # run = self.save_run(project, 'predict', {'fov': fov_names,
-            #                                          'network': self.gui.network.currentData().__name__,
-            #                                          'weights': self.gui.weights.currentData(),
-            #                                          'class_names': self.class_names,
-            #                                          'red': self.gui.red_channel.currentIndex(),
-            #                                          'green': self.gui.green_channel.currentIndex(),
-            #                                          'blue': self.gui.blue_channel.currentIndex()
-            #                                          })
-            # roi_list = np.ndarray.flatten(np.array([roi for roi in [fov.roi_list for fov in
-            #                                                         [project.get_named_object('FOV', fov_name) for
-            #                                                          fov_name in
-            #                                                          fov_names]]]))
             roi_list = np.ndarray.flatten(np.array(list([fov.roi_list for fov in
                                                          [project.get_named_object('FOV', fov_name) for
                                                           fov_name in
@@ -540,20 +520,13 @@ class Plugin(plugins.Plugin):
                 pass
 
         self.parameters.get('weights').set_items({'None': None})
-        # _ = [self.weights.addItem(os.path.basename(f), userData=f) for f in w_files]
         weights = {os.path.basename(f): f for f in w_files}
-        # self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
-        # if self.action_menu.currentText() != 'Classify ROIs':
-        #     self.weights.addItem('None', userData=None)
-        # elif len(w_files) == 0:
-        #     self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
         self.parameters.get('weights').add_items(weights)
 
     def update_class_names(self):
         """
         Update the classes associated with the currently selected model
         """
-        # self.classes.setText(json.dumps(get_class_names()))
         if self.parameters.get('weights').item != 'None':
             self.parameters.get('class_names').set_items(self.get_class_names(self.parameters.get('weights').items))
         else:
@@ -584,13 +557,6 @@ class Plugin(plugins.Plugin):
             self.gui.update_all()
         self.gui.setVisible(True)
 
-    # def annotate_rois(self):
-    #     """
-    #     Launch the annotator GUI for ROI annotation
-    #     """
-    #     with pydetecdiv_project(PyDetecDiv.project_name) as project:
-    #         selected_rois = random.sample(project.get_objects('ROI'), self.gui.roi_number.value())
-    #     open_annotator(self, selected_rois, Annotator())
 
     def save_annotations(self, roi, roi_classes, run):
         """
