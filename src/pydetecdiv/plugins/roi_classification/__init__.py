@@ -289,11 +289,11 @@ class Plugin(plugins.Plugin):
 
         predict_menu = submenu.addMenu('Classification')
         predict = QAction("Predict ROI classes", predict_menu)
-        edit_results = QAction("View classification results", predict_menu)
+        show_results = QAction("View classification results", predict_menu)
         predict_menu.addAction(predict)
-        predict_menu.addAction(edit_results)
+        predict_menu.addAction(show_results)
 
-        edit_results.triggered.connect(self.show_results)
+        show_results.triggered.connect(self.show_results)
 
     def add_context_action(self, data):
         """
@@ -348,6 +348,7 @@ class Plugin(plugins.Plugin):
     def show_results(self, arg=None, roi_selection=None):
         prediction_runs = self.get_prediction_runs()
         if prediction_runs:
+            self.parameters.get('class_names').set_value(list(prediction_runs.keys())[0])
             tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / ROI classification')
             tab.project_name = PyDetecDiv.project_name
             annotator = ClassificationViewer()
@@ -381,6 +382,19 @@ class Plugin(plugins.Plugin):
                         runs[class_names] = [run[0]]
                 # self.parameters.get('class_names').value = json.loads(class_names)
         return runs
+
+    # def get_prediction_runs(self):
+    #     print(f'get_prediction_runs {self.class_names()}')
+    #     with pydetecdiv_project(PyDetecDiv.project_name) as project:
+    #         results = list(project.repository.session.execute(
+    #             sqlalchemy.text(f"SELECT run.id_,"
+    #                             f"run.parameters ->> '$.class_names' as class_names "
+    #                             f"FROM run "
+    #                             f"WHERE run.command='predict' "
+    #                             # f"AND class_names=json('{self.class_names()}') "
+    #                             f"ORDER BY run.id_ ASC;")))
+    #         runs = [f'Run {run[0]}' for run in results]
+    #     return runs
 
     def get_prediction_runs(self):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
@@ -523,14 +537,14 @@ class Plugin(plugins.Plugin):
         weights = {os.path.basename(f): f for f in w_files}
         self.parameters.get('weights').add_items(weights)
 
-    def update_class_names(self):
+    def update_class_names(self, prediction=False):
         """
         Update the classes associated with the currently selected model
         """
         if self.parameters.get('weights').item != 'None':
             self.parameters.get('class_names').set_items(self.get_class_names(self.parameters.get('weights').items))
         else:
-            self.parameters.get('class_names').set_items(self.get_class_names())
+            self.parameters.get('class_names').set_items(self.get_class_names(prediction=prediction))
 
     def update_channels(self):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
@@ -556,7 +570,6 @@ class Plugin(plugins.Plugin):
             self.gui = ROIclassificationDialog(self, title='ROI class prediction (Deep Learning)')
             self.gui.update_all()
         self.gui.setVisible(True)
-
 
     def save_annotations(self, roi, roi_classes, run):
         """
@@ -992,7 +1005,7 @@ class Plugin(plugins.Plugin):
                 rec_items[roi.name].setBrush(colours[annotation])
 
     @staticmethod
-    def get_class_names(weight_file=None):
+    def get_class_names(weight_file=None, prediction=False):
         """
         Get the class names for a project
 
@@ -1000,22 +1013,20 @@ class Plugin(plugins.Plugin):
         """
         if (weight_file != 'None') and (weight_file is not None):
             clause = f"(run.command='train_model') AND (best_weights='{weight_file}' OR last_weights='{weight_file}')"
+        elif prediction:
+            clause = f"run.command='predict'"
         else:
-            clause = (f"annotator='{get_config_value('project', 'user')}' "
-                      f"AND (run.command='annotate_rois' OR run.command='import_annotated_rois') ")
+            clause = f"(run.command='annotate_rois' OR run.command='import_annotated_rois')"
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             results = list(project.repository.session.execute(
                 sqlalchemy.text(f"SELECT "
-                                f"run.parameters ->> '$.annotator' as annotator, "
                                 f"run.parameters ->> '$.class_names' as class_names, "
                                 f"run.parameters ->> '$.best_weights' as best_weights, "
                                 f"run.parameters ->> '$.last_weights' as last_weights "
                                 f"FROM run "
                                 f"WHERE {clause} "
                                 f"ORDER BY run.id_ DESC;")))
-            # class_names = json.loads(results[-1][1])
-            # class_names = {r[1]: None for r in results}
-            class_names = {json.dumps(json.loads(r[1])): json.loads(r[1]) for r in results}
+            class_names = {json.dumps(json.loads(r[0])): json.loads(r[0]) for r in results}
         return class_names
 
 

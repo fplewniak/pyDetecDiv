@@ -43,6 +43,7 @@ class AnnotationTool(VideoPlayer):
     def setup(self, menubar=None, plugin=None, scene=None):
         super().setup(menubar=menubar)
         self.plugin = plugin
+        self.menubar.setup()
         self.viewer_panel.setup(scene=scene)
         self.viewer_panel.setOrientation(Qt.Vertical)
         self.annotation_chart_view = AnnotationChartView(annotator=self)
@@ -89,8 +90,11 @@ class AnnotationTool(VideoPlayer):
     def plot_roi_classes(self):
         self.annotation_chart_view.plot_roi_classes(self.roi_classes_idx)
 
-    def update_ROI_selection(self, class_names):
+    def select_class_names(self, class_names):
         self.plugin.parameters.get('class_names').set_value(class_names)
+
+    def update_ROI_selection(self, class_names):
+        self.select_class_names(class_names)
         self.load_selected_ROIs()
 
     def load_selected_ROIs(self):
@@ -207,18 +211,18 @@ class ManualAnnotator(AnnotationTool):
         if scene is None:
             scene = AnnotationScene()
         super().setup(menubar=ManualAnnotationMenuBar(self), plugin=plugin, scene=scene)
-        self.class_names_choice = []
-        self.class_names_group = QActionGroup(self.menubar)
-        self.class_names_group.setExclusive(True)
-
-        for class_names in self.plugin.parameters.get('class_names').items:
-            self.class_names_choice.append(QAction(class_names))
-            self.class_names_choice[-1].setCheckable(True)
-            if class_names == self.plugin.class_names():
-                self.class_names_choice[-1].setChecked(True)
-            self.class_names_group.addAction(self.class_names_choice[-1])
-            self.menubar.menuClasses.addAction(self.class_names_choice[-1])
-        self.class_names_group.triggered.connect(lambda x: self.update_ROI_selection(x.text()))
+        # self.class_names_choice = []
+        # self.class_names_group = QActionGroup(self.menubar)
+        # self.class_names_group.setExclusive(True)
+        #
+        # for class_names in self.plugin.parameters.get('class_names').items:
+        #     self.class_names_choice.append(QAction(class_names))
+        #     self.class_names_choice[-1].setCheckable(True)
+        #     if class_names == self.plugin.class_names():
+        #         self.class_names_choice[-1].setChecked(True)
+        #     self.class_names_group.addAction(self.class_names_choice[-1])
+        #     self.menubar.menuClasses.addAction(self.class_names_choice[-1])
+        # self.class_names_group.triggered.connect(lambda x: self.update_ROI_selection(x.text()))
 
     def keyPressEvent(self, event):
         """
@@ -283,7 +287,47 @@ class ManualAnnotator(AnnotationTool):
             self.run = self.plugin.save_run(project, 'annotate_rois', parameters)
 
 
-class ManualAnnotationMenuBar(QMenuBar):
+class ClassificationViewer(AnnotationTool):
+    def __init__(self):
+        super().__init__()
+
+    @property
+    def annotation_run_list(self):
+        return [self.menubar.prediction_runs_group.checkedAction().data()]
+
+    def load_selected_ROIs(self):
+        self.select_prediction_run(self.menubar.prediction_runs_group.checkedAction())
+        self.next_roi()
+
+    def select_prediction_run(self, prediction_run):
+        classified_rois = self.plugin.get_annotated_rois(run=prediction_run.data())
+        self.set_roi_list(classified_rois)
+        self.next_roi()
+
+
+class AnnotationMenuBar(QMenuBar):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.class_names_choice = []
+        self.menuClasses = self.addMenu('ROI classes')
+        self.class_names_group = QActionGroup(self)
+        self.class_names_group.setExclusive(True)
+        self.class_names_group.triggered.connect(lambda x: self.parent().update_ROI_selection(x.text()))
+
+    def setup(self):
+        self.set_class_names_choice()
+
+    def set_class_names_choice(self):
+        for class_names in self.parent().plugin.parameters.get('class_names').items:
+            self.class_names_choice.append(QAction(class_names))
+            self.class_names_choice[-1].setCheckable(True)
+            if class_names == self.parent().plugin.class_names():
+                self.class_names_choice[-1].setChecked(True)
+            self.class_names_group.addAction(self.class_names_choice[-1])
+            self.menuClasses.addAction(self.class_names_choice[-1])
+
+
+class ManualAnnotationMenuBar(AnnotationMenuBar):
     def __init__(self, parent):
         super().__init__(parent)
         self.menuROI = self.addMenu('ROI selection')
@@ -292,14 +336,39 @@ class ManualAnnotationMenuBar(QMenuBar):
         self.actionToggle_annotated.changed.connect(self.parent().load_selected_ROIs)
         self.menuROI.addAction(self.actionToggle_annotated)
 
-        self.menuClasses = self.addMenu('ROI classes')
+    def setup(self):
+        super().setup()
+        self.class_names_group.triggered.connect(lambda x: self.parent().update_ROI_selection(x.text()))
 
 
-class ClassificationViewer(AnnotationTool):
-    def __init__(self):
-        super().__init__()
-
-
-class ClassificationMenuBar(QMenuBar):
+class ClassificationMenuBar(AnnotationMenuBar):
     def __init__(self, parent):
         super().__init__(parent)
+        self.run_choice = []
+        self.menu_prediction_runs = self.addMenu('Prediction runs')
+        self.prediction_runs_group = QActionGroup(self)
+        self.prediction_runs_group.setExclusive(True)
+        self.prediction_runs_group.triggered.connect(lambda x: self.parent().select_prediction_run(x))
+
+    def setup(self):
+        super().setup()
+        self.set_run_choice(self.parent().plugin.class_names())
+        self.class_names_group.triggered.connect(lambda x: self.set_run_choice(x.text()))
+
+    def set_class_names_choice(self):
+        self.parent().plugin.update_class_names(prediction=True)
+        super().set_class_names_choice()
+
+    def set_run_choice(self, class_names):
+        self.parent().plugin.parameters.get('class_names').set_value(class_names)
+        self.run_choice = []
+        for action in self.prediction_runs_group.actions():
+            self.prediction_runs_group.removeAction(action)
+        prediction_runs = self.parent().plugin.get_prediction_runs()
+        for prediction_run in prediction_runs[class_names]:
+            self.run_choice.append(QAction(f'run-{prediction_run}'))
+            self.run_choice[-1].setCheckable(True)
+            self.prediction_runs_group.addAction(self.run_choice[-1])
+            self.menu_prediction_runs.addAction(self.run_choice[-1])
+            self.run_choice[-1].setData(prediction_run)
+        self.run_choice[0].setChecked(True)
