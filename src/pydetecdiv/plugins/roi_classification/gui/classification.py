@@ -95,7 +95,10 @@ class AnnotationTool(VideoPlayer):
 
     def update_ROI_selection(self, class_names):
         self.plugin.parameters.get('class_names').set_value(class_names)
-        self.menubar.load_selected_ROIs()
+        self.load_selected_ROIs()
+
+    def load_selected_ROIs(self):
+        raise NotImplementedError
 
     def update_roi_classes_plot(self):
         self.annotation_chart_view.chart().clear()
@@ -254,6 +257,19 @@ class ManualAnnotator(AnnotationTool):
         elif event.key() == Qt.Key_Escape:
             self.next_roi()
 
+    def load_selected_ROIs(self):
+        if self.menubar.actionToggle_annotated.isChecked():
+            annotated_rois = self.plugin.get_annotated_rois()
+            self.set_roi_list(annotated_rois)
+        else:
+            unannotated_rois, all_rois = self.plugin.get_unannotated_rois()
+            if unannotated_rois:
+                self.set_roi_list(unannotated_rois)
+            else:
+                self.menubar.actionToggle_annotated.setChecked(True)
+                self.set_roi_list(all_rois)
+        self.next_roi()
+
     def annotate_current(self, class_name=None):
         """
         Assign the class name to the current frame
@@ -279,23 +295,10 @@ class ManualAnnotationMenuBar(QMenuBar):
         self.menuROI = self.addMenu('ROI selection')
         self.actionToggle_annotated = QAction('Annotated ROIs')
         self.actionToggle_annotated.setCheckable(True)
-        self.actionToggle_annotated.changed.connect(self.load_selected_ROIs)
+        self.actionToggle_annotated.changed.connect(self.parent().load_selected_ROIs)
         self.menuROI.addAction(self.actionToggle_annotated)
 
         self.menuClasses = self.addMenu('ROI classes')
-
-    def load_selected_ROIs(self):
-        if self.actionToggle_annotated.isChecked():
-            annotated_rois = self.parent().plugin.get_annotated_rois()
-            self.parent().set_roi_list(annotated_rois)
-        else:
-            unannotated_rois, all_rois = self.parent().plugin.get_unannotated_rois()
-            if unannotated_rois:
-                self.parent().set_roi_list(unannotated_rois)
-            else:
-                self.actionToggle_annotated.setChecked(True)
-                self.parent().set_roi_list(all_rois)
-        self.parent().next_roi()
 
 
 class ClassificationViewer(AnnotationTool):
