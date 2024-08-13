@@ -73,10 +73,6 @@ class AnnotationTool(VideoPlayer):
             self.scene.removeItem(self.class_item)
         self.class_item = self.viewer.background.addItem(QGraphicsTextItem('-'))
 
-        # if self.roi_classes(self.T) == '-' and self.T > 0 and self.roi_classes(self.T - 1) != '-':
-        #     roi_class = self.roi_classes(self.T - 1)
-        #     self.class_item.setDefaultTextColor('red')
-        # else:
         roi_class = self.roi_classes(self.T) if roi_class is None else roi_class
         self.class_item.setDefaultTextColor('black')
         self.class_item.setPlainText(roi_class)
@@ -126,7 +122,6 @@ class AnnotationTool(VideoPlayer):
                 crop = (slice(x1, x2), slice(y1, y2))
                 self.setBackgroundImage(image_resource.image_resource_data(), crop=crop)
                 self.viewer.display()
-                # self.roi_classes = self.get_roi_annotations()
                 self.roi_classes_idx = self.get_roi_annotations(as_index=True)
                 self.plot_roi_classes()
                 self.change_frame(0)
@@ -283,7 +278,6 @@ class ManualAnnotator(AnnotationTool):
         Save the current ROI annotation process in the database
         """
         parameters = {'annotator': get_config_value('project', 'user'), }
-        # parameters.update(self.plugin.parameter_widgets.get_values('annotate'))
         parameters.update(self.plugin.parameters.values(groups='annotate'))
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             self.run = self.plugin.save_run(project, 'annotate_rois', parameters)
