@@ -8,6 +8,7 @@ from pydetecdiv.app.gui.core.widgets.viewers import Scene
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer
 from pydetecdiv.app.gui.core.widgets.viewers.plots import ChartView
 from pydetecdiv.settings import get_config_value
+from pydetecdiv.utils import BidirectionalIterator, previous
 
 
 class AnnotationTool(VideoPlayer):
@@ -109,7 +110,8 @@ class AnnotationTool(VideoPlayer):
         Sets the list of ROIs to annotate as an iterator
         :param roi_selection: the list of ROIs
         """
-        self.roi_list = iter(roi_selection)
+        # self.roi_list = iter(roi_selection)
+        self.roi_list = BidirectionalIterator(roi_selection)
         self.tscale = roi_selection[0].fov.tscale * roi_selection[0].fov.tunit
 
     def next_roi(self):
@@ -118,22 +120,32 @@ class AnnotationTool(VideoPlayer):
         """
         try:
             self.roi = next(self.roi_list)
-            self.set_title(f'ROI: {self.roi.name}')
-            with pydetecdiv_project(PyDetecDiv.project_name) as project:
-                image_resource = project.get_linked_objects('FOV', self.roi)[0].image_resource()
-                x1, x2 = self.roi.top_left[0], self.roi.bottom_right[0] + 1
-                y1, y2 = self.roi.top_left[1], self.roi.bottom_right[1] + 1
-                crop = (slice(x1, x2), slice(y1, y2))
-                self.setBackgroundImage(image_resource.image_resource_data(), crop=crop)
-                self.viewer.display()
-                self.roi_classes_idx = self.get_roi_annotations(as_index=True)
-                self.plot_roi_classes()
-                self.change_frame(0)
-                self.video_frame.emit(0)
-                self.control_panel.video_control.t_slider.setSliderPosition(0)
-                PyDetecDiv.main_window.active_subwindow.setCurrentWidget(self)
+            self.display_roi()
         except StopIteration:
             pass
+
+    def previous_roi(self):
+        try:
+            self.roi = previous(self.roi_list)
+            self.display_roi()
+        except StopIteration:
+            pass
+
+    def display_roi(self):
+        self.set_title(f'ROI: {self.roi.name}')
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            image_resource = project.get_linked_objects('FOV', self.roi)[0].image_resource()
+            x1, x2 = self.roi.top_left[0], self.roi.bottom_right[0] + 1
+            y1, y2 = self.roi.top_left[1], self.roi.bottom_right[1] + 1
+            crop = (slice(x1, x2), slice(y1, y2))
+            self.setBackgroundImage(image_resource.image_resource_data(), crop=crop)
+            self.viewer.display()
+            self.roi_classes_idx = self.get_roi_annotations(as_index=True)
+            self.plot_roi_classes()
+            self.change_frame(0)
+            self.video_frame.emit(0)
+            self.control_panel.video_control.t_slider.setSliderPosition(0)
+            PyDetecDiv.main_window.active_subwindow.setCurrentWidget(self)
 
     def get_roi_annotations(self, as_index=False):
         """
@@ -248,11 +260,13 @@ class ManualAnnotator(AnnotationTool):
             self.change_frame(max(self.T - 1, 0))
         elif event.key() == Qt.Key_PageDown:
             self.annotate_current(class_name=f'{self.class_item.toPlainText()}')
-            self.class_item.setDefaultTextColor('black')
+            # self.class_item.setDefaultTextColor('black')
             if self.run is None:
                 self.save_run()
             self.plugin.save_annotations(self.roi, [self.class_names[c] for c in self.roi_classes_idx], self.run)
             self.next_roi()
+        elif event.key() == Qt.Key_PageUp:
+            self.previous_roi()
         elif event.key() == Qt.Key_Escape:
             self.next_roi()
 
@@ -307,7 +321,6 @@ class PredictionViewer(AnnotationTool):
     def select_prediction_run(self, prediction_run):
         classified_rois = self.plugin.get_annotated_rois(run=prediction_run.data())
         self.set_roi_list(classified_rois)
-        self.next_roi()
 
     def keyPressEvent(self, event):
         """
@@ -329,6 +342,8 @@ class PredictionViewer(AnnotationTool):
             self.change_frame(max(self.T - 1, 0))
         elif event.key() == Qt.Key_PageDown:
             self.next_roi()
+        elif event.key() == Qt.Key_PageUp:
+            self.previous_roi()
         elif event.key() == Qt.Key_Escape:
             self.next_roi()
 
