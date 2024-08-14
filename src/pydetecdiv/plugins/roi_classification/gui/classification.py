@@ -287,9 +287,14 @@ class ManualAnnotator(AnnotationTool):
             self.run = self.plugin.save_run(project, 'annotate_rois', parameters)
 
 
-class ClassificationViewer(AnnotationTool):
+class PredictionViewer(AnnotationTool):
     def __init__(self):
         super().__init__()
+
+    def setup(self, menubar=None, plugin=None, scene=None):
+        if scene is None:
+            scene = AnnotationScene()
+        super().setup(menubar=PredictionMenuBar(self), plugin=plugin, scene=scene)
 
     @property
     def annotation_run_list(self):
@@ -341,7 +346,7 @@ class ManualAnnotationMenuBar(AnnotationMenuBar):
         self.class_names_group.triggered.connect(lambda x: self.parent().update_ROI_selection(x.text()))
 
 
-class ClassificationMenuBar(AnnotationMenuBar):
+class PredictionMenuBar(AnnotationMenuBar):
     def __init__(self, parent):
         super().__init__(parent)
         self.run_choice = []

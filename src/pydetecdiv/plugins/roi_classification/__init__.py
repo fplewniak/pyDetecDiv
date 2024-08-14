@@ -33,8 +33,7 @@ from pydetecdiv.settings import get_config_value
 
 from .gui import FOV2ROIlinks, ROIclassificationDialog
 from . import models
-# from .gui.annotate import open_annotator, Annotator, AnnotationMenuBar, ClassificationViewer, ClassificationMenuBar
-from .gui.classification import ManualAnnotator, ClassificationViewer, ClassificationMenuBar
+from .gui.classification import ManualAnnotator, PredictionViewer
 from ..parameters import Parameter
 from ...app.gui.core.widgets.viewers.plots import MatplotViewer
 
@@ -308,6 +307,8 @@ class Plugin(plugins.Plugin):
                 roi_list = [selected_roi]
                 annotate = menu.addAction('Annotate region classes')
                 annotate.triggered.connect(lambda _: self.manual_annotation(roi_selection=roi_list))
+                view_predictions = menu.addAction('View class predictions')
+                view_predictions.triggered.connect(lambda _: self.show_results(roi_selection=roi_list))
 
     def import_annotated_rois(self):
         """
@@ -325,7 +326,6 @@ class Plugin(plugins.Plugin):
             FOV2ROIlinks(annotation_file, self)
 
     def manual_annotation(self, arg=None, roi_selection=None):
-        print(arg)
         annotation_runs = self.get_annotation_runs()
         if annotation_runs:
             self.parameters.get('class_names').set_value(list(annotation_runs.keys())[0])
@@ -349,11 +349,11 @@ class Plugin(plugins.Plugin):
         prediction_runs = self.get_prediction_runs()
         if prediction_runs:
             self.parameters.get('class_names').set_value(list(prediction_runs.keys())[0])
-            tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / ROI classification')
+            tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / ROI class predictions')
             tab.project_name = PyDetecDiv.project_name
-            annotator = ClassificationViewer()
-            annotator.setup(plugin=self, menubar=ClassificationMenuBar(annotator))
-            tab.set_top_tab(annotator, 'Classification viewer')
+            annotator = PredictionViewer()
+            annotator.setup(plugin=self)
+            tab.set_top_tab(annotator, 'Prediction viewer')
             if roi_selection is None:
                 annotator.update_ROI_selection(self.class_names())
             else:
@@ -383,19 +383,6 @@ class Plugin(plugins.Plugin):
                 # self.parameters.get('class_names').value = json.loads(class_names)
         return runs
 
-    # def get_prediction_runs(self):
-    #     print(f'get_prediction_runs {self.class_names()}')
-    #     with pydetecdiv_project(PyDetecDiv.project_name) as project:
-    #         results = list(project.repository.session.execute(
-    #             sqlalchemy.text(f"SELECT run.id_,"
-    #                             f"run.parameters ->> '$.class_names' as class_names "
-    #                             f"FROM run "
-    #                             f"WHERE run.command='predict' "
-    #                             # f"AND class_names=json('{self.class_names()}') "
-    #                             f"ORDER BY run.id_ ASC;")))
-    #         runs = [f'Run {run[0]}' for run in results]
-    #     return runs
-
     def get_prediction_runs(self):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             results = list(project.repository.session.execute(
@@ -414,17 +401,6 @@ class Plugin(plugins.Plugin):
                         runs[class_names] = [run[0]]
                 self.parameters.get('class_names').value = json.loads(class_names)
         return runs
-
-        # with pydetecdiv_project(PyDetecDiv.project_name) as project:
-        #     results = list(project.repository.session.execute(
-        #         sqlalchemy.text(f"SELECT "
-        #                         f"run.parameters ->> '$.class_names' as class_names, "
-        #                         f"run.id_ "
-        #                         f"FROM run "
-        #                         f"WHERE run.command='predict' "
-        #                         f"ORDER BY run.id_ DESC;")))
-        #     class_names_runs = {f'run {r[1]} {r[0]}': [] for r in results}
-        # return class_names_runs
 
     def load_model(self):
         """
@@ -502,7 +478,6 @@ class Plugin(plugins.Plugin):
         """
         Load available models (modules)
 
-        :param gui: the GUI
         """
         for _, name, _ in pkgutil.iter_modules(models.__path__):
             self.parameters.get('model').add_item(
@@ -514,7 +489,6 @@ class Plugin(plugins.Plugin):
             sys.modules[name] = module
             spec.loader.exec_module(module)
             self.parameters.get('model').add_item({name: module})
-        # gui.update()
 
     def update_model_weights(self):
         """
