@@ -204,7 +204,7 @@ class AnnotationChartView(ChartView):
         left.setGrid(100)
         self.addXline(self.annotator.T, angle=90, movable=False, pen=pg.mkPen('g', width=2))
         self.addLinePlot(roi_classes_idx, pen=pg.mkPen('k', width=1))
-        self.addScatterPlot(roi_classes_idx, size=4, pen=pg.mkPen(None), brush=pg.mkBrush(255, 0, 0, 255))
+        self.addScatterPlot(roi_classes_idx, size=6, pen=pg.mkPen(None), brush=pg.mkBrush(255, 0, 0, 255))
 
     def clicked(self, plot, points):
         self.annotator.change_frame(int(points[0].pos().x()))
@@ -223,18 +223,6 @@ class ManualAnnotator(AnnotationTool):
         if scene is None:
             scene = AnnotationScene()
         super().setup(menubar=ManualAnnotationMenuBar(self), plugin=plugin, scene=scene)
-        # self.class_names_choice = []
-        # self.class_names_group = QActionGroup(self.menubar)
-        # self.class_names_group.setExclusive(True)
-        #
-        # for class_names in self.plugin.parameters.get('class_names').items:
-        #     self.class_names_choice.append(QAction(class_names))
-        #     self.class_names_choice[-1].setCheckable(True)
-        #     if class_names == self.plugin.class_names():
-        #         self.class_names_choice[-1].setChecked(True)
-        #     self.class_names_group.addAction(self.class_names_choice[-1])
-        #     self.menubar.menuClasses.addAction(self.class_names_choice[-1])
-        # self.class_names_group.triggered.connect(lambda x: self.update_ROI_selection(x.text()))
 
     def keyPressEvent(self, event):
         """
