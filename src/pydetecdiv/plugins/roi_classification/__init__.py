@@ -17,7 +17,7 @@ import numpy as np
 import sqlalchemy
 from PySide6.QtGui import QAction, QColor
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
-from PySide6.QtWidgets import QGraphicsRectItem, QFileDialog
+from PySide6.QtWidgets import QGraphicsRectItem, QFileDialog, QMessageBox
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
@@ -361,7 +361,8 @@ class Plugin(plugins.Plugin):
                 annotator.next_roi()
             annotator.setFocus()
         else:
-            print("Nothing to show")
+            QMessageBox.information(PyDetecDiv.main_window, 'Nothing to display',
+                                    'There are no prediction results available for this project')
 
     def get_annotation_runs(self):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
