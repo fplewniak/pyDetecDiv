@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGrou
                                QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView,
                                QRadioButton, QButtonGroup)
 from pydetecdiv.app import PyDetecDiv, WaitDialog, pydetecdiv_project, MessageDialog
+from pydetecdiv.plugins.parameters import Parameter
 
 from pydetecdiv.settings import get_config_value
 from pydetecdiv import delete_files
@@ -436,7 +437,7 @@ class ImportDataDialog(QDialog):
                                             int(len(file_list) / int(get_config_value('project', 'batch'))) + 1):
                     if len(batch):
                         process = project.import_images(batch, in_place=in_place,
-                                                                  destination=self.destination_directory.currentText())
+                                                        destination=self.destination_directory.currentText())
                         processes.append(process)
                         n_files = 0 if in_place else self.count_imported_files(destination, n_files0)
                         n_dso = project.count_objects('Data') - n_dso0
@@ -637,14 +638,17 @@ class ComputeDriftDialog(gui.Dialog):
         self.drift = {}
 
         self.select_FOV = self.addGroupBox('Select FOV')
-        self.fov_list = self.select_FOV.addOption(None, widget=gui.ListView, multiselection=True,
-                                                  items=self.update_fov_list(PyDetecDiv.project_name),
-                                                  height=75)
+        self.fov_list = self.select_FOV.addOption(None, widget=gui.ListView,
+                                                  parameter=Parameter(name='FOVs', label='FOV',
+                                                                      items=self.update_fov_list(
+                                                                          PyDetecDiv.project_name)),
+                                                  multiselection=True, height=75)
 
         self.method_box = self.addGroupBox('Method')
         self.method = self.method_box.addOption(None, widget=gui.ComboBox,
-                                                items={'vidstab': None, 'phase correlation': None},
-                                                selected='vidstab')
+                                                parameter=Parameter(name='Method', label='Method', default='vidstab',
+                                                                    items={'vidstab': None, 'phase correlation': None})
+                                                )
 
         self.button_box = self.addButtonBox()
 

@@ -143,12 +143,6 @@ class ParametersFormGroupBox(GroupBox):
             option.changed.connect(parameter.set_value)
             parameter.changed.connect(option.setValue)
             parameter.reset()
-        # if parameter is not None:
-        #     groups, param = parameter
-        #     if not isinstance(groups, list):
-        #         groups = [groups]
-        #     for group in groups:
-        #         self.plugin.parameter_widgets.add(group, {parameter: option})
 
         if label is None:
             self.layout.addRow(option)
@@ -239,7 +233,6 @@ class ListView(QListView):
     """
     an extension of the QComboBox class
     """
-
     def __init__(self, parent, parameter, height=None, multiselection=False, **kwargs):
         super().__init__(parent, **kwargs)
         if multiselection:
@@ -260,34 +253,16 @@ class ListView(QListView):
         self.items = options
         self.model().setStringList(list(options.keys()))
 
-    # def setText(self, text):
-    #     if self.findText(text) != -1:
-    #         self.setCurrentText(text)
-    #     else:
-    #         self.addItem(text)
-    #
-    # def text(self):
-    #     return self.currentText()
-    #
-    # @property
-    # def selected(self):
-    #     """
-    #     return property telling whether the current index of this ComboBox has changed
-    #
-    #     :return: boolean indication whether the current index has changed (i.e. new selection)
-    #     """
-    #     return self.currentIndexChanged
-    #
-    # @property
-    # def changed(self):
-    #     """
-    #     return property telling whether the current text of this ComboBox has changed. This overwrites the Pyside
-    #     equivalent method in order to have the same method name for all widgets
-    #
-    #     :return: boolean indication whether the current text has changed (i.e. new selection)
-    #     """
-    #     return self.currentTextChanged
-    #
+    @property
+    def changed(self):
+        """
+        return property telling whether the current text of this ComboBox has changed. This overwrites the Pyside
+        equivalent method in order to have the same method name for all widgets
+
+        :return: PySide6.QtCore.QModelIndex the new selection model
+        """
+        return self.selectionModel().currentChanged
+
     def selection(self):
         """
         method to standardize the way widget values from a form are returned
@@ -296,6 +271,10 @@ class ListView(QListView):
         """
         return [self.items[self.model().data(idx)] for idx in
                 sorted(self.selectedIndexes(), key=lambda x: x.row(), reverse=False)]
+
+    def setValue(self):
+        # could use setSelectionModel(selectionModel) with selectionModel determined from parameter value
+        pass
 
 
 class LineEdit(QLineEdit):
