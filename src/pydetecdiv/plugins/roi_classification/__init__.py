@@ -26,14 +26,14 @@ import tensorflow as tf
 from sklearn.metrics import ConfusionMatrixDisplay
 
 from pydetecdiv import plugins
-from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir
+from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir, MessageDialog
 from pydetecdiv.settings import get_plugins_dir
 from pydetecdiv.domain import Image, Dataset, ImgDType
 from pydetecdiv.settings import get_config_value
 
 from .gui import FOV2ROIlinks, ROIclassificationDialog
 from . import models
-from .gui.classification import ManualAnnotator, PredictionViewer
+from .gui.classification import ManualAnnotator, PredictionViewer, DefineClassesDialog
 from ..parameters import Parameter
 from ...app.gui.core.widgets.viewers.plots import MatplotViewer
 
@@ -341,9 +341,7 @@ class Plugin(plugins.Plugin):
                 annotator.next_roi()
             annotator.setFocus()
         else:
-            print('Define classes')
-            print(f'Suggestions: {self.parameters.get("class_names").items}')
-            print(f'Suggestion: {dict({self.class_names(): self.class_names(as_string=False)})}')
+            define_classes_dialog = DefineClassesDialog(self)
 
     def show_results(self, arg=None, roi_selection=None):
         prediction_runs = self.get_prediction_runs()

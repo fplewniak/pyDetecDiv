@@ -8,6 +8,8 @@ from pydetecdiv.app.gui.core.widgets.viewers import Scene
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer
 from pydetecdiv.app.gui.core.widgets.viewers.plots import ChartView
 from pydetecdiv.plugins import Dialog
+from pydetecdiv.plugins.gui import ListView
+from pydetecdiv.plugins.parameters import Parameter
 from pydetecdiv.settings import get_config_value
 from pydetecdiv.utils import BidirectionalIterator, previous
 
@@ -413,9 +415,15 @@ class PredictionMenuBar(AnnotationMenuBar):
 class DefineClassesDialog(Dialog):
     def __init__(self, plugin, title=None):
         super().__init__(plugin, title='Define classes')
-        self.list_view = ListView(self, )
+        suggestion = self.plugin.class_names(as_string=False)
+        if suggestion is None:
+            suggestion = {}
+        self.list_view = ListView(self,
+                                  parameter=Parameter(name='class_names', label='Class names', items=suggestion,
+                                                      multiselection=True, height=75)
+                                  )
         self.button_box = self.addButtonBox()
-        self.arrangeWidgets([self.button_box])
+        self.arrangeWidgets([self.list_view, self.button_box])
         self.fit_to_contents()
         self.exec()
         print('Define classes')

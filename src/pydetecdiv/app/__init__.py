@@ -218,7 +218,7 @@ class MessageDialog(QDialog):
 
     def __init__(self, msg):
         super().__init__()
-        self.setWindowModality(Qt.WindowModal)
+        # self.setWindowModality(Qt.WindowModal)
         label = QLabel()
         label.setStyleSheet("""
         font-weight: bold;
