@@ -309,6 +309,29 @@ class PredictionViewer(AnnotationTool):
         self.set_roi_list(classified_rois)
         self.next_roi()
 
+    def keyPressEvent(self, event):
+        """
+        Handle actions triggered by pressing keys when the scene is in focus.
+        Letters from azertyuiop assign a class to the current frame, and jumps to the next frame suggesting a class
+        Space bar validates the suggested assignation and jumps to the next frame
+        Right arrow moves one frame forward
+        Left arrow moves one frame backwards
+        Enter key validates the current suggestion, saves the annotations to the database and jumps to the nex ROI if
+        there is one
+        Escape key cancels annotations and jumps to the next ROI if there is one
+        :param event: the keyPressEvent
+        """
+        if event.text() == ' ':
+            self.change_frame(min(self.T + 1, self.viewer.image_resource_data.sizeT - 1))
+        elif event.key() == Qt.Key_Right:
+            self.change_frame(min(self.T + 1, self.viewer.image_resource_data.sizeT - 1))
+        elif event.key() == Qt.Key_Left:
+            self.change_frame(max(self.T - 1, 0))
+        elif event.key() == Qt.Key_PageDown:
+            self.next_roi()
+        elif event.key() == Qt.Key_Escape:
+            self.next_roi()
+
 
 class AnnotationMenuBar(QMenuBar):
     def __init__(self, parent):
