@@ -371,6 +371,10 @@ class ManualAnnotationMenuBar(AnnotationMenuBar):
         super().setup()
         self.class_names_group.triggered.connect(lambda x: self.parent().update_ROI_selection(x.text()))
 
+    def set_class_names_choice(self):
+        self.parent().plugin.update_class_names()
+        super().set_class_names_choice()
+
 
 class PredictionMenuBar(AnnotationMenuBar):
     def __init__(self, parent):
