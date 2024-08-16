@@ -325,13 +325,16 @@ class Plugin(plugins.Plugin):
             self.parameters.get('annotation_file').set_value(annotation_file)
             FOV2ROIlinks(annotation_file, self)
 
-    def manual_annotation(self, arg=None, roi_selection=None):
+    def manual_annotation(self, arg=None, roi_selection=None, run=None):
         annotation_runs = self.get_annotation_runs()
+        annotator = ManualAnnotator()
+        if roi_selection:
+            annotator.set_roi_list(roi_selection)
         if annotation_runs:
             self.parameters.get('class_names').set_value(list(annotation_runs.keys())[0])
             tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / ROI annotation')
             tab.project_name = PyDetecDiv.project_name
-            annotator = ManualAnnotator()
+            # annotator = ManualAnnotator()
             annotator.setup(plugin=self)
             tab.set_top_tab(annotator, 'Manual annotation')
             if roi_selection is None:
@@ -339,9 +342,28 @@ class Plugin(plugins.Plugin):
             else:
                 annotator.set_roi_list(roi_selection)
                 annotator.next_roi()
+            annotator.run = run
             annotator.setFocus()
         else:
-            define_classes_dialog = DefineClassesDialog(self)
+            annotator.setup(plugin=self)
+            annotator.define_classes()
+
+    def resume_manual_annotation(self, annotator, roi_selection=None, run=None):
+        # annotation_runs = self.get_annotation_runs()
+        if annotator.parent() is None:
+            tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / ROI annotation')
+            tab.project_name = PyDetecDiv.project_name
+            tab.set_top_tab(annotator, 'Manual annotation')
+        if roi_selection:
+            annotator.set_roi_list(roi_selection)
+        # self.parameters.get('class_names').set_value(list(annotation_runs.keys())[0])
+        if roi_selection is None:
+            annotator.update_ROI_selection(self.class_names())
+        else:
+            annotator.set_roi_list(roi_selection)
+            # annotator.next_roi()
+        annotator.run = run
+        annotator.setFocus()
 
     def show_results(self, arg=None, roi_selection=None):
         prediction_runs = self.get_prediction_runs()
@@ -552,10 +574,14 @@ class Plugin(plugins.Plugin):
         :param roi_classes: the classes along time
         :param run: the annotation run
         """
+        # with pydetecdiv_project(PyDetecDiv.project_name) as project:
+        #     for t, class_name in enumerate(roi_classes):
+        #         if class_name != '-':
+        #             Results().save(project, run, roi, t, np.array([1]), [class_name])
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             for t, class_name in enumerate(roi_classes):
-                if class_name != '-':
-                    Results().save(project, run, roi, t, np.array([1]), [class_name])
+                if class_name != -1:
+                    Results().save(project, run, roi, t, np.array([1]), [self.class_names(as_string=False)[class_name]])
 
     def get_annotated_rois(self, run=None, ids_only=False):
         """

@@ -3,12 +3,12 @@ Module defining widgets and other utilities for creating windows/forms with a mi
 """
 import json
 
-from PySide6.QtCore import QStringListModel
-from PySide6.QtGui import QIcon
+from PySide6.QtCore import QStringListModel, QItemSelection, QItemSelectionModel
+from PySide6.QtGui import QIcon, QAction
 from PySide6.QtSql import QSqlQueryModel
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox, \
     QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView, QAbstractItemView, \
-    QPushButton, QApplication, QRadioButton, QListView
+    QPushButton, QApplication, QRadioButton, QListView, QMenu
 
 
 # class ParameterWidgets:
@@ -140,9 +140,10 @@ class ParametersFormGroupBox(GroupBox):
             option = widget(self, **kwargs)
         else:
             option = widget(self, parameter, **kwargs)
-            option.changed.connect(parameter.set_value)
-            parameter.changed.connect(option.setValue)
-            parameter.reset()
+            if parameter is not None:
+                option.changed.connect(parameter.set_value)
+                parameter.changed.connect(option.setValue)
+                parameter.reset()
 
         if label is None:
             self.layout.addRow(option)
@@ -167,7 +168,7 @@ class ComboBox(QComboBox):
 
     def __init__(self, parent, parameter, editable=False):
         super().__init__(parent)
-        if parameter.items is not None:
+        if parameter is not None and parameter.items is not None:
             self.addItemDict(parameter.items)
         self.setEditable(editable)
 
@@ -233,15 +234,15 @@ class ListView(QListView):
     """
     an extension of the QComboBox class
     """
-    def __init__(self, parent, parameter, height=None, multiselection=False, **kwargs):
+
+    def __init__(self, parent, parameter=None, height=None, multiselection=False, **kwargs):
         super().__init__(parent, **kwargs)
         if multiselection:
             self.setSelectionMode(QAbstractItemView.MultiSelection)
         if height is not None:
             self.setFixedHeight(height)
         self.setModel(QStringListModel())
-        self.items = parameter.items
-        if parameter.items is not None:
+        if parameter is not None and parameter.items is not None:
             self.addItemDict(parameter.items)
 
     def addItemDict(self, options):
@@ -275,6 +276,60 @@ class ListView(QListView):
     def setValue(self):
         # could use setSelectionModel(selectionModel) with selectionModel determined from parameter value
         pass
+
+    def contextMenuEvent(self, e):
+        """
+        Definition of a context menu to clear or toggle selection of sources in list model, remove selected sources from
+        the list model, clear the source list model
+
+        :param e: mouse event providing the position of the context menu
+        :type e: PySide6.QtGui.QContextMenuEvent
+        """
+        if self.model().rowCount():
+            context = QMenu(self)
+            unselect = QAction("Unselect all", self)
+            unselect.triggered.connect(self.unselect)
+            context.addAction(unselect)
+            toggle = QAction("Toggle selection", self)
+            toggle.triggered.connect(self.toggle)
+            context.addAction(toggle)
+            context.addSeparator()
+            remove = QAction("Remove selected items", self)
+            remove.triggered.connect(self.remove_items)
+            context.addAction(remove)
+            clear_list = QAction("Clear list", self)
+            context.addAction(clear_list)
+            clear_list.triggered.connect(self.clear_list)
+            context.exec(e.globalPos())
+
+    def unselect(self):
+        """
+        Clear selection model
+        """
+        self.selectionModel().clear()
+
+    def toggle(self):
+        """
+        Toggle selection model, selected sources are deselected and unselected ones are selected
+        """
+        toggle_selection = QItemSelection()
+        top_left = self.model().index(0, 0)
+        bottom_right = self.model().index(self.model().rowCount() - 1, 0)
+        toggle_selection.select(top_left, bottom_right)
+        self.selectionModel().select(toggle_selection, QItemSelectionModel.Toggle)
+
+    def remove_items(self):
+        """
+        Delete selected sources
+        """
+        for idx in sorted(self.selectedIndexes(), key=lambda x: x.row(), reverse=True):
+            self.model().removeRow(idx.row())
+
+    def clear_list(self):
+        """
+        Clear the source list
+        """
+        self.model().removeRows(0, self.model().rowCount())
 
 
 class LineEdit(QLineEdit):

@@ -1,6 +1,8 @@
-from PySide6.QtCore import Qt, QRectF
+import json
+
+from PySide6.QtCore import Qt, QRectF, QItemSelection, QItemSelectionModel
 from PySide6.QtGui import QAction, QActionGroup
-from PySide6.QtWidgets import QMenuBar, QGraphicsTextItem
+from PySide6.QtWidgets import QMenuBar, QGraphicsTextItem, QPushButton, QDialogButtonBox, QMenu
 import pyqtgraph as pg
 
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
@@ -143,23 +145,20 @@ class AnnotationTool(VideoPlayer):
             crop = (slice(x1, x2), slice(y1, y2))
             self.setBackgroundImage(image_resource.image_resource_data(), crop=crop)
             self.viewer.display()
-            self.roi_classes_idx = self.get_roi_annotations(as_index=True)
+            self.roi_classes_idx = self.get_roi_annotations()
             self.plot_roi_classes()
             self.change_frame(0)
             self.video_frame.emit(0)
             self.control_panel.video_control.t_slider.setSliderPosition(0)
             PyDetecDiv.main_window.active_subwindow.setCurrentWidget(self)
 
-    def get_roi_annotations(self, as_index=False):
+    def get_roi_annotations(self):
         """
         Retrieve from the database the manual annotations for a ROI
         """
-        if as_index:
-            roi_classes = [-1] * self.viewer.image_resource_data.sizeT
-        else:
-            roi_classes = ['-'] * self.viewer.image_resource_data.sizeT
+        roi_classes = [-1] * self.viewer.image_resource_data.sizeT
         for frame, annotation in enumerate(
-                self.plugin.get_classifications(self.roi, self.annotation_run_list, as_index=as_index)):
+                self.plugin.get_classifications(self.roi, self.annotation_run_list, as_index=True)):
             if annotation != -1:
                 roi_classes[frame] = annotation
         return roi_classes
@@ -254,17 +253,26 @@ class ManualAnnotator(AnnotationTool):
             # self.class_item.setDefaultTextColor('black')
             if self.run is None:
                 self.save_run()
-            self.plugin.save_annotations(self.roi, [self.class_names[c] for c in self.roi_classes_idx], self.run)
+            # self.plugin.save_annotations(self.roi, [self.class_names[c] for c in self.roi_classes_idx], self.run)
+            self.plugin.save_annotations(self.roi, self.roi_classes_idx, self.run)
             self.next_roi()
         elif event.key() == Qt.Key_PageUp:
             self.previous_roi()
         elif event.key() == Qt.Key_Escape:
             self.next_roi()
 
+    def define_classes(self):
+        self.define_classes_dialog = DefineClassesDialog(self, self.plugin)
+
     def load_selected_ROIs(self):
         if self.menubar.actionToggle_annotated.isChecked():
             annotated_rois = self.plugin.get_annotated_rois()
-            self.set_roi_list(annotated_rois)
+            if annotated_rois:
+                self.set_roi_list(annotated_rois)
+            else:
+                self.menubar.actionToggle_annotated.setChecked(False)
+                unannotated_rois, all_rois = self.plugin.get_unannotated_rois()
+                self.set_roi_list(all_rois)
         else:
             unannotated_rois, all_rois = self.plugin.get_unannotated_rois()
             if unannotated_rois:
@@ -279,8 +287,9 @@ class ManualAnnotator(AnnotationTool):
         Assign the class name to the current frame
         :param class_name: the class name
         """
-        self.roi_classes_idx[self.T] = self.class_names.index(class_name)
-        self.update_roi_classes_plot()
+        if class_name in self.class_names:
+            self.roi_classes_idx[self.T] = self.class_names.index(class_name)
+            self.update_roi_classes_plot()
 
     def save_run(self):
         """
@@ -368,15 +377,22 @@ class ManualAnnotationMenuBar(AnnotationMenuBar):
         self.actionToggle_annotated = QAction('Annotated ROIs')
         self.actionToggle_annotated.setCheckable(True)
         self.actionToggle_annotated.changed.connect(self.parent().load_selected_ROIs)
+        self.action_edit_classes = QAction('Edit class sets')
         self.menuROI.addAction(self.actionToggle_annotated)
+        # self.menuClasses.addSeparator()
+        # self.menuClasses.addAction(self.action_new_classes)
 
     def setup(self):
         super().setup()
         self.class_names_group.triggered.connect(lambda x: self.parent().update_ROI_selection(x.text()))
 
     def set_class_names_choice(self):
+        self.menuClasses.clear()
         self.parent().plugin.update_class_names()
+        self.menuClasses.addAction(self.action_edit_classes)
+        self.menuClasses.addSeparator()
         super().set_class_names_choice()
+        self.action_edit_classes.triggered.connect(self.parent().define_classes)
 
 
 class PredictionMenuBar(AnnotationMenuBar):
@@ -413,19 +429,75 @@ class PredictionMenuBar(AnnotationMenuBar):
 
 
 class DefineClassesDialog(Dialog):
-    def __init__(self, plugin, title=None):
+    def __init__(self, annotator, plugin, title=None):
         super().__init__(plugin, title='Define classes')
+        self.annotator = annotator
+        self.list_view = ClassListView(self, multiselection=True)
         suggestion = self.plugin.class_names(as_string=False)
         if suggestion is None:
-            suggestion = {}
-        self.list_view = ListView(self,
-                                  parameter=Parameter(name='class_names', label='Class names', items=suggestion,
-                                                      multiselection=True, height=75)
-                                  )
+            self.list_view.model().setStringList(['A', 'B'])
+        else:
+            self.list_view.model().setStringList(suggestion)
         self.button_box = self.addButtonBox()
+        self.add_class_btn = QPushButton('Import classes', parent=self.button_box)
+        self.add_class_btn.clicked.connect(self.import_classes)
+        self.button_box.addButton(self.add_class_btn, QDialogButtonBox.ActionRole)
+        self.button_box.accepted.connect(self.save_new_classes)
+        self.button_box.rejected.connect(self.close)
         self.arrangeWidgets([self.list_view, self.button_box])
         self.fit_to_contents()
         self.exec()
-        print('Define classes')
-        print(f'Suggestions: {self.plugin.parameters.get("class_names").items}')
-        print(f'Suggestion: {dict({self.plugin.class_names(): self.plugin.class_names(as_string=False)})}')
+
+    def save_new_classes(self):
+        print('Saving new classes')
+        self.plugin.parameters.get("class_names").add_item(
+            {json.dumps(self.list_view.model().stringList()): self.list_view.model().stringList()})
+        self.plugin.parameters.get("class_names").set_value(self.list_view.model().stringList())
+        self.annotator.save_run()
+        print(f'Saving run {self.annotator.run}')
+        self.annotator.menubar.set_class_names_choice()
+        if self.annotator.roi_list:
+            self.plugin.resume_manual_annotation(self.annotator, run=self.annotator.run,
+                                                 roi_selection=self.annotator.roi_list.data)
+        else:
+            self.plugin.resume_manual_annotation(self.annotator, run=self.annotator.run)
+        print('Updating plot')
+        self.annotator.update_roi_classes_plot()
+        print('Closing dialog')
+        self.close()
+
+    def import_classes(self):
+        pass
+
+
+class ClassListView(ListView):
+    def __init__(self, parent, parameter=None, height=None, multiselection=False, **kwargs):
+        super().__init__(parent, parameter=parameter, height=height, multiselection=multiselection, **kwargs)
+
+    def contextMenuEvent(self, e):
+        if self.model().rowCount():
+            context = QMenu(self)
+            add_class = QAction("Add a new class", self)
+            add_class.triggered.connect(self.add_class)
+            context.addAction(add_class)
+            unselect = QAction("Unselect all", self)
+            unselect.triggered.connect(self.unselect)
+            context.addAction(unselect)
+            toggle = QAction("Toggle selection", self)
+            toggle.triggered.connect(self.toggle)
+            context.addAction(toggle)
+            context.addSeparator()
+            remove = QAction("Remove selected items", self)
+            remove.triggered.connect(self.remove_items)
+            context.addAction(remove)
+            clear_list = QAction("Clear list", self)
+            context.addAction(clear_list)
+            clear_list.triggered.connect(self.clear_list)
+            context.exec(e.globalPos())
+
+    def add_class(self):
+        new_list = self.model().stringList() + ['']
+        self.model().setStringList(new_list)
+        self.unselect()
+        selection = self.model().index(self.model().rowCount() - 1, 0)
+        self.selectionModel().select(selection, QItemSelectionModel.Select)

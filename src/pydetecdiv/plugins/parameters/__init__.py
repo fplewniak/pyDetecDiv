@@ -10,7 +10,8 @@ class Parameter(QObject):
                  **kwargs):
         super().__init__()
         self.name = name
-        self.items = {} if items is None else items
+        # self.items = {} if items is None else items
+        self.set_items(items)
         self.label = label
         self._default = default
         self.validator = validator
