@@ -215,6 +215,7 @@ class AnnotationChartView(ChartView):
 class ManualAnnotator(AnnotationTool):
     def __init__(self):
         super().__init__()
+        self.define_classes_dialog = None
 
     @property
     def annotation_run_list(self):
@@ -262,7 +263,10 @@ class ManualAnnotator(AnnotationTool):
             self.next_roi()
 
     def define_classes(self):
-        self.define_classes_dialog = DefineClassesDialog(self, self.plugin)
+        if self.define_classes_dialog is None:
+            self.define_classes_dialog = DefineClassesDialog(self, self.plugin)
+        else:
+            self.define_classes_dialog.show()
 
     def load_selected_ROIs(self):
         if self.menubar.actionToggle_annotated.isChecked():
@@ -449,21 +453,17 @@ class DefineClassesDialog(Dialog):
         self.exec()
 
     def save_new_classes(self):
-        print('Saving new classes')
         self.plugin.parameters.get("class_names").add_item(
             {json.dumps(self.list_view.model().stringList()): self.list_view.model().stringList()})
         self.plugin.parameters.get("class_names").set_value(self.list_view.model().stringList())
         self.annotator.save_run()
-        print(f'Saving run {self.annotator.run}')
         self.annotator.menubar.set_class_names_choice()
         if self.annotator.roi_list:
             self.plugin.resume_manual_annotation(self.annotator, run=self.annotator.run,
                                                  roi_selection=self.annotator.roi_list.data)
         else:
             self.plugin.resume_manual_annotation(self.annotator, run=self.annotator.run)
-        print('Updating plot')
         self.annotator.update_roi_classes_plot()
-        print('Closing dialog')
         self.close()
 
     def import_classes(self):

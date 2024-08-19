@@ -31,7 +31,8 @@ from pydetecdiv.settings import get_plugins_dir
 from pydetecdiv.domain import Image, Dataset, ImgDType
 from pydetecdiv.settings import get_config_value
 
-from .gui import FOV2ROIlinks, ROIclassificationDialog
+# from .gui import FOV2ROIlinks, ROIclassificationDialog
+from .gui import FOV2ROIlinks
 from . import models
 from .gui.classification import ManualAnnotator, PredictionViewer, DefineClassesDialog
 from ..parameters import Parameter
@@ -332,10 +333,9 @@ class Plugin(plugins.Plugin):
             annotator.set_roi_list(roi_selection)
         if annotation_runs:
             self.parameters.get('class_names').set_value(list(annotation_runs.keys())[0])
+            annotator.setup(plugin=self)
             tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / ROI annotation')
             tab.project_name = PyDetecDiv.project_name
-            # annotator = ManualAnnotator()
-            annotator.setup(plugin=self)
             tab.set_top_tab(annotator, 'Manual annotation')
             if roi_selection is None:
                 annotator.update_ROI_selection(self.class_names())
