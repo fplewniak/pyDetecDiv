@@ -35,6 +35,8 @@ from pydetecdiv.settings import get_config_value
 from .gui import FOV2ROIlinks
 from . import models
 from .gui.classification import ManualAnnotator, PredictionViewer, DefineClassesDialog
+from .gui.prediction import PredictionDialog
+from .gui.training import TrainingDialog, FineTuningDialog
 from ..parameters import Parameter
 from ...app.gui.core.widgets.viewers.plots import MatplotViewer
 
@@ -287,12 +289,16 @@ class Plugin(plugins.Plugin):
         training_menu.addAction(train_model)
         training_menu.addAction(fine_tuning)
 
+        train_model.triggered.connect(self.run_training)
+        fine_tuning.triggered.connect(self.run_fine_tuning)
+
         predict_menu = submenu.addMenu('Classification')
         predict = QAction("Predict ROI classes", predict_menu)
         show_results = QAction("View classification results", predict_menu)
         predict_menu.addAction(predict)
         predict_menu.addAction(show_results)
 
+        predict.triggered.connect(self.run_prediction)
         show_results.triggered.connect(self.show_results)
 
     def add_context_action(self, data):
@@ -422,6 +428,18 @@ class Plugin(plugins.Plugin):
                         runs[class_names] = [run[0]]
                 self.parameters.get('class_names').value = json.loads(class_names)
         return runs
+
+    def run_prediction(self):
+        print('Open prediction form')
+        PredictionDialog(self)
+
+    def run_training(self):
+        print('Open training form')
+        TrainingDialog(self)
+
+    def run_fine_tuning(self):
+        print('Open fine tuning form')
+        FineTuningDialog(self)
 
     def load_model(self):
         """
