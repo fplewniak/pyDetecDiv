@@ -48,7 +48,8 @@ class AnnotationTool(VideoPlayer):
 
     def setup(self, menubar=None, plugin=None, scene=None):
         super().setup(menubar=menubar)
-        self.plugin = plugin
+        if plugin is not None:
+            self.plugin = plugin
         self.menubar.setup()
         self.viewer_panel.setup(scene=scene)
         self.viewer_panel.setOrientation(Qt.Vertical)
@@ -456,6 +457,8 @@ class DefineClassesDialog(Dialog):
         self.plugin.parameters["class_names"].add_item(
             {json.dumps(self.list_view.model().stringList()): self.list_view.model().stringList()})
         self.plugin.parameters["class_names"].set_value(self.list_view.model().stringList())
+        if self.annotator.menubar is None:
+            self.annotator.setup()
         self.annotator.save_run()
         self.annotator.menubar.set_class_names_choice()
         if self.annotator.roi_list:

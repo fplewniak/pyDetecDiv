@@ -351,7 +351,8 @@ class Plugin(plugins.Plugin):
             annotator.run = run
             annotator.setFocus()
         else:
-            annotator.setup(plugin=self)
+            # annotator.setup(plugin=self)
+            annotator.plugin = self
             annotator.define_classes()
 
     def resume_manual_annotation(self, annotator, roi_selection=None, run=None):
