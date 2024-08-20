@@ -135,5 +135,13 @@ class Parameters:
     def __repr__(self):
         return f'{self.values()}'
 
+    def __getitem__(self, item):
+        self_dict = self.to_dict()
+        if not isinstance(item, str):
+            raise TypeError
+        elif item in self_dict:
+            return self.to_dict()[item]
+        raise KeyError
+
     def to_dict(self):
         return {param.name: param for param in self.parameter_list}

@@ -255,8 +255,8 @@ class Plugin(plugins.Plugin):
         """
         # return json.loads(self.parameters.get('class_names').value)
         if as_string:
-            return json.dumps(self.parameters.get('class_names').value)
-        return self.parameters.get('class_names').value
+            return json.dumps(self.parameters['class_names'].value)
+        return self.parameters['class_names'].value
 
     def create_table(self):
         """
@@ -338,7 +338,7 @@ class Plugin(plugins.Plugin):
         if roi_selection:
             annotator.set_roi_list(roi_selection)
         if annotation_runs:
-            self.parameters.get('class_names').set_value(list(annotation_runs.keys())[0])
+            self.parameters['class_names'].set_value(list(annotation_runs.keys())[0])
             annotator.setup(plugin=self)
             tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / ROI annotation')
             tab.project_name = PyDetecDiv.project_name
@@ -374,7 +374,7 @@ class Plugin(plugins.Plugin):
     def show_results(self, arg=None, roi_selection=None):
         prediction_runs = self.get_prediction_runs()
         if prediction_runs:
-            self.parameters.get('class_names').set_value(list(prediction_runs.keys())[0])
+            self.parameters['class_names'].set_value(list(prediction_runs.keys())[0])
             tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / ROI class predictions')
             tab.project_name = PyDetecDiv.project_name
             annotator = PredictionViewer()
@@ -426,7 +426,7 @@ class Plugin(plugins.Plugin):
                         runs[class_names].append(run[0])
                     else:
                         runs[class_names] = [run[0]]
-                self.parameters.get('class_names').value = json.loads(class_names)
+                self.parameters['class_names'].value = json.loads(class_names)
         return runs
 
     def run_prediction(self):
@@ -519,7 +519,7 @@ class Plugin(plugins.Plugin):
 
         """
         for _, name, _ in pkgutil.iter_modules(models.__path__):
-            self.parameters.get('model').add_item(
+            self.parameters['model'].add_item(
                 {name: importlib.import_module(f'.models.{name}', package=__package__)})
         for finder, name, _ in pkgutil.iter_modules([os.path.join(get_plugins_dir(), 'roi_classification/models')]):
             loader = finder.find_module(name)
@@ -527,37 +527,37 @@ class Plugin(plugins.Plugin):
             module = importlib.util.module_from_spec(spec)
             sys.modules[name] = module
             spec.loader.exec_module(module)
-            self.parameters.get('model').add_item({name: module})
+            self.parameters['model'].add_item({name: module})
 
     def update_model_weights(self):
         """
         Update the list of model weights associated with the currently selected network
         """
-        model_path = self.parameters.get('model').item.__path__[0]
+        model_path = self.parameters['model'].item.__path__[0]
         w_files = [os.path.join(model_path, f) for f in os.listdir(model_path)
                    if os.path.isfile(os.path.join(model_path, f)) and f.endswith('.h5')]
 
         if PyDetecDiv.project_name is not None:
             try:
                 user_path = os.path.join(get_project_dir(), 'roi_classification', 'models',
-                                         self.parameters.get('model').value)
+                                         self.parameters['model'].value)
                 w_files.extend([os.path.join(user_path, f) for f in os.listdir(user_path)
                                 if os.path.isfile(os.path.join(user_path, f)) and f.endswith('.h5')])
             except FileNotFoundError:
                 pass
 
-        self.parameters.get('weights').set_items({'None': None})
+        self.parameters['weights'].set_items({'None': None})
         weights = {os.path.basename(f): f for f in w_files}
-        self.parameters.get('weights').add_items(weights)
+        self.parameters['weights'].add_items(weights)
 
     def update_class_names(self, prediction=False):
         """
         Update the classes associated with the currently selected model
         """
-        if self.parameters.get('weights').item != 'None':
-            self.parameters.get('class_names').set_items(self.get_class_names(self.parameters.get('weights').items))
+        if self.parameters['weights'].item != 'None':
+            self.parameters['class_names'].set_items(self.get_class_names(self.parameters['weights'].items))
         else:
-            self.parameters.get('class_names').set_items(self.get_class_names(prediction=prediction))
+            self.parameters['class_names'].set_items(self.get_class_names(prediction=prediction))
 
     def update_channels(self):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
@@ -565,24 +565,24 @@ class Plugin(plugins.Plugin):
             n_layers = image_resource.zdim if image_resource else 0
 
         for param in ['red_channel', 'green_channel', 'blue_channel']:
-            self.parameters.get(param).set_items([str(i) for i in range(n_layers)])
+            self.parameters[param].set_items([str(i) for i in range(n_layers)])
 
-    def run(self):
-        """
-        Run the action selected in the GUI (create new model, annotate ROIs, train model, classify ROIs)
-        """
-        self.gui.action_menu.currentData()()
+    # def run(self):
+    #     """
+    #     Run the action selected in the GUI (create new model, annotate ROIs, train model, classify ROIs)
+    #     """
+    #     self.gui.action_menu.currentData()()
 
-    def launch(self):
-        """
-        Display the ROI classification docked GUI window
-        """
-        if self.gui is None:
-            self.create_table()
-            PyDetecDiv.app.project_selected.connect(self.create_table)
-            self.gui = ROIclassificationDialog(self, title='ROI class prediction (Deep Learning)')
-            self.gui.update_all()
-        self.gui.setVisible(True)
+    # def launch(self):
+    #     """
+    #     Display the ROI classification docked GUI window
+    #     """
+    #     # if self.gui is None:
+    #     #     self.create_table()
+    #     #     PyDetecDiv.app.project_selected.connect(self.create_table)
+    #     #     self.gui = ROIclassificationDialog(self, title='ROI class prediction (Deep Learning)')
+    #     #     self.gui.update_all()
+    #     # self.gui.setVisible(True)
 
     def save_annotations(self, roi, roi_classes, run):
         """

@@ -97,7 +97,7 @@ class AnnotationTool(VideoPlayer):
         self.annotation_chart_view.plot_roi_classes(self.roi_classes_idx)
 
     def select_class_names(self, class_names):
-        self.plugin.parameters.get('class_names').set_value(class_names)
+        self.plugin.parameters['class_names'].set_value(class_names)
 
     def update_ROI_selection(self, class_names):
         self.select_class_names(class_names)
@@ -365,7 +365,7 @@ class AnnotationMenuBar(QMenuBar):
         self.set_class_names_choice()
 
     def set_class_names_choice(self):
-        for class_names in self.parent().plugin.parameters.get('class_names').items:
+        for class_names in self.parent().plugin.parameters['class_names'].items:
             self.class_names_choice.append(QAction(class_names))
             self.class_names_choice[-1].setCheckable(True)
             if class_names == self.parent().plugin.class_names():
@@ -418,7 +418,7 @@ class PredictionMenuBar(AnnotationMenuBar):
         super().set_class_names_choice()
 
     def set_run_choice(self, class_names):
-        self.parent().plugin.parameters.get('class_names').set_value(class_names)
+        self.parent().plugin.parameters['class_names'].set_value(class_names)
         self.run_choice = []
         for action in self.prediction_runs_group.actions():
             self.prediction_runs_group.removeAction(action)
@@ -453,9 +453,9 @@ class DefineClassesDialog(Dialog):
         self.exec()
 
     def save_new_classes(self):
-        self.plugin.parameters.get("class_names").add_item(
+        self.plugin.parameters["class_names"].add_item(
             {json.dumps(self.list_view.model().stringList()): self.list_view.model().stringList()})
-        self.plugin.parameters.get("class_names").set_value(self.list_view.model().stringList())
+        self.plugin.parameters["class_names"].set_value(self.list_view.model().stringList())
         self.annotator.save_run()
         self.annotator.menubar.set_class_names_choice()
         if self.annotator.roi_list:
