@@ -45,6 +45,14 @@ class Parameter(QObject):
         self.set_value(value)
 
     @property
+    def values(self):
+        return list(self.items.keys())
+
+    @property
+    def data(self):
+        return list(self.items.values())
+
+    @property
     def item(self):
         item = self.get_item(self._value)
         if item is None:

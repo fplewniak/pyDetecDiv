@@ -547,16 +547,17 @@ class Plugin(plugins.Plugin):
             except FileNotFoundError:
                 pass
 
-        self.parameters['weights'].set_items({'None': None})
+        # self.parameters['weights'].set_items({'None': None})
         weights = {os.path.basename(f): f for f in w_files}
-        self.parameters['weights'].add_items(weights)
+        print(f'found those weight files {weights}')
+        self.parameters['weights'].set_items(weights)
 
     def update_class_names(self, prediction=False):
         """
         Update the classes associated with the currently selected model
         """
         if self.parameters['weights'].item != 'None':
-            self.parameters['class_names'].set_items(self.get_class_names(self.parameters['weights'].items))
+            self.parameters['class_names'].set_items(self.get_class_names(self.parameters['weights'].value))
         else:
             self.parameters['class_names'].set_items(self.get_class_names(prediction=prediction))
 

@@ -144,6 +144,7 @@ class ParametersFormGroupBox(GroupBox):
                 option.changed.connect(parameter.set_value)
                 parameter.changed.connect(option.setValue)
                 parameter.reset()
+                parameter.changed.emit(parameter.value)
 
         if label is None:
             self.layout.addRow(option)
