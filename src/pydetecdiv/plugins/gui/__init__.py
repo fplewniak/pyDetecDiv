@@ -3,12 +3,14 @@ Module defining widgets and other utilities for creating windows/forms with a mi
 """
 import json
 
-from PySide6.QtCore import QStringListModel, QItemSelection, QItemSelectionModel
-from PySide6.QtGui import QIcon, QAction
+from PySide6.QtCore import QStringListModel, QItemSelection, QItemSelectionModel, Signal, QByteArray
+from PySide6.QtGui import QIcon, QAction, Qt
 from PySide6.QtSql import QSqlQueryModel
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox, \
     QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView, QAbstractItemView, \
-    QPushButton, QApplication, QRadioButton, QListView, QMenu
+    QPushButton, QApplication, QRadioButton, QListView, QMenu, QDataWidgetMapper
+
+import pydetecdiv.app.models as models
 
 
 # class ParameterWidgets:
@@ -140,11 +142,13 @@ class ParametersFormGroupBox(GroupBox):
             option = widget(self, **kwargs)
         else:
             option = widget(self, parameter, **kwargs)
-            if parameter is not None:
-                option.changed.connect(parameter.set_value)
-                parameter.changed.connect(option.setValue)
-                parameter.reset()
-                parameter.changed.emit(parameter.value)
+            # if parameter is not None:
+            #     option.changed.connect(parameter.set_value)
+            #     parameter.changed.connect(option.setValue)
+            #     if hasattr(option, 'setItemsDict'):
+            #         parameter.itemsChanged.connect(option.setItemsDict)
+            #     parameter.reset()
+            #     parameter.changed.emit(parameter.value)
 
         if label is None:
             self.layout.addRow(option)
@@ -167,10 +171,12 @@ class ComboBox(QComboBox):
     an extension of the QComboBox class
     """
 
-    def __init__(self, parent, parameter, editable=False):
+    def __init__(self, parent, model=None, editable=False):
         super().__init__(parent)
-        if parameter is not None and parameter.items is not None:
-            self.addItemDict(parameter.items)
+        if model is not None and model.rows() is not None:
+            self.addItemDict(model.rows())
+            self.setModel(model)
+            self.setModelColumn(0)
         self.setEditable(editable)
 
     def addItemDict(self, options):
@@ -181,6 +187,10 @@ class ComboBox(QComboBox):
         """
         for label, data in options.items():
             self.addItem(label, userData=data)
+
+    def setItemsDict(self, options):
+        self.clear()
+        self.addItemDict(options)
 
     def setText(self, text):
         if self.findText(text) != -1:
@@ -217,18 +227,58 @@ class ComboBox(QComboBox):
         :return: the current data (if it can be json serialized) or the current text of the selected item
         """
         if self.currentData() is not None:
-            try:
-                _ = json.dumps(self.currentData())
-                return self.currentData()
-            except TypeError:
-                pass
-        try:
-            return json.loads(self.currentText())
-        except json.decoder.JSONDecodeError:
-            return self.currentText()
+            return self.currentData()
+        return self.currentText()
+        # if self.currentData() is not None:
+        #     try:
+        #         _ = json.dumps(self.currentData())
+        #         return self.currentData()
+        #     except TypeError:
+        #         pass
+        # try:
+        #     return json.loads(self.currentText())
+        # except json.decoder.JSONDecodeError:
+        #     return self.currentText()
 
     def setValue(self, value):
         self.setCurrentText(value)
+
+    # def currentData(self, role = ...):
+    #     return self.model().getItemObject(self.currentIndex())
+
+    # def setModel(self, model):
+    #     if isinstance(model, models.StringList):
+    #         super().setModel(model)
+    #     elif isinstance(model, models.DictList):
+    #         self.setItemsDict(model.itemsDict())
+    #         self.table_view = QTableView()
+    #         self.table_view.setModel(model)
+    #         self.selection_model = QItemSelectionModel(model)
+    #         self.table_view.setSelectionModel(self.selection_model)
+    #         self.currentIndexChanged.connect(self.sync_selection_with_table)
+    #         self.selection_model.selectionChanged.connect(self.sync_selection_with_combobox)
+    #         model.updated.connect(self.update_combobox_items)
+
+    # def update_combobox_items(self):
+    #     self.clear()
+    #     for label, data in self.table_view.model().items():
+    #         self.addItem(label, userData=data)
+    #     self.sync_selection_with_table(2)
+    #
+    # def sync_selection_with_table(self, index):
+    #     # Synchroniser la sélection dans QTableView lorsque l'élément dans QComboBox change
+    #     if index >= 0:
+    #         self.selection_model.select(
+    #             self.table_view.model().index(index, 0),
+    #             QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows
+    #         )
+    #
+    # def sync_selection_with_combobox(self):
+    #     # Synchroniser la sélection dans QComboBox lorsque l'élément dans QTableView change
+    #     indexes = self.selection_model.selectedRows()
+    #     if indexes:
+    #         row = indexes[0].row()
+    #         self.setCurrentIndex(row)
 
 
 class ListView(QListView):
@@ -338,9 +388,11 @@ class LineEdit(QLineEdit):
     an extension of QLineEdit class
     """
 
-    def __init__(self, parent, parameter, editable=True):
+    def __init__(self, parent, model=None, editable=True):
         super().__init__(parent)
         self.setEditable(editable)
+        self.mapper = QDataWidgetMapper(self)
+        self.setModel(model)
 
     def value(self):
         """
@@ -354,7 +406,8 @@ class LineEdit(QLineEdit):
             return self.text()
 
     def setValue(self, value):
-        self.setText(value)
+        self.mapper.model().setData(self.mapper.model().index(0,0), value)
+        # self.setText(value)
 
     @property
     def changed(self):
@@ -366,6 +419,11 @@ class LineEdit(QLineEdit):
 
     def setEditable(self, editable=True):
         self.setReadOnly(not editable)
+
+    def setModel(self, model):
+        self.mapper.setModel(model)
+        self.mapper.addMapping(self, 0)
+        self.mapper.toFirst()
 
 
 class PushButton(QPushButton):

@@ -1,10 +1,11 @@
 import json
 
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Signal, QAbstractItemModel, QModelIndex, Qt
 
 
-class Parameter(QObject):
+class Parameter(QAbstractItemModel):
     changed = Signal(object)
+    itemsChanged = Signal(object)
 
     def __init__(self, name=None, items=None, label=None, default=None, validator=None, groups=None, updater=None,
                  **kwargs):
@@ -19,6 +20,32 @@ class Parameter(QObject):
         self.updater_kwargs = kwargs
         self.groups = set() if groups is None else groups
         self._value = default
+
+    def rowCount(self, parent=QModelIndex()):
+        return 1  # Une seule ligne
+
+    def columnCount(self, parent=QModelIndex()):
+        return 1  # Une seule colonne
+
+    def data(self, index, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole or role == Qt.EditRole:
+            return self._value
+        return None
+
+    def setData(self, index, value, role=Qt.EditRole):
+        if role == Qt.EditRole:
+            self._value = value
+            self.dataChanged.emit(index, index, [role])
+            return True
+        return False
+
+    def index(self, row, column, parent=QModelIndex()):
+        if not parent.isValid() and row == 0 and column == 0:
+            return self.createIndex(row, column)
+        return QModelIndex()
+
+    def parent(self, index):
+        return QModelIndex()
 
     @property
     def default(self):
@@ -37,7 +64,8 @@ class Parameter(QObject):
         if value != self._value and self.validate(value):
             if isinstance(value, (list, dict)):
                 value = json.dumps(value)
-            self._value = value
+            # self._value = value
+            self.setData(self.index(0,0), value)
             self.changed.emit(value)
 
     @value.setter
@@ -49,7 +77,7 @@ class Parameter(QObject):
         return list(self.items.keys())
 
     @property
-    def data(self):
+    def data_list(self):
         return list(self.items.values())
 
     @property
@@ -73,14 +101,17 @@ class Parameter(QObject):
             self.items = {item: None for item in items}
         else:
             self.items = items
+        self.itemsChanged.emit(self.items)
 
     def add_item(self, item):
         if not isinstance(item, dict):
             item = {item: None}
         self.items.update(item)
+        self.itemsChanged.emit(self.items)
 
     def add_items(self, items):
         self.items.update(items)
+        self.itemsChanged.emit(self.items)
 
     def get_item(self, key):
         if key in self.items:
