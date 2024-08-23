@@ -178,6 +178,7 @@ class ComboBox(QComboBox):
             self.setModel(model)
             self.setModelColumn(0)
         self.setEditable(editable)
+        self.currentIndexChanged.connect(self.model().set_selection)
 
     def addItemDict(self, options):
         """

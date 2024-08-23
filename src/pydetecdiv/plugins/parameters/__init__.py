@@ -2,17 +2,17 @@ import json
 
 from PySide6.QtCore import QObject, Signal, QAbstractItemModel, QModelIndex, Qt
 
+from pydetecdiv.app.models import ItemModel, DictItemModel
 
-class Parameter(QAbstractItemModel):
-    changed = Signal(object)
-    itemsChanged = Signal(object)
 
-    def __init__(self, name=None, items=None, label=None, default=None, validator=None, groups=None, updater=None,
+class AbstractParameter:
+    # changed = Signal(object)
+    # itemsChanged = Signal(object)
+
+    def __init__(self, name=None, label=None, default=None, validator=None, groups=None, updater=None,
                  **kwargs):
         super().__init__()
         self.name = name
-        # self.items = {} if items is None else items
-        self.set_items(items)
         self.label = label
         self._default = default
         self.validator = validator
@@ -20,32 +20,7 @@ class Parameter(QAbstractItemModel):
         self.updater_kwargs = kwargs
         self.groups = set() if groups is None else groups
         self._value = default
-
-    def rowCount(self, parent=QModelIndex()):
-        return 1  # Une seule ligne
-
-    def columnCount(self, parent=QModelIndex()):
-        return 1  # Une seule colonne
-
-    def data(self, index, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole or role == Qt.EditRole:
-            return self._value
-        return None
-
-    def setData(self, index, value, role=Qt.EditRole):
-        if role == Qt.EditRole:
-            self._value = value
-            self.dataChanged.emit(index, index, [role])
-            return True
-        return False
-
-    def index(self, row, column, parent=QModelIndex()):
-        if not parent.isValid() and row == 0 and column == 0:
-            return self.createIndex(row, column)
-        return QModelIndex()
-
-    def parent(self, index):
-        return QModelIndex()
+        self.model = None
 
     @property
     def default(self):
@@ -55,37 +30,37 @@ class Parameter(QAbstractItemModel):
 
     @property
     def value(self):
-        try:
-            return json.loads(self._value)
-        except:
-            return self._value
+        return self.model.value()
+        # try:
+        #     return json.loads(self._value)
+        # except:
+        #     return self._value
 
     def set_value(self, value):
         if value != self._value and self.validate(value):
-            if isinstance(value, (list, dict)):
-                value = json.dumps(value)
+            self.model.set_value(value)
+            # if isinstance(value, (list, dict)):
+            #     value = json.dumps(value)
             # self._value = value
-            self.setData(self.index(0,0), value)
-            self.changed.emit(value)
 
     @value.setter
     def value(self, value):
         self.set_value(value)
 
-    @property
-    def values(self):
-        return list(self.items.keys())
+    # @property
+    # def values(self):
+    #     return list(self.items.keys())
 
-    @property
-    def data_list(self):
-        return list(self.items.values())
+    # @property
+    # def data_list(self):
+    #     return list(self.items.values())
 
-    @property
-    def item(self):
-        item = self.get_item(self._value)
-        if item is None:
-            return self.value
-        return item
+    # @property
+    # def item(self):
+    #     item = self.get_item(self._value)
+    #     if item is None:
+    #         return self.value
+    #     return item
 
     def reset(self):
         self.value = self.default
@@ -94,29 +69,29 @@ class Parameter(QAbstractItemModel):
         if self.updater is not None:
             self.updater(**self.updater_kwargs)
 
-    def set_items(self, items):
-        if items is None:
-            self.items = {}
-        elif isinstance(items, list):
-            self.items = {item: None for item in items}
-        else:
-            self.items = items
-        self.itemsChanged.emit(self.items)
-
-    def add_item(self, item):
-        if not isinstance(item, dict):
-            item = {item: None}
-        self.items.update(item)
-        self.itemsChanged.emit(self.items)
-
-    def add_items(self, items):
-        self.items.update(items)
-        self.itemsChanged.emit(self.items)
-
-    def get_item(self, key):
-        if key in self.items:
-            return self.items[key]
-        return None
+    # def set_items(self, items):
+    #     if items is None:
+    #         self.items = {}
+    #     elif isinstance(items, list):
+    #         self.items = {item: None for item in items}
+    #     else:
+    #         self.items = items
+    #     # self.itemsChanged.emit(self.items)
+    #
+    # def add_item(self, item):
+    #     if not isinstance(item, dict):
+    #         item = {item: None}
+    #     self.items.update(item)
+    #     # self.itemsChanged.emit(self.items)
+    #
+    # def add_items(self, items):
+    #     self.items.update(items)
+    #     # self.itemsChanged.emit(self.items)
+    #
+    # def get_item(self, key):
+    #     if key in self.items:
+    #         return self.items[key]
+    #     return None
 
     def validate(self, value):
         """
@@ -129,6 +104,48 @@ class Parameter(QAbstractItemModel):
             if not isinstance(value, (list, dict)):
                 return value in self.items
         return (self.validator is None) or self.validator(value)
+
+
+class Parameter(AbstractParameter):
+    def __init__(self, name=None, model_type='str', label=None, default=None, validator=None, groups=None, updater=None,
+                 **kwargs):
+        super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
+                         **kwargs)
+        self.model = ItemModel()
+
+
+class ChoiceParameter(AbstractParameter):
+    def __init__(self, name=None, items=None, label=None, default=None, validator=None, groups=None, updater=None,
+                 **kwargs):
+        super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
+                         **kwargs)
+        self.model = DictItemModel(items)
+
+    @property
+    def value(self):
+        return self.model.value()
+
+    @property
+    def keys(self):
+        return self.model.keys()
+
+    @property
+    def values(self):
+        return self.model.values()
+
+    @property
+    def item(self):
+        return self.model.value()
+
+    def set_items(self, items):
+        self.model.set_items(items)
+
+    def add_item(self, item):
+        self.model.add_item(item)
+
+    def add_items(self, items):
+        for item in items.items():
+            self.add_item(item)
 
 
 class Parameters:

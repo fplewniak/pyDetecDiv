@@ -37,7 +37,7 @@ from . import models
 from .gui.classification import ManualAnnotator, PredictionViewer, DefineClassesDialog
 from .gui.prediction import PredictionDialog
 from .gui.training import TrainingDialog, FineTuningDialog
-from ..parameters import Parameter
+from ..parameters import Parameter, ChoiceParameter
 from ...app.gui.core.widgets.viewers.plots import MatplotViewer
 
 Base = registry().generate_base()
@@ -178,16 +178,16 @@ class Plugin(plugins.Plugin):
         self.menu = None
         # self.gui = None
         self.parameters.parameter_list = [
-            Parameter(name='model', label='Network', groups={'training', 'classify'}, default='ResNet50V2_lstm',
+            ChoiceParameter(name='model', label='Network', groups={'training', 'classify'}, default='ResNet50V2_lstm',
                       updater=self.load_models),
-            Parameter(name='weights', label='Weights', groups={'training', 'classify'}, default='None',
+            ChoiceParameter(name='weights', label='Weights', groups={'training', 'classify'}, default='None',
                       updater=self.update_model_weights),
-            Parameter(name='class_names', label='Classes',
+            ChoiceParameter(name='class_names', label='Classes',
                       groups={'training', 'classify', 'annotate', 'import_annotations'},
                       updater=self.update_class_names),
             Parameter(name='seed', label='Random seed', groups={'training'}, default=42,
                       validator=lambda x: isinstance(x, int)),
-            Parameter(name='optimizer', label='Optimizer', groups={'training'}, default='SGD',
+            ChoiceParameter(name='optimizer', label='Optimizer', groups={'training'}, default='SGD',
                       items={'SGD': keras.optimizers.SGD,
                              'Adam': keras.optimizers.Adam,
                              'Adadelta': keras.optimizers.Adadelta,
@@ -202,7 +202,7 @@ class Plugin(plugins.Plugin):
                       validator=lambda x: isinstance(x, int) & x > 0),
             Parameter(name='momentum', label='Momentum', groups={'training'}, default=0.9,
                       validator=lambda x: isinstance(x, float) & (0.0 < x < 1.0)),
-            Parameter(name='checkpoint_metric', label='Checkpoint metric', groups={'training'}, default='Loss',
+            ChoiceParameter(name='checkpoint_metric', label='Checkpoint metric', groups={'training'}, default='Loss',
                       items={'Loss': 'val_loss', 'Accuracy': 'val_accuracy', }),
             Parameter(name='early_stopping', label='Early stopping', groups={'training'}, default=False,
                       validator=lambda x: isinstance(x, bool)),
@@ -217,11 +217,11 @@ class Plugin(plugins.Plugin):
                       validator=lambda x: isinstance(x, float) & (0.01 <= x <= 0.99)),
             Parameter(name='dataset_seed', label='Random seed', groups={'training'}, default=42,
                       validator=lambda x: isinstance(x, int)),
-            Parameter(name='red_channel', label='Red', groups={'training', 'classify'}, default=0,
+            ChoiceParameter(name='red_channel', label='Red', groups={'training', 'classify'}, default=0,
                       updater=self.update_channels),
-            Parameter(name='green_channel', label='Green', groups={'training', 'classify'}, default=0,
+            ChoiceParameter(name='green_channel', label='Green', groups={'training', 'classify'}, default=0,
                       updater=self.update_channels),
-            Parameter(name='blue_channel', label='Blue', groups={'training', 'classify'}, default=0,
+            ChoiceParameter(name='blue_channel', label='Blue', groups={'training', 'classify'}, default=0,
                       updater=self.update_channels),
             Parameter(name='epochs', label='Epochs', groups={'training'}, default=16,
                       validator=lambda x: isinstance(x, int) & x > 0),
@@ -230,6 +230,8 @@ class Plugin(plugins.Plugin):
             Parameter(name='seqlen', label='Sequence length', groups={'training', 'classify'}, default=50,
                       validator=lambda x: isinstance(x, int) & x > 0, adaptive=True, ),
             Parameter(name='annotation_file', label='Annotation file', groups={'import_annotations'}, ),
+            # Parameter(name='classifier', label='Classifier', groups={'predict'}, updater=self.update_classifiers,
+            #           multiselection=False),
         ]
 
     def register(self):
@@ -549,7 +551,7 @@ class Plugin(plugins.Plugin):
 
         # self.parameters['weights'].set_items({'None': None})
         weights = {os.path.basename(f): f for f in w_files}
-        print(f'found those weight files {weights}')
+        print(f'found those weight files {weights} for {self.parameters["model"].value}')
         self.parameters['weights'].set_items(weights)
 
     def update_class_names(self, prediction=False):

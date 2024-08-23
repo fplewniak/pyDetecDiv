@@ -3,29 +3,31 @@ from PySide6.QtCore import QAbstractItemModel, QModelIndex, Qt, QAbstractListMod
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 
 
-class Text(QAbstractItemModel):
-    def __init__(self, text: str = '', parent=None):
+class ItemModel(QAbstractItemModel):
+    def __init__(self, data: object = None, parent=None):
         super().__init__(parent)
-        self._text = text
+        self._data = data
 
-    @property
     def value(self):
         return self.data(self.index(0, 0))
 
+    def set_value(self, value):
+        self.setData(self.index(0,0), value)
+
     def rowCount(self, parent=QModelIndex()):
-        return 1  # Une seule ligne
+        return 1
 
     def columnCount(self, parent=QModelIndex()):
-        return 1  # Une seule colonne
+        return 1
 
     def data(self, index, role=Qt.DisplayRole):
         if role == Qt.DisplayRole or role == Qt.EditRole:
-            return self._text
+            return self._data
         return None
 
     def setData(self, index, value, role=Qt.EditRole):
         if role == Qt.EditRole:
-            self._text = value
+            self._data = value
             self.dataChanged.emit(index, index, [role])
             return True
         return False
@@ -76,47 +78,44 @@ class StringList(QStringListModel):
             self.dataChanged.emit(self.index(row, 0), self.index(row, 0), [Qt.DisplayRole])
 
 
-class DictList(QStandardItemModel):
+class DictItemModel(QStandardItemModel):
     def __init__(self, data_dict=None, parent=None):
         super().__init__(parent)
-        self.setColumnCount(2)
-        self.setHorizontalHeaderLabels(['label', 'data'])
         if data_dict:
-            self.setItemsDict(data_dict)
+            self.set_items(data_dict)
+        self.selection = 0
+
+    def columnCount(self, parent=QModelIndex()):
+        return 1
+
+    def row(self, index):
+        return self.item(index, 0)
+
+    def value(self):
+        return self.values()[self.selection]
 
     def rows(self):
-        return {self.item(row, 0).text(): self.item(row, 1).data(Qt.UserRole) for row in range(self.rowCount())}
+        return {self.row(row).text(): self.row(row).data(Qt.UserRole) for row in range(self.rowCount())}
 
-    def setItemsDict(self, data_dict):
+    def keys(self):
+        return [self.row(row).text() for row in range(self.rowCount())]
+
+    def values(self):
+        return [self.row(row).data(Qt.UserRole) for row in range(self.rowCount())]
+
+    def set_items(self, data_dict):
         for key, value in data_dict.items():
-            self.addItem(key, value)
+            self.add_item({key: value})
 
-    def addItem(self, key, value):
-        key_item = QStandardItem(key)
-        key_item.setData(value, Qt.UserRole)
-        value_item = QStandardItem(str(value))  # Optionnel: convertir l'objet en chaîne pour l'affichage
-        # value_item.setData(value, Qt.UserRole)  # Stocker l'objet dans le rôle UserRole
-        self.appendRow([key_item, value_item])
+    def add_item(self, item):
+        for key, value in item.items():
+            key_item = QStandardItem(key)
+            key_item.setData(value, Qt.UserRole)
+            self.appendRow([key_item])
 
-    def removeItem(self, row):
+    def remove_item(self, row):
         if 0 <= row < self.rowCount():
             self.removeRow(row)
 
-    def clear(self):
-        self.clear()
-        self.setHorizontalHeaderLabels(['label', 'data'])
-
-    # def getItemObject(self, row):
-    #     if 0 <= row < self.rowCount():
-    #         return self.item(row, 1).data(Qt.UserRole)
-    #     return None
-    #
-    # def getItemKey(self, row):
-    #     if 0 <= row < self.rowCount():
-    #         return self.item(row, 0).data(Qt.UserRole)
-    #     return None
-    #
-    # def getData(self, key):
-    #     for row in range(self.rowCount()):
-    #         if key == self.item(row, 0).text():
-    #             return self.item(row, 1).data(Qt.UserRole)
+    def set_selection(self, index):
+        self.selection = index
