@@ -37,7 +37,7 @@ from . import models
 from .gui.classification import ManualAnnotator, PredictionViewer, DefineClassesDialog
 from .gui.prediction import PredictionDialog
 from .gui.training import TrainingDialog, FineTuningDialog
-from ..parameters import Parameter, ChoiceParameter
+from ..parameters import ItemParameter, ChoiceParameter
 from ...app.gui.core.widgets.viewers.plots import MatplotViewer
 
 Base = registry().generate_base()
@@ -185,7 +185,7 @@ class Plugin(plugins.Plugin):
             ChoiceParameter(name='class_names', label='Classes',
                       groups={'training', 'classify', 'annotate', 'import_annotations'},
                       updater=self.update_class_names),
-            Parameter(name='seed', label='Random seed', groups={'training'}, default=42,
+            ItemParameter(name='seed', label='Random seed', groups={'training'}, default=42,
                       validator=lambda x: isinstance(x, int)),
             ChoiceParameter(name='optimizer', label='Optimizer', groups={'training'}, default='SGD',
                       items={'SGD': keras.optimizers.SGD,
@@ -193,29 +193,29 @@ class Plugin(plugins.Plugin):
                              'Adadelta': keras.optimizers.Adadelta,
                              'Adamax': keras.optimizers.Adamax,
                              'Nadam': keras.optimizers.Nadam, }),
-            Parameter(name='learning_rate', label='Learning rate', groups={'training'}, default=0.001,
+            ItemParameter(name='learning_rate', label='Learning rate', groups={'training'}, default=0.001,
                       range=(0.00001, 1.0), decimals=4,
                       validator=lambda x: isinstance(x, float) & (0.00001 <= x <= 1.0)),
-            Parameter(name='decay_rate', label='Decay rate', groups={'training'}, default=0.95,
+            ItemParameter(name='decay_rate', label='Decay rate', groups={'training'}, default=0.95,
                       validator=lambda x: isinstance(x, float) & (0.0 < x < 1.0)),
-            Parameter(name='decay_period', label='Decay period', groups={'training'}, default=2,
+            ItemParameter(name='decay_period', label='Decay period', groups={'training'}, default=2,
                       validator=lambda x: isinstance(x, int) & x > 0),
-            Parameter(name='momentum', label='Momentum', groups={'training'}, default=0.9,
+            ItemParameter(name='momentum', label='Momentum', groups={'training'}, default=0.9,
                       validator=lambda x: isinstance(x, float) & (0.0 < x < 1.0)),
             ChoiceParameter(name='checkpoint_metric', label='Checkpoint metric', groups={'training'}, default='Loss',
                       items={'Loss': 'val_loss', 'Accuracy': 'val_accuracy', }),
-            Parameter(name='early_stopping', label='Early stopping', groups={'training'}, default=False,
+            ItemParameter(name='early_stopping', label='Early stopping', groups={'training'}, default=False,
                       validator=lambda x: isinstance(x, bool)),
-            Parameter(name='num_training', label='Training dataset', groups={'training'}, default=0.6,
+            ItemParameter(name='num_training', label='Training dataset', groups={'training'}, default=0.6,
                       range=(0.01, 0.99), decimals=2,
                       validator=lambda x: isinstance(x, float) & (0.01 <= x <= 0.99)),
-            Parameter(name='num_validation', label='Validation dataset', groups={'training'}, default=0.2,
+            ItemParameter(name='num_validation', label='Validation dataset', groups={'training'}, default=0.2,
                       range=(0.01, 0.99), decimals=2,
                       validator=lambda x: isinstance(x, float) & (0.01 <= x <= 0.99)),
-            Parameter(name='num_test', label='Test dataset', groups={'training'}, default=0.2,
+            ItemParameter(name='num_test', label='Test dataset', groups={'training'}, default=0.2,
                       range=(0.01, 0.99), decimals=2, enabled=False,
                       validator=lambda x: isinstance(x, float) & (0.01 <= x <= 0.99)),
-            Parameter(name='dataset_seed', label='Random seed', groups={'training'}, default=42,
+            ItemParameter(name='dataset_seed', label='Random seed', groups={'training'}, default=42,
                       validator=lambda x: isinstance(x, int)),
             ChoiceParameter(name='red_channel', label='Red', groups={'training', 'classify'}, default=0,
                       updater=self.update_channels),
@@ -223,14 +223,14 @@ class Plugin(plugins.Plugin):
                       updater=self.update_channels),
             ChoiceParameter(name='blue_channel', label='Blue', groups={'training', 'classify'}, default=0,
                       updater=self.update_channels),
-            Parameter(name='epochs', label='Epochs', groups={'training'}, default=16,
+            ItemParameter(name='epochs', label='Epochs', groups={'training'}, default=16,
                       validator=lambda x: isinstance(x, int) & x > 0),
-            Parameter(name='batch_size', label='Batch size', groups={'training', 'classify'}, default=128,
+            ItemParameter(name='batch_size', label='Batch size', groups={'training', 'classify'}, default=128,
                       validator=lambda x: isinstance(x, int) & x > 0, adaptive=True, ),
-            Parameter(name='seqlen', label='Sequence length', groups={'training', 'classify'}, default=50,
+            ItemParameter(name='seqlen', label='Sequence length', groups={'training', 'classify'}, default=50,
                       validator=lambda x: isinstance(x, int) & x > 0, adaptive=True, ),
-            Parameter(name='annotation_file', label='Annotation file', groups={'import_annotations'}, ),
-            # Parameter(name='classifier', label='Classifier', groups={'predict'}, updater=self.update_classifiers,
+            ItemParameter(name='annotation_file', label='Annotation file', groups={'import_annotations'}, ),
+            # ItemParameter(name='classifier', label='Classifier', groups={'predict'}, updater=self.update_classifiers,
             #           multiselection=False),
         ]
 
@@ -429,7 +429,7 @@ class Plugin(plugins.Plugin):
                         runs[class_names].append(run[0])
                     else:
                         runs[class_names] = [run[0]]
-                self.parameters['class_names'].value = json.loads(class_names)
+                self.parameters['class_names'].set_items({class_names: json.loads(class_names) for class_names in runs})
         return runs
 
     def run_prediction(self):
@@ -543,7 +543,7 @@ class Plugin(plugins.Plugin):
         if PyDetecDiv.project_name is not None:
             try:
                 user_path = os.path.join(get_project_dir(), 'roi_classification', 'models',
-                                         self.parameters['model'].value)
+                                         self.parameters['model'].key)
                 w_files.extend([os.path.join(user_path, f) for f in os.listdir(user_path)
                                 if os.path.isfile(os.path.join(user_path, f)) and f.endswith('.h5')])
             except FileNotFoundError:
@@ -558,7 +558,7 @@ class Plugin(plugins.Plugin):
         """
         Update the classes associated with the currently selected model
         """
-        if self.parameters['weights'].item != 'None':
+        if self.parameters['weights'].item != 'None'and (self.parameters['weights'].item is not None):
             self.parameters['class_names'].set_items(self.get_class_names(self.parameters['weights'].value))
         else:
             self.parameters['class_names'].set_items(self.get_class_names(prediction=prediction))
@@ -569,7 +569,7 @@ class Plugin(plugins.Plugin):
             n_layers = image_resource.zdim if image_resource else 0
 
         for param in ['red_channel', 'green_channel', 'blue_channel']:
-            self.parameters[param].set_items([str(i) for i in range(n_layers)])
+            self.parameters[param].set_items({str(i): None for i in range(n_layers)})
 
     # def run(self):
     #     """
@@ -1046,7 +1046,7 @@ class Plugin(plugins.Plugin):
                                 f"run.parameters ->> '$.last_weights' as last_weights "
                                 f"FROM run "
                                 f"WHERE {clause} "
-                                f"ORDER BY run.id_ DESC;")))
+                                f"ORDER BY run.id_ ASC;")))
             class_names = {json.dumps(json.loads(r[0])): json.loads(r[0]) for r in results}
         return class_names
 

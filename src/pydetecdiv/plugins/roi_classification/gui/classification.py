@@ -267,6 +267,7 @@ class ManualAnnotator(AnnotationTool):
         if self.define_classes_dialog is None:
             self.define_classes_dialog = DefineClassesDialog(self, self.plugin)
         else:
+            self.define_classes_dialog.setup_class_names()
             self.define_classes_dialog.show()
 
     def load_selected_ROIs(self):
@@ -366,7 +367,7 @@ class AnnotationMenuBar(QMenuBar):
         self.set_class_names_choice()
 
     def set_class_names_choice(self):
-        for class_names in self.parent().plugin.parameters['class_names'].items:
+        for class_names in self.parent().plugin.parameters['class_names'].keys:
             self.class_names_choice.append(QAction(class_names))
             self.class_names_choice[-1].setCheckable(True)
             if class_names == self.parent().plugin.class_names():
@@ -416,6 +417,7 @@ class PredictionMenuBar(AnnotationMenuBar):
 
     def set_class_names_choice(self):
         self.parent().plugin.update_class_names(prediction=True)
+        self.menuClasses.clear()
         super().set_class_names_choice()
 
     def set_run_choice(self, class_names):
@@ -438,11 +440,7 @@ class DefineClassesDialog(Dialog):
         super().__init__(plugin, title='Define classes')
         self.annotator = annotator
         self.list_view = ClassListView(self, multiselection=True)
-        suggestion = self.plugin.class_names(as_string=False)
-        if suggestion is None:
-            self.list_view.model().setStringList(['A', 'B'])
-        else:
-            self.list_view.model().setStringList(suggestion)
+        self.setup_class_names()
         self.button_box = self.addButtonBox()
         self.add_class_btn = QPushButton('Import classes', parent=self.button_box)
         self.add_class_btn.clicked.connect(self.import_classes)
@@ -452,6 +450,13 @@ class DefineClassesDialog(Dialog):
         self.arrangeWidgets([self.list_view, self.button_box])
         self.fit_to_contents()
         self.exec()
+
+    def setup_class_names(self):
+        suggestion = self.plugin.class_names(as_string=False)
+        if suggestion is None:
+            self.list_view.model().setStringList(['A', 'B'])
+        else:
+            self.list_view.model().setStringList(suggestion)
 
     def save_new_classes(self):
         self.plugin.parameters["class_names"].add_item(
