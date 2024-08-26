@@ -141,7 +141,7 @@ class ParametersFormGroupBox(GroupBox):
         if issubclass(widget, (QPushButton, QDialogButtonBox)):
             option = widget(self, **kwargs)
         else:
-            option = widget(self, parameter, **kwargs)
+            option = widget(self, parameter.model, **kwargs)
             # if parameter is not None:
             #     option.changed.connect(parameter.set_value)
             #     parameter.changed.connect(option.setValue)
@@ -179,6 +179,7 @@ class ComboBox(QComboBox):
             self.setModelColumn(0)
         self.setEditable(editable)
         self.currentIndexChanged.connect(self.model().set_selection)
+        self.model().selection_changed.connect(self.setCurrentIndex)
 
     def addItemDict(self, options):
         """

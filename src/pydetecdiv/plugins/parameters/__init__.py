@@ -123,6 +123,10 @@ class ChoiceParameter(Parameter):
     def value(self):
         return self.model.value()
 
+    @value.setter
+    def value(self, value):
+        self.model.set_value(value)
+
     @property
     def keys(self):
         return self.model.keys()

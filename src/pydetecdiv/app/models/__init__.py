@@ -79,6 +79,8 @@ class StringList(QStringListModel):
 
 
 class DictItemModel(QStandardItemModel):
+    selection_changed = Signal(int)
+
     def __init__(self, data_dict=None, parent=None):
         super().__init__(parent)
         if data_dict:
@@ -93,7 +95,8 @@ class DictItemModel(QStandardItemModel):
 
     def key(self):
         try:
-            return self.keys()[self.selection]
+            return self.row(self.selection).text()
+            # return self.keys()[self.selection]
         except IndexError:
             return None
 
@@ -102,7 +105,11 @@ class DictItemModel(QStandardItemModel):
 
     def value(self):
         try:
-            return self.values()[self.selection]
+            # return self.row(self.selection).data(Qt.UserRole)
+            selected_value = self.values()[self.selection]
+            if selected_value is None:
+                return self.key()
+            return selected_value
         except IndexError:
             return None
 
@@ -135,3 +142,4 @@ class DictItemModel(QStandardItemModel):
 
     def set_selection(self, index):
         self.selection = index
+        self.selection_changed.emit(index)
