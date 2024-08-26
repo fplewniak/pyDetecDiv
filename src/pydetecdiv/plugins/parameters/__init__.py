@@ -9,8 +9,7 @@ class Parameter:
     # changed = Signal(object)
     # itemsChanged = Signal(object)
 
-    def __init__(self, name=None, label=None, default=None, validator=None, groups=None, updater=None,
-                 **kwargs):
+    def __init__(self, name, label=None, default=None, validator=None, groups=None, updater=None, **kwargs):
         super().__init__()
         self.name = name
         self.label = label
@@ -21,6 +20,9 @@ class Parameter:
         self.groups = set() if groups is None else groups
         self._value = default
         self.model = None
+
+    def kwargs(self):
+        return {'default': self.default}
 
     @property
     def default(self):
@@ -101,16 +103,73 @@ class Parameter:
 
 
 class ItemParameter(Parameter):
-    def __init__(self, name=None, model_type='str', label=None, default=None, validator=None, groups=None, updater=None,
-                 **kwargs):
+    def __init__(self, name, label=None, default=None, validator=None, groups=None, updater=None, **kwargs):
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          **kwargs)
         self.model = ItemModel()
+        self.reset()
+
+
+class NumParameter(ItemParameter):
+    def __init__(self, name, label=None, default=None, minimum=None, maximum=None, validator=None,
+                 groups=None, updater=None, **kwargs):
+        self.minimum = minimum
+        self.maximum = max(minimum, maximum)
+        super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
+                         **kwargs)
+
+    def kwargs(self):
+        return {'default': self.default, 'minimum': self.minimum, 'maximum': self.maximum}
+
+    def reset(self):
+        if self.default is None:
+            self.set_value(self.minimum)
+        else:
+            self.set_value(self.default)
+
+    def set_minimum(self, value):
+        self.minimum = value
+
+    def set_maximum(self, value):
+        self.maximum = value
+
+    def set_range(self, minimum, maximum):
+        self.set_minimum(minimum)
+        self.set_maximum(maximum)
+
+
+class IntParameter(NumParameter):
+    def __init__(self, name, label=None, default=None, minimum=1, maximum=4096, validator=None,
+                 groups=None, updater=None, **kwargs):
+        super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
+                         minimum=minimum, maximum=maximum, **kwargs)
+
+
+class FloatParameter(NumParameter):
+    def __init__(self, name, label=None, default=None, validator=None, minimum=0.0, maximum=1.0,
+                 groups=None, updater=None, **kwargs):
+        super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
+                         minimum=minimum, maximum=maximum, **kwargs)
+
+
+class StringParameter(ItemParameter):
+    def __init__(self, name, label=None, default='', validator=None,
+                 groups=None, updater=None, **kwargs):
+        super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
+                         **kwargs)
+        self.model = ItemModel()
+        self.reset()
+
+
+class CheckParameter(ItemParameter):
+    def __init__(self, name, label=None, default=None, validator=None,
+                 groups=None, updater=None, **kwargs):
+        super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
+                         **kwargs)
 
 
 class ChoiceParameter(Parameter):
-    def __init__(self, name=None, items=None, label=None, default=None, validator=None, groups=None, updater=None,
-                 **kwargs):
+    def __init__(self, name, items=None, label=None, default=None, validator=None, groups=None, updater=None, **kwargs):
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          **kwargs)
         self.model = DictItemModel(items)

@@ -3,62 +3,12 @@ Module defining widgets and other utilities for creating windows/forms with a mi
 """
 import json
 
-from PySide6.QtCore import QStringListModel, QItemSelection, QItemSelectionModel, Signal, QByteArray
+from PySide6.QtCore import QStringListModel, QItemSelection, QItemSelectionModel
 from PySide6.QtGui import QIcon, QAction, Qt
 from PySide6.QtSql import QSqlQueryModel
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox, \
     QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView, QAbstractItemView, \
     QPushButton, QApplication, QRadioButton, QListView, QMenu, QDataWidgetMapper
-
-import pydetecdiv.app.models as models
-
-
-# class ParameterWidgets:
-#     """
-#     A class to handle plugin parameters from a Form gui
-#     """
-#
-#     def __init__(self):
-#         self.param_groups = {}
-#
-#     def add_groups(self, groups):
-#         """
-#         Add empty groups of parameters
-#
-#         :param groups: the list of groups
-#         """
-#         for group in groups:
-#             self.add_group(group)
-#
-#     def add_group(self, group, parameters=None):
-#         """
-#         Add a new group of parameters (in a dictionary)
-#
-#         :param group: the group to create
-#         :param param_dict: the dictionary of parameters
-#         """
-#         self.param_groups[group] = parameters if parameters is not None else {}
-#
-#     def add(self, group, parameter):
-#         """
-#         Add parameters (in a dictionary) to an existing group of parameters
-#
-#         :param group: the group of parameters to expand
-#         :param param_dict: the parameters
-#         """
-#         self.param_groups[group].update(parameter)
-#
-#     def get_values(self, group):
-#         """
-#         Get a dictionary containing all parameters key/values for a given group
-#
-#         :param group: the requested parameter group
-#         :return: a dictionary of parameters
-#         """
-#         return {name: widget.value() for name, widget in self.param_groups[group].items()}
-#
-#     def get_value(self, name, group):
-#         return self.get_values(group)[name]
 
 
 class StyleSheets:
@@ -141,14 +91,7 @@ class ParametersFormGroupBox(GroupBox):
         if issubclass(widget, (QPushButton, QDialogButtonBox)):
             option = widget(self, **kwargs)
         else:
-            option = widget(self, parameter.model, **kwargs)
-            # if parameter is not None:
-            #     option.changed.connect(parameter.set_value)
-            #     parameter.changed.connect(option.setValue)
-            #     if hasattr(option, 'setItemsDict'):
-            #         parameter.itemsChanged.connect(option.setItemsDict)
-            #     parameter.reset()
-            #     parameter.changed.emit(parameter.value)
+            option = widget(self, parameter.model, **parameter.kwargs(), **kwargs)
 
         if label is None:
             self.layout.addRow(option)
@@ -171,7 +114,7 @@ class ComboBox(QComboBox):
     an extension of the QComboBox class
     """
 
-    def __init__(self, parent, model=None, editable=False):
+    def __init__(self, parent, model=None, editable=False, **kwargs):
         super().__init__(parent)
         if model is not None and model.rows() is not None:
             self.addItemDict(model.rows())
@@ -231,56 +174,9 @@ class ComboBox(QComboBox):
         if self.currentData() is not None:
             return self.currentData()
         return self.currentText()
-        # if self.currentData() is not None:
-        #     try:
-        #         _ = json.dumps(self.currentData())
-        #         return self.currentData()
-        #     except TypeError:
-        #         pass
-        # try:
-        #     return json.loads(self.currentText())
-        # except json.decoder.JSONDecodeError:
-        #     return self.currentText()
 
     def setValue(self, value):
         self.setCurrentText(value)
-
-    # def currentData(self, role = ...):
-    #     return self.model().getItemObject(self.currentIndex())
-
-    # def setModel(self, model):
-    #     if isinstance(model, models.StringList):
-    #         super().setModel(model)
-    #     elif isinstance(model, models.DictList):
-    #         self.setItemsDict(model.itemsDict())
-    #         self.table_view = QTableView()
-    #         self.table_view.setModel(model)
-    #         self.selection_model = QItemSelectionModel(model)
-    #         self.table_view.setSelectionModel(self.selection_model)
-    #         self.currentIndexChanged.connect(self.sync_selection_with_table)
-    #         self.selection_model.selectionChanged.connect(self.sync_selection_with_combobox)
-    #         model.updated.connect(self.update_combobox_items)
-
-    # def update_combobox_items(self):
-    #     self.clear()
-    #     for label, data in self.table_view.model().items():
-    #         self.addItem(label, userData=data)
-    #     self.sync_selection_with_table(2)
-    #
-    # def sync_selection_with_table(self, index):
-    #     # Synchroniser la sélection dans QTableView lorsque l'élément dans QComboBox change
-    #     if index >= 0:
-    #         self.selection_model.select(
-    #             self.table_view.model().index(index, 0),
-    #             QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows
-    #         )
-    #
-    # def sync_selection_with_combobox(self):
-    #     # Synchroniser la sélection dans QComboBox lorsque l'élément dans QTableView change
-    #     indexes = self.selection_model.selectedRows()
-    #     if indexes:
-    #         row = indexes[0].row()
-    #         self.setCurrentIndex(row)
 
 
 class ListView(QListView):
@@ -390,7 +286,7 @@ class LineEdit(QLineEdit):
     an extension of QLineEdit class
     """
 
-    def __init__(self, parent, model=None, editable=True):
+    def __init__(self, parent, model=None, editable=True, **kwargs):
         super().__init__(parent)
         self.setEditable(editable)
         self.mapper = QDataWidgetMapper(self)
@@ -503,13 +399,21 @@ class SpinBox(QSpinBox):
     an extension of the QSpinBox class
     """
 
-    def __init__(self, parent, parameter, range=(1, 4096), single_step=1, adaptive=False):
+    def __init__(self, parent, model=None, minimum=1, maximum=4096, single_step=1, adaptive=False, **kwargs):
         super().__init__(parent)
-        self.setRange(*range[0:2])
+        self.setRange(minimum, maximum)
         self.setSingleStep(single_step)
         if adaptive:
             self.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
-        self.setValue(parameter.value)
+        self.model = None
+        self.setModel(model)
+
+    def setModel(self, model):
+        if model is not None:
+            self.model = model
+            self.setValue(model.value())
+            model.dataChanged.connect(self.update)
+            self.valueChanged.connect(model.set_value)
 
     @property
     def changed(self):
@@ -521,25 +425,32 @@ class SpinBox(QSpinBox):
         """
         return self.valueChanged
 
+    def update(self, topLeft, bottomRight, roles):
+        self.setValue(self.model.data(topLeft, Qt.DisplayRole))
+
 
 class DoubleSpinBox(QDoubleSpinBox):
     """
     an extension of the QDoubleSpinBox class
     """
 
-    def __init__(self, parent, parameter, range=(0.1, 1.0), decimals=2, single_step=0.1, adaptive=False, value=0.1,
-                 enabled=True):
+    def __init__(self, parent, model=None, minimum=0.1, maximum=1.0, decimals=2, single_step=0.1, adaptive=False,
+                 enabled=True, **kwargs):
         super().__init__(parent)
-        self.setRange(*range[0:2])
+        self.setRange(minimum, maximum)
         self.setDecimals(decimals)
         self.setSingleStep(single_step)
         if adaptive:
             self.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
-        if value is None:
-            self.setValue(range[0])
-        else:
-            self.setValue(value)
-        self.setEnabled(enabled)
+        self.model = None
+        self.setModel(model)
+
+    def setModel(self, model):
+        if model is not None:
+            self.model = model
+            self.setValue(model.value())
+            model.dataChanged.connect(self.update)
+            self.valueChanged.connect(model.set_value)
 
     @property
     def changed(self):
@@ -550,6 +461,8 @@ class DoubleSpinBox(QDoubleSpinBox):
         """
         return self.valueChanged
 
+    def update(self, topLeft, bottomRight, roles):
+        self.setValue(self.model.data(topLeft, Qt.DisplayRole))
 
 class TableView(QTableView):
     """

@@ -14,6 +14,8 @@ class TrainingDialog(Dialog):
     def __init__(self, plugin, title=None):
         super().__init__(plugin, title='Training classification model')
 
+
+
         # self.text_model = Parameter(name='text', default='Initial text')
         self.text_model = ItemModel('Initial text')
         # print(self.text_model.value)
@@ -49,7 +51,7 @@ class TrainingDialog(Dialog):
         self.exec()
 
     def run_training(self):
-        print(self.text_model.value)
+        print(self.text_model.value())
         self.model.add_item({"XXX": {'name': 'Object 4', 'value': 500}})
         print(self.combo_box.currentText(), self.combo_box.value())
         self.combo_box.setCurrentText("XXX")
