@@ -91,8 +91,20 @@ class DictItemModel(QStandardItemModel):
     def row(self, index):
         return self.item(index, 0)
 
+    def key(self):
+        try:
+            return self.keys()[self.selection]
+        except IndexError:
+            return None
+
+    def set_value(self, key):
+        self.set_selection(self.keys().index(key))
+
     def value(self):
-        return self.values()[self.selection]
+        try:
+            return self.values()[self.selection]
+        except IndexError:
+            return None
 
     def rows(self):
         return {self.row(row).text(): self.row(row).data(Qt.UserRole) for row in range(self.rowCount())}
@@ -103,7 +115,11 @@ class DictItemModel(QStandardItemModel):
     def values(self):
         return [self.row(row).data(Qt.UserRole) for row in range(self.rowCount())]
 
+    def items(self):
+        return self.rows()
+
     def set_items(self, data_dict):
+        self.clear()
         for key, value in data_dict.items():
             self.add_item({key: value})
 

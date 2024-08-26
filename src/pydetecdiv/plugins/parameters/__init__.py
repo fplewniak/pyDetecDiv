@@ -5,7 +5,7 @@ from PySide6.QtCore import QObject, Signal, QAbstractItemModel, QModelIndex, Qt
 from pydetecdiv.app.models import ItemModel, DictItemModel
 
 
-class AbstractParameter:
+class Parameter:
     # changed = Signal(object)
     # itemsChanged = Signal(object)
 
@@ -37,11 +37,10 @@ class AbstractParameter:
         #     return self._value
 
     def set_value(self, value):
-        if value != self._value and self.validate(value):
+        if value != self.model.value() and self.validate(value):
+            if isinstance(value, (list, dict)):
+                value = json.dumps(value)
             self.model.set_value(value)
-            # if isinstance(value, (list, dict)):
-            #     value = json.dumps(value)
-            # self._value = value
 
     @value.setter
     def value(self, value):
@@ -98,15 +97,10 @@ class AbstractParameter:
         Abstract method that needs to be implemented in each concrete Parameter implementation to for validation
         of the new value
         """
-        if self.items != {}:
-            # if isinstance(value, (list, dict)):
-            #     return json.dumps(value) in self.items
-            if not isinstance(value, (list, dict)):
-                return value in self.items
         return (self.validator is None) or self.validator(value)
 
 
-class Parameter(AbstractParameter):
+class ItemParameter(Parameter):
     def __init__(self, name=None, model_type='str', label=None, default=None, validator=None, groups=None, updater=None,
                  **kwargs):
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
@@ -114,12 +108,16 @@ class Parameter(AbstractParameter):
         self.model = ItemModel()
 
 
-class ChoiceParameter(AbstractParameter):
+class ChoiceParameter(Parameter):
     def __init__(self, name=None, items=None, label=None, default=None, validator=None, groups=None, updater=None,
                  **kwargs):
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          **kwargs)
         self.model = DictItemModel(items)
+
+    @property
+    def key(self):
+        return self.model.key()
 
     @property
     def value(self):
@@ -131,6 +129,10 @@ class ChoiceParameter(AbstractParameter):
 
     @property
     def values(self):
+        return self.model.values()
+
+    @property
+    def items(self):
         return self.model.values()
 
     @property
