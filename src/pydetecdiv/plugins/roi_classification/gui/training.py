@@ -2,8 +2,8 @@ from pydetecdiv.app.models import StringList, DictItemModel, ItemModel
 from pydetecdiv.plugins import Dialog
 from PySide6.QtCore import QModelIndex, QAbstractTableModel, QItemSelectionModel, QItemSelection
 
-from pydetecdiv.plugins.gui import LineEdit, ComboBox
-
+from pydetecdiv.plugins.gui import LineEdit, ComboBox, AdvancedButton, SpinBox, ParametersFormGroupBox, DoubleSpinBox, \
+    RadioButton, set_connections
 
 from PySide6.QtCore import QAbstractListModel, Qt
 
@@ -14,67 +14,91 @@ class TrainingDialog(Dialog):
     def __init__(self, plugin, title=None):
         super().__init__(plugin, title='Training classification model')
 
+        self.classifier_selection = self.addGroupBox('Classifier')
+        self.classifier_selection.addOption('Network', ComboBox, parameter=self.plugin.parameters['model'])
+        self.classifier_selection.addOption('Classes', ComboBox, parameter=self.plugin.parameters['class_names'])
 
+        self.hyper = self.addGroupBox('Hyper parameters')
+        self.hyper.addOption('Epochs:', SpinBox, adaptive=True, parameter=self.plugin.parameters['epochs'])
 
-        # self.text_model = Parameter(name='text', default='Initial text')
-        self.text_model = ItemModel('Initial text')
-        # print(self.text_model.value)
-        self.line_edit = LineEdit(self, self.text_model)
-        # self.mapper = QDataWidgetMapper(self)
-        # self.mapper.setModel(self.text_model)
-        # self.mapper.addMapping(self.line_edit, 0)
-        # self.mapper.toFirst()
+        self.hyper.addOption('Batch size:', SpinBox, adaptive=True, parameter=self.plugin.parameters['batch_size'])
 
-        self.items = {
-            "Item 1": 'Objet numero 1',
-            "Item 2": 'Objet numero 2',
-            "Item 3": 'Objet numero 3',
-        }
-        self.model = DictItemModel(self.items)
-        self.combo_box = ComboBox(self, self.model)
-        # self.combo_box.setModel(self.model)
-        # self.combo_box.setModelColumn(0)
+        self.hyper.addOption('Sequence length:', SpinBox, adaptive=True, parameter=self.plugin.parameters['seqlen'])
+
+        self.advanced = self.hyper.addOption(None, AdvancedButton)
+        self.advanced.linkGroupBox(self.hyper.addOption(None, ParametersFormGroupBox, show=False))
+        self.advanced.group_box.addOption('Random seed:', SpinBox, parameter=self.plugin.parameters['seed'])
+        self.advanced.group_box.addOption('Optimizer:', ComboBox, parameter=self.plugin.parameters['optimizer'])
+
+        self.advanced.group_box.addOption('Learning rate:', DoubleSpinBox, decimals=4, single_step=0.01, adaptive=True,
+                                          parameter=self.plugin.parameters['learning_rate'])
+        self.advanced.group_box.addOption('Decay rate:', DoubleSpinBox, parameter=self.plugin.parameters['decay_rate'])
+        self.advanced.group_box.addOption('Decay period:', SpinBox, parameter=self.plugin.parameters['decay_period'])
+        self.advanced.group_box.addOption('Momentum:', DoubleSpinBox, parameter=self.plugin.parameters['momentum'])
+        self.advanced.group_box.addOption('Checkpoint metric:', ComboBox,
+                                          parameter=self.plugin.parameters['checkpoint_metric'])
+
+        self.advanced.group_box.addOption('Early stopping:', RadioButton,
+                                          parameter=self.plugin.parameters['early_stopping'])
+
+        self.datasets = self.addGroupBox('Datasets')
+        self.training_data = self.datasets.addOption('Training dataset:', DoubleSpinBox,
+                                                     parameter=self.plugin.parameters['num_training'])
+        self.validation_data = self.datasets.addOption('Validation dataset:', DoubleSpinBox,
+                                                       parameter=self.plugin.parameters['num_validation'])
+        self.test_data = self.datasets.addOption('Test dataset:', DoubleSpinBox, enabled=False,
+                                                 parameter=self.plugin.parameters['num_test'])
+        self.datasets.addOption('Random seed:', SpinBox, parameter=self.plugin.parameters['dataset_seed'])
+
+        self.preprocessing = self.addGroupBox('Other options')
+        self.channels = self.preprocessing.addOption(None, AdvancedButton, text='Preprocessing')
+        self.channels.linkGroupBox(self.preprocessing.addOption(None, ParametersFormGroupBox, show=False))
+
+        self.channels.group_box.addOption('Red', ComboBox, parameter=self.plugin.parameters['red_channel'])
+        self.channels.group_box.addOption('Green', ComboBox, parameter=self.plugin.parameters['green_channel'])
+        self.channels.group_box.addOption('Blue', ComboBox, parameter=self.plugin.parameters['blue_channel'])
 
         self.button_box = self.addButtonBox()
-        self.button_box.accepted.connect(self.run_training)
-        self.button_box.rejected.connect(self.close)
 
-        # self.line_edit.changed.connect(lambda _: print(self.text_model.value))
-        # self.combo_box.changed.connect(lambda _: print('changed label', self.model.index(self.combo_box.currentIndex(), 0).data()))
-        # self.combo_box.changed.connect(lambda _: print('changed data', self.model.index(self.combo_box.currentIndex(), 1).data(Qt.UserRole)))
-        # self.combo_box.changed.connect(lambda _: print('changed value', self.combo_box.value()))
-        self.combo_box.changed.connect(lambda _: print('changed value', self.combo_box.value(), self.model.value()))
+        self.arrangeWidgets([self.classifier_selection, self.hyper, self.datasets, self.preprocessing, self.button_box])
 
-        self.arrangeWidgets([self.line_edit, self.combo_box, self.button_box])
+        set_connections({self.button_box.accepted: self.run_training,
+                         self.button_box.rejected: self.close,
+                         self.training_data.changed: lambda _: self.update_datasets(self.training_data),
+                         self.validation_data.changed: lambda _: self.update_datasets(self.validation_data),
+                         # self.optimizer.changed: self.update_optimizer_options,
+                         # PyDetecDiv.app.project_selected: self.update_all,
+                         })
+
+        self.plugin.update_parameters('training')
 
         self.fit_to_contents()
         self.exec()
 
     def run_training(self):
-        print(self.text_model.value())
-        self.model.add_item({"XXX": {'name': 'Object 4', 'value': 500}})
-        print(self.combo_box.currentText(), self.combo_box.value())
-        self.combo_box.setCurrentText("XXX")
-        print(self.combo_box.currentText(), self.combo_box.value())
-        v = self.model.value()
-        print(v['name'])
-        print(self.model.rows())
-        # print('label', self.model.index(self.combo_box.currentIndex(), 0).data())
-        # print('data', self.model.index(self.combo_box.currentIndex(), 1).data(Qt.UserRole))
-        # print(self.combo_box.value())
-        # print(self.model.items())
+        print('run_training')
+        for p, v in self.plugin.parameters.values(groups='training').items():
+            print(f'{p}: {v} {v.__class__.__name__}')
 
-        self.text_model.setData(self.text_model.index(0,0), 'Training model')
-        print(self.text_model.value())
-        # self.line_edit.setValue('Training model')
-        # print(self.text_model.value)
+    def update_datasets(self, changed_dataset=None):
+        """
+        Update the proportion of data to dispatch in training, validation and test datasets. The total must sum to 1 and
+        the modifications are constrained to ensure it is the case.
+
+        :param changed_dataset: the dataset that has just been changed
+        """
+        if changed_dataset:
+            self.test_data.setValue(1.0 - (self.training_data.value() + self.validation_data.value()))
+            total = self.training_data.value() + self.validation_data.value() + self.test_data.value()
+            if total > 1.0:
+                changed_dataset.setValue(changed_dataset.value() - total + 1.0)
+        else:
+            self.test_data.setValue(1 - self.training_data.value() - self.validation_data.value())
 
 
 class FineTuningDialog(Dialog):
     def __init__(self, plugin, title=None):
         super().__init__(plugin, title='Fine tuning classification model')
-
-
 
         self.button_box = self.addButtonBox()
         self.button_box.accepted.connect(self.run_fine_tuning)
