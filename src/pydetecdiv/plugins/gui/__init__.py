@@ -79,7 +79,7 @@ class ParametersFormGroupBox(GroupBox):
         self.layout.addRow(sub_box)
         return sub_box
 
-    def addOption(self, label=None, widget=None, parameter=None, **kwargs):
+    def addOption(self, label=None, widget=None, parameter=None, enabled=True, **kwargs):
         """
         add an option to the current Form
 
@@ -88,10 +88,12 @@ class ParametersFormGroupBox(GroupBox):
         :param kwargs: extra args passed to the widget
         :return: the option widget
         """
-        if issubclass(widget, (QPushButton, QDialogButtonBox)):
+        if issubclass(widget, (QPushButton, QDialogButtonBox, QGroupBox)):
             option = widget(self, **kwargs)
         else:
             option = widget(self, parameter.model, **parameter.kwargs(), **kwargs)
+
+        option.setEnabled(enabled)
 
         if label is None:
             self.layout.addRow(option)
@@ -123,6 +125,9 @@ class ComboBox(QComboBox):
         self.setEditable(editable)
         self.currentIndexChanged.connect(self.model().set_selection)
         self.model().selection_changed.connect(self.setCurrentIndex)
+
+    def setCurrentIndex(self, index):
+        super().setCurrentIndex(index)
 
     def addItemDict(self, options):
         """
@@ -342,8 +347,8 @@ class AdvancedButton(PushButton):
     an extension of PushButton class to control collapsible group boxes for advanced options
     """
 
-    def __init__(self, parent):
-        super().__init__(parent, text='Advanced options', icon=QIcon(':icons/show'), flat=True)
+    def __init__(self, parent, text='Advanced options'):
+        super().__init__(parent, text=text, icon=QIcon(':icons/show'), flat=True)
         self.group_box = None
         self.clicked.connect(self.toggle)
 
@@ -550,7 +555,7 @@ class Dialog(QDialog):
         QApplication.processEvents()
         self.adjustSize()
 
-    def addGroupBox(self, title, widget=ParametersFormGroupBox):
+    def addGroupBox(self, title=None, widget=ParametersFormGroupBox):
         """
         Add a group box to the Dialog window
 

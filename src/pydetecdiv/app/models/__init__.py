@@ -83,7 +83,10 @@ class DictItemModel(QStandardItemModel):
             return None
 
     def set_value(self, key):
-        self.set_selection(self.keys().index(key))
+        if not isinstance(key, str):
+            key = str(key)
+        if key in self.keys():
+            self.set_selection(self.keys().index(key))
 
     def value(self):
         try:
