@@ -18,7 +18,6 @@ class Parameter:
         self.updater = updater
         self.updater_kwargs = kwargs
         self.groups = set() if groups is None else groups
-        self._value = default
         self.model = None
 
     def kwargs(self):
