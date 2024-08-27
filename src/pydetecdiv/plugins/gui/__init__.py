@@ -304,7 +304,7 @@ class LineEdit(QLineEdit):
             return self.text()
 
     def setValue(self, value):
-        self.mapper.model().setData(self.mapper.model().index(0,0), value)
+        self.mapper.model().setData(self.mapper.model().index(0, 0), value)
         # self.setText(value)
 
     @property
@@ -381,17 +381,32 @@ class RadioButton(QRadioButton):
     an extension of the QRadioButton class
     """
 
-    def __init__(self, parent, parameter, exclusive=True):
+    def __init__(self, parent, model=None, exclusive=True, **kwargs):
         super().__init__(None, parent)
         self.setAutoExclusive(exclusive)
+        self.mapper = QDataWidgetMapper(self)
+        self.setModel(model)
+        self.toggled.connect(self.on_toggled)
 
-    def value(self):
-        """
-        method to standardize the way widget values from a form are returned
+    def setModel(self, model):
+        if model is not None:
+            self.mapper.setModel(model)
+            self.mapper.addMapping(self, 0)
+            self.mapper.setSubmitPolicy(QDataWidgetMapper.AutoSubmit)
+            self.mapper.toFirst()
 
-        :return: boolean, True if button is checked, False otherwise
+    @property
+    def changed(self):
         """
-        return self.isChecked()
+        return property telling whether the spinbox value has changed. This overwrites the Pyside equivalent method in
+         order to have the same method name for all widgets
+
+        :return: boolean indication whether the value has changed
+        """
+        return self.toggled()
+
+    def on_toggled(self, checked):
+        self.mapper.model().set_value(checked)
 
 
 class SpinBox(QSpinBox):
@@ -405,15 +420,16 @@ class SpinBox(QSpinBox):
         self.setSingleStep(single_step)
         if adaptive:
             self.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
-        self.model = None
+        self.mapper = QDataWidgetMapper(self)
         self.setModel(model)
+        # self.model = None
+        # self.setModel(model)
 
     def setModel(self, model):
         if model is not None:
-            self.model = model
-            self.setValue(model.value())
-            model.dataChanged.connect(self.update)
-            self.valueChanged.connect(model.set_value)
+            self.mapper.setModel(model)
+            self.mapper.addMapping(self, 0)
+            self.mapper.toFirst()
 
     @property
     def changed(self):
@@ -424,9 +440,6 @@ class SpinBox(QSpinBox):
         :return: boolean indication whether the value has changed
         """
         return self.valueChanged
-
-    def update(self, topLeft, bottomRight, roles):
-        self.setValue(self.model.data(topLeft, Qt.DisplayRole))
 
 
 class DoubleSpinBox(QDoubleSpinBox):
@@ -442,15 +455,14 @@ class DoubleSpinBox(QDoubleSpinBox):
         self.setSingleStep(single_step)
         if adaptive:
             self.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
-        self.model = None
+        self.mapper = QDataWidgetMapper(self)
         self.setModel(model)
 
     def setModel(self, model):
         if model is not None:
-            self.model = model
-            self.setValue(model.value())
-            model.dataChanged.connect(self.update)
-            self.valueChanged.connect(model.set_value)
+            self.mapper.setModel(model)
+            self.mapper.addMapping(self, 0)
+            self.mapper.toFirst()
 
     @property
     def changed(self):
@@ -461,8 +473,6 @@ class DoubleSpinBox(QDoubleSpinBox):
         """
         return self.valueChanged
 
-    def update(self, topLeft, bottomRight, roles):
-        self.setValue(self.model.data(topLeft, Qt.DisplayRole))
 
 class TableView(QTableView):
     """

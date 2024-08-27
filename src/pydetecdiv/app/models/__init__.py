@@ -3,42 +3,24 @@ from PySide6.QtCore import QAbstractItemModel, QModelIndex, Qt, QAbstractListMod
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 
 
-class ItemModel(QAbstractItemModel):
+class ItemModel(QStandardItemModel):
     def __init__(self, data: object = None, parent=None):
-        super().__init__(parent)
-        self._data = data
+        super().__init__(1, 1)
+        item = QStandardItem()
+        item.setData(data, Qt.EditRole)
+        self.setItem(0, 0, item)
 
     def value(self):
-        return self.data(self.index(0, 0))
+        return self.data(self.index(0, 0), role=Qt.DisplayRole)
 
     def set_value(self, value):
-        self.setData(self.index(0,0), value)
+        self.setData(self.index(0, 0), value)
 
     def rowCount(self, parent=QModelIndex()):
         return 1
 
     def columnCount(self, parent=QModelIndex()):
         return 1
-
-    def data(self, index, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole or role == Qt.EditRole:
-            return self._data
-        return None
-
-    def setData(self, index, value, role=Qt.EditRole):
-        if role == Qt.EditRole:
-            self._data = value
-            self.dataChanged.emit(index, index, [role])
-            return True
-        return False
-
-    def index(self, row, column, parent=QModelIndex()):
-        if not parent.isValid() and row == 0 and column == 0:
-            return self.createIndex(row, column)
-        return QModelIndex()
-
-    def parent(self, index):
-        return QModelIndex()
 
 
 class StringList(QStringListModel):

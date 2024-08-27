@@ -32,10 +32,6 @@ class Parameter:
     @property
     def value(self):
         return self.model.value()
-        # try:
-        #     return json.loads(self._value)
-        # except:
-        #     return self._value
 
     def set_value(self, value):
         if value != self.model.value() and self.validate(value):
@@ -47,51 +43,12 @@ class Parameter:
     def value(self, value):
         self.set_value(value)
 
-    # @property
-    # def values(self):
-    #     return list(self.items.keys())
-
-    # @property
-    # def data_list(self):
-    #     return list(self.items.values())
-
-    # @property
-    # def item(self):
-    #     item = self.get_item(self._value)
-    #     if item is None:
-    #         return self.value
-    #     return item
-
     def reset(self):
         self.value = self.default
 
     def update(self):
         if self.updater is not None:
             self.updater(**self.updater_kwargs)
-
-    # def set_items(self, items):
-    #     if items is None:
-    #         self.items = {}
-    #     elif isinstance(items, list):
-    #         self.items = {item: None for item in items}
-    #     else:
-    #         self.items = items
-    #     # self.itemsChanged.emit(self.items)
-    #
-    # def add_item(self, item):
-    #     if not isinstance(item, dict):
-    #         item = {item: None}
-    #     self.items.update(item)
-    #     # self.itemsChanged.emit(self.items)
-    #
-    # def add_items(self, items):
-    #     self.items.update(items)
-    #     # self.itemsChanged.emit(self.items)
-    #
-    # def get_item(self, key):
-    #     if key in self.items:
-    #         return self.items[key]
-    #     return None
 
     def validate(self, value):
         """
@@ -156,15 +113,17 @@ class StringParameter(ItemParameter):
                  groups=None, updater=None, **kwargs):
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          **kwargs)
-        self.model = ItemModel()
-        self.reset()
 
 
 class CheckParameter(ItemParameter):
-    def __init__(self, name, label=None, default=None, validator=None,
+    def __init__(self, name, label=None, default=False, validator=None, exclusive=True,
                  groups=None, updater=None, **kwargs):
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          **kwargs)
+        self.exclusive = exclusive
+
+    def kwargs(self):
+        return {'default': self.default, 'exclusive': self.exclusive}
 
 
 class ChoiceParameter(Parameter):
