@@ -93,6 +93,12 @@ class NumParameter(ItemParameter):
         self.set_minimum(minimum)
         self.set_maximum(maximum)
 
+    def validate(self, value):
+        if self.validator is None:
+            return self.minimum <= value <= self.maximum
+        else:
+            return self.validator(value)
+
 
 class IntParameter(NumParameter):
     def __init__(self, name, label=None, default=None, minimum=1, maximum=4096, validator=None,
@@ -100,6 +106,11 @@ class IntParameter(NumParameter):
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          minimum=minimum, maximum=maximum, **kwargs)
 
+    def validate(self, value):
+        if self.validator is None:
+            return isinstance(value, int) & (self.minimum <= value <= self.maximum)
+        else:
+            return self.validator(value)
 
 class FloatParameter(NumParameter):
     def __init__(self, name, label=None, default=None, validator=None, minimum=0.0, maximum=1.0,
@@ -107,6 +118,11 @@ class FloatParameter(NumParameter):
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          minimum=minimum, maximum=maximum, **kwargs)
 
+    def validate(self, value):
+        if self.validator is None:
+            return isinstance(value, float) & (self.minimum <= value <= self.maximum)
+        else:
+            return self.validator(value)
 
 class StringParameter(ItemParameter):
     def __init__(self, name, label=None, default='', validator=None,
