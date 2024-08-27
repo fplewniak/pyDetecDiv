@@ -198,9 +198,15 @@ class Parameters:
         else:
             self.parameter_list = [parameters]
 
-    def reset(self):
-        for parameter in self.parameter_list:
+    def reset(self, groups=None):
+        for parameter in self.get_groups(groups):
             parameter.reset()
+            # print(f'{parameter.name}: {parameter.value} ({parameter.default})')
+
+    def update(self, groups=None):
+        # for parameter in self.parameter_list:
+        for parameter in self.get_groups(groups):
+            parameter.update()
 
     def values(self, param_list=None, groups=None):
         if groups is None:
@@ -214,12 +220,16 @@ class Parameters:
                 param_list = list(set(param_list).intersection(set(group_params)))
         return {param.name: param.value for param in param_list}
 
-    def get_groups(self, groups):
-        if isinstance(groups, list):
-            groups = set(groups)
-        if isinstance(groups, str):
-            groups = {groups}
-        return [param for param in self.parameter_list if param.groups.intersection(groups)]
+    def get_groups(self, groups, union=False):
+        if groups is not None:
+            if isinstance(groups, list):
+                groups = set(groups)
+            if isinstance(groups, str):
+                groups = {groups}
+            if union:
+                return [param for param in self.parameter_list if param.groups.union(groups)]
+            return [param for param in self.parameter_list if param.groups.intersection(groups)]
+        return self.parameter_list
 
     def get_value(self, name):
         return self.values()[name]
