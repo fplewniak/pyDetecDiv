@@ -297,21 +297,6 @@ class LineEdit(QLineEdit):
         self.mapper = QDataWidgetMapper(self)
         self.setModel(model)
 
-    def value(self):
-        """
-        method to standardize the way widget values from a form are returned
-
-        :return: the text in LineEdit
-        """
-        try:
-            return json.loads(self.text())
-        except json.decoder.JSONDecodeError:
-            return self.text()
-
-    def setValue(self, value):
-        self.mapper.model().setData(self.mapper.model().index(0, 0), value)
-        # self.setText(value)
-
     @property
     def changed(self):
         return self.textChanged
@@ -325,7 +310,7 @@ class LineEdit(QLineEdit):
 
     def setModel(self, model):
         self.mapper.setModel(model)
-        self.mapper.addMapping(self, 0)
+        self.mapper.addMapping(self, 0, b"text")
         self.mapper.toFirst()
 
 
@@ -338,20 +323,6 @@ class Label(QLabel):
         super().__init__(parent)
         self.mapper = QDataWidgetMapper(self)
         self.setModel(model)
-
-    def value(self):
-        """
-        method to standardize the way widget values from a form are returned
-
-        :return: the text in LineEdit
-        """
-        try:
-            return json.loads(self.text())
-        except json.decoder.JSONDecodeError:
-            return self.text()
-
-    def setValue(self, value):
-        self.mapper.model().setData(self.mapper.model().index(0, 0), value)
 
     # @property
     # def changed(self):
