@@ -1,13 +1,7 @@
-from pydetecdiv.app.models import StringList, DictItemModel, ItemModel
 from pydetecdiv.plugins import Dialog
-from PySide6.QtCore import QModelIndex, QAbstractTableModel, QItemSelectionModel, QItemSelection
 
-from pydetecdiv.plugins.gui import LineEdit, ComboBox, AdvancedButton, SpinBox, ParametersFormGroupBox, DoubleSpinBox, \
+from pydetecdiv.plugins.gui import ComboBox, AdvancedButton, SpinBox, ParametersFormGroupBox, DoubleSpinBox, \
     RadioButton, set_connections
-
-from PySide6.QtCore import QAbstractListModel, Qt
-
-from pydetecdiv.plugins.parameters import Parameter
 
 
 class TrainingDialog(Dialog):
