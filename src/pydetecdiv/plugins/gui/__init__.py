@@ -329,6 +329,40 @@ class LineEdit(QLineEdit):
         self.mapper.toFirst()
 
 
+class Label(QLabel):
+    """
+    an extension of QLabel class
+    """
+
+    def __init__(self, parent, model=None, **kwargs):
+        super().__init__(parent)
+        self.mapper = QDataWidgetMapper(self)
+        self.setModel(model)
+
+    def value(self):
+        """
+        method to standardize the way widget values from a form are returned
+
+        :return: the text in LineEdit
+        """
+        try:
+            return json.loads(self.text())
+        except json.decoder.JSONDecodeError:
+            return self.text()
+
+    def setValue(self, value):
+        self.mapper.model().setData(self.mapper.model().index(0, 0), value)
+
+    # @property
+    # def changed(self):
+    #     return self.textChanged
+
+    def setModel(self, model):
+        self.mapper.setModel(model)
+        self.mapper.addMapping(self, 0, b"text")
+        self.mapper.toFirst()
+
+
 class PushButton(QPushButton):
     """
     an extension of QPushButton class
