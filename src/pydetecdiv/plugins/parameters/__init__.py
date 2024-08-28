@@ -6,8 +6,6 @@ from pydetecdiv.app.models import ItemModel, DictItemModel
 
 
 class Parameter:
-    # changed = Signal(object)
-    # itemsChanged = Signal(object)
 
     def __init__(self, name, label=None, default=None, validator=None, groups=None, updater=None, **kwargs):
         super().__init__()
@@ -42,6 +40,10 @@ class Parameter:
     @value.setter
     def value(self, value):
         self.set_value(value)
+
+    @property
+    def json(self):
+        return self.value
 
     def reset(self):
         self.value = self.default
@@ -112,6 +114,7 @@ class IntParameter(NumParameter):
         else:
             return self.validator(value)
 
+
 class FloatParameter(NumParameter):
     def __init__(self, name, label=None, default=None, validator=None, minimum=0.0, maximum=1.0,
                  groups=None, updater=None, **kwargs):
@@ -123,6 +126,7 @@ class FloatParameter(NumParameter):
             return isinstance(value, float) & (self.minimum <= value <= self.maximum)
         else:
             return self.validator(value)
+
 
 class StringParameter(ItemParameter):
     def __init__(self, name, label=None, default='', validator=None,
@@ -147,6 +151,13 @@ class ChoiceParameter(Parameter):
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          **kwargs)
         self.model = DictItemModel(items)
+
+    @property
+    def json(self):
+        try:
+            return json.loads(self.key)
+        except json.decoder.JSONDecodeError:
+            return self.key
 
     @property
     def key(self):
@@ -245,8 +256,20 @@ class Parameters:
         if not isinstance(item, str):
             raise TypeError
         elif item in self_dict:
-            return self.to_dict()[item]
+            return self_dict[item]
         raise KeyError
 
     def to_dict(self):
         return {param.name: param for param in self.parameter_list}
+
+    def json(self, param_list=None, groups=None):
+        if groups is None:
+            if param_list is None:
+                param_list = self.parameter_list
+        else:
+            group_params = self.get_groups(groups)
+            if param_list is None:
+                param_list = group_params
+            else:
+                param_list = list(set(param_list).intersection(set(group_params)))
+        return {param.name: param.json for param in param_list}

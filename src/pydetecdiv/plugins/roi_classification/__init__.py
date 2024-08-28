@@ -197,17 +197,17 @@ class Plugin(plugins.Plugin):
                            minimum=0.00001, maximum=1.0),
             FloatParameter(name='decay_rate', label='Decay rate', groups={'training', 'fine-tune'}, default=0.95),
             IntParameter(name='decay_period', label='Decay period', groups={'training', 'fine-tune'}, default=2),
-            FloatParameter(name='momentum', label='Momentum', groups={'training', 'fine-tune'}, default=0.9,),
+            FloatParameter(name='momentum', label='Momentum', groups={'training', 'fine-tune'}, default=0.9, ),
             ChoiceParameter(name='checkpoint_metric', label='Checkpoint metric', groups={'training', 'fine-tune'},
                             default='Loss', items={'Loss': 'val_loss', 'Accuracy': 'val_accuracy', }),
             CheckParameter(name='early_stopping', label='Early stopping', groups={'training', 'fine-tune'},
                            default=False),
             FloatParameter(name='num_training', label='Training dataset', groups={'training', 'fine-tune'}, default=0.6,
-                           minimum=0.01, maximum=0.99,),
+                           minimum=0.01, maximum=0.99, ),
             FloatParameter(name='num_validation', label='Validation dataset', groups={'training', 'fine-tune'},
-                           default=0.2,  minimum=0.01, maximum=0.99,),
+                           default=0.2, minimum=0.01, maximum=0.99, ),
             FloatParameter(name='num_test', label='Test dataset', groups={'training', 'fine-tune'}, default=0.2,
-                           minimum=0.01, maximum=0.99, decimals=2,),
+                           minimum=0.01, maximum=0.99, decimals=2, ),
             IntParameter(name='dataset_seed', label='Random seed', groups={'training', 'fine-tune'}, default=42,
                          validator=lambda x: isinstance(x, int), maximum=999999999),
             ChoiceParameter(name='red_channel', label='Red', groups={'training', 'fine-tune', 'classify'}, default=0,
@@ -216,11 +216,11 @@ class Plugin(plugins.Plugin):
                             default=1, updater=self.update_channels),
             ChoiceParameter(name='blue_channel', label='Blue', groups={'training', 'fine-tune', 'classify'}, default=2,
                             updater=self.update_channels),
-            IntParameter(name='epochs', label='Epochs', groups={'training', 'fine-tune'}, default=16,),
+            IntParameter(name='epochs', label='Epochs', groups={'training', 'fine-tune'}, default=16, ),
             IntParameter(name='batch_size', label='Batch size', groups={'training', 'fine-tune', 'classify'},
-                         default=128,),
+                         default=128, ),
             IntParameter(name='seqlen', label='Sequence length', groups={'training', 'fine-tune', 'classify'},
-                         default=50,),
+                         default=50, ),
             ItemParameter(name='annotation_file', label='Annotation file', groups={'import_annotations'}, ),
             # ItemParameter(name='classifier', label='Classifier', groups={'predict'}, updater=self.update_classifiers,
             #           multiselection=False),
@@ -445,14 +445,14 @@ class Plugin(plugins.Plugin):
 
         :return: the model
         """
-        module = self.gui.network.currentData()
+        module = self.parameters['model'].value
         print(module.__name__)
-        model = module.model.create_model(len(self.class_names))
+        model = module.model.create_model(len(self.parameters['class_names'].value))
         print('Loading weights')
-        weights = self.gui.weights.currentData()
+        weights = self.parameters['weights'].value
         print(weights)
         if weights:
-            loadWeights(model, filename=self.gui.weights.currentData())
+            loadWeights(model, filename=self.parameters['weights'].value)
 
         print('Compiling model')
         model.compile(
@@ -784,8 +784,8 @@ class Plugin(plugins.Plugin):
         :param lr: the current learning rate
         :return: the new learning rate
         """
-        if (epoch != 0) & (epoch % self.gui.decay_freq.value() == 0):
-            return lr * self.gui.decay_rate.value()
+        if (epoch != 0) & (epoch % self.parameters['decay_period'].value == 0):
+            return lr * self.parameters['decay_rate'].value
         return lr
 
     def train_model(self):
@@ -793,31 +793,31 @@ class Plugin(plugins.Plugin):
         Launch training a model: select the network, load weights (optional), define the training, validation
         and test sets, then run the training using training and validation sets and the evaluation on the test set.
         """
-        tf.keras.utils.set_random_seed(self.gui.weight_seed.value())
-        batch_size = self.gui.batch_size.value()
-        seqlen = self.gui.seq_length.value()
-        epochs = self.gui.epochs.value()
-        z_channels = [self.gui.red_channel.currentIndex(), self.gui.green_channel.currentIndex(),
-                      self.gui.blue_channel.currentIndex()]
+        tf.keras.utils.set_random_seed(self.parameters['seed'].value)
+        batch_size = self.parameters['batch_size'].value
+        seqlen = self.parameters['seqlen'].value
+        epochs = self.parameters['epochs'].value
+        z_channels = [self.parameters['red_channel'].value, self.parameters['green_channel'].value,
+                      self.parameters['blue_channel'].value]
 
-        module = self.gui.network.currentData()
+        module = self.parameters['model'].value
         print(module.__name__)
 
         run = self.save_training_run(module)
 
-        model = module.model.create_model(len(self.class_names))
-        print('Loading weights')
-        weights = self.gui.weights.currentData()
-        if weights:
-            loadWeights(model, filename=self.gui.weights.currentData())
+        model = module.model.create_model(len(self.parameters['class_names'].value))
+        # print('Loading weights')
+        # weights = self.gui.weights.currentData()
+        # if weights:
+        #     loadWeights(model, filename=self.gui.weights.currentData())
 
         print('Compiling model')
-        learning_rate = self.gui.learning_rate.value()
-        if self.gui.optimizer.currentText() in ['SGD']:
-            optimizer = self.gui.optimizer.currentData()(learning_rate=learning_rate,
-                                                         momentum=self.gui.momentum.value())
+        learning_rate = self.parameters['learning_rate'].value
+        if self.parameters['optimizer'].key in ['SGD']:
+            optimizer = self.parameters['optimizer'].value(learning_rate=learning_rate,
+                                                           momentum=self.parameters['momentum'].value)
         else:
-            optimizer = self.gui.optimizer.currentData()(learning_rate=learning_rate)
+            optimizer = self.parameters['optimizer'].value(learning_rate=learning_rate)
         lr_metric = get_lr_metric(optimizer)
 
         model.compile(
@@ -835,10 +835,10 @@ class Plugin(plugins.Plugin):
             img_size = (input_shape[1], input_shape[2])
 
             roi_list = self.prepare_data(self.get_annotated_rois())
-            random.seed(self.gui.datasets_seed.value())
+            random.seed(self.parameters['dataset_seed'].value)
             random.shuffle(roi_list)
-            num_training = int(self.gui.training_data.value() * len(roi_list))
-            num_validation = int(self.gui.validation_data.value() * len(roi_list))
+            num_training = int(self.parameters['num_training'].value * len(roi_list))
+            num_validation = int(self.parameters['num_validation'].value * len(roi_list))
 
             print('Training dataset')
             training_dataset = ROIDataset(roi_list[:num_training], z_channels=z_channels,
@@ -854,10 +854,10 @@ class Plugin(plugins.Plugin):
             img_size = (input_shape[2], input_shape[3])
 
             roi_list = self.prepare_data(self.get_annotated_rois(), seqlen)
-            random.seed(self.gui.datasets_seed.value())
+            random.seed(self.parameters['dataset_seed'].value)
             random.shuffle(roi_list)
-            num_training = round(self.gui.training_data.value() * len(roi_list))
-            num_validation = round(self.gui.validation_data.value() * len(roi_list))
+            num_training = int(self.parameters['num_training'].value * len(roi_list))
+            num_validation = int(self.parameters['num_validation'].value * len(roi_list))
 
             print('Training dataset')
             training_dataset = ROIDataset(roi_list[:num_training], image_size=img_size, class_names=self.class_names,
@@ -875,10 +875,10 @@ class Plugin(plugins.Plugin):
 
         self.save_training_datasets(run, roi_list, num_training, num_validation)
 
-        checkpoint_monitor_metric = self.gui.checkpoint_metric.currentData()
+        checkpoint_monitor_metric = self.parameters['checkpoint_metric'].value
         best_checkpoint_filename = f'{run.id_}_best_{checkpoint_monitor_metric}.weights.h5'
         checkpoint_filepath = os.path.join(get_project_dir(), 'roi_classification', 'models',
-                                           self.gui.network.currentText(),
+                                           self.parameters['model'].key,
                                            f'{best_checkpoint_filename}')
 
         model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
@@ -897,7 +897,7 @@ class Plugin(plugins.Plugin):
 
         callbacks = [model_checkpoint_callback, learning_rate_scheduler]
 
-        if self.gui.early_stopping.isChecked():
+        if self.parameters['early_stopping'].value:
             callbacks += [training_early_stopping]
 
         # class_weights = compute_class_weights() if self.gui.class_weights.isChecked() else {k: 1.0 for k in range(len(self.class_names))}
@@ -907,7 +907,7 @@ class Plugin(plugins.Plugin):
 
         last_weights_filename = f'{run.id_}_last.weights.h5'
         model.save_weights(os.path.join(get_project_dir(), 'roi_classification', 'models',
-                                        self.gui.network.currentText(), last_weights_filename), overwrite=True)
+                                        self.parameters['model'].key, last_weights_filename), overwrite=True)
 
         run.parameters.update({'last_weights': last_weights_filename, 'best_weights': best_checkpoint_filename})
         run.validate().commit()
@@ -938,13 +938,14 @@ class Plugin(plugins.Plugin):
         tab.addTab(history_plot, 'Training')
         tab.setCurrentWidget(history_plot)
 
-        confusion_matrix_plot = plot_confusion_matrix(ground_truth, predictions, self.class_names)
+        confusion_matrix_plot = plot_confusion_matrix(ground_truth, predictions, self.parameters['class_names'].value)
         tab.addTab(confusion_matrix_plot, 'Confusion matrix (last epoch)')
 
-        confusion_matrix_plot = plot_confusion_matrix(ground_truth, best_predictions, self.class_names)
+        confusion_matrix_plot = plot_confusion_matrix(ground_truth, best_predictions,
+                                                      self.parameters['class_names'].value)
         tab.addTab(confusion_matrix_plot, 'Confusion matrix (best checkpoint)')
 
-        self.gui.update_model_weights()
+        # self.update_model_weights()
 
     def save_training_run(self, module):
         """
@@ -956,10 +957,12 @@ class Plugin(plugins.Plugin):
         :param module: the module name (i.e. the network that was trained)
         :return: the current Run instance
         """
-        parameters = {'model': module.__name__}
-        parameters.update(self.parameter_widgets.get_values('training'))
+        # parameters = self.parameters.values(groups='training')
+        # # parameters.update({'model': module.__name__})
+        # parameters.update({'model': self.parameters['model'].key})
+        # parameters.update({'optimizer': self.parameters['optimizer'].key})
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            return self.save_run(project, 'train_model', parameters)
+            return self.save_run(project, 'train_model', self.parameters.json(groups='training'))
 
     def save_training_datasets(self, run, roi_list, num_training, num_validation):
         """

@@ -62,7 +62,7 @@ class TrainingDialog(Dialog):
 
         self.arrangeWidgets([self.classifier_selection, self.hyper, self.datasets, self.preprocessing, self.button_box])
 
-        set_connections({self.button_box.accepted: self.run_training,
+        set_connections({self.button_box.accepted: self.plugin.train_model,
                          self.button_box.rejected: self.close,
                          self.training_data.changed: lambda _: self.update_datasets(self.training_data),
                          self.validation_data.changed: lambda _: self.update_datasets(self.validation_data),
@@ -74,11 +74,6 @@ class TrainingDialog(Dialog):
 
         self.fit_to_contents()
         self.exec()
-
-    def run_training(self):
-        print('run_training')
-        for p, v in self.plugin.parameters.values(groups='training').items():
-            print(f'{p}: {v} {v.__class__.__name__}')
 
     def update_datasets(self, changed_dataset=None):
         """
