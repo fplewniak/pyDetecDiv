@@ -116,7 +116,7 @@ class ComboBox(QComboBox):
     an extension of the QComboBox class
     """
 
-    def __init__(self, parent, model=None, editable=False, **kwargs):
+    def __init__(self, parent, model=None, editable=False, enabled=True, **kwargs):
         super().__init__(parent)
         if model is not None and model.rows() is not None:
             self.addItemDict(model.rows())
@@ -125,6 +125,7 @@ class ComboBox(QComboBox):
         self.setEditable(editable)
         self.currentIndexChanged.connect(self.model().set_selection)
         self.model().selection_changed.connect(self.setCurrentIndex)
+        self.setEnabled(enabled)
 
     def setCurrentIndex(self, index):
         super().setCurrentIndex(index)
@@ -189,7 +190,7 @@ class ListView(QListView):
     an extension of the QComboBox class
     """
 
-    def __init__(self, parent, parameter=None, height=None, multiselection=False, **kwargs):
+    def __init__(self, parent, parameter=None, height=None, multiselection=False, enabled=True, **kwargs):
         super().__init__(parent, **kwargs)
         if multiselection:
             self.setSelectionMode(QAbstractItemView.MultiSelection)
@@ -198,6 +199,7 @@ class ListView(QListView):
         self.setModel(QStringListModel())
         if parameter is not None and parameter.items is not None:
             self.addItemDict(parameter.items)
+        self.setEnabled(enabled)
 
     def addItemDict(self, options):
         """
@@ -291,11 +293,12 @@ class LineEdit(QLineEdit):
     an extension of QLineEdit class
     """
 
-    def __init__(self, parent, model=None, editable=True, **kwargs):
+    def __init__(self, parent, model=None, editable=True, enabled=True, **kwargs):
         super().__init__(parent)
         self.setEditable(editable)
         self.mapper = QDataWidgetMapper(self)
         self.setModel(model)
+        self.setEnabled(enabled)
 
     @property
     def changed(self):
@@ -339,12 +342,13 @@ class PushButton(QPushButton):
     an extension of QPushButton class
     """
 
-    def __init__(self, parent, text, icon=None, flat=False):
+    def __init__(self, parent, text, icon=None, flat=False, enabled=True):
         if icon is None:
             super().__init__(text, parent)
         else:
             super().__init__(icon, text, parent)
         self.setFlat(flat)
+        self.setEnabled(enabled)
 
 
 class AdvancedButton(PushButton):
@@ -391,12 +395,13 @@ class RadioButton(QRadioButton):
     an extension of the QRadioButton class
     """
 
-    def __init__(self, parent, model=None, exclusive=True, **kwargs):
+    def __init__(self, parent, model=None, exclusive=True, enabled=True, **kwargs):
         super().__init__(None, parent)
         self.setAutoExclusive(exclusive)
         self.mapper = QDataWidgetMapper(self)
         self.setModel(model)
         self.toggled.connect(self.on_toggled)
+        self.setEnabled(enabled)
 
     def setModel(self, model):
         if model is not None:
@@ -424,7 +429,7 @@ class SpinBox(QSpinBox):
     an extension of the QSpinBox class
     """
 
-    def __init__(self, parent, model=None, minimum=1, maximum=4096, single_step=1, adaptive=False, **kwargs):
+    def __init__(self, parent, model=None, minimum=1, maximum=4096, single_step=1, adaptive=False, enabled=True, **kwargs):
         super().__init__(parent)
         self.setRange(minimum, maximum)
         self.setSingleStep(single_step)
@@ -432,8 +437,7 @@ class SpinBox(QSpinBox):
             self.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
         self.mapper = QDataWidgetMapper(self)
         self.setModel(model)
-        # self.model = None
-        # self.setModel(model)
+        self.setEnabled(enabled)
 
     def setModel(self, model):
         if model is not None:
@@ -467,6 +471,7 @@ class DoubleSpinBox(QDoubleSpinBox):
             self.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
         self.mapper = QDataWidgetMapper(self)
         self.setModel(model)
+        self.setEnabled(enabled)
 
     def setModel(self, model):
         if model is not None:
@@ -489,7 +494,7 @@ class TableView(QTableView):
     an extension of the QTableView widget
     """
 
-    def __init__(self, parent, parameter, multiselection=True, behavior='rows'):
+    def __init__(self, parent, parameter, multiselection=True, behavior='rows', enabled=True):
         super().__init__(parent)
         self.model = QSqlQueryModel()
         self.setModel(self.model)
@@ -500,6 +505,7 @@ class TableView(QTableView):
                 self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
             case _:
                 pass
+        self.setEnabled(enabled)
 
     def setQuery(self, query):
         """
