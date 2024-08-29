@@ -27,6 +27,9 @@ class Parameter:
             return self._default()
         return self._default
 
+    def clear(self):
+        self.model.clear()
+
     @property
     def value(self):
         return self.model.value()
