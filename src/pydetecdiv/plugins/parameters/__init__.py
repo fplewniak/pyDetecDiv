@@ -181,7 +181,7 @@ class ChoiceParameter(Parameter):
 
     @property
     def items(self):
-        return self.model.values()
+        return self.model.rows()
 
     @property
     def item(self):
