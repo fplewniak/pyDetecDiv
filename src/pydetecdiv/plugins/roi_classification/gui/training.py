@@ -1,3 +1,5 @@
+from PySide6.QtCore import Qt
+
 from pydetecdiv.plugins import Dialog
 
 from pydetecdiv.plugins.gui import ComboBox, AdvancedButton, SpinBox, ParametersFormGroupBox, DoubleSpinBox, \
@@ -90,11 +92,12 @@ class FineTuningDialog(Dialog):
         super().__init__(plugin, title='Fine tuning classification model')
 
         self.classifier_selection = self.addGroupBox('Classifier')
-        self.classifier_selection.addOption('Network', ComboBox, parameter=self.plugin.parameters['model'])
-        self.classifier_selection.addOption('Classes', Label, parameter=self.plugin.parameters['class_names'])
+        self.weights_choice = self.classifier_selection.addOption('Weights', ComboBox, parameter=self.plugin.parameters['weights'])
+        self.classifier_selection.addOption('Network', ComboBox, parameter=self.plugin.parameters['model'], enabled=False)
+        self.classifier_selection.addOption('Classes', ComboBox, parameter=self.plugin.parameters['class_names'], enabled=False)
 
         self.hyper = self.addGroupBox('Hyper parameters')
-        self.hyper.addOption('Epochs:', Label, adaptive=True, parameter=self.plugin.parameters['epochs'])
+        self.hyper.addOption('Epochs:', SpinBox, adaptive=True, parameter=self.plugin.parameters['epochs'])
 
         self.hyper.addOption('Batch size:', SpinBox, adaptive=True, parameter=self.plugin.parameters['batch_size'])
 
@@ -118,20 +121,20 @@ class FineTuningDialog(Dialog):
 
         self.datasets = self.addGroupBox('Datasets')
         self.training_data = self.datasets.addOption('Training dataset:', DoubleSpinBox,
-                                                     parameter=self.plugin.parameters['num_training'])
+                                                     parameter=self.plugin.parameters['num_training'], enabled=False)
         self.validation_data = self.datasets.addOption('Validation dataset:', DoubleSpinBox,
-                                                       parameter=self.plugin.parameters['num_validation'])
+                                                       parameter=self.plugin.parameters['num_validation'], enabled=False)
         self.test_data = self.datasets.addOption('Test dataset:', DoubleSpinBox, enabled=False,
                                                  parameter=self.plugin.parameters['num_test'])
-        self.datasets.addOption('Random seed:', SpinBox, parameter=self.plugin.parameters['dataset_seed'])
+        self.datasets.addOption('Random seed:', Label, parameter=self.plugin.parameters['dataset_seed'])
 
         self.preprocessing = self.addGroupBox('Other options')
         self.channels = self.preprocessing.addOption(None, AdvancedButton, text='Preprocessing')
         self.channels.linkGroupBox(self.preprocessing.addOption(None, ParametersFormGroupBox, show=False))
 
-        self.channels.group_box.addOption('Red', Label, parameter=self.plugin.parameters['red_channel'])
-        self.channels.group_box.addOption('Green', ComboBox, parameter=self.plugin.parameters['green_channel'])
-        self.channels.group_box.addOption('Blue', ComboBox, parameter=self.plugin.parameters['blue_channel'])
+        self.channels.group_box.addOption('Red', ComboBox, parameter=self.plugin.parameters['red_channel'], enabled=False)
+        self.channels.group_box.addOption('Green', ComboBox, parameter=self.plugin.parameters['green_channel'], enabled=False)
+        self.channels.group_box.addOption('Blue', ComboBox, parameter=self.plugin.parameters['blue_channel'], enabled=False)
 
         self.button_box = self.addButtonBox()
 
@@ -139,17 +142,19 @@ class FineTuningDialog(Dialog):
 
         set_connections({self.button_box.accepted: self.run_fine_tuning,
                          self.button_box.rejected: self.close,
-                         self.training_data.changed: lambda _: self.update_datasets(self.training_data),
-                         self.validation_data.changed: lambda _: self.update_datasets(self.validation_data),
-                         # self.optimizer.changed: self.update_optimizer_options,
-                         # PyDetecDiv.app.project_selected: self.update_all,
+                         self.weights_choice.changed: [self.plugin.select_model_classes],
                          })
-
-        self.plugin.update_parameters('training')
+        #
+        self.plugin.update_parameters(groups='fine-tune')
+        self.plugin.select_model_classes(self.plugin.parameters['weights'].key)
 
         self.fit_to_contents()
         self.exec()
 
     def run_fine_tuning(self):
         print('Fine tuning model')
-        print(self.plugin.parameters.json(groups='fine-tune'))
+        # print(self.plugin.parameters['class_names'].model.rows())
+        # print(self.plugin.parameters['class_names'].model.selection)
+        # print(self.plugin.parameters['class_names'].model.row(self.plugin.parameters['class_names'].model.selection).data(Qt.UserRole))
+        for k in self.plugin.parameters.to_dict().keys():
+            print(f'{k}: {self.plugin.parameters[k].json}')

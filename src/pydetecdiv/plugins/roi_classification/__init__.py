@@ -180,11 +180,11 @@ class Plugin(plugins.Plugin):
         self.parameters.parameter_list = [
             ChoiceParameter(name='model', label='Network', groups={'training', 'fine-tune', 'classify'},
                             default='ResNet50V2_lstm', updater=self.load_models),
-            ChoiceParameter(name='weights', label='Weights', groups={'fine-tune', 'classify'}, default='None',
-                            updater=self.update_model_weights),
             ChoiceParameter(name='class_names', label='Classes',
                             groups={'training', 'fine-tune', 'classify', 'annotate', 'import_annotations'},
                             updater=self.update_class_names),
+            ChoiceParameter(name='weights', label='Weights', groups={'fine-tune', 'classify'}, default='None',
+                            updater=self.update_model_weights),
             IntParameter(name='seed', label='Random seed', groups={'training', 'fine-tune'}, maximum=999999999,
                          default=42),
             ChoiceParameter(name='optimizer', label='Optimizer', groups={'training', 'fine-tune'}, default='SGD',
@@ -227,22 +227,12 @@ class Plugin(plugins.Plugin):
         ]
 
     def register(self):
-        self.parameters.update()
-        # self.load_models()
-        # self.update_model_weights()
-        # self.update_class_names()
+        # self.parameters.update()
         PyDetecDiv.app.project_selected.connect(self.update_parameters)
-        # PyDetecDiv.app.project_selected.connect(self.update_channels)
-        # PyDetecDiv.app.project_selected.connect(self.create_table)
-        # PyDetecDiv.app.viewer_roi_click.connect(self.add_context_action)
 
     def update_parameters(self, groups=None):
         self.parameters.update(groups)
         self.parameters.reset(groups)
-        # self.load_models()
-        # self.update_model_weights()
-        # self.update_class_names()
-        # self.update_channels()
 
     def class_names(self, as_string=True):
         """
@@ -432,12 +422,18 @@ class Plugin(plugins.Plugin):
         PredictionDialog(self)
 
     def run_training(self):
-        print('Open training form')
-        TrainingDialog(self)
+        if len(self.get_annotation_runs()) == 0:
+            print('No previous annotation run')
+        else:
+            TrainingDialog(self)
 
     def run_fine_tuning(self):
-        print('Open fine tuning form')
-        FineTuningDialog(self)
+        self.update_parameters(groups='fine-tune')
+        self.update_model_weights()
+        if len(self.parameters['weights'].values) == 0:
+            print('No previous training run to fine tune')
+        else:
+            FineTuningDialog(self)
 
     def load_model(self):
         """
@@ -531,36 +527,68 @@ class Plugin(plugins.Plugin):
             available_models[name] = module
         self.parameters['model'].set_items(available_models)
 
+    def select_model_classes(self, weights_file):
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            run_list = project.get_objects('Run')
+        all_parameters = [run.parameters for run in run_list if run.command in ['train_model', 'fine-tune']]
+        for parameters in all_parameters:
+            if weights_file in [parameters['best_weights'], parameters['last_weights']]:
+                self.parameters['model'].value = parameters['model']
+                # self.parameters['class_names'].value = json.dumps(parameters['class_names'])
+                self.parameters['class_names'].value = parameters['class_names']
+
     def update_model_weights(self):
         """
-        Update the list of model weights associated with the currently selected network
+        Update the list of model weights associated with training and fine-tuning runs
         """
-        model_path = self.parameters['model'].item.__path__[0]
-        w_files = [os.path.join(model_path, f) for f in os.listdir(model_path)
-                   if os.path.isfile(os.path.join(model_path, f)) and f.endswith('.h5')]
+        self.parameters['weights'].clear()
+        w_files = {}
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            run_list = project.get_objects('Run')
+            all_parameters = [run.parameters for run in run_list if run.command in ['train_model', 'fine-tune']]
 
-        if PyDetecDiv.project_name is not None:
+        for parameters in all_parameters:
+            module = self.parameters['model'].items[parameters['model']]
+            run_weights = [parameters['best_weights'], parameters['last_weights']]
+            model_path = module.__path__[0]
+            w_files.update({f: os.path.join(model_path, f) for f in os.listdir(model_path) if
+                            os.path.isfile(os.path.join(model_path, f)) and f in run_weights})
             try:
-                user_path = os.path.join(get_project_dir(), 'roi_classification', 'models',
-                                         self.parameters['model'].key)
-                w_files.extend([os.path.join(user_path, f) for f in os.listdir(user_path)
-                                if os.path.isfile(os.path.join(user_path, f)) and f.endswith('.h5')])
+                user_path = os.path.join(get_project_dir(), 'roi_classification', 'models', parameters['model'])
+                w_files.update({f: os.path.join(user_path, f) for f in os.listdir(user_path) if
+                                os.path.isfile(os.path.join(user_path, f)) and f in run_weights})
             except FileNotFoundError:
                 pass
+        if w_files:
+            self.parameters['weights'].set_items(w_files)
 
-        # self.parameters['weights'].set_items({'None': None})
-        weights = {os.path.basename(f): f for f in w_files}
-        # print(f'found those weight files {weights} for {self.parameters["model"].value}')
-        self.parameters['weights'].set_items(weights)
+        # model_path = self.parameters['model'].item.__path__[0]
+        # w_files = [os.path.join(model_path, f) for f in os.listdir(model_path)
+        #            if os.path.isfile(os.path.join(model_path, f)) and f.endswith('.h5')]
+        #
+        # if PyDetecDiv.project_name is not None:
+        #     try:
+        #         user_path = os.path.join(get_project_dir(), 'roi_classification', 'models',
+        #                                  self.parameters['model'].key)
+        #         w_files.extend([os.path.join(user_path, f) for f in os.listdir(user_path)
+        #                         if os.path.isfile(os.path.join(user_path, f)) and f.endswith('.h5')])
+        #     except FileNotFoundError:
+        #         pass
+        #
+        # # self.parameters['weights'].set_items({'None': None})
+        # weights = {os.path.basename(f): f for f in w_files}
+        # # print(f'found those weight files {weights} for {self.parameters["model"].value}')
+        # self.parameters['weights'].set_items(weights)
 
     def update_class_names(self, prediction=False):
         """
         Update the classes associated with the currently selected model
         """
-        if self.parameters['weights'].item != 'None' and (self.parameters['weights'].item is not None):
-            self.parameters['class_names'].set_items(self.get_class_names(self.parameters['weights'].value))
-        else:
-            self.parameters['class_names'].set_items(self.get_class_names(prediction=prediction))
+        self.parameters['class_names'].set_items(self.get_class_names(prediction=prediction))
+        # if self.parameters['weights'].item != 'None' and (self.parameters['weights'].item is not None):
+        #     self.parameters['class_names'].set_items(self.get_class_names(self.parameters['weights'].value))
+        # else:
+        #     self.parameters['class_names'].set_items(self.get_class_names(prediction=prediction))
 
     def update_channels(self):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
