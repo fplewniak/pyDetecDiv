@@ -1,3 +1,5 @@
+import json
+
 from PySide6.QtCore import QAbstractItemModel, QModelIndex, Qt, QAbstractListModel, QStringListModel, \
     QAbstractTableModel, Signal
 from PySide6.QtGui import QStandardItemModel, QStandardItem
@@ -84,7 +86,8 @@ class DictItemModel(QStandardItemModel):
 
     def set_value(self, key):
         if not isinstance(key, str):
-            key = str(key)
+            # key = str(key)
+            key = json.dumps(key)
         if key in self.keys():
             self.set_selection(self.keys().index(key))
 
