@@ -221,7 +221,7 @@ class ManualAnnotator(AnnotationTool):
     @property
     def annotation_run_list(self):
         annotation_runs = self.plugin.get_annotation_runs()
-        return annotation_runs[self.plugin.class_names()]
+        return annotation_runs[self.plugin.parameters['class_names'].key]
 
     def setup(self, menubar=None, plugin=None, scene=None):
         if scene is None:
@@ -263,11 +263,11 @@ class ManualAnnotator(AnnotationTool):
         elif event.key() == Qt.Key_Escape:
             self.next_roi()
 
-    def define_classes(self):
+    def define_classes(self, suggestion=None):
         if self.define_classes_dialog is None:
-            self.define_classes_dialog = DefineClassesDialog(self, self.plugin)
+            self.define_classes_dialog = DefineClassesDialog(self, self.plugin, suggestion=suggestion)
         else:
-            self.define_classes_dialog.setup_class_names()
+            self.define_classes_dialog.setup_class_names(suggestion=suggestion)
             self.define_classes_dialog.show()
 
     def load_selected_ROIs(self):
@@ -394,11 +394,10 @@ class ManualAnnotationMenuBar(AnnotationMenuBar):
 
     def set_class_names_choice(self):
         self.menuClasses.clear()
-        self.parent().plugin.update_class_names()
         self.menuClasses.addAction(self.action_edit_classes)
         self.menuClasses.addSeparator()
         super().set_class_names_choice()
-        self.action_edit_classes.triggered.connect(self.parent().define_classes)
+        self.action_edit_classes.triggered.connect(lambda _: self.parent().define_classes())
 
 
 class PredictionMenuBar(AnnotationMenuBar):
@@ -436,11 +435,11 @@ class PredictionMenuBar(AnnotationMenuBar):
 
 
 class DefineClassesDialog(Dialog):
-    def __init__(self, annotator, plugin, title=None):
+    def __init__(self, annotator, plugin, suggestion=None, title=None):
         super().__init__(plugin, title='Define classes')
         self.annotator = annotator
         self.list_view = ClassListView(self, multiselection=True)
-        self.setup_class_names()
+        self.setup_class_names(suggestion)
         self.button_box = self.addButtonBox()
         self.add_class_btn = QPushButton('Import classes', parent=self.button_box)
         self.add_class_btn.clicked.connect(self.import_classes)
@@ -451,8 +450,9 @@ class DefineClassesDialog(Dialog):
         self.fit_to_contents()
         self.exec()
 
-    def setup_class_names(self):
-        suggestion = self.plugin.class_names(as_string=False)
+    def setup_class_names(self, suggestion=None):
+        if suggestion is None:
+            suggestion = self.plugin.class_names(as_string=False)
         if suggestion is None:
             self.list_view.model().setStringList(['A', 'B'])
         else:
@@ -463,7 +463,7 @@ class DefineClassesDialog(Dialog):
             {json.dumps(self.list_view.model().stringList()): self.list_view.model().stringList()})
         self.plugin.parameters["class_names"].set_value(self.list_view.model().stringList())
         if self.annotator.menubar is None:
-            self.annotator.setup()
+            self.annotator.setup(plugin=self.plugin)
         self.annotator.save_run()
         self.annotator.menubar.set_class_names_choice()
         if self.annotator.roi_list:
