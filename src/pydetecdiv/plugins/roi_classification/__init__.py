@@ -183,7 +183,7 @@ class Plugin(plugins.Plugin):
             ChoiceParameter(name='class_names', label='Classes',
                             groups={'training', 'finetune', 'classify', 'annotate', 'import_annotations'},
                             updater=self.update_class_names),
-            ChoiceParameter(name='weights', label='Weights', groups={'fine-tune', 'classify'}, default='None',
+            ChoiceParameter(name='weights', label='Weights', groups={'finetune', 'prediction'}, default='None',
                             updater=self.update_model_weights),
             IntParameter(name='seed', label='Random seed', groups={'training', 'finetune'}, maximum=999999999,
                          default=42),
