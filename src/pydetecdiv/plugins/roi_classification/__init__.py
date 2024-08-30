@@ -562,33 +562,23 @@ class Plugin(plugins.Plugin):
         if w_files:
             self.parameters['weights'].set_items(w_files)
 
-        # model_path = self.parameters['model'].item.__path__[0]
-        # w_files = [os.path.join(model_path, f) for f in os.listdir(model_path)
-        #            if os.path.isfile(os.path.join(model_path, f)) and f.endswith('.h5')]
-        #
-        # if PyDetecDiv.project_name is not None:
-        #     try:
-        #         user_path = os.path.join(get_project_dir(), 'roi_classification', 'models',
-        #                                  self.parameters['model'].key)
-        #         w_files.extend([os.path.join(user_path, f) for f in os.listdir(user_path)
-        #                         if os.path.isfile(os.path.join(user_path, f)) and f.endswith('.h5')])
-        #     except FileNotFoundError:
-        #         pass
-        #
-        # # self.parameters['weights'].set_items({'None': None})
-        # weights = {os.path.basename(f): f for f in w_files}
-        # # print(f'found those weight files {weights} for {self.parameters["model"].value}')
-        # self.parameters['weights'].set_items(weights)
-
     def update_class_names(self, prediction=False):
         """
         Update the classes associated with the currently selected model
         """
-        self.parameters['class_names'].set_items(self.get_class_names(prediction=prediction))
-        # if self.parameters['weights'].item != 'None' and (self.parameters['weights'].item is not None):
-        #     self.parameters['class_names'].set_items(self.get_class_names(self.parameters['weights'].value))
-        # else:
-        #     self.parameters['class_names'].set_items(self.get_class_names(prediction=prediction))
+        self.parameters['class_names'].clear()
+        class_names = {}
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            run_list = project.get_objects('Run')
+            if prediction:
+                 all_parameters = [run.parameters for run in run_list if run.command in ['predict']]
+            else:
+                all_parameters = [run.parameters for run in run_list if run.command in ['annotate_rois', 'import_annotated_rois']]
+
+        for parameters in all_parameters:
+            class_names.update({json.dumps(parameters['class_names']): parameters['class_names']})
+
+        self.parameters['class_names'].set_items(class_names)
 
     def update_channels(self):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
