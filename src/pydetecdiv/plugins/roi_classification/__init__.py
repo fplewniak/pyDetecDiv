@@ -178,48 +178,48 @@ class Plugin(plugins.Plugin):
         self.menu = None
         # self.gui = None
         self.parameters.parameter_list = [
-            ChoiceParameter(name='model', label='Network', groups={'training', 'fine-tune', 'classify'},
+            ChoiceParameter(name='model', label='Network', groups={'training', 'finetune', 'classify'},
                             default='ResNet50V2_lstm', updater=self.load_models),
             ChoiceParameter(name='class_names', label='Classes',
-                            groups={'training', 'fine-tune', 'classify', 'annotate', 'import_annotations'},
+                            groups={'training', 'finetune', 'classify', 'annotate', 'import_annotations'},
                             updater=self.update_class_names),
             ChoiceParameter(name='weights', label='Weights', groups={'fine-tune', 'classify'}, default='None',
                             updater=self.update_model_weights),
-            IntParameter(name='seed', label='Random seed', groups={'training', 'fine-tune'}, maximum=999999999,
+            IntParameter(name='seed', label='Random seed', groups={'training', 'finetune'}, maximum=999999999,
                          default=42),
-            ChoiceParameter(name='optimizer', label='Optimizer', groups={'training', 'fine-tune'}, default='SGD',
+            ChoiceParameter(name='optimizer', label='Optimizer', groups={'training', 'finetune'}, default='SGD',
                             items={'SGD': keras.optimizers.SGD,
                                    'Adam': keras.optimizers.Adam,
                                    'Adadelta': keras.optimizers.Adadelta,
                                    'Adamax': keras.optimizers.Adamax,
                                    'Nadam': keras.optimizers.Nadam, }),
-            FloatParameter(name='learning_rate', label='Learning rate', groups={'training', 'fine-tune'}, default=0.001,
+            FloatParameter(name='learning_rate', label='Learning rate', groups={'training', 'finetune'}, default=0.001,
                            minimum=0.00001, maximum=1.0),
-            FloatParameter(name='decay_rate', label='Decay rate', groups={'training', 'fine-tune'}, default=0.95),
-            IntParameter(name='decay_period', label='Decay period', groups={'training', 'fine-tune'}, default=2),
-            FloatParameter(name='momentum', label='Momentum', groups={'training', 'fine-tune'}, default=0.9, ),
-            ChoiceParameter(name='checkpoint_metric', label='Checkpoint metric', groups={'training', 'fine-tune'},
+            FloatParameter(name='decay_rate', label='Decay rate', groups={'training', 'finetune'}, default=0.95),
+            IntParameter(name='decay_period', label='Decay period', groups={'training', 'finetune'}, default=2),
+            FloatParameter(name='momentum', label='Momentum', groups={'training', 'finetune'}, default=0.9, ),
+            ChoiceParameter(name='checkpoint_metric', label='Checkpoint metric', groups={'training', 'finetune'},
                             default='Loss', items={'Loss': 'val_loss', 'Accuracy': 'val_accuracy', }),
-            CheckParameter(name='early_stopping', label='Early stopping', groups={'training', 'fine-tune'},
+            CheckParameter(name='early_stopping', label='Early stopping', groups={'training', 'finetune'},
                            default=False),
-            FloatParameter(name='num_training', label='Training dataset', groups={'training', 'fine-tune'}, default=0.6,
+            FloatParameter(name='num_training', label='Training dataset', groups={'training', 'finetune'}, default=0.6,
                            minimum=0.01, maximum=0.99, ),
-            FloatParameter(name='num_validation', label='Validation dataset', groups={'training', 'fine-tune'},
+            FloatParameter(name='num_validation', label='Validation dataset', groups={'training', 'finetune'},
                            default=0.2, minimum=0.01, maximum=0.99, ),
-            FloatParameter(name='num_test', label='Test dataset', groups={'training', 'fine-tune'}, default=0.2,
+            FloatParameter(name='num_test', label='Test dataset', groups={'training', 'finetune'}, default=0.2,
                            minimum=0.01, maximum=0.99, decimals=2, ),
-            IntParameter(name='dataset_seed', label='Random seed', groups={'training', 'fine-tune'}, default=42,
+            IntParameter(name='dataset_seed', label='Random seed', groups={'training', 'finetune'}, default=42,
                          validator=lambda x: isinstance(x, int), maximum=999999999),
-            ChoiceParameter(name='red_channel', label='Red', groups={'training', 'fine-tune', 'classify'}, default=0,
+            ChoiceParameter(name='red_channel', label='Red', groups={'training', 'finetune', 'classify'}, default=0,
                             updater=self.update_channels),
-            ChoiceParameter(name='green_channel', label='Green', groups={'training', 'fine-tune', 'classify'},
+            ChoiceParameter(name='green_channel', label='Green', groups={'training', 'finetune', 'classify'},
                             default=1, updater=self.update_channels),
-            ChoiceParameter(name='blue_channel', label='Blue', groups={'training', 'fine-tune', 'classify'}, default=2,
+            ChoiceParameter(name='blue_channel', label='Blue', groups={'training', 'finetune', 'classify'}, default=2,
                             updater=self.update_channels),
-            IntParameter(name='epochs', label='Epochs', groups={'training', 'fine-tune'}, default=16, ),
-            IntParameter(name='batch_size', label='Batch size', groups={'training', 'fine-tune', 'classify'},
+            IntParameter(name='epochs', label='Epochs', groups={'training', 'finetune'}, default=16, ),
+            IntParameter(name='batch_size', label='Batch size', groups={'training', 'finetune', 'classify'},
                          default=128, ),
-            IntParameter(name='seqlen', label='Sequence length', groups={'training', 'fine-tune', 'classify'},
+            IntParameter(name='seqlen', label='Sequence length', groups={'training', 'finetune', 'classify'},
                          default=50, ),
             ItemParameter(name='annotation_file', label='Annotation file', groups={'import_annotations'}, ),
             # ItemParameter(name='classifier', label='Classifier', groups={'predict'}, updater=self.update_classifiers,
@@ -231,6 +231,8 @@ class Plugin(plugins.Plugin):
         PyDetecDiv.app.project_selected.connect(self.update_parameters)
 
     def update_parameters(self, groups=None):
+        if groups in ['training']:
+            self.parameters['weights'].clear()
         self.parameters.update(groups)
         self.parameters.reset(groups)
 
@@ -428,7 +430,7 @@ class Plugin(plugins.Plugin):
             TrainingDialog(self)
 
     def run_fine_tuning(self):
-        self.update_parameters(groups='fine-tune')
+        self.update_parameters(groups='finetune')
         self.update_model_weights()
         if len(self.parameters['weights'].values) == 0:
             print('No previous training run to fine tune')
@@ -527,15 +529,21 @@ class Plugin(plugins.Plugin):
             available_models[name] = module
         self.parameters['model'].set_items(available_models)
 
-    def select_model_classes(self, weights_file):
+    def select_saved_parameters(self, weights_file):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             run_list = project.get_objects('Run')
-        all_parameters = [run.parameters for run in run_list if run.command in ['train_model', 'fine-tune']]
+        all_parameters = [run.parameters for run in run_list if run.command in ['train_model', 'fine_tune']]
         for parameters in all_parameters:
             if weights_file in [parameters['best_weights'], parameters['last_weights']]:
                 self.parameters['model'].value = parameters['model']
-                # self.parameters['class_names'].value = json.dumps(parameters['class_names'])
                 self.parameters['class_names'].value = parameters['class_names']
+                self.parameters['num_training'].value = parameters['num_training']
+                self.parameters['num_validation'].value = parameters['num_validation']
+                self.parameters['num_test'].value = parameters['num_test']
+                self.parameters['red_channel'].value = parameters['red_channel']
+                self.parameters['green_channel'].value = parameters['green_channel']
+                self.parameters['blue_channel'].value = parameters['blue_channel']
+                self.parameters['dataset_seed'].value = parameters['dataset_seed']
 
     def update_model_weights(self):
         """
@@ -545,7 +553,7 @@ class Plugin(plugins.Plugin):
         w_files = {}
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             run_list = project.get_objects('Run')
-            all_parameters = [run.parameters for run in run_list if run.command in ['train_model', 'fine-tune']]
+            all_parameters = [run.parameters for run in run_list if run.command in ['train_model', 'fine_tune']]
 
         for parameters in all_parameters:
             module = self.parameters['model'].items[parameters['model']]
@@ -821,13 +829,14 @@ class Plugin(plugins.Plugin):
         module = self.parameters['model'].value
         print(module.__name__)
 
-        run = self.save_training_run(module)
-
         model = module.model.create_model(len(self.parameters['class_names'].value))
-        # print('Loading weights')
-        # weights = self.gui.weights.currentData()
-        # if weights:
-        #     loadWeights(model, filename=self.gui.weights.currentData())
+
+        if self.parameters['weights'].value is not None:
+            print(f'Loading weights from {self.parameters["weights"].key}')
+            loadWeights(model, filename=self.parameters['weights'].value)
+            run = self.save_training_run(finetune=True)
+        else:
+            run = self.save_training_run()
 
         print('Compiling model')
         learning_rate = self.parameters['learning_rate'].value
@@ -965,7 +974,7 @@ class Plugin(plugins.Plugin):
 
         # self.update_model_weights()
 
-    def save_training_run(self, module):
+    def save_training_run(self, finetune=False):
         """
         save the current training Run
 
@@ -980,6 +989,8 @@ class Plugin(plugins.Plugin):
         # parameters.update({'model': self.parameters['model'].key})
         # parameters.update({'optimizer': self.parameters['optimizer'].key})
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            if finetune:
+                return self.save_run(project, 'fine_tune', self.parameters.json(groups='finetune'))
             return self.save_run(project, 'train_model', self.parameters.json(groups='training'))
 
     def save_training_datasets(self, run, roi_list, num_training, num_validation):

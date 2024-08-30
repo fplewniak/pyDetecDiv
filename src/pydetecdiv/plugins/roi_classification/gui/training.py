@@ -1,5 +1,3 @@
-from PySide6.QtCore import Qt
-
 from pydetecdiv.plugins import Dialog
 
 from pydetecdiv.plugins.gui import ComboBox, AdvancedButton, SpinBox, ParametersFormGroupBox, DoubleSpinBox, \
@@ -79,13 +77,12 @@ class TrainingDialog(Dialog):
         :param changed_dataset: the dataset that has just been changed
         """
         if changed_dataset:
-            self.test_data.setValue(1.0 - (self.training_data.value() + self.validation_data.value()))
-            total = self.training_data.value() + self.validation_data.value() + self.test_data.value()
+            self.plugin.parameters['num_test'].set_value(1.0 - (self.plugin.parameters['num_training'].value + self.plugin.parameters['num_validation'].value))
+            total = self.plugin.parameters['num_training'].value + self.plugin.parameters['num_validation'].value + self.plugin.parameters['num_test'].value
             if total > 1.0:
                 changed_dataset.setValue(changed_dataset.value() - total + 1.0)
         else:
-            self.test_data.setValue(1 - self.training_data.value() - self.validation_data.value())
-
+            self.plugin.parameters['num_test'].set_value(1.0 - self.plugin.parameters['num_training'].value - self.plugin.parameters['num_validation'].value)
 
 class FineTuningDialog(Dialog):
     def __init__(self, plugin, title=None):
@@ -140,21 +137,13 @@ class FineTuningDialog(Dialog):
 
         self.arrangeWidgets([self.classifier_selection, self.hyper, self.datasets, self.preprocessing, self.button_box])
 
-        set_connections({self.button_box.accepted: self.run_fine_tuning,
+        set_connections({self.button_box.accepted: self.plugin.train_model,
                          self.button_box.rejected: self.close,
-                         self.weights_choice.changed: [self.plugin.select_model_classes],
+                         self.weights_choice.changed: self.plugin.select_saved_parameters,
                          })
         #
-        self.plugin.update_parameters(groups='fine-tune')
-        self.plugin.select_model_classes(self.plugin.parameters['weights'].key)
+        self.plugin.update_parameters(groups='finetune')
+        self.plugin.select_saved_parameters(self.plugin.parameters['weights'].key)
 
         self.fit_to_contents()
         self.exec()
-
-    def run_fine_tuning(self):
-        print('Fine tuning model')
-        # print(self.plugin.parameters['class_names'].model.rows())
-        # print(self.plugin.parameters['class_names'].model.selection)
-        # print(self.plugin.parameters['class_names'].model.row(self.plugin.parameters['class_names'].model.selection).data(Qt.UserRole))
-        for k in self.plugin.parameters.to_dict().keys():
-            print(f'{k}: {self.plugin.parameters[k].json}')
