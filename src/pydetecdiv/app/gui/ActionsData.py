@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGrou
                                QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView,
                                QRadioButton, QButtonGroup)
 from pydetecdiv.app import PyDetecDiv, WaitDialog, pydetecdiv_project, MessageDialog
-from pydetecdiv.plugins.parameters import Parameter
+from pydetecdiv.plugins.parameters import Parameter, ChoiceParameter
 
 from pydetecdiv.settings import get_config_value
 from pydetecdiv import delete_files
@@ -639,14 +639,14 @@ class ComputeDriftDialog(gui.Dialog):
 
         self.select_FOV = self.addGroupBox('Select FOV')
         self.fov_list = self.select_FOV.addOption(None, widget=gui.ListView,
-                                                  parameter=Parameter(name='FOVs', label='FOV',
+                                                  parameter=ChoiceParameter(name='FOVs', label='FOV',
                                                                       items=self.update_fov_list(
                                                                           PyDetecDiv.project_name)),
                                                   multiselection=True, height=75)
 
         self.method_box = self.addGroupBox('Method')
         self.method = self.method_box.addOption(None, widget=gui.ComboBox,
-                                                parameter=Parameter(name='Method', label='Method', default='vidstab',
+                                                parameter=ChoiceParameter(name='Method', label='Method', default='vidstab',
                                                                     items={'vidstab': None, 'phase correlation': None})
                                                 )
 

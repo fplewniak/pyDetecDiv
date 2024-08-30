@@ -120,9 +120,13 @@ class DictItemModel(QStandardItemModel):
 
     def add_item(self, item):
         for key, value in item.items():
-            key_item = QStandardItem(key)
-            key_item.setData(value, Qt.UserRole)
-            self.appendRow([key_item])
+            if key not in self.keys():
+                key_item = QStandardItem(key)
+                key_item.setData(value, Qt.UserRole)
+                self.appendRow([key_item])
+            else:
+                key_item = self.item(self.keys().index(key))
+                key_item.setData(value, Qt.UserRole)
 
     def remove_item(self, row):
         if 0 <= row < self.rowCount():

@@ -190,15 +190,15 @@ class ListView(QListView):
     an extension of the QComboBox class
     """
 
-    def __init__(self, parent, parameter=None, height=None, multiselection=False, enabled=True, **kwargs):
-        super().__init__(parent, **kwargs)
+    def __init__(self, parent, model=None, height=None, multiselection=False, enabled=True, **kwargs):
+        super().__init__(parent)
         if multiselection:
             self.setSelectionMode(QAbstractItemView.MultiSelection)
         if height is not None:
             self.setFixedHeight(height)
         self.setModel(QStringListModel())
-        if parameter is not None and parameter.items is not None:
-            self.addItemDict(parameter.items)
+        if model is not None and model.items is not None:
+            self.addItemDict(model.items())
         self.setEnabled(enabled)
 
     def addItemDict(self, options):
@@ -286,6 +286,28 @@ class ListView(QListView):
         Clear the source list
         """
         self.model().removeRows(0, self.model().rowCount())
+
+
+class ListWidget(QListView):
+    def __init__(self, parent, model=None, height=None, editable=False, multiselection=False, enabled=True, **kwargs):
+        super().__init__(parent)
+        self.setSelectionModel(QItemSelectionModel())
+        if multiselection:
+            self.setSelectionMode(QAbstractItemView.MultiSelection)
+        if model is not None and model.rows() is not None:
+            self.addItemDict(model.rows())
+            self.setModel(model)
+            self.setModelColumn(0)
+        self.setEnabled(enabled)
+
+    def addItemDict(self, options):
+        """
+        add items to the ComboBox as a dictionary
+
+        :param options: dictionary of options specifying labels and corresponding user data {label: userData, ...}
+        """
+        for label, data in options.items():
+            self.addItem(label, userData=data)
 
 
 class LineEdit(QLineEdit):
@@ -429,7 +451,8 @@ class SpinBox(QSpinBox):
     an extension of the QSpinBox class
     """
 
-    def __init__(self, parent, model=None, minimum=1, maximum=4096, single_step=1, adaptive=False, enabled=True, **kwargs):
+    def __init__(self, parent, model=None, minimum=1, maximum=4096, single_step=1, adaptive=False, enabled=True,
+                 **kwargs):
         super().__init__(parent)
         self.setRange(minimum, maximum)
         self.setSingleStep(single_step)
@@ -494,26 +517,38 @@ class TableView(QTableView):
     an extension of the QTableView widget
     """
 
-    def __init__(self, parent, parameter, multiselection=True, behavior='rows', enabled=True):
+    def __init__(self, parent, model=None, enabled=True, **kwargs):
         super().__init__(parent)
-        self.model = QSqlQueryModel()
-        self.setModel(self.model)
-        if multiselection:
-            self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
-        match behavior:
-            case 'rows':
-                self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-            case _:
-                pass
-        self.setEnabled(enabled)
+        # if model is not None:
+        #     self.setModel(model)
+        # if model is not None and model.rows() is not None:
+        #     self.addItemDict(model.rows())
+        #     self.setModel(model)
+        #     self.setModelColumn(0)
+        # self.currentIndexChanged.connect(self.model().set_selection)
+        # self.model().selection_changed.connect(self.setCurrentIndex)
+        # self.setEnabled(enabled)
 
-    def setQuery(self, query):
-        """
-        set the SQL query used to feed the model of the table view
-
-        :param query: the query
-        """
-        self.model.setQuery(query)
+    # def __init__(self, parent, parameter, multiselection=True, behavior='rows', enabled=True):
+    #     super().__init__(parent)
+    #     self.model = QSqlQueryModel()
+    #     self.setModel(self.model)
+    #     if multiselection:
+    #         self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+    #     match behavior:
+    #         case 'rows':
+    #             self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+    #         case _:
+    #             pass
+    #     self.setEnabled(enabled)
+    #
+    # def setQuery(self, query):
+    #     """
+    #     set the SQL query used to feed the model of the table view
+    #
+    #     :param query: the query
+    #     """
+    #     self.model.setQuery(query)
 
 
 class DialogButtonBox(QDialogButtonBox):
