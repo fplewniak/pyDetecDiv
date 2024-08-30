@@ -972,7 +972,8 @@ class Plugin(plugins.Plugin):
                                                       self.parameters['class_names'].value)
         tab.addTab(confusion_matrix_plot, 'Confusion matrix (best checkpoint)')
 
-        # self.update_model_weights()
+        if self.parameters['weights'].value is not None:
+            self.update_model_weights()
 
     def save_training_run(self, finetune=False):
         """
