@@ -222,7 +222,7 @@ class Plugin(plugins.Plugin):
             IntParameter(name='seqlen', label='Sequence length', groups={'training', 'finetune', 'prediction'},
                          default=50, ),
             ItemParameter(name='annotation_file', label='Annotation file', groups={'import_annotations'}, ),
-            ChoiceParameter(name='fov_list', label='Select FOVs', groups={'prediction'}, updater=self.update_fov_list),
+            ChoiceParameter(name='fov', label='Select FOVs', groups={'prediction'}, updater=self.update_fov_list),
         ]
 
     def register(self):
@@ -534,9 +534,10 @@ class Plugin(plugins.Plugin):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             run_list = project.get_objects('Run')
             if prediction:
-                 all_parameters = [run.parameters for run in run_list if run.command in ['predict']]
+                all_parameters = [run.parameters for run in run_list if run.command in ['predict']]
             else:
-                all_parameters = [run.parameters for run in run_list if run.command in ['annotate_rois', 'import_annotated_rois']]
+                all_parameters = [run.parameters for run in run_list if
+                                  run.command in ['annotate_rois', 'import_annotated_rois']]
 
         for parameters in all_parameters:
             class_names.update({json.dumps(parameters['class_names']): parameters['class_names']})
@@ -553,7 +554,7 @@ class Plugin(plugins.Plugin):
 
     def update_fov_list(self):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            self.parameters['fov_list'].set_items({fov.name: fov for fov in project.get_objects('FOV')})
+            self.parameters['fov'].set_items({fov.name: fov for fov in project.get_objects('FOV')})
 
     # def run(self):
     #     """
@@ -980,22 +981,34 @@ class Plugin(plugins.Plugin):
 
     def predict(self):
         """
-        Running prediction on all available ROIs.
+        Running prediction on all ROIs in selected FOVs.
         """
-        model = self.load_model()
+        module = self.parameters['model'].value
+        print(module.__name__)
+        model = module.model.create_model(len(self.parameters['class_names'].value))
+        print('Loading weights')
+        weights = self.parameters['weights'].value
+        print(weights)
+        if weights:
+            loadWeights(model, filename=self.parameters['weights'].value)
+
         input_shape = model.layers[0].output.shape
+
+        print('Compiling model')
+        model.compile()
 
         batch_size = self.parameters['batch_size'].value
         seqlen = self.parameters['seqlen'].value
         z_channels = [self.parameters['red_channel'].value, self.parameters['green_channel'].value,
                       self.parameters['blue_channel'].value]
 
-        fov_names = [index.data() for index in self.gui.selection_model.selectedRows(0)]
+        fov_names = [self.parameters['fov'].key]
+
+        print(self.parameters.json(groups='prediction'))
 
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             print('Saving run')
-            parameters = {'fov': fov_names}
-            parameters.update(self.parameter_widgets.get_values('prediction'))
+            parameters = self.parameters.json(groups='prediction')
             run = self.save_run(project, 'predict', parameters)
             roi_list = np.ndarray.flatten(np.array(list([fov.roi_list for fov in
                                                          [project.get_named_object('FOV', fov_name) for
@@ -1005,28 +1018,23 @@ class Plugin(plugins.Plugin):
             if len(input_shape) == 4:
                 img_size = (input_shape[1], input_shape[2])
                 roi_data_list = self.prepare_data(roi_list, targets=False)
-                roi_dataset = ROIDataset(roi_data_list, image_size=img_size, class_names=self.class_names,
+                roi_dataset = ROIDataset(roi_data_list, image_size=img_size,
                                          batch_size=batch_size, z_channels=z_channels)
             else:
                 img_size = (input_shape[2], input_shape[3])
                 roi_data_list = self.prepare_data(roi_list, seqlen, targets=False)
-                roi_dataset = ROIDataset(roi_data_list, image_size=img_size, class_names=self.class_names,
+                roi_dataset = ROIDataset(roi_data_list, image_size=img_size,
                                          seqlen=seqlen, batch_size=batch_size, z_channels=z_channels)
 
             predictions = model.predict(roi_dataset)
-            # display_dataset(roi_dataset, sequences=len(input_shape) != 4)
 
             for (prediction, data) in zip(np.squeeze(predictions), roi_data_list):
                 if len(input_shape) == 4:
-                    # max_score, max_index = max((value, index) for index, value in enumerate(prediction))
-                    # print(data.roi.name, data.frame, self.class_names[max_index], max_score)
-                    Results().save(project, run, data.roi, data.frame, prediction, self.class_names)
+                    Results().save(project, run, data.roi, data.frame, prediction, self.class_names(as_string=False))
                 else:
                     for i in range(seqlen):
-                        # max_score, max_index = max((value, index) for index, value in enumerate(prediction[i]))
-                        # print(data.roi.name, data.frame + i, self.class_names[max_index], max_score)
                         if (data.frame + i) < data.imgdata.sizeT:
-                            Results().save(project, run, data.roi, data.frame + i, prediction[i], self.class_names)
+                            Results().save(project, run, data.roi, data.frame + i, prediction[i], self.class_names(as_string=False))
         print('predictions OK')
 
     def save_results(self, project, run, roi, frame, class_name):

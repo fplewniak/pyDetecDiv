@@ -8,7 +8,7 @@ from PySide6.QtGui import QIcon, QAction, Qt
 from PySide6.QtSql import QSqlQueryModel
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox, \
     QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView, QAbstractItemView, \
-    QPushButton, QApplication, QRadioButton, QListView, QMenu, QDataWidgetMapper
+    QPushButton, QApplication, QRadioButton, QListView, QMenu, QDataWidgetMapper, QListWidget, QListWidgetItem
 
 
 class StyleSheets:
@@ -295,10 +295,15 @@ class ListWidget(QListView):
         if multiselection:
             self.setSelectionMode(QAbstractItemView.MultiSelection)
         if model is not None and model.rows() is not None:
-            self.addItemDict(model.rows())
             self.setModel(model)
             self.setModelColumn(0)
+            self.addItemDict(model.rows())
         self.setEnabled(enabled)
+        # self.currentIndexChanged.connect(self.model().set_selection)
+        self.selectionModel().currentChanged.connect(self.setCurrentIndex)
+
+    def setCurrentIndex(self, index):
+        self.model().set_selection(index.row())
 
     def addItemDict(self, options):
         """
@@ -306,8 +311,11 @@ class ListWidget(QListView):
 
         :param options: dictionary of options specifying labels and corresponding user data {label: userData, ...}
         """
-        for label, data in options.items():
-            self.addItem(label, userData=data)
+        for text, data in options.items():
+            self.addItem(text, userData=data)
+
+    def addItem(self, text, userData=None):
+        self.model().add_item({text: userData})
 
 
 class LineEdit(QLineEdit):

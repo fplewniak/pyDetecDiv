@@ -1,6 +1,6 @@
 from pydetecdiv.plugins import Dialog
 from pydetecdiv.plugins.gui import ComboBox, set_connections, SpinBox, AdvancedButton, ParametersFormGroupBox, \
-    DoubleSpinBox, TableView, ListView
+    DoubleSpinBox, TableView, ListView, ListWidget
 
 
 class PredictionDialog(Dialog):
@@ -13,7 +13,7 @@ class PredictionDialog(Dialog):
         self.classifier_selection.addOption('Classes', ComboBox, parameter=self.plugin.parameters['class_names'], enabled=False)
 
         self.fov_selection = self.addGroupBox('Select FOVs')
-        self.fov_selection.addOption(None, ListView, parameter=self.plugin.parameters['fov_list'])
+        self.fov_selection.addOption(None, ListWidget, parameter=self.plugin.parameters['fov'])
 
         self.hyper = self.addGroupBox('Hyper parameters')
         self.hyper.addOption('Batch size:', SpinBox, adaptive=True, parameter=self.plugin.parameters['batch_size'])
@@ -33,7 +33,7 @@ class PredictionDialog(Dialog):
         self.arrangeWidgets([self.classifier_selection, self.fov_selection,
                              self.hyper, self.preprocessing, self.button_box])
 
-        set_connections({self.button_box.accepted: self.run_prediction,
+        set_connections({self.button_box.accepted: self.plugin.predict,
                          self.button_box.rejected: self.close,
                          self.weights_choice.changed: self.plugin.select_saved_parameters,
                          })

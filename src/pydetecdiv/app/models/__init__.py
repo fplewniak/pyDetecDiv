@@ -135,3 +135,4 @@ class DictItemModel(QStandardItemModel):
     def set_selection(self, index):
         self.selection = index
         self.selection_changed.emit(index)
+
