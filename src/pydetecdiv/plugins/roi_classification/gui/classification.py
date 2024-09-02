@@ -2,7 +2,7 @@ import json
 
 from PySide6.QtCore import Qt, QRectF, QItemSelection, QItemSelectionModel
 from PySide6.QtGui import QAction, QActionGroup
-from PySide6.QtWidgets import QMenuBar, QGraphicsTextItem, QPushButton, QDialogButtonBox, QMenu
+from PySide6.QtWidgets import QMenuBar, QGraphicsTextItem, QPushButton, QDialogButtonBox, QMenu, QFileDialog
 import pyqtgraph as pg
 
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
@@ -475,7 +475,19 @@ class DefineClassesDialog(Dialog):
         self.close()
 
     def import_classes(self):
-        pass
+        """
+        Select a csv file containing ROI frames annotations and open a FOV2ROIlinks window to load the data it contains
+        into the database as FOVs and ROIs with annotations.
+        """
+        filters = ["txt (*.txt)", ]
+        init_dir = get_config_value('project', 'workspace')
+        class_names_file, _ = QFileDialog.getOpenFileName(PyDetecDiv.main_window,
+                                                         caption='Choose text file with class names',
+                                                         dir=init_dir,
+                                                         filter=";;".join(filters),
+                                                         selectedFilter=filters[0])
+        if class_names_file:
+            self.setup_class_names(suggestion=sorted([line.strip() for line in open(class_names_file, 'r')]))
 
 
 class ClassListView(ListView):

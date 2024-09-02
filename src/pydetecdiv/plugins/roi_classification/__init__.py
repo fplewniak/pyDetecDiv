@@ -932,8 +932,6 @@ class Plugin(plugins.Plugin):
 
         fov_names = [self.parameters['fov'].key]
 
-        print(self.parameters.json(groups='prediction'))
-
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             print('Saving run')
             parameters = self.parameters.json(groups='prediction')

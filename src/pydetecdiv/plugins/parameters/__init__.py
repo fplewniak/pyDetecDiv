@@ -215,7 +215,6 @@ class Parameters:
     def reset(self, groups=None):
         for parameter in self.get_groups(groups):
             parameter.reset()
-            # print(f'{parameter.name}: {parameter.value} ({parameter.default})')
 
     def update(self, groups=None):
         # for parameter in self.parameter_list:

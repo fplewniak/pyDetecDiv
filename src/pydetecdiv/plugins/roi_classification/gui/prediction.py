@@ -43,7 +43,3 @@ class PredictionDialog(Dialog):
 
         self.fit_to_contents()
         self.exec()
-
-    def run_prediction(self):
-        print('running prediction')
-        print(self.plugin.parameters['fov_list'].value)
