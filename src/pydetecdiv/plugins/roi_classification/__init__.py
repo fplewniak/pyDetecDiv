@@ -26,19 +26,18 @@ import tensorflow as tf
 from sklearn.metrics import ConfusionMatrixDisplay
 
 from pydetecdiv import plugins
-from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir, MessageDialog
+from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir
 from pydetecdiv.settings import get_plugins_dir
 from pydetecdiv.domain import Image, Dataset, ImgDType
 from pydetecdiv.settings import get_config_value
+from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer
 
-# from .gui import FOV2ROIlinks, ROIclassificationDialog
-from .gui import FOV2ROIlinks
 from . import models
+from .gui.ImportAnnotatedROIs import FOV2ROIlinks
 from .gui.classification import ManualAnnotator, PredictionViewer, DefineClassesDialog
 from .gui.prediction import PredictionDialog
 from .gui.training import TrainingDialog, FineTuningDialog
 from ..parameters import ItemParameter, ChoiceParameter, IntParameter, FloatParameter, CheckParameter
-from ...app.gui.core.widgets.viewers.plots import MatplotViewer
 
 Base = registry().generate_base()
 
@@ -228,6 +227,7 @@ class Plugin(plugins.Plugin):
     def register(self):
         # self.parameters.update()
         PyDetecDiv.app.project_selected.connect(self.update_parameters)
+        PyDetecDiv.app.viewer_roi_click.connect(self.add_context_action)
 
     def update_parameters(self, groups=None):
         if groups in ['training']:
