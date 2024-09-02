@@ -1,8 +1,9 @@
 import json
 
-from PySide6.QtCore import Qt, QRectF, QItemSelection, QItemSelectionModel
+from PySide6.QtCore import Qt, QRectF, QItemSelectionModel
 from PySide6.QtGui import QAction, QActionGroup
-from PySide6.QtWidgets import QMenuBar, QGraphicsTextItem, QPushButton, QDialogButtonBox, QMenu, QFileDialog
+from PySide6.QtWidgets import QMenuBar, QGraphicsTextItem, QPushButton, QDialogButtonBox, QMenu, QFileDialog, \
+    QAbstractItemView
 import pyqtgraph as pg
 
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
@@ -11,7 +12,6 @@ from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer
 from pydetecdiv.app.gui.core.widgets.viewers.plots import ChartView
 from pydetecdiv.plugins import Dialog
 from pydetecdiv.plugins.gui import ListView
-from pydetecdiv.plugins.parameters import Parameter
 from pydetecdiv.settings import get_config_value
 from pydetecdiv.utils import BidirectionalIterator, previous
 
@@ -441,12 +441,20 @@ class DefineClassesDialog(Dialog):
         self.list_view = ClassListView(self, multiselection=True)
         self.setup_class_names(suggestion)
         self.button_box = self.addButtonBox()
-        self.add_class_btn = QPushButton('Import classes', parent=self.button_box)
-        self.add_class_btn.clicked.connect(self.import_classes)
+
+        self.import_class_btn = QPushButton('Import classes', parent=self.button_box)
+        self.import_class_btn.clicked.connect(self.import_classes)
+        self.button_box.addButton(self.import_class_btn, QDialogButtonBox.ActionRole)
+
+        self.add_class_btn = QPushButton('Add new class', parent=self.button_box)
+        self.add_class_btn.clicked.connect(self.list_view.add_class)
         self.button_box.addButton(self.add_class_btn, QDialogButtonBox.ActionRole)
+
         self.button_box.accepted.connect(self.save_new_classes)
         self.button_box.rejected.connect(self.close)
+
         self.arrangeWidgets([self.list_view, self.button_box])
+
         self.fit_to_contents()
         self.exec()
 
@@ -521,3 +529,4 @@ class ClassListView(ListView):
         self.unselect()
         selection = self.model().index(self.model().rowCount() - 1, 0)
         self.selectionModel().select(selection, QItemSelectionModel.Select)
+        self.edit(selection)
