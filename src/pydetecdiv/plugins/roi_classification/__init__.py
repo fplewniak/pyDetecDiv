@@ -241,7 +241,6 @@ class Plugin(plugins.Plugin):
 
         :return: the class list
         """
-        # return json.loads(self.parameters.get('class_names').value)
         if as_string:
             return json.dumps(self.parameters['class_names'].value)
         return self.parameters['class_names'].value
@@ -440,29 +439,6 @@ class Plugin(plugins.Plugin):
         else:
             FineTuningDialog(self)
 
-    def load_model(self):
-        """
-        Load the model
-
-        :return: the model
-        """
-        module = self.parameters['model'].value
-        print(module.__name__)
-        model = module.model.create_model(len(self.parameters['class_names'].value))
-        print('Loading weights')
-        weights = self.parameters['weights'].value
-        print(weights)
-        if weights:
-            loadWeights(model, filename=self.parameters['weights'].value)
-
-        print('Compiling model')
-        model.compile(
-            optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
-            loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-            metrics=["accuracy"],
-        )
-        return model
-
     def load_models(self):
         """
         Load available models (modules)
@@ -555,23 +531,6 @@ class Plugin(plugins.Plugin):
     def update_fov_list(self):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             self.parameters['fov'].set_items({fov.name: fov for fov in project.get_objects('FOV')})
-
-    # def run(self):
-    #     """
-    #     Run the action selected in the GUI (create new model, annotate ROIs, train model, classify ROIs)
-    #     """
-    #     self.gui.action_menu.currentData()()
-
-    # def launch(self):
-    #     """
-    #     Display the ROI classification docked GUI window
-    #     """
-    #     # if self.gui is None:
-    #     #     self.create_table()
-    #     #     PyDetecDiv.app.project_selected.connect(self.create_table)
-    #     #     self.gui = ROIclassificationDialog(self, title='ROI class prediction (Deep Learning)')
-    #     #     self.gui.update_all()
-    #     # self.gui.setVisible(True)
 
     def save_annotations(self, roi, roi_classes, run):
         """
@@ -685,33 +644,6 @@ class Plugin(plugins.Plugin):
                                 f"WHERE rc.run IN ({','.join([str(i) for i in run_list])}) and rc.roi={roi.id_} "
                                 f"AND run.id_=rc.run "
                                 f"ORDER BY rc.run ASC;")))
-            if results:
-                class_names = json.loads(results[0][3])
-                if as_index:
-                    for annotation in results:
-                        roi_classes[annotation[1]] = class_names.index(annotation[2])
-                else:
-                    for annotation in results:
-                        roi_classes[annotation[1]] = annotation[2]
-        return roi_classes
-
-    def get_prediction(self, roi, run, as_index=True):
-        """
-        Get the predictions for a ROI
-
-        :param roi: the ROI
-        :param run: the prediction run
-        :param as_index: bool set to True to return annotations as indices of class_names list, set to False to return
-        annotations as class names
-        :return: the list of predicted classes by frame
-        """
-        roi_classes = [-1] * roi.fov.image_resource().image_resource_data().sizeT
-        with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            results = list(project.repository.session.execute(
-                sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,"
-                                f"run.parameters ->> '$.class_names' as class_names "
-                                f"FROM run, roi_classification as rc "
-                                f"WHERE run.id_=rc.run and rc.run={run.id_} and rc.roi={roi.id_} ;")))
             if results:
                 class_names = json.loads(results[0][3])
                 if as_index:
@@ -942,10 +874,6 @@ class Plugin(plugins.Plugin):
         :param module: the module name (i.e. the network that was trained)
         :return: the current Run instance
         """
-        # parameters = self.parameters.values(groups='training')
-        # # parameters.update({'model': module.__name__})
-        # parameters.update({'model': self.parameters['model'].key})
-        # parameters.update({'optimizer': self.parameters['optimizer'].key})
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             if finetune:
                 return self.save_run(project, 'fine_tune', self.parameters.json(groups='finetune'))
@@ -1034,7 +962,8 @@ class Plugin(plugins.Plugin):
                 else:
                     for i in range(seqlen):
                         if (data.frame + i) < data.imgdata.sizeT:
-                            Results().save(project, run, data.roi, data.frame + i, prediction[i], self.class_names(as_string=False))
+                            Results().save(project, run, data.roi, data.frame + i, prediction[i],
+                                           self.class_names(as_string=False))
         print('predictions OK')
 
     def save_results(self, project, run, roi, frame, class_name):
@@ -1071,31 +1000,6 @@ class Plugin(plugins.Plugin):
             if roi.name in rec_items:
                 annotation = self.get_annotation(roi)[PyDetecDiv.main_window.active_subwindow.viewer.T]
                 rec_items[roi.name].setBrush(colours[annotation])
-
-    @staticmethod
-    def get_class_names(weight_file=None, prediction=False):
-        """
-        Get the class names for a project
-
-        :return: the list of classes from the last annotation run for this project
-        """
-        if (weight_file != 'None') and (weight_file is not None):
-            clause = f"(run.command='train_model') AND (best_weights='{weight_file}' OR last_weights='{weight_file}')"
-        elif prediction:
-            clause = f"run.command='predict'"
-        else:
-            clause = f"(run.command='annotate_rois' OR run.command='import_annotated_rois')"
-        with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            results = list(project.repository.session.execute(
-                sqlalchemy.text(f"SELECT "
-                                f"run.parameters ->> '$.class_names' as class_names, "
-                                f"run.parameters ->> '$.best_weights' as best_weights, "
-                                f"run.parameters ->> '$.last_weights' as last_weights "
-                                f"FROM run "
-                                f"WHERE {clause} "
-                                f"ORDER BY run.id_ ASC;")))
-            class_names = {json.dumps(json.loads(r[0])): json.loads(r[0]) for r in results}
-        return class_names
 
 
 def plot_history(history, evaluation):
@@ -1244,29 +1148,29 @@ def get_rgb_images_from_stacks(imgdata, roi_list, t, z=None):
     return roi_images
 
 
-def display_dataset(dataset, sequences=False):
-    """
-    Display a dataset in plot viewer
-
-    :param dataset: the dataset to display
-    :param sequences: whether or not to show frame sequences
-    """
-    for dset in dataset.__iter__():
-        ds = dset[0] if isinstance(dset, tuple) else dset
-        for data in ds:
-            tab = PyDetecDiv.main_window.add_tabbed_window('Showing dataset')
-            if sequences is False:
-                plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=1, rows=1)
-            else:
-                plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=len(data), rows=1)
-            axs = plot_viewer.axes
-            tab.addTab(plot_viewer, 'training dataset')
-            if sequences is False:
-                axs.imshow(data)
-            else:
-                for i, img in enumerate(data):
-                    axs[i].imshow(img)
-        plot_viewer.show()
+# def display_dataset(dataset, sequences=False):
+#     """
+#     Display a dataset in plot viewer
+#
+#     :param dataset: the dataset to display
+#     :param sequences: whether or not to show frame sequences
+#     """
+#     for dset in dataset.__iter__():
+#         ds = dset[0] if isinstance(dset, tuple) else dset
+#         for data in ds:
+#             tab = PyDetecDiv.main_window.add_tabbed_window('Showing dataset')
+#             if sequences is False:
+#                 plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=1, rows=1)
+#             else:
+#                 plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=len(data), rows=1)
+#             axs = plot_viewer.axes
+#             tab.addTab(plot_viewer, 'training dataset')
+#             if sequences is False:
+#                 axs.imshow(data)
+#             else:
+#                 for i, img in enumerate(data):
+#                     axs[i].imshow(img)
+#         plot_viewer.show()
 
 
 def loadWeights(model, filename=os.path.join(__path__[0], "weights.h5"), debug=False):
