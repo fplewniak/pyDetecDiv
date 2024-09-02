@@ -322,11 +322,11 @@ class PredictionViewer(AnnotationTool):
 
     def load_selected_ROIs(self):
         self.select_prediction_run(self.menubar.prediction_runs_group.checkedAction())
-        self.next_roi()
 
     def select_prediction_run(self, prediction_run):
         classified_rois = self.plugin.get_annotated_rois(run=prediction_run.data())
         self.set_roi_list(classified_rois)
+        self.next_roi()
 
     def keyPressEvent(self, event):
         """
