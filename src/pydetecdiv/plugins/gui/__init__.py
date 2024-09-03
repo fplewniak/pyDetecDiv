@@ -291,7 +291,7 @@ class ListView(QListView):
 class ListWidget(QListView):
     def __init__(self, parent, model=None, height=None, editable=False, multiselection=False, enabled=True, **kwargs):
         super().__init__(parent)
-        self.setSelectionModel(QItemSelectionModel())
+        # self.setSelectionModel(QItemSelectionModel())
         if multiselection:
             self.setSelectionMode(QAbstractItemView.MultiSelection)
         if model is not None and model.rows() is not None:
