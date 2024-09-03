@@ -483,6 +483,8 @@ class Plugin(plugins.Plugin):
                 self.parameters['green_channel'].value = parameters['green_channel']
                 self.parameters['blue_channel'].value = parameters['blue_channel']
                 self.parameters['dataset_seed'].value = parameters['dataset_seed']
+                self.parameters['batch_size'].value = parameters['batch_size']
+                self.parameters['seqlen'].value = parameters['seqlen']
 
     def update_model_weights(self, project_name=None):
         """
