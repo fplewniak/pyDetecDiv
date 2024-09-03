@@ -929,7 +929,6 @@ class Plugin(plugins.Plugin):
         model = module.model.create_model(len(self.parameters['class_names'].value))
         print('Loading weights')
         weights = self.parameters['weights'].value
-        print(weights)
         if weights:
             loadWeights(model, filename=self.parameters['weights'].value)
 
