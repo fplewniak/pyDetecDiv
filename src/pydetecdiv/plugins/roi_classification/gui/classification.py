@@ -2,8 +2,7 @@ import json
 
 from PySide6.QtCore import Qt, QRectF, QItemSelectionModel
 from PySide6.QtGui import QAction, QActionGroup
-from PySide6.QtWidgets import QMenuBar, QGraphicsTextItem, QPushButton, QDialogButtonBox, QMenu, QFileDialog, \
-    QAbstractItemView
+from PySide6.QtWidgets import QMenuBar, QGraphicsTextItem, QPushButton, QDialogButtonBox, QMenu, QFileDialog
 import pyqtgraph as pg
 
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv

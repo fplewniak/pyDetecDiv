@@ -25,10 +25,10 @@ import tensorflow as tf
 
 from sklearn.metrics import ConfusionMatrixDisplay
 
-from pydetecdiv import plugins
-from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir
+from pydetecdiv import plugins, copy_files
+from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir, project_list
 from pydetecdiv.settings import get_plugins_dir
-from pydetecdiv.domain import Image, Dataset, ImgDType
+from pydetecdiv.domain import Image, Dataset, ImgDType, Run
 from pydetecdiv.settings import get_config_value
 from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer
 
@@ -36,8 +36,8 @@ from . import models
 from .gui.ImportAnnotatedROIs import FOV2ROIlinks
 from .gui.classification import ManualAnnotator, PredictionViewer, DefineClassesDialog
 from .gui.prediction import PredictionDialog
-from .gui.training import TrainingDialog, FineTuningDialog
-from ..parameters import ItemParameter, ChoiceParameter, IntParameter, FloatParameter, CheckParameter
+from .gui.training import TrainingDialog, FineTuningDialog, ImportClassifierDialog
+from ..parameters import ItemParameter, ChoiceParameter, IntParameter, FloatParameter, CheckParameter, Parameters
 
 Base = registry().generate_base()
 
@@ -224,6 +224,8 @@ class Plugin(plugins.Plugin):
             ChoiceParameter(name='fov', label='Select FOVs', groups={'prediction'}, updater=self.update_fov_list),
         ]
 
+        self.classifiers = ChoiceParameter(name='classifier', label='Classifier', groups={'import_classifier'})
+
     def register(self):
         # self.parameters.update()
         PyDetecDiv.app.project_selected.connect(self.update_parameters)
@@ -287,6 +289,11 @@ class Plugin(plugins.Plugin):
 
         predict.triggered.connect(self.run_prediction)
         show_results.triggered.connect(self.show_results)
+
+        submenu.addSeparator()
+
+        import_classifier = submenu.addAction('Import classifier')
+        import_classifier.triggered.connect(self.run_import_classifier)
 
     def add_context_action(self, data):
         """
@@ -462,7 +469,8 @@ class Plugin(plugins.Plugin):
     def select_saved_parameters(self, weights_file):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             run_list = project.get_objects('Run')
-        all_parameters = [run.parameters for run in run_list if run.command in ['train_model', 'fine_tune']]
+        all_parameters = [run.parameters for run in run_list if
+                          run.command in ['train_model', 'fine_tune', 'import_classifier']]
         for parameters in all_parameters:
             if weights_file in [parameters['best_weights'], parameters['last_weights']]:
                 self.parameters['model'].value = parameters['model']
@@ -476,15 +484,18 @@ class Plugin(plugins.Plugin):
                 self.parameters['blue_channel'].value = parameters['blue_channel']
                 self.parameters['dataset_seed'].value = parameters['dataset_seed']
 
-    def update_model_weights(self):
+    def update_model_weights(self, project_name=None):
         """
         Update the list of model weights associated with training and fine-tuning runs
         """
         self.parameters['weights'].clear()
         w_files = {}
-        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+        if project_name is None:
+            project_name = PyDetecDiv.project_name
+        with pydetecdiv_project(project_name) as project:
             run_list = project.get_objects('Run')
-            all_parameters = [run.parameters for run in run_list if run.command in ['train_model', 'fine_tune']]
+            all_parameters = [run.parameters for run in run_list if
+                              run.command in ['train_model', 'fine_tune', 'import_classifier']]
 
         for parameters in all_parameters:
             module = self.parameters['model'].items[parameters['model']]
@@ -975,6 +986,36 @@ class Plugin(plugins.Plugin):
         :param class_name: the class name
         """
         Results().save(project, run, roi, frame, np.array([1]), [class_name])
+
+    def run_import_classifier(self):
+        current_project_name = PyDetecDiv.project_name
+        self.classifiers.clear()
+        for project_name in [p for p in project_list() if p != current_project_name]:
+            with pydetecdiv_project(project_name) as project:
+                run_list = [run for run in project.get_objects('Run') if
+                            run.command in ['train_model', 'fine_tune', 'import_classifier']]
+                for run in run_list:
+                    run.parameters['project'] = project_name
+                    run.parameters['run'] = run.id_
+                    run.command = 'import_classifier'
+                    self.classifiers.add_item(
+                        {f"{project_name}-{run.id_} {run.parameters['model']} {run.parameters['class_names']}": run})
+        with pydetecdiv_project(current_project_name) as project:  # resetting global project name
+            pass
+        ImportClassifierDialog(self)
+
+    def import_classifier(self):
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            run = self.classifiers.value
+            user_path = str(os.path.join(get_project_dir(), 'roi_classification', 'models', run.parameters['model']))
+            os.makedirs(user_path, exist_ok=True)
+            origin_path = str(os.path.join(get_project_dir(run.parameters['project']), 'roi_classification', 'models',
+                                           run.parameters['model']))
+            copy_files([os.path.join(origin_path, run.parameters['best_weights']),
+                        os.path.join(origin_path, run.parameters['last_weights'])], user_path)
+            new_run = Run(project=project, **(run.record(no_id=True)))
+
+        print('Classifier imported')
 
     def draw_annotated_rois(self):
         """

@@ -147,3 +147,21 @@ class FineTuningDialog(Dialog):
 
         self.fit_to_contents()
         self.exec()
+
+class ImportClassifierDialog(Dialog):
+    def __init__(self, plugin, title=None):
+        super().__init__(plugin, title='Import classifier from another project')
+
+        classifier_selection = self.addGroupBox('Classifier')
+        classifier_selection.addOption(None, ComboBox, parameter=self.plugin.classifiers)
+
+        button_box = self.addButtonBox()
+
+        self.arrangeWidgets([classifier_selection, button_box])
+
+        set_connections({button_box.accepted: self.plugin.import_classifier,
+                         button_box.rejected: self.close,
+                         })
+
+        self.fit_to_contents()
+        self.exec()

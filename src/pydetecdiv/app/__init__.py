@@ -257,9 +257,11 @@ def get_settings():
 #         os.mkdir(plugins_path)
 #     return plugins_path
 
-def get_project_dir():
+def get_project_dir(project_name=None):
+    if project_name is None:
+        project_name = PyDetecDiv.project_name
     workspace_dir = get_config_value('project', 'workspace')
-    return os.path.join(workspace_dir, PyDetecDiv.project_name)
+    return os.path.join(workspace_dir, project_name)
 
 
 def project_list():
