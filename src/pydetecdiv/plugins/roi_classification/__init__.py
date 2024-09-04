@@ -323,7 +323,7 @@ class Plugin(plugins.Plugin):
                                                          filter=";;".join(filters),
                                                          selectedFilter=filters[0])
         if annotation_file:
-            self.parameters.get('annotation_file').set_value(annotation_file)
+            self.parameters['annotation_file'].set_value(annotation_file)
             FOV2ROIlinks(annotation_file, self)
 
     def manual_annotation(self, arg=None, roi_selection=None, run=None):
@@ -361,7 +361,6 @@ class Plugin(plugins.Plugin):
             tab.set_top_tab(annotator, 'Manual annotation')
         if roi_selection:
             annotator.set_roi_list(roi_selection)
-        # self.parameters.get('class_names').set_value(list(annotation_runs.keys())[0])
         if roi_selection is None:
             annotator.update_ROI_selection(self.class_names())
         else:
@@ -406,7 +405,6 @@ class Plugin(plugins.Plugin):
                         runs[class_names].append(run[0])
                     else:
                         runs[class_names] = [run[0]]
-                # self.parameters.get('class_names').value = json.loads(class_names)
         return runs
 
     def get_prediction_runs(self):
