@@ -12,7 +12,6 @@ from pydetecdiv.plugins.parameters import Parameters
 from pydetecdiv.settings import get_plugins_dir
 from pydetecdiv.domain import Run
 from pydetecdiv.plugins.gui import Dialog
-from PySide6.QtCore import Signal, QObject
 
 
 
@@ -32,6 +31,9 @@ class Plugin:
         self.parameters = Parameters([])
 
     def register(self):
+        """
+        Abstract method to register the plugin. This method should be implemented by all plugins for them to work.
+        """
         raise NotImplementedError
 
     def addActions(self, menu):
@@ -148,6 +150,9 @@ class PluginList:
         return None
 
     def register_all(self):
+        """
+        Register plugins
+        """
         for plugin in self.plugins_dict.values():
             plugin.register()
 

@@ -203,7 +203,7 @@ class ChoiceParameter(Parameter):
 
 class Parameters:
     """
-    A class to handle plugin parameters
+    A class to handle a list of parameters
     """
 
     def __init__(self, parameters=None):
@@ -213,15 +213,31 @@ class Parameters:
             self.parameter_list = [parameters]
 
     def reset(self, groups=None):
+        """
+        Reset all parameters in groups
+
+        :param groups: the groups to reset
+        """
         for parameter in self.get_groups(groups):
             parameter.reset()
 
     def update(self, groups=None):
-        # for parameter in self.parameter_list:
+        """
+        Updates all parameters in groups
+
+        :param groups: the groups to update
+        """
         for parameter in self.get_groups(groups):
             parameter.update()
 
     def values(self, param_list=None, groups=None):
+        """
+        Returns a dictionary of parameters with name as key and value as value
+
+        :param param_list: the list of parameters, if None, all parameters are returned
+        :param groups: the parameters groups, if None, all parameters are returned
+        :return: a dictionary of all parameters
+        """
         if groups is None:
             if param_list is None:
                 param_list = self.parameter_list
@@ -234,6 +250,16 @@ class Parameters:
         return {param.name: param.value for param in param_list}
 
     def get_groups(self, groups, union=False):
+        """
+        Get parameters from groups. If multiple groups are given, either intersection (default) or union of the
+        parameters sets is returned
+
+        :param groups: the groups
+        :param union: a boolean, if True, a parameter is returned if it belongs to at least one group, if False, it is
+        returned only if it belongs to all groups
+
+        :return: a list of parameters
+        """
         if groups is not None:
             if isinstance(groups, list):
                 groups = set(groups)
@@ -244,16 +270,20 @@ class Parameters:
             return [param for param in self.parameter_list if param.groups.intersection(groups)]
         return self.parameter_list
 
-    def get_value(self, name):
-        return self.values()[name]
-
-    def get(self, name):
-        return self.to_dict()[name]
-
     def __repr__(self):
+        """
+        Return the parameters as a string
+        :rtype: str
+        """
         return f'{self.values()}'
 
     def __getitem__(self, item):
+        """
+        Private method enabling Parameters to behave as if it were a dictionary of Parameter objects indexed by their
+        name
+
+        :rtype: object
+        """
         self_dict = self.to_dict()
         if not isinstance(item, str):
             raise TypeError
@@ -262,9 +292,21 @@ class Parameters:
         raise KeyError
 
     def to_dict(self):
+        """
+        Return the parameters as a dictionary
+
+        :return: a dictionary of all parameters, values are Parameter objects
+        """
         return {param.name: param for param in self.parameter_list}
 
     def json(self, param_list=None, groups=None):
+        """
+        Return dictionary of parameters representing each of them as a json-compatible object
+
+        :param param_list: the list of parameters, if None, all parameters are returned
+        :param groups: the parameters groups, if None, all parameters are returned
+        :return: a dictionary of all parameters in a json-compatible format
+        """
         if groups is None:
             if param_list is None:
                 param_list = self.parameter_list
