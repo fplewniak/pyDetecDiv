@@ -1,9 +1,14 @@
+from PySide6.QtCore import Signal
+
+from pydetecdiv.app import StdoutWaitDialog
 from pydetecdiv.plugins import Dialog
-from pydetecdiv.plugins.gui import ComboBox, set_connections, SpinBox, AdvancedButton, ParametersFormGroupBox, \
-    DoubleSpinBox, TableView, ListView, ListWidget
+from pydetecdiv.plugins.gui import (ComboBox, set_connections, SpinBox, AdvancedButton, ParametersFormGroupBox,
+                                    ListWidget)
 
 
 class PredictionDialog(Dialog):
+    finished = Signal(bool)
+
     def __init__(self, plugin, title=None):
         super().__init__(plugin, title='Predict classes')
 
@@ -33,7 +38,7 @@ class PredictionDialog(Dialog):
         self.arrangeWidgets([self.classifier_selection, self.fov_selection,
                              self.hyper, self.preprocessing, self.button_box])
 
-        set_connections({self.button_box.accepted: self.plugin.predict,
+        set_connections({self.button_box.accepted: self.wait_for_prediction,
                          self.button_box.rejected: self.close,
                          self.weights_choice.changed: self.plugin.select_saved_parameters,
                          })
@@ -43,3 +48,14 @@ class PredictionDialog(Dialog):
 
         self.fit_to_contents()
         self.exec()
+
+    def wait_for_prediction(self):
+        wait_dialog = StdoutWaitDialog('**Starting prediction run**', self)
+        self.finished.connect(wait_dialog.stop_redirection)
+        wait_dialog.wait_for(self.run_prediction)
+        print('finished')
+        self.close()
+
+    def run_prediction(self):
+        self.plugin.predict()
+        self.finished.emit(True)
