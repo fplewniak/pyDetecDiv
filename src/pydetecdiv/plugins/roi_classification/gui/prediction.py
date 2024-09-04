@@ -51,9 +51,9 @@ class PredictionDialog(Dialog):
 
     def wait_for_prediction(self):
         wait_dialog = StdoutWaitDialog('**Starting prediction run**', self)
+        wait_dialog.resize(500, 300)
         self.finished.connect(wait_dialog.stop_redirection)
         wait_dialog.wait_for(self.run_prediction)
-        print('finished')
         self.close()
 
     def run_prediction(self):
