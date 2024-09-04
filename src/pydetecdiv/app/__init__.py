@@ -8,8 +8,9 @@ import sys
 from collections import defaultdict
 from contextlib import contextmanager
 from enum import StrEnum
+import markdown
 
-from PySide6.QtGui import QCursor, QGuiApplication
+from PySide6.QtGui import QCursor, QGuiApplication, QTextCursor
 from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox, QMessageBox, \
     QTextEdit
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal, QObject
@@ -259,7 +260,7 @@ class StdoutWaitDialog(AbstractWaitDialog):
         super().__init__(parent, cancel_msg=cancel_msg, ignore_close_event=ignore_close_event)
         self.log = QTextEdit(self)
         self.log.setReadOnly(True)
-        self.log.append(msg)
+        self.addText(msg)
         layout = QVBoxLayout(self)
         layout.addWidget(self.log)
         self.button_box = QDialogButtonBox(QDialogButtonBox.Close, self)
@@ -276,7 +277,10 @@ class StdoutWaitDialog(AbstractWaitDialog):
         sys.stdout = self.redirector
 
     def addText(self, text):
-        self.log.append(text)
+        html = markdown.markdown(text)
+        self.log.moveCursor(QTextCursor.End)
+        self.log.insertHtml(html)
+        self.log.insertHtml('<br>')
 
     def cancel(self):
         """
