@@ -1,3 +1,4 @@
+from pydetecdiv.app import StdoutWaitDialog
 from pydetecdiv.plugins import Dialog
 
 from pydetecdiv.plugins.gui import ComboBox, AdvancedButton, SpinBox, ParametersFormGroupBox, DoubleSpinBox, \
@@ -56,7 +57,7 @@ class TrainingDialog(Dialog):
 
         self.arrangeWidgets([self.classifier_selection, self.hyper, self.datasets, self.preprocessing, self.button_box])
 
-        set_connections({self.button_box.accepted: self.plugin.train_model,
+        set_connections({self.button_box.accepted: self.wait_for_training,
                          self.button_box.rejected: self.close,
                          self.training_data.changed: lambda _: self.update_datasets(self.training_data),
                          self.validation_data.changed: lambda _: self.update_datasets(self.validation_data),
@@ -77,21 +78,38 @@ class TrainingDialog(Dialog):
         :param changed_dataset: the dataset that has just been changed
         """
         if changed_dataset:
-            self.plugin.parameters['num_test'].set_value(1.0 - (self.plugin.parameters['num_training'].value + self.plugin.parameters['num_validation'].value))
-            total = self.plugin.parameters['num_training'].value + self.plugin.parameters['num_validation'].value + self.plugin.parameters['num_test'].value
+            self.plugin.parameters['num_test'].set_value(
+                1.0 - (self.plugin.parameters['num_training'].value + self.plugin.parameters['num_validation'].value))
+            total = self.plugin.parameters['num_training'].value + self.plugin.parameters['num_validation'].value + \
+                    self.plugin.parameters['num_test'].value
             if total > 1.0:
                 changed_dataset.setValue(changed_dataset.value() - total + 1.0)
         else:
-            self.plugin.parameters['num_test'].set_value(1.0 - self.plugin.parameters['num_training'].value - self.plugin.parameters['num_validation'].value)
+            self.plugin.parameters['num_test'].set_value(
+                1.0 - self.plugin.parameters['num_training'].value - self.plugin.parameters['num_validation'].value)
+
+    def wait_for_training(self):
+        wait_dialog = StdoutWaitDialog('**Training model**', self)
+        wait_dialog.resize(500, 300)
+        self.finished.connect(wait_dialog.stop_redirection)
+        wait_dialog.wait_for(self.run_training)
+        self.close()
+
+    def run_training(self):
+        self.plugin.train_model()
+        self.finished.emit(True)
 
 class FineTuningDialog(Dialog):
     def __init__(self, plugin, title=None):
         super().__init__(plugin, title='Fine tuning classification model')
 
         self.classifier_selection = self.addGroupBox('Classifier')
-        self.weights_choice = self.classifier_selection.addOption('Weights', ComboBox, parameter=self.plugin.parameters['weights'])
-        self.classifier_selection.addOption('Network', ComboBox, parameter=self.plugin.parameters['model'], enabled=False)
-        self.classifier_selection.addOption('Classes', ComboBox, parameter=self.plugin.parameters['class_names'], enabled=False)
+        self.weights_choice = self.classifier_selection.addOption('Weights', ComboBox,
+                                                                  parameter=self.plugin.parameters['weights'])
+        self.classifier_selection.addOption('Network', ComboBox, parameter=self.plugin.parameters['model'],
+                                            enabled=False)
+        self.classifier_selection.addOption('Classes', ComboBox, parameter=self.plugin.parameters['class_names'],
+                                            enabled=False)
 
         self.hyper = self.addGroupBox('Hyper parameters')
         self.hyper.addOption('Epochs:', SpinBox, adaptive=True, parameter=self.plugin.parameters['epochs'])
@@ -120,7 +138,8 @@ class FineTuningDialog(Dialog):
         self.training_data = self.datasets.addOption('Training dataset:', DoubleSpinBox,
                                                      parameter=self.plugin.parameters['num_training'], enabled=False)
         self.validation_data = self.datasets.addOption('Validation dataset:', DoubleSpinBox,
-                                                       parameter=self.plugin.parameters['num_validation'], enabled=False)
+                                                       parameter=self.plugin.parameters['num_validation'],
+                                                       enabled=False)
         self.test_data = self.datasets.addOption('Test dataset:', DoubleSpinBox, enabled=False,
                                                  parameter=self.plugin.parameters['num_test'])
         self.datasets.addOption('Random seed:', Label, parameter=self.plugin.parameters['dataset_seed'])
@@ -129,24 +148,38 @@ class FineTuningDialog(Dialog):
         self.channels = self.preprocessing.addOption(None, AdvancedButton, text='Preprocessing')
         self.channels.linkGroupBox(self.preprocessing.addOption(None, ParametersFormGroupBox, show=False))
 
-        self.channels.group_box.addOption('Red', ComboBox, parameter=self.plugin.parameters['red_channel'], enabled=False)
-        self.channels.group_box.addOption('Green', ComboBox, parameter=self.plugin.parameters['green_channel'], enabled=False)
-        self.channels.group_box.addOption('Blue', ComboBox, parameter=self.plugin.parameters['blue_channel'], enabled=False)
+        self.channels.group_box.addOption('Red', ComboBox, parameter=self.plugin.parameters['red_channel'],
+                                          enabled=False)
+        self.channels.group_box.addOption('Green', ComboBox, parameter=self.plugin.parameters['green_channel'],
+                                          enabled=False)
+        self.channels.group_box.addOption('Blue', ComboBox, parameter=self.plugin.parameters['blue_channel'],
+                                          enabled=False)
 
         self.button_box = self.addButtonBox()
 
         self.arrangeWidgets([self.classifier_selection, self.hyper, self.datasets, self.preprocessing, self.button_box])
 
-        set_connections({self.button_box.accepted: self.plugin.train_model,
+        set_connections({self.button_box.accepted: self.wait_for_finetuning,
                          self.button_box.rejected: self.close,
                          self.weights_choice.changed: self.plugin.select_saved_parameters,
                          })
-        #
+
         self.plugin.update_parameters(groups='finetune')
         self.plugin.select_saved_parameters(self.plugin.parameters['weights'].key)
 
         self.fit_to_contents()
         self.exec()
+
+    def wait_for_finetuning(self):
+        wait_dialog = StdoutWaitDialog('**Fine-tuning model**', self)
+        wait_dialog.resize(500, 300)
+        self.finished.connect(wait_dialog.stop_redirection)
+        wait_dialog.wait_for(self.run_finetuning)
+        self.close()
+
+    def run_finetuning(self):
+        self.plugin.train_model()
+        self.finished.emit(True)
 
 class ImportClassifierDialog(Dialog):
     def __init__(self, plugin, title=None):
@@ -159,9 +192,20 @@ class ImportClassifierDialog(Dialog):
 
         self.arrangeWidgets([classifier_selection, button_box])
 
-        set_connections({button_box.accepted: self.plugin.import_classifier,
+        set_connections({button_box.accepted: self.wait_for_import_classifier,
                          button_box.rejected: self.close,
                          })
 
         self.fit_to_contents()
         self.exec()
+
+    def wait_for_import_classifier(self):
+        wait_dialog = StdoutWaitDialog('**Importing classifier**', self)
+        wait_dialog.resize(500, 100)
+        self.finished.connect(wait_dialog.stop_redirection)
+        wait_dialog.wait_for(self.run_import_classifier)
+        self.close()
+
+    def run_import_classifier(self):
+        self.plugin.import_classifier()
+        self.finished.emit(True)
