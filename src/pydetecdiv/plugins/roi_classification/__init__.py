@@ -429,12 +429,13 @@ class Plugin(plugins.Plugin):
         return runs
 
     def run_prediction(self):
-        print('Open prediction form')
         PredictionDialog(self)
 
     def run_training(self):
         if len(self.get_annotated_rois()) == 0:
-            print('No previous annotation run')
+            QMessageBox.critical(PyDetecDiv.main_window, 'No annotated ROI',
+                                 'You should provide ground truth annotations for ROIs before training a model. '
+                                 + 'Please, annotate ROIs or import annotations from a csv file.')
         else:
             TrainingDialog(self)
 
@@ -442,7 +443,9 @@ class Plugin(plugins.Plugin):
         self.update_parameters(groups='finetune')
         self.update_model_weights()
         if len(self.parameters['weights'].values) == 0:
-            print('No previous training run to fine tune')
+            QMessageBox.critical(PyDetecDiv.main_window, 'No classifier to refine',
+                                 'You need a trained model for fine-tuning. '
+                                 + 'Please, train a model first or import a classifier from another project.')
         else:
             FineTuningDialog(self)
 
@@ -573,12 +576,19 @@ class Plugin(plugins.Plugin):
             db.setDatabaseName(project.repository.name)
             db.open()
             if run is None:
-                query = QSqlQuery(
-                    f"SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
-                    f"WHERE run.id_=roi_classification.run "
-                    f"AND (run.command='annotate_rois' OR run.command='import_annotated_rois') "
-                    f"AND run.parameters ->> '$.class_names'=json('{self.class_names()}') ;",
-                    db=db)
+                if self.class_names(as_string=False):
+                    query = QSqlQuery(
+                        f"SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
+                        f"WHERE run.id_=roi_classification.run "
+                        f"AND (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+                        f"AND run.parameters ->> '$.class_names'=json('{self.class_names()}') ;",
+                        db=db)
+                else:
+                    query = QSqlQuery(
+                        f"SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
+                        f"WHERE run.id_=roi_classification.run "
+                        f"AND (run.command='annotate_rois' OR run.command='import_annotated_rois') ",
+                        db=db)
             else:
                 if isinstance(run, int):
                     run = project.get_object('Run', run)
@@ -700,12 +710,6 @@ class Plugin(plugins.Plugin):
             if k not in weights:
                 weights[k] = 0.00
         return weights
-
-    def create_model(self):
-        """
-        Launch model creation.
-        """
-        print('Not implemented')
 
     def lr_decay(self, epoch, lr):
         """
@@ -1016,7 +1020,7 @@ class Plugin(plugins.Plugin):
                         os.path.join(origin_path, run.parameters['last_weights'])], user_path)
             new_run = Run(project=project, **(run.record(no_id=True)))
 
-        print('Classifier imported')
+        print(f'Classifier imported from project {run.parameters["project"]}')
 
     def draw_annotated_rois(self):
         """
