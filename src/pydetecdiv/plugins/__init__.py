@@ -14,7 +14,6 @@ from pydetecdiv.domain import Run
 from pydetecdiv.plugins.gui import Dialog
 
 
-
 class Plugin:
     """
     Generic class defining common Plugin attributes and methods
@@ -27,7 +26,6 @@ class Plugin:
 
     def __init__(self):
         self.gui = None
-        # self.parameter_widgets = ParameterWidgets()
         self.parameters = Parameters([])
 
     def register(self):
@@ -86,19 +84,6 @@ class Plugin:
         run = Run(project=project, **record)
         # project.commit()
         return run
-
-
-# def get_plugins_dir():
-#     """
-# Get the user directory where plugins are installed. The directory is created if it does not exist
-# :return: the user plugin path
-# :rtype: Path
-# """
-#     plugins_path = os.path.join(pydetecdiv.app.get_appdata_dir(), 'plugins')
-#     if not os.path.exists(plugins_path):
-#         os.mkdir(plugins_path)
-#     return [plugins_path]
-#     # return [pydetecdiv.plugins.__path__[0], plugins_path]
 
 
 class PluginList:
