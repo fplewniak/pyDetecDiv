@@ -1,14 +1,13 @@
 """
 Module defining widgets and other utilities for creating windows/forms with a minimum of code
 """
-import json
+from typing import Any, Self, Type
 
 from PySide6.QtCore import QStringListModel, QItemSelection, QItemSelectionModel
-from PySide6.QtGui import QIcon, QAction, Qt
-from PySide6.QtSql import QSqlQueryModel
+from PySide6.QtGui import QIcon, QAction
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox, \
     QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView, QAbstractItemView, \
-    QPushButton, QApplication, QRadioButton, QListView, QMenu, QDataWidgetMapper, QListWidget, QListWidgetItem
+    QPushButton, QApplication, QRadioButton, QListView, QMenu, QDataWidgetMapper, QWidget, QLayout
 
 
 class StyleSheets:
@@ -37,12 +36,12 @@ class GroupBox(QGroupBox):
     an extension of QGroupBox class
     """
 
-    def __init__(self, parent, title=None):
+    def __init__(self, parent: QWidget, title: str = None) -> None:
         super().__init__(parent)
         if title is not None:
             self.setTitle(title)
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
-        self.layout = self.layout()
+        self.layout: QLayout = self.layout()
 
     @property
     def plugin(self):
@@ -51,13 +50,20 @@ class GroupBox(QGroupBox):
 
         :return: the plugin module or None if it was not found
         """
-        parent = self.parent()
+        parent: QWidget = self.parent()
         while parent:
             if hasattr(parent, 'plugin'):
                 return parent.plugin
         return None
 
-    def addSubBox(self, widget, **kwargs):
+    def addSubBox(self, widget: Type[Self], **kwargs: dict[str, Any]) -> Self:
+        """
+        Adds a sub-box to the current GroupBox
+
+        :param widget: the class of the GroupBox to add as a sub box
+        :param kwargs: keywords arguments to pass to the sub box
+        :return: the sub box object
+        """
         sub_box = widget(self, **kwargs)
         self.layout.addWidget(sub_box)
         return sub_box
@@ -68,14 +74,14 @@ class ParametersFormGroupBox(GroupBox):
     an extension of GroupBox class to handle Forms
     """
 
-    def __init__(self, parent, title=None, show=True):
+    def __init__(self, parent: QWidget, title: str = None, show: bool = True) -> None:
         super().__init__(parent, title)
-        self.layout = QFormLayout(self)
+        self.layout: QLayout = QFormLayout(self)
         self.setLayout(self.layout)
         self.setVisible(show)
 
-    def addSubBox(self, widget, **kwargs):
-        sub_box = widget(self, **kwargs)
+    def addSubBox(self, widget: Type[GroupBox], **kwargs: dict[str, Any]) -> GroupBox:
+        sub_box: GroupBox = widget(self, **kwargs)
         self.layout.addRow(sub_box)
         return sub_box
 
