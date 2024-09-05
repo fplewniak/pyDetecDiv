@@ -426,14 +426,10 @@ class Parameters:
         :return: a dictionary of all parameters
         """
         if groups is None:
-            if param_list is None:
-                param_list = self.parameter_list
+            param_list = param_list or self.parameter_list
         else:
             group_params = self.get_groups(groups)
-            if param_list is None:
-                param_list = group_params
-            else:
-                param_list = list(set(param_list).intersection(set(group_params)))
+            param_list = [param for param in (param_list or group_params) if param in group_params]
         return {param.name: param.value for param in param_list}
 
     def get_groups(self, groups: list[str] | str, union: bool = False) -> list[Parameter]:
@@ -447,15 +443,13 @@ class Parameters:
 
         :return: a list of parameters
         """
-        if groups is not None:
-            if isinstance(groups, list):
-                groups = set(groups)
-            if isinstance(groups, str):
-                groups = {groups}
-            if union:
-                return [param for param in self.parameter_list if param.groups.union(groups)]
-            return [param for param in self.parameter_list if param.groups.intersection(groups)]
-        return self.parameter_list
+        if groups is None:
+            return self.parameter_list
+        elif isinstance(groups, str):
+            groups = {groups}
+        if union:
+            return [param for param in self.parameter_list if param.groups.union(groups)]
+        return [param for param in self.parameter_list if param.groups.intersection(groups)]
 
     def __repr__(self) -> str:
         """
