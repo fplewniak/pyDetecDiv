@@ -20,11 +20,11 @@ class Parameter:
         self.name: str = name
         self.label: str = label
         self._default: Any = default
-        self.validator:Callable[[Any], bool] = validator
-        self.updater:Callable = updater
-        self.updater_kwargs:dict[str, Any] = kwargs
+        self.validator: Callable[[Any], bool] = validator
+        self.updater: Callable = updater
+        self.updater_kwargs: dict[str, Any] = kwargs
         self.groups: set[str] = set() if groups is None else groups
-        self.model:QAbstractItemModel = None
+        self.model: QAbstractItemModel = None
 
     def kwargs(self) -> dict[str, Any]:
         """
