@@ -14,6 +14,7 @@ class Parameter:
     """
     Generic class defining the general behaviour of parameters
     """
+
     def __init__(self, name: str, label: str = None, default: Any = None, validator: Callable[[Any], bool] = None,
                  groups: set[str] = None, updater: Callable = None, **kwargs: dict[str, Any]) -> None:
         super().__init__()
@@ -118,6 +119,7 @@ class ItemParameter(Parameter):
     """
     Class representing a parameter holding any kind of single value parameter (item).
     """
+
     def __init__(self, name: str, label: str = None, default: Any = None, validator: Callable[..., bool] = None,
                  groups: set[str] = None, updater: Callable = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
@@ -130,6 +132,7 @@ class NumParameter(ItemParameter):
     """
     Class representing a parameter holding a number.
     """
+
     def __init__(self, name: str, label: str = None, default: int | float = None, minimum: int | float = None,
                  maximum: int | float = None, validator: Callable[[int | float], bool] = None,
                  groups: set[str] = None, updater: Callable = None, **kwargs: dict[str, Any]) -> None:
@@ -198,6 +201,7 @@ class IntParameter(NumParameter):
     """
     Class representing a parameter holding a integer number.
     """
+
     def __init__(self, name: str, label: str = None, default: int = 1, validator: Callable[[int], bool] = None,
                  minimum: int = 1, maximum: int = 4096, groups: set[str] = None, updater: Callable = None,
                  **kwargs: dict[str, Any]) -> None:
@@ -220,6 +224,7 @@ class FloatParameter(NumParameter):
     """
     Class representing a parameter holding a float number.
     """
+
     def __init__(self, name: str, label: str = None, default: float = 0.0, validator: Callable[[float], bool] = None,
                  minimum: float = 0.0, maximum: float = 1.0, groups: set[str] = None, updater: Callable = None,
                  **kwargs: dict[str, Any]) -> None:
@@ -242,6 +247,7 @@ class StringParameter(ItemParameter):
     """
     Class representing a parameter holding text.
     """
+
     def __init__(self, name: str, label: str = None, default: str = '', validator: Callable[[str], bool] = None,
                  groups: set[str] = None, updater: Callable = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
@@ -253,6 +259,7 @@ class CheckParameter(ItemParameter):
     Class representing a parameter whose value is either True (checked) or False (unchecked). Such parameters can be
     linked to CheckBox arranged in the same GroupBox and set to be mutually exclusive.
     """
+
     def __init__(self, name: str, label: str = None, exclusive: bool = True,
                  default: str | int | float | bool | Callable = None, validator: Callable[[bool], bool] = None,
                  groups: set[str] = None, updater: Callable[..., None] = None, **kwargs: dict[str, Any]) -> None:
@@ -371,7 +378,7 @@ class ChoiceParameter(Parameter):
             if isinstance(value, (list, dict)):
                 value = json.dumps(value)
             self.model.set_value(value)
-            
+
     def set_items(self, items: dict[str, object]) -> None:
         """
         Sets the choice items of the ChoiceParameter object. It the object contained items before, these are cleared and
@@ -459,7 +466,7 @@ class Parameters:
         """
         if groups is None:
             return self.parameter_list
-        elif isinstance(groups, str):
+        if isinstance(groups, str):
             groups = {groups}
         if union:
             return [param for param in self.parameter_list if param.groups.union(groups)]
