@@ -1,9 +1,8 @@
 from PySide6.QtCore import Signal
 
 from pydetecdiv.app import StdoutWaitDialog
-from pydetecdiv.plugins import Dialog
 from pydetecdiv.plugins.gui import (ComboBox, set_connections, SpinBox, AdvancedButton, ParametersFormGroupBox,
-                                    ListWidget)
+                                    ListWidget, Dialog)
 
 
 class PredictionDialog(Dialog):
