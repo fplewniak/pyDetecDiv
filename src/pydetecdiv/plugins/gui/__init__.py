@@ -3,11 +3,15 @@ Module defining widgets and other utilities for creating windows/forms with a mi
 """
 from typing import Any, Self, Type
 
-from PySide6.QtCore import QStringListModel, QItemSelection, QItemSelectionModel
+from PySide6.QtCore import QStringListModel, QItemSelection, QItemSelectionModel, QAbstractItemModel
 from PySide6.QtGui import QIcon, QAction
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox, \
     QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView, QAbstractItemView, \
     QPushButton, QApplication, QRadioButton, QListView, QMenu, QDataWidgetMapper, QWidget, QLayout
+
+from pydetecdiv.app.models import GenericModel
+import pydetecdiv.plugins as plugins
+from pydetecdiv.plugins.parameters import Parameter
 
 
 class StyleSheets:
@@ -44,7 +48,7 @@ class GroupBox(QGroupBox):
         self.layout: QLayout = self.layout()
 
     @property
-    def plugin(self):
+    def plugin(self) -> plugins.Plugin | None:
         """
         Property returning the plugin from the top parent of the current widget
 
@@ -81,23 +85,33 @@ class ParametersFormGroupBox(GroupBox):
         self.setVisible(show)
 
     def addSubBox(self, widget: Type[GroupBox], **kwargs: dict[str, Any]) -> GroupBox:
+        """
+        Adds a sub-box to the current ParametersFormGroupBox
+
+        :param widget: the class of the GroupBox to add as a sub box
+        :param kwargs: keywords arguments to pass to the sub box
+        :return: the sub box object
+        """
         sub_box: GroupBox = widget(self, **kwargs)
         self.layout.addRow(sub_box)
         return sub_box
 
-    def addOption(self, label=None, widget=None, parameter=None, enabled=True, **kwargs):
+    def addOption(self, label: str = None, widget: Type[QWidget] = None, parameter: Parameter = None,
+                  enabled: bool = True, **kwargs: dict[str, Any]) -> QWidget:
         """
         add an option to the current Form
 
+        :param enabled: whether this option is enabled
+        :param parameter: the Parameter attached to the widget
         :param label: the label for the option
         :param widget: the widget to specify the option value, etc
         :param kwargs: extra args passed to the widget
         :return: the option widget
         """
         if issubclass(widget, (QPushButton, QDialogButtonBox, QGroupBox)):
-            option = widget(self, **kwargs)
+            option: QWidget = widget(parent=self, **kwargs)
         else:
-            option = widget(self, parameter.model, **parameter.kwargs(), **kwargs)
+            option: QWidget = widget(parent=self, model=parameter.model, **parameter.kwargs(), **kwargs)
 
         option.setEnabled(enabled)
 
@@ -107,7 +121,7 @@ class ParametersFormGroupBox(GroupBox):
             self.layout.addRow(QLabel(label), option)
         return option
 
-    def setRowVisible(self, index, on=True):
+    def setRowVisible(self, index: int, on: bool = True) -> None:
         """
         set the row defined by index or widget visible or invisible in the form layout
 
@@ -119,18 +133,19 @@ class ParametersFormGroupBox(GroupBox):
 
 class ComboBox(QComboBox):
     """
-    an extension of the QComboBox class
+    an extension of the QComboBox class with a custom model/view architecture
     """
 
-    def __init__(self, parent, model=None, editable=False, enabled=True, **kwargs):
+    def __init__(self, parent: QWidget, model: GenericModel = None, editable: bool = False,
+                 enabled: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         if model is not None and model.rows() is not None:
             self.addItemDict(model.rows())
             self.setModel(model)
             self.setModelColumn(0)
+            self.currentIndexChanged.connect(self.model().set_selection)
+            self.model().selection_changed.connect(self.setCurrentIndex)
         self.setEditable(editable)
-        self.currentIndexChanged.connect(self.model().set_selection)
-        self.model().selection_changed.connect(self.setCurrentIndex)
         self.setEnabled(enabled)
 
     def setCurrentIndex(self, index):

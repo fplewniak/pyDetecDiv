@@ -3,16 +3,19 @@ Classes for handling models that are used to store Parameters data and ensure th
 """
 import json
 from enum import IntEnum
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 from PySide6.QtCore import QModelIndex, Qt, QStringListModel, Signal
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 
+GenericModel = TypeVar('GenericModel')
 
-class ItemModel(QStandardItemModel):
+
+class ItemModel(QStandardItemModel, Generic[GenericModel]):
     """
     Class for all Item models, containing one and only one value of data
     """
+
     def __init__(self, data: Any = None) -> None:
         super().__init__(1, 1)
         item: QStandardItem = QStandardItem()
@@ -54,10 +57,11 @@ class ItemModel(QStandardItemModel):
         return 1
 
 
-class StringList(QStringListModel):
+class StringList(QStringListModel,  Generic[GenericModel]):
     """
  Class for string list model
     """
+
     def __init__(self, data: list[str] = None) -> None:
         super().__init__()
         self._data: list[str] = data if data else []
@@ -124,7 +128,7 @@ class StringList(QStringListModel):
             self.dataChanged.emit(self.index(row, 0), self.index(row, 0), [Qt.DisplayRole])
 
 
-class DictItemModel(QStandardItemModel):
+class DictItemModel(QStandardItemModel,  Generic[GenericModel]):
     """
     Class for Dictionary-based item model. This is used by ChoiceParameter class to hold all choices and the current
     selection

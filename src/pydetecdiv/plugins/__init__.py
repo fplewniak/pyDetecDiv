@@ -11,7 +11,6 @@ import pydetecdiv
 from pydetecdiv.plugins.parameters import Parameters
 from pydetecdiv.settings import get_plugins_dir
 from pydetecdiv.domain import Run
-from pydetecdiv.plugins.gui import Dialog
 
 
 class Plugin:

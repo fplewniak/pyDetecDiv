@@ -294,7 +294,7 @@ class StdoutWaitDialog(AbstractWaitDialog):
         sys.stdout = sys.__stdout__
         super().close_window()
 
-    def stop_redirection(self):
+    def stop_redirection(self, signal):
         if self.cancel_msg:
             self.button_box.button(QDialogButtonBox.Cancel).setEnabled(False)
         self.button_box.button(QDialogButtonBox.Close).setEnabled(True)
