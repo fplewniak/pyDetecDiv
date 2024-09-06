@@ -23,14 +23,11 @@ from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
 import tensorflow as tf
 
-from sklearn.metrics import ConfusionMatrixDisplay
-
 from pydetecdiv import plugins, copy_files
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir, project_list
 from pydetecdiv.settings import get_plugins_dir
 from pydetecdiv.domain import Image, Dataset, ImgDType, Run
 from pydetecdiv.settings import get_config_value
-from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer
 
 from . import models
 from .gui.ImportAnnotatedROIs import FOV2ROIlinks
@@ -863,21 +860,11 @@ class Plugin(plugins.Plugin):
             best_predictions = [label for seq in model.predict(test_dataset).argmax(axis=2) for label in seq]
             ground_truth = [label for seq in ground_truth for label in seq]
 
-        tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {module.__name__}')
-        tab.project_name = PyDetecDiv.project_name
-        history_plot = plot_history(history, evaluation)
-        tab.addTab(history_plot, 'Training')
-        tab.setCurrentWidget(history_plot)
-
-        confusion_matrix_plot = plot_confusion_matrix(ground_truth, predictions, self.parameters['class_names'].value)
-        tab.addTab(confusion_matrix_plot, 'Confusion matrix (last epoch)')
-
-        confusion_matrix_plot = plot_confusion_matrix(ground_truth, best_predictions,
-                                                      self.parameters['class_names'].value)
-        tab.addTab(confusion_matrix_plot, 'Confusion matrix (best checkpoint)')
-
         if self.parameters['weights'].value is not None:
             self.update_model_weights()
+
+        return (module.__name__, self.parameters['class_names'].value, history, evaluation, ground_truth, predictions,
+                best_predictions)
 
     def save_training_run(self, finetune=False):
         """
@@ -1042,50 +1029,6 @@ class Plugin(plugins.Plugin):
             if roi.name in rec_items:
                 annotation = self.get_annotation(roi)[PyDetecDiv.main_window.active_subwindow.viewer.T]
                 rec_items[roi.name].setBrush(colours[annotation])
-
-
-def plot_history(history, evaluation):
-    """
-    Plots metrics history.
-
-    :param history: metrics history to plot
-    :param evaluation: metrics from model evaluation on test dataset, shown as horizontal dashed lines on the plots
-    """
-    plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=2, rows=1)
-    axs = plot_viewer.axes
-    axs[0].plot(history.history['accuracy'])
-    axs[0].plot(history.history['val_accuracy'])
-    axs[0].axhline(evaluation['accuracy'], color='red', linestyle='--')
-    axs[0].set_ylabel('accuracy')
-    axs[0].set_xlabel('epoch')
-    axs[0].legend(['train', 'val'], loc='lower right')
-    axs[1].plot(history.history['loss'])
-    axs[1].plot(history.history['val_loss'])
-    axs[1].axhline(evaluation['loss'], color='red', linestyle='--')
-    axs[1].legend(['train', 'val'], loc='upper right')
-    axs[1].set_ylabel('loss')
-
-    plot_viewer.show()
-    return plot_viewer
-
-
-def plot_confusion_matrix(ground_truth, predictions, class_names):
-    """
-    Plot the confusion matrix normalized i) by rows (recall in diagonals) and ii) by columns (precision in diagonals)
-
-    :param ground_truth: the ground truth index values
-    :param predictions: the predicted index values
-    :param class_names: the class names
-    :return: the plot viewer where the confusion matrix is plotted
-    """
-    plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=2, rows=1)
-    plot_viewer.axes[0].set_title('Normalized by row')
-    ConfusionMatrixDisplay.from_predictions(ground_truth, predictions, labels=list(range(len(class_names))),
-                                            display_labels=class_names, normalize='true', ax=plot_viewer.axes[0])
-    plot_viewer.axes[1].set_title('Normalized by column')
-    ConfusionMatrixDisplay.from_predictions(ground_truth, predictions, labels=list(range(len(class_names))),
-                                            display_labels=class_names, normalize='pred', ax=plot_viewer.axes[1])
-    return plot_viewer
 
 
 def get_lr_metric(optimizer):
