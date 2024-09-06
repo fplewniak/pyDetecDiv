@@ -358,6 +358,20 @@ class ChoiceParameter(Parameter):
         """
         return self.model.value()
 
+    def set_value(self, value: Any) -> None:
+        """
+        Sets the current value for the parameter. The model's value setter is called only if the new value is different
+        to avoid emit the changed signal without any reason
+
+        :param value: the new parameter selected key, pointing to the new value
+        """
+        if value is None:
+            value = self.keys[0]
+        if value != self.model.key() and self.validate(value):
+            if isinstance(value, (list, dict)):
+                value = json.dumps(value)
+            self.model.set_value(value)
+            
     def set_items(self, items: dict[str, object]) -> None:
         """
         Sets the choice items of the ChoiceParameter object. It the object contained items before, these are cleared and
