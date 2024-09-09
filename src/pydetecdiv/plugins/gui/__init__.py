@@ -1,15 +1,15 @@
 """
 Module defining widgets and other utilities for creating windows/forms with a minimum of code
 """
-from typing import Any, Self, Type
+from typing import Any, Self, Type, Union
 
-from PySide6.QtCore import QStringListModel, QItemSelection, QItemSelectionModel, QAbstractItemModel, Signal, Slot
-from PySide6.QtGui import QIcon, QAction
+from PySide6.QtCore import QStringListModel, QItemSelection, QItemSelectionModel, Signal, Slot, QModelIndex
+from PySide6.QtGui import QIcon, QAction, QContextMenuEvent
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox, \
     QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView, QAbstractItemView, \
-    QPushButton, QApplication, QRadioButton, QListView, QMenu, QDataWidgetMapper, QWidget, QLayout, QAbstractButton
+    QPushButton, QApplication, QRadioButton, QListView, QMenu, QDataWidgetMapper, QWidget, QLayout
 
-from pydetecdiv.app.models import GenericModel
+from pydetecdiv.app.models import GenericModel, ItemModel, DictItemModel, StringList
 from pydetecdiv import plugins
 from pydetecdiv.plugins.parameters import Parameter
 
@@ -33,6 +33,9 @@ class StyleSheets:
                     subcontrol-position: top center;
                 }
                 """
+
+
+StandardButtonCombination = Union["QDialogButtonBox.StandardButton", ...]
 
 
 class GroupBox(QGroupBox):
@@ -148,14 +151,15 @@ class ComboBox(QComboBox):
         self.setEditable(editable)
         self.setEnabled(enabled)
 
-    def setCurrentIndex(self, index):
+    def setCurrentIndex(self, index: int) -> None:
         """
+        sets the currently selected index
 
-        :param index:
+        :param index: the index to select
         """
         super().setCurrentIndex(index)
 
-    def addItemDict(self, options):
+    def addItemDict(self, options: dict[str, Any]) -> None:
         """
         add items to the ComboBox as a dictionary
 
@@ -164,64 +168,68 @@ class ComboBox(QComboBox):
         for label, data in options.items():
             self.addItem(label, userData=data)
 
-    def setItemsDict(self, options):
+    def setItemsDict(self, options: dict[str, Any]) -> None:
         """
+        Defines items from a dictionary
 
-        :param options:
+        :param options: the dictionary representing the options
         """
         self.clear()
         self.addItemDict(options)
 
-    def setText(self, text):
+    def setText(self, text: str) -> None:
         """
+        sets the current text if text is already an option, otherwise, it adds a new item
 
-        :param text:
+        :param text: the text to select or add
         """
         if self.findText(text) != -1:
             self.setCurrentText(text)
         else:
             self.addItem(text)
 
-    def text(self):
+    def text(self) -> str:
         """
+        returns the currently selected text
 
-        :return:
+        :return: the currently selected text
         """
         return self.currentText()
 
     @property
-    def selected(self):
+    def selected(self) -> Signal:
         """
         return property telling whether the current index of this ComboBox has changed
 
-        :return: boolean indication whether the current index has changed (i.e. new selection)
+        :return: Signal emitted when the current index has changed (i.e. new selection)
         """
         return self.currentIndexChanged
 
     @property
-    def changed(self):
+    def changed(self) -> Signal:
         """
         return property telling whether the current text of this ComboBox has changed. This overwrites the Pyside
         equivalent method in order to have the same method name for all widgets
 
-        :return: boolean indication whether the current text has changed (i.e. new selection)
+        :return: Signal emitted when the current text has changed (i.e. new selection)
         """
         return self.currentTextChanged
 
-    def value(self):
+    def value(self) -> str | Any:
         """
         method to standardize the way widget values from a form are returned
 
-        :return: the current data (if it can be json serialized) or the current text of the selected item
+        :return: the current data if it can be json serialized or the current text of the selected item if it can't
         """
         if self.currentData() is not None:
             return self.currentData()
         return self.currentText()
 
-    def setValue(self, value):
+    def setValue(self, value: str) -> None:
         """
+        Defines the currently selected option of the ComboBox
 
-        :param value:
+        :param value: the currently selected text
         """
         self.setCurrentText(value)
 
@@ -231,7 +239,8 @@ class ListView(QListView):
     an extension of the QComboBox class
     """
 
-    def __init__(self, parent, model=None, height=None, multiselection=False, enabled=True, **kwargs):
+    def __init__(self, parent: QWidget, model: StringList = None, height: int = None, multiselection: bool = False,
+                 enabled: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         if multiselection:
             self.setSelectionMode(QAbstractItemView.MultiSelection)
@@ -242,7 +251,7 @@ class ListView(QListView):
             self.addItemDict(model.items())
         self.setEnabled(enabled)
 
-    def addItemDict(self, options):
+    def addItemDict(self, options: dict[str, Any]) -> None:
         """
         add items to the ComboBox as a dictionary
 
@@ -252,7 +261,7 @@ class ListView(QListView):
         self.model().setStringList(list(options.keys()))
 
     @property
-    def changed(self):
+    def changed(self) -> Signal:
         """
         return property telling whether the current text of this ComboBox has changed. This overwrites the Pyside
         equivalent method in order to have the same method name for all widgets
@@ -261,7 +270,7 @@ class ListView(QListView):
         """
         return self.selectionModel().currentChanged
 
-    def selection(self):
+    def selection(self) -> list[Any]:
         """
         method to standardize the way widget values from a form are returned
 
@@ -277,7 +286,7 @@ class ListView(QListView):
         # could use setSelectionModel(selectionModel) with selectionModel determined from parameter value
         pass
 
-    def contextMenuEvent(self, e):
+    def contextMenuEvent(self, e: QContextMenuEvent) -> None:
         """
         Definition of a context menu to clear or toggle selection of sources in list model, remove selected sources from
         the list model, clear the source list model
@@ -302,13 +311,13 @@ class ListView(QListView):
             clear_list.triggered.connect(self.clear_list)
             context.exec(e.globalPos())
 
-    def unselect(self):
+    def unselect(self) -> None:
         """
         Clear selection model
         """
         self.selectionModel().clear()
 
-    def toggle(self):
+    def toggle(self) -> None:
         """
         Toggle selection model, selected sources are deselected and unselected ones are selected
         """
@@ -318,14 +327,14 @@ class ListView(QListView):
         toggle_selection.select(top_left, bottom_right)
         self.selectionModel().select(toggle_selection, QItemSelectionModel.Toggle)
 
-    def remove_items(self):
+    def remove_items(self) -> None:
         """
         Delete selected sources
         """
         for idx in sorted(self.selectedIndexes(), key=lambda x: x.row(), reverse=True):
             self.model().removeRow(idx.row())
 
-    def clear_list(self):
+    def clear_list(self) -> None:
         """
         Clear the source list
         """
@@ -334,10 +343,12 @@ class ListView(QListView):
 
 class ListWidget(QListView):
     """
-
+    An extension of the QListView providing consistency with other custom widgets.
     """
 
-    def __init__(self, parent, model=None, height=None, editable=False, multiselection=False, enabled=True, **kwargs):
+    def __init__(self, parent: QWidget, model: DictItemModel = None, height: int = None, editable: bool = False,
+                 multiselection: bool = False, enabled: bool = True,
+                 **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         # self.setSelectionModel(QItemSelectionModel())
         if multiselection:
@@ -350,27 +361,29 @@ class ListWidget(QListView):
         # self.currentIndexChanged.connect(self.model().set_selection)
         self.selectionModel().currentChanged.connect(self.setCurrentIndex)
 
-    def setCurrentIndex(self, index):
+    def setCurrentIndex(self, index: QModelIndex) -> None:
         """
+        Sets the current index (current selection)
 
-        :param index:
+        :param index: the index for the current selection
         """
         self.model().set_selection(index.row())
 
-    def addItemDict(self, options):
+    def addItemDict(self, options: dict[str, Any]) -> Any:
         """
-        add items to the ComboBox as a dictionary
+        add items to the ListWidget as a dictionary
 
         :param options: dictionary of options specifying labels and corresponding user data {label: userData, ...}
         """
         for text, data in options.items():
             self.addItem(text, userData=data)
 
-    def addItem(self, text, userData=None):
+    def addItem(self, text: str, userData: Any = None) -> None:
         """
+        Adds an item to the list
 
-        :param text:
-        :param userData:
+        :param text: the text to display in the List view
+        :param userData: the associated data (can be any type of object)
         """
         self.model().add_item({text: userData})
 
@@ -380,7 +393,8 @@ class LineEdit(QLineEdit):
     an extension of QLineEdit class
     """
 
-    def __init__(self, parent, model=None, editable=True, enabled=True, **kwargs):
+    def __init__(self, parent: QWidget, model: ItemModel = None, editable: bool = True, enabled: bool = True,
+                 **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         self.setEditable(editable)
         self.mapper = QDataWidgetMapper(self)
@@ -396,20 +410,27 @@ class LineEdit(QLineEdit):
         return self.textChanged
 
     @property
-    def edited(self):
+    def edited(self) -> Signal:
+        """
+        returns the Signal that editing is finished
+
+        :return: the self.editingFinished signal
+        """
         return self.editingFinished
 
-    def setEditable(self, editable=True):
+    def setEditable(self, editable: bool = True) -> None:
         """
+        Sets the property editable for the LineEdit widget
 
-        :param editable:
+        :param editable: True if the LineEdit can be edited, False otherwise
         """
         self.setReadOnly(not editable)
 
-    def setModel(self, model):
+    def setModel(self, model: ItemModel) -> None:
         """
+        Sets the model for the LineEdit widget
 
-        :param model:
+        :param model: the item model containing a str value
         """
         self.mapper.setModel(model)
         self.mapper.addMapping(self, 0, b"text")
@@ -421,7 +442,7 @@ class Label(QLabel):
     an extension of QLabel class
     """
 
-    def __init__(self, parent, model=None, **kwargs):
+    def __init__(self, parent: QWidget, model: ItemModel = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         self.mapper = QDataWidgetMapper(self)
         self.setModel(model)
@@ -430,10 +451,11 @@ class Label(QLabel):
     # def changed(self):
     #     return self.textChanged
 
-    def setModel(self, model):
+    def setModel(self, model: ItemModel) -> None:
         """
+        Sets the model for the Label
 
-        :param model:
+        :param model: the item model containing a str value
         """
         self.mapper.setModel(model)
         self.mapper.addMapping(self, 0, b"text")
@@ -445,7 +467,8 @@ class PushButton(QPushButton):
     an extension of QPushButton class
     """
 
-    def __init__(self, parent, text, icon=None, flat=False, enabled=True):
+    def __init__(self, parent: QWidget, text: str, icon: QIcon = None, flat: bool = False,
+                 enabled: bool = True) -> None:
         if icon is None:
             super().__init__(text, parent)
         else:
@@ -459,9 +482,9 @@ class AdvancedButton(PushButton):
     an extension of PushButton class to control collapsible group boxes for advanced options
     """
 
-    def __init__(self, parent, text='Advanced options'):
+    def __init__(self, parent: QWidget, text: str = 'Advanced options') -> None:
         super().__init__(parent, text=text, icon=QIcon(':icons/show'), flat=True)
-        self.group_box = None
+        self.group_box: GroupBox = None
         self.clicked.connect(self.toggle)
 
     def hide(self):
@@ -472,7 +495,7 @@ class AdvancedButton(PushButton):
         self.setIcon(QIcon(':icons/show'))
         self.group_box.setVisible(False)
 
-    def linkGroupBox(self, group_box):
+    def linkGroupBox(self, group_box: GroupBox) -> None:
         """
         link this advanced button to a group box whose expansion or collapse should be controlled by this button
 
@@ -498,18 +521,20 @@ class RadioButton(QRadioButton):
     an extension of the QRadioButton class
     """
 
-    def __init__(self, parent, model=None, exclusive=True, enabled=True, **kwargs):
-        super().__init__(None, parent)
+    def __init__(self, parent: QWidget, model: ItemModel = None, exclusive: bool = True, enabled: bool = True,
+                 **kwargs: dict[str, Any]) -> None:
+        super().__init__(parent)
         self.setAutoExclusive(exclusive)
         self.mapper = QDataWidgetMapper(self)
         self.setModel(model)
         self.toggled.connect(self.on_toggled)
         self.setEnabled(enabled)
 
-    def setModel(self, model):
+    def setModel(self, model: ItemModel) -> None:
         """
+        Sets the model for the radio button
 
-        :param model:
+        :param model: the item model containing a bool value
         """
         if model is not None:
             self.mapper.setModel(model)
@@ -518,19 +543,21 @@ class RadioButton(QRadioButton):
             self.mapper.toFirst()
 
     @property
-    def changed(self):
+    def changed(self) -> Signal:
         """
-        return property telling whether the spinbox value has changed. This overwrites the Pyside equivalent method in
-         order to have the same method name for all widgets
+        return property telling whether the RadioButton value has changed. This overwrites the Pyside equivalent method
+         in order to have the same method name for all widgets
 
         :return: boolean indication whether the value has changed
         """
-        return self.toggled()
+        return self.toggled
 
-    def on_toggled(self, checked):
+    @Slot(bool)
+    def on_toggled(self, checked: bool) -> None:
         """
+        Slot setting the value of the bool model when the RadioButton is toggled
 
-        :param checked:
+        :param checked: bool value indicating whether the button has been checked or unchecked
         """
         self.mapper.model().set_value(checked)
 
@@ -540,8 +567,8 @@ class SpinBox(QSpinBox):
     an extension of the QSpinBox class
     """
 
-    def __init__(self, parent, model=None, minimum=1, maximum=4096, single_step=1, adaptive=False, enabled=True,
-                 **kwargs):
+    def __init__(self, parent: QWidget, model: ItemModel = None, minimum: int = 1, maximum: int = 4096,
+                 single_step: int = 1, adaptive: bool = False, enabled: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         self.setRange(minimum, maximum)
         self.setSingleStep(single_step)
@@ -551,10 +578,11 @@ class SpinBox(QSpinBox):
         self.setModel(model)
         self.setEnabled(enabled)
 
-    def setModel(self, model):
+    def setModel(self, model: ItemModel):
         """
+        Sets the model for the spin box
 
-        :param model:
+        :param model: the item model containing an int value
         """
         if model is not None:
             self.mapper.setModel(model)
@@ -562,7 +590,7 @@ class SpinBox(QSpinBox):
             self.mapper.toFirst()
 
     @property
-    def changed(self):
+    def changed(self) -> Signal:
         """
         return property telling whether the spinbox value has changed. This overwrites the Pyside equivalent method in
          order to have the same method name for all widgets
@@ -577,22 +605,24 @@ class DoubleSpinBox(QDoubleSpinBox):
     an extension of the QDoubleSpinBox class
     """
 
-    def __init__(self, parent, model=None, minimum=0.1, maximum=1.0, decimals=2, single_step=0.1, adaptive=False,
-                 enabled=True, **kwargs):
+    def __init__(self, parent: QWidget, model: ItemModel = None, minimum: float = 0.1, maximum: float = 1.0,
+                 decimals: int = 2, single_step: float = 0.1, adaptive: bool = False, enabled: bool = True,
+                 **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         self.setRange(minimum, maximum)
         self.setDecimals(decimals)
         self.setSingleStep(single_step)
         if adaptive:
             self.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
-        self.mapper = QDataWidgetMapper(self)
+        self.mapper: QDataWidgetMapper = QDataWidgetMapper(self)
         self.setModel(model)
         self.setEnabled(enabled)
 
-    def setModel(self, model):
+    def setModel(self, model: ItemModel) -> None:
         """
+        Sets the model for the spin box
 
-        :param model:
+        :param model: the item model containing a float value
         """
         if model is not None:
             self.mapper.setModel(model)
@@ -653,12 +683,13 @@ class DialogButtonBox(QDialogButtonBox):
     A extension of QDialogButtonBox to add a button box
     """
 
-    def __init__(self, parent, buttons=(QDialogButtonBox.Ok, QDialogButtonBox.Close)):
+    def __init__(self, parent: QWidget,
+                 buttons: StandardButtonCombination = (QDialogButtonBox.Ok, QDialogButtonBox.Close)) -> None:
         super().__init__(parent)
         for button in buttons:
             self.addButton(button)
 
-    def connect_to(self, connections=None):
+    def connect_to(self, connections: dict[Signal, Slot] = None) -> None:
         """
         Specify the connections between the signal from this button box and slots specified in a directory
 
@@ -682,7 +713,7 @@ class Dialog(QDialog):
     An extension of QDialog to define forms that may be used to specify plugin options
     """
 
-    def __init__(self, plugin=None, title=None, **kwargs):
+    def __init__(self, plugin: plugins.Plugin = None, title: str = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(**kwargs)
         self.vert_layout = QVBoxLayout(self)
         self.setLayout(self.vert_layout)
@@ -698,7 +729,7 @@ class Dialog(QDialog):
         QApplication.processEvents()
         self.adjustSize()
 
-    def addGroupBox(self, title=None, widget=ParametersFormGroupBox):
+    def addGroupBox(self, title: str = None, widget: Type[GroupBox] = ParametersFormGroupBox) -> GroupBox:
         """
         Add a group box to the Dialog window
 
@@ -711,7 +742,8 @@ class Dialog(QDialog):
         group_box.setStyleSheet(StyleSheets.groupBox)
         return group_box
 
-    def addButtonBox(self, buttons=QDialogButtonBox.Ok | QDialogButtonBox.Close, centered=True):
+    def addButtonBox(self, buttons: StandardButtonCombination = QDialogButtonBox.Ok | QDialogButtonBox.Close,
+                     centered: bool = True) -> DialogButtonBox:
         """
         Add a button box to the Dialog window
 
@@ -749,7 +781,7 @@ class Dialog(QDialog):
             self.vert_layout.addWidget(widget)
 
 
-def set_connections(connections: dict) -> None:
+def set_connections(connections: dict[Signal, Slot]) -> None:
     """
     connect a signal to a slot or a list of slots, as defined in a dictionary
 
