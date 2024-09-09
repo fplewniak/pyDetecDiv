@@ -26,7 +26,7 @@ import tensorflow as tf
 from pydetecdiv import plugins, copy_files
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir, project_list
 from pydetecdiv.settings import get_plugins_dir
-from pydetecdiv.domain import Image, Dataset, ImgDType, Run
+from pydetecdiv.domain import Image, Dataset, ImgDType, Run, Project, ROI
 from pydetecdiv.settings import get_config_value
 
 from . import models
@@ -34,7 +34,7 @@ from .gui.ImportAnnotatedROIs import FOV2ROIlinks
 from .gui.classification import ManualAnnotator, PredictionViewer, DefineClassesDialog
 from .gui.prediction import PredictionDialog
 from .gui.training import TrainingDialog, FineTuningDialog, ImportClassifierDialog
-from ..parameters import ItemParameter, ChoiceParameter, IntParameter, FloatParameter, CheckParameter, Parameters
+from ..parameters import ItemParameter, ChoiceParameter, IntParameter, FloatParameter, CheckParameter
 
 Base = registry().generate_base()
 
@@ -221,7 +221,7 @@ class Plugin(plugins.Plugin):
             ChoiceParameter(name='fov', label='Select FOVs', groups={'prediction'}, updater=self.update_fov_list),
         ]
 
-        self.classifiers = ChoiceParameter(name='classifier', label='Classifier', groups={'import_classifier'})
+        self.classifiers: ChoiceParameter = ChoiceParameter(name='classifier', label='Classifier', groups={'import_classifier'})
 
     def register(self):
         # self.parameters.update()
@@ -980,9 +980,9 @@ class Plugin(plugins.Plugin):
                                            self.class_names(as_string=False))
         print('predictions OK')
 
-    def save_results(self, project, run, roi, frame, class_name):
+    def save_results(self, project: Project, run: Run, roi: ROI, frame: int, class_name: str) -> None:
         """
-        Save the results in database
+        Saves the results in database
 
         :param project: the current project
         :param run: the current run
@@ -992,12 +992,16 @@ class Plugin(plugins.Plugin):
         """
         Results().save(project, run, roi, frame, np.array([1]), [class_name])
 
-    def run_import_classifier(self):
+    def run_import_classifier(self) -> None:
+        """
+        Gets all runs with an available classifier from another project, and launches the ImportClassifierDialog for the
+         user to choose one
+        """
         current_project_name = PyDetecDiv.project_name
         self.classifiers.clear()
         for project_name in [p for p in project_list() if p != current_project_name]:
             with pydetecdiv_project(project_name) as project:
-                run_list = [run for run in project.get_objects('Run') if
+                run_list: list[Run] = [run for run in project.get_objects('Run') if
                             run.command in ['train_model', 'fine_tune', 'import_classifier']]
                 for run in run_list:
                     run.parameters['project'] = project_name
@@ -1009,9 +1013,13 @@ class Plugin(plugins.Plugin):
             pass
         ImportClassifierDialog(self)
 
-    def import_classifier(self):
+    def import_classifier(self) -> None:
+        """
+        Imports a classifier, i.e. a combination of a deep-learning network/model, weights trained on annotated data and
+        class names
+        """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            run = self.classifiers.value
+            run: Run = self.classifiers.value
             user_path = str(os.path.join(get_project_dir(), 'roi_classification', 'models', run.parameters['model']))
             os.makedirs(user_path, exist_ok=True)
             origin_path = str(os.path.join(get_project_dir(run.parameters['project']), 'roi_classification', 'models',
@@ -1147,32 +1155,6 @@ def get_rgb_images_from_stacks(imgdata, roi_list, t, z=None):
                                           ]).as_tensor(ImgDType.float32) for roi in roi_list]
     return roi_images
 
-
-# def display_dataset(dataset, sequences=False):
-#     """
-#     Display a dataset in plot viewer
-#
-#     :param dataset: the dataset to display
-#     :param sequences: whether or not to show frame sequences
-#     """
-#     for dset in dataset.__iter__():
-#         ds = dset[0] if isinstance(dset, tuple) else dset
-#         for data in ds:
-#             tab = PyDetecDiv.main_window.add_tabbed_window('Showing dataset')
-#             if sequences is False:
-#                 plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=1, rows=1)
-#             else:
-#                 plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=len(data), rows=1)
-#             axs = plot_viewer.axes
-#             tab.addTab(plot_viewer, 'training dataset')
-#             if sequences is False:
-#                 axs.imshow(data)
-#             else:
-#                 for i, img in enumerate(data):
-#                     axs[i].imshow(img)
-#         plot_viewer.show()
-
-
 def loadWeights(model, filename=os.path.join(__path__[0], "weights.h5"), debug=False):
     """
     load the weights into the model
@@ -1247,7 +1229,7 @@ def layerNum(model, layerName):
     return -1
 
 
-def intList(myList):
+def intList(myList: list[str]) -> list[int]:
     """
     Converts a list of numbers into a list of ints.
 
