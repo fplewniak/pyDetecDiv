@@ -311,7 +311,7 @@ class ChoiceParameter(Parameter):
         return self.model.key()
 
     @property
-    def value(self) -> object:
+    def value(self) -> Any:
         """
         Returns the value object of the selected choice
 
