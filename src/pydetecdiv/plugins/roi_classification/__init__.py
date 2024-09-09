@@ -292,6 +292,19 @@ class Plugin(plugins.Plugin):
         import_classifier = submenu.addAction('Import classifier')
         import_classifier.triggered.connect(self.run_import_classifier)
 
+        submenu.aboutToShow.connect(
+            lambda: self.set_enabled_actions(manual_annotation, train_model, fine_tuning, predict, show_results))
+
+    def set_enabled_actions(self, manual_annotation, train_model, fine_tuning, predict, show_results):
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            manual_annotation.setEnabled(project.count_objects('ROI') > 0)
+            train_model.setEnabled(len(self.get_annotated_rois(ids_only=True)) > 0)
+            self.update_model_weights()
+            fine_tuning.setEnabled(
+                (len(self.parameters['weights'].values) > 0) & (len(self.get_annotated_rois(ids_only=True)) > 0))
+            predict.setEnabled(len(self.parameters['weights'].values) > 0)
+            show_results.setEnabled(len(self.get_prediction_runs()) > 0)
+
     def add_context_action(self, data):
         """
         Add an action to annotate the ROI from the FOV viewer
@@ -488,6 +501,8 @@ class Plugin(plugins.Plugin):
         """
         Update the list of model weights associated with training and fine-tuning runs
         """
+        if len(self.parameters['model'].items) == 0:
+            self.load_models()
         self.parameters['weights'].clear()
         w_files = {}
         if project_name is None:
@@ -524,7 +539,7 @@ class Plugin(plugins.Plugin):
                 all_parameters = [run.parameters for run in run_list if run.command in ['predict']]
             else:
                 all_parameters = [run.parameters for run in run_list if
-                                  run.command in ['annotate_rois', 'import_annotated_rois']]
+                                  run.command in ['annotate_rois', 'import_annotated_rois', 'import_classifier']]
 
         for parameters in all_parameters:
             class_names.update({json.dumps(parameters['class_names']): parameters['class_names']})

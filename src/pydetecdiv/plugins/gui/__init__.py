@@ -3,14 +3,14 @@ Module defining widgets and other utilities for creating windows/forms with a mi
 """
 from typing import Any, Self, Type
 
-from PySide6.QtCore import QStringListModel, QItemSelection, QItemSelectionModel, QAbstractItemModel
+from PySide6.QtCore import QStringListModel, QItemSelection, QItemSelectionModel, QAbstractItemModel, Signal, Slot
 from PySide6.QtGui import QIcon, QAction
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox, \
     QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView, QAbstractItemView, \
-    QPushButton, QApplication, QRadioButton, QListView, QMenu, QDataWidgetMapper, QWidget, QLayout
+    QPushButton, QApplication, QRadioButton, QListView, QMenu, QDataWidgetMapper, QWidget, QLayout, QAbstractButton
 
 from pydetecdiv.app.models import GenericModel
-import pydetecdiv.plugins as plugins
+from pydetecdiv import plugins
 from pydetecdiv.plugins.parameters import Parameter
 
 
@@ -149,6 +149,10 @@ class ComboBox(QComboBox):
         self.setEnabled(enabled)
 
     def setCurrentIndex(self, index):
+        """
+
+        :param index:
+        """
         super().setCurrentIndex(index)
 
     def addItemDict(self, options):
@@ -161,16 +165,28 @@ class ComboBox(QComboBox):
             self.addItem(label, userData=data)
 
     def setItemsDict(self, options):
+        """
+
+        :param options:
+        """
         self.clear()
         self.addItemDict(options)
 
     def setText(self, text):
+        """
+
+        :param text:
+        """
         if self.findText(text) != -1:
             self.setCurrentText(text)
         else:
             self.addItem(text)
 
     def text(self):
+        """
+
+        :return:
+        """
         return self.currentText()
 
     @property
@@ -203,6 +219,10 @@ class ComboBox(QComboBox):
         return self.currentText()
 
     def setValue(self, value):
+        """
+
+        :param value:
+        """
         self.setCurrentText(value)
 
 
@@ -251,6 +271,9 @@ class ListView(QListView):
                 sorted(self.selectedIndexes(), key=lambda x: x.row(), reverse=False)]
 
     def setValue(self):
+        """
+
+        """
         # could use setSelectionModel(selectionModel) with selectionModel determined from parameter value
         pass
 
@@ -310,6 +333,10 @@ class ListView(QListView):
 
 
 class ListWidget(QListView):
+    """
+
+    """
+
     def __init__(self, parent, model=None, height=None, editable=False, multiselection=False, enabled=True, **kwargs):
         super().__init__(parent)
         # self.setSelectionModel(QItemSelectionModel())
@@ -324,6 +351,10 @@ class ListWidget(QListView):
         self.selectionModel().currentChanged.connect(self.setCurrentIndex)
 
     def setCurrentIndex(self, index):
+        """
+
+        :param index:
+        """
         self.model().set_selection(index.row())
 
     def addItemDict(self, options):
@@ -336,6 +367,11 @@ class ListWidget(QListView):
             self.addItem(text, userData=data)
 
     def addItem(self, text, userData=None):
+        """
+
+        :param text:
+        :param userData:
+        """
         self.model().add_item({text: userData})
 
 
@@ -353,6 +389,10 @@ class LineEdit(QLineEdit):
 
     @property
     def changed(self):
+        """
+
+        :return:
+        """
         return self.textChanged
 
     @property
@@ -360,9 +400,17 @@ class LineEdit(QLineEdit):
         return self.editingFinished
 
     def setEditable(self, editable=True):
+        """
+
+        :param editable:
+        """
         self.setReadOnly(not editable)
 
     def setModel(self, model):
+        """
+
+        :param model:
+        """
         self.mapper.setModel(model)
         self.mapper.addMapping(self, 0, b"text")
         self.mapper.toFirst()
@@ -383,6 +431,10 @@ class Label(QLabel):
     #     return self.textChanged
 
     def setModel(self, model):
+        """
+
+        :param model:
+        """
         self.mapper.setModel(model)
         self.mapper.addMapping(self, 0, b"text")
         self.mapper.toFirst()
@@ -455,6 +507,10 @@ class RadioButton(QRadioButton):
         self.setEnabled(enabled)
 
     def setModel(self, model):
+        """
+
+        :param model:
+        """
         if model is not None:
             self.mapper.setModel(model)
             self.mapper.addMapping(self, 0)
@@ -472,6 +528,10 @@ class RadioButton(QRadioButton):
         return self.toggled()
 
     def on_toggled(self, checked):
+        """
+
+        :param checked:
+        """
         self.mapper.model().set_value(checked)
 
 
@@ -492,6 +552,10 @@ class SpinBox(QSpinBox):
         self.setEnabled(enabled)
 
     def setModel(self, model):
+        """
+
+        :param model:
+        """
         if model is not None:
             self.mapper.setModel(model)
             self.mapper.addMapping(self, 0)
@@ -526,6 +590,10 @@ class DoubleSpinBox(QDoubleSpinBox):
         self.setEnabled(enabled)
 
     def setModel(self, model):
+        """
+
+        :param model:
+        """
         if model is not None:
             self.mapper.setModel(model)
             self.mapper.addMapping(self, 0)
@@ -548,15 +616,15 @@ class TableView(QTableView):
 
     def __init__(self, parent, model=None, enabled=True, **kwargs):
         super().__init__(parent)
-        # if model is not None:
-        #     self.setModel(model)
+        if model is not None:
+            self.setModel(model)
         # if model is not None and model.rows() is not None:
         #     self.addItemDict(model.rows())
         #     self.setModel(model)
         #     self.setModelColumn(0)
-        # self.currentIndexChanged.connect(self.model().set_selection)
-        # self.model().selection_changed.connect(self.setCurrentIndex)
-        # self.setEnabled(enabled)
+        #     self.currentIndexChanged.connect(self.model().set_selection)
+        #     self.model().selection_changed.connect(self.setCurrentIndex)
+        self.setEnabled(enabled)
 
     # def __init__(self, parent, parameter, multiselection=True, behavior='rows', enabled=True):
     #     super().__init__(parent)
@@ -655,7 +723,8 @@ class Dialog(QDialog):
         button_box.setCenterButtons(centered)
         return button_box
 
-    def addButton(self, widget, text=None, icon=None, flat=False):
+    def addButton(self, widget: Type[QPushButton], text: str = None, icon: QIcon = None,
+                  flat: bool = False) -> QPushButton:
         """
         Add a button to the Dialog window
 
@@ -665,12 +734,12 @@ class Dialog(QDialog):
         :param flat: should the button be flat
         :return: the added button
         """
-        button = widget(text, icon)
+        button: QPushButton = widget(icon=icon, text=text)
         if flat:
             button.setFlat(True)
         return button
 
-    def arrangeWidgets(self, widget_list):
+    def arrangeWidgets(self, widget_list: list[QWidget]) -> None:
         """
         Arrange the widgets in the Dialog window vertical layout
 
@@ -680,7 +749,7 @@ class Dialog(QDialog):
             self.vert_layout.addWidget(widget)
 
 
-def set_connections(connections):
+def set_connections(connections: dict) -> None:
     """
     connect a signal to a slot or a list of slots, as defined in a dictionary
 
