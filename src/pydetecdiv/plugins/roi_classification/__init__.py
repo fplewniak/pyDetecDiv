@@ -226,6 +226,7 @@ class Plugin(plugins.Plugin):
     def register(self):
         # self.parameters.update()
         PyDetecDiv.app.project_selected.connect(self.update_parameters)
+        PyDetecDiv.app.project_selected.connect(self.create_table)
         PyDetecDiv.app.viewer_roi_click.connect(self.add_context_action)
 
     def update_parameters(self, groups=None):
