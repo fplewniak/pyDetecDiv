@@ -27,6 +27,10 @@ class Plugin:
         self.gui = None
         self.parameters = Parameters([])
 
+    def update_parameters(self, groups=None):
+        self.parameters.update(groups)
+        self.parameters.reset(groups)
+
     def register(self):
         """
         Abstract method to register the plugin. This method should be implemented by all plugins for them to work.
