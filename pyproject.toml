@@ -20,7 +20,7 @@ classifiers=[
         "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 
-requires-python = ">=3.10.0"
+requires-python = ">=3.10.0, <3.12"
 dependencies = [
     "aicsimageio",
     "h5py",
@@ -33,11 +33,13 @@ dependencies = [
     "psutil",
     #"pylibjpeg",
     #"pylibjpeg-libjpeg",
+    "pyqtgraph",
     "pyside6",
     "pyxdg",
     "qimage2ndarray>=1.9.0",
     "scikit-image",
     #"scipy",
+    "scikit-learn",
     "sqlalchemy<2.0",
     "tifffile",
     "tensorflow==2.15.0",
