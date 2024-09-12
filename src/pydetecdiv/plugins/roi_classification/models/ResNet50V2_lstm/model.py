@@ -33,7 +33,7 @@ def create_model(n_classes: int) -> keras.Model:
     softmax = keras.layers.Softmax()(fc)
     classification = softmax
 
-    model = keras.Model(inputs=[input], outputs=[classification])
+    model = keras.Model(inputs=[input_layer], outputs=[classification])
     return model
 
 
