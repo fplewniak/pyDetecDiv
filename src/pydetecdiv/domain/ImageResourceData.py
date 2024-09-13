@@ -123,7 +123,7 @@ class ImageResourceData(abc.ABC):
     def image_memmap(self, sliceX=None, sliceY=None, **kwargs):
         if sliceX and sliceY:
             return self._image_memmap(sliceX=sliceX, sliceY=sliceY, **kwargs)
-        return self._image(**kwargs)
+        return self._image_memmap(**kwargs)
 
     @abc.abstractmethod
     def data_sample(self, X=None, Y=None):
