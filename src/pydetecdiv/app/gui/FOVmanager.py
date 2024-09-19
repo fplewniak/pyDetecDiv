@@ -194,7 +194,7 @@ class FOVmanager(VideoPlayer):
             for rect_item in sorted(rois, key=lambda x: x.scenePos().toPoint().toTuple()):
                 x, y = rect_item.scenePos().toPoint().toTuple()
                 w, h = rect_item.rect().toRect().getCoords()[2:]
-                new_roi_name = f'{self.fov.name}_{x}_{y}_{w}_{h}'
+                new_roi_name = f'{self.fov.name}_{x}_{y}_{w + 1}_{h + 1}'
                 if new_roi_name not in roi_list:
                     new_roi = ROI(project=project, name=new_roi_name, fov=self.fov,
                                   top_left=(x, y), bottom_right=(int(x) + w, int(y) + h))
