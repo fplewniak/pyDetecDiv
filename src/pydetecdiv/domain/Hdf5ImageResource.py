@@ -18,7 +18,7 @@ class Hdf5ImageResource(ImageResourceData):
     """
 
     def __init__(self, max_mem=5000, image_resource=None):
-        print('HD5F')
+        print('HDF5')
         self.path = os.path.join(get_config_value('project', 'workspace'),
                                  image_resource.fov.project.dbname, 'data',
                                  image_resource.key_val['hdf5'])
