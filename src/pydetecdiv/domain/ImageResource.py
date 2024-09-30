@@ -11,6 +11,7 @@ from PIL import Image
 from aicsimageio.dimensions import Dimensions
 
 from pydetecdiv.domain import MultiFileImageResource, SingleFileImageResource, FOV, Dataset
+from pydetecdiv.domain.Hdf5ImageResource import Hdf5ImageResource
 from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.settings import get_config_value
 
@@ -218,6 +219,8 @@ class ImageResource(DomainSpecificObject):
         :return: the ImageResourceData object
         :rtype: ImageResourceData (SingleFileImageResource or MultiFileImageResource)
         """
+        if self.key_val is not None and 'hdf5' in self.key_val:
+            return Hdf5ImageResource(image_resource=self)
         if not self.multi:
             return SingleFileImageResource(image_resource=self)
         return MultiFileImageResource(image_resource=self)
