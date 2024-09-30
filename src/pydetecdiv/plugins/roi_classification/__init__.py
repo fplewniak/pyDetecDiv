@@ -130,11 +130,16 @@ class ROIDataset(tf.keras.utils.Sequence):
         self.roi_data_list = roi_data_list
         self.seqlen = seqlen
         self.z_channels = z_channels
+        self.batches = {idx: self.get_items(idx) for idx in range(-(-len(roi_data_list) // batch_size))}
+        # self.batches = np.array([self.get_items(idx) for idx in range((len(roi_data_list)//batch_size))])
+        # for idx in range(-(-len(roi_data_list)//batch_size)):
+        #     print(f'{idx}: {self.get_items(idx)[0].shape}, {self.get_items(idx)[1].shape}')
+        # print(self.batches.shape)
 
     def __len__(self):
         return math.ceil(len(self.roi_data_list) / self.batch_size)
 
-    def __getitem__(self, idx):
+    def get_items(self, idx):
         low = idx * self.batch_size
         # Cap upper bound at array length; the last batch may be smaller
         # if the total number of items is not a multiple of batch size.
@@ -144,7 +149,7 @@ class ROIDataset(tf.keras.utils.Sequence):
         batch_data = []
         for data in batch_roi:
             if self.seqlen is None:
-                roi_dataset = get_rgb_images_from_stacks_memmap(imgdata=data.imgdata, roi_list=[data.roi], t=data.frame,
+                roi_dataset = get_rgb_images_from_stacks(imgdata=data.imgdata, roi_list=[data.roi], t=data.frame,
                                                                 z=self.z_channels)
                 if data.target is not None:
                     batch_targets.append(data.target[0])
@@ -158,6 +163,9 @@ class ROIDataset(tf.keras.utils.Sequence):
         if batch_targets:
             return np.array(batch_data), np.array(batch_targets)
         return np.array(batch_data)
+
+    def __getitem__(self, idx):
+        return self.batches[idx]
 
 
 class Plugin(plugins.Plugin):
@@ -739,6 +747,8 @@ class Plugin(plugins.Plugin):
         Launch training a model: select the network, load weights (optional), define the training, validation
         and test sets, then run the training using training and validation sets and the evaluation on the test set.
         """
+        log_dir = os.path.join(get_project_dir(), 'logs', 'fit', datetime.now().strftime("%Y%m%d-%H%M%S"))
+        # tf.profiler.experimental.start(log_dir)
         tf.keras.utils.set_random_seed(self.parameters['seed'].value)
         batch_size = self.parameters['batch_size'].value
         seqlen = self.parameters['seqlen'].value
@@ -836,13 +846,16 @@ class Plugin(plugins.Plugin):
             verbose=1,
             save_best_only=True)
 
+        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1,
+                                                              profile_batch=(0, 20))
+
         training_early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', start_from_epoch=1, min_delta=0,
                                                                    patience=5, verbose=1, mode='auto', baseline=None,
                                                                    restore_best_weights=True)
 
         learning_rate_scheduler = tf.keras.callbacks.LearningRateScheduler(self.lr_decay, verbose=0)
 
-        callbacks = [model_checkpoint_callback, learning_rate_scheduler]
+        callbacks = [model_checkpoint_callback, learning_rate_scheduler, tensorboard_callback]
 
         if self.parameters['early_stopping'].value:
             callbacks += [training_early_stopping]
@@ -878,6 +891,8 @@ class Plugin(plugins.Plugin):
 
         if self.parameters['weights'].value is not None:
             self.update_model_weights()
+
+        # tf.profiler.experimental.stop()
 
         return (module.__name__, self.parameters['class_names'].value, history, evaluation, ground_truth, predictions,
                 best_predictions)
@@ -1095,7 +1110,7 @@ def get_images_sequences(imgdata, roi_list, t, seqlen=None, z=None):
     """
     maxt = min(imgdata.sizeT, t + seqlen) if seqlen else imgdata.sizeT
     roi_sequences = tf.stack(
-        [get_rgb_images_from_stacks_memmap(imgdata, roi_list, f, z=z) for f in range(t, maxt)],
+        [get_rgb_images_from_stacks(imgdata, roi_list, f, z=z) for f in range(t, maxt)],
         axis=1)
     if roi_sequences.shape[1] < seqlen:
         padding_config = [[0, 0], [seqlen - roi_sequences.shape[1], 0], [0, 0], [0, 0], [0, 0]]
