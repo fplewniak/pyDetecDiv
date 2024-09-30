@@ -705,6 +705,7 @@ class Plugin(plugins.Plugin):
         :param targets: should targets be included in the dataset or not
         :return: the ROIData list
         """
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data')
         roi_data_list = []
         for roi in data_list:
             imgdata = roi.fov.image_resource().image_resource_data()
@@ -717,6 +718,7 @@ class Plugin(plugins.Plugin):
                         roi_data_list.extend([ROIdata(roi, imgdata, sequence, i)])
             else:
                 roi_data_list.extend([ROIdata(roi, imgdata, None, frame) for frame in range(0, imgdata.sizeT, seqlen)])
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Data ready')
         return roi_data_list
 
     def compute_class_weights(self):
@@ -762,13 +764,13 @@ class Plugin(plugins.Plugin):
         model = module.model.create_model(len(self.parameters['class_names'].value))
 
         if self.parameters['weights'].value is not None:
-            print(f'Loading weights from {self.parameters["weights"].key}')
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Loading weights from {self.parameters["weights"].key}')
             loadWeights(model, filename=self.parameters['weights'].value)
             run = self.save_training_run(finetune=True)
         else:
             run = self.save_training_run()
 
-        print('Compiling model')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Compiling model')
         learning_rate = self.parameters['learning_rate'].value
         if self.parameters['optimizer'].key in ['SGD']:
             optimizer = self.parameters['optimizer'].value(learning_rate=learning_rate,
@@ -797,18 +799,20 @@ class Plugin(plugins.Plugin):
             num_training = int(self.parameters['num_training'].value * len(roi_list))
             num_validation = int(self.parameters['num_validation'].value * len(roi_list))
 
-            print('Training dataset')
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Training dataset')
             training_dataset = ROIDataset(roi_list[:num_training], z_channels=z_channels,
                                           image_size=img_size, batch_size=batch_size)
-            print('Validation dataset')
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Validation dataset')
             validation_dataset = ROIDataset(roi_list[num_training:num_training + num_validation], z_channels=z_channels,
                                             image_size=img_size, batch_size=batch_size)
-            print('Test dataset')
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Test dataset')
             test_dataset = ROIDataset(roi_list[num_training + num_validation:], z_channels=z_channels,
                                       image_size=img_size,
                                       batch_size=batch_size)
         else:
             img_size = (input_shape[2], input_shape[3])
+
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Sequence length: {seqlen}')
 
             roi_list = self.prepare_data(self.get_annotated_rois(), seqlen)
             random.seed(self.parameters['dataset_seed'].value)
@@ -816,14 +820,14 @@ class Plugin(plugins.Plugin):
             num_training = int(self.parameters['num_training'].value * len(roi_list))
             num_validation = int(self.parameters['num_validation'].value * len(roi_list))
 
-            print('Training dataset')
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Training dataset')
             training_dataset = ROIDataset(roi_list[:num_training], image_size=img_size,
                                           seqlen=seqlen, batch_size=batch_size, z_channels=z_channels, )
-            print('Validation dataset')
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Validation dataset')
             validation_dataset = ROIDataset(roi_list[num_training:num_training + num_validation],
                                             image_size=img_size, seqlen=seqlen,
                                             batch_size=batch_size, z_channels=z_channels, )
-            print('Test dataset')
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Test dataset')
             test_dataset = ROIDataset(roi_list[num_training + num_validation:], z_channels=z_channels,
                                       image_size=img_size,
                                       seqlen=seqlen, batch_size=batch_size)
@@ -947,14 +951,14 @@ class Plugin(plugins.Plugin):
         module = self.parameters['model'].value
         print(module.__name__)
         model = module.model.create_model(len(self.parameters['class_names'].value))
-        print('Loading weights')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Loading weights')
         weights = self.parameters['weights'].value
         if weights:
             loadWeights(model, filename=self.parameters['weights'].value)
 
         input_shape = model.layers[0].output.shape
 
-        print('Compiling model')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Compiling model')
         model.compile()
 
         batch_size = self.parameters['batch_size'].value
@@ -965,7 +969,7 @@ class Plugin(plugins.Plugin):
         fov_names = [self.parameters['fov'].key]
 
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            print('Saving run')
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Saving run')
             parameters = self.parameters.json(groups='prediction')
             run = self.save_run(project, 'predict', parameters)
             roi_list = np.ndarray.flatten(np.array(list([fov.roi_list for fov in
@@ -994,7 +998,7 @@ class Plugin(plugins.Plugin):
                         if (data.frame + i) < data.imgdata.sizeT:
                             Results().save(project, run, data.roi, data.frame + i, prediction[i],
                                            self.class_names(as_string=False))
-        print('predictions OK')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: predictions OK')
 
     def save_results(self, project: Project, run: Run, roi: ROI, frame: int, class_name: str) -> None:
         """
