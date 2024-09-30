@@ -130,7 +130,9 @@ class ROIDataset(tf.keras.utils.Sequence):
         self.roi_data_list = roi_data_list
         self.seqlen = seqlen
         self.z_channels = z_channels
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Creating batches')
         self.batches = {idx: self.get_items(idx) for idx in range(-(-len(roi_data_list) // batch_size))}
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Batches created')
         # self.batches = np.array([self.get_items(idx) for idx in range((len(roi_data_list)//batch_size))])
         # for idx in range(-(-len(roi_data_list)//batch_size)):
         #     print(f'{idx}: {self.get_items(idx)[0].shape}, {self.get_items(idx)[1].shape}')
@@ -140,6 +142,7 @@ class ROIDataset(tf.keras.utils.Sequence):
         return math.ceil(len(self.roi_data_list) / self.batch_size)
 
     def get_items(self, idx):
+        print(f'{datetime.now().strftime("%H:%M:%S")}: creating batch {idx}')
         low = idx * self.batch_size
         # Cap upper bound at array length; the last batch may be smaller
         # if the total number of items is not a multiple of batch size.
