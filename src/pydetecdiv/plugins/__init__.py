@@ -8,9 +8,9 @@ import sys
 from PySide6.QtGui import QAction
 
 import pydetecdiv
+from pydetecdiv.plugins.parameters import Parameters
 from pydetecdiv.settings import get_plugins_dir
 from pydetecdiv.domain import Run
-from pydetecdiv.plugins.gui import Parameters, Dialog
 
 
 class Plugin:
@@ -25,7 +25,17 @@ class Plugin:
 
     def __init__(self):
         self.gui = None
-        self.parameters = Parameters()
+        self.parameters = Parameters([])
+
+    def update_parameters(self, groups=None):
+        self.parameters.update(groups)
+        self.parameters.reset(groups)
+
+    def register(self):
+        """
+        Abstract method to register the plugin. This method should be implemented by all plugins for them to work.
+        """
+        raise NotImplementedError
 
     def addActions(self, menu):
         """
@@ -78,18 +88,6 @@ class Plugin:
         # project.commit()
         return run
 
-# def get_plugins_dir():
-#     """
-# Get the user directory where plugins are installed. The directory is created if it does not exist
-# :return: the user plugin path
-# :rtype: Path
-# """
-#     plugins_path = os.path.join(pydetecdiv.app.get_appdata_dir(), 'plugins')
-#     if not os.path.exists(plugins_path):
-#         os.mkdir(plugins_path)
-#     return [plugins_path]
-#     # return [pydetecdiv.plugins.__path__[0], plugins_path]
-
 
 class PluginList:
     """
@@ -138,6 +136,13 @@ class PluginList:
             self.plugins_dict[module.Plugin.id_] = module.Plugin()
             return module
         return None
+
+    def register_all(self):
+        """
+        Register plugins
+        """
+        for plugin in self.plugins_dict.values():
+            plugin.register()
 
     @property
     def len(self):

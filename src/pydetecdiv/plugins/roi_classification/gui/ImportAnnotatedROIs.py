@@ -1,6 +1,7 @@
 """
 Dialog window handling the definition of patterns for FOV creation from raw data file names
 """
+import json
 import random
 import re
 
@@ -48,6 +49,9 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
             self.FOVsamples[i].setText(label_text)
 
         self.df = pd.read_csv(annotation_file)
+        class_names = sorted(self.df['class_name'].unique().tolist())
+        self.plugin.parameters['class_names'].add_item({json.dumps(class_names): class_names})
+        # self.plugin.parameters['class_names'].set_value(sorted(self.df['class_name'].unique().tolist()))
         self.df['frame'] -= 1
         # self.class_index_mapping =  [-1] * len(self.plugin.class_names)
         # self.class_index_mapping = {row.ann: self.plugin.class_names.index(row.class_name)
@@ -290,7 +294,7 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
         """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             return self.plugin.save_run(project, 'import_annotated_rois',
-                                        {'class_names': self.plugin.class_names,
+                                        {'class_names': self.plugin.parameters['class_names'].value,
                                          'annotator': get_config_value('project', 'user'),
                                          'file_name': self.annotation_file
                                          })

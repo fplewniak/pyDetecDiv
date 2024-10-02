@@ -96,10 +96,14 @@ class ImageResourceData(abc.ABC):
         :rtype: 2D numpy.array
         """
 
-    def image(self, sliceX=None, sliceY=None, **kwargs):
+    def image(self, sliceX=None, sliceY=None, C=0, **kwargs):
+        if C is None:
+            if sliceX and sliceY:
+                return np.zeros((self.sizeY, self.sizeX), np.uint16)[sliceY, sliceX]
+            return np.zeros((self.sizeY, self.sizeX), np.uint16)
         if sliceX and sliceY:
-            return self._image(**kwargs)[sliceY, sliceX]
-        return self._image(**kwargs)
+            return self._image(C=C, **kwargs)[sliceY, sliceX]
+        return self._image(C=C, **kwargs)
 
     @abc.abstractmethod
     def _image_memmap(self, sliceX=None, sliceY=None, C=0, Z=0, T=0, drift=None):
@@ -119,7 +123,7 @@ class ImageResourceData(abc.ABC):
     def image_memmap(self, sliceX=None, sliceY=None, **kwargs):
         if sliceX and sliceY:
             return self._image_memmap(sliceX=sliceX, sliceY=sliceY, **kwargs)
-        return self._image(**kwargs)
+        return self._image_memmap(**kwargs)
 
     @abc.abstractmethod
     def data_sample(self, X=None, Y=None):

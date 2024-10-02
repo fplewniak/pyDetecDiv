@@ -3,6 +3,7 @@
 """
 Concrete Repositories using a SQL database with the sqlalchemy toolkit
 """
+import json
 import os
 import re
 import sqlite3
@@ -135,7 +136,7 @@ class ShallowSQLite3(ShallowDb):
         :return: the list of imported files. This list can be used to roll the copy back if needed
         :rtype: list of str
         """
-        urls = []
+        # urls = []
         if destination:
             data_dir_path = os.path.join(data_dir_path, destination)
         try:
@@ -157,10 +158,11 @@ class ShallowSQLite3(ShallowDb):
                 with Image.open(record['url']) as img:
                     record['xdim'], record['ydim'] = img.size
                 self.save_object('Data', record)
-                urls.append(record['url'])
+                # urls.append(record['url'])
         except:
             raise ImportImagesError('Could not import images')
-        return urls, process
+        # return urls, process
+        return process
 
     def annotate_data(self, dataset, source, keys_, regex):
         """

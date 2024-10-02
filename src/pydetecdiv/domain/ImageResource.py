@@ -11,6 +11,7 @@ from PIL import Image
 from aicsimageio.dimensions import Dimensions
 
 from pydetecdiv.domain import MultiFileImageResource, SingleFileImageResource, FOV, Dataset
+from pydetecdiv.domain.Hdf5ImageResource import Hdf5ImageResource
 from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.settings import get_config_value
 
@@ -23,7 +24,7 @@ class ImageResource(DomainSpecificObject):
     def __init__(self, dataset, fov, multi,
                  xdim=-1, ydim=-1, zdim=-1, cdim=-1, tdim=-1,
                  xyscale=1, tscale=1, zscale=1,
-                 xyunit=1e-6, zunit=1e-6, tunit=60, key_val=None,
+                 xyunit=1e-6, zunit=1e-6, tunit=1e-3, key_val=None,
                  **kwargs):
         super().__init__(**kwargs)
         self._dataset = dataset.id_ if isinstance(dataset, Dataset) else dataset
@@ -43,8 +44,8 @@ class ImageResource(DomainSpecificObject):
         self.key_val = key_val
         self.validate(updated=False)
 
-        self.image_files_5d = self._image_files_5d
-        self.image_files = self._image_files
+        self._image_files_5d = None
+        self._image_files = None
         self.pattern = self._pattern
         self.fov = self._fov
 
@@ -66,7 +67,7 @@ class ImageResource(DomainSpecificObject):
     def drift(self):
         if self.key_val is not None and 'drift' in self.key_val:
             drift_path = os.path.join(get_config_value('project', 'workspace'),
-                                  self.fov.project.dbname, self.key_val['drift'])
+                                      self.fov.project.dbname, self.key_val['drift'])
             return pandas.read_csv(drift_path)
         return None
 
@@ -109,6 +110,10 @@ class ImageResource(DomainSpecificObject):
             self._ydim, self._xdim = self.set_image_shape_from_file()
         return self._xdim
 
+    @xdim.setter
+    def xdim(self, xdim):
+        self._xdim = xdim
+
     @property
     def ydim(self):
         """
@@ -117,6 +122,10 @@ class ImageResource(DomainSpecificObject):
         if (self._ydim == -1) and len(self.project.get_linked_objects('Data', self)):
             self._ydim, self._xdim = self.set_image_shape_from_file()
         return self._ydim
+
+    @ydim.setter
+    def ydim(self, ydim):
+        self._ydim = ydim
 
     @property
     def tdim(self):
@@ -157,13 +166,12 @@ class ImageResource(DomainSpecificObject):
     def zdim(self, zdim):
         self._zdim = zdim
 
-
     def set_image_shape_from_file(self):
         """
         The image shape determined from first file
         """
         # with Image.open(self.project.get_linked_objects('Data', self)[0].url) as img:
-        with Image.open(self._image_files[0]) as img:
+        with Image.open(self.image_files[0]) as img:
             self._xdim, self._ydim = img.size
         self.project.save(self)
         return (self._ydim, self._xdim)
@@ -211,67 +219,42 @@ class ImageResource(DomainSpecificObject):
         :return: the ImageResourceData object
         :rtype: ImageResourceData (SingleFileImageResource or MultiFileImageResource)
         """
+        if self.key_val is not None and 'hdf5' in self.key_val:
+            return Hdf5ImageResource(image_resource=self)
         if not self.multi:
             return SingleFileImageResource(image_resource=self)
         return MultiFileImageResource(image_resource=self)
-        # if not self.multi:
-        #     return SingleFileImageResource(self.project.get_linked_objects('Data', self)[0].url,
-        #                                      max_mem=5000, fov=self.fov, image_resource=self)
-        # return MultiFileImageResource([data.url for data in self.project.get_linked_objects('Data', self)],
-        #                          pattern=self.dataset.pattern, max_mem=5000, fov=self.fov, image_resource=self)
-
-    # def image(self, C=0, Z=0, T=0, drift=None):
-    #     """
-    #     A 2D grayscale image (on frame, one channel and one layer)
-    #
-    #     :param C: the channel index
-    #     :type C: int
-    #     :param Z: the layer index
-    #     :type Z: int
-    #     :param T: the frame index
-    #     :type T: int
-    #     :return: a 2D data array
-    #     :rtype: 2D numpy.array
-    #     """
-    #     return self.image_files[T, C, Z].image_data()
-    # if self._memmap is not None:
-    #     s = self.resource.shape
-    #     data = np.expand_dims(self._memmap, axis=tuple(i for i in range(len(s)) if s[i] == 1))[T, C, Z, ...]
-    # else:
-    #     data = self.resource.get_image_dask_data('YX', C=C, Z=Z, T=T).compute()
-    # if drift is not None:
-    #     return cv.warpAffine(np.array(data),
-    #                   np.float32(
-    #                       [[1, 0, -drift.dx],
-    #                        [0, 1, -drift.dy]]),
-    #                   (data.shape[1], data.shape[0]))
-    # return data
 
     @property
-    def _image_files_5d(self):
+    def image_files_5d(self):
         """
         property returning the list of file paths as a 3D array. Each file contains a XY 2D image, and there is one
         file for each T, C,Z combination of coordinates
         :return: 3D array of file paths
         :rtype: array of str
         """
-        data_list = self.project.get_linked_objects('Data', self)
-        if self.multi:
-            image_files = np.empty((self.sizeT, self.sizeC, self.sizeZ), dtype=object)
-            for data in sorted(data_list, key=lambda x: (x.t, x.c, x.z)):
-                image_files[data.t, data.c, data.z] = data.url
-        else:
-            image_files = None
-        return image_files
+        if self._image_files_5d is None:
+            data_list = self.project.get_linked_objects('Data', self)
+
+            if self.multi:
+                self._image_files_5d = np.empty((self.sizeT, self.sizeC, self.sizeZ), dtype=object)
+                for data in sorted(data_list, key=lambda x: (x.t, x.c, x.z)):
+                    self._image_files_5d[data.t, data.c, data.z] = data.url
+            else:
+                self._image_files_5d = None
+        return self._image_files_5d
 
     @property
-    def _image_files(self):
+    def image_files(self):
         """
         property returning the list of all files associated with this image resource
         :return: list of image files
         :rtype: list of str (file paths)
         """
-        return [d.url for d in sorted(self.project.get_linked_objects('Data', self), key=lambda x: (x.t, x.c, x.z))]
+        if self._image_files is None:
+            self._image_files = [d.url for d in
+                                 sorted(self.project.get_linked_objects('Data', self), key=lambda x: (x.t, x.c, x.z))]
+        return self._image_files
 
     @property
     def _pattern(self):
