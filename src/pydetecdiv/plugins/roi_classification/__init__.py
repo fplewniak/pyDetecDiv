@@ -14,6 +14,7 @@ import keras.optimizers
 
 import h5py
 import numpy as np
+import pandas
 import sqlalchemy
 from PySide6.QtGui import QAction, QColor
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
@@ -117,58 +118,36 @@ class ROIdata:
 
 
 class ROIDataset(tf.keras.utils.Sequence):
-    """
-    ROI dataset that can be used to feed the model for training, evaluation or prediction
-    """
-
-    def __init__(self, roi_data_list, image_size=(60, 60), class_names=None, batch_size=32, seqlen=None,
-                 z_channels=None, **kwargs):
+    def __init__(self, hdf5_file, data_list, batch_size=32, seqlen=None, **kwargs):
         super().__init__(**kwargs)
-        self.img_size = image_size
-        # self.class_names = class_names
+        self.hdf5_file = hdf5_file
+        self.data_list = data_list
         self.batch_size = batch_size
-        self.roi_data_list = roi_data_list
         self.seqlen = seqlen
-        self.z_channels = z_channels
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Creating batches')
-        self.batches = {idx: self.get_items(idx) for idx in range(-(-len(roi_data_list) // batch_size))}
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Batches created')
-        # self.batches = np.array([self.get_items(idx) for idx in range((len(roi_data_list)//batch_size))])
-        # for idx in range(-(-len(roi_data_list)//batch_size)):
-        #     print(f'{idx}: {self.get_items(idx)[0].shape}, {self.get_items(idx)[1].shape}')
-        # print(self.batches.shape)
 
     def __len__(self):
-        return math.ceil(len(self.roi_data_list) / self.batch_size)
-
-    def get_items(self, idx):
-        print(f'{datetime.now().strftime("%H:%M:%S")}: creating batch {idx}')
-        low = idx * self.batch_size
-        # Cap upper bound at array length; the last batch may be smaller
-        # if the total number of items is not a multiple of batch size.
-        high = min(low + self.batch_size, len(self.roi_data_list))
-        batch_roi = self.roi_data_list[low:high]
-        batch_targets = []
-        batch_data = []
-        for data in batch_roi:
-            if self.seqlen is None:
-                roi_dataset = get_rgb_images_from_stacks(imgdata=data.imgdata, roi_list=[data.roi], t=data.frame,
-                                                                z=self.z_channels)
-                if data.target is not None:
-                    batch_targets.append(data.target[0])
-            else:
-                roi_dataset = get_images_sequences(imgdata=data.imgdata, roi_list=[data.roi], t=data.frame,
-                                                   seqlen=self.seqlen, z=self.z_channels)
-                if data.target is not None:
-                    batch_targets.append(data.target)
-            img_array = tf.convert_to_tensor([tf.image.resize(i, self.img_size, method='nearest') for i in roi_dataset])
-            batch_data.append(img_array[0])
-        if batch_targets:
-            return np.array(batch_data), np.array(batch_targets)
-        return np.array(batch_data)
+        return math.ceil(len(self.data_list) / self.batch_size)
 
     def __getitem__(self, idx):
-        return self.batches[idx]
+        low = idx * self.batch_size
+        high = min(low + self.batch_size, len(self.data_list))
+        data_list = self.data_list[low:high]
+        if self.seqlen:
+            with h5py.File(self.hdf5_file, 'r') as f:
+                batch_data = np.array([f['rois'][frame:frame + self.seqlen, roi, ...] for frame, roi in data_list])
+                if 'targets' in f:
+                    batch_targets = np.array([f['targets'][frame, roi] for frame, roi in data_list])
+                    return batch_data, batch_targets
+                else:
+                    return batch_data
+        else:
+            with h5py.File(self.hdf5_file, 'r') as f:
+                batch_data = np.array([f['rois'][frame, roi, ...] for frame, roi in data_list])
+                if 'targets' in f:
+                    batch_targets = np.array([f['targets'][frame, roi] for frame, roi in data_list])
+                    return batch_data, batch_targets
+                else:
+                    return batch_data
 
 
 class Plugin(plugins.Plugin):
@@ -232,7 +211,8 @@ class Plugin(plugins.Plugin):
             ChoiceParameter(name='fov', label='Select FOVs', groups={'prediction'}, updater=self.update_fov_list),
         ]
 
-        self.classifiers: ChoiceParameter = ChoiceParameter(name='classifier', label='Classifier', groups={'import_classifier'})
+        self.classifiers: ChoiceParameter = ChoiceParameter(name='classifier', label='Classifier',
+                                                            groups={'import_classifier'})
 
     def register(self):
         # self.parameters.update()
@@ -699,30 +679,63 @@ class Plugin(plugins.Plugin):
                         roi_classes[annotation[1]] = annotation[2]
         return roi_classes
 
-    def prepare_data(self, data_list, seqlen=None, targets=True):
-        """
-        Prepare the data from a list of ROI object as a list of ROIData objects to build the ROIDataset instance
+    def create_hdf5_annotated_rois(self, hdf5_file, z_channels=None):
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Retrieving annotated ROIs')
+        roi_list = self.get_annotated_rois()
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Getting data array')
+        data = [[roi.name, roi.fov.id_, roi.x, roi.y, roi.width, roi.height, t, label] for roi in roi_list for t, label in enumerate(self.get_annotation(roi))]
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Creating dataframe')
+        df = pandas.DataFrame(data, columns=['roi', 'fov', 'x', 'y', 'w', 'h', 'frame', 'target'])
+        # df.sort_values(by=['fov'], inplace=True)
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Grouping by FOV id')
+        df = df.groupby('fov').apply(lambda x: x.values)
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Done')
+        print(df)
+        # for _, row in df.iterrows():
+        #     print(row.tolist())
 
-        :param data_list: the ROI list
-        :param seqlen: the length of the frame sequence
-        :param targets: should targets be included in the dataset or not
-        :return: the ROIData list
-        """
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data')
-        roi_data_list = []
-        for roi in data_list:
-            imgdata = roi.fov.image_resource().image_resource_data()
-            seqlen = seqlen if seqlen else 1
-            if targets:
-                annotation_indices = self.get_annotation(roi)
-                for i in range(0, imgdata.sizeT, seqlen):
-                    sequence = annotation_indices[i:i + seqlen]
-                    if len(sequence) == seqlen and all(a >= 0 for a in sequence):
-                        roi_data_list.extend([ROIdata(roi, imgdata, sequence, i)])
-            else:
-                roi_data_list.extend([ROIdata(roi, imgdata, None, frame) for frame in range(0, imgdata.sizeT, seqlen)])
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Data ready')
-        return roi_data_list
+        # for roi in roi_list:
+        #     for t, label in enumerate(self.get_annotation(roi)):
+        #         print(f'{roi.name}, {roi.x}, {roi.y}, {roi.width}, {roi.height}, {t}, {label}, {self.class_names()[label]}')
+
+    def prepare_data(self, hdf5_file, seqlen=0, train=0.6, validation=0.2, seed=42):
+        with h5py.File(hdf5_file, 'r') as f:
+            tdim = f['rois'].shape[0] - seqlen
+            num_rois = f['rois'].shape[1]
+
+        unique_combinations = [(t, roi,) for t in range(tdim - seqlen) for roi in range(num_rois)]
+        random.seed(seed)
+        random.shuffle(unique_combinations)
+        num_training = int(len(unique_combinations) * train)
+        num_validation = int(len(unique_combinations) * validation)
+
+        return (unique_combinations[:num_training], unique_combinations[num_training:num_validation + num_training],
+                unique_combinations[num_validation + num_training:])
+
+    # def prepare_data(self, data_list, seqlen=None, targets=True):
+    #     """
+    #     Prepare the data from a list of ROI object as a list of ROIData objects to build the ROIDataset instance
+    #
+    #     :param data_list: the ROI list
+    #     :param seqlen: the length of the frame sequence
+    #     :param targets: should targets be included in the dataset or not
+    #     :return: the ROIData list
+    #     """
+    #     print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data')
+    #     roi_data_list = []
+    #     for roi in data_list:
+    #         imgdata = roi.fov.image_resource().image_resource_data()
+    #         seqlen = seqlen if seqlen else 1
+    #         if targets:
+    #             annotation_indices = self.get_annotation(roi)
+    #             for i in range(0, imgdata.sizeT, seqlen):
+    #                 sequence = annotation_indices[i:i + seqlen]
+    #                 if len(sequence) == seqlen and all(a >= 0 for a in sequence):
+    #                     roi_data_list.extend([ROIdata(roi, imgdata, sequence, i)])
+    #         else:
+    #             roi_data_list.extend([ROIdata(roi, imgdata, None, frame) for frame in range(0, imgdata.sizeT, seqlen)])
+    #     print(f'{datetime.now().strftime("%H:%M:%S")}: Data ready')
+    #     return roi_data_list
 
     def compute_class_weights(self):
         class_counts = dict(
@@ -753,10 +766,8 @@ class Plugin(plugins.Plugin):
         and test sets, then run the training using training and validation sets and the evaluation on the test set.
         """
         log_dir = os.path.join(get_project_dir(), 'logs', 'fit', datetime.now().strftime("%Y%m%d-%H%M%S"))
-        # tf.profiler.experimental.start(log_dir)
         tf.keras.utils.set_random_seed(self.parameters['seed'].value)
         batch_size = self.parameters['batch_size'].value
-        seqlen = self.parameters['seqlen'].value
         epochs = self.parameters['epochs'].value
         z_channels = [self.parameters['red_channel'].value, self.parameters['green_channel'].value,
                       self.parameters['blue_channel'].value]
@@ -766,12 +777,12 @@ class Plugin(plugins.Plugin):
 
         model = module.model.create_model(len(self.parameters['class_names'].value))
 
-        if self.parameters['weights'].value is not None:
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Loading weights from {self.parameters["weights"].key}')
-            loadWeights(model, filename=self.parameters['weights'].value)
-            run = self.save_training_run(finetune=True)
-        else:
-            run = self.save_training_run()
+        # if self.parameters['weights'].value is not None:
+        #     print(f'{datetime.now().strftime("%H:%M:%S")}: Loading weights from {self.parameters["weights"].key}')
+        #     loadWeights(model, filename=self.parameters['weights'].value)
+        #     run = self.save_training_run(finetune=True)
+        # else:
+        #     run = self.save_training_run()
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Compiling model')
         learning_rate = self.parameters['learning_rate'].value
@@ -789,55 +800,32 @@ class Plugin(plugins.Plugin):
         )
         # print(model.summary())
         input_shape = model.layers[0].output.shape
-        # print(input_shape)
-        # print(seqlen)
-        # print(model.layers[-1].output.shape)
 
-        if len(input_shape) == 4:
-            img_size = (input_shape[1], input_shape[2])
-
-            roi_list = self.prepare_data(self.get_annotated_rois())
-            random.seed(self.parameters['dataset_seed'].value)
-            random.shuffle(roi_list)
-            num_training = int(self.parameters['num_training'].value * len(roi_list))
-            num_validation = int(self.parameters['num_validation'].value * len(roi_list))
-
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Training dataset')
-            training_dataset = ROIDataset(roi_list[:num_training], z_channels=z_channels,
-                                          image_size=img_size, batch_size=batch_size)
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Validation dataset')
-            validation_dataset = ROIDataset(roi_list[num_training:num_training + num_validation], z_channels=z_channels,
-                                            image_size=img_size, batch_size=batch_size)
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Test dataset')
-            test_dataset = ROIDataset(roi_list[num_training + num_validation:], z_channels=z_channels,
-                                      image_size=img_size,
-                                      batch_size=batch_size)
-        else:
-            img_size = (input_shape[2], input_shape[3])
-
+        if len(input_shape) == 5:
+            seqlen = self.parameters['seqlen'].value
             print(f'{datetime.now().strftime("%H:%M:%S")}: Sequence length: {seqlen}')
+        else:
+            seqlen = 0
 
-            roi_list = self.prepare_data(self.get_annotated_rois(), seqlen)
-            random.seed(self.parameters['dataset_seed'].value)
-            random.shuffle(roi_list)
-            num_training = int(self.parameters['num_training'].value * len(roi_list))
-            num_validation = int(self.parameters['num_validation'].value * len(roi_list))
+        hdf5_file = os.path.join(get_project_dir(), 'data', 'annotated_rois.h5')
+        if not os.path.exists(hdf5_file):
+            self.create_hdf5_annotated_rois(hdf5_file, z_channels=z_channels)
 
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Training dataset')
-            training_dataset = ROIDataset(roi_list[:num_training], image_size=img_size,
-                                          seqlen=seqlen, batch_size=batch_size, z_channels=z_channels, )
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Validation dataset')
-            validation_dataset = ROIDataset(roi_list[num_training:num_training + num_validation],
-                                            image_size=img_size, seqlen=seqlen,
-                                            batch_size=batch_size, z_channels=z_channels, )
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Test dataset')
-            test_dataset = ROIDataset(roi_list[num_training + num_validation:], z_channels=z_channels,
-                                      image_size=img_size,
-                                      seqlen=seqlen, batch_size=batch_size)
+        training_idx, validation_idx, test_idx = self.prepare_data(hdf5_file, seqlen=seqlen,
+                                                                   train=self.parameters['num_training'].value,
+                                                                   validation=self.parameters['num_validation'].value,
+                                                                   seed=self.parameters['dataset_seed'].value)
 
-        # display_dataset(training_dataset, sequences=len(input_shape) != 4)
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Training dataset')
+        training_dataset = ROIDataset(hdf5_file, training_idx, seqlen=seqlen, batch_size=batch_size)
 
-        self.save_training_datasets(run, roi_list, num_training, num_validation)
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Validation dataset')
+        validation_dataset = ROIDataset(hdf5_file, validation_idx, seqlen=seqlen, batch_size=batch_size)
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Test dataset')
+        test_dataset = ROIDataset(hdf5_file, test_idx, seqlen=seqlen, batch_size=batch_size)
+
+        # self.save_training_datasets(run, roi_list, num_training, num_validation)
 
         checkpoint_monitor_metric = self.parameters['checkpoint_metric'].value
         best_checkpoint_filename = f'{run.id_}_best_{checkpoint_monitor_metric}.weights.h5'
@@ -1025,7 +1013,7 @@ class Plugin(plugins.Plugin):
         for project_name in [p for p in project_list() if p != current_project_name]:
             with pydetecdiv_project(project_name) as project:
                 run_list: list[Run] = [run for run in project.get_objects('Run') if
-                            run.command in ['train_model', 'fine_tune', 'import_classifier']]
+                                       run.command in ['train_model', 'fine_tune', 'import_classifier']]
                 for run in run_list:
                     run.parameters['project'] = project_name
                     run.parameters['run'] = run.id_
@@ -1177,6 +1165,7 @@ def get_rgb_images_from_stacks(imgdata, roi_list, t, z=None):
                                           image3.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast()
                                           ]).as_tensor(ImgDType.float32) for roi in roi_list]
     return roi_images
+
 
 def loadWeights(model, filename=os.path.join(__path__[0], "weights.h5"), debug=False):
     """
