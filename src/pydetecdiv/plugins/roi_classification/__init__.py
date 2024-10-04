@@ -23,6 +23,7 @@ from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
 import tensorflow as tf
+from tifffile import tifffile
 
 from pydetecdiv import plugins, copy_files
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir, project_list
@@ -679,24 +680,128 @@ class Plugin(plugins.Plugin):
                         roi_classes[annotation[1]] = annotation[2]
         return roi_classes
 
-    def create_hdf5_annotated_rois(self, hdf5_file, z_channels=None):
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Retrieving annotated ROIs')
-        roi_list = self.get_annotated_rois()
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Getting data array')
-        data = [[roi.name, roi.fov.id_, roi.x, roi.y, roi.width, roi.height, t, label] for roi in roi_list for t, label in enumerate(self.get_annotation(roi))]
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Creating dataframe')
-        df = pandas.DataFrame(data, columns=['roi', 'fov', 'x', 'y', 'w', 'h', 'frame', 'target'])
-        # df.sort_values(by=['fov'], inplace=True)
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Grouping by FOV id')
-        df = df.groupby('fov').apply(lambda x: x.values)
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Done')
-        print(df)
-        # for _, row in df.iterrows():
-        #     print(row.tolist())
+    def get_all_annotations(self, z_layers=None, ):
+        if z_layers is None:
+            z_layers = (0,)
 
-        # for roi in roi_list:
-        #     for t, label in enumerate(self.get_annotation(roi)):
-        #         print(f'{roi.name}, {roi.x}, {roi.y}, {roi.width}, {roi.height}, {t}, {label}, {self.class_names()[label]}')
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            results = pandas.DataFrame(project.repository.session.execute(
+                sqlalchemy.text(f"SELECT run.id_, rc.roi, roi.fov, roi.x0_, roi.y0_, roi.x1_, roi.y1_, "
+                                f"rc.t, data.z, rc.class_name, data.url "
+                                f"FROM roi_classification as rc, ROI as roi, run, data, ImageResource as img "
+                                f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+                                f"AND rc.run=run.id_ and rc.roi=roi.id_ "
+                                f"AND run.parameters ->> '$.annotator'='{get_config_value('project', 'user')}' "
+                                f"AND run.parameters ->> '$.class_names'=json('{self.class_names()}') "
+                                f"AND data.t = rc.t AND data.image_resource=img.id_ AND img.fov=roi.fov "
+                                f"AND data.z in {tuple(z_layers)}"
+                                f"ORDER BY rc.run, data.url, rc.roi ASC;")))
+            return results
+
+    def create_hdf5_annotated_rois(self, hdf5_file, z_channels=None):
+        print(z_channels)
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Retrieving data for annotated ROIs')
+        data = self.get_all_annotations(z_layers = z_channels)
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Data retrieved with {len(data)} rows')
+        data = data.drop_duplicates(subset=['roi', 't', 'z'], keep='last')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Kept latest annotations only, there are now {len(data)} rows')
+        data.sort_values(by=['fov', 'url'], inplace=True)
+        data['w'] = data['x1_'] - data['x0_'] + 1
+        data['h'] = data['y1_'] - data['y0_'] + 1
+        df = data.max(numeric_only=True)
+        data['roi'] -= 1
+        class_names = self.class_names()
+
+        with h5py.File(hdf5_file, 'w') as hdf5:
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Creating ROIs dataset with shape ({df.t + 1}, {df.roi}, {df.w}, {df.h}, {df.z + 1},)')
+            roi_ds = hdf5.create_dataset('rois', shape=(df.t + 1, df.roi, df.w, df.h, df.z + 1,), dtype=np.uint16)
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Creating targets dataset with shape ({df.t + 1}, {df.roi},)')
+            initial_values = np.zeros((df.t + 1, df.roi,), dtype=np.int8) - 1
+            targets_ds = hdf5.create_dataset('targets', shape=(df.t + 1, df.roi,), dtype=np.int8, data=initial_values)
+
+            # df = data.groupby(by='fov').max(numeric_only=True)
+            # for fov in df.itertuples():
+            #     print(f'{fov.Index}: ({fov.t + 1}, {fov.roi}, {fov.w}, {fov.h}, {fov.z + 1})', file=sys.stderr)
+
+            prev_fov = -1
+            prev_url = ''
+            for d in data.itertuples():
+                if d.fov != prev_fov:
+                    print(f'{datetime.now().strftime("%H:%M:%S")}: Extracting ROIs from FOV {d.fov}')
+                    prev_fov = d.fov
+                if d.url != prev_url:
+                    fov_image = tifffile.imread(d.url)
+                    prev_url = d.url
+                try:
+                    roi_ds[d.t, d.roi, :, :, z_channels.index(d.z)] = fov_image[d.y0_: d.y1_ + 1, d.x0_:d.x1_ + 1]
+                except:
+                    print(f'{d.t=}, {d.roi=}, {z_channels.index(d.z)=}, {d.z=}')
+                if d.z == z_channels[0]:
+                    targets_ds[d.t, d.roi] = class_names.index(d.class_name)
+                    # print(f'{datetime.now().strftime("%H:%M:%S")}: adding roi annotation at {d.roi}, {d.t}', file=sys.stderr)
+
+
+        # roi_list = self.get_annotated_rois()
+        # print(f'{datetime.now().strftime("%H:%M:%S")}: Getting data array')
+        # data = [[roi.name, roi.fov.id_, roi.x, roi.y, roi.width, roi.height, t, label] for roi in roi_list for t, label in enumerate(self.get_annotation(roi))]
+        # print(f'{datetime.now().strftime("%H:%M:%S")}: Creating dataframe')
+        # df = pandas.DataFrame(data, columns=['roi', 'fov', 'x', 'y', 'w', 'h', 'frame', 'target'])
+        #
+        # # df.sort_values(by=['fov'], inplace=True)
+        # print(f'{datetime.now().strftime("%H:%M:%S")}: Grouping by FOV id')
+        # # groups = df.groupby('fov', group_keys=False).apply(lambda x: x)
+        # groups = df.groupby(['fov', 'frame'], group_keys=True)
+        #
+        # print(f'{datetime.now().strftime("%H:%M:%S")}: Create datasets')
+        # with h5py.File(hdf5_file, 'w') as f:
+        #     for group_name in groups.groups:
+        #         group = groups.get_group(group_name)
+        #         frame = group_name[1]
+        #         with pydetecdiv_project(PyDetecDiv.project_name) as project:
+        #             fov = project.get_object("FOV", group_name[0])
+        #             img_data_files = [fov.image_resource().image_resource_data().image_files[frame, 0, z] for z in z_channels]
+        #             fov_image = np.stack([tifffile.imread(z_layer) for z_layer in img_data_files], axis=2)
+        #             # stack_fov_image(fov.image_resource().image_resource_data(), group_name[1], z=z_channels)
+        #         rois = list(group["roi"].unique())
+        #         num_rois = len(rois)
+        #         tdim = group["frame"].max() + 1
+        #         width = group.loc[df['fov'] == fov.id_]['w'].max()
+        #         height = group.loc[df['fov'] == fov.id_]['h'].max()
+        #
+        #         print(f'{datetime.now().strftime("%H:%M:%S")}: FOV: {group_name}, {num_rois} ROIs, {tdim} frames' )
+        #         fov_ds = f.create_dataset(f'rois/{fov.name}', shape=(tdim, num_rois, height, width, 3), dtype=np.uint16, )
+        #         targets_ds = f.create_dataset(f'targets/{fov.name}', shape=(tdim, num_rois, height, width, 3), dtype=np.uint16, )
+        #         # group.sort_values(by=[6,], inplace=True)
+        #         for row in group.itertuples():
+        #             fov_ds[row.frame, rois.index(row.roi), ...] = fov_image[row.y:row.y + row.h, row.x:row.x + row.w]
+        #             targets_ds[row.frame, rois.index(row.roi)] = row.target
+        #
+        #         # with pydetecdiv_project(PyDetecDiv.project_name) as project:
+        #         #     fov = project.get_object("FOV", group_name)
+        #         #     fov_ds = f.create_dataset(fov.name, shape=(tdim, num_rois, 1, width, height, 3), dtype=np.uint16,)
+        #         #     for row in group.itertuples():
+        #         #         fov_ds[row.frame, rois.index(row.roi), 0] = row.target
+        #                 # fov_ds[row.frame, rois.index(row.roi), : , ...] =
+        #                 #     (row.roi, row.frame, row.x, row.y, row.w, row.h, row.target)
+        #             #     if row.Index == 4:
+        #             #         break
+        #             # fov_image = stack_fov_image(fov.image_resource().image_resource_data(), t, z=None)
+        #             # print(fov_image.shape)
+        #             # for row in group.iterrows():
+        #
+        #
+        #     # for roi in roi_list:
+        #     #     tdim = df.loc[df['roi'] == roi.name]['frame'].max() + 1
+        #     #     roi_ds = f.create_dataset(f'rois/{roi.name}', shape=(tdim, roi.width, roi.height, 3), dtype=np.uint16,)
+        #     #     targets_ds = f.create_dataset(f'targets/{roi.name}', shape=(tdim, ), dtype=np.uint8,)
+        #
+        #
+        # # for group_name in groups.groups:
+        # #     group = groups.get_group(group_name)
+        # #     print(f'FOV: {group_name}, {group["roi"].nunique()} ROIs, {group["frame"].max() + 1} frames' )
+        # #
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Done')
+
 
     def prepare_data(self, hdf5_file, seqlen=0, train=0.6, validation=0.2, seed=42):
         with h5py.File(hdf5_file, 'r') as f:
@@ -777,13 +882,6 @@ class Plugin(plugins.Plugin):
 
         model = module.model.create_model(len(self.parameters['class_names'].value))
 
-        # if self.parameters['weights'].value is not None:
-        #     print(f'{datetime.now().strftime("%H:%M:%S")}: Loading weights from {self.parameters["weights"].key}')
-        #     loadWeights(model, filename=self.parameters['weights'].value)
-        #     run = self.save_training_run(finetune=True)
-        # else:
-        #     run = self.save_training_run()
-
         print(f'{datetime.now().strftime("%H:%M:%S")}: Compiling model')
         learning_rate = self.parameters['learning_rate'].value
         if self.parameters['optimizer'].key in ['SGD']:
@@ -824,6 +922,14 @@ class Plugin(plugins.Plugin):
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Test dataset')
         test_dataset = ROIDataset(hdf5_file, test_idx, seqlen=seqlen, batch_size=batch_size)
+
+
+        if self.parameters['weights'].value is not None:
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Loading weights from {self.parameters["weights"].key}')
+            loadWeights(model, filename=self.parameters['weights'].value)
+            run = self.save_training_run(finetune=True)
+        else:
+            run = self.save_training_run()
 
         # self.save_training_datasets(run, roi_list, num_training, num_validation)
 
@@ -1142,6 +1248,19 @@ def get_rgb_images_from_stacks_memmap(imgdata, roi_list, t, z=None):
                                 ]).as_tensor(ImgDType.float32) for roi in roi_list]
     return roi_images
 
+def stack_fov_image(imgdata, t, z=None):
+    if z is None:
+        z = [0, 0, 0]
+
+    image1 = Image(imgdata.image(T=t, Z=z[0], drift=PyDetecDiv.app.apply_drift))
+    image2 = Image(imgdata.image(T=t, Z=z[1], drift=PyDetecDiv.app.apply_drift))
+    image3 = Image(imgdata.image(T=t, Z=z[2], drift=PyDetecDiv.app.apply_drift))
+
+    rgb_image = Image.compose_channels([image1.stretch_contrast(),
+                                          image2.stretch_contrast(),
+                                          image3.stretch_contrast()
+                                          ]).as_tensor(ImgDType.float32)
+    return rgb_image
 
 def get_rgb_images_from_stacks(imgdata, roi_list, t, z=None):
     """
