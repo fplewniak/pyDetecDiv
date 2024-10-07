@@ -714,8 +714,8 @@ class Plugin(plugins.Plugin):
         class_names = self.class_names(as_string=False)
 
         with h5py.File(hdf5_file, 'w') as hdf5:
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Creating ROIs dataset with shape ({df.t + 1}, {df.roi}, {df.w}, {df.h}, {df.z + 1},)')
-            roi_ds = hdf5.create_dataset('rois', shape=(df.t + 1, df.roi, df.w, df.h, df.z + 1,), dtype=np.uint16)
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Creating ROIs dataset with shape ({df.t + 1}, {df.roi}, {df.h}, {df.w}, {df.z + 1},)')
+            roi_ds = hdf5.create_dataset('rois', shape=(df.t + 1, df.roi, df.h, df.w, df.z + 1,), dtype=np.float32)
             print(f'{datetime.now().strftime("%H:%M:%S")}: Creating targets dataset with shape ({df.t + 1}, {df.roi},)')
             initial_values = np.zeros((df.t + 1, df.roi,), dtype=np.int8) - 1
             targets_ds = hdf5.create_dataset('targets', shape=(df.t + 1, df.roi,), dtype=np.int8, data=initial_values)
@@ -814,12 +814,14 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Done')
 
 
-    def prepare_data(self, hdf5_file, seqlen=0, train=0.6, validation=0.2, seed=42):
+    def prepare_data_for_training(self, hdf5_file, seqlen=0, train=0.6, validation=0.2, seed=42):
         with h5py.File(hdf5_file, 'r') as f:
             tdim = f['rois'].shape[0] - seqlen
             num_rois = f['rois'].shape[1]
-
-        unique_combinations = [(t, roi,) for t in range(tdim - seqlen) for roi in range(num_rois)]
+            if seqlen:
+                unique_combinations = [(t, roi,) for t in range(tdim - seqlen) for roi in range(num_rois) if all(f['targets'][t:t + seqlen, roi, ...]!= -1)]
+            else:
+                unique_combinations = [(t, roi,) for t in range(tdim) for roi in range(num_rois) if f['targets'][t, roi, ...] != -1]
         random.seed(seed)
         random.shuffle(unique_combinations)
         num_training = int(len(unique_combinations) * train)
@@ -920,7 +922,7 @@ class Plugin(plugins.Plugin):
         if not os.path.exists(hdf5_file):
             self.create_hdf5_annotated_rois(hdf5_file, z_channels=z_channels)
 
-        training_idx, validation_idx, test_idx = self.prepare_data(hdf5_file, seqlen=seqlen,
+        training_idx, validation_idx, test_idx = self.prepare_data_for_training(hdf5_file, seqlen=seqlen,
                                                                    train=self.parameters['num_training'].value,
                                                                    validation=self.parameters['num_validation'].value,
                                                                    seed=self.parameters['dataset_seed'].value)
