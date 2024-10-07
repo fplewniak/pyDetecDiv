@@ -745,8 +745,9 @@ class Plugin(plugins.Plugin):
                     prev_url = d.url
                 try:
                     roi_ds[d.t, d.roi, :, :, z_channels.index(d.z)] = fov_image[d.y0_: d.y1_ + 1, d.x0_:d.x1_ + 1]
-                except:
-                    print(f'{d.t=}, {d.roi=}, {z_channels.index(d.z)=}, {d.z=}')
+                except Exception as e:
+                    print(e)
+                    print(f'{d.t=}, {d.roi=}, {z_channels.index(d.z)=}, {d.z=}, {fov_image=}')
                 if d.z == z_channels[0]:
                     targets_ds[d.t, d.roi] = class_names.index(d.class_name)
                     # print(f'{datetime.now().strftime("%H:%M:%S")}: adding roi annotation at {d.roi}, {d.t}', file=sys.stderr)
