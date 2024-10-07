@@ -711,7 +711,7 @@ class Plugin(plugins.Plugin):
         data['h'] = data['y1_'] - data['y0_'] + 1
         df = data.max(numeric_only=True)
         data['roi'] -= 1
-        class_names = self.class_names()
+        class_names = self.class_names(as_string=False)
 
         with h5py.File(hdf5_file, 'w') as hdf5:
             print(f'{datetime.now().strftime("%H:%M:%S")}: Creating ROIs dataset with shape ({df.t + 1}, {df.roi}, {df.w}, {df.h}, {df.z + 1},)')
