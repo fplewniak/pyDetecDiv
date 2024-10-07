@@ -10,6 +10,8 @@ import random
 import sys
 from collections import Counter
 from datetime import datetime
+
+import cv2
 import keras.optimizers
 
 import h5py
@@ -687,7 +689,7 @@ class Plugin(plugins.Plugin):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             results = pandas.DataFrame(project.repository.session.execute(
                 sqlalchemy.text(f"SELECT run.id_, rc.roi, roi.fov, roi.x0_, roi.y0_, roi.x1_, roi.y1_, "
-                                f"rc.t, data.z, rc.class_name, data.url "
+                                f"rc.t, data.z, rc.class_name, data.url, img.key_val ->> '$.drift' as drift "
                                 f"FROM roi_classification as rc, ROI as roi, run, data, ImageResource as img "
                                 f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
                                 f"AND rc.run=run.id_ and rc.roi=roi.id_ "
@@ -699,7 +701,6 @@ class Plugin(plugins.Plugin):
             return results
 
     def create_hdf5_annotated_rois(self, hdf5_file, z_channels=None):
-        print(z_channels)
         print(f'{datetime.now().strftime("%H:%M:%S")}: Retrieving data for annotated ROIs')
         data = self.get_all_annotations(z_layers = z_channels)
         print(f'{datetime.now().strftime("%H:%M:%S")}: Data retrieved with {len(data)} rows')
@@ -728,9 +729,19 @@ class Plugin(plugins.Plugin):
             for d in data.itertuples():
                 if d.fov != prev_fov:
                     print(f'{datetime.now().strftime("%H:%M:%S")}: Extracting ROIs from FOV {d.fov}')
+                    if d.drift:
+                        drift_path = os.path.join(get_project_dir(), d.drift)
+                        drift = pandas.read_csv(drift_path)
                     prev_fov = d.fov
                 if d.url != prev_url:
                     fov_image = tifffile.imread(d.url)
+                    if d.drift:
+                        fov_image = cv2.warpAffine(np.array(fov_image),
+                                       np.float32(
+                                           [[1, 0, -drift.iloc[d.t].dx],
+                                            [0, 1, -drift.iloc[d.t].dy]]),
+                                       (fov_image.shape[1], fov_image.shape[0]))
+                    fov_image = np.float32(fov_image) / np.float32(fov_image.max())
                     prev_url = d.url
                 try:
                     roi_ds[d.t, d.roi, :, :, z_channels.index(d.z)] = fov_image[d.y0_: d.y1_ + 1, d.x0_:d.x1_ + 1]
