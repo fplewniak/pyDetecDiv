@@ -129,8 +129,8 @@ class MultiFileImageResource(ImageResourceData):
         deltaX = 0 if not drift or self.drift is None else int(round(self.drift.iloc[T].dx))
         deltaY = 0 if not drift or self.drift is None else int(round(self.drift.iloc[T].dy))
 
-        sliceX = slice(sliceX.start - deltaX, sliceX.stop - deltaX)
-        sliceY = slice(sliceY.start - deltaY, sliceY.stop - deltaY)
+        sliceX = slice(sliceX.start + deltaX, sliceX.stop + deltaX)
+        sliceY = slice(sliceY.start + deltaY, sliceY.stop + deltaY)
 
         if self.image_files[T, C, Z]:
             return tifffile.memmap(self.image_files[T, C, Z])[sliceY, sliceX]
