@@ -5,6 +5,7 @@
 """
 from enum import Enum
 
+import cv2
 import numpy as np
 import tensorflow as tf
 from skimage import exposure
@@ -114,6 +115,14 @@ class Image():
         :return: 2D tensor
         """
         return tf.image.rgb_to_grayscale(self.tensor)
+
+    def warp_affine(self, affine_matrix, in_place=True):
+        tensor = tf.convert_to_tensor(cv2.warpAffine(self.as_array(), np.float32(affine_matrix), self.shape[1], self.shape[0]))
+        if in_place:
+            return Image(tensor)
+        self.tensor = tensor
+        self.tensor = self._convert_to_dtype(dtype=self._initial_tensor.dtype)
+        return self
 
     def resize(self, shape=None, method='nearest', antialias=True):
         """
