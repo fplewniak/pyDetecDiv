@@ -132,9 +132,11 @@ class ROIDataset(tf.keras.utils.Sequence):
         return math.ceil(len(self.data_list) / self.batch_size)
 
     def __getitem__(self, idx):
+        # print(f'{datetime.now().strftime("%H:%M:%S")}: Loading data list for batch {idx}')
         low = idx * self.batch_size
         high = min(low + self.batch_size, len(self.data_list))
         data_list = self.data_list[low:high]
+        # print(f'{datetime.now().strftime("%H:%M:%S")}: Reading data for batch {idx}')
         if self.seqlen:
             with h5py.File(self.hdf5_file, 'r') as f:
                 batch_data = np.array([f['rois'][frame:frame + self.seqlen, roi, ...] for frame, roi in data_list])
@@ -148,6 +150,7 @@ class ROIDataset(tf.keras.utils.Sequence):
                 batch_data = np.array([f['rois'][frame, roi, ...] for frame, roi in data_list])
                 if 'targets' in f:
                     batch_targets = np.array([f['targets'][frame, roi] for frame, roi in data_list])
+                    # print(f'{datetime.now().strftime("%H:%M:%S")}: Returning data and targets for batch {idx}')
                     return batch_data, batch_targets
                 else:
                     return batch_data
@@ -702,7 +705,7 @@ class Plugin(plugins.Plugin):
 
     def create_hdf5_annotated_rois(self, hdf5_file, z_channels=None):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Retrieving data for annotated ROIs')
-        data = self.get_all_annotations(z_layers = z_channels)
+        data = self.get_all_annotations(z_layers=z_channels)
         print(f'{datetime.now().strftime("%H:%M:%S")}: Data retrieved with {len(data)} rows')
         data = data.drop_duplicates(subset=['roi', 't', 'z'], keep='last')
         print(f'{datetime.now().strftime("%H:%M:%S")}: Kept latest annotations only, there are now {len(data)} rows')
@@ -712,10 +715,17 @@ class Plugin(plugins.Plugin):
         df = data.max(numeric_only=True)
         data['roi'] -= 1
         class_names = self.class_names(as_string=False)
+        data_list = data.loc[:, ['t', 'roi']].drop_duplicates().to_numpy()
 
         with h5py.File(hdf5_file, 'w') as hdf5:
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Creating ROIs dataset with shape ({df.t + 1}, {df.roi}, {df.h}, {df.w}, {df.z + 1},)')
-            roi_ds = hdf5.create_dataset('rois', shape=(df.t + 1, df.roi, df.h, df.w, df.z + 1,), dtype=np.float32)
+            print(
+                f'{datetime.now().strftime("%H:%M:%S")}: Creating annotated (roi, frame) pairs dataset with shape {data_list.shape}')
+            _ = hdf5.create_dataset('annotated', shape=data_list.shape, dtype=np.uint16, data=data_list)
+
+            print(
+                f'{datetime.now().strftime("%H:%M:%S")}: Creating ROIs dataset with shape ({df.t + 1}, {df.roi}, {df.h}, {df.w}, {df.z + 1},)')
+            roi_ds = hdf5.create_dataset('rois', chunks=(1, 1, df.h, df.w, df.z + 1,),
+                                         shape=(df.t + 1, df.roi, df.h, df.w, df.z + 1,), dtype=np.float32)
             print(f'{datetime.now().strftime("%H:%M:%S")}: Creating targets dataset with shape ({df.t + 1}, {df.roi},)')
             initial_values = np.zeros((df.t + 1, df.roi,), dtype=np.int8) - 1
             targets_ds = hdf5.create_dataset('targets', shape=(df.t + 1, df.roi,), dtype=np.int8, data=initial_values)
@@ -734,24 +744,22 @@ class Plugin(plugins.Plugin):
                         drift = pandas.read_csv(drift_path)
                     prev_fov = d.fov
                 if d.url != prev_url:
-                    fov_image = tifffile.imread(d.url)
-                    if d.drift:
-                        fov_image = cv2.warpAffine(np.array(fov_image),
-                                       np.float32(
-                                           [[1, 0, -drift.iloc[d.t].dx],
-                                            [0, 1, -drift.iloc[d.t].dy]]),
-                                       (fov_image.shape[1], fov_image.shape[0]))
-                    fov_image = np.float32(fov_image) / np.float32(fov_image.max())
+                    fov_image = Image(tifffile.imread(d.url)).stretch_contrast()
                     prev_url = d.url
                 try:
-                    roi_ds[d.t, d.roi, :, :, z_channels.index(d.z)] = fov_image[d.y0_: d.y1_ + 1, d.x0_:d.x1_ + 1]
+                    # roi_ds[d.t, d.roi, :, :, z_channels.index(d.z)] = fov_image.as_array(dtype=ImgDType.float32)[d.y0_: d.y1_ + 1, d.x0_:d.x1_ + 1]
+                    deltaX = 0 if not d.drift else int(round(drift.iloc[d.t].dx))
+                    deltaY = 0 if not d.drift else int(round(drift.iloc[d.t].dy))
+                    roi_ds[d.t, d.roi, :, :, z_channels.index(d.z)] = fov_image.crop(d.y0_ + deltaY,
+                                                                                     d.x0_ + deltaX,
+                                                                                     d.h,
+                                                                                     d.w).as_array(dtype=ImgDType.float32)
                 except Exception as e:
                     print(e)
                     print(f'{d.t=}, {d.roi=}, {z_channels.index(d.z)=}, {d.z=}, {fov_image=}')
                 if d.z == z_channels[0]:
                     targets_ds[d.t, d.roi] = class_names.index(d.class_name)
                     # print(f'{datetime.now().strftime("%H:%M:%S")}: adding roi annotation at {d.roi}, {d.t}', file=sys.stderr)
-
 
         # roi_list = self.get_annotated_rois()
         # print(f'{datetime.now().strftime("%H:%M:%S")}: Getting data array')
@@ -814,20 +822,26 @@ class Plugin(plugins.Plugin):
         # #
         print(f'{datetime.now().strftime("%H:%M:%S")}: Done')
 
-
     def prepare_data_for_training(self, hdf5_file, seqlen=0, train=0.6, validation=0.2, seed=42):
         with h5py.File(hdf5_file, 'r') as f:
-            tdim = f['rois'].shape[0] - seqlen
-            num_rois = f['rois'].shape[1]
-            if seqlen:
-                unique_combinations = [(t, roi,) for t in range(tdim - seqlen) for roi in range(num_rois) if all(f['targets'][t:t + seqlen, roi, ...]!= -1)]
-            else:
-                unique_combinations = [(t, roi,) for t in range(tdim) for roi in range(num_rois) if f['targets'][t, roi, ...] != -1]
+            # tdim = f['rois'].shape[0] - seqlen
+            # num_rois = f['rois'].shape[1]
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Reading (frame, roi) annotated pairs')
+            unique_combinations = f['annotated'][...]
+
+            # print(f'{datetime.now().strftime("%H:%M:%S")}: Computing (frame, roi) combinations')
+            # if seqlen:
+            #     unique_combinations = [(t, roi,) for t in range(tdim - seqlen) for roi in range(num_rois) if all(f['targets'][t:t + seqlen, roi, ...]!= -1)]
+            # else:
+            #     unique_combinations = [(t, roi,) for t in range(tdim) for roi in range(num_rois) if f['targets'][t, roi, ...] != -1]
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Shuffling data')
         random.seed(seed)
         random.shuffle(unique_combinations)
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Determine training and validation datasets size')
         num_training = int(len(unique_combinations) * train)
         num_validation = int(len(unique_combinations) * validation)
 
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Return datasets indices')
         return (unique_combinations[:num_training], unique_combinations[num_training:num_validation + num_training],
                 unique_combinations[num_validation + num_training:])
 
@@ -923,10 +937,14 @@ class Plugin(plugins.Plugin):
         if not os.path.exists(hdf5_file):
             self.create_hdf5_annotated_rois(hdf5_file, z_channels=z_channels)
 
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data for training')
         training_idx, validation_idx, test_idx = self.prepare_data_for_training(hdf5_file, seqlen=seqlen,
-                                                                   train=self.parameters['num_training'].value,
-                                                                   validation=self.parameters['num_validation'].value,
-                                                                   seed=self.parameters['dataset_seed'].value)
+                                                                                train=self.parameters[
+                                                                                    'num_training'].value,
+                                                                                validation=self.parameters[
+                                                                                    'num_validation'].value,
+                                                                                seed=self.parameters[
+                                                                                    'dataset_seed'].value)
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Training dataset')
         training_dataset = ROIDataset(hdf5_file, training_idx, seqlen=seqlen, batch_size=batch_size)
@@ -936,7 +954,6 @@ class Plugin(plugins.Plugin):
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Test dataset')
         test_dataset = ROIDataset(hdf5_file, test_idx, seqlen=seqlen, batch_size=batch_size)
-
 
         if self.parameters['weights'].value is not None:
             print(f'{datetime.now().strftime("%H:%M:%S")}: Loading weights from {self.parameters["weights"].key}')
@@ -1262,6 +1279,7 @@ def get_rgb_images_from_stacks_memmap(imgdata, roi_list, t, z=None):
                                 ]).as_tensor(ImgDType.float32) for roi in roi_list]
     return roi_images
 
+
 def stack_fov_image(imgdata, t, z=None):
     if z is None:
         z = [0, 0, 0]
@@ -1271,10 +1289,11 @@ def stack_fov_image(imgdata, t, z=None):
     image3 = Image(imgdata.image(T=t, Z=z[2], drift=PyDetecDiv.app.apply_drift))
 
     rgb_image = Image.compose_channels([image1.stretch_contrast(),
-                                          image2.stretch_contrast(),
-                                          image3.stretch_contrast()
-                                          ]).as_tensor(ImgDType.float32)
+                                        image2.stretch_contrast(),
+                                        image3.stretch_contrast()
+                                        ]).as_tensor(ImgDType.float32)
     return rgb_image
+
 
 def get_rgb_images_from_stacks(imgdata, roi_list, t, z=None):
     """
