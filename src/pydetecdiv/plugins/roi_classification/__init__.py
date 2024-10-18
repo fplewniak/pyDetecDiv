@@ -842,12 +842,13 @@ class Plugin(plugins.Plugin):
 
             # If merging and normalization are too slow, maybe use tensorflow or pytorch to do the operations
             img = cv2.merge([cv2.imread(z_file, cv2.IMREAD_UNCHANGED) for z_file in reversed(row.channel_files)])
-            fov_image = cv2.normalize(img.astype(np.float32), dst=None, alpha=1.0, beta=0.0, norm_type=cv2.NORM_MINMAX)
+            # fov_image = cv2.normalize(img.astype(np.float32), dst=None, alpha=1.0, beta=0.0, norm_type=cv2.NORM_MINMAX)
             # fov_image = img
 
-            roi_frames = np.array([fov_image[roi.y0:roi.y1+1, roi.x0:roi.x1+1] for roi in rois.itertuples()])
             for roi in rois.itertuples():
-                roi_data[row.t, roi.roi-1, ...] = fov_image[roi.y0:roi.y1+1, roi.x0:roi.x1+1]
+                roi_data[row.t, roi.roi-1, ...] = cv2.normalize(img[roi.y0:roi.y1+1, roi.x0:roi.x1+1], dtype=cv2.CV_32F, dst=None, alpha=1e-10, beta=1.0, norm_type=cv2.NORM_MINMAX)
+                # roi_data[row.t, roi.roi-1, ...] = tf.keras.utils.normalize(img[roi.y0:roi.y1+1, roi.x0:roi.x1+1], axis=-1) # does not stretch from 0 to 1
+                # roi_data[row.t, roi.roi-1, ...] = fov_image[roi.y0:roi.y1+1, roi.x0:roi.x1+1]
 
             # targets = np.array([data[(data['roi']==row.roi) & (data['t']==row.t)]['class_name'] for row in rois.itertuples()])
 
