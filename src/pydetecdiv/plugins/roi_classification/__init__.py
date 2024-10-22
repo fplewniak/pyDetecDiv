@@ -12,6 +12,7 @@ from collections import Counter
 from datetime import datetime
 
 import cv2
+import fastremap
 import keras.optimizers
 import pandas as pd
 
@@ -158,22 +159,13 @@ class ROIDataset(tf.keras.utils.Sequence):
                     return batch_data
 
 
-class TblRoiAnnotationRow(tbl.IsDescription):
+class TblTargetRow(tbl.IsDescription):
     roi = tbl.UInt16Col()
-    fov = tbl.UInt16Col()
-    x0_ = tbl.UInt16Col()
-    y0_ = tbl.UInt16Col()
-    x1_ = tbl.UInt16Col()
-    y1_ = tbl.UInt16Col()
-    w = tbl.UInt16Col()
-    h = tbl.UInt16Col()
     t = tbl.UInt16Col()
-    z = tbl.UInt8Col()
-    channel = tbl.UInt8Col()
     label = tbl.UInt8Col()
+
+class TblClassNamesRow(tbl.IsDescription):
     class_name = tbl.StringCol(16)
-    url = tbl.StringCol(512)
-    drift = tbl.StringCol(128)
 
 
 class Plugin(plugins.Plugin):
@@ -788,22 +780,13 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Data retrieved with {len(data)} rows')
         class_names = self.class_names(as_string=False)
 
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Saving data to HDF5 file')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Creating HDF5 file')
         h5file = tbl.open_file(hdf5_file, mode='w', title='ROI annotations')
-        # roi_table = h5file.create_table(h5file.root, 'annotated', TblRoiAnnotationRow, 'Annotated ROIs')
-        # roi_table.append([list(row) for row in data.sort_index(axis=1).itertuples(index=False)])
-
-        # data = data.loc[data['channel'] == channel]
-        # print(f'{datetime.now().strftime("%H:%M:%S")}: Kept channel {channel}, there are now {len(data)} rows')
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Getting fov data')
         fov_data = self.get_fov_data(z_layers=z_channels)
         mask = fov_data[['fov', 't']].apply(tuple, axis=1).isin(data[['fov', 't']].apply(tuple, axis=1))
         fov_data = fov_data[mask]
-        # print(fov_data[fov_data['fov']==1], file=sys.stderr)
-        # fov_data = data.loc[:, ['fov', 't', 'z', 'url']].drop_duplicates(subset=['fov', 't', 'z'])
-        # fov_data = fov_data.groupby(['fov', 't'])['url'].apply(self.layers2channels).reset_index()
-        # fov_data.columns = ['fov', 't', 'channel_files']
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Getting drift correction')
         drift_correction = self.get_drift_corrections()
@@ -828,37 +811,64 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: T = {np.max(fov_data["t"])+1}', file=sys.stderr)
         print(f'{datetime.now().strftime("%H:%M:%S")}: ROIs = {len(roi_list["roi"].unique())} ({len(roi_list)})', file=sys.stderr)
 
-        num_rois = len(roi_list["roi"].unique())
+        # roi_values = roi_list["roi"].unique()
+        # num_rois = len(roi_values)
+
+        # roi_values = fastremap.unique(roi_list["roi"])
+        # num_rois = len(roi_values)
+        # roi_mapping = dict(zip(roi_values, range(num_rois)))
+
+        roi_values = np.array(roi_list["roi"])
+        roi_list["roi"], roi_mapping = fastremap.renumber(roi_values, in_place=False, preserve_zero=False)
+        num_rois = len(roi_mapping)
+
+        # num_rois = np.max(roi_list["roi"])
         num_frames = np.max(fov_data['t']) + 1
 
-        roi_data = h5file.create_carray(h5file.root, 'roi_data', atom=tbl.Float32Atom(shape=(height, width, 3)), shape=(num_frames, num_rois))
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Creating target datasets')
+
+        targets = data.loc[:, ['t', 'roi', 'class_name']]
+        targets['roi'] = fastremap.remap(np.array(targets['roi']), roi_mapping)
+        targets['label'] = targets['class_name'].apply(lambda x: self.class_names(as_string=False).index(x))
+
+        # target_table = h5file.create_table(h5file.root, 'targets', TblTargetRow, 'Targets')
+        # # print([(row.t, row.roi, row.label) for row in targets.itertuples()], file=sys.stderr)
+        # target_table.append([(row.label, row.roi-1, row.t) for row in targets.itertuples()])
+
+        target_array = h5file.create_carray(h5file.root, 'targets', atom=tbl.Int8Atom(), shape=(num_frames, num_rois))
+
+        class_names_table = h5file.create_table(h5file.root, 'class_names', TblClassNamesRow, 'Class names')
+        class_names_table.append([(name,) for name in self.class_names(as_string=False)])
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Creating ROI dataset')
+
+        roi_data = h5file.create_carray(h5file.root, 'roi_data', atom=tbl.Float16Atom(shape=(height, width, 3)),
+                                        shape=(num_frames, num_rois))
+        # roi_data = h5file.create_vlarray(h5file.root, 'roi_data', atom=tbl.Float16Atom(shape=(height, width, 3)))
+        # roi_data = h5file.create_vlarray(h5file.root, 'roi_data', atom=tbl.ObjectAtom())
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Reading and compositing images')
         for row in fov_data.itertuples():
             if row.t % 10 == 0:
                 print(f'{datetime.now().strftime("%H:%M:%S")}: FOV {row.fov}, frame {row.t}')
 
-            rois = roi_list.loc[(roi_list['fov'] == row.fov) & (roi_list['t'] == row.t), ['roi','x0', 'y0',  'x1', 'y1', 'dx', 'dy']]
+            # rois = roi_list.loc[(roi_list['fov'] == row.fov) & (roi_list['t'] == row.t), ['roi', 'x0', 'y0',  'x1', 'y1', 'dx', 'dy']]
+            rois = roi_list.loc[(roi_list['fov'] == row.fov) & (roi_list['t'] == row.t)]
 
             # If merging and normalization are too slow, maybe use tensorflow or pytorch to do the operations
-            img = cv2.merge([cv2.imread(z_file, cv2.IMREAD_UNCHANGED) for z_file in reversed(row.channel_files)])
-            # fov_image = cv2.normalize(img.astype(np.float32), dst=None, alpha=1.0, beta=0.0, norm_type=cv2.NORM_MINMAX)
-            # fov_image = img
+            fov_img = cv2.merge([cv2.imread(z_file, cv2.IMREAD_UNCHANGED) for z_file in reversed(row.channel_files)])
 
             for roi in rois.itertuples():
-                roi_data[row.t, roi.roi-1, ...] = cv2.normalize(img[roi.y0:roi.y1+1, roi.x0:roi.x1+1], dtype=cv2.CV_32F, dst=None, alpha=1e-10, beta=1.0, norm_type=cv2.NORM_MINMAX)
-                # roi_data[row.t, roi.roi-1, ...] = tf.keras.utils.normalize(img[roi.y0:roi.y1+1, roi.x0:roi.x1+1], axis=-1) # does not stretch from 0 to 1
-                # roi_data[row.t, roi.roi-1, ...] = fov_image[roi.y0:roi.y1+1, roi.x0:roi.x1+1]
+                # roi_data.append(cv2.normalize(fov_img[roi.y0:roi.y1+1, roi.x0:roi.x1+1],
+                #                                                 dtype=cv2.CV_16F, dst=None, alpha=1e-10, beta=1.0,
+                #                                                 norm_type=cv2.NORM_MINMAX))
+                roi_data[row.t, roi.roi-1, ...] = cv2.normalize(fov_img[roi.y0:roi.y1+1, roi.x0:roi.x1+1],
+                                                                dtype=cv2.CV_16F, dst=None, alpha=1e-10, beta=1.0,
+                                                                norm_type=cv2.NORM_MINMAX)
+                target_array[row.t, roi.roi-1] = targets.loc[(targets['t']==row.t) & (targets['roi']==roi.roi), 'label'].values
 
-            # targets = np.array([data[(data['roi']==row.roi) & (data['t']==row.t)]['class_name'] for row in rois.itertuples()])
-
-        # for fov in data['fov'].unique():
-        #     num_frames = data.loc[(data['fov'] == fov)]['t'].max() + 1
-        #     for T in range(min(3, num_frames)):
-        #         urls = [data.loc[(data['fov'] == fov) & (data['channel'] == channel) & (data['t'] == T) & (data['t'] == T) & (data['z'] == z)]['url'].unique()[0]
-        #             for z in z_channels]
-        #         fov_image = Image.compose_channels([Image(tifffile.imread(url)) for url in urls])
-        #         print(fov_image.shape, file=sys.stderr)
+            # targets = np.array([data[(data['roi']==roi.roi) & (data['t']==row.t)]['class_name'] for roi in rois.itertuples()])
+            # print(targets)
 
         # with h5py.File(hdf5_file, 'w') as hdf5:
         #     print(
@@ -872,38 +882,6 @@ class Plugin(plugins.Plugin):
         #     print(f'{datetime.now().strftime("%H:%M:%S")}: Creating targets dataset with shape ({df.t + 1}, {df.roi},)')
         #     initial_values = np.zeros((df.t + 1, df.roi,), dtype=np.int8) - 1
         #     targets_ds = hdf5.create_dataset('targets', shape=(df.t + 1, df.roi,), dtype=np.int8, data=initial_values)
-        #
-        #     # df = data.groupby(by='fov').max(numeric_only=True)
-        #     # for fov in df.itertuples():
-        #     #     print(f'{fov.Index}: ({fov.t + 1}, {fov.roi}, {fov.w}, {fov.h}, {fov.z + 1})', file=sys.stderr)
-        #
-        #     prev_fov = -1
-        #     prev_url = ''
-        #     for d in data.itertuples():
-        #         if d.fov != prev_fov:
-        #             print(f'{datetime.now().strftime("%H:%M:%S")}: Extracting ROIs from FOV {d.fov}')
-        #             if d.drift:
-        #                 drift_path = os.path.join(get_project_dir(), d.drift)
-        #                 drift = pandas.read_csv(drift_path)
-        #             prev_fov = d.fov
-        #         if d.url != prev_url:
-        #             fov_image = Image(tifffile.imread(d.url)).stretch_contrast()
-        #             prev_url = d.url
-        #         try:
-        #             # roi_ds[d.t, d.roi, :, :, z_channels.index(d.z)] = fov_image.as_array(dtype=ImgDType.float32)[d.y0_: d.y1_ + 1, d.x0_:d.x1_ + 1]
-        #             deltaX = 0 if not d.drift else int(round(drift.iloc[d.t].dx))
-        #             deltaY = 0 if not d.drift else int(round(drift.iloc[d.t].dy))
-        #             roi_ds[d.t, d.roi, :, :, z_channels.index(d.z)] = fov_image.crop(d.y0_ + deltaY,
-        #                                                                              d.x0_ + deltaX,
-        #                                                                              d.h,
-        #                                                                              d.w).as_array(
-        #                 dtype=ImgDType.float32)
-        #         except Exception as e:
-        #             print(e)
-        #             print(f'{d.t=}, {d.roi=}, {z_channels.index(d.z)=}, {d.z=}, {fov_image=}')
-        #         if d.z == z_channels[0]:
-        #             targets_ds[d.t, d.roi] = class_names.index(d.class_name)
-        #             # print(f'{datetime.now().strftime("%H:%M:%S")}: adding roi annotation at {d.roi}, {d.t}', file=sys.stderr)
 
         h5file.close()
         print(f'{datetime.now().strftime("%H:%M:%S")}: Done')
