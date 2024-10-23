@@ -807,18 +807,9 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: ROIs = {len(roi_list["roi"].unique())} ({len(roi_list)})',
               file=sys.stderr)
 
-        # roi_values = roi_list["roi"].unique()
-        # num_rois = len(roi_values)
-
-        # roi_values = fastremap.unique(roi_list["roi"])
-        # num_rois = len(roi_values)
-        # roi_mapping = dict(zip(roi_values, range(num_rois)))
-
         roi_values = np.array(roi_list["roi"])
         roi_list["roi"], roi_mapping = fastremap.renumber(roi_values, in_place=False, preserve_zero=False)
         num_rois = len(roi_mapping)
-
-        # num_rois = np.max(roi_list["roi"])
         num_frames = np.max(fov_data['t']) + 1
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Creating target datasets')
@@ -857,30 +848,29 @@ class Plugin(plugins.Plugin):
                     (targets['t'] == row.t) & (targets['roi'] == roi.roi), 'label'].values
 
         h5file.close()
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Done')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: HDF5 file of annotated ROIs ready')
 
-    def prepare_data_for_training(self, hdf5_file, seqlen=0, train=0.6, validation=0.2, seed=42):
-        with h5py.File(hdf5_file, 'r') as f:
-            # tdim = f['rois'].shape[0] - seqlen
-            # num_rois = f['rois'].shape[1]
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Reading (frame, roi) annotated pairs')
-            unique_combinations = f['annotated'][...]
+    def prepare_data_for_training(self, hdf5_file, seqlen=1, train=0.6, validation=0.2, seed=42):
+        h5file = tbl.open_file(hdf5_file, mode='r')
+        roi_data = h5file.root.roi_data
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Reading targets into a numpy array')
+        targets_arr = h5file.root.targets
+        num_frames = targets_arr.shape[0]
+        num_rois = targets_arr.shape[1]
+        targets = targets_arr.read()
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Select valid targets from array with shape {targets.shape}')
+        indices = [[frame, roi] for roi in range(num_rois) for frame in range(num_frames - seqlen + 1)
+                   if np.all([targets[frame:frame + seqlen, roi] != -1])]
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Kept {len(indices)} valid ROI frames or sequences')
 
-            # print(f'{datetime.now().strftime("%H:%M:%S")}: Computing (frame, roi) combinations')
-            # if seqlen:
-            #     unique_combinations = [(t, roi,) for t in range(tdim - seqlen) for roi in range(num_rois) if all(f['targets'][t:t + seqlen, roi, ...]!= -1)]
-            # else:
-            #     unique_combinations = [(t, roi,) for t in range(tdim) for roi in range(num_rois) if f['targets'][t, roi, ...] != -1]
         print(f'{datetime.now().strftime("%H:%M:%S")}: Shuffling data')
-        random.seed(seed)
-        random.shuffle(unique_combinations)
+        rng = np.random.default_rng(self.parameters['dataset_seed'].value)
+        rng.shuffle(indices)
         print(f'{datetime.now().strftime("%H:%M:%S")}: Determine training and validation datasets size')
-        num_training = int(len(unique_combinations) * train)
-        num_validation = int(len(unique_combinations) * validation)
-
+        num_training = int(len(indices) * train)
+        num_validation = int(len(indices) * validation)
         print(f'{datetime.now().strftime("%H:%M:%S")}: Return datasets indices')
-        return (unique_combinations[:num_training], unique_combinations[num_training:num_validation + num_training],
-                unique_combinations[num_validation + num_training:])
+        return indices[:num_training], indices[num_training:num_validation + num_training], indices[num_validation + num_training:]
 
     # def prepare_data(self, data_list, seqlen=None, targets=True):
     #     """
@@ -968,10 +958,10 @@ class Plugin(plugins.Plugin):
             seqlen = self.parameters['seqlen'].value
             print(f'{datetime.now().strftime("%H:%M:%S")}: Sequence length: {seqlen}')
         else:
-            seqlen = 0
+            seqlen = 1
 
         hdf5_file = os.path.join(get_project_dir(), 'data', 'annotated_rois.h5')
-        if True or not os.path.exists(hdf5_file):
+        if not os.path.exists(hdf5_file):
             self.create_hdf5_annotated_rois(hdf5_file, z_channels=z_channels)
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data for training')
