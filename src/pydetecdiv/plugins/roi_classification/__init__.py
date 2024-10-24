@@ -128,7 +128,6 @@ class ROIDataset(tf.keras.utils.Sequence):
         super().__init__(**kwargs)
         self.h5file_name = h5file_name
         self.data_list = data_list
-        print(len(self.data_list), file=sys.stderr)
         self.batch_size = batch_size
         self.seqlen = seqlen
 
@@ -971,8 +970,8 @@ class Plugin(plugins.Plugin):
             loss=tf.keras.losses.SparseCategoricalCrossentropy(),
             metrics=['accuracy', lr_metric],
         )
-        model.summary(print_fn=lambda x: print(x, file=sys.stderr))
-        print('model output:', model.layers[-1].output.shape, file=sys.stderr)
+        # model.summary(print_fn=lambda x: print(x, file=sys.stderr))
+        # print('model output:', model.layers[-1].output.shape, file=sys.stderr)
         input_shape = model.layers[0].output.shape
 
         if len(input_shape) == 5:
@@ -994,13 +993,13 @@ class Plugin(plugins.Plugin):
                                                                                 seed=self.parameters[
                                                                                     'dataset_seed'].value)
 
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Training dataset')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Training dataset (size: {len(training_idx)})')
         training_dataset = ROIDataset(hdf5_file, training_idx, seqlen=seqlen, batch_size=batch_size)
 
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Validation dataset')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Validation dataset (size: {len(validation_idx)})')
         validation_dataset = ROIDataset(hdf5_file, validation_idx, seqlen=seqlen, batch_size=batch_size)
 
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Test dataset')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Test dataset (size: {len(test_idx)})')
         test_dataset = ROIDataset(hdf5_file, test_idx, seqlen=seqlen, batch_size=batch_size)
 
         if self.parameters['weights'].value is not None:
