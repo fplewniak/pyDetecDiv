@@ -41,6 +41,7 @@ dependencies = [
     #"scipy",
     "scikit-learn",
     "sqlalchemy<2.0",
+    "tables",
     "tifffile",
     "tensorflow==2.15.0",
     "vidstab",
