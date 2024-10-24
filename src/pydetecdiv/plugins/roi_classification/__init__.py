@@ -123,7 +123,7 @@ class ROIdata:
         self.frame = frame
 
 
-class ROIDataset(tf.keras.utils.Sequence):
+class ROI_KerasSequence(tf.keras.utils.Sequence):
     def __init__(self, h5file_name, data_list, batch_size=32, seqlen=1, **kwargs):
         super().__init__(**kwargs)
         self.h5file_name = h5file_name
@@ -882,7 +882,7 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Kept {len(indices)} valid ROI frames or sequences')
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Shuffling data')
-        rng = np.random.default_rng(self.parameters['dataset_seed'].value)
+        rng = np.random.default_rng(seed)
         rng.shuffle(indices)
         print(f'{datetime.now().strftime("%H:%M:%S")}: Determine training and validation datasets size')
         num_training = int(len(indices) * train)
@@ -893,7 +893,7 @@ class Plugin(plugins.Plugin):
 
     # def prepare_data(self, data_list, seqlen=None, targets=True):
     #     """
-    #     Prepare the data from a list of ROI object as a list of ROIData objects to build the ROIDataset instance
+    #     Prepare the data from a list of ROI object as a list of ROIData objects to build the ROI_KerasSequence instance
     #
     #     :param data_list: the ROI list
     #     :param seqlen: the length of the frame sequence
@@ -994,13 +994,13 @@ class Plugin(plugins.Plugin):
                                                                                     'dataset_seed'].value)
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Training dataset (size: {len(training_idx)})')
-        training_dataset = ROIDataset(hdf5_file, training_idx, seqlen=seqlen, batch_size=batch_size)
+        training_dataset = ROI_KerasSequence(hdf5_file, training_idx, seqlen=seqlen, batch_size=batch_size)
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Validation dataset (size: {len(validation_idx)})')
-        validation_dataset = ROIDataset(hdf5_file, validation_idx, seqlen=seqlen, batch_size=batch_size)
+        validation_dataset = ROI_KerasSequence(hdf5_file, validation_idx, seqlen=seqlen, batch_size=batch_size)
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Test dataset (size: {len(test_idx)})')
-        test_dataset = ROIDataset(hdf5_file, test_idx, seqlen=seqlen, batch_size=batch_size)
+        test_dataset = ROI_KerasSequence(hdf5_file, test_idx, seqlen=seqlen, batch_size=batch_size)
 
         if self.parameters['weights'].value is not None:
             print(f'{datetime.now().strftime("%H:%M:%S")}: Loading weights from {self.parameters["weights"].key}')
@@ -1155,13 +1155,13 @@ class Plugin(plugins.Plugin):
             if len(input_shape) == 4:
                 img_size = (input_shape[1], input_shape[2])
                 roi_data_list = self.prepare_data(roi_list, targets=False)
-                roi_dataset = ROIDataset(roi_data_list, image_size=img_size,
-                                         batch_size=batch_size, z_channels=z_channels)
+                roi_dataset = ROI_KerasSequence(roi_data_list, image_size=img_size,
+                                                batch_size=batch_size, z_channels=z_channels)
             else:
                 img_size = (input_shape[2], input_shape[3])
                 roi_data_list = self.prepare_data(roi_list, seqlen, targets=False)
-                roi_dataset = ROIDataset(roi_data_list, image_size=img_size,
-                                         seqlen=seqlen, batch_size=batch_size, z_channels=z_channels)
+                roi_dataset = ROI_KerasSequence(roi_data_list, image_size=img_size,
+                                                seqlen=seqlen, batch_size=batch_size, z_channels=z_channels)
 
             predictions = model.predict(roi_dataset)
 
