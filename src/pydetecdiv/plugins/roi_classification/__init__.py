@@ -124,10 +124,11 @@ class ROIdata:
 
 
 class ROIDataset(tf.keras.utils.Sequence):
-    def __init__(self, hdf5_file, data_list, batch_size=32, seqlen=None, **kwargs):
+    def __init__(self, h5file_name, data_list, batch_size=32, seqlen=1, **kwargs):
         super().__init__(**kwargs)
-        self.hdf5_file = hdf5_file
+        self.h5file_name = h5file_name
         self.data_list = data_list
+        print(len(self.data_list), file=sys.stderr)
         self.batch_size = batch_size
         self.seqlen = seqlen
 
@@ -139,24 +140,42 @@ class ROIDataset(tf.keras.utils.Sequence):
         low = idx * self.batch_size
         high = min(low + self.batch_size, len(self.data_list))
         data_list = self.data_list[low:high]
-        # print(f'{datetime.now().strftime("%H:%M:%S")}: Reading data for batch {idx}')
-        if self.seqlen:
-            with h5py.File(self.hdf5_file, 'r') as f:
-                batch_data = np.array([f['rois'][frame:frame + self.seqlen, roi, ...] for frame, roi in data_list])
-                if 'targets' in f:
-                    batch_targets = np.array([f['targets'][frame, roi] for frame, roi in data_list])
-                    return batch_data, batch_targets
-                else:
-                    return batch_data
+
+        h5file = tbl.open_file(self.h5file_name, 'r')
+        roi_data = h5file.root.roi_data
+        targets = h5file.root.targets
+
+        if self.seqlen > 1:
+            batch_data = np.array([roi_data[frame:frame+self.seqlen, roi_id, ...] for frame, roi_id in data_list])
+            batch_targets = np.array([targets[frame:frame+self.seqlen, roi_id] for frame, roi_id in data_list])
         else:
-            with h5py.File(self.hdf5_file, 'r') as f:
-                batch_data = np.array([f['rois'][frame, roi, ...] for frame, roi in data_list])
-                if 'targets' in f:
-                    batch_targets = np.array([f['targets'][frame, roi] for frame, roi in data_list])
-                    # print(f'{datetime.now().strftime("%H:%M:%S")}: Returning data and targets for batch {idx}')
-                    return batch_data, batch_targets
-                else:
-                    return batch_data
+            batch_data = np.array([roi_data[frame, roi_id, ...] for frame, roi_id in data_list])
+            batch_targets = np.array([targets[frame, roi_id] for frame, roi_id in data_list])
+
+        # print(batch_data.shape, file=sys.stderr)
+        # print(batch_targets.shape, file=sys.stderr)
+
+        h5file.close()
+        return batch_data, batch_targets
+        #
+        # # print(f'{datetime.now().strftime("%H:%M:%S")}: Reading data for batch {idx}')
+        # if self.seqlen:
+        #     with h5py.File(self.hdf5_file, 'r') as f:
+        #         batch_data = np.array([f['rois'][frame:frame + self.seqlen, roi, ...] for frame, roi in data_list])
+        #         if 'targets' in f:
+        #             batch_targets = np.array([f['targets'][frame, roi] for frame, roi in data_list])
+        #             return batch_data, batch_targets
+        #         else:
+        #             return batch_data
+        # else:
+        #     with h5py.File(self.hdf5_file, 'r') as f:
+        #         batch_data = np.array([f['rois'][frame, roi, ...] for frame, roi in data_list])
+        #         if 'targets' in f:
+        #             batch_targets = np.array([f['targets'][frame, roi] for frame, roi in data_list])
+        #             # print(f'{datetime.now().strftime("%H:%M:%S")}: Returning data and targets for batch {idx}')
+        #             return batch_data, batch_targets
+        #         else:
+        #             return batch_data
 
 
 class TblClassNamesRow(tbl.IsDescription):
@@ -869,7 +888,8 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Determine training and validation datasets size')
         num_training = int(len(indices) * train)
         num_validation = int(len(indices) * validation)
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Return datasets indices')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Close HDF5 file and return datasets indices')
+        h5file.close()
         return indices[:num_training], indices[num_training:num_validation + num_training], indices[num_validation + num_training:]
 
     # def prepare_data(self, data_list, seqlen=None, targets=True):
@@ -951,7 +971,8 @@ class Plugin(plugins.Plugin):
             loss=tf.keras.losses.SparseCategoricalCrossentropy(),
             metrics=['accuracy', lr_metric],
         )
-        # print(model.summary())
+        model.summary(print_fn=lambda x: print(x, file=sys.stderr))
+        print('model output:', model.layers[-1].output.shape, file=sys.stderr)
         input_shape = model.layers[0].output.shape
 
         if len(input_shape) == 5:
@@ -1354,6 +1375,7 @@ def loadWeights(model, filename=os.path.join(__path__[0], "weights.h5"), debug=F
     :param filename: the H5 file name containing the weights
     :param debug: debug mode
     """
+    import h5py
     with h5py.File(filename, 'r') as f:
         # try to read model weights as available in HDF5 file from Matlab export
         try:
