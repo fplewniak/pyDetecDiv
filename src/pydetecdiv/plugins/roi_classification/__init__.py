@@ -838,7 +838,7 @@ class Plugin(plugins.Plugin):
 
         initial_values = np.zeros((num_frames, num_rois,), dtype=np.int8) - 1
         target_array = h5file.create_carray(h5file.root, 'targets', atom=tbl.Int8Atom(), shape=(num_frames, num_rois),
-                                            obj=initial_values)
+                                            chunkshape=(num_frames, num_rois,), obj=initial_values)
 
         class_names_table = h5file.create_table(h5file.root, 'class_names', TblClassNamesRow, 'Class names')
         class_names_table.append([(name,) for name in self.class_names(as_string=False)])
@@ -846,7 +846,7 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Creating ROI dataset')
 
         roi_data = h5file.create_carray(h5file.root, 'roi_data', atom=tbl.Float16Atom(shape=(height, width, 3)),
-                                        shape=(num_frames, num_rois))
+                                        chunkshape=(50, num_rois,), shape=(num_frames, num_rois))
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Reading and compositing images')
         for row in fov_data.itertuples():
