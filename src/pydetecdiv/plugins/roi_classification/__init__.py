@@ -152,11 +152,16 @@ class ROI_KerasSequence(tf.keras.utils.Sequence):
         # targets = h5file.root.targets
 
         if self.seqlen > 1:
-            batch_data = np.array([roi_data[frame:frame+self.seqlen, roi_id, ...] for frame, roi_id in data_list])
-            batch_targets = np.array([targets[frame:frame+self.seqlen, roi_id] for frame, roi_id in data_list])
+            # batch_data = np.array([roi_data[frame:frame+self.seqlen, roi_id, ...] for frame, roi_id in data_list])
+            batch_data = np.array(
+                [[tf.image.resize(np.array(self.roi_data[frame + i, roi_id, ...]), (60, 60),
+                                  method='nearest') for i in range(self.seqlen)] for frame, roi_id in
+                 data_list])
+            batch_targets = np.array([self.targets[frame:frame + self.seqlen, roi_id] for frame, roi_id in data_list])
         else:
-            batch_data = np.array([roi_data[frame, roi_id, ...] for frame, roi_id in data_list])
-            batch_targets = np.array([targets[frame, roi_id] for frame, roi_id in data_list])
+            batch_data = tf.image.resize(
+                np.array([self.roi_data[frame, roi_id, ...] for frame, roi_id in data_list]), (60, 60), method='nearest')
+            batch_targets = np.array([self.targets[frame, roi_id] for frame, roi_id in data_list])
 
         # print(batch_data.shape, file=sys.stderr)
         # print(batch_targets.shape, file=sys.stderr)
