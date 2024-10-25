@@ -127,6 +127,10 @@ class ROI_KerasSequence(tf.keras.utils.Sequence):
     def __init__(self, h5file_name, data_list, batch_size=32, seqlen=1, **kwargs):
         super().__init__(**kwargs)
         self.h5file_name = h5file_name
+        self.h5file = tbl.open_file(self.h5file_name, 'r')
+        self.roi_data = self.h5file.root.roi_data
+        targets_arr = self.h5file.root.targets
+        self.targets = targets_arr.read()
         self.data_list = data_list
         self.batch_size = batch_size
         self.seqlen = seqlen
@@ -134,15 +138,18 @@ class ROI_KerasSequence(tf.keras.utils.Sequence):
     def __len__(self):
         return math.ceil(len(self.data_list) / self.batch_size)
 
+    def close(self):
+        self.h5file.close()
+
     def __getitem__(self, idx):
         # print(f'{datetime.now().strftime("%H:%M:%S")}: Loading data list for batch {idx}')
         low = idx * self.batch_size
         high = min(low + self.batch_size, len(self.data_list))
         data_list = self.data_list[low:high]
 
-        h5file = tbl.open_file(self.h5file_name, 'r')
-        roi_data = h5file.root.roi_data
-        targets = h5file.root.targets
+        # h5file = tbl.open_file(self.h5file_name, 'r')
+        # roi_data = h5file.root.roi_data
+        # targets = h5file.root.targets
 
         if self.seqlen > 1:
             batch_data = np.array([roi_data[frame:frame+self.seqlen, roi_id, ...] for frame, roi_id in data_list])
@@ -154,7 +161,7 @@ class ROI_KerasSequence(tf.keras.utils.Sequence):
         # print(batch_data.shape, file=sys.stderr)
         # print(batch_targets.shape, file=sys.stderr)
 
-        h5file.close()
+        # h5file.close()
         return batch_data, batch_targets
         #
         # # print(f'{datetime.now().strftime("%H:%M:%S")}: Reading data for batch {idx}')
