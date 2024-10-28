@@ -123,6 +123,46 @@ class ROIdata:
         self.frame = frame
 
 
+class DataProvider(tf.keras.utils.Sequence):
+    def __init__(self, h5file_name, indices, batch_size=32, image_shape=(60, 60), seqlen=0, name=None, **kwargs):
+        super().__init__(**kwargs)
+        self.h5file = tbl.open_file(h5file_name, mode='r')
+        self.roi_data = self.h5file.root.roi_data
+        self.targets = self.h5file.root.targets
+        self.indices = indices
+        self.batch_size = batch_size
+        self.seqlen = seqlen
+        self.name = name
+        self.image_shape = image_shape
+        self.on_epoch_end()  # Shuffle indices at the beginning of each epoch
+
+    def __len__(self):
+        # Number of batches per epoch
+        return int(np.ceil(len(self.indices) / self.batch_size))
+
+    def __getitem__(self, index):
+        batch_indices = self.indices[index * self.batch_size:(index + 1) * self.batch_size]
+
+        if self.seqlen == 0:
+            batch_roi_data = np.array([tf.image.resize(np.array(self.roi_data[frame, roi_id, ...]), self.image_shape,
+                                                       method='nearest') for (frame, roi_id) in batch_indices])
+            batch_targets = np.array([self.targets[frame, roi_id] for (frame, roi_id) in batch_indices])
+        else:
+            batch_roi_data = np.array(
+                [[tf.image.resize(np.array(self.roi_data[frame + i, roi_id, ...]), self.image_shape,
+                                  method='nearest') for i in range(self.seqlen)] for frame, roi_id in batch_indices])
+            batch_targets = np.array([self.targets[frame:frame + self.seqlen, roi_id] for (frame, roi_id) in batch_indices])
+
+        # print(f'{self.name} {index}: {batch_roi_data.shape} {batch_targets.shape}')
+        return batch_roi_data, batch_targets
+
+    def on_epoch_end(self):
+        np.random.shuffle(self.indices)
+
+    def close(self):
+        self.h5file.close()
+
+
 class ROI_KerasSequence(tf.keras.utils.Sequence):
     def __init__(self, h5file_name, data_list, batch_size=32, seqlen=1, **kwargs):
         super().__init__(**kwargs)
@@ -147,12 +187,7 @@ class ROI_KerasSequence(tf.keras.utils.Sequence):
         high = min(low + self.batch_size, len(self.data_list))
         data_list = self.data_list[low:high]
 
-        # h5file = tbl.open_file(self.h5file_name, 'r')
-        # roi_data = h5file.root.roi_data
-        # targets = h5file.root.targets
-
         if self.seqlen > 1:
-            # batch_data = np.array([roi_data[frame:frame+self.seqlen, roi_id, ...] for frame, roi_id in data_list])
             batch_data = np.array(
                 [[tf.image.resize(np.array(self.roi_data[frame + i, roi_id, ...]), (60, 60),
                                   method='nearest') for i in range(self.seqlen)] for frame, roi_id in
@@ -162,31 +197,7 @@ class ROI_KerasSequence(tf.keras.utils.Sequence):
             batch_data = tf.image.resize(
                 np.array([self.roi_data[frame, roi_id, ...] for frame, roi_id in data_list]), (60, 60), method='nearest')
             batch_targets = np.array([self.targets[frame, roi_id] for frame, roi_id in data_list])
-
-        # print(batch_data.shape, file=sys.stderr)
-        # print(batch_targets.shape, file=sys.stderr)
-
-        # h5file.close()
         return batch_data, batch_targets
-        #
-        # # print(f'{datetime.now().strftime("%H:%M:%S")}: Reading data for batch {idx}')
-        # if self.seqlen:
-        #     with h5py.File(self.hdf5_file, 'r') as f:
-        #         batch_data = np.array([f['rois'][frame:frame + self.seqlen, roi, ...] for frame, roi in data_list])
-        #         if 'targets' in f:
-        #             batch_targets = np.array([f['targets'][frame, roi] for frame, roi in data_list])
-        #             return batch_data, batch_targets
-        #         else:
-        #             return batch_data
-        # else:
-        #     with h5py.File(self.hdf5_file, 'r') as f:
-        #         batch_data = np.array([f['rois'][frame, roi, ...] for frame, roi in data_list])
-        #         if 'targets' in f:
-        #             batch_targets = np.array([f['targets'][frame, roi] for frame, roi in data_list])
-        #             # print(f'{datetime.now().strftime("%H:%M:%S")}: Returning data and targets for batch {idx}')
-        #             return batch_data, batch_targets
-        #         else:
-        #             return batch_data
 
 
 class TblClassNamesRow(tbl.IsDescription):
@@ -880,7 +891,7 @@ class Plugin(plugins.Plugin):
         h5file.close()
         print(f'{datetime.now().strftime("%H:%M:%S")}: HDF5 file of annotated ROIs ready')
 
-    def prepare_data_for_training(self, hdf5_file, seqlen=1, train=0.6, validation=0.2, seed=42):
+    def prepare_data_for_training(self, hdf5_file, seqlen=0, train=0.6, validation=0.2, seed=42):
         h5file = tbl.open_file(hdf5_file, mode='r')
         roi_data = h5file.root.roi_data
         print(f'{datetime.now().strftime("%H:%M:%S")}: Reading targets into a numpy array')
@@ -889,8 +900,11 @@ class Plugin(plugins.Plugin):
         num_rois = targets_arr.shape[1]
         targets = targets_arr.read()
         print(f'{datetime.now().strftime("%H:%M:%S")}: Select valid targets from array with shape {targets.shape}')
-        indices = [[frame, roi] for roi in range(num_rois) for frame in range(num_frames - seqlen + 1)
-                   if np.all([targets[frame:frame + seqlen, roi] != -1])]
+        if seqlen == 0:
+            indices = [[frame, roi] for roi in range(num_rois) for frame in range(num_frames) if targets[frame, roi] != -1]
+        else:
+            indices = [[frame, roi] for roi in range(num_rois) for frame in range(num_frames - seqlen + 1)
+                       if np.all([targets[frame:frame + seqlen, roi] != -1])]
         print(f'{datetime.now().strftime("%H:%M:%S")}: Kept {len(indices)} valid ROI frames or sequences')
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Shuffling data')
@@ -902,31 +916,6 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Close HDF5 file and return datasets indices')
         h5file.close()
         return indices[:num_training], indices[num_training:num_validation + num_training], indices[num_validation + num_training:]
-
-    # def prepare_data(self, data_list, seqlen=None, targets=True):
-    #     """
-    #     Prepare the data from a list of ROI object as a list of ROIData objects to build the ROI_KerasSequence instance
-    #
-    #     :param data_list: the ROI list
-    #     :param seqlen: the length of the frame sequence
-    #     :param targets: should targets be included in the dataset or not
-    #     :return: the ROIData list
-    #     """
-    #     print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data')
-    #     roi_data_list = []
-    #     for roi in data_list:
-    #         imgdata = roi.fov.image_resource().image_resource_data()
-    #         seqlen = seqlen if seqlen else 1
-    #         if targets:
-    #             annotation_indices = self.get_annotation(roi)
-    #             for i in range(0, imgdata.sizeT, seqlen):
-    #                 sequence = annotation_indices[i:i + seqlen]
-    #                 if len(sequence) == seqlen and all(a >= 0 for a in sequence):
-    #                     roi_data_list.extend([ROIdata(roi, imgdata, sequence, i)])
-    #         else:
-    #             roi_data_list.extend([ROIdata(roi, imgdata, None, frame) for frame in range(0, imgdata.sizeT, seqlen)])
-    #     print(f'{datetime.now().strftime("%H:%M:%S")}: Data ready')
-    #     return roi_data_list
 
     def compute_class_weights(self):
         class_counts = dict(
@@ -990,7 +979,7 @@ class Plugin(plugins.Plugin):
             seqlen = self.parameters['seqlen'].value
             print(f'{datetime.now().strftime("%H:%M:%S")}: Sequence length: {seqlen}')
         else:
-            seqlen = 1
+            seqlen = 0
 
         hdf5_file = os.path.join(get_project_dir(), 'data', 'annotated_rois.h5')
         if not os.path.exists(hdf5_file):
@@ -1006,13 +995,13 @@ class Plugin(plugins.Plugin):
                                                                                     'dataset_seed'].value)
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Training dataset (size: {len(training_idx)})')
-        training_dataset = ROI_KerasSequence(hdf5_file, training_idx, seqlen=seqlen, batch_size=batch_size)
+        training_dataset = DataProvider(hdf5_file, training_idx, seqlen=seqlen, batch_size=batch_size, name='training')
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Validation dataset (size: {len(validation_idx)})')
-        validation_dataset = ROI_KerasSequence(hdf5_file, validation_idx, seqlen=seqlen, batch_size=batch_size)
+        validation_dataset = DataProvider(hdf5_file, validation_idx, seqlen=seqlen, batch_size=batch_size, name='validation')
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Test dataset (size: {len(test_idx)})')
-        test_dataset = ROI_KerasSequence(hdf5_file, test_idx, seqlen=seqlen, batch_size=batch_size)
+        test_dataset = DataProvider(hdf5_file, test_idx, seqlen=seqlen, batch_size=batch_size, name='test')
 
         if self.parameters['weights'].value is not None:
             print(f'{datetime.now().strftime("%H:%M:%S")}: Loading weights from {self.parameters["weights"].key}')
@@ -1020,8 +1009,6 @@ class Plugin(plugins.Plugin):
             run = self.save_training_run(finetune=True)
         else:
             run = self.save_training_run()
-
-        # self.save_training_datasets(run, roi_list, num_training, num_validation)
 
         checkpoint_monitor_metric = self.parameters['checkpoint_metric'].value
         best_checkpoint_filename = f'{run.id_}_best_{checkpoint_monitor_metric}.weights.h5'
@@ -1051,8 +1038,8 @@ class Plugin(plugins.Plugin):
         if self.parameters['early_stopping'].value:
             callbacks += [training_early_stopping]
 
-        history = model.fit(training_dataset, epochs=epochs,
-                            callbacks=callbacks, validation_data=validation_dataset, verbose=2, )
+        history = model.fit(training_dataset, epochs=epochs, callbacks=callbacks, validation_data=validation_dataset,
+                            verbose=2, )
 
         last_weights_filename = f'{run.id_}_last.weights.h5'
         model.save_weights(os.path.join(get_project_dir(), 'roi_classification', 'models',
