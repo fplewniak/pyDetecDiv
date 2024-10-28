@@ -974,6 +974,7 @@ class Plugin(plugins.Plugin):
         # model.summary(print_fn=lambda x: print(x, file=sys.stderr))
         # print('model output:', model.layers[-1].output.shape, file=sys.stderr)
         input_shape = model.layers[0].output.shape
+        image_shape = (input_shape[-3], input_shape[-2])
 
         if len(input_shape) == 5:
             seqlen = self.parameters['seqlen'].value
@@ -995,13 +996,15 @@ class Plugin(plugins.Plugin):
                                                                                     'dataset_seed'].value)
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Training dataset (size: {len(training_idx)})')
-        training_dataset = DataProvider(hdf5_file, training_idx, seqlen=seqlen, batch_size=batch_size, name='training')
+        training_dataset = DataProvider(hdf5_file, training_idx, image_shape=image_shape, seqlen=seqlen, batch_size=batch_size,
+                                        name='training')
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Validation dataset (size: {len(validation_idx)})')
-        validation_dataset = DataProvider(hdf5_file, validation_idx, seqlen=seqlen, batch_size=batch_size, name='validation')
+        validation_dataset = DataProvider(hdf5_file, validation_idx, image_shape=image_shape, seqlen=seqlen, batch_size=batch_size,
+                                          name='validation')
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Test dataset (size: {len(test_idx)})')
-        test_dataset = DataProvider(hdf5_file, test_idx, seqlen=seqlen, batch_size=batch_size, name='test')
+        test_dataset = DataProvider(hdf5_file, test_idx, image_shape=image_shape, seqlen=seqlen, batch_size=batch_size, name='test')
 
         if self.parameters['weights'].value is not None:
             print(f'{datetime.now().strftime("%H:%M:%S")}: Loading weights from {self.parameters["weights"].key}')
