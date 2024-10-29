@@ -93,7 +93,7 @@ class TrainingData(Base):
     t = Column(Integer, nullable=False, index=True)
     target = Column(JSON)
 
-    def save(self, project, roi, t, target, dataset):
+    def save(self, project, roi_id, t, target, dataset):
         """
         Save the results from a plugin run on a ROI at time t into the database
 
@@ -104,10 +104,10 @@ class TrainingData(Base):
         :param predictions: the list of prediction values
         :param class_names: the class names
         """
-        self.roi = roi.id_
-        self.t = t
-        self.target = target
-        self.dataset = dataset
+        self.roi = int(roi_id)
+        self.t = int(t)
+        self.target = int(target)
+        self.dataset = int(dataset)
         project.repository.session.add(self)
 
 
@@ -1110,42 +1110,51 @@ class Plugin(plugins.Plugin):
         test_ds = Dataset(project=self.run.project, name=f'test_{datetime.now().strftime("%Y%m%d-%H%M%S")}', type_='test',
                           run=self.run.id_)
 
-        print(len(training_idx), len(validation_idx), len(test_idx))
+        # print(len(training_idx), len(validation_idx), len(test_idx))
 
         h5file = tbl.open_file(hdf5_file, mode='r')
         targets = h5file.root.targets.read()
         h5file.close()
 
         for frame, roi_id in training_idx:
-            print(self.run.project.name, roi_id, frame, targets[frame, roi_id], training_ds.id_)
+            TrainingData().save(self.run.project, roi_id, frame, targets[frame, roi_id], training_ds.id_)
 
-    def save_training_datasets_off(self, run, roi_list, num_training, num_validation):
-        """
-        save the datasets used for training and evaluation in the database
+        for frame, roi_id in validation_idx:
+            TrainingData().save(self.run.project, roi_id, frame, targets[frame, roi_id], validation_ds.id_)
 
-        :param run: the current run
-        :param roi_list: the list of ROI/frames
-        :param num_training: the number of training data
-        :param num_validation: the number of validation data
-        """
-        project = roi_list[0].roi.project
-        training_ds = Dataset(project=project, name=f'train_{datetime.now().strftime("%Y%m%d-%H%M%S")}',
-                              type_='training', run=run.id_)
-        validation_ds = Dataset(project=project, name=f'val_{datetime.now().strftime("%Y%m%d-%H%M%S")}',
-                                type_='validation', run=run.id_)
-        test_ds = Dataset(project=project, name=f'test_{datetime.now().strftime("%Y%m%d-%H%M%S")}', type_='test',
-                          run=run.id_)
+        for frame, roi_id in test_idx:
+            TrainingData().save(self.run.project, roi_id, frame, targets[frame, roi_id], test_ds.id_)
 
-        print(num_training, num_validation)
-        for data in roi_list[:num_training]:
-            TrainingData().save(project, data.roi, data.frame, data.target, training_ds.id_)
+        self.run.project.commit()
 
-        for data in roi_list[num_training:num_training + num_validation]:
-            TrainingData().save(project, data.roi, data.frame, data.target, validation_ds.id_)
 
-        for data in roi_list[num_training + num_validation:]:
-            TrainingData().save(project, data.roi, data.frame, data.target, test_ds.id_)
-        project.commit()
+    # def save_training_datasets_off(self, run, roi_list, num_training, num_validation):
+    #     """
+    #     save the datasets used for training and evaluation in the database
+    #
+    #     :param run: the current run
+    #     :param roi_list: the list of ROI/frames
+    #     :param num_training: the number of training data
+    #     :param num_validation: the number of validation data
+    #     """
+    #     project = roi_list[0].roi.project
+    #     training_ds = Dataset(project=project, name=f'train_{datetime.now().strftime("%Y%m%d-%H%M%S")}',
+    #                           type_='training', run=run.id_)
+    #     validation_ds = Dataset(project=project, name=f'val_{datetime.now().strftime("%Y%m%d-%H%M%S")}',
+    #                             type_='validation', run=run.id_)
+    #     test_ds = Dataset(project=project, name=f'test_{datetime.now().strftime("%Y%m%d-%H%M%S")}', type_='test',
+    #                       run=run.id_)
+    #
+    #     print(num_training, num_validation)
+    #     for data in roi_list[:num_training]:
+    #         TrainingData().save(project, data.roi, data.frame, data.target, training_ds.id_)
+    #
+    #     for data in roi_list[num_training:num_training + num_validation]:
+    #         TrainingData().save(project, data.roi, data.frame, data.target, validation_ds.id_)
+    #
+    #     for data in roi_list[num_training + num_validation:]:
+    #         TrainingData().save(project, data.roi, data.frame, data.target, test_ds.id_)
+    #     project.commit()
 
     def predict(self):
         """
