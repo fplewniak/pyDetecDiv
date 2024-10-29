@@ -330,9 +330,9 @@ class ImportDataDialog(QDialog):
         self.keep_copy_buttons.setExclusive(True)
 
         self.exec()
-        for child in self.children():
-            child.deleteLater()
-        self.destroy(True)
+        # for child in self.children():
+        #     child.deleteLater()
+        # self.destroy(True)
 
     def add_files(self):
         """
