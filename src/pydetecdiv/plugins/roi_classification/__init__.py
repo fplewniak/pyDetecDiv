@@ -217,6 +217,13 @@ class Plugin(plugins.Plugin):
         super().__init__()
         self.menu = None
         # self.gui = None
+        physical_devices = tf.config.list_physical_devices('GPU')
+        try:
+            tf.config.experimental.set_memory_growth(physical_devices[0], True)
+        except:
+            # Invalid device or cannot modify virtual devices once initialized.
+            pass
+
         self.parameters.parameter_list = [
             ChoiceParameter(name='model', label='Network', groups={'training', 'finetune', 'prediction'},
                             default='ResNet50V2_lstm', updater=self.load_models),
@@ -1013,6 +1020,8 @@ class Plugin(plugins.Plugin):
         else:
             run = self.save_training_run()
 
+        self.save_training_datasets(hdf5_file, training_idx, validation_idx, test_idx)
+
         checkpoint_monitor_metric = self.parameters['checkpoint_metric'].value
         best_checkpoint_filename = f'{run.id_}_best_{checkpoint_monitor_metric}.weights.h5'
         checkpoint_filepath = os.path.join(get_project_dir(), 'roi_classification', 'models',
@@ -1093,7 +1102,24 @@ class Plugin(plugins.Plugin):
                 return self.save_run(project, 'fine_tune', self.parameters.json(groups='finetune'))
             return self.save_run(project, 'train_model', self.parameters.json(groups='training'))
 
-    def save_training_datasets(self, run, roi_list, num_training, num_validation):
+    def save_training_datasets(self, hdf5_file, training_idx, validation_idx, test_idx):
+        training_ds = Dataset(project=self.run.project, name=f'train_{datetime.now().strftime("%Y%m%d-%H%M%S")}',
+                              type_='training', run=self.run.id_)
+        validation_ds = Dataset(project=self.run.project, name=f'val_{datetime.now().strftime("%Y%m%d-%H%M%S")}',
+                                type_='validation', run=self.run.id_)
+        test_ds = Dataset(project=self.run.project, name=f'test_{datetime.now().strftime("%Y%m%d-%H%M%S")}', type_='test',
+                          run=self.run.id_)
+
+        print(len(training_idx), len(validation_idx), len(test_idx))
+
+        h5file = tbl.open_file(hdf5_file, mode='r')
+        targets = h5file.root.targets.read()
+        h5file.close()
+
+        for frame, roi_id in training_idx:
+            print(self.run.project.name, roi_id, frame, targets[frame, roi_id], training_ds.id_)
+
+    def save_training_datasets_off(self, run, roi_list, num_training, num_validation):
         """
         save the datasets used for training and evaluation in the database
 

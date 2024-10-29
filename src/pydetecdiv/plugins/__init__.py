@@ -26,6 +26,7 @@ class Plugin:
     def __init__(self):
         self.gui = None
         self.parameters = Parameters([])
+        self.run = None
 
     def update_parameters(self, groups=None):
         self.parameters.update(groups)
@@ -84,9 +85,9 @@ class Plugin:
             'parameters': parameters,
             # 'uuid': self.uuid
         }
-        run = Run(project=project, **record)
+        self.run = Run(project=project, **record)
         # project.commit()
-        return run
+        return self.run
 
 
 class PluginList:
