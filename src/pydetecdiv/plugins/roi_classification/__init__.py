@@ -124,11 +124,14 @@ class ROIdata:
 
 
 class DataProvider(tf.keras.utils.Sequence):
-    def __init__(self, h5file_name, indices, batch_size=32, image_shape=(60, 60), seqlen=0, name=None, **kwargs):
+    def __init__(self, h5file_name, indices, batch_size=32, image_shape=(60, 60), seqlen=0, name=None, targets=False, **kwargs):
         super().__init__(**kwargs)
         self.h5file = tbl.open_file(h5file_name, mode='r')
         self.roi_data = self.h5file.root.roi_data
-        self.targets = self.h5file.root.targets
+        if targets:
+            self.targets = self.h5file.root.targets
+        else:
+            self.targets = None
         self.indices = indices
         self.batch_size = batch_size
         self.seqlen = seqlen
@@ -146,21 +149,58 @@ class DataProvider(tf.keras.utils.Sequence):
         if self.seqlen == 0:
             batch_roi_data = np.array([tf.image.resize(np.array(self.roi_data[frame, roi_id, ...]), self.image_shape,
                                                        method='nearest') for (frame, roi_id) in batch_indices])
-            batch_targets = np.array([self.targets[frame, roi_id] for (frame, roi_id) in batch_indices])
+            if self.targets is not None:
+                batch_targets = np.array([self.targets[frame, roi_id] for (frame, roi_id) in batch_indices])
         else:
             batch_roi_data = np.array(
                 [[tf.image.resize(np.array(self.roi_data[frame + i, roi_id, ...]), self.image_shape,
                                   method='nearest') for i in range(self.seqlen)] for frame, roi_id in batch_indices])
-            batch_targets = np.array([self.targets[frame:frame + self.seqlen, roi_id] for (frame, roi_id) in batch_indices])
+            if self.targets is not None:
+                batch_targets = np.array([self.targets[frame:frame + self.seqlen, roi_id] for (frame, roi_id) in batch_indices])
 
         # print(f'{self.name} {index}: {batch_roi_data.shape} {batch_targets.shape}')
-        return batch_roi_data, batch_targets
+        if self.targets is not None:
+            return batch_roi_data, batch_targets
+        return batch_roi_data
 
     def on_epoch_end(self):
         np.random.shuffle(self.indices)
 
     def close(self):
         self.h5file.close()
+
+
+class ROISequence(tf.keras.utils.Sequence):
+    def __init__(self, roi_list, image_size=(60, 60), class_names=None, seqlen=None, batch_size=32):
+        self.roi_list = roi_list
+        self.img_size = image_size
+        self.class_names = class_names
+        self.batch_size = batch_size
+        self.roi_data_list = self.prepare_data(roi_list)
+        self.seqlen = seqlen
+
+    def prepare_data(self, data_list):
+        roi_data_list = []
+        for roi in data_list:
+            imgdata = roi.fov.image_resource().image_resource_data()
+            annotation_indices = [self.class_names.index(a) for a in Plugin.get_annotation(roi)]
+            roi_data_list.append(ROIdata(roi, imgdata, annotation_indices))
+        return roi_data_list
+
+    def __len__(self):
+        return math.ceil(len(self.roi_list) / self.batch_size)
+
+    def __getitem__(self, idx):
+        low = idx * self.batch_size
+        high = min(low + self.batch_size, len(self.roi_list))
+        batch_roi = self.roi_data_list[low:high]
+        batch_data = []
+        for data in batch_roi:
+            roi_sequences = Plugin.get_images_sequences(data.imgdata, [data.roi], 0, seqlen=self.seqlen)
+            img_array = tf.convert_to_tensor(
+                [tf.image.resize(i, self.img_size, method='nearest') for i in roi_sequences])
+            batch_data.append(img_array[0])
+        return np.array(batch_data)
 
 
 class ROI_KerasSequence(tf.keras.utils.Sequence):
@@ -1126,35 +1166,6 @@ class Plugin(plugins.Plugin):
             TrainingData().save(self.run.project, roi_id, frame, targets[frame, roi_id], test_ds.id_)
 
         self.run.project.commit()
-
-
-    # def save_training_datasets_off(self, run, roi_list, num_training, num_validation):
-    #     """
-    #     save the datasets used for training and evaluation in the database
-    #
-    #     :param run: the current run
-    #     :param roi_list: the list of ROI/frames
-    #     :param num_training: the number of training data
-    #     :param num_validation: the number of validation data
-    #     """
-    #     project = roi_list[0].roi.project
-    #     training_ds = Dataset(project=project, name=f'train_{datetime.now().strftime("%Y%m%d-%H%M%S")}',
-    #                           type_='training', run=run.id_)
-    #     validation_ds = Dataset(project=project, name=f'val_{datetime.now().strftime("%Y%m%d-%H%M%S")}',
-    #                             type_='validation', run=run.id_)
-    #     test_ds = Dataset(project=project, name=f'test_{datetime.now().strftime("%Y%m%d-%H%M%S")}', type_='test',
-    #                       run=run.id_)
-    #
-    #     print(num_training, num_validation)
-    #     for data in roi_list[:num_training]:
-    #         TrainingData().save(project, data.roi, data.frame, data.target, training_ds.id_)
-    #
-    #     for data in roi_list[num_training:num_training + num_validation]:
-    #         TrainingData().save(project, data.roi, data.frame, data.target, validation_ds.id_)
-    #
-    #     for data in roi_list[num_training + num_validation:]:
-    #         TrainingData().save(project, data.roi, data.frame, data.target, test_ds.id_)
-    #     project.commit()
 
     def predict(self):
         """
