@@ -122,6 +122,10 @@ class ROIdata:
         self.target = target
         self.frame = frame
 
+    @property
+    def fov(self):
+        return self.roi.fov
+
 
 class DataProvider(tf.keras.utils.Sequence):
     def __init__(self, h5file_name, indices, batch_size=32, image_shape=(60, 60), seqlen=0, name=None, targets=False, **kwargs):
@@ -171,7 +175,7 @@ class DataProvider(tf.keras.utils.Sequence):
 
 
 class ROISequence(tf.keras.utils.Sequence):
-    def __init__(self, roi_list, image_size=(60, 60), class_names=None, seqlen=None, batch_size=32):
+    def __init__(self, roi_list, image_size=(60, 60), class_names=None, seqlen=None, batch_size=32, z_channels=None):
         self.roi_list = roi_list
         self.img_size = image_size
         self.class_names = class_names
@@ -180,12 +184,11 @@ class ROISequence(tf.keras.utils.Sequence):
         self.seqlen = seqlen
 
     def prepare_data(self, data_list):
-        roi_data_list = []
-        for roi in data_list:
-            imgdata = roi.fov.image_resource().image_resource_data()
-            annotation_indices = [self.class_names.index(a) for a in Plugin.get_annotation(roi)]
-            roi_data_list.append(ROIdata(roi, imgdata, annotation_indices))
-        return roi_data_list
+        return [ROIdata(data.roi, data.fov.image_resource().image_resource_data()) for data in data_list]
+        # roi_data_list = []
+        # for roi in data_list:
+        #     roi_data_list.append(ROIdata(roi, roi.fov.image_resource().image_resource_data()))
+        # return roi_data_list
 
     def __len__(self):
         return math.ceil(len(self.roi_list) / self.batch_size)
@@ -196,9 +199,8 @@ class ROISequence(tf.keras.utils.Sequence):
         batch_roi = self.roi_data_list[low:high]
         batch_data = []
         for data in batch_roi:
-            roi_sequences = Plugin.get_images_sequences(data.imgdata, [data.roi], 0, seqlen=self.seqlen)
-            img_array = tf.convert_to_tensor(
-                [tf.image.resize(i, self.img_size, method='nearest') for i in roi_sequences])
+            roi_sequences = get_images_sequences(data.imgdata, [data.roi], 0, seqlen=self.seqlen)
+            img_array = tf.convert_to_tensor([tf.image.resize(i, self.img_size, method='nearest') for i in roi_sequences])
             batch_data.append(img_array[0])
         return np.array(batch_data)
 
@@ -964,6 +966,22 @@ class Plugin(plugins.Plugin):
         h5file.close()
         return indices[:num_training], indices[num_training:num_validation + num_training], indices[num_validation + num_training:]
 
+    def prepare_data_for_prediction(self, data_list, seqlen=None):
+        """
+        Prepare the data from a list of ROI object as a list of ROIData objects to build the ROIDataset instance
+
+        :param data_list: the ROI list
+        :param seqlen: the length of the frame sequence
+        :param targets: should targets be included in the dataset or not
+        :return: the ROIData list
+        """
+        roi_data_list = []
+        for roi in data_list:
+            imgdata = roi.fov.image_resource().image_resource_data()
+            seqlen = seqlen if seqlen else 1
+            roi_data_list.extend([ROIdata(roi, imgdata, None, frame) for frame in range(0, imgdata.sizeT, seqlen)])
+        return roi_data_list
+
     def compute_class_weights(self):
         class_counts = dict(
             Counter([x for roi in self.get_annotated_rois() for x in self.get_annotation(roi) if x >= 0]))
@@ -1044,14 +1062,15 @@ class Plugin(plugins.Plugin):
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Training dataset (size: {len(training_idx)})')
         training_dataset = DataProvider(hdf5_file, training_idx, image_shape=image_shape, seqlen=seqlen, batch_size=batch_size,
-                                        name='training')
+                                        name='training', targets=True)
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Validation dataset (size: {len(validation_idx)})')
         validation_dataset = DataProvider(hdf5_file, validation_idx, image_shape=image_shape, seqlen=seqlen, batch_size=batch_size,
-                                          name='validation')
+                                          name='validation', targets=True)
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Test dataset (size: {len(test_idx)})')
-        test_dataset = DataProvider(hdf5_file, test_idx, image_shape=image_shape, seqlen=seqlen, batch_size=batch_size, name='test')
+        test_dataset = DataProvider(hdf5_file, test_idx, image_shape=image_shape, seqlen=seqlen, batch_size=batch_size,
+                                    name='test', targets=True)
 
         if self.parameters['weights'].value is not None:
             print(f'{datetime.now().strftime("%H:%M:%S")}: Loading weights from {self.parameters["weights"].key}')
@@ -1202,14 +1221,13 @@ class Plugin(plugins.Plugin):
 
             if len(input_shape) == 4:
                 img_size = (input_shape[1], input_shape[2])
-                roi_data_list = self.prepare_data(roi_list, targets=False)
-                roi_dataset = ROI_KerasSequence(roi_data_list, image_size=img_size,
-                                                batch_size=batch_size, z_channels=z_channels)
+                roi_data_list = self.prepare_data_for_prediction(roi_list)
+                roi_dataset = ROISequence(roi_data_list, image_size=img_size, batch_size=batch_size, z_channels=z_channels)
             else:
                 img_size = (input_shape[2], input_shape[3])
-                roi_data_list = self.prepare_data(roi_list, seqlen, targets=False)
-                roi_dataset = ROI_KerasSequence(roi_data_list, image_size=img_size,
-                                                seqlen=seqlen, batch_size=batch_size, z_channels=z_channels)
+                roi_data_list = self.prepare_data_for_prediction(roi_list, seqlen)
+                roi_dataset = ROISequence(roi_data_list, image_size=img_size, seqlen=seqlen,
+                                          batch_size=batch_size, z_channels=z_channels)
 
             predictions = model.predict(roi_dataset)
 
@@ -1336,9 +1354,7 @@ def get_images_sequences(imgdata, roi_list, t, seqlen=None, z=None):
     :return: a tensor containing the sequences for all ROIs
     """
     maxt = min(imgdata.sizeT, t + seqlen) if seqlen else imgdata.sizeT
-    roi_sequences = tf.stack(
-        [get_rgb_images_from_stacks(imgdata, roi_list, f, z=z) for f in range(t, maxt)],
-        axis=1)
+    roi_sequences = tf.stack([get_rgb_images_from_stacks(imgdata, roi_list, f, z=z) for f in range(t, maxt)], axis=1)
     if roi_sequences.shape[1] < seqlen:
         padding_config = [[0, 0], [seqlen - roi_sequences.shape[1], 0], [0, 0], [0, 0], [0, 0]]
         roi_sequences = tf.pad(roi_sequences, padding_config, mode='CONSTANT', constant_values=0.0)
