@@ -1047,7 +1047,10 @@ class Plugin(plugins.Plugin):
         else:
             seqlen = 0
 
-        hdf5_file = os.path.join(get_project_dir(), 'data', 'annotated_rois.h5')
+        # hdf5_file = os.path.join(get_project_dir(), 'data', 'annotated_rois.h5')
+        os.makedirs(os.path.join(get_project_dir(), 'roi_classification', 'data'), exist_ok=True)
+        hdf5_file = os.path.join(get_project_dir(), 'roi_classification', 'data', 'annotated_rois.h5')
+        print(hdf5_file)
         if not os.path.exists(hdf5_file):
             self.create_hdf5_annotated_rois(hdf5_file, z_channels=z_channels)
 
