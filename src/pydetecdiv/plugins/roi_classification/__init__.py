@@ -619,6 +619,12 @@ class Plugin(plugins.Plugin):
                                 os.path.isfile(os.path.join(user_path, f)) and f in run_weights})
             except FileNotFoundError:
                 pass
+            # try:
+            #     all_users_path = os.path.join(get_plugins_dir(), 'roi_classification', 'models', parameters['model'])
+            #     w_files.update({f: os.path.join(all_users_path, f) for f in os.listdir(all_users_path) if
+            #                     os.path.isfile(os.path.join(all_users_path, f)) and f.endswith('.weights.h5')})
+            # except FileNotFoundError:
+            #     pass
         if w_files:
             self.parameters['weights'].set_items(w_files)
 
