@@ -17,10 +17,13 @@ def get_default_settings() -> dict:
 
     :return: a dictionary containing the default values
     """
-    return {'project': {'dbms': 'SQLite3', 'workspace': '/data2/BioImageIT/workspace', 'user': getpass.getuser(),
+    return {'project': {'dbms': 'SQLite3', 'workspace': os.path.join('/data', getpass.getuser(), 'workspace'),
+                        'user': getpass.getuser(),
                         'batch': 1024},
             'project.sqlite': {'database': 'pydetecdiv'},
-            'paths': {'appdata': get_appdata_dir()}
+            'project.conda': {'dir': '/opt/miniconda3/'},
+            'paths': {'appdata': xdg.BaseDirectory.save_data_path('pyDetecDiv'),
+                      'toolbox': '/data/Fred/BioImageIT/bioimageit-toolboxes'}
             # 'project.mysql': {'database': 'pydetecdiv', 'host': 'localhost', 'credentials': 'mysql.credentials', },
             # 'omero': {'host': 'localhost', 'credentials': 'omero.credentials', },
             # 'bioimageit': {'config_file': '/data2/BioImageIT/config.json'}
@@ -68,7 +71,7 @@ def get_config():
     if not config.sections():
         config.read_dict(get_default_settings())
         default_file = Path(xdg.BaseDirectory.save_config_path('pyDetecDiv')).joinpath('settings.ini')
-        with os.open(default_file, 'w') as f:
+        with open(default_file, 'w') as f:
             config.write(f)
     return config
 
@@ -107,3 +110,17 @@ def get_plugins_dir():
     if not os.path.exists(plugins_path):
         os.mkdir(plugins_path)
     return plugins_path
+
+
+def get_default_workspace_dir():
+    """
+    Get the user workspace directory. The default directory is not created if it does not exist to avoid confusion. It is up to the
+    user to make sure the directory exists or select an existing directory.
+
+    :return: the user workspace path
+    :rtype: Path
+    """
+    default_workspace_dir = os.path.join('/data', getpass.getuser(), 'workspace')
+    # if not os.path.exists(default_workspace_dir):
+    #     os.mkdir(default_workspace_dir)
+    return default_workspace_dir
