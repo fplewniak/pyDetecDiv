@@ -277,7 +277,7 @@ class StdoutWaitDialog(AbstractWaitDialog):
         sys.stdout = self.redirector
 
     def addText(self, text):
-        html = markdown.markdown(text)
+        html = markdown.markdown(text, extensions=['tables'])
         self.log.moveCursor(QTextCursor.End)
         self.log.insertHtml(html)
         self.log.insertHtml('<br>')

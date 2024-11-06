@@ -28,6 +28,8 @@ from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
 import tensorflow as tf
+from sklearn.metrics import precision_recall_fscore_support
+
 from tifffile import tifffile
 
 from pydetecdiv import plugins, copy_files
@@ -1052,7 +1054,7 @@ class Plugin(plugins.Plugin):
 
         if len(input_shape) == 5:
             seqlen = self.parameters['seqlen'].value
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Sequence length: {seqlen}')
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Sequence length: {seqlen}\n')
         else:
             seqlen = 0
 
@@ -1121,8 +1123,9 @@ class Plugin(plugins.Plugin):
         if self.parameters['early_stopping'].value:
             callbacks += [training_early_stopping]
 
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Starting training')
         history = model.fit(training_dataset, epochs=epochs, callbacks=callbacks, validation_data=validation_dataset,
-                            verbose=2, )
+                            verbose=2)
 
         last_weights_filename = f'{run.id_}_last.weights.h5'
         model.save_weights(os.path.join(get_project_dir(), 'roi_classification', 'models',
@@ -1131,24 +1134,65 @@ class Plugin(plugins.Plugin):
         run.parameters.update({'last_weights': last_weights_filename, 'best_weights': best_checkpoint_filename})
         run.validate().commit()
 
-        evaluation = dict(zip(model.metrics_names, model.evaluate(test_dataset)))
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Evaluation on test dataset')
+        evaluation = dict(zip(model.metrics_names, model.evaluate(test_dataset, verbose=2)))
 
         ground_truth = [label for batch in [y for x, y in test_dataset] for label in batch]
         if len(input_shape) == 4:
-            predictions = model.predict(test_dataset).argmax(axis=1)
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for last model')
+            predictions = model.predict(test_dataset, verbose=2).argmax(axis=1)
+
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for best model')
             model.load_weights(checkpoint_filepath)
             # model.compile(optimizer=optimizer,
             #               loss=tf.keras.losses.SparseCategoricalCrossentropy(),
             #               metrics=['accuracy', lr_metric], )
             best_predictions = model.predict(test_dataset).argmax(axis=1)
         else:
-            predictions = [label for seq in model.predict(test_dataset).argmax(axis=2) for label in seq]
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for last model')
+            predictions = [label for seq in model.predict(test_dataset, verbose=2).argmax(axis=2) for label in seq]
+
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for best model')
             model.load_weights(checkpoint_filepath)
             # model.compile(optimizer=optimizer,
             #               loss=tf.keras.losses.SparseCategoricalCrossentropy(),
             #               metrics=['accuracy', lr_metric], )
-            best_predictions = [label for seq in model.predict(test_dataset).argmax(axis=2) for label in seq]
+            best_predictions = [label for seq in model.predict(test_dataset, verbose=2).argmax(axis=2) for label in seq]
             ground_truth = [label for seq in ground_truth for label in seq]
+
+        labels = list(range(len(self.parameters['class_names'].value)))
+        precision, recall, fscore, support = precision_recall_fscore_support(ground_truth, predictions, labels=labels,
+                                                                             zero_division=np.nan)
+        rows = [
+            f'| {self.parameters["class_names"].value[i]} | {precision[i]:.2f} | {recall[i]:.2f} | {fscore[i]:.2f} | {support[i]}'
+            for i in labels]
+        stats = '\n'.join(rows)
+        # print('**Last epoch model evaluation on test set**')
+        print(f"""  
+        
+        
+**Last epoch model evaluation on test set**
+
+| class | precision | recall | F-score | support 
+|:------|----------:|-------:|--------:|--------:
+{stats}
+
+""")
+        precision, recall, fscore, support = precision_recall_fscore_support(ground_truth, best_predictions, labels=labels,
+                                                                             zero_division=np.nan)
+        rows = [
+            f'| {self.parameters["class_names"].value[i]} | {precision[i]:.2f} | {recall[i]:.2f} | {fscore[i]:.2f} | {support[i]}'
+            for i in labels]
+        stats = '\n'.join(rows)
+        # print('**Best model evaluation on test set**')
+        print(f"""
+**Best model evaluation on test set**
+
+| class | precision | recall | F-score | support 
+|:------|----------:|-------:|--------:|--------:
+{stats}
+
+""")
 
         if self.parameters['weights'].value is not None:
             self.update_model_weights()
