@@ -312,7 +312,7 @@ class Plugin(plugins.Plugin):
             IntParameter(name='batch_size', label='Batch size', groups={'training', 'finetune', 'prediction'},
                          default=128, ),
             IntParameter(name='seqlen', label='Sequence length', groups={'training', 'finetune', 'prediction'},
-                         default=50, ),
+                         default=15, ),
             ItemParameter(name='annotation_file', label='Annotation file', groups={'import_annotations'}, ),
             ChoiceParameter(name='fov', label='Select FOVs', groups={'prediction'}, updater=self.update_fov_list),
         ]
