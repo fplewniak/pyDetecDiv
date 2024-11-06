@@ -128,7 +128,8 @@ class ROIdata:
 
 
 class DataProvider(tf.keras.utils.Sequence):
-    def __init__(self, h5file_name, indices, batch_size=32, image_shape=(60, 60), seqlen=0, name=None, targets=False, **kwargs):
+    def __init__(self, h5file_name, indices, batch_size=32, image_shape=(60, 60), seqlen=0, name=None, targets=False,
+                 shuffle=True, **kwargs):
         super().__init__(**kwargs)
         self.h5file = tbl.open_file(h5file_name, mode='r')
         self.roi_data = self.h5file.root.roi_data
@@ -141,6 +142,7 @@ class DataProvider(tf.keras.utils.Sequence):
         self.seqlen = seqlen
         self.name = name
         self.image_shape = image_shape
+        self.shuffle = shuffle
         self.on_epoch_end()  # Shuffle indices at the beginning of each epoch
 
     def __len__(self):
@@ -168,7 +170,8 @@ class DataProvider(tf.keras.utils.Sequence):
         return batch_roi_data
 
     def on_epoch_end(self):
-        np.random.shuffle(self.indices)
+        if self.shuffle:
+            np.random.shuffle(self.indices)
 
     def close(self):
         self.h5file.close()
@@ -1079,7 +1082,7 @@ class Plugin(plugins.Plugin):
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Test dataset (size: {len(test_idx)})')
         test_dataset = DataProvider(hdf5_file, test_idx, image_shape=image_shape, seqlen=seqlen, batch_size=batch_size,
-                                    name='test', targets=True)
+                                    name='test', targets=True, shuffle=False)
 
         if self.parameters['weights'].value is not None:
             print(f'{datetime.now().strftime("%H:%M:%S")}: Loading weights from {self.parameters["weights"].key}')
@@ -1134,16 +1137,16 @@ class Plugin(plugins.Plugin):
         if len(input_shape) == 4:
             predictions = model.predict(test_dataset).argmax(axis=1)
             model.load_weights(checkpoint_filepath)
-            model.compile(optimizer=optimizer,
-                          loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-                          metrics=['accuracy', lr_metric], )
+            # model.compile(optimizer=optimizer,
+            #               loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+            #               metrics=['accuracy', lr_metric], )
             best_predictions = model.predict(test_dataset).argmax(axis=1)
         else:
             predictions = [label for seq in model.predict(test_dataset).argmax(axis=2) for label in seq]
             model.load_weights(checkpoint_filepath)
-            model.compile(optimizer=optimizer,
-                          loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-                          metrics=['accuracy', lr_metric], )
+            # model.compile(optimizer=optimizer,
+            #               loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+            #               metrics=['accuracy', lr_metric], )
             best_predictions = [label for seq in model.predict(test_dataset).argmax(axis=2) for label in seq]
             ground_truth = [label for seq in ground_truth for label in seq]
 
