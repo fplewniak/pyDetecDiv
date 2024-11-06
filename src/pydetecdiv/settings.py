@@ -17,7 +17,7 @@ def get_default_settings() -> dict:
 
     :return: a dictionary containing the default values
     """
-    return {'project': {'dbms': 'SQLite3', 'workspace': os.path.join('/data', getpass.getuser(), 'workspace'),
+    return {'project': {'dbms': 'SQLite3', 'workspace': os.path.join('/home', getpass.getuser(), 'workspace'),
                         'user': getpass.getuser(),
                         'batch': 1024},
             'project.sqlite': {'database': 'pydetecdiv'},
