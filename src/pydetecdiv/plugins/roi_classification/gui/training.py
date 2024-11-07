@@ -250,6 +250,8 @@ def plot_confusion_matrix(ground_truth, predictions, class_names):
 
 
 class ImportClassifierDialog(Dialog):
+    job_finished: Signal = Signal(object)
+
     def __init__(self, plugin, title=None):
         super().__init__(plugin, title='Import classifier from another project')
 
