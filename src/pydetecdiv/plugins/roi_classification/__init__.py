@@ -1163,6 +1163,18 @@ class Plugin(plugins.Plugin):
         labels = list(range(len(self.parameters['class_names'].value)))
         precision, recall, fscore, support = precision_recall_fscore_support(ground_truth, predictions, labels=labels,
                                                                              zero_division=np.nan)
+        stats = {'last_stats': {'precision': list(precision),
+                                'recall': list(recall),
+                                'fscore': list(fscore),
+                                'support': [int(s) for s in support]
+                                }}
+        if run.key_val is None:
+            run.key_val = stats
+        else:
+            run.key_val.update(stats)
+
+        run.validate().commit()
+
         rows = [
             f'| {self.parameters["class_names"].value[i]} | {precision[i]:.2f} | {recall[i]:.2f} | {fscore[i]:.2f} | {support[i]}'
             for i in labels]
@@ -1178,8 +1190,22 @@ class Plugin(plugins.Plugin):
 {stats}
 
 """)
+
         precision, recall, fscore, support = precision_recall_fscore_support(ground_truth, best_predictions, labels=labels,
                                                                              zero_division=np.nan)
+
+        stats = {'best_stats': {'precision': list(precision),
+                                'recall': list(recall),
+                                'fscore': list(fscore),
+                                'support': [int(s) for s in support]
+                                }}
+        if run.key_val is None:
+            run.key_val = stats
+        else:
+            run.key_val.update(stats)
+
+        run.validate().commit()
+
         rows = [
             f'| {self.parameters["class_names"].value[i]} | {precision[i]:.2f} | {recall[i]:.2f} | {fscore[i]:.2f} | {support[i]}'
             for i in labels]
