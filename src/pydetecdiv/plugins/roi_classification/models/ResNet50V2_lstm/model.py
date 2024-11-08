@@ -17,7 +17,8 @@ def create_model(n_classes: int) -> keras.Model:
     input_layer = keras.Input(shape=(None, 60, 60, 3))
     fold_out, fold_miniBatchSize = SequenceFoldingLayer((60, 60, 3))(input_layer)
 
-    central_block = resnet(fold_out, training=True)
+    # central_block = resnet(fold_out, training=True)
+    central_block = resnet(fold_out)
     plugout = keras.layers.GlobalAveragePooling2D()(central_block)
 
     # unfolding layer should be the same size as the output from the previous block
