@@ -1224,6 +1224,9 @@ class Plugin(plugins.Plugin):
             self.update_model_weights()
 
         # tf.profiler.experimental.stop()
+        training_dataset.close()
+        validation_dataset.close()
+        test_dataset.close()
 
         return (module.__name__, self.parameters['class_names'].value, history, evaluation, ground_truth, predictions,
                 best_predictions)
