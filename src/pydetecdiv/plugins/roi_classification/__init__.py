@@ -963,7 +963,7 @@ class Plugin(plugins.Plugin):
         if seqlen == 0:
             indices = [[frame, roi] for roi in range(num_rois) for frame in range(num_frames) if targets[frame, roi] != -1]
         else:
-            indices = [[frame, roi] for roi in range(num_rois) for frame in range(num_frames - seqlen + 1)
+            indices = [[frame, roi] for roi in range(num_rois) for frame in range(0, num_frames - seqlen + 1, seqlen)
                        if np.all([targets[frame:frame + seqlen, roi] != -1])]
         print(f'{datetime.now().strftime("%H:%M:%S")}: Kept {len(indices)} valid ROI frames or sequences')
 
