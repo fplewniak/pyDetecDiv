@@ -1296,11 +1296,13 @@ class Plugin(plugins.Plugin):
             print(f'{datetime.now().strftime("%H:%M:%S")}: Saving run')
             parameters = self.parameters.json(groups='prediction')
             run = self.save_run(project, 'predict', parameters)
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Getting list of ROIs')
             roi_list = np.ndarray.flatten(np.array(list([fov.roi_list for fov in
                                                          [project.get_named_object('FOV', fov_name) for
                                                           fov_name in
                                                           fov_names]])))
 
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data')
             if len(input_shape) == 4:
                 img_size = (input_shape[1], input_shape[2])
                 roi_data_list = self.prepare_data_for_prediction(roi_list)
@@ -1311,8 +1313,10 @@ class Plugin(plugins.Plugin):
                 roi_dataset = ROISequence(roi_data_list, image_size=img_size, seqlen=seqlen,
                                           batch_size=batch_size, z_channels=z_channels)
 
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Making predictions')
             predictions = model.predict(roi_dataset)
 
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Saving results')
             for (prediction, data) in zip(np.squeeze(predictions), roi_data_list):
                 if len(input_shape) == 4:
                     Results().save(project, run, data.roi, data.frame, prediction, self.class_names(as_string=False))
