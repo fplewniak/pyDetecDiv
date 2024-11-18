@@ -179,6 +179,46 @@ class DataProvider(tf.keras.utils.Sequence):
         self.h5file.close()
 
 
+class PredictionBatch(tf.keras.utils.Sequence):
+    def __init__(self, fov_data, roi_list, image_size=(60, 60), seqlen=None, z_channels=None):
+        self.fov_data = fov_data
+        self.roi_list = roi_list
+        self.img_size = image_size
+        self.z_channels = z_channels
+        self.seqlen = 1 if seqlen is None else seqlen
+
+    def __len__(self):
+        return len(self.fov_data) // self.seqlen + (len(self.fov_data) % self.seqlen != 0)
+
+    def __getitem__(self, idx):
+        low = idx * self.seqlen
+        high = min(low + self.seqlen, len(self.fov_data))
+        roi_list = self.roi_list
+        fov_data = self.fov_data.iloc[low:high]
+        if self.seqlen > 1:
+            roi_data = np.zeros((len(roi_list["roi"].unique()), min(self.seqlen, len(self.fov_data) - low), self.img_size[0],
+                             self.img_size[1], len(self.z_channels)))
+        else:
+            roi_data = np.zeros((len(roi_list["roi"].unique()), self.img_size[0], self.img_size[1], len(self.z_channels)))
+
+        for row in fov_data.itertuples():
+            rois = roi_list.loc[(roi_list['fov'] == row.fov) & (roi_list['t'] == row.t)]
+            roi_ids = sorted(list(rois['roi'].unique()))
+
+            # If merging and normalization are too slow, maybe use tensorflow or pytorch to do the operations
+            fov_img = cv2.merge([cv2.imread(z_file, cv2.IMREAD_UNCHANGED) for z_file in reversed(row.channel_files)])
+
+            for roi in rois.itertuples():
+                roi_img = cv2.normalize(fov_img[roi.y0:roi.y1 + 1, roi.x0:roi.x1 + 1], dtype=cv2.CV_16F, dst=None, alpha=1e-10,
+                                        beta=1.0, norm_type=cv2.NORM_MINMAX)
+                if self.seqlen > 1:
+                    roi_data[roi_ids.index(roi.roi), row.t % self.seqlen, ...] = tf.image.resize(np.array(roi_img), self.img_size,
+                                                                                             method='nearest')
+                else:
+                    roi_data[roi_ids.index(roi.roi), ...] = tf.image.resize(np.array(roi_img), self.img_size, method='nearest')
+        return roi_data
+
+
 class ROISequence(tf.keras.utils.Sequence):
     def __init__(self, roi_list, image_size=(60, 60), class_names=None, seqlen=None, batch_size=32, z_channels=None):
         self.roi_list = roi_list
@@ -993,6 +1033,35 @@ class Plugin(plugins.Plugin):
             roi_data_list.extend([ROIdata(roi, imgdata, None, frame) for frame in range(0, imgdata.sizeT, seqlen)])
         return roi_data_list
 
+    def prepare_data_for_classification(self, fov_list, z_channels=None):
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Getting fov data')
+        fov_data = self.get_fov_data(z_layers=z_channels)
+        mask = fov_data['fov'].isin(fov_list)
+        fov_data = fov_data[mask]
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Getting drift correction')
+        drift_correction = self.get_drift_corrections()
+        mask = drift_correction['fov'].isin(fov_list)
+        drift_correction = drift_correction[mask]
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Getting roi list')
+        roi_list = self.get_roi_list()
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Applying drift correction to ROIs')
+        roi_list = pandas.merge(drift_correction, roi_list, on=['fov'], how='left').dropna()
+        roi_list['x0'] = (roi_list['x0'] + roi_list['dx'].round().astype(int))
+        roi_list['x1'] = (roi_list['x1'] + roi_list['dx'].round().astype(int))
+        roi_list['y0'] = (roi_list['y0'] + roi_list['dy'].round().astype(int))
+        roi_list['y1'] = (roi_list['y1'] + roi_list['dy'].round().astype(int))
+
+        rois = roi_list["roi"].unique()
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: FOV = {len(fov_data["fov"].unique())}')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: T = {np.max(fov_data["t"]) + 1}')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: ROIs = {len(rois)} ({len(roi_list)})')
+
+        return fov_data, roi_list, rois
+
     def compute_class_weights(self):
         class_counts = dict(
             Counter([x for roi in self.get_annotated_rois() for x in self.get_annotation(roi) if x >= 0]))
@@ -1275,6 +1344,11 @@ class Plugin(plugins.Plugin):
         """
         Running prediction on all ROIs in selected FOVs.
         """
+        seqlen = self.parameters['seqlen'].value
+        z_channels = [self.parameters['red_channel'].value, self.parameters['green_channel'].value,
+                      self.parameters['blue_channel'].value]
+        fov_names = [self.parameters['fov'].key]
+
         module = self.parameters['model'].value
         print(module.__name__)
         model = module.model.create_model(len(self.parameters['class_names'].value))
@@ -1288,46 +1362,55 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Compiling model')
         model.compile()
 
-        batch_size = self.parameters['batch_size'].value
-        seqlen = self.parameters['seqlen'].value
-        z_channels = [self.parameters['red_channel'].value, self.parameters['green_channel'].value,
-                      self.parameters['blue_channel'].value]
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data')
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            fov_ids = [fov.id_ for fov in [project.get_named_object('FOV', fov_name) for fov_name in fov_names]]
 
-        fov_names = [self.parameters['fov'].key]
+        fov_data, roi_list, rois = self.prepare_data_for_classification(fov_ids, z_channels)
+        num_rois = len(rois)
+
+        # print(roi_list.loc[:, ['t', 'roi']].to_numpy(), file=sys.stderr)
+
+        if len(input_shape) == 4:
+            img_size = (input_shape[1], input_shape[2])
+            roi_dataset = PredictionBatch(fov_data, roi_list, image_size=img_size, z_channels=z_channels)
+        else:
+            img_size = (input_shape[2], input_shape[3])
+            roi_dataset = PredictionBatch(fov_data, roi_list, image_size=img_size, seqlen=seqlen, z_channels=z_channels)
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Making predictions')
+
+        predictions = model.predict(roi_dataset, verbose=2)
+        # print(predictions.shape, file=sys.stderr)
+
+        if len(input_shape) > 4:
+            if not isinstance(predictions, tf.RaggedTensor):
+                predictions = tf.RaggedTensor.from_tensor(predictions)
+            grouped_tensors = []
+            for roi_idx in range(num_rois):
+                # Collect rows for this ROI: i, i + num_rois, i + 2*num_rois, ...
+                indices = tf.range(roi_idx, predictions.shape[0], delta=num_rois)
+                grouped_rows = tf.gather(predictions, indices)  # Gather ragged slices
+                concatenated_rows = tf.concat(grouped_rows, axis=0)  # Concatenate along the time dimension
+                grouped_tensors.append(concatenated_rows.flat_values)
+
+            # 2. Stack results into a dense tensor
+            predictions = tf.stack(grouped_tensors, axis=0).numpy()
+            # print(predictions.shape, file=sys.stderr)
 
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Saving run')
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Saving results')
             parameters = self.parameters.json(groups='prediction')
             run = self.save_run(project, 'predict', parameters)
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Getting list of ROIs')
-            roi_list = np.ndarray.flatten(np.array(list([fov.roi_list for fov in
-                                                         [project.get_named_object('FOV', fov_name) for
-                                                          fov_name in
-                                                          fov_names]])))
-
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data')
-            if len(input_shape) == 4:
-                img_size = (input_shape[1], input_shape[2])
-                roi_data_list = self.prepare_data_for_prediction(roi_list)
-                roi_dataset = ROISequence(roi_data_list, image_size=img_size, batch_size=batch_size, z_channels=z_channels)
+            if len(input_shape) > 4:
+                for roi_id, prediction in zip(rois, predictions):
+                    for frame, p in enumerate(prediction):
+                        # print(f'ROI: {roi_id}, t:{frame}, {p}', file=sys.stderr)
+                        Results().save(project, run, project.get_object('ROI', roi_id), frame, p, self.class_names(as_string=False))
             else:
-                img_size = (input_shape[2], input_shape[3])
-                roi_data_list = self.prepare_data_for_prediction(roi_list, seqlen)
-                roi_dataset = ROISequence(roi_data_list, image_size=img_size, seqlen=seqlen,
-                                          batch_size=batch_size, z_channels=z_channels)
-
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Making predictions')
-            predictions = model.predict(roi_dataset)
-
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Saving results')
-            for (prediction, data) in zip(np.squeeze(predictions), roi_data_list):
-                if len(input_shape) == 4:
-                    Results().save(project, run, data.roi, data.frame, prediction, self.class_names(as_string=False))
-                else:
-                    for i in range(seqlen):
-                        if (data.frame + i) < data.imgdata.sizeT:
-                            Results().save(project, run, data.roi, data.frame + i, prediction[i],
-                                           self.class_names(as_string=False))
+                for (roi_id, frame), p in zip(roi_list.loc[:,['roi', 't']].to_numpy(), predictions):
+                    # print(f'ROI: {roi_id}, t:{frame}, {prediction}', file=sys.stderr)
+                    Results().save(project, run, project.get_object('ROI', roi_id), frame, p, self.class_names(as_string=False))
         print(f'{datetime.now().strftime("%H:%M:%S")}: predictions OK')
 
     def save_results(self, project: Project, run: Run, roi: ROI, frame: int, class_name: str) -> None:
