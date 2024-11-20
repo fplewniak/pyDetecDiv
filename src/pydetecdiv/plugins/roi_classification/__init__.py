@@ -1413,7 +1413,7 @@ class Plugin(plugins.Plugin):
                     Results().save(project, run, project.get_object('ROI', roi_id), frame, p, self.class_names(as_string=False))
         print(f'{datetime.now().strftime("%H:%M:%S")}: predictions OK')
 
-    def save_results(self, project: Project, run: Run, roi: ROI, frame: int, class_name: str) -> None:
+    def save_annotation(self, project: Project, run: Run, roi: ROI, frame: int, class_name: str) -> None:
         """
         Saves the results in database
 
@@ -1423,7 +1423,9 @@ class Plugin(plugins.Plugin):
         :param frame: the current frame
         :param class_name: the class name
         """
-        Results().save(project, run, roi, frame, np.array([1]), [class_name])
+        if roi.sizeT > frame:
+            Results().save(project, run, roi, frame, np.array([int(class_name == c) for c in self.class_names(as_string=False)]),
+                           self.class_names(as_string=False))
 
     def run_import_classifier(self) -> None:
         """

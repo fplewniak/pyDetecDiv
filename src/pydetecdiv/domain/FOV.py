@@ -132,6 +132,10 @@ Comments:             {self.comments}
         return self.image_resource().tunit
 
     @property
+    def sizeT(self):
+        return self.image_resource().sizeT
+
+    @property
     def size(self):
         return (self.image_resource().sizeX, self.image_resource().sizeY)
 
