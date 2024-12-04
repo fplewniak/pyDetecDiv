@@ -523,7 +523,7 @@ class Plugin(plugins.Plugin):
             QMessageBox.information(PyDetecDiv.main_window, 'Nothing to display',
                                     'There are no prediction results available for this project')
 
-    def get_classification_df(self, roi_selection=None, ground_truth=True, run_list=None):
+    def get_classification_df(self, roi_selection=None, ground_truth=True, run_list=None) -> pd.DataFrame:
         """
 
         :param roi_selection:
@@ -534,27 +534,26 @@ class Plugin(plugins.Plugin):
         annotation_runs = self.get_annotation_runs()
         if run_list is None:
             run_list = self.get_prediction_runs()[self.class_names()]
-        ground_truth = {}
-        predictions = {run: {} for run in run_list}
-        for roi in self.get_annotated_rois(ids_only=False):
-            if annotation_runs:
-                ground_truth[roi.name] = self.get_classifications(roi=roi, run_list=annotation_runs[self.class_names()])
-
-        for run in run_list:
-            for roi in self.get_annotated_rois(run=run, ids_only=False):
-                predictions[run][roi.name] = self.get_classifications(roi=roi, run_list=[run])
-
+        annotations = {}
         if ground_truth:
+            for roi in self.get_annotated_rois(ids_only=False):
+                if annotation_runs:
+                    annotations[roi.name] = self.get_classifications(roi=roi, run_list=annotation_runs[self.class_names()])
             df = pd.DataFrame(
-                    [[roi_name, frame, label] for roi_name in ground_truth for frame, label in enumerate(ground_truth[roi_name])],
+                    [[roi_name, frame, label] for roi_name in annotations for frame, label in enumerate(annotations[roi_name])],
                     columns=('roi', 'frame', 'ground truth'))
+        else:
+            df = pd.DataFrame([], columns=('roi', 'frame'))
 
         for run in run_list:
+            predictions = {}
+            for roi in self.get_annotated_rois(run=run, ids_only=False):
+                predictions[roi.name] = self.get_classifications(roi=roi, run_list=[run])
+
             predictions_df = pd.DataFrame(
-                    [[roi_name, frame, label] for roi_name in predictions[run] for frame, label in
-                     enumerate(predictions[run][roi_name])],
+                    [[roi_name, frame, label] for roi_name in predictions for frame, label in enumerate(predictions[roi_name])],
                     columns=('roi', 'frame', f'run_{run}'))
-            if ground_truth:
+            if len(df) > 0:
                 df = df.merge(predictions_df, on=['roi', 'frame'], how='outer')
             else:
                 df = predictions_df
