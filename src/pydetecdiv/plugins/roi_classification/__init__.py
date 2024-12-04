@@ -249,7 +249,6 @@ class Plugin(plugins.Plugin):
     def __init__(self):
         super().__init__()
         self.menu = None
-        # self.gui = None
         physical_devices = tf.config.list_physical_devices('GPU')
         try:
             tf.config.experimental.set_memory_growth(physical_devices[0], True)
@@ -677,8 +676,6 @@ class Plugin(plugins.Plugin):
         """
         available_models = {}
         for _, name, _ in pkgutil.iter_modules(models.__path__):
-            # self.parameters['model'].add_item(
-            #     {name: importlib.import_module(f'.models.{name}', package=__package__)})
             available_models[name] = importlib.import_module(f'.models.{name}', package=__package__)
         for finder, name, _ in pkgutil.iter_modules([os.path.join(get_plugins_dir(), 'roi_classification/models')]):
             loader = finder.find_module(name)
@@ -686,7 +683,6 @@ class Plugin(plugins.Plugin):
             module = importlib.util.module_from_spec(spec)
             sys.modules[name] = module
             spec.loader.exec_module(module)
-            # self.parameters['model'].add_item({name: module})
             available_models[name] = module
         self.parameters['model'].set_items(available_models)
 
@@ -705,7 +701,6 @@ class Plugin(plugins.Plugin):
                 self.parameters['class_names'].value = parameters['class_names']
                 self.parameters['num_training'].value = parameters['num_training']
                 self.parameters['num_validation'].value = parameters['num_validation']
-                # self.parameters['num_test'].value = parameters['num_test']
                 self.parameters['num_test'].value = 1.0 - parameters['num_training'] - parameters['num_validation']
                 self.parameters['red_channel'].value = parameters['red_channel']
                 self.parameters['green_channel'].value = parameters['green_channel']
@@ -795,10 +790,6 @@ class Plugin(plugins.Plugin):
         :param roi_classes: the classes along time
         :param run: the annotation run
         """
-        # with pydetecdiv_project(PyDetecDiv.project_name) as project:
-        #     for t, class_name in enumerate(roi_classes):
-        #         if class_name != '-':
-        #             Results().save(project, run, roi, t, np.array([1]), [class_name])
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             for t, class_name in enumerate(roi_classes):
                 if class_name != -1:
@@ -1251,7 +1242,6 @@ class Plugin(plugins.Plugin):
         else:
             seqlen = 0
 
-        # hdf5_file = os.path.join(get_project_dir(), 'data', 'annotated_rois.h5')
         os.makedirs(os.path.join(get_project_dir(), 'roi_classification', 'data'), exist_ok=True)
         hdf5_file = os.path.join(get_project_dir(), 'roi_classification', 'data', 'annotated_rois.h5')
         print(hdf5_file)
@@ -1281,7 +1271,6 @@ class Plugin(plugins.Plugin):
 
         if self.parameters['weights'].value is not None:
             print(f'{datetime.now().strftime("%H:%M:%S")}: Loading weights from {self.parameters["weights"].key}')
-            # loadWeights(model, filename=self.parameters['weights'].value)
             model.load_weights(self.parameters['weights'].value)
             run = self.save_training_run(finetune=True)
         else:
@@ -1338,9 +1327,6 @@ class Plugin(plugins.Plugin):
 
             print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for best model')
             model.load_weights(checkpoint_filepath)
-            # model.compile(optimizer=optimizer,
-            #               loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-            #               metrics=['accuracy', lr_metric], )
             best_predictions = model.predict(test_dataset).argmax(axis=1)
         else:
             print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for last model')
@@ -1348,9 +1334,6 @@ class Plugin(plugins.Plugin):
 
             print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for best model')
             model.load_weights(checkpoint_filepath)
-            # model.compile(optimizer=optimizer,
-            #               loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-            #               metrics=['accuracy', lr_metric], )
             best_predictions = [label for seq in model.predict(test_dataset, verbose=2).argmax(axis=2) for label in seq]
             ground_truth = [label for seq in ground_truth for label in seq]
 
@@ -1374,7 +1357,6 @@ class Plugin(plugins.Plugin):
             f'| {self.parameters["class_names"].value[i]} | {precision[i]:.2f} | {recall[i]:.2f} | {fscore[i]:.2f} | {support[i]}'
             for i in labels]
         stats = '\n'.join(rows)
-        # print('**Last epoch model evaluation on test set**')
         print(f"""
         
         
@@ -1406,7 +1388,6 @@ class Plugin(plugins.Plugin):
             f'| {self.parameters["class_names"].value[i]} | {precision[i]:.2f} | {recall[i]:.2f} | {fscore[i]:.2f} | {support[i]}'
             for i in labels]
         stats = '\n'.join(rows)
-        # print('**Best model evaluation on test set**')
         print(f"""
 **Best model evaluation on test set**
 
@@ -1482,7 +1463,6 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Loading weights')
         weights = self.parameters['weights'].value
         if weights:
-            # loadWeights(model, filename=self.parameters['weights'].value)
             model.load_weights(self.parameters['weights'].value)
 
         input_shape = model.layers[0].output.shape
@@ -1497,8 +1477,6 @@ class Plugin(plugins.Plugin):
         fov_data, roi_list, rois = self.prepare_data_for_classification(fov_ids, z_channels)
         num_rois = len(rois)
 
-        # print(roi_list.loc[:, ['t', 'roi']].to_numpy(), file=sys.stderr)
-
         if len(input_shape) == 4:
             img_size = (input_shape[1], input_shape[2])
             roi_dataset = PredictionBatch(fov_data, roi_list, image_size=img_size, z_channels=z_channels)
@@ -1509,7 +1487,6 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Making predictions')
 
         predictions = model.predict(roi_dataset, verbose=2)
-        # print(predictions.shape, file=sys.stderr)
 
         if len(input_shape) > 4:
             if not isinstance(predictions, tf.RaggedTensor):
@@ -1524,7 +1501,6 @@ class Plugin(plugins.Plugin):
 
             # 2. Stack results into a dense tensor
             predictions = tf.stack(grouped_tensors, axis=0).numpy()
-            # print(predictions.shape, file=sys.stderr)
 
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             print(f'{datetime.now().strftime("%H:%M:%S")}: Saving results')
@@ -1533,11 +1509,9 @@ class Plugin(plugins.Plugin):
             if len(input_shape) > 4:
                 for roi_id, prediction in zip(rois, predictions):
                     for frame, p in enumerate(prediction):
-                        # print(f'ROI: {roi_id}, t:{frame}, {p}', file=sys.stderr)
                         Results().save(project, run, project.get_object('ROI', roi_id), frame, p, self.class_names(as_string=False))
             else:
                 for (roi_id, frame), p in zip(roi_list.loc[:, ['roi', 't']].to_numpy(), predictions):
-                    # print(f'ROI: {roi_id}, t:{frame}, {prediction}', file=sys.stderr)
                     Results().save(project, run, project.get_object('ROI', roi_id), frame, p, self.class_names(as_string=False))
         print(f'{datetime.now().strftime("%H:%M:%S")}: predictions OK')
 
@@ -1565,7 +1539,6 @@ class Plugin(plugins.Plugin):
         for project_name in [p for p in project_list() if p != current_project_name]:
             with pydetecdiv_project(project_name) as project:
                 run_list: list[Run] = [run for run in project.get_objects('Run') if run.command in ['train_model', 'fine_tune']]
-                # run.command in ['train_model', 'fine_tune', 'import_classifier']]
                 for run in run_list:
                     run.parameters['project'] = project_name
                     run.parameters['run'] = run.id_
