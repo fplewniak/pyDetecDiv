@@ -1515,8 +1515,8 @@ class Plugin(plugins.Plugin):
         self.classifiers.clear()
         for project_name in [p for p in project_list() if p != current_project_name]:
             with pydetecdiv_project(project_name) as project:
-                run_list: list[Run] = [run for run in project.get_objects('Run') if
-                                       run.command in ['train_model', 'fine_tune', 'import_classifier']]
+                run_list: list[Run] = [run for run in project.get_objects('Run') if run.command in ['train_model', 'fine_tune']]
+                # run.command in ['train_model', 'fine_tune', 'import_classifier']]
                 for run in run_list:
                     run.parameters['project'] = project_name
                     run.parameters['run'] = run.id_
