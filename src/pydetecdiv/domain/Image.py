@@ -329,3 +329,98 @@ class Image():
                 [Image(image_resource_data.image(C=c, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift)) for c in
                  C], alpha=alpha)
         return img
+
+
+def get_images_sequences(imgdata, roi_list, t, seqlen=None, z=None, apply_drift=True):
+    """
+    Get a sequence of seqlen images for each roi
+
+    :param imgdata: the image data resource
+    :param roi_list: the list of ROIs
+    :param t: the starting time point (index of frame)
+    :param seqlen: the number of frames
+    :return: a tensor containing the sequences for all ROIs
+    """
+    maxt = min(imgdata.sizeT, t + seqlen) if seqlen else imgdata.sizeT
+    roi_sequences = tf.stack([get_rgb_images_from_stacks(imgdata, roi_list, f, z=z) for f in range(t, maxt)], axis=1,
+                             apply_drift=apply_drift)
+    if roi_sequences.shape[1] < seqlen:
+        padding_config = [[0, 0], [seqlen - roi_sequences.shape[1], 0], [0, 0], [0, 0], [0, 0]]
+        roi_sequences = tf.pad(roi_sequences, padding_config, mode='CONSTANT', constant_values=0.0)
+    # print('roi sequence', roi_sequences.shape)
+    return roi_sequences
+
+
+def get_rgb_images_from_stacks_memmap(imgdata, roi_list, t, z=None, apply_drift=True):
+    """
+    Combine 3 z-layers of a grayscale image resource into a RGB image where each of the z-layer is a channel
+
+    :param imgdata: the image data resource
+    :param roi_list: the list of ROIs
+    :param t: the frame index
+    :param z: a list of 3 z-layer indices defining the grayscale layers that must be combined as channels
+    :return: a tensor of the combined RGB images
+    """
+    if z is None:
+        z = [0, 0, 0]
+    roi_images = [
+        Image.compose_channels([Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
+                                                           sliceY=slice(roi.y, roi.y + roi.height),
+                                                           C=0, Z=z[0], T=t,
+                                                           drift=apply_drift)).stretch_contrast(),
+                                Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
+                                                           sliceY=slice(roi.y, roi.y + roi.height),
+                                                           C=0, Z=z[1], T=t,
+                                                           drift=apply_drift)).stretch_contrast(),
+                                Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
+                                                           sliceY=slice(roi.y, roi.y + roi.height),
+                                                           C=0, Z=z[2], T=t,
+                                                           drift=apply_drift)).stretch_contrast(),
+                                ]).as_tensor(ImgDType.float32) for roi in roi_list]
+    return roi_images
+
+
+def stack_fov_image(imgdata, t, z=None, apply_drift=True):
+    """
+
+    :param imgdata:
+    :param t:
+    :param z:
+    :return:
+    """
+    if z is None:
+        z = [0, 0, 0]
+
+    image1 = Image(imgdata.image(T=t, Z=z[0], drift=apply_drift))
+    image2 = Image(imgdata.image(T=t, Z=z[1], drift=apply_drift))
+    image3 = Image(imgdata.image(T=t, Z=z[2], drift=apply_drift))
+
+    rgb_image = Image.compose_channels([image1.stretch_contrast(),
+                                        image2.stretch_contrast(),
+                                        image3.stretch_contrast()
+                                        ]).as_tensor(ImgDType.float32)
+    return rgb_image
+
+
+def get_rgb_images_from_stacks(imgdata, roi_list, t, z=None, apply_drift=True):
+    """
+    Combine 3 z-layers of a grayscale image resource into a RGB image where each of the z-layer is a channel
+
+    :param imgdata: the image data resource
+    :param roi_list: the list of ROIs
+    :param t: the frame index
+    :param z: a list of 3 z-layer indices defining the grayscale layers that must be combined as channels
+    :return: a tensor of the combined RGB images
+    """
+    if z is None:
+        z = [0, 0, 0]
+
+    image1 = Image(imgdata.image(T=t, Z=z[0], drift=apply_drift))
+    image2 = Image(imgdata.image(T=t, Z=z[1], drift=apply_drift))
+    image3 = Image(imgdata.image(T=t, Z=z[2], drift=apply_drift))
+
+    roi_images = [Image.compose_channels([image1.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
+                                          image2.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
+                                          image3.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast()
+                                          ]).as_tensor(ImgDType.float32) for roi in roi_list]
+    return roi_images
