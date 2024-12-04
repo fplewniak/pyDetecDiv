@@ -6,7 +6,6 @@ import json
 import math
 import os.path
 import pkgutil
-import random
 import sys
 from collections import Counter
 from datetime import datetime
@@ -18,19 +17,15 @@ import pandas as pd
 
 import tables as tbl
 import numpy as np
-import pandas
 import sqlalchemy
 from PySide6.QtGui import QAction, QColor
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
 from PySide6.QtWidgets import QGraphicsRectItem, QFileDialog, QMessageBox
-from matplotlib import pyplot as plt
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
 import tensorflow as tf
 from sklearn.metrics import precision_recall_fscore_support
-
-from tifffile import tifffile
 
 from pydetecdiv import plugins, copy_files
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir, project_list
@@ -838,7 +833,7 @@ class Plugin(plugins.Plugin):
             z_layers = (0,)
 
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            results = pandas.DataFrame(project.repository.session.execute(
+            results = pd.DataFrame(project.repository.session.execute(
                 sqlalchemy.text(f"SELECT run.id_, rc.roi, roi.fov, roi.x0_, roi.y0_, roi.x1_, roi.y1_, "
                                 f"rc.t, data.c as channel, data.z, rc.class_name, data.url, img.key_val ->> '$.drift' as drift "
                                 f"FROM roi_classification as rc, ROI as roi, run, data, ImageResource as img "
@@ -859,7 +854,7 @@ class Plugin(plugins.Plugin):
             # channel = self.parameters['channel']
 
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            results = pandas.DataFrame(project.repository.session.execute(
+            results = pd.DataFrame(project.repository.session.execute(
                 sqlalchemy.text(f"SELECT img.fov, data.t, data.url "
                                 f"FROM data, ImageResource as img "
                                 f"WHERE data.image_resource=img.id_ "
@@ -872,7 +867,7 @@ class Plugin(plugins.Plugin):
 
     def get_roi_list(self):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            results = pandas.DataFrame(project.repository.session.execute(
+            results = pd.DataFrame(project.repository.session.execute(
                 sqlalchemy.text(f"SELECT id_ as roi, fov, x0_ as x0, y0_ as y0, x1_ as x1, y1_ as y1 "
                                 f"FROM ROI "
                                 f"ORDER BY fov, id_ ASC;")))
@@ -880,7 +875,7 @@ class Plugin(plugins.Plugin):
 
     def get_annotations(self):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            results = pandas.DataFrame(project.repository.session.execute(
+            results = pd.DataFrame(project.repository.session.execute(
                 sqlalchemy.text(f"SELECT run.id_, rc.roi, roi.fov, rc.t, rc.class_name "
                                 f"FROM roi_classification as rc, run, ROI as roi "
                                 f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
@@ -893,11 +888,11 @@ class Plugin(plugins.Plugin):
 
     def get_drift_corrections(self):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            results = pandas.DataFrame(project.repository.session.execute(
+            results = pd.DataFrame(project.repository.session.execute(
                 sqlalchemy.text(f"SELECT fov, img.key_val ->> '$.drift' as drift "
                                 f"FROM ImageResource as img "
                                 f"ORDER BY fov ASC;")))
-            drift_corrections = pandas.DataFrame(columns=['fov', 't', 'dx', 'dy'])
+            drift_corrections = pd.DataFrame(columns=['fov', 't', 'dx', 'dy'])
             for row in results.itertuples(index=False):
                 df = pandas.read_csv(os.path.join(get_project_dir(), row.drift))
                 df['fov'] = row.fov
@@ -934,7 +929,7 @@ class Plugin(plugins.Plugin):
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Applying drift correction to ROIs')
         roi_list = roi_list[roi_list['roi'].isin(set(data['roi']))]
-        roi_list = pandas.merge(drift_correction, roi_list, on=['fov'], how='left').dropna()
+        roi_list = pd.merge(drift_correction, roi_list, on=['fov'], how='left').dropna()
         roi_list['x0'] = (roi_list['x0'] + roi_list['dx'].round().astype(int))
         roi_list['x1'] = (roi_list['x1'] + roi_list['dx'].round().astype(int))
         roi_list['y0'] = (roi_list['y0'] + roi_list['dy'].round().astype(int))
@@ -1048,7 +1043,7 @@ class Plugin(plugins.Plugin):
         roi_list = self.get_roi_list()
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Applying drift correction to ROIs')
-        roi_list = pandas.merge(drift_correction, roi_list, on=['fov'], how='left').dropna()
+        roi_list = pd.merge(drift_correction, roi_list, on=['fov'], how='left').dropna()
         roi_list['x0'] = (roi_list['x0'] + roi_list['dx'].round().astype(int))
         roi_list['x1'] = (roi_list['x1'] + roi_list['dx'].round().astype(int))
         roi_list['y0'] = (roi_list['y0'] + roi_list['dy'].round().astype(int))
