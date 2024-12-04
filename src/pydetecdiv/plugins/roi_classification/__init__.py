@@ -112,6 +112,7 @@ class DataProvider(tf.keras.utils.Sequence):
     """
 
     """
+
     def __init__(self, h5file_name, indices, batch_size=32, image_shape=(60, 60), seqlen=0, name=None, targets=False,
                  shuffle=True, **kwargs):
         super().__init__(**kwargs)
@@ -152,8 +153,8 @@ class DataProvider(tf.keras.utils.Sequence):
                 batch_targets = np.array([self.targets[frame, roi_id] for (frame, roi_id) in batch_indices])
         else:
             batch_roi_data = np.array(
-                [[tf.image.resize(np.array(self.roi_data[frame + i, roi_id, ...]), self.image_shape,
-                                  method='nearest') for i in range(self.seqlen)] for frame, roi_id in batch_indices])
+                    [[tf.image.resize(np.array(self.roi_data[frame + i, roi_id, ...]), self.image_shape,
+                                      method='nearest') for i in range(self.seqlen)] for frame, roi_id in batch_indices])
             if self.targets is not None:
                 batch_targets = np.array([self.targets[frame:frame + self.seqlen, roi_id] for (frame, roi_id) in batch_indices])
 
@@ -180,6 +181,7 @@ class PredictionBatch(tf.keras.utils.Sequence):
     """
 
     """
+
     def __init__(self, fov_data, roi_list, image_size=(60, 60), seqlen=None, z_channels=None):
         self.fov_data = fov_data
         self.roi_list = roi_list
@@ -266,11 +268,12 @@ class Plugin(plugins.Plugin):
             IntParameter(name='seed', label='Random seed', groups={'training', 'finetune'}, maximum=999999999,
                          default=42),
             ChoiceParameter(name='optimizer', label='Optimizer', groups={'training', 'finetune'}, default='SGD',
-                            items={'SGD': keras.optimizers.SGD,
-                                   'Adam': keras.optimizers.Adam,
+                            items={'SGD'     : keras.optimizers.SGD,
+                                   'Adam'    : keras.optimizers.Adam,
                                    'Adadelta': keras.optimizers.Adadelta,
-                                   'Adamax': keras.optimizers.Adamax,
-                                   'Nadam': keras.optimizers.Nadam, }),
+                                   'Adamax'  : keras.optimizers.Adamax,
+                                   'Nadam'   : keras.optimizers.Nadam,
+                                   }),
             FloatParameter(name='learning_rate', label='Learning rate', groups={'training', 'finetune'}, default=0.001,
                            minimum=0.00001, maximum=1.0),
             FloatParameter(name='decay_rate', label='Decay rate', groups={'training', 'finetune'}, default=0.95),
@@ -301,7 +304,7 @@ class Plugin(plugins.Plugin):
                          default=15, ),
             ItemParameter(name='annotation_file', label='Annotation file', groups={'import_annotations'}, ),
             ChoiceParameter(name='fov', label='Select FOVs', groups={'prediction'}, updater=self.update_fov_list),
-        ]
+            ]
 
         self.classifiers: ChoiceParameter = ChoiceParameter(name='classifier', label='Classifier',
                                                             groups={'import_classifier'})
@@ -387,8 +390,8 @@ class Plugin(plugins.Plugin):
         import_classifier.triggered.connect(self.run_import_classifier)
 
         submenu.aboutToShow.connect(
-            lambda: self.set_enabled_actions(manual_annotation, train_model, fine_tuning, predict, show_results,
-                                             export_classification))
+                lambda: self.set_enabled_actions(manual_annotation, train_model, fine_tuning, predict, show_results,
+                                                 export_classification))
 
     def set_enabled_actions(self, manual_annotation, train_model, fine_tuning, predict, show_results, export_classification):
         """
@@ -405,11 +408,11 @@ class Plugin(plugins.Plugin):
             train_model.setEnabled(len(self.get_annotated_rois(ids_only=True)) > 0)
             self.update_model_weights()
             fine_tuning.setEnabled(
-                (len(self.parameters['weights'].values) > 0) & (len(self.get_annotated_rois(ids_only=True)) > 0))
+                    (len(self.parameters['weights'].values) > 0) & (len(self.get_annotated_rois(ids_only=True)) > 0))
             predict.setEnabled(len(self.parameters['weights'].values) > 0)
             show_results.setEnabled(len(self.get_prediction_runs()) > 0)
             export_classification.setEnabled(
-                (len(self.get_annotated_rois(ids_only=True)) > 0) | (len(self.get_prediction_runs()) > 0))
+                    (len(self.get_annotated_rois(ids_only=True)) > 0) | (len(self.get_prediction_runs()) > 0))
 
     def add_context_action(self, data):
         """
@@ -544,14 +547,14 @@ class Plugin(plugins.Plugin):
 
         if ground_truth:
             df = pd.DataFrame(
-                [[roi_name, frame, label] for roi_name in ground_truth for frame, label in enumerate(ground_truth[roi_name])],
-                columns=('roi', 'frame', 'ground truth'))
+                    [[roi_name, frame, label] for roi_name in ground_truth for frame, label in enumerate(ground_truth[roi_name])],
+                    columns=('roi', 'frame', 'ground truth'))
 
         for run in run_list:
             predictions_df = pd.DataFrame(
-                [[roi_name, frame, label] for roi_name in predictions[run] for frame, label in
-                 enumerate(predictions[run][roi_name])],
-                columns=('roi', 'frame', f'run_{run}'))
+                    [[roi_name, frame, label] for roi_name in predictions[run] for frame, label in
+                     enumerate(predictions[run][roi_name])],
+                    columns=('roi', 'frame', f'run_{run}'))
             if ground_truth:
                 df = df.merge(predictions_df, on=['roi', 'frame'], how='outer')
             else:
@@ -598,12 +601,12 @@ class Plugin(plugins.Plugin):
         """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             results = list(project.repository.session.execute(
-                sqlalchemy.text(f"SELECT run.id_,"
-                                f"run.parameters ->> '$.annotator' as annotator, "
-                                f"run.parameters ->> '$.class_names' as class_names "
-                                f"FROM run "
-                                f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
-                                f"ORDER BY run.id_ ASC;")))
+                    sqlalchemy.text(f"SELECT run.id_,"
+                                    f"run.parameters ->> '$.annotator' as annotator, "
+                                    f"run.parameters ->> '$.class_names' as class_names "
+                                    f"FROM run "
+                                    f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+                                    f"ORDER BY run.id_ ASC;")))
             runs = {}
             if results:
                 for run in results:
@@ -621,11 +624,11 @@ class Plugin(plugins.Plugin):
         """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             results = list(project.repository.session.execute(
-                sqlalchemy.text(f"SELECT run.id_,"
-                                f"run.parameters ->> '$.class_names' as class_names "
-                                f"FROM run "
-                                f"WHERE run.command='predict' "
-                                f"ORDER BY run.id_ ASC;")))
+                    sqlalchemy.text(f"SELECT run.id_,"
+                                    f"run.parameters ->> '$.class_names' as class_names "
+                                    f"FROM run "
+                                    f"WHERE run.command='predict' "
+                                    f"ORDER BY run.id_ ASC;")))
             runs = {}
             if results:
                 for run in results:
@@ -814,25 +817,25 @@ class Plugin(plugins.Plugin):
             if run is None:
                 if self.class_names(as_string=False):
                     query = QSqlQuery(
-                        f"SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
-                        f"WHERE run.id_=roi_classification.run "
-                        f"AND (run.command='annotate_rois' OR run.command='import_annotated_rois') "
-                        f"AND run.parameters ->> '$.class_names'=json('{self.class_names()}') ;",
-                        db=db)
+                            f"SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
+                            f"WHERE run.id_=roi_classification.run "
+                            f"AND (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+                            f"AND run.parameters ->> '$.class_names'=json('{self.class_names()}') ;",
+                            db=db)
                 else:
                     query = QSqlQuery(
-                        f"SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
-                        f"WHERE run.id_=roi_classification.run "
-                        f"AND (run.command='annotate_rois' OR run.command='import_annotated_rois') ",
-                        db=db)
+                            f"SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
+                            f"WHERE run.id_=roi_classification.run "
+                            f"AND (run.command='annotate_rois' OR run.command='import_annotated_rois') ",
+                            db=db)
             else:
                 if isinstance(run, int):
                     run = project.get_object('Run', run)
                 query = QSqlQuery(
-                    f"SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
-                    f"WHERE run.id_=roi_classification.run "
-                    f"AND run.id_={run.id_} ;",
-                    db=db)
+                        f"SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
+                        f"WHERE run.id_=roi_classification.run "
+                        f"AND run.id_={run.id_} ;",
+                        db=db)
             query.exec()
             if query.first():
                 roi_ids = [query.value('annotated_rois')]
@@ -869,15 +872,15 @@ class Plugin(plugins.Plugin):
         roi_classes = [-1] * roi.fov.image_resource().image_resource_data().sizeT
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             results = list(project.repository.session.execute(
-                sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,"
-                                f"run.parameters ->> '$.annotator' as annotator, "
-                                f"run.parameters ->> '$.class_names' as class_names "
-                                f"FROM run, roi_classification as rc "
-                                f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
-                                f"AND rc.run=run.id_ and rc.roi={roi.id_} "
-                                f"AND annotator='{get_config_value('project', 'user')}' "
-                                f"AND run.parameters ->> '$.class_names'=json('{self.class_names()}') "
-                                f"ORDER BY rc.run ASC;")))
+                    sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,"
+                                    f"run.parameters ->> '$.annotator' as annotator, "
+                                    f"run.parameters ->> '$.class_names' as class_names "
+                                    f"FROM run, roi_classification as rc "
+                                    f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+                                    f"AND rc.run=run.id_ and rc.roi={roi.id_} "
+                                    f"AND annotator='{get_config_value('project', 'user')}' "
+                                    f"AND run.parameters ->> '$.class_names'=json('{self.class_names()}') "
+                                    f"ORDER BY rc.run ASC;")))
             if results:
                 class_names = json.loads(results[0][4])
                 if as_index:
@@ -901,12 +904,12 @@ class Plugin(plugins.Plugin):
         roi_classes = [-1] * roi.fov.image_resource().image_resource_data().sizeT
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             results = list(project.repository.session.execute(
-                sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,"
-                                f"run.parameters ->> '$.class_names' as class_names, rc.run, run.id_ "
-                                f"FROM run, roi_classification as rc "
-                                f"WHERE rc.run IN ({','.join([str(i) for i in run_list])}) and rc.roi={roi.id_} "
-                                f"AND run.id_=rc.run "
-                                f"ORDER BY rc.run ASC;")))
+                    sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,"
+                                    f"run.parameters ->> '$.class_names' as class_names, rc.run, run.id_ "
+                                    f"FROM run, roi_classification as rc "
+                                    f"WHERE rc.run IN ({','.join([str(i) for i in run_list])}) and rc.roi={roi.id_} "
+                                    f"AND run.id_=rc.run "
+                                    f"ORDER BY rc.run ASC;")))
             if results:
                 class_names = json.loads(results[0][3])
                 if as_index:
@@ -928,16 +931,16 @@ class Plugin(plugins.Plugin):
 
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             results = pd.DataFrame(project.repository.session.execute(
-                sqlalchemy.text(f"SELECT run.id_, rc.roi, roi.fov, roi.x0_, roi.y0_, roi.x1_, roi.y1_, "
-                                f"rc.t, data.c as channel, data.z, rc.class_name, data.url, img.key_val ->> '$.drift' as drift "
-                                f"FROM roi_classification as rc, ROI as roi, run, data, ImageResource as img "
-                                f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
-                                f"AND rc.run=run.id_ and rc.roi=roi.id_ "
-                                f"AND run.parameters ->> '$.annotator'='{get_config_value('project', 'user')}' "
-                                f"AND run.parameters ->> '$.class_names'=json('{self.class_names()}') "
-                                f"AND data.t = rc.t AND data.image_resource=img.id_ AND img.fov=roi.fov "
-                                f"AND data.z in {tuple(z_layers)} "
-                                f"ORDER BY rc.run, data.url, rc.roi ASC;")))
+                    sqlalchemy.text(f"SELECT run.id_, rc.roi, roi.fov, roi.x0_, roi.y0_, roi.x1_, roi.y1_, "
+                                    f"rc.t, data.c as channel, data.z, rc.class_name, data.url, img.key_val ->> '$.drift' as drift "
+                                    f"FROM roi_classification as rc, ROI as roi, run, data, ImageResource as img "
+                                    f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+                                    f"AND rc.run=run.id_ and rc.roi=roi.id_ "
+                                    f"AND run.parameters ->> '$.annotator'='{get_config_value('project', 'user')}' "
+                                    f"AND run.parameters ->> '$.class_names'=json('{self.class_names()}') "
+                                    f"AND data.t = rc.t AND data.image_resource=img.id_ AND img.fov=roi.fov "
+                                    f"AND data.z in {tuple(z_layers)} "
+                                    f"ORDER BY rc.run, data.url, rc.roi ASC;")))
             return results
 
     def get_fov_data(self, z_layers=None, channel=None):
@@ -955,12 +958,12 @@ class Plugin(plugins.Plugin):
 
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             results = pd.DataFrame(project.repository.session.execute(
-                sqlalchemy.text(f"SELECT img.fov, data.t, data.url "
-                                f"FROM data, ImageResource as img "
-                                f"WHERE data.image_resource=img.id_ "
-                                f"AND data.z in {tuple(z_layers)} "
-                                f"AND data.c={channel} "
-                                f"ORDER BY img.fov, data.url ASC;")))
+                    sqlalchemy.text(f"SELECT img.fov, data.t, data.url "
+                                    f"FROM data, ImageResource as img "
+                                    f"WHERE data.image_resource=img.id_ "
+                                    f"AND data.z in {tuple(z_layers)} "
+                                    f"AND data.c={channel} "
+                                    f"ORDER BY img.fov, data.url ASC;")))
             fov_data = results.groupby(['fov', 't'])['url'].apply(self.layers2channels).reset_index()
         fov_data.columns = ['fov', 't', 'channel_files']
         return fov_data
@@ -972,9 +975,9 @@ class Plugin(plugins.Plugin):
         """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             results = pd.DataFrame(project.repository.session.execute(
-                sqlalchemy.text(f"SELECT id_ as roi, fov, x0_ as x0, y0_ as y0, x1_ as x1, y1_ as y1 "
-                                f"FROM ROI "
-                                f"ORDER BY fov, id_ ASC;")))
+                    sqlalchemy.text(f"SELECT id_ as roi, fov, x0_ as x0, y0_ as y0, x1_ as x1, y1_ as y1 "
+                                    f"FROM ROI "
+                                    f"ORDER BY fov, id_ ASC;")))
         return results
 
     def get_annotations(self):
@@ -984,13 +987,13 @@ class Plugin(plugins.Plugin):
         """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             results = pd.DataFrame(project.repository.session.execute(
-                sqlalchemy.text(f"SELECT run.id_, rc.roi, roi.fov, rc.t, rc.class_name "
-                                f"FROM roi_classification as rc, run, ROI as roi "
-                                f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
-                                f"AND rc.run=run.id_ AND roi.id_=rc.roi "
-                                f"AND run.parameters ->> '$.annotator'='{get_config_value('project', 'user')}' "
-                                f"AND run.parameters ->> '$.class_names'=json('{self.class_names()}') "
-                                f"ORDER BY run.id_, rc.t, rc.roi ASC;")))
+                    sqlalchemy.text(f"SELECT run.id_, rc.roi, roi.fov, rc.t, rc.class_name "
+                                    f"FROM roi_classification as rc, run, ROI as roi "
+                                    f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+                                    f"AND rc.run=run.id_ AND roi.id_=rc.roi "
+                                    f"AND run.parameters ->> '$.annotator'='{get_config_value('project', 'user')}' "
+                                    f"AND run.parameters ->> '$.class_names'=json('{self.class_names()}') "
+                                    f"ORDER BY run.id_, rc.t, rc.roi ASC;")))
             results = results.drop_duplicates(subset=['roi', 't'], keep='last')
             return results
 
@@ -1001,9 +1004,9 @@ class Plugin(plugins.Plugin):
         """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             results = pd.DataFrame(project.repository.session.execute(
-                sqlalchemy.text(f"SELECT fov, img.key_val ->> '$.drift' as drift "
-                                f"FROM ImageResource as img "
-                                f"ORDER BY fov ASC;")))
+                    sqlalchemy.text(f"SELECT fov, img.key_val ->> '$.drift' as drift "
+                                    f"FROM ImageResource as img "
+                                    f"ORDER BY fov ASC;")))
             drift_corrections = pd.DataFrame(columns=['fov', 't', 'dx', 'dy'])
             for row in results.itertuples(index=False):
                 if row.drift is not None:
@@ -1185,7 +1188,7 @@ class Plugin(plugins.Plugin):
 
         """
         class_counts = dict(
-            Counter([x for roi in self.get_annotated_rois() for x in self.get_annotation(roi) if x >= 0]))
+                Counter([x for roi in self.get_annotated_rois() for x in self.get_annotation(roi) if x >= 0]))
         n = len(class_counts)
         total = sum([v for c, v in class_counts.items()])
         weights = {k: total / (n * class_counts[k]) for k in class_counts.keys()}
@@ -1233,10 +1236,10 @@ class Plugin(plugins.Plugin):
         lr_metric = get_lr_metric(optimizer)
 
         model.compile(
-            optimizer=optimizer,
-            loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-            metrics=['accuracy', lr_metric],
-        )
+                optimizer=optimizer,
+                loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+                metrics=['accuracy', lr_metric],
+                )
         # model.summary(print_fn=lambda x: print(x, file=sys.stderr))
         # print('model output:', model.layers[-1].output.shape, file=sys.stderr)
         input_shape = model.layers[0].output.shape
@@ -1293,12 +1296,12 @@ class Plugin(plugins.Plugin):
                                            f'{best_checkpoint_filename}')
 
         model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-            filepath=checkpoint_filepath,
-            save_weights_only=True,
-            monitor=checkpoint_monitor_metric,
-            mode='auto',
-            verbose=1,
-            save_best_only=True)
+                filepath=checkpoint_filepath,
+                save_weights_only=True,
+                monitor=checkpoint_monitor_metric,
+                mode='auto',
+                verbose=1,
+                save_best_only=True)
 
         tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1,
                                                               profile_batch=(0, 20))
@@ -1355,10 +1358,11 @@ class Plugin(plugins.Plugin):
         precision, recall, fscore, support = precision_recall_fscore_support(ground_truth, predictions, labels=labels,
                                                                              zero_division=np.nan)
         stats = {'last_stats': {'precision': list(precision),
-                                'recall': list(recall),
-                                'fscore': list(fscore),
-                                'support': [int(s) for s in support]
-                                }}
+                                'recall'   : list(recall),
+                                'fscore'   : list(fscore),
+                                'support'  : [int(s) for s in support]
+                                }
+                 }
         if run.key_val is None:
             run.key_val = stats
         else:
@@ -1386,10 +1390,11 @@ class Plugin(plugins.Plugin):
                                                                              zero_division=np.nan)
 
         stats = {'best_stats': {'precision': list(precision),
-                                'recall': list(recall),
-                                'fscore': list(fscore),
-                                'support': [int(s) for s in support]
-                                }}
+                                'recall'   : list(recall),
+                                'fscore'   : list(fscore),
+                                'support'  : [int(s) for s in support]
+                                }
+                 }
         if run.key_val is None:
             run.key_val = stats
         else:
@@ -1566,7 +1571,7 @@ class Plugin(plugins.Plugin):
                     run.parameters['run'] = run.id_
                     run.command = 'import_classifier'
                     self.classifiers.add_item(
-                        {f"{project_name}-{run.id_} {run.parameters['model']} {run.parameters['class_names']}": run})
+                            {f"{project_name}-{run.id_} {run.parameters['model']} {run.parameters['class_names']}": run})
         with pydetecdiv_project(current_project_name) as project:  # resetting global project name
             pass
         ImportClassifierDialog(self)
@@ -1603,7 +1608,7 @@ class Plugin(plugins.Plugin):
             QColor(64, 0, 128, 64),
             QColor(128, 64, 0, 64),
             QColor(0, 64, 128, 64),
-        ]
+            ]
         rec_items = {item.data(0): item for item in PyDetecDiv.main_window.active_subwindow.viewer.scene.items() if
                      isinstance(item, QGraphicsRectItem)}
         for roi in self.get_annotated_rois():

@@ -97,7 +97,7 @@ class Image():
         if isinstance(dtype, ImgDType):
             dtype = dtype.tensor_dtype
         saturate = (self.tensor.dtype.is_floating and dtype.is_integer) or (
-                    not self.tensor.dtype.is_unsigned and dtype.is_unsigned)
+                not self.tensor.dtype.is_unsigned and dtype.is_unsigned)
         return tf.image.convert_image_dtype(self.tensor, dtype=dtype, saturate=saturate)
 
     def rgb_to_gray(self):
@@ -197,7 +197,7 @@ class Image():
         """
         tensor = tf.expand_dims(self.tensor, axis=-1) if len(self.shape) == 2 else self.tensor
         tensor = tf.squeeze(
-            tf.image.crop_to_bounding_box(tensor, offset_height, offset_width, target_height, target_width))
+                tf.image.crop_to_bounding_box(tensor, offset_height, offset_width, target_height, target_width))
         if new_image:
             return Image(tensor)
         self.tensor = tensor
@@ -320,14 +320,14 @@ class Image():
         if isinstance(C, int):
             if isinstance(Z, (tuple, list)):
                 img = Image.compose_channels(
-                    [Image(image_resource_data.image(C=C, T=T, Z=c, sliceX=crop[0], sliceY=crop[1], drift=drift)) for c
-                     in Z], alpha=alpha)
+                        [Image(image_resource_data.image(C=C, T=T, Z=c, sliceX=crop[0], sliceY=crop[1], drift=drift)) for c
+                         in Z], alpha=alpha)
             else:
                 img = Image(image_resource_data.image(C=C, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift))
         elif isinstance(C, (tuple, list)):
             img = Image.compose_channels(
-                [Image(image_resource_data.image(C=c, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift)) for c in
-                 C], alpha=alpha)
+                    [Image(image_resource_data.image(C=c, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift)) for c in
+                     C], alpha=alpha)
         return img
 
 
