@@ -416,11 +416,14 @@ class Plugin(plugins.Plugin):
         predict_menu = submenu.addMenu('Classification')
         predict = QAction("Predict ROI classes", predict_menu)
         show_results = QAction("View classification results", predict_menu)
+        export_classification = QAction("Export ROI classifications", predict_menu)
         predict_menu.addAction(predict)
         predict_menu.addAction(show_results)
+        predict_menu.addAction(export_classification)
 
         predict.triggered.connect(self.run_prediction)
         show_results.triggered.connect(self.show_results)
+        export_classification.triggered.connect(self.export_classification_to_csv)
 
         submenu.addSeparator()
 
@@ -428,9 +431,11 @@ class Plugin(plugins.Plugin):
         import_classifier.triggered.connect(self.run_import_classifier)
 
         submenu.aboutToShow.connect(
-            lambda: self.set_enabled_actions(manual_annotation, train_model, fine_tuning, predict, show_results))
+            lambda: self.set_enabled_actions(manual_annotation, train_model, fine_tuning, predict, show_results,
+                                             export_classification))
 
     def set_enabled_actions(self, manual_annotation, train_model, fine_tuning, predict, show_results):
+    def set_enabled_actions(self, manual_annotation, train_model, fine_tuning, predict, show_results, export_classification):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             manual_annotation.setEnabled(project.count_objects('ROI') > 0)
             train_model.setEnabled(len(self.get_annotated_rois(ids_only=True)) > 0)
@@ -439,6 +444,8 @@ class Plugin(plugins.Plugin):
                 (len(self.parameters['weights'].values) > 0) & (len(self.get_annotated_rois(ids_only=True)) > 0))
             predict.setEnabled(len(self.parameters['weights'].values) > 0)
             show_results.setEnabled(len(self.get_prediction_runs()) > 0)
+            export_classification.setEnabled(
+                (len(self.get_annotated_rois(ids_only=True)) > 0) | (len(self.get_prediction_runs()) > 0))
 
     def add_context_action(self, data):
         """
@@ -533,7 +540,81 @@ class Plugin(plugins.Plugin):
             QMessageBox.information(PyDetecDiv.main_window, 'Nothing to display',
                                     'There are no prediction results available for this project')
 
+    def get_classification_df(self, roi_selection=None, ground_truth=True, run_list=None):
+        """
+
+        :param roi_selection:
+        :param ground_truth:
+        :param run_list:
+        :return:
+        """
+        annotation_runs = self.get_annotation_runs()
+        if run_list is None:
+            run_list = self.get_prediction_runs()[self.class_names()]
+        ground_truth = {}
+        predictions = {run: {} for run in run_list}
+        for roi in self.get_annotated_rois(ids_only=False):
+            if annotation_runs:
+                ground_truth[roi.name] = self.get_classifications(roi=roi, run_list=annotation_runs[self.class_names()])
+
+        for run in run_list:
+            for roi in self.get_annotated_rois(run=run, ids_only=False):
+                predictions[run][roi.name] = self.get_classifications(roi=roi, run_list=[run])
+
+        if ground_truth:
+            df = pd.DataFrame(
+                [[roi_name, frame, label] for roi_name in ground_truth for frame, label in enumerate(ground_truth[roi_name])],
+                columns=('roi', 'frame', 'ground truth'))
+
+        for run in run_list:
+            predictions_df = pd.DataFrame(
+                [[roi_name, frame, label] for roi_name in predictions[run] for frame, label in
+                 enumerate(predictions[run][roi_name])],
+                columns=('roi', 'frame', f'run_{run}'))
+            if ground_truth:
+                df = df.merge(predictions_df, on=['roi', 'frame'], how='outer')
+            else:
+                df = predictions_df
+        return df
+
+    def export_classification_to_csv(self, trigger, filename='classification.csv', roi_selection=None, ground_truth=True,
+                                     run_list=None):
+        """
+
+        :param trigger:
+        :param filename:
+        :param roi_selection:
+        :param ground_truth:
+        :param run_list:
+        """
+        print('export ROI classification')
+        df = self.get_classification_df(roi_selection=roi_selection, ground_truth=ground_truth, run_list=run_list)
+        # ok = {'frame': [frame for frame in df.loc[:,'frame'].unique()]}
+        # if run_list is None:
+        #     run_list = self.get_prediction_runs()[self.class_names()]
+        # for run in run_list:
+        #     ok[f'run_{run}'] = [df[df['frame'] == frame].apply(lambda row: (row[f'run_{run}']==row['ground truth']), axis=1).sum()
+        #                         for frame in ok['frame']
+        #                         ]
+        # df = pd.DataFrame(ok)
+        df.to_csv(os.path.join(get_project_dir(), filename))
+
+    def get_classification_runs(self):
+        """
+
+        :return:
+        """
+        annotation_runs = self.get_annotation_runs()
+        prediction_runs = self.get_prediction_runs()
+        classification_runs = {classes: {'annotations': annotation_runs[classes], 'predictions': prediction_runs[classes]}
+                               for classes in annotation_runs}
+        return classification_runs
+
     def get_annotation_runs(self):
+        """
+
+        :return:
+        """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             results = list(project.repository.session.execute(
                 sqlalchemy.text(f"SELECT run.id_,"
