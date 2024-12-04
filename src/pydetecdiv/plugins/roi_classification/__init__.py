@@ -1234,7 +1234,8 @@ class Plugin(plugins.Plugin):
 
         if self.parameters['weights'].value is not None:
             print(f'{datetime.now().strftime("%H:%M:%S")}: Loading weights from {self.parameters["weights"].key}')
-            loadWeights(model, filename=self.parameters['weights'].value)
+            # loadWeights(model, filename=self.parameters['weights'].value)
+            model.load_weights(self.parameters['weights'].value)
             run = self.save_training_run(finetune=True)
         else:
             run = self.save_training_run()
@@ -1432,7 +1433,8 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Loading weights')
         weights = self.parameters['weights'].value
         if weights:
-            loadWeights(model, filename=self.parameters['weights'].value)
+            # loadWeights(model, filename=self.parameters['weights'].value)
+            model.load_weights(self.parameters['weights'].value)
 
         input_shape = model.layers[0].output.shape
 
@@ -1681,86 +1683,86 @@ def get_rgb_images_from_stacks(imgdata, roi_list, t, z=None):
     return roi_images
 
 
-def loadWeights(model, filename=os.path.join(__path__[0], "weights.h5"), debug=False):
-    """
-    load the weights into the model
-
-    :param model: the model
-    :param filename: the H5 file name containing the weights
-    :param debug: debug mode
-    """
-    import h5py
-    with h5py.File(filename, 'r') as f:
-        # try to read model weights as available in HDF5 file from Matlab export
-        try:
-            for g in f:
-                if isinstance(f[g], h5py.Group):
-                    group = f[g]
-                    layerName = group.attrs['Name']
-                    numVars = int(group.attrs['NumVars'])
-                    if debug:
-                        print("layerName:", layerName)
-                        print("    numVars:", numVars)
-                    # Find the layer index from its namevar
-                    layerIdx = layerNum(model, layerName)
-                    layer = model.layers[layerIdx]
-                    if debug:
-                        print("    layerIdx=", layerIdx)
-                    # Every weight is an h5 dataset in the layer group. Read the weights
-                    # into a list in the correct order
-                    weightList = [0] * numVars
-                    for d in group:
-                        dataset = group[d]
-                        varName = dataset.attrs['Name']
-                        shp = intList(dataset.attrs['Shape'])
-                        weightNum = int(dataset.attrs['WeightNum'])
-                        # Read the weight and put it into the right position in the list
-                        if debug:
-                            print("    varName:", varName)
-                            print("        shp:", shp)
-                            print("        weightNum:", weightNum)
-                        weightList[weightNum] = tf.constant(dataset[()], shape=shp)
-                    # Assign the weights into the layer
-                    for w in range(numVars):
-                        if debug:
-                            print("Copying variable of shape:")
-                            print(weightList[w].shape)
-                        layer.variables[w].assign(weightList[w])
-                        if debug:
-                            print("Assignment successful.")
-                            print("Set variable value:")
-                            print(layer.variables[w])
-                    # Finalize layer state
-                    if hasattr(layer, 'finalize_state'):
-                        layer.finalize_state()
-        except:
-            # otherwise, load the weights directly using Keras API
-            model.load_weights(filename)
-
-
-def layerNum(model, layerName):
-    """
-    Returns the index to the layer
-
-    :param model: the model
-    :param layerName: the name of the layer
-    :return: the index of the layer
-    """
-    layers = model.layers
-    for i in range(len(layers)):
-        if layerName == layers[i].name:
-            return i
-    print("")
-    print("WEIGHT LOADING FAILED. MODEL DOES NOT CONTAIN LAYER WITH NAME: ", layerName)
-    print("")
-    return -1
-
-
-def intList(myList: list[str]) -> list[int]:
-    """
-    Converts a list of numbers into a list of ints.
-
-    :param myList: the list to be converted
-    :return: the converted list
-    """
-    return list(map(int, myList))
+# def loadWeights(model, filename=os.path.join(__path__[0], "weights.h5"), debug=False):
+#     """
+#     load the weights into the model
+#
+#     :param model: the model
+#     :param filename: the H5 file name containing the weights
+#     :param debug: debug mode
+#     """
+#     import h5py
+#     with h5py.File(filename, 'r') as f:
+#         # try to read model weights as available in HDF5 file from Matlab export
+#         try:
+#             for g in f:
+#                 if isinstance(f[g], h5py.Group):
+#                     group = f[g]
+#                     layerName = group.attrs['Name']
+#                     numVars = int(group.attrs['NumVars'])
+#                     if debug:
+#                         print("layerName:", layerName)
+#                         print("    numVars:", numVars)
+#                     # Find the layer index from its namevar
+#                     layerIdx = layerNum(model, layerName)
+#                     layer = model.layers[layerIdx]
+#                     if debug:
+#                         print("    layerIdx=", layerIdx)
+#                     # Every weight is an h5 dataset in the layer group. Read the weights
+#                     # into a list in the correct order
+#                     weightList = [0] * numVars
+#                     for d in group:
+#                         dataset = group[d]
+#                         varName = dataset.attrs['Name']
+#                         shp = intList(dataset.attrs['Shape'])
+#                         weightNum = int(dataset.attrs['WeightNum'])
+#                         # Read the weight and put it into the right position in the list
+#                         if debug:
+#                             print("    varName:", varName)
+#                             print("        shp:", shp)
+#                             print("        weightNum:", weightNum)
+#                         weightList[weightNum] = tf.constant(dataset[()], shape=shp)
+#                     # Assign the weights into the layer
+#                     for w in range(numVars):
+#                         if debug:
+#                             print("Copying variable of shape:")
+#                             print(weightList[w].shape)
+#                         layer.variables[w].assign(weightList[w])
+#                         if debug:
+#                             print("Assignment successful.")
+#                             print("Set variable value:")
+#                             print(layer.variables[w])
+#                     # Finalize layer state
+#                     if hasattr(layer, 'finalize_state'):
+#                         layer.finalize_state()
+#         except:
+#             # otherwise, load the weights directly using Keras API
+#             model.load_weights(filename)
+#
+#
+# def layerNum(model, layerName):
+#     """
+#     Returns the index to the layer
+#
+#     :param model: the model
+#     :param layerName: the name of the layer
+#     :return: the index of the layer
+#     """
+#     layers = model.layers
+#     for i in range(len(layers)):
+#         if layerName == layers[i].name:
+#             return i
+#     print("")
+#     print("WEIGHT LOADING FAILED. MODEL DOES NOT CONTAIN LAYER WITH NAME: ", layerName)
+#     print("")
+#     return -1
+#
+#
+# def intList(myList: list[str]) -> list[int]:
+#     """
+#     Converts a list of numbers into a list of ints.
+#
+#     :param myList: the list to be converted
+#     :return: the converted list
+#     """
+#     return list(map(int, myList))
