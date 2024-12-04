@@ -975,10 +975,11 @@ class Plugin(plugins.Plugin):
                                 f"ORDER BY fov ASC;")))
             drift_corrections = pd.DataFrame(columns=['fov', 't', 'dx', 'dy'])
             for row in results.itertuples(index=False):
-                df = pandas.read_csv(os.path.join(get_project_dir(), row.drift))
-                df['fov'] = row.fov
-                df['t'] = df.index
-                drift_corrections = pd.concat([drift_corrections, df], ignore_index=True)
+                if row.drift is not None:
+                    df = pd.read_csv(os.path.join(get_project_dir(), row.drift))
+                    df['fov'] = row.fov
+                    df['t'] = df.index
+                    drift_corrections = pd.concat([drift_corrections, df], ignore_index=True)
             return drift_corrections
 
     def layers2channels(self, zfiles):
