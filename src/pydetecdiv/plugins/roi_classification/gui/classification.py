@@ -429,7 +429,7 @@ class PredictionMenuBar(AnnotationMenuBar):
             self.prediction_runs_group.addAction(self.run_choice[-1])
             self.menu_prediction_runs.addAction(self.run_choice[-1])
             self.run_choice[-1].setData(prediction_run)
-        self.run_choice[0].setChecked(True)
+        self.run_choice[-1].setChecked(True)
 
 
 class DefineClassesDialog(Dialog):
