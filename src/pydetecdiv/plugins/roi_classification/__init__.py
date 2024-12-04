@@ -30,7 +30,7 @@ from sklearn.metrics import precision_recall_fscore_support
 from pydetecdiv import plugins, copy_files
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir, project_list
 from pydetecdiv.settings import get_plugins_dir
-from pydetecdiv.domain import Image, Dataset, ImgDType, Run, Project, ROI
+from pydetecdiv.domain import Dataset, Run, Project, ROI
 from pydetecdiv.settings import get_config_value
 
 from . import models
