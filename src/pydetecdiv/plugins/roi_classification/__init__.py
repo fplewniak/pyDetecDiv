@@ -108,26 +108,6 @@ class TrainingData(Base):
         project.repository.session.add(self)
 
 
-class ROIdata:
-    """
-    ROI data, linking ROI object, the corresponding image data, target (class), and frame
-    """
-
-    def __init__(self, roi, imgdata, target=None, frame=0):
-        self.roi = roi
-        self.imgdata = imgdata
-        self.target = target
-        self.frame = frame
-
-    @property
-    def fov(self):
-        """
-
-        :return:
-        """
-        return self.roi.fov
-
-
 class DataProvider(tf.keras.utils.Sequence):
     """
 
@@ -246,106 +226,6 @@ class PredictionBatch(tf.keras.utils.Sequence):
                 else:
                     roi_data[roi_ids.index(roi.roi), ...] = tf.image.resize(np.array(roi_img), self.img_size, method='nearest')
         return roi_data
-
-
-class ROISequence(tf.keras.utils.Sequence):
-    """
-
-    """
-    def __init__(self, roi_list, image_size=(60, 60), class_names=None, seqlen=None, batch_size=32, z_channels=None):
-        self.roi_list = roi_list
-        self.img_size = image_size
-        self.class_names = class_names
-        self.batch_size = batch_size
-        self.roi_data_list = self.prepare_data(roi_list)
-        self.seqlen = seqlen
-
-    def prepare_data(self, data_list):
-        """
-
-        :param data_list:
-        :return:
-        """
-        return [ROIdata(data.roi, data.fov.image_resource().image_resource_data()) for data in data_list]
-        # roi_data_list = []
-        # for roi in data_list:
-        #     roi_data_list.append(ROIdata(roi, roi.fov.image_resource().image_resource_data()))
-        # return roi_data_list
-
-    def __len__(self):
-        """
-
-        :return:
-        """
-        return math.ceil(len(self.roi_list) / self.batch_size)
-
-    def __getitem__(self, idx):
-        """
-
-        :param idx:
-        :return:
-        """
-        low = idx * self.batch_size
-        high = min(low + self.batch_size, len(self.roi_list))
-        batch_roi = self.roi_data_list[low:high]
-        batch_data = []
-        for data in batch_roi:
-            roi_sequences = get_images_sequences(data.imgdata, [data.roi], 0, seqlen=self.seqlen)
-            img_array = tf.convert_to_tensor([tf.image.resize(i, self.img_size, method='nearest') for i in roi_sequences])
-            batch_data.append(img_array[0])
-        return np.array(batch_data)
-
-
-class ROI_KerasSequence(tf.keras.utils.Sequence):
-    """
-
-    """
-    def __init__(self, h5file_name, data_list, batch_size=32, seqlen=1, **kwargs):
-        super().__init__(**kwargs)
-        self.h5file_name = h5file_name
-        self.h5file = tbl.open_file(self.h5file_name, 'r')
-        self.roi_data = self.h5file.root.roi_data
-        targets_arr = self.h5file.root.targets
-        self.targets = targets_arr.read()
-        self.data_list = data_list
-        self.batch_size = batch_size
-        self.seqlen = seqlen
-
-    def __len__(self):
-        """
-
-        :return:
-        """
-        return math.ceil(len(self.data_list) / self.batch_size)
-
-    def close(self):
-        """
-
-        """
-        self.h5file.close()
-
-    def __getitem__(self, idx):
-        """
-
-        :param idx:
-        :return:
-        """
-        # print(f'{datetime.now().strftime("%H:%M:%S")}: Loading data list for batch {idx}')
-        low = idx * self.batch_size
-        high = min(low + self.batch_size, len(self.data_list))
-        data_list = self.data_list[low:high]
-
-        if self.seqlen > 1:
-            batch_data = np.array(
-                [[tf.image.resize(np.array(self.roi_data[frame + i, roi_id, ...]), (60, 60),
-                                  method='nearest') for i in range(self.seqlen)] for frame, roi_id in
-                 data_list])
-            batch_targets = np.array([self.targets[frame:frame + self.seqlen, roi_id] for frame, roi_id in data_list])
-        else:
-            batch_data = tf.image.resize(
-                np.array([self.roi_data[frame, roi_id, ...] for frame, roi_id in data_list]), (60, 60), method='nearest')
-            batch_targets = np.array([self.targets[frame, roi_id] for frame, roi_id in data_list])
-        return batch_data, batch_targets
 
 
 class TblClassNamesRow(tbl.IsDescription):
@@ -1264,22 +1144,6 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Close HDF5 file and return datasets indices')
         h5file.close()
         return indices[:num_training], indices[num_training:num_validation + num_training], indices[num_validation + num_training:]
-
-    def prepare_data_for_prediction(self, data_list, seqlen=None):
-        """
-        Prepare the data from a list of ROI object as a list of ROIData objects to build the ROIDataset instance
-
-        :param data_list: the ROI list
-        :param seqlen: the length of the frame sequence
-        :param targets: should targets be included in the dataset or not
-        :return: the ROIData list
-        """
-        roi_data_list = []
-        for roi in data_list:
-            imgdata = roi.fov.image_resource().image_resource_data()
-            seqlen = seqlen if seqlen else 1
-            roi_data_list.extend([ROIdata(roi, imgdata, None, frame) for frame in range(0, imgdata.sizeT, seqlen)])
-        return roi_data_list
 
     def prepare_data_for_classification(self, fov_list, z_channels=None):
         """
