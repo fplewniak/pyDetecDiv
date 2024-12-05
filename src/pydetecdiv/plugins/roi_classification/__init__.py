@@ -20,7 +20,7 @@ import numpy as np
 import sqlalchemy
 from PySide6.QtGui import QAction, QColor
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
-from PySide6.QtWidgets import QGraphicsRectItem, QFileDialog, QMessageBox
+from PySide6.QtWidgets import QGraphicsRectItem, QFileDialog, QMessageBox, QMenu
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
@@ -57,7 +57,7 @@ class Results(Base):
     class_name = Column(String)
     score = Column(Float)
 
-    def save(self, project, run, roi, t, predictions, class_names):
+    def save(self, project: Project, run: Run, roi: ROI, t: int, predictions: pd.DataFrame, class_names: list[str]) -> None:
         """
         Save the results from a plugin run on a ROI at time t into the database
 
@@ -90,7 +90,7 @@ class TrainingData(Base):
     t = Column(Integer, nullable=False, index=True)
     target = Column(JSON)
 
-    def save(self, project, roi_id, t, target, dataset):
+    def save(self, project: Project, roi_id: int, t: int, target: int, dataset: int) -> None:
         """
         Save the results from a plugin run on a ROI at time t into the database
 
@@ -113,8 +113,8 @@ class DataProvider(tf.keras.utils.Sequence):
 
     """
 
-    def __init__(self, h5file_name, indices, batch_size=32, image_shape=(60, 60), seqlen=0, name=None, targets=False,
-                 shuffle=True, **kwargs):
+    def __init__(self, h5file_name: str, indices: list, batch_size: int=32, image_shape: tuple[int, int]=(60, 60), seqlen: int=0,
+                 name: str|None=None, targets: bool=False, shuffle: bool=True, **kwargs):
         super().__init__(**kwargs)
         self.h5file = tbl.open_file(h5file_name, mode='r')
         self.roi_data = self.h5file.root.roi_data
@@ -130,7 +130,7 @@ class DataProvider(tf.keras.utils.Sequence):
         self.shuffle = shuffle
         self.on_epoch_end()  # Shuffle indices at the beginning of each epoch
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
 
         :return:
@@ -138,7 +138,7 @@ class DataProvider(tf.keras.utils.Sequence):
         # Number of batches per epoch
         return int(np.ceil(len(self.indices) / self.batch_size))
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> np.ndarray|tuple[np.ndarray, np.ndarray]:
         """
 
         :param index:
@@ -151,26 +151,24 @@ class DataProvider(tf.keras.utils.Sequence):
                                                        method='nearest') for (frame, roi_id) in batch_indices])
             if self.targets is not None:
                 batch_targets = np.array([self.targets[frame, roi_id] for (frame, roi_id) in batch_indices])
+                return batch_roi_data, batch_targets
         else:
             batch_roi_data = np.array(
                     [[tf.image.resize(np.array(self.roi_data[frame + i, roi_id, ...]), self.image_shape,
                                       method='nearest') for i in range(self.seqlen)] for frame, roi_id in batch_indices])
             if self.targets is not None:
                 batch_targets = np.array([self.targets[frame:frame + self.seqlen, roi_id] for (frame, roi_id) in batch_indices])
-
-        # print(f'{self.name} {index}: {batch_roi_data.shape} {batch_targets.shape}')
-        if self.targets is not None:
-            return batch_roi_data, batch_targets
+                return batch_roi_data, batch_targets
         return batch_roi_data
 
-    def on_epoch_end(self):
+    def on_epoch_end(self) -> None:
         """
 
         """
         if self.shuffle:
             np.random.shuffle(self.indices)
 
-    def close(self):
+    def close(self) -> None:
         """
 
         """
@@ -182,21 +180,22 @@ class PredictionBatch(tf.keras.utils.Sequence):
 
     """
 
-    def __init__(self, fov_data, roi_list, image_size=(60, 60), seqlen=None, z_channels=None):
+    def __init__(self, fov_data: pd.DataFrame, roi_list: pd.DataFrame, image_size: tuple[int, int]=(60, 60), seqlen: int=None,
+                 z_channels: list[int]=None):
         self.fov_data = fov_data
         self.roi_list = roi_list
         self.img_size = image_size
         self.z_channels = z_channels
         self.seqlen = 1 if seqlen is None else seqlen
 
-    def __len__(self):
+    def __len__(self) -> None:
         """
 
         :return:
         """
         return len(self.fov_data) // self.seqlen + (len(self.fov_data) % self.seqlen != 0)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> None:
         """
 
         :param idx:
@@ -308,7 +307,7 @@ class Plugin(plugins.Plugin):
         self.classifiers: ChoiceParameter = ChoiceParameter(name='classifier', label='Classifier',
                                                             groups={'import_classifier'})
 
-    def register(self):
+    def register(self) -> None:
         """
 
         """
@@ -317,7 +316,7 @@ class Plugin(plugins.Plugin):
         PyDetecDiv.app.project_selected.connect(self.create_table)
         PyDetecDiv.app.viewer_roi_click.connect(self.add_context_action)
 
-    def update_parameters(self, groups=None):
+    def update_parameters(self, groups: list[str]=None) -> None:
         """
 
         :param groups:
@@ -327,7 +326,7 @@ class Plugin(plugins.Plugin):
         self.parameters.update(groups)
         self.parameters.reset(groups)
 
-    def class_names(self, as_string=True):
+    def class_names(self, as_string: bool=True) -> list[str]|str:
         """
         return the classes
 
@@ -337,14 +336,14 @@ class Plugin(plugins.Plugin):
             return json.dumps(self.parameters['class_names'].value)
         return self.parameters['class_names'].value
 
-    def create_table(self):
+    def create_table(self)-> None:
         """
         Create the table to save results if it does not exist yet
         """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             Base.metadata.create_all(project.repository.engine)
 
-    def addActions(self, menu):
+    def addActions(self, menu: QMenu) -> None:
         """
         Overrides the addActions method in order to create a submenu with several actions for the same menu
 
@@ -392,7 +391,8 @@ class Plugin(plugins.Plugin):
                 lambda: self.set_enabled_actions(manual_annotation, train_model, fine_tuning, predict, show_results,
                                                  export_classification))
 
-    def set_enabled_actions(self, manual_annotation, train_model, fine_tuning, predict, show_results, export_classification):
+    def set_enabled_actions(self, manual_annotation: QAction, train_model: QAction, fine_tuning: QAction, predict: QAction,
+                            show_results: QAction, export_classification: QAction) -> None:
         """
 
         :param manual_annotation:
@@ -413,7 +413,7 @@ class Plugin(plugins.Plugin):
             export_classification.setEnabled(
                     (len(self.get_annotated_rois(ids_only=True)) > 0) | (len(self.get_prediction_runs()) > 0))
 
-    def add_context_action(self, data):
+    def add_context_action(self, data: tuple[QGraphicsRectItem, QMenu]) -> None:
         """
         Add an action to annotate the ROI from the FOV viewer
 
@@ -429,7 +429,7 @@ class Plugin(plugins.Plugin):
                 view_predictions = menu.addAction('View class predictions')
                 view_predictions.triggered.connect(lambda _: self.show_results(roi_selection=roi_list))
 
-    def import_annotated_rois(self):
+    def import_annotated_rois(self) -> None:
         """
         Select a csv file containing ROI frames annotations and open a FOV2ROIlinks window to load the data it contains
         into the database as FOVs and ROIs with annotations.
@@ -444,7 +444,7 @@ class Plugin(plugins.Plugin):
             self.parameters['annotation_file'].set_value(annotation_file)
             FOV2ROIlinks(annotation_file, self)
 
-    def manual_annotation(self, arg=None, roi_selection=None, run=None):
+    def manual_annotation(self, arg=None, roi_selection: list[ROI]=None, run: Run=None) -> None:
         """
 
         :param arg:
@@ -477,7 +477,7 @@ class Plugin(plugins.Plugin):
             self.parameters['class_names'].clear()
             annotator.define_classes(suggestion=suggestion)
 
-    def resume_manual_annotation(self, annotator, roi_selection=None, run=None):
+    def resume_manual_annotation(self, annotator: ManualAnnotator, roi_selection: list[ROI]=None, run: Run=None) -> None:
         """
 
         :param annotator:
@@ -499,7 +499,7 @@ class Plugin(plugins.Plugin):
         annotator.run = run
         annotator.setFocus()
 
-    def show_results(self, arg=None, roi_selection=None):
+    def show_results(self, arg=None, roi_selection: list[ROI]=None) -> None:
         """
 
         :param arg:
@@ -523,7 +523,8 @@ class Plugin(plugins.Plugin):
             QMessageBox.information(PyDetecDiv.main_window, 'Nothing to display',
                                     'There are no prediction results available for this project')
 
-    def get_classification_df(self, roi_selection=None, ground_truth=True, run_list=None) -> pd.DataFrame:
+    def get_classification_df(self, roi_selection: list[int]=None, ground_truth: bool=True,
+                              run_list: list[int]=None) -> pd.DataFrame:
         """
 
         :param roi_selection:
@@ -537,7 +538,7 @@ class Plugin(plugins.Plugin):
         annotations = {}
         if ground_truth:
             for roi in self.get_annotated_rois(ids_only=False):
-                if annotation_runs:
+                if roi_selection is None or (roi.id_ in roi_selection and annotation_runs):
                     annotations[roi.name] = self.get_classifications(roi=roi, run_list=annotation_runs[self.class_names()])
             df = pd.DataFrame(
                     [[roi_name, frame, label] for roi_name in annotations for frame, label in enumerate(annotations[roi_name])],
@@ -548,7 +549,8 @@ class Plugin(plugins.Plugin):
         for run in run_list:
             predictions = {}
             for roi in self.get_annotated_rois(run=run, ids_only=False):
-                predictions[roi.name] = self.get_classifications(roi=roi, run_list=[run])
+                if roi_selection is None or (roi.id_ in roi_selection):
+                    predictions[roi.name] = self.get_classifications(roi=roi, run_list=[run])
 
             predictions_df = pd.DataFrame(
                     [[roi_name, frame, label] for roi_name in predictions for frame, label in enumerate(predictions[roi_name])],
@@ -559,8 +561,8 @@ class Plugin(plugins.Plugin):
                 df = predictions_df
         return df
 
-    def export_classification_to_csv(self, trigger, filename='classification.csv', roi_selection=None, ground_truth=True,
-                                     run_list=None):
+    def export_classification_to_csv(self, trigger, filename: str='classification.csv', roi_selection: list[int]=None,
+                                     ground_truth: bool=True, run_list: list[int]=None) -> None:
         """
 
         :param trigger:
