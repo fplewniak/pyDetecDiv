@@ -8,6 +8,7 @@ import os.path
 import pkgutil
 import sys
 from collections import Counter
+from collections.abc import Callable
 from datetime import datetime
 
 import cv2
@@ -113,8 +114,9 @@ class DataProvider(tf.keras.utils.Sequence):
 
     """
 
-    def __init__(self, h5file_name: str, indices: list, batch_size: int=32, image_shape: tuple[int, int]=(60, 60), seqlen: int=0,
-                 name: str|None=None, targets: bool=False, shuffle: bool=True, **kwargs):
+    def __init__(self, h5file_name: str, indices: list, batch_size: int = 32, image_shape: tuple[int, int] = (60, 60),
+                 seqlen: int = 0,
+                 name: str | None = None, targets: bool = False, shuffle: bool = True, **kwargs):
         super().__init__(**kwargs)
         self.h5file = tbl.open_file(h5file_name, mode='r')
         self.roi_data = self.h5file.root.roi_data
@@ -138,7 +140,7 @@ class DataProvider(tf.keras.utils.Sequence):
         # Number of batches per epoch
         return int(np.ceil(len(self.indices) / self.batch_size))
 
-    def __getitem__(self, index: int) -> np.ndarray|tuple[np.ndarray, np.ndarray]:
+    def __getitem__(self, index: int) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
         """
 
         :param index:
@@ -180,8 +182,8 @@ class PredictionBatch(tf.keras.utils.Sequence):
 
     """
 
-    def __init__(self, fov_data: pd.DataFrame, roi_list: pd.DataFrame, image_size: tuple[int, int]=(60, 60), seqlen: int=None,
-                 z_channels: list[int]=None):
+    def __init__(self, fov_data: pd.DataFrame, roi_list: pd.DataFrame, image_size: tuple[int, int] = (60, 60), seqlen: int = None,
+                 z_channels: list[int] = None):
         self.fov_data = fov_data
         self.roi_list = roi_list
         self.img_size = image_size
@@ -316,7 +318,7 @@ class Plugin(plugins.Plugin):
         PyDetecDiv.app.project_selected.connect(self.create_table)
         PyDetecDiv.app.viewer_roi_click.connect(self.add_context_action)
 
-    def update_parameters(self, groups: list[str]=None) -> None:
+    def update_parameters(self, groups: list[str] = None) -> None:
         """
 
         :param groups:
@@ -326,7 +328,7 @@ class Plugin(plugins.Plugin):
         self.parameters.update(groups)
         self.parameters.reset(groups)
 
-    def class_names(self, as_string: bool=True) -> list[str]|str:
+    def class_names(self, as_string: bool = True) -> list[str] | str:
         """
         return the classes
 
@@ -336,7 +338,7 @@ class Plugin(plugins.Plugin):
             return json.dumps(self.parameters['class_names'].value)
         return self.parameters['class_names'].value
 
-    def create_table(self)-> None:
+    def create_table(self) -> None:
         """
         Create the table to save results if it does not exist yet
         """
@@ -444,7 +446,7 @@ class Plugin(plugins.Plugin):
             self.parameters['annotation_file'].set_value(annotation_file)
             FOV2ROIlinks(annotation_file, self)
 
-    def manual_annotation(self, arg=None, roi_selection: list[ROI]=None, run: Run=None) -> None:
+    def manual_annotation(self, arg=None, roi_selection: list[ROI] = None, run: Run = None) -> None:
         """
 
         :param arg:
@@ -477,7 +479,7 @@ class Plugin(plugins.Plugin):
             self.parameters['class_names'].clear()
             annotator.define_classes(suggestion=suggestion)
 
-    def resume_manual_annotation(self, annotator: ManualAnnotator, roi_selection: list[ROI]=None, run: Run=None) -> None:
+    def resume_manual_annotation(self, annotator: ManualAnnotator, roi_selection: list[ROI] = None, run: Run = None) -> None:
         """
 
         :param annotator:
@@ -499,7 +501,7 @@ class Plugin(plugins.Plugin):
         annotator.run = run
         annotator.setFocus()
 
-    def show_results(self, arg=None, roi_selection: list[ROI]=None) -> None:
+    def show_results(self, arg=None, roi_selection: list[ROI] = None) -> None:
         """
 
         :param arg:
@@ -523,8 +525,8 @@ class Plugin(plugins.Plugin):
             QMessageBox.information(PyDetecDiv.main_window, 'Nothing to display',
                                     'There are no prediction results available for this project')
 
-    def get_classification_df(self, roi_selection: list[int]=None, ground_truth: bool=True,
-                              run_list: list[int]=None) -> pd.DataFrame:
+    def get_classification_df(self, roi_selection: list[int] = None, ground_truth: bool = True,
+                              run_list: list[int] = None) -> pd.DataFrame:
         """
 
         :param roi_selection:
@@ -561,8 +563,8 @@ class Plugin(plugins.Plugin):
                 df = predictions_df
         return df
 
-    def export_classification_to_csv(self, trigger, filename: str='classification.csv', roi_selection: list[int]=None,
-                                     ground_truth: bool=True, run_list: list[int]=None) -> None:
+    def export_classification_to_csv(self, trigger, filename: str = 'classification.csv', roi_selection: list[int] = None,
+                                     ground_truth: bool = True, run_list: list[int] = None) -> None:
         """
 
         :param trigger:
@@ -583,7 +585,7 @@ class Plugin(plugins.Plugin):
         # df = pd.DataFrame(ok)
         df.to_csv(os.path.join(get_project_dir(), filename))
 
-    def get_classification_runs(self):
+    def get_classification_runs(self) -> dict:
         """
 
         :return:
@@ -594,7 +596,7 @@ class Plugin(plugins.Plugin):
                                for classes in annotation_runs}
         return classification_runs
 
-    def get_annotation_runs(self):
+    def get_annotation_runs(self) -> dict:
         """
 
         :return:
@@ -617,7 +619,7 @@ class Plugin(plugins.Plugin):
                         runs[class_names] = [run[0]]
         return runs
 
-    def get_prediction_runs(self):
+    def get_prediction_runs(self) -> dict:
         """
 
         :return:
@@ -640,13 +642,13 @@ class Plugin(plugins.Plugin):
                 self.parameters['class_names'].set_items({class_names: json.loads(class_names) for class_names in runs})
         return runs
 
-    def run_prediction(self):
+    def run_prediction(self) -> None:
         """
 
         """
         PredictionDialog(self)
 
-    def run_training(self):
+    def run_training(self) -> None:
         """
 
         """
@@ -657,7 +659,7 @@ class Plugin(plugins.Plugin):
         else:
             TrainingDialog(self)
 
-    def run_fine_tuning(self):
+    def run_fine_tuning(self) -> None:
         """
 
         """
@@ -670,7 +672,7 @@ class Plugin(plugins.Plugin):
         else:
             FineTuningDialog(self)
 
-    def load_models(self):
+    def load_models(self) -> None:
         """
         Load available models (modules)
 
@@ -687,7 +689,7 @@ class Plugin(plugins.Plugin):
             available_models[name] = module
         self.parameters['model'].set_items(available_models)
 
-    def select_saved_parameters(self, weights_file):
+    def select_saved_parameters(self, weights_file: str) -> None:
         """
 
         :param weights_file:
@@ -710,7 +712,7 @@ class Plugin(plugins.Plugin):
                 self.parameters['batch_size'].value = parameters['batch_size']
                 self.parameters['seqlen'].value = parameters['seqlen']
 
-    def update_model_weights(self, project_name=None):
+    def update_model_weights(self, project_name: str = None) -> None:
         """
         Update the list of model weights associated with training and fine-tuning runs
         """
@@ -746,7 +748,7 @@ class Plugin(plugins.Plugin):
         if w_files:
             self.parameters['weights'].set_items(w_files)
 
-    def update_class_names(self, prediction=False):
+    def update_class_names(self, prediction: bool = False) -> None:
         """
         Update the classes associated with the currently selected model
         """
@@ -765,7 +767,7 @@ class Plugin(plugins.Plugin):
 
         self.parameters['class_names'].set_items(class_names)
 
-    def update_channels(self):
+    def update_channels(self) -> None:
         """
 
         """
@@ -776,14 +778,14 @@ class Plugin(plugins.Plugin):
         for param in ['red_channel', 'green_channel', 'blue_channel']:
             self.parameters[param].set_items({str(i): i for i in range(n_layers)})
 
-    def update_fov_list(self):
+    def update_fov_list(self) -> None:
         """
 
         """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             self.parameters['fov'].set_items({fov.name: fov for fov in project.get_objects('FOV')})
 
-    def save_annotations(self, roi, roi_classes, run):
+    def save_annotations(self, roi: ROI, roi_classes: list[int], run) -> None:
         """
         Save manual annotation into the database
 
@@ -792,11 +794,11 @@ class Plugin(plugins.Plugin):
         :param run: the annotation run
         """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            for t, class_name in enumerate(roi_classes):
-                if class_name != -1:
-                    Results().save(project, run, roi, t, np.array([1]), [self.class_names(as_string=False)[class_name]])
+            for t, class_id in enumerate(roi_classes):
+                if class_id != -1:
+                    Results().save(project, run, roi, t, pd.DataFrame([1]), [self.class_names(as_string=False)[class_id]])
 
-    def get_annotated_rois(self, run=None, ids_only=False):
+    def get_annotated_rois(self, run: Run = None, ids_only: bool = False) -> list[int] | list[ROI]:
         """
         Get a list of annotated ROI frames
 
@@ -816,9 +818,9 @@ class Plugin(plugins.Plugin):
                             db=db)
                 else:
                     query = QSqlQuery(
-                            f"SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
-                            f"WHERE run.id_=roi_classification.run "
-                            f"AND (run.command='annotate_rois' OR run.command='import_annotated_rois') ",
+                            "SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
+                            "WHERE run.id_=roi_classification.run "
+                            "AND (run.command='annotate_rois' OR run.command='import_annotated_rois') ",
                             db=db)
             else:
                 if isinstance(run, int):
@@ -838,7 +840,7 @@ class Plugin(plugins.Plugin):
                 return roi_ids
             return []
 
-    def get_unannotated_rois(self):
+    def get_unannotated_rois(self) -> (list[ROI], list[ROI]):
         """
 
         :return:
@@ -852,7 +854,7 @@ class Plugin(plugins.Plugin):
             print(f'Unannotated ROIs: {len(unannotated_roi_ids)}')
             return project.get_objects('ROI', list(unannotated_roi_ids)), project.get_objects('ROI', list(all_roi_ids))
 
-    def get_annotation(self, roi, as_index=True):
+    def get_annotation(self, roi=ROI, as_index: bool = True) -> list[int] | list[str]:
         """
         Get the annotations for a ROI
 
@@ -883,7 +885,7 @@ class Plugin(plugins.Plugin):
                         roi_classes[annotation[1]] = annotation[2]
         return roi_classes
 
-    def get_classifications(self, roi, run_list, as_index=True):
+    def get_classifications(self, roi: ROI, run_list: list[int], as_index: bool = True) -> list[int] | list[str]:
         """
         Get the annotations for a ROI as defined in a list of runs
 
@@ -912,7 +914,7 @@ class Plugin(plugins.Plugin):
                         roi_classes[annotation[1]] = annotation[2]
         return roi_classes
 
-    def get_all_annotations(self, z_layers=None):
+    def get_all_annotations(self, z_layers: tuple[int] = None) -> pd.DataFrame:
         """
 
         :param z_layers:
@@ -935,7 +937,7 @@ class Plugin(plugins.Plugin):
                                     f"ORDER BY rc.run, data.url, rc.roi ASC;")))
             return results
 
-    def get_fov_data(self, z_layers=None, channel=None):
+    def get_fov_data(self, z_layers: tuple[int] = None, channel: int = None) -> pd.DataFrame:
         """
 
         :param z_layers:
@@ -960,7 +962,7 @@ class Plugin(plugins.Plugin):
         fov_data.columns = ['fov', 't', 'channel_files']
         return fov_data
 
-    def get_roi_list(self):
+    def get_roi_list(self) -> pd.DataFrame:
         """
 
         :return:
@@ -972,7 +974,7 @@ class Plugin(plugins.Plugin):
                                     f"ORDER BY fov, id_ ASC;")))
         return results
 
-    def get_annotations(self):
+    def get_annotations(self) -> pd.DataFrame:
         """
 
         :return:
@@ -989,7 +991,7 @@ class Plugin(plugins.Plugin):
             results = results.drop_duplicates(subset=['roi', 't'], keep='last')
             return results
 
-    def get_drift_corrections(self):
+    def get_drift_corrections(self) -> pd.DataFrame:
         """
 
         :return:
@@ -1008,7 +1010,7 @@ class Plugin(plugins.Plugin):
                     drift_corrections = pd.concat([drift_corrections, df], ignore_index=True)
             return drift_corrections
 
-    def layers2channels(self, zfiles):
+    def layers2channels(self, zfiles) -> list[str]:
         """
 
         :param zfiles:
@@ -1018,7 +1020,7 @@ class Plugin(plugins.Plugin):
         return [zfiles[i] for i in [self.parameters['red_channel'].value, self.parameters['green_channel'].value,
                                     self.parameters['blue_channel'].value]]
 
-    def create_hdf5_annotated_rois(self, hdf5_file, z_channels=None, channel=0):
+    def create_hdf5_annotated_rois(self, hdf5_file: str, z_channels: tuple[int] = None, channel: int = 0) -> None:
         """
 
         :param hdf5_file:
@@ -1105,7 +1107,8 @@ class Plugin(plugins.Plugin):
         h5file.close()
         print(f'{datetime.now().strftime("%H:%M:%S")}: HDF5 file of annotated ROIs ready')
 
-    def prepare_data_for_training(self, hdf5_file, seqlen=0, train=0.6, validation=0.2, seed=42):
+    def prepare_data_for_training(self, hdf5_file: str, seqlen: int = 0, train: float = 0.6, validation: float = 0.2,
+                                  seed: int = 42) -> (list[int], list[int], list[int]):
         """
 
         :param hdf5_file:
@@ -1140,7 +1143,8 @@ class Plugin(plugins.Plugin):
         h5file.close()
         return indices[:num_training], indices[num_training:num_validation + num_training], indices[num_validation + num_training:]
 
-    def prepare_data_for_classification(self, fov_list, z_channels=None):
+    def prepare_data_for_classification(self, fov_list: list[int],
+                                        z_channels: tuple[int] = None) -> (pd.DataFrame, pd.DataFrame, np.ndarray):
         """
 
         :param fov_list:
@@ -1175,7 +1179,7 @@ class Plugin(plugins.Plugin):
 
         return fov_data, roi_list, rois
 
-    def compute_class_weights(self) -> list:
+    def compute_class_weights(self) -> dict:
         """
 
         """
@@ -1189,7 +1193,7 @@ class Plugin(plugins.Plugin):
                 weights[k] = 0.00
         return weights
 
-    def lr_decay(self, epoch, lr):
+    def lr_decay(self, epoch: int, lr: float) -> float:
         """
         Learning rate scheduler
 
@@ -1201,7 +1205,7 @@ class Plugin(plugins.Plugin):
             return lr * self.parameters['decay_rate'].value
         return lr
 
-    def train_model(self):
+    def train_model(self) -> (str, str, tf.keras.callbacks.History, list[int], list[int], list[int], list[int]):
         """
         Launch training a model: select the network, load weights (optional), define the training, validation
         and test sets, then run the training using training and validation sets and the evaluation on the test set.
@@ -1409,7 +1413,7 @@ class Plugin(plugins.Plugin):
         return (module.__name__, self.parameters['class_names'].value, history, evaluation, ground_truth, predictions,
                 best_predictions)
 
-    def save_training_run(self, finetune=False):
+    def save_training_run(self, finetune: bool = False) -> Run:
         """
         save the current training Run
 
@@ -1424,7 +1428,15 @@ class Plugin(plugins.Plugin):
                 return self.save_run(project, 'fine_tune', self.parameters.json(groups='finetune'))
             return self.save_run(project, 'train_model', self.parameters.json(groups='training'))
 
-    def save_training_datasets(self, hdf5_file, training_idx, validation_idx, test_idx):
+    def save_training_datasets(self, hdf5_file: str, training_idx: list[int], validation_idx: list[int],
+                               test_idx: list[int]) -> None:
+        """
+
+        :param hdf5_file:
+        :param training_idx:
+        :param validation_idx:
+        :param test_idx:
+        """
         training_ds = Dataset(project=self.run.project, name=f'train_{datetime.now().strftime("%Y%m%d-%H%M%S")}',
                               type_='training', run=self.run.id_)
         validation_ds = Dataset(project=self.run.project, name=f'val_{datetime.now().strftime("%Y%m%d-%H%M%S")}',
@@ -1449,7 +1461,7 @@ class Plugin(plugins.Plugin):
 
         self.run.project.commit()
 
-    def predict(self):
+    def predict(self) -> None:
         """
         Running prediction on all ROIs in selected FOVs.
         """
@@ -1563,11 +1575,11 @@ class Plugin(plugins.Plugin):
                                            run.parameters['model']))
             copy_files([os.path.join(origin_path, run.parameters['best_weights']),
                         os.path.join(origin_path, run.parameters['last_weights'])], user_path)
-            new_run = Run(project=project, **(run.record(no_id=True)))
+            _ = Run(project=project, **(run.record(no_id=True)))
 
         print(f'Classifier imported from project {run.parameters["project"]}')
 
-    def draw_annotated_rois(self):
+    def draw_annotated_rois(self) -> None:
         """
         Draw annotated ROIs as rectangles coloured according to the class
         """
@@ -1591,7 +1603,7 @@ class Plugin(plugins.Plugin):
                 rec_items[roi.name].setBrush(colours[annotation])
 
 
-def get_lr_metric(optimizer):
+def get_lr_metric(optimizer: tf.keras.optimizers.Optimizer) -> Callable:
     """
     Get the learning rate metric for optimizer for use during training to monitor the learning rate
 
@@ -1605,7 +1617,7 @@ def get_lr_metric(optimizer):
     return lr
 
 
-def lr_exp_decay(epoch, lr):
+def lr_exp_decay(epoch: int, lr: float) -> float:
     """
     Learning rate scheduler for exponential decay
 
