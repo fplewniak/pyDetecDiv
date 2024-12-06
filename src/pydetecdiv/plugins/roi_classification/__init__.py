@@ -6,27 +6,32 @@ import json
 import math
 import os.path
 import pkgutil
-import random
 import sys
 from collections import Counter
+from collections.abc import Callable
 from datetime import datetime
-import keras.optimizers
 
-import h5py
+import cv2
+import fastremap
+import keras.optimizers
+import pandas as pd
+
+import tables as tbl
 import numpy as np
 import sqlalchemy
 from PySide6.QtGui import QAction, QColor
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
-from PySide6.QtWidgets import QGraphicsRectItem, QFileDialog, QMessageBox
+from PySide6.QtWidgets import QGraphicsRectItem, QFileDialog, QMessageBox, QMenu
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
 import tensorflow as tf
+from sklearn.metrics import precision_recall_fscore_support
 
 from pydetecdiv import plugins, copy_files
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir, project_list
 from pydetecdiv.settings import get_plugins_dir
-from pydetecdiv.domain import Image, Dataset, ImgDType, Run, Project, ROI
+from pydetecdiv.domain import Dataset, Run, Project, ROI
 from pydetecdiv.settings import get_config_value
 
 from . import models
@@ -53,7 +58,7 @@ class Results(Base):
     class_name = Column(String)
     score = Column(Float)
 
-    def save(self, project, run, roi, t, predictions, class_names):
+    def save(self, project: Project, run: Run, roi: ROI, t: int, predictions: pd.DataFrame, class_names: list[str]) -> None:
         """
         Save the results from a plugin run on a ROI at time t into the database
 
@@ -86,7 +91,7 @@ class TrainingData(Base):
     t = Column(Integer, nullable=False, index=True)
     target = Column(JSON)
 
-    def save(self, project, roi, t, target, dataset):
+    def save(self, project: Project, roi_id: int, t: int, target: int, dataset: int) -> None:
         """
         Save the results from a plugin run on a ROI at time t into the database
 
@@ -97,78 +102,140 @@ class TrainingData(Base):
         :param predictions: the list of prediction values
         :param class_names: the class names
         """
-        self.roi = roi.id_
-        self.t = t
-        self.target = target
-        self.dataset = dataset
+        self.roi = int(roi_id)
+        self.t = int(t)
+        self.target = int(target)
+        self.dataset = int(dataset)
         project.repository.session.add(self)
 
 
-class ROIdata:
+class DataProvider(tf.keras.utils.Sequence):
     """
-    ROI data, linking ROI object, the corresponding image data, target (class), and frame
-    """
-
-    def __init__(self, roi, imgdata, target=None, frame=0):
-        self.roi = roi
-        self.imgdata = imgdata
-        self.target = target
-        self.frame = frame
-
-
-class ROIDataset(tf.keras.utils.Sequence):
-    """
-    ROI dataset that can be used to feed the model for training, evaluation or prediction
+    An extension of keras Sequence for prediction. For performance reasons, data are stored in an HDF5 file
     """
 
-    def __init__(self, roi_data_list, image_size=(60, 60), class_names=None, batch_size=32, seqlen=None,
-                 z_channels=None, **kwargs):
+    def __init__(self, h5file_name: str, indices: list, batch_size: int = 32, image_shape: tuple[int, int] = (60, 60),
+                 seqlen: int = 0, name: str | None = None, targets: bool = False, shuffle: bool = True, **kwargs):
         super().__init__(**kwargs)
-        self.img_size = image_size
-        # self.class_names = class_names
+        self.h5file = tbl.open_file(h5file_name, mode='r')
+        self.roi_data = self.h5file.root.roi_data
+        if targets:
+            self.targets = self.h5file.root.targets
+        else:
+            self.targets = None
+        self.indices = indices
         self.batch_size = batch_size
-        self.roi_data_list = roi_data_list
         self.seqlen = seqlen
+        self.name = name
+        self.image_shape = image_shape
+        self.shuffle = shuffle
+        self.on_epoch_end()  # Shuffle indices at the beginning of each epoch
+
+    def __len__(self) -> int:
+        """
+        :return: the length of the Sequence
+        """
+        # Number of batches per epoch
+        return int(np.ceil(len(self.indices) / self.batch_size))
+
+    def __getitem__(self, index: int) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
+        """
+        Gets batch with index = index
+
+        :param index: the batch index
+        :return: the batch data
+        """
+        batch_indices = self.indices[index * self.batch_size:(index + 1) * self.batch_size]
+
+        if self.seqlen == 0:
+            batch_roi_data = np.array([tf.image.resize(np.array(self.roi_data[frame, roi_id, ...]), self.image_shape,
+                                                       method='nearest') for (frame, roi_id) in batch_indices])
+            if self.targets is not None:
+                batch_targets = np.array([self.targets[frame, roi_id] for (frame, roi_id) in batch_indices])
+                return batch_roi_data, batch_targets
+        else:
+            batch_roi_data = np.array(
+                    [[tf.image.resize(np.array(self.roi_data[frame + i, roi_id, ...]), self.image_shape,
+                                      method='nearest') for i in range(self.seqlen)] for frame, roi_id in batch_indices])
+            if self.targets is not None:
+                batch_targets = np.array([self.targets[frame:frame + self.seqlen, roi_id] for (frame, roi_id) in batch_indices])
+                return batch_roi_data, batch_targets
+        return batch_roi_data
+
+    def on_epoch_end(self) -> None:
+        """
+        Operations to run at the end of each epoch (shuffle dataset, etc.)
+        """
+        if self.shuffle:
+            np.random.shuffle(self.indices)
+
+    def close(self) -> None:
+        """
+        Closes the HDF5 file
+        """
+        self.h5file.close()
+
+
+class PredictionBatch(tf.keras.utils.Sequence):
+    """
+    An extension of keras Sequence for prediction. For performance reasons, FOVs are read sequentially and all ROIs from a FOV are
+     placed in the same batch.
+    """
+
+    def __init__(self, fov_data: pd.DataFrame, roi_list: pd.DataFrame, image_size: tuple[int, int] = (60, 60), seqlen: int = None,
+                 z_channels: list[int] = None):
+        self.fov_data = fov_data
+        self.roi_list = roi_list
+        self.img_size = image_size
         self.z_channels = z_channels
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Creating batches')
-        self.batches = {idx: self.get_items(idx) for idx in range(-(-len(roi_data_list) // batch_size))}
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Batches created')
-        # self.batches = np.array([self.get_items(idx) for idx in range((len(roi_data_list)//batch_size))])
-        # for idx in range(-(-len(roi_data_list)//batch_size)):
-        #     print(f'{idx}: {self.get_items(idx)[0].shape}, {self.get_items(idx)[1].shape}')
-        # print(self.batches.shape)
+        self.seqlen = 1 if seqlen is None else seqlen
 
-    def __len__(self):
-        return math.ceil(len(self.roi_data_list) / self.batch_size)
+    def __len__(self) -> int:
+        """
+        :return: the length of the Sequence
+        """
+        return len(self.fov_data) // self.seqlen + (len(self.fov_data) % self.seqlen != 0)
 
-    def get_items(self, idx):
-        print(f'{datetime.now().strftime("%H:%M:%S")}: creating batch {idx}')
-        low = idx * self.batch_size
-        # Cap upper bound at array length; the last batch may be smaller
-        # if the total number of items is not a multiple of batch size.
-        high = min(low + self.batch_size, len(self.roi_data_list))
-        batch_roi = self.roi_data_list[low:high]
-        batch_targets = []
-        batch_data = []
-        for data in batch_roi:
-            if self.seqlen is None:
-                roi_dataset = get_rgb_images_from_stacks(imgdata=data.imgdata, roi_list=[data.roi], t=data.frame,
-                                                                z=self.z_channels)
-                if data.target is not None:
-                    batch_targets.append(data.target[0])
-            else:
-                roi_dataset = get_images_sequences(imgdata=data.imgdata, roi_list=[data.roi], t=data.frame,
-                                                   seqlen=self.seqlen, z=self.z_channels)
-                if data.target is not None:
-                    batch_targets.append(data.target)
-            img_array = tf.convert_to_tensor([tf.image.resize(i, self.img_size, method='nearest') for i in roi_dataset])
-            batch_data.append(img_array[0])
-        if batch_targets:
-            return np.array(batch_data), np.array(batch_targets)
-        return np.array(batch_data)
+    def __getitem__(self, idx: int) -> np.ndarray:
+        """
+        Gets batch with index = idx
 
-    def __getitem__(self, idx):
-        return self.batches[idx]
+        :param idx: the batch index
+        :return: the batch data
+        """
+        low = idx * self.seqlen
+        high = min(low + self.seqlen, len(self.fov_data))
+        roi_list = self.roi_list
+        fov_data = self.fov_data.iloc[low:high]
+        if self.seqlen > 1:
+            roi_data = np.zeros((len(roi_list["roi"].unique()), min(self.seqlen, len(self.fov_data) - low), self.img_size[0],
+                                 self.img_size[1], len(self.z_channels)))
+        else:
+            roi_data = np.zeros((len(roi_list["roi"].unique()), self.img_size[0], self.img_size[1], len(self.z_channels)))
+
+        for row in fov_data.itertuples():
+            rois = roi_list.loc[(roi_list['fov'] == row.fov) & (roi_list['t'] == row.t)]
+            roi_ids = sorted(list(rois['roi'].unique()))
+
+            # If merging and normalization are too slow, maybe use tensorflow or pytorch to do the operations
+            fov_img = cv2.merge([cv2.imread(z_file, cv2.IMREAD_UNCHANGED) for z_file in reversed(row.channel_files)])
+
+            for roi in rois.itertuples():
+                roi_img = cv2.normalize(fov_img[roi.y0:roi.y1 + 1, roi.x0:roi.x1 + 1], dtype=cv2.CV_16F, dst=None, alpha=1e-10,
+                                        beta=1.0, norm_type=cv2.NORM_MINMAX)
+                if self.seqlen > 1:
+                    roi_data[roi_ids.index(roi.roi), row.t % self.seqlen, ...] = tf.image.resize(np.array(roi_img), self.img_size,
+                                                                                                 method='nearest')
+                else:
+                    roi_data[roi_ids.index(roi.roi), ...] = tf.image.resize(np.array(roi_img), self.img_size, method='nearest')
+        return roi_data
+
+
+class TblClassNamesRow(tbl.IsDescription):
+    """
+    A class to describe the class names row saved in a table of an HDF5 file
+    """
+    class_name = tbl.StringCol(16)
 
 
 class Plugin(plugins.Plugin):
@@ -183,7 +250,13 @@ class Plugin(plugins.Plugin):
     def __init__(self):
         super().__init__()
         self.menu = None
-        # self.gui = None
+        physical_devices = tf.config.list_physical_devices('GPU')
+        try:
+            tf.config.experimental.set_memory_growth(physical_devices[0], True)
+        except:
+            # Invalid device or cannot modify virtual devices once initialized.
+            pass
+
         self.parameters.parameter_list = [
             ChoiceParameter(name='model', label='Network', groups={'training', 'finetune', 'prediction'},
                             default='ResNet50V2_lstm', updater=self.load_models),
@@ -195,11 +268,12 @@ class Plugin(plugins.Plugin):
             IntParameter(name='seed', label='Random seed', groups={'training', 'finetune'}, maximum=999999999,
                          default=42),
             ChoiceParameter(name='optimizer', label='Optimizer', groups={'training', 'finetune'}, default='SGD',
-                            items={'SGD': keras.optimizers.SGD,
-                                   'Adam': keras.optimizers.Adam,
+                            items={'SGD'     : keras.optimizers.SGD,
+                                   'Adam'    : keras.optimizers.Adam,
                                    'Adadelta': keras.optimizers.Adadelta,
-                                   'Adamax': keras.optimizers.Adamax,
-                                   'Nadam': keras.optimizers.Nadam, }),
+                                   'Adamax'  : keras.optimizers.Adamax,
+                                   'Nadam'   : keras.optimizers.Nadam,
+                                   }),
             FloatParameter(name='learning_rate', label='Learning rate', groups={'training', 'finetune'}, default=0.001,
                            minimum=0.00001, maximum=1.0),
             FloatParameter(name='decay_rate', label='Decay rate', groups={'training', 'finetune'}, default=0.95),
@@ -227,28 +301,37 @@ class Plugin(plugins.Plugin):
             IntParameter(name='batch_size', label='Batch size', groups={'training', 'finetune', 'prediction'},
                          default=128, ),
             IntParameter(name='seqlen', label='Sequence length', groups={'training', 'finetune', 'prediction'},
-                         default=50, ),
+                         default=15, ),
             ItemParameter(name='annotation_file', label='Annotation file', groups={'import_annotations'}, ),
             ChoiceParameter(name='fov', label='Select FOVs', groups={'prediction'}, updater=self.update_fov_list),
-        ]
+            ]
 
-        self.classifiers: ChoiceParameter = ChoiceParameter(name='classifier', label='Classifier', groups={'import_classifier'})
+        self.classifiers: ChoiceParameter = ChoiceParameter(name='classifier', label='Classifier',
+                                                            groups={'import_classifier'})
 
-    def register(self):
+    def register(self) -> None:
+        """
+        Registers the plugin
+        """
         # self.parameters.update()
         PyDetecDiv.app.project_selected.connect(self.update_parameters)
         PyDetecDiv.app.project_selected.connect(self.create_table)
         PyDetecDiv.app.viewer_roi_click.connect(self.add_context_action)
 
-    def update_parameters(self, groups=None):
+    def update_parameters(self, groups: list[str] = None) -> None:
+        """
+        Updates parameters
+
+        :param groups: the parameter groups to update
+        """
         if groups in ['training']:
             self.parameters['weights'].clear()
         self.parameters.update(groups)
         self.parameters.reset(groups)
 
-    def class_names(self, as_string=True):
+    def class_names(self, as_string: bool = True) -> list[str] | str:
         """
-        return the classes
+        Returns the classes currently in use
 
         :return: the class list
         """
@@ -256,14 +339,14 @@ class Plugin(plugins.Plugin):
             return json.dumps(self.parameters['class_names'].value)
         return self.parameters['class_names'].value
 
-    def create_table(self):
+    def create_table(self) -> None:
         """
         Create the table to save results if it does not exist yet
         """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             Base.metadata.create_all(project.repository.engine)
 
-    def addActions(self, menu):
+    def addActions(self, menu: QMenu) -> None:
         """
         Overrides the addActions method in order to create a submenu with several actions for the same menu
 
@@ -293,11 +376,14 @@ class Plugin(plugins.Plugin):
         predict_menu = submenu.addMenu('Classification')
         predict = QAction("Predict ROI classes", predict_menu)
         show_results = QAction("View classification results", predict_menu)
+        export_classification = QAction("Export ROI classifications", predict_menu)
         predict_menu.addAction(predict)
         predict_menu.addAction(show_results)
+        predict_menu.addAction(export_classification)
 
         predict.triggered.connect(self.run_prediction)
         show_results.triggered.connect(self.show_results)
+        export_classification.triggered.connect(self.export_classification_to_csv)
 
         submenu.addSeparator()
 
@@ -305,21 +391,35 @@ class Plugin(plugins.Plugin):
         import_classifier.triggered.connect(self.run_import_classifier)
 
         submenu.aboutToShow.connect(
-            lambda: self.set_enabled_actions(manual_annotation, train_model, fine_tuning, predict, show_results))
+                lambda: self.set_enabled_actions(manual_annotation, train_model, fine_tuning, predict, show_results,
+                                                 export_classification))
 
-    def set_enabled_actions(self, manual_annotation, train_model, fine_tuning, predict, show_results):
+    def set_enabled_actions(self, manual_annotation: QAction, train_model: QAction, fine_tuning: QAction, predict: QAction,
+                            show_results: QAction, export_classification: QAction) -> None:
+        """
+        Enables or disables actions in menus according to the level of completion of the ROI classification workflow.
+
+        :param manual_annotation: Manual annotation, enabled only if there are ROIs to annotate
+        :param train_model: Train model, enabled only if there are annotated ROIs
+        :param fine_tuning: Fine-tuning, enabled only if a previously trained model is available (previous training or import)
+        :param predict: Prediction, enabled only if a previously trained model is available (previous training or import)
+        :param show_results: Showing results, enabled only if a prediction has been run
+        :param export_classification: Export classification, enabled only if a prediction has been run
+        """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             manual_annotation.setEnabled(project.count_objects('ROI') > 0)
             train_model.setEnabled(len(self.get_annotated_rois(ids_only=True)) > 0)
             self.update_model_weights()
             fine_tuning.setEnabled(
-                (len(self.parameters['weights'].values) > 0) & (len(self.get_annotated_rois(ids_only=True)) > 0))
+                    (len(self.parameters['weights'].values) > 0) & (len(self.get_annotated_rois(ids_only=True)) > 0))
             predict.setEnabled(len(self.parameters['weights'].values) > 0)
             show_results.setEnabled(len(self.get_prediction_runs()) > 0)
+            export_classification.setEnabled(
+                    (len(self.get_annotated_rois(ids_only=True)) > 0) | (len(self.get_prediction_runs()) > 0))
 
-    def add_context_action(self, data):
+    def add_context_action(self, data: tuple[QGraphicsRectItem, QMenu]) -> None:
         """
-        Add an action to annotate the ROI from the FOV viewer
+        Adds an action to annotate the ROI from the FOV viewer
 
         :param data: the data sent by the PyDetecDiv().viewer_roi_click signal
         """
@@ -333,9 +433,9 @@ class Plugin(plugins.Plugin):
                 view_predictions = menu.addAction('View class predictions')
                 view_predictions.triggered.connect(lambda _: self.show_results(roi_selection=roi_list))
 
-    def import_annotated_rois(self):
+    def import_annotated_rois(self) -> None:
         """
-        Select a csv file containing ROI frames annotations and open a FOV2ROIlinks window to load the data it contains
+        Selects a csv file containing ROI frames annotations and open a FOV2ROIlinks window to load the data it contains
         into the database as FOVs and ROIs with annotations.
         """
         filters = ["csv (*.csv)", "tsv (*.tsv)", ]
@@ -348,7 +448,14 @@ class Plugin(plugins.Plugin):
             self.parameters['annotation_file'].set_value(annotation_file)
             FOV2ROIlinks(annotation_file, self)
 
-    def manual_annotation(self, arg=None, roi_selection=None, run=None):
+    def manual_annotation(self, trigger=None, roi_selection: list[ROI] = None, run: Run = None) -> None:
+        """
+        Opens a ManualAnnotator widget to annotate a list of ROIs
+
+        :param trigger: the data passed by the triggered action
+        :param roi_selection: the list of ROIs
+        :param run: the current Run instance
+        """
         annotation_runs = self.get_annotation_runs()
         annotator = ManualAnnotator()
         if roi_selection:
@@ -375,7 +482,14 @@ class Plugin(plugins.Plugin):
             self.parameters['class_names'].clear()
             annotator.define_classes(suggestion=suggestion)
 
-    def resume_manual_annotation(self, annotator, roi_selection=None, run=None):
+    def resume_manual_annotation(self, annotator: ManualAnnotator, roi_selection: list[ROI] = None, run: Run = None) -> None:
+        """
+        Resumes manual annotation after the creation of a new set of classes
+
+        :param annotator: the Annotator widget
+        :param roi_selection: the selection of ROIs
+        :param run: the current Run
+        """
         # annotation_runs = self.get_annotation_runs()
         if annotator.parent() is None:
             tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / ROI annotation')
@@ -391,7 +505,13 @@ class Plugin(plugins.Plugin):
         annotator.run = run
         annotator.setFocus()
 
-    def show_results(self, arg=None, roi_selection=None):
+    def show_results(self, trigger=None, roi_selection: list[ROI] = None) -> None:
+        """
+        Show predictions results in an Annotator widget
+
+        :param trigger: the data passed by the triggered action
+        :param roi_selection: the list of ROIs to show results for
+        """
         prediction_runs = self.get_prediction_runs()
         if prediction_runs:
             self.parameters['class_names'].set_value(list(prediction_runs.keys())[0])
@@ -410,15 +530,94 @@ class Plugin(plugins.Plugin):
             QMessageBox.information(PyDetecDiv.main_window, 'Nothing to display',
                                     'There are no prediction results available for this project')
 
-    def get_annotation_runs(self):
+    def get_classification_df(self, roi_selection: list[int] = None, ground_truth: bool = True,
+                              run_list: list[int] = None) -> pd.DataFrame:
+        """
+        Gets classification in a pandas DataFrame
+
+        :param roi_selection: the list of ROI indices to save
+        :param ground_truth: if True, includes ground truth
+        :param run_list: the list of Run ids to include
+        :return: the pandas DataFrame with the annotations
+        """
+        annotation_runs = self.get_annotation_runs()
+        if run_list is None:
+            run_list = self.get_prediction_runs()[self.class_names()]
+        annotations = {}
+        if ground_truth:
+            for roi in self.get_annotated_rois(ids_only=False):
+                if roi_selection is None or (roi.id_ in roi_selection and annotation_runs):
+                    annotations[roi.name] = self.get_classifications(roi=roi, run_list=annotation_runs[self.class_names()])
+            df = pd.DataFrame(
+                    [[roi_name, frame, label] for roi_name, v in annotations.items() for frame, label in enumerate(v)],
+                    columns=('roi', 'frame', 'ground truth'))
+        else:
+            df = pd.DataFrame([], columns=('roi', 'frame'))
+
+        for run in run_list:
+            predictions = {}
+            for roi in self.get_annotated_rois(run=run, ids_only=False):
+                if roi_selection is None or (roi.id_ in roi_selection):
+                    predictions[roi.name] = self.get_classifications(roi=roi, run_list=[run])
+
+            predictions_df = pd.DataFrame(
+                    [[roi_name, frame, label] for roi_name in predictions for frame, label in enumerate(predictions[roi_name])],
+                    columns=('roi', 'frame', f'run_{run}'))
+            if len(df) > 0:
+                df = df.merge(predictions_df, on=['roi', 'frame'], how='outer')
+            else:
+                df = predictions_df
+        return df
+
+    def export_classification_to_csv(self, trigger, filename: str = 'classification.csv', roi_selection: list[int] = None,
+                                     ground_truth: bool = True, run_list: list[int] = None) -> None:
+        """
+        Exports classification of ROIs in a CSV file
+
+        :param trigger: the data passed by the triggered action
+        :param filename: the CSV file name
+        :param roi_selection: the list of ROI indices to include in the CSV file
+        :param ground_truth: if True, ground truth classification is saved in the file
+        :param run_list: the list of Run indices to export classification for
+        """
+        print('export ROI classification')
+        df = self.get_classification_df(roi_selection=roi_selection, ground_truth=ground_truth, run_list=run_list)
+        # ok = {'frame': [frame for frame in df.loc[:,'frame'].unique()]}
+        # if run_list is None:
+        #     run_list = self.get_prediction_runs()[self.class_names()]
+        # for run in run_list:
+        #     ok[f'run_{run}'] = [df[df['frame'] == frame].apply(lambda row: (row[f'run_{run}']==row['ground truth']), axis=1).sum()
+        #                         for frame in ok['frame']
+        #                         ]
+        # df = pd.DataFrame(ok)
+        df.to_csv(os.path.join(get_project_dir(), filename))
+
+    def get_classification_runs(self) -> dict:
+        """
+        Gets previous annotation and prediction runs
+
+        :return: a dictionary containing the ids of all classification runs corresponding to a given list of classes
+        """
+        annotation_runs = self.get_annotation_runs()
+        prediction_runs = self.get_prediction_runs()
+        classification_runs = {classes: {'annotations': annotation_runs[classes], 'predictions': prediction_runs[classes]}
+                               for classes in annotation_runs}
+        return classification_runs
+
+    def get_annotation_runs(self) -> dict:
+        """
+       Gets previously run prediction runs
+
+        :return: a dictionary containing the ids of all prediction runs corresponding to a given list of classes
+        """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             results = list(project.repository.session.execute(
-                sqlalchemy.text(f"SELECT run.id_,"
-                                f"run.parameters ->> '$.annotator' as annotator, "
-                                f"run.parameters ->> '$.class_names' as class_names "
-                                f"FROM run "
-                                f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
-                                f"ORDER BY run.id_ ASC;")))
+                    sqlalchemy.text(f"SELECT run.id_,"
+                                    f"run.parameters ->> '$.annotator' as annotator, "
+                                    f"run.parameters ->> '$.class_names' as class_names "
+                                    f"FROM run "
+                                    f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+                                    f"ORDER BY run.id_ ASC;")))
             runs = {}
             if results:
                 for run in results:
@@ -429,14 +628,19 @@ class Plugin(plugins.Plugin):
                         runs[class_names] = [run[0]]
         return runs
 
-    def get_prediction_runs(self):
+    def get_prediction_runs(self) -> dict:
+        """
+        Gets previously run prediction runs
+
+        :return: a dictionary containing the ids of all prediction runs corresponding to a given list of classes
+        """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             results = list(project.repository.session.execute(
-                sqlalchemy.text(f"SELECT run.id_,"
-                                f"run.parameters ->> '$.class_names' as class_names "
-                                f"FROM run "
-                                f"WHERE run.command='predict' "
-                                f"ORDER BY run.id_ ASC;")))
+                    sqlalchemy.text("SELECT run.id_,"
+                                    "run.parameters ->> '$.class_names' as class_names "
+                                    "FROM run "
+                                    "WHERE run.command='predict' "
+                                    "ORDER BY run.id_ ASC;")))
             runs = {}
             if results:
                 for run in results:
@@ -448,10 +652,16 @@ class Plugin(plugins.Plugin):
                 self.parameters['class_names'].set_items({class_names: json.loads(class_names) for class_names in runs})
         return runs
 
-    def run_prediction(self):
+    def run_prediction(self) -> None:
+        """
+        Runs a prediction process. Opens the PredictionDialog widget
+        """
         PredictionDialog(self)
 
-    def run_training(self):
+    def run_training(self) -> None:
+        """
+        Runs a model training process. Opens the TrainingDialog widget
+        """
         if len(self.get_annotated_rois()) == 0:
             QMessageBox.critical(PyDetecDiv.main_window, 'No annotated ROI',
                                  'You should provide ground truth annotations for ROIs before training a model. '
@@ -459,7 +669,10 @@ class Plugin(plugins.Plugin):
         else:
             TrainingDialog(self)
 
-    def run_fine_tuning(self):
+    def run_fine_tuning(self) -> None:
+        """
+        Runs fine-tuning process. Opens the FineTuningDialog widget
+        """
         self.update_parameters(groups='finetune')
         self.update_model_weights()
         if len(self.parameters['weights'].values) == 0:
@@ -469,15 +682,13 @@ class Plugin(plugins.Plugin):
         else:
             FineTuningDialog(self)
 
-    def load_models(self):
+    def load_models(self) -> None:
         """
-        Load available models (modules)
+        Loads available models (modules)
 
         """
         available_models = {}
         for _, name, _ in pkgutil.iter_modules(models.__path__):
-            # self.parameters['model'].add_item(
-            #     {name: importlib.import_module(f'.models.{name}', package=__package__)})
             available_models[name] = importlib.import_module(f'.models.{name}', package=__package__)
         for finder, name, _ in pkgutil.iter_modules([os.path.join(get_plugins_dir(), 'roi_classification/models')]):
             loader = finder.find_module(name)
@@ -485,11 +696,16 @@ class Plugin(plugins.Plugin):
             module = importlib.util.module_from_spec(spec)
             sys.modules[name] = module
             spec.loader.exec_module(module)
-            # self.parameters['model'].add_item({name: module})
             available_models[name] = module
         self.parameters['model'].set_items(available_models)
 
-    def select_saved_parameters(self, weights_file):
+    def select_saved_parameters(self, weights_file: str) -> None:
+        """
+        Gets the parameters of a previous model training run, identified by the name of the saved weight file, for display in the
+         GUI form
+
+        :param weights_file: the weights file name
+        """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             run_list = project.get_objects('Run')
         all_parameters = [run.parameters for run in run_list if
@@ -500,7 +716,6 @@ class Plugin(plugins.Plugin):
                 self.parameters['class_names'].value = parameters['class_names']
                 self.parameters['num_training'].value = parameters['num_training']
                 self.parameters['num_validation'].value = parameters['num_validation']
-                # self.parameters['num_test'].value = parameters['num_test']
                 self.parameters['num_test'].value = 1.0 - parameters['num_training'] - parameters['num_validation']
                 self.parameters['red_channel'].value = parameters['red_channel']
                 self.parameters['green_channel'].value = parameters['green_channel']
@@ -509,7 +724,7 @@ class Plugin(plugins.Plugin):
                 self.parameters['batch_size'].value = parameters['batch_size']
                 self.parameters['seqlen'].value = parameters['seqlen']
 
-    def update_model_weights(self, project_name=None):
+    def update_model_weights(self, project_name: str = None) -> None:
         """
         Update the list of model weights associated with training and fine-tuning runs
         """
@@ -536,10 +751,16 @@ class Plugin(plugins.Plugin):
                                 os.path.isfile(os.path.join(user_path, f)) and f in run_weights})
             except FileNotFoundError:
                 pass
+            # try:
+            #     all_users_path = os.path.join(get_plugins_dir(), 'roi_classification', 'models', parameters['model'])
+            #     w_files.update({f: os.path.join(all_users_path, f) for f in os.listdir(all_users_path) if
+            #                     os.path.isfile(os.path.join(all_users_path, f)) and f.endswith('.weights.h5')})
+            # except FileNotFoundError:
+            #     pass
         if w_files:
             self.parameters['weights'].set_items(w_files)
 
-    def update_class_names(self, prediction=False):
+    def update_class_names(self, prediction: bool = False) -> None:
         """
         Update the classes associated with the currently selected model
         """
@@ -558,7 +779,10 @@ class Plugin(plugins.Plugin):
 
         self.parameters['class_names'].set_items(class_names)
 
-    def update_channels(self):
+    def update_channels(self) -> None:
+        """
+        Updates the list of available channels to display in the GUI form
+        """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             image_resource = project.get_object('ImageResource', 1)
             n_layers = image_resource.zdim if image_resource else 0
@@ -566,30 +790,29 @@ class Plugin(plugins.Plugin):
         for param in ['red_channel', 'green_channel', 'blue_channel']:
             self.parameters[param].set_items({str(i): i for i in range(n_layers)})
 
-    def update_fov_list(self):
+    def update_fov_list(self) -> None:
+        """
+        Updates the list of available FOV to display in the GUI form
+        """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             self.parameters['fov'].set_items({fov.name: fov for fov in project.get_objects('FOV')})
 
-    def save_annotations(self, roi, roi_classes, run):
+    def save_annotations(self, roi: ROI, roi_classes: list[int], run) -> None:
         """
-        Save manual annotation into the database
+        Saves manual annotation into the database
 
         :param roi: the annotated ROI
         :param roi_classes: the classes along time
         :param run: the annotation run
         """
-        # with pydetecdiv_project(PyDetecDiv.project_name) as project:
-        #     for t, class_name in enumerate(roi_classes):
-        #         if class_name != '-':
-        #             Results().save(project, run, roi, t, np.array([1]), [class_name])
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            for t, class_name in enumerate(roi_classes):
-                if class_name != -1:
-                    Results().save(project, run, roi, t, np.array([1]), [self.class_names(as_string=False)[class_name]])
+            for t, class_id in enumerate(roi_classes):
+                if class_id != -1:
+                    Results().save(project, run, roi, t, pd.DataFrame([1]), [self.class_names(as_string=False)[class_id]])
 
-    def get_annotated_rois(self, run=None, ids_only=False):
+    def get_annotated_rois(self, run: Run = None, ids_only: bool = False) -> list[int] | list[ROI]:
         """
-        Get a list of annotated ROI frames
+        Gets a list of annotated ROI frames
 
         :return: the list of annotated ROI frames
         """
@@ -600,25 +823,25 @@ class Plugin(plugins.Plugin):
             if run is None:
                 if self.class_names(as_string=False):
                     query = QSqlQuery(
-                        f"SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
-                        f"WHERE run.id_=roi_classification.run "
-                        f"AND (run.command='annotate_rois' OR run.command='import_annotated_rois') "
-                        f"AND run.parameters ->> '$.class_names'=json('{self.class_names()}') ;",
-                        db=db)
+                            f"SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
+                            f"WHERE run.id_=roi_classification.run "
+                            f"AND (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+                            f"AND run.parameters ->> '$.class_names'=json('{self.class_names()}') ;",
+                            db=db)
                 else:
                     query = QSqlQuery(
-                        f"SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
-                        f"WHERE run.id_=roi_classification.run "
-                        f"AND (run.command='annotate_rois' OR run.command='import_annotated_rois') ",
-                        db=db)
+                            "SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
+                            "WHERE run.id_=roi_classification.run "
+                            "AND (run.command='annotate_rois' OR run.command='import_annotated_rois') ",
+                            db=db)
             else:
                 if isinstance(run, int):
                     run = project.get_object('Run', run)
                 query = QSqlQuery(
-                    f"SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
-                    f"WHERE run.id_=roi_classification.run "
-                    f"AND run.id_={run.id_} ;",
-                    db=db)
+                        f"SELECT DISTINCT(roi) as annotated_rois FROM roi_classification, run "
+                        f"WHERE run.id_=roi_classification.run "
+                        f"AND run.id_={run.id_} ;",
+                        db=db)
             query.exec()
             if query.first():
                 roi_ids = [query.value('annotated_rois')]
@@ -629,7 +852,12 @@ class Plugin(plugins.Plugin):
                 return roi_ids
             return []
 
-    def get_unannotated_rois(self):
+    def get_unannotated_rois(self) -> (list[ROI], list[ROI]):
+        """
+        Gets the unannotated ROIs
+
+        :return: list of unannotated ROIs and list of all ROIs
+        """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             all_roi_ids = [roi.id_ for roi in project.get_objects('ROI')]
             print(f'All ROIs: {len(all_roi_ids)}')
@@ -639,7 +867,7 @@ class Plugin(plugins.Plugin):
             print(f'Unannotated ROIs: {len(unannotated_roi_ids)}')
             return project.get_objects('ROI', list(unannotated_roi_ids)), project.get_objects('ROI', list(all_roi_ids))
 
-    def get_annotation(self, roi, as_index=True):
+    def get_annotation(self, roi=ROI, as_index: bool = True) -> list[int] | list[str]:
         """
         Get the annotations for a ROI
 
@@ -651,15 +879,15 @@ class Plugin(plugins.Plugin):
         roi_classes = [-1] * roi.fov.image_resource().image_resource_data().sizeT
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             results = list(project.repository.session.execute(
-                sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,"
-                                f"run.parameters ->> '$.annotator' as annotator, "
-                                f"run.parameters ->> '$.class_names' as class_names "
-                                f"FROM run, roi_classification as rc "
-                                f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
-                                f"AND rc.run=run.id_ and rc.roi={roi.id_} "
-                                f"AND annotator='{get_config_value('project', 'user')}' "
-                                f"AND run.parameters ->> '$.class_names'=json('{self.class_names()}') "
-                                f"ORDER BY rc.run ASC;")))
+                    sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,"
+                                    f"run.parameters ->> '$.annotator' as annotator, "
+                                    f"run.parameters ->> '$.class_names' as class_names "
+                                    f"FROM run, roi_classification as rc "
+                                    f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+                                    f"AND rc.run=run.id_ and rc.roi={roi.id_} "
+                                    f"AND annotator='{get_config_value('project', 'user')}' "
+                                    f"AND run.parameters ->> '$.class_names'=json('{self.class_names()}') "
+                                    f"ORDER BY rc.run ASC;")))
             if results:
                 class_names = json.loads(results[0][4])
                 if as_index:
@@ -670,7 +898,7 @@ class Plugin(plugins.Plugin):
                         roi_classes[annotation[1]] = annotation[2]
         return roi_classes
 
-    def get_classifications(self, roi, run_list, as_index=True):
+    def get_classifications(self, roi: ROI, run_list: list[int], as_index: bool = True) -> list[int] | list[str]:
         """
         Get the annotations for a ROI as defined in a list of runs
 
@@ -683,12 +911,12 @@ class Plugin(plugins.Plugin):
         roi_classes = [-1] * roi.fov.image_resource().image_resource_data().sizeT
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             results = list(project.repository.session.execute(
-                sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,"
-                                f"run.parameters ->> '$.class_names' as class_names, rc.run, run.id_ "
-                                f"FROM run, roi_classification as rc "
-                                f"WHERE rc.run IN ({','.join([str(i) for i in run_list])}) and rc.roi={roi.id_} "
-                                f"AND run.id_=rc.run "
-                                f"ORDER BY rc.run ASC;")))
+                    sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,"
+                                    f"run.parameters ->> '$.class_names' as class_names, rc.run, run.id_ "
+                                    f"FROM run, roi_classification as rc "
+                                    f"WHERE rc.run IN ({','.join([str(i) for i in run_list])}) and rc.roi={roi.id_} "
+                                    f"AND run.id_=rc.run "
+                                    f"ORDER BY rc.run ASC;")))
             if results:
                 class_names = json.loads(results[0][3])
                 if as_index:
@@ -699,43 +927,296 @@ class Plugin(plugins.Plugin):
                         roi_classes[annotation[1]] = annotation[2]
         return roi_classes
 
-    def prepare_data(self, data_list, seqlen=None, targets=True):
+    def get_all_annotations(self, z_layers: tuple[int] = None) -> pd.DataFrame:
         """
-        Prepare the data from a list of ROI object as a list of ROIData objects to build the ROIDataset instance
+        Gets all annotations, i.e. Run id, ROI and FOV ids, ROI positions, time frame, channel, z layer index, class name,
+         file name, drift values
 
-        :param data_list: the ROI list
-        :param seqlen: the length of the frame sequence
-        :param targets: should targets be included in the dataset or not
-        :return: the ROIData list
+        :param z_layers: the z layers to be used as RGB channels
+        :return: the annotations in a pandas DataFrame
         """
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data')
-        roi_data_list = []
-        for roi in data_list:
-            imgdata = roi.fov.image_resource().image_resource_data()
-            seqlen = seqlen if seqlen else 1
-            if targets:
-                annotation_indices = self.get_annotation(roi)
-                for i in range(0, imgdata.sizeT, seqlen):
-                    sequence = annotation_indices[i:i + seqlen]
-                    if len(sequence) == seqlen and all(a >= 0 for a in sequence):
-                        roi_data_list.extend([ROIdata(roi, imgdata, sequence, i)])
-            else:
-                roi_data_list.extend([ROIdata(roi, imgdata, None, frame) for frame in range(0, imgdata.sizeT, seqlen)])
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Data ready')
-        return roi_data_list
+        if z_layers is None:
+            z_layers = (0,)
 
-    def compute_class_weights(self):
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            results = pd.DataFrame(project.repository.session.execute(
+                    sqlalchemy.text(f"SELECT run.id_, rc.roi, roi.fov, roi.x0_, roi.y0_, roi.x1_, roi.y1_, "
+                                    f"rc.t, data.c as channel, data.z, rc.class_name, data.url, img.key_val ->> '$.drift' as drift "
+                                    f"FROM roi_classification as rc, ROI as roi, run, data, ImageResource as img "
+                                    f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+                                    f"AND rc.run=run.id_ and rc.roi=roi.id_ "
+                                    f"AND run.parameters ->> '$.annotator'='{get_config_value('project', 'user')}' "
+                                    f"AND run.parameters ->> '$.class_names'=json('{self.class_names()}') "
+                                    f"AND data.t = rc.t AND data.image_resource=img.id_ AND img.fov=roi.fov "
+                                    f"AND data.z in {tuple(z_layers)} "
+                                    f"ORDER BY rc.run, data.url, rc.roi ASC;")))
+            return results
+
+    def get_fov_data(self, z_layers: tuple[int] = None, channel: int = None) -> pd.DataFrame:
+        """
+        Gets FOV data, i.e. FOV id, time frame and the list of files with the z layers to be used as RGB channels
+
+        :param z_layers: the z layer files to use as RGB channels
+        :param channel: the channel of the original image to be loaded
+        :return: a pandas DataFrame with the FOV data
+        """
+        if z_layers is None:
+            z_layers = (0,)
+        if channel is None:
+            channel = 0
+            # channel = self.parameters['channel']
+
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            results = pd.DataFrame(project.repository.session.execute(
+                    sqlalchemy.text(f"SELECT img.fov, data.t, data.url "
+                                    f"FROM data, ImageResource as img "
+                                    f"WHERE data.image_resource=img.id_ "
+                                    f"AND data.z in {tuple(z_layers)} "
+                                    f"AND data.c={channel} "
+                                    f"ORDER BY img.fov, data.url ASC;")))
+            fov_data = results.groupby(['fov', 't'])['url'].apply(self.layers2channels).reset_index()
+        fov_data.columns = ['fov', 't', 'channel_files']
+        return fov_data
+
+    def get_roi_list(self) -> pd.DataFrame:
+        """
+        Gets a list of ROIs in a DataFrame
+
+        :return: pandas DataFrame containing ROIO id, FOV id, ROI x, y positions of top left and bottom right corners
+        """
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            results = pd.DataFrame(project.repository.session.execute(
+                    sqlalchemy.text("SELECT id_ as roi, fov, x0_ as x0, y0_ as y0, x1_ as x1, y1_ as y1 "
+                                    "FROM ROI "
+                                    "ORDER BY fov, id_ ASC;")))
+        return results
+
+    def get_annotations(self) -> pd.DataFrame:
+        """
+        Gets ROI annotations from manual annotation or imported annotation runs in a DataFrame
+
+        :return: a pandas DataFrame containing run id, ROI and FOV ids, frame, class name
+        """
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            results = pd.DataFrame(project.repository.session.execute(
+                    sqlalchemy.text(f"SELECT run.id_, rc.roi, roi.fov, rc.t, rc.class_name "
+                                    f"FROM roi_classification as rc, run, ROI as roi "
+                                    f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+                                    f"AND rc.run=run.id_ AND roi.id_=rc.roi "
+                                    f"AND run.parameters ->> '$.annotator'='{get_config_value('project', 'user')}' "
+                                    f"AND run.parameters ->> '$.class_names'=json('{self.class_names()}') "
+                                    f"ORDER BY run.id_, rc.t, rc.roi ASC;")))
+            results = results.drop_duplicates(subset=['roi', 't'], keep='last')
+            return results
+
+    def get_drift_corrections(self) -> pd.DataFrame:
+        """
+        Gets the drift correction values for FOVs in a pandas DataFrame
+
+        :return: a pandas DataFrame with the (dx, dy) drift values for each FOV and frame
+        """
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            results = pd.DataFrame(project.repository.session.execute(
+                    sqlalchemy.text("SELECT fov, img.key_val ->> '$.drift' as drift "
+                                    "FROM ImageResource as img "
+                                    "ORDER BY fov ASC;")))
+            drift_corrections = pd.DataFrame(columns=['fov', 't', 'dx', 'dy'])
+            for row in results.itertuples(index=False):
+                if row.drift is not None:
+                    df = pd.read_csv(os.path.join(get_project_dir(), row.drift))
+                    df['fov'] = row.fov
+                    df['t'] = df.index
+                    drift_corrections = pd.concat([drift_corrections, df], ignore_index=True)
+            return drift_corrections
+
+    def layers2channels(self, zfiles) -> list[str]:
+        """
+        Gets the image file names for red, green and blue channels
+
+        :param zfiles: the list of files corresponding to one z layer each
+        :return: the list of zfiles
+        """
+        zfiles = list(zfiles)
+        return [zfiles[i] for i in [self.parameters['red_channel'].value, self.parameters['green_channel'].value,
+                                    self.parameters['blue_channel'].value]]
+
+    def create_hdf5_annotated_rois(self, hdf5_file: str, z_channels: tuple[int] = None, channel: int = 0) -> None:
+        """
+        Creates a HDF5 file containing the annotated ROI data and their targets
+
+        :param hdf5_file: the HDF5 file name
+        :param z_channels: the z layers to be used as channels
+        :param channel: the original channel to use
+        """
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Retrieving data for annotated ROIs')
+        data = self.get_annotations()
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Data retrieved with {len(data)} rows')
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Creating HDF5 file')
+        h5file = tbl.open_file(hdf5_file, mode='w', title='ROI annotations')
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Getting fov data')
+        fov_data = self.get_fov_data(z_layers=z_channels)
+        mask = fov_data[['fov', 't']].apply(tuple, axis=1).isin(data[['fov', 't']].apply(tuple, axis=1))
+        fov_data = fov_data[mask]
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Getting drift correction')
+        drift_correction = self.get_drift_corrections()
+        mask = drift_correction[['fov', 't']].apply(tuple, axis=1).isin(data[['fov', 't']].apply(tuple, axis=1))
+        drift_correction = drift_correction[mask]
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Getting roi list')
+        roi_list = self.get_roi_list()
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Applying drift correction to ROIs')
+        roi_list = roi_list[roi_list['roi'].isin(set(data['roi']))]
+        roi_list = pd.merge(drift_correction, roi_list, on=['fov'], how='left').dropna()
+        roi_list['x0'] = (roi_list['x0'] + roi_list['dx'].round().astype(int))
+        roi_list['x1'] = (roi_list['x1'] + roi_list['dx'].round().astype(int))
+        roi_list['y0'] = (roi_list['y0'] + roi_list['dy'].round().astype(int))
+        roi_list['y1'] = (roi_list['y1'] + roi_list['dy'].round().astype(int))
+
+        width = (roi_list['x1'] - roi_list['x0'] + 1).max()
+        height = (roi_list['y1'] - roi_list['y0'] + 1).max()
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: FOV = {len(fov_data["fov"].unique())}', file=sys.stderr)
+        print(f'{datetime.now().strftime("%H:%M:%S")}: T = {np.max(fov_data["t"]) + 1}', file=sys.stderr)
+        print(f'{datetime.now().strftime("%H:%M:%S")}: ROIs = {len(roi_list["roi"].unique())} ({len(roi_list)})',
+              file=sys.stderr)
+
+        roi_values = np.array(roi_list["roi"])
+        roi_list["roi"], roi_mapping = fastremap.renumber(roi_values, in_place=False, preserve_zero=False)
+        num_rois = len(roi_mapping)
+        num_frames = np.max(fov_data['t']) + 1
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Creating target datasets')
+
+        targets = data.loc[:, ['t', 'roi', 'class_name']]
+        targets['roi'] = fastremap.remap(np.array(targets['roi']), roi_mapping)
+        targets['label'] = targets['class_name'].apply(lambda x: self.class_names(as_string=False).index(x))
+
+        initial_values = np.zeros((num_frames, num_rois,), dtype=np.int8) - 1
+        target_array = h5file.create_carray(h5file.root, 'targets', atom=tbl.Int8Atom(), shape=(num_frames, num_rois),
+                                            chunkshape=(num_frames, num_rois,), obj=initial_values)
+
+        class_names_table = h5file.create_table(h5file.root, 'class_names', TblClassNamesRow, 'Class names')
+        class_names_table.append([(name,) for name in self.class_names(as_string=False)])
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Creating ROI dataset')
+
+        roi_data = h5file.create_carray(h5file.root, 'roi_data', atom=tbl.Float16Atom(shape=(height, width, 3)),
+                                        chunkshape=(50, num_rois,), shape=(num_frames, num_rois))
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Reading and compositing images')
+        for row in fov_data.itertuples():
+            if row.t % 10 == 0:
+                print(f'{datetime.now().strftime("%H:%M:%S")}: FOV {row.fov}, frame {row.t}')
+
+            rois = roi_list.loc[(roi_list['fov'] == row.fov) & (roi_list['t'] == row.t)]
+
+            # If merging and normalization are too slow, maybe use tensorflow or pytorch to do the operations
+            fov_img = cv2.merge([cv2.imread(z_file, cv2.IMREAD_UNCHANGED) for z_file in reversed(row.channel_files)])
+
+            for roi in rois.itertuples():
+                roi_data[row.t, roi.roi - 1, ...] = cv2.normalize(fov_img[roi.y0:roi.y1 + 1, roi.x0:roi.x1 + 1],
+                                                                  dtype=cv2.CV_16F, dst=None, alpha=1e-10, beta=1.0,
+                                                                  norm_type=cv2.NORM_MINMAX)
+                target_array[row.t, roi.roi - 1] = targets.loc[
+                    (targets['t'] == row.t) & (targets['roi'] == roi.roi), 'label'].values
+
+        h5file.close()
+        print(f'{datetime.now().strftime("%H:%M:%S")}: HDF5 file of annotated ROIs ready')
+
+    def prepare_data_for_training(self, hdf5_file: str, seqlen: int = 0, train: float = 0.6, validation: float = 0.2,
+                                  seed: int = 42) -> (list[int], list[int], list[int]):
+        """
+        Prepares data for training.
+
+        :param hdf5_file: the HDF5 file containing the annotated ROI data
+        :param seqlen: the length of ROI time sequence or 0 if the model takes a single image as input
+        :param train: the proportion of images or sequences used for training
+        :param validation: the proportion of images or sequences used for validation
+        :param seed: the seed used to shuffle the data before dispatching data into the datasets
+        :return: indices for training, validation, testing datasets
+        """
+        h5file = tbl.open_file(hdf5_file, mode='r')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Reading targets into a numpy array')
+        targets_arr = h5file.root.targets
+        num_frames = targets_arr.shape[0]
+        num_rois = targets_arr.shape[1]
+        targets = targets_arr.read()
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Select valid targets from array with shape {targets.shape}')
+        if seqlen == 0:
+            indices = [[frame, roi] for roi in range(num_rois) for frame in range(num_frames) if targets[frame, roi] != -1]
+        else:
+            indices = [[frame, roi] for roi in range(num_rois) for frame in range(0, num_frames - seqlen + 1, seqlen)
+                       if np.all([targets[frame:frame + seqlen, roi] != -1])]
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Kept {len(indices)} valid ROI frames or sequences')
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Shuffling data')
+        rng = np.random.default_rng(seed)
+        rng.shuffle(np.array(indices))
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Determine training and validation datasets size')
+        num_training = int(len(indices) * train)
+        num_validation = int(len(indices) * validation)
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Close HDF5 file and return datasets indices')
+        h5file.close()
+        return indices[:num_training], indices[num_training:num_validation + num_training], indices[num_validation + num_training:]
+
+    def prepare_data_for_classification(self, fov_list: list[int],
+                                        z_channels: tuple[int] = None) -> (pd.DataFrame, pd.DataFrame, np.ndarray):
+        """
+        Prepares the data for class prediction. Drift correction is automatically applied
+
+        :param fov_list: the list of FOV indices whose ROIs should be classified
+        :param z_channels: the z layers to be used as channels
+        :return: Pandas DataFrames containing FOV data, list of (ROI, frame) with positions, unique indices of ROIs
+        """
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Getting fov data')
+        fov_data = self.get_fov_data(z_layers=z_channels)
+        mask = fov_data['fov'].isin(fov_list)
+        fov_data = fov_data[mask]
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Getting drift correction')
+        drift_correction = self.get_drift_corrections()
+        mask = drift_correction['fov'].isin(fov_list)
+        drift_correction = drift_correction[mask]
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Getting roi list')
+        roi_list = self.get_roi_list()
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Applying drift correction to ROIs')
+        roi_list = pd.merge(drift_correction, roi_list, on=['fov'], how='left').dropna()
+        roi_list['x0'] = (roi_list['x0'] + roi_list['dx'].round().astype(int))
+        roi_list['x1'] = (roi_list['x1'] + roi_list['dx'].round().astype(int))
+        roi_list['y0'] = (roi_list['y0'] + roi_list['dy'].round().astype(int))
+        roi_list['y1'] = (roi_list['y1'] + roi_list['dy'].round().astype(int))
+
+        rois = roi_list["roi"].unique()
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: FOV = {len(fov_data["fov"].unique())}')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: T = {np.max(fov_data["t"]) + 1}')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: ROIs = {len(rois)} ({len(roi_list)})')
+
+        return fov_data, roi_list, rois
+
+    def compute_class_weights(self) -> dict:
+        """
+        Computes class weights from their cardinality
+
+        :return: a dictionary with class weights
+        """
         class_counts = dict(
-            Counter([x for roi in self.get_annotated_rois() for x in self.get_annotation(roi) if x >= 0]))
+                Counter([x for roi in self.get_annotated_rois() for x in self.get_annotation(roi) if x >= 0]))
         n = len(class_counts)
-        total = sum([v for c, v in class_counts.items()])
-        weights = {k: total / (n * class_counts[k]) for k in class_counts.keys()}
+        total = sum(v for c, v in class_counts.items())
+        weights = {k: total / (n * v) for k, v in class_counts.items()}
         for k in range(n):
             if k not in weights:
                 weights[k] = 0.00
         return weights
 
-    def lr_decay(self, epoch, lr):
+    def lr_decay(self, epoch: int, lr: float) -> float:
         """
         Learning rate scheduler
 
@@ -747,16 +1228,14 @@ class Plugin(plugins.Plugin):
             return lr * self.parameters['decay_rate'].value
         return lr
 
-    def train_model(self):
+    def train_model(self) -> (str, str, tf.keras.callbacks.History, list[int], list[int], list[int], list[int]):
         """
-        Launch training a model: select the network, load weights (optional), define the training, validation
+        Launches model training: select the network, load weights (optional), define the training, validation
         and test sets, then run the training using training and validation sets and the evaluation on the test set.
         """
         log_dir = os.path.join(get_project_dir(), 'logs', 'fit', datetime.now().strftime("%Y%m%d-%H%M%S"))
-        # tf.profiler.experimental.start(log_dir)
         tf.keras.utils.set_random_seed(self.parameters['seed'].value)
         batch_size = self.parameters['batch_size'].value
-        seqlen = self.parameters['seqlen'].value
         epochs = self.parameters['epochs'].value
         z_channels = [self.parameters['red_channel'].value, self.parameters['green_channel'].value,
                       self.parameters['blue_channel'].value]
@@ -765,13 +1244,6 @@ class Plugin(plugins.Plugin):
         print(module.__name__)
 
         model = module.model.create_model(len(self.parameters['class_names'].value))
-
-        if self.parameters['weights'].value is not None:
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Loading weights from {self.parameters["weights"].key}')
-            loadWeights(model, filename=self.parameters['weights'].value)
-            run = self.save_training_run(finetune=True)
-        else:
-            run = self.save_training_run()
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Compiling model')
         learning_rate = self.parameters['learning_rate'].value
@@ -783,61 +1255,56 @@ class Plugin(plugins.Plugin):
         lr_metric = get_lr_metric(optimizer)
 
         model.compile(
-            optimizer=optimizer,
-            loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-            metrics=['accuracy', lr_metric],
-        )
-        # print(model.summary())
+                optimizer=optimizer,
+                loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+                metrics=['accuracy', lr_metric],
+                )
+        # model.summary(print_fn=lambda x: print(x, file=sys.stderr))
+        # print('model output:', model.layers[-1].output.shape, file=sys.stderr)
         input_shape = model.layers[0].output.shape
-        # print(input_shape)
-        # print(seqlen)
-        # print(model.layers[-1].output.shape)
+        image_shape = (input_shape[-3], input_shape[-2])
 
-        if len(input_shape) == 4:
-            img_size = (input_shape[1], input_shape[2])
-
-            roi_list = self.prepare_data(self.get_annotated_rois())
-            random.seed(self.parameters['dataset_seed'].value)
-            random.shuffle(roi_list)
-            num_training = int(self.parameters['num_training'].value * len(roi_list))
-            num_validation = int(self.parameters['num_validation'].value * len(roi_list))
-
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Training dataset')
-            training_dataset = ROIDataset(roi_list[:num_training], z_channels=z_channels,
-                                          image_size=img_size, batch_size=batch_size)
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Validation dataset')
-            validation_dataset = ROIDataset(roi_list[num_training:num_training + num_validation], z_channels=z_channels,
-                                            image_size=img_size, batch_size=batch_size)
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Test dataset')
-            test_dataset = ROIDataset(roi_list[num_training + num_validation:], z_channels=z_channels,
-                                      image_size=img_size,
-                                      batch_size=batch_size)
+        if len(input_shape) == 5:
+            seqlen = self.parameters['seqlen'].value
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Sequence length: {seqlen}\n')
         else:
-            img_size = (input_shape[2], input_shape[3])
+            seqlen = 0
 
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Sequence length: {seqlen}')
+        os.makedirs(os.path.join(get_project_dir(), 'roi_classification', 'data'), exist_ok=True)
+        hdf5_file = os.path.join(get_project_dir(), 'roi_classification', 'data', 'annotated_rois.h5')
+        print(hdf5_file)
+        if not os.path.exists(hdf5_file):
+            self.create_hdf5_annotated_rois(hdf5_file, z_channels=z_channels)
 
-            roi_list = self.prepare_data(self.get_annotated_rois(), seqlen)
-            random.seed(self.parameters['dataset_seed'].value)
-            random.shuffle(roi_list)
-            num_training = int(self.parameters['num_training'].value * len(roi_list))
-            num_validation = int(self.parameters['num_validation'].value * len(roi_list))
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data for training')
+        training_idx, validation_idx, test_idx = self.prepare_data_for_training(hdf5_file, seqlen=seqlen,
+                                                                                train=self.parameters[
+                                                                                    'num_training'].value,
+                                                                                validation=self.parameters[
+                                                                                    'num_validation'].value,
+                                                                                seed=self.parameters[
+                                                                                    'dataset_seed'].value)
 
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Training dataset')
-            training_dataset = ROIDataset(roi_list[:num_training], image_size=img_size,
-                                          seqlen=seqlen, batch_size=batch_size, z_channels=z_channels, )
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Validation dataset')
-            validation_dataset = ROIDataset(roi_list[num_training:num_training + num_validation],
-                                            image_size=img_size, seqlen=seqlen,
-                                            batch_size=batch_size, z_channels=z_channels, )
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Test dataset')
-            test_dataset = ROIDataset(roi_list[num_training + num_validation:], z_channels=z_channels,
-                                      image_size=img_size,
-                                      seqlen=seqlen, batch_size=batch_size)
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Training dataset (size: {len(training_idx)})')
+        training_dataset = DataProvider(hdf5_file, training_idx, image_shape=image_shape, seqlen=seqlen, batch_size=batch_size,
+                                        name='training', targets=True)
 
-        # display_dataset(training_dataset, sequences=len(input_shape) != 4)
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Validation dataset (size: {len(validation_idx)})')
+        validation_dataset = DataProvider(hdf5_file, validation_idx, image_shape=image_shape, seqlen=seqlen, batch_size=batch_size,
+                                          name='validation', targets=True)
 
-        self.save_training_datasets(run, roi_list, num_training, num_validation)
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Test dataset (size: {len(test_idx)})')
+        test_dataset = DataProvider(hdf5_file, test_idx, image_shape=image_shape, seqlen=seqlen, batch_size=batch_size,
+                                    name='test', targets=True, shuffle=False)
+
+        if self.parameters['weights'].value is not None:
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Loading weights from {self.parameters["weights"].key}')
+            model.load_weights(self.parameters['weights'].value)
+            run = self.save_training_run(finetune=True)
+        else:
+            run = self.save_training_run()
+
+        self.save_training_datasets(hdf5_file, training_idx, validation_idx, test_idx)
 
         checkpoint_monitor_metric = self.parameters['checkpoint_metric'].value
         best_checkpoint_filename = f'{run.id_}_best_{checkpoint_monitor_metric}.weights.h5'
@@ -846,12 +1313,12 @@ class Plugin(plugins.Plugin):
                                            f'{best_checkpoint_filename}')
 
         model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-            filepath=checkpoint_filepath,
-            save_weights_only=True,
-            monitor=checkpoint_monitor_metric,
-            mode='auto',
-            verbose=1,
-            save_best_only=True)
+                filepath=checkpoint_filepath,
+                save_weights_only=True,
+                monitor=checkpoint_monitor_metric,
+                mode='auto',
+                verbose=1,
+                save_best_only=True)
 
         tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1,
                                                               profile_batch=(0, 20))
@@ -867,8 +1334,9 @@ class Plugin(plugins.Plugin):
         if self.parameters['early_stopping'].value:
             callbacks += [training_early_stopping]
 
-        history = model.fit(training_dataset, epochs=epochs,
-                            callbacks=callbacks, validation_data=validation_dataset, verbose=2, )
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Starting training')
+        history = model.fit(training_dataset, epochs=epochs, callbacks=callbacks, validation_data=validation_dataset,
+                            verbose=2)
 
         last_weights_filename = f'{run.id_}_last.weights.h5'
         model.save_weights(os.path.join(get_project_dir(), 'roi_classification', 'models',
@@ -877,41 +1345,103 @@ class Plugin(plugins.Plugin):
         run.parameters.update({'last_weights': last_weights_filename, 'best_weights': best_checkpoint_filename})
         run.validate().commit()
 
-        evaluation = dict(zip(model.metrics_names, model.evaluate(test_dataset)))
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Evaluation on test dataset')
+        evaluation = dict(zip(model.metrics_names, model.evaluate(test_dataset, verbose=2)))
 
         ground_truth = [label for batch in [y for x, y in test_dataset] for label in batch]
         if len(input_shape) == 4:
-            predictions = model.predict(test_dataset).argmax(axis=1)
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for last model')
+            predictions = model.predict(test_dataset, verbose=2).argmax(axis=1)
+
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for best model')
             model.load_weights(checkpoint_filepath)
-            model.compile(optimizer=optimizer,
-                          loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-                          metrics=['accuracy', lr_metric], )
             best_predictions = model.predict(test_dataset).argmax(axis=1)
         else:
-            predictions = [label for seq in model.predict(test_dataset).argmax(axis=2) for label in seq]
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for last model')
+            predictions = [label for seq in model.predict(test_dataset, verbose=2).argmax(axis=2) for label in seq]
+
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for best model')
             model.load_weights(checkpoint_filepath)
-            model.compile(optimizer=optimizer,
-                          loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-                          metrics=['accuracy', lr_metric], )
-            best_predictions = [label for seq in model.predict(test_dataset).argmax(axis=2) for label in seq]
+            best_predictions = [label for seq in model.predict(test_dataset, verbose=2).argmax(axis=2) for label in seq]
             ground_truth = [label for seq in ground_truth for label in seq]
+
+        labels = list(range(len(self.parameters['class_names'].value)))
+        precision, recall, fscore, support = precision_recall_fscore_support(ground_truth, predictions, labels=labels,
+                                                                             zero_division=np.nan)
+        stats = {'last_stats': {'precision': list(precision),
+                                'recall'   : list(recall),
+                                'fscore'   : list(fscore),
+                                'support'  : [int(s) for s in support]
+                                }
+                 }
+        if run.key_val is None:
+            run.key_val = stats
+        else:
+            run.key_val.update(stats)
+
+        run.validate().commit()
+
+        rows = [
+            f'| {self.parameters["class_names"].value[i]} | {precision[i]:.2f} | {recall[i]:.2f} | {fscore[i]:.2f} | {support[i]}'
+            for i in labels]
+        stats = '\n'.join(rows)
+        print(f"""
+        
+        
+**Last epoch model evaluation on test set**
+
+| class | precision | recall | F-score | support 
+|:------|----------:|-------:|--------:|--------:
+{stats}
+
+""")
+
+        precision, recall, fscore, support = precision_recall_fscore_support(ground_truth, best_predictions, labels=labels,
+                                                                             zero_division=np.nan)
+
+        stats = {'best_stats': {'precision': list(precision),
+                                'recall'   : list(recall),
+                                'fscore'   : list(fscore),
+                                'support'  : [int(s) for s in support]
+                                }
+                 }
+        if run.key_val is None:
+            run.key_val = stats
+        else:
+            run.key_val.update(stats)
+
+        run.validate().commit()
+
+        rows = [
+            f'| {self.parameters["class_names"].value[i]} | {precision[i]:.2f} | {recall[i]:.2f} | {fscore[i]:.2f} | {support[i]}'
+            for i in labels]
+        stats = '\n'.join(rows)
+        print(f"""
+**Best model evaluation on test set**
+
+| class | precision | recall | F-score | support 
+|:------|----------:|-------:|--------:|--------:
+{stats}
+
+""")
 
         if self.parameters['weights'].value is not None:
             self.update_model_weights()
 
         # tf.profiler.experimental.stop()
+        training_dataset.close()
+        validation_dataset.close()
+        test_dataset.close()
 
         return (module.__name__, self.parameters['class_names'].value, history, evaluation, ground_truth, predictions,
                 best_predictions)
 
-    def save_training_run(self, finetune=False):
+    def save_training_run(self, finetune: bool = False) -> Run:
         """
-        save the current training Run
+        Saves the current training Run
 
-        :param seqlen: the sequence length
-        :param epochs: the number of epochs
-        :param batch_size: the batch size
-        :param module: the module name (i.e. the network that was trained)
+        :param finetune: False if the run is a training run (from scratch or pretrained Keras model), True if it is a fine-tuning
+         run
         :return: the current Run instance
         """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
@@ -919,91 +1449,109 @@ class Plugin(plugins.Plugin):
                 return self.save_run(project, 'fine_tune', self.parameters.json(groups='finetune'))
             return self.save_run(project, 'train_model', self.parameters.json(groups='training'))
 
-    def save_training_datasets(self, run, roi_list, num_training, num_validation):
+    def save_training_datasets(self, hdf5_file: str, training_idx: list[int], validation_idx: list[int],
+                               test_idx: list[int]) -> None:
         """
-        save the datasets used for training and evaluation in the database
+        Saves in TrainingData table the (ROI, frame, class) data subsets that were used for training, validation and testing while
+        training a model.
 
-        :param run: the current run
-        :param roi_list: the list of ROI/frames
-        :param num_training: the number of training data
-        :param num_validation: the number of validation data
+        :param hdf5_file: the HDF5 file containing the annotated ROI data
+        :param training_idx: the list of (ROI, frame) data indices in the training dataset
+        :param validation_idx: the list of (ROI, frame) data indices in the validation dataset
+        :param test_idx: the list of (ROI, frame) data indices in the validation dataset
         """
-        project = roi_list[0].roi.project
-        training_ds = Dataset(project=project, name=f'train_{datetime.now().strftime("%Y%m%d-%H%M%S")}',
-                              type_='training', run=run.id_)
-        validation_ds = Dataset(project=project, name=f'val_{datetime.now().strftime("%Y%m%d-%H%M%S")}',
-                                type_='validation', run=run.id_)
-        test_ds = Dataset(project=project, name=f'test_{datetime.now().strftime("%Y%m%d-%H%M%S")}', type_='test',
-                          run=run.id_)
+        training_ds = Dataset(project=self.run.project, name=f'train_{datetime.now().strftime("%Y%m%d-%H%M%S")}',
+                              type_='training', run=self.run.id_)
+        validation_ds = Dataset(project=self.run.project, name=f'val_{datetime.now().strftime("%Y%m%d-%H%M%S")}',
+                                type_='validation', run=self.run.id_)
+        test_ds = Dataset(project=self.run.project, name=f'test_{datetime.now().strftime("%Y%m%d-%H%M%S")}', type_='test',
+                          run=self.run.id_)
 
-        print(num_training, num_validation)
-        for data in roi_list[:num_training]:
-            TrainingData().save(project, data.roi, data.frame, data.target, training_ds.id_)
+        # print(len(training_idx), len(validation_idx), len(test_idx))
 
-        for data in roi_list[num_training:num_training + num_validation]:
-            TrainingData().save(project, data.roi, data.frame, data.target, validation_ds.id_)
+        h5file = tbl.open_file(hdf5_file, mode='r')
+        targets = h5file.root.targets.read()
+        h5file.close()
 
-        for data in roi_list[num_training + num_validation:]:
-            TrainingData().save(project, data.roi, data.frame, data.target, test_ds.id_)
-        project.commit()
+        for frame, roi_id in training_idx:
+            TrainingData().save(self.run.project, roi_id, frame, targets[frame, roi_id], training_ds.id_)
 
-    def predict(self):
+        for frame, roi_id in validation_idx:
+            TrainingData().save(self.run.project, roi_id, frame, targets[frame, roi_id], validation_ds.id_)
+
+        for frame, roi_id in test_idx:
+            TrainingData().save(self.run.project, roi_id, frame, targets[frame, roi_id], test_ds.id_)
+
+        self.run.project.commit()
+
+    def predict(self) -> None:
         """
         Running prediction on all ROIs in selected FOVs.
         """
+        seqlen = self.parameters['seqlen'].value
+        z_channels = [self.parameters['red_channel'].value, self.parameters['green_channel'].value,
+                      self.parameters['blue_channel'].value]
+        fov_names = [self.parameters['fov'].key]
+
         module = self.parameters['model'].value
         print(module.__name__)
         model = module.model.create_model(len(self.parameters['class_names'].value))
         print(f'{datetime.now().strftime("%H:%M:%S")}: Loading weights')
         weights = self.parameters['weights'].value
         if weights:
-            loadWeights(model, filename=self.parameters['weights'].value)
+            model.load_weights(self.parameters['weights'].value)
 
         input_shape = model.layers[0].output.shape
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Compiling model')
         model.compile()
 
-        batch_size = self.parameters['batch_size'].value
-        seqlen = self.parameters['seqlen'].value
-        z_channels = [self.parameters['red_channel'].value, self.parameters['green_channel'].value,
-                      self.parameters['blue_channel'].value]
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data')
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            fov_ids = [fov.id_ for fov in [project.get_named_object('FOV', fov_name) for fov_name in fov_names]]
 
-        fov_names = [self.parameters['fov'].key]
+        fov_data, roi_list, rois = self.prepare_data_for_classification(fov_ids, z_channels)
+        num_rois = len(rois)
+
+        if len(input_shape) == 4:
+            img_size = (input_shape[1], input_shape[2])
+            roi_dataset = PredictionBatch(fov_data, roi_list, image_size=img_size, z_channels=z_channels)
+        else:
+            img_size = (input_shape[2], input_shape[3])
+            roi_dataset = PredictionBatch(fov_data, roi_list, image_size=img_size, seqlen=seqlen, z_channels=z_channels)
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Making predictions')
+
+        predictions = model.predict(roi_dataset, verbose=2)
+
+        if len(input_shape) > 4:
+            if not isinstance(predictions, tf.RaggedTensor):
+                predictions = tf.RaggedTensor.from_tensor(predictions)
+            grouped_tensors = []
+            for roi_idx in range(num_rois):
+                # Collect rows for this ROI: i, i + num_rois, i + 2*num_rois, ...
+                indices = tf.range(roi_idx, predictions.shape[0], delta=num_rois)
+                grouped_rows = tf.gather(predictions, indices)  # Gather ragged slices
+                concatenated_rows = tf.concat(grouped_rows, axis=0)  # Concatenate along the time dimension
+                grouped_tensors.append(concatenated_rows.flat_values)
+
+            # 2. Stack results into a dense tensor
+            predictions = tf.stack(grouped_tensors, axis=0).numpy()
 
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Saving run')
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Saving results')
             parameters = self.parameters.json(groups='prediction')
             run = self.save_run(project, 'predict', parameters)
-            roi_list = np.ndarray.flatten(np.array(list([fov.roi_list for fov in
-                                                         [project.get_named_object('FOV', fov_name) for
-                                                          fov_name in
-                                                          fov_names]])))
-
-            if len(input_shape) == 4:
-                img_size = (input_shape[1], input_shape[2])
-                roi_data_list = self.prepare_data(roi_list, targets=False)
-                roi_dataset = ROIDataset(roi_data_list, image_size=img_size,
-                                         batch_size=batch_size, z_channels=z_channels)
+            if len(input_shape) > 4:
+                for roi_id, prediction in zip(rois, predictions):
+                    for frame, p in enumerate(prediction):
+                        Results().save(project, run, project.get_object('ROI', roi_id), frame, p, self.class_names(as_string=False))
             else:
-                img_size = (input_shape[2], input_shape[3])
-                roi_data_list = self.prepare_data(roi_list, seqlen, targets=False)
-                roi_dataset = ROIDataset(roi_data_list, image_size=img_size,
-                                         seqlen=seqlen, batch_size=batch_size, z_channels=z_channels)
-
-            predictions = model.predict(roi_dataset)
-
-            for (prediction, data) in zip(np.squeeze(predictions), roi_data_list):
-                if len(input_shape) == 4:
-                    Results().save(project, run, data.roi, data.frame, prediction, self.class_names(as_string=False))
-                else:
-                    for i in range(seqlen):
-                        if (data.frame + i) < data.imgdata.sizeT:
-                            Results().save(project, run, data.roi, data.frame + i, prediction[i],
-                                           self.class_names(as_string=False))
+                for (roi_id, frame), p in zip(roi_list.loc[:, ['roi', 't']].to_numpy(), predictions):
+                    Results().save(project, run, project.get_object('ROI', roi_id), frame, p, self.class_names(as_string=False))
         print(f'{datetime.now().strftime("%H:%M:%S")}: predictions OK')
 
-    def save_results(self, project: Project, run: Run, roi: ROI, frame: int, class_name: str) -> None:
+    def save_annotation(self, project: Project, run: Run, roi: ROI, frame: int, class_name: str) -> None:
         """
         Saves the results in database
 
@@ -1013,7 +1561,9 @@ class Plugin(plugins.Plugin):
         :param frame: the current frame
         :param class_name: the class name
         """
-        Results().save(project, run, roi, frame, np.array([1]), [class_name])
+        if roi.sizeT > frame:
+            Results().save(project, run, roi, frame, np.array([int(class_name == c) for c in self.class_names(as_string=False)]),
+                           self.class_names(as_string=False))
 
     def run_import_classifier(self) -> None:
         """
@@ -1024,14 +1574,13 @@ class Plugin(plugins.Plugin):
         self.classifiers.clear()
         for project_name in [p for p in project_list() if p != current_project_name]:
             with pydetecdiv_project(project_name) as project:
-                run_list: list[Run] = [run for run in project.get_objects('Run') if
-                            run.command in ['train_model', 'fine_tune', 'import_classifier']]
+                run_list: list[Run] = [run for run in project.get_objects('Run') if run.command in ['train_model', 'fine_tune']]
                 for run in run_list:
                     run.parameters['project'] = project_name
                     run.parameters['run'] = run.id_
                     run.command = 'import_classifier'
                     self.classifiers.add_item(
-                        {f"{project_name}-{run.id_} {run.parameters['model']} {run.parameters['class_names']}": run})
+                            {f"{project_name}-{run.id_} {run.parameters['model']} {run.parameters['class_names']}": run})
         with pydetecdiv_project(current_project_name) as project:  # resetting global project name
             pass
         ImportClassifierDialog(self)
@@ -1049,11 +1598,11 @@ class Plugin(plugins.Plugin):
                                            run.parameters['model']))
             copy_files([os.path.join(origin_path, run.parameters['best_weights']),
                         os.path.join(origin_path, run.parameters['last_weights'])], user_path)
-            new_run = Run(project=project, **(run.record(no_id=True)))
+            _ = Run(project=project, **(run.record(no_id=True)))
 
         print(f'Classifier imported from project {run.parameters["project"]}')
 
-    def draw_annotated_rois(self):
+    def draw_annotated_rois(self) -> None:
         """
         Draw annotated ROIs as rectangles coloured according to the class
         """
@@ -1068,7 +1617,7 @@ class Plugin(plugins.Plugin):
             QColor(64, 0, 128, 64),
             QColor(128, 64, 0, 64),
             QColor(0, 64, 128, 64),
-        ]
+            ]
         rec_items = {item.data(0): item for item in PyDetecDiv.main_window.active_subwindow.viewer.scene.items() if
                      isinstance(item, QGraphicsRectItem)}
         for roi in self.get_annotated_rois():
@@ -1077,7 +1626,7 @@ class Plugin(plugins.Plugin):
                 rec_items[roi.name].setBrush(colours[annotation])
 
 
-def get_lr_metric(optimizer):
+def get_lr_metric(optimizer: tf.keras.optimizers.Optimizer) -> Callable:
     """
     Get the learning rate metric for optimizer for use during training to monitor the learning rate
 
@@ -1091,7 +1640,7 @@ def get_lr_metric(optimizer):
     return lr
 
 
-def lr_exp_decay(epoch, lr):
+def lr_exp_decay(epoch: int, lr: float) -> float:
     """
     Learning rate scheduler for exponential decay
 
@@ -1103,160 +1652,3 @@ def lr_exp_decay(epoch, lr):
     if epoch == 0:
         return lr
     return lr * math.exp(-k)
-
-
-def get_images_sequences(imgdata, roi_list, t, seqlen=None, z=None):
-    """
-    Get a sequence of seqlen images for each roi
-
-    :param imgdata: the image data resource
-    :param roi_list: the list of ROIs
-    :param t: the starting time point (index of frame)
-    :param seqlen: the number of frames
-    :return: a tensor containing the sequences for all ROIs
-    """
-    maxt = min(imgdata.sizeT, t + seqlen) if seqlen else imgdata.sizeT
-    roi_sequences = tf.stack(
-        [get_rgb_images_from_stacks(imgdata, roi_list, f, z=z) for f in range(t, maxt)],
-        axis=1)
-    if roi_sequences.shape[1] < seqlen:
-        padding_config = [[0, 0], [seqlen - roi_sequences.shape[1], 0], [0, 0], [0, 0], [0, 0]]
-        roi_sequences = tf.pad(roi_sequences, padding_config, mode='CONSTANT', constant_values=0.0)
-    # print('roi sequence', roi_sequences.shape)
-    return roi_sequences
-
-
-def get_rgb_images_from_stacks_memmap(imgdata, roi_list, t, z=None):
-    """
-    Combine 3 z-layers of a grayscale image resource into a RGB image where each of the z-layer is a channel
-
-    :param imgdata: the image data resource
-    :param roi_list: the list of ROIs
-    :param t: the frame index
-    :param z: a list of 3 z-layer indices defining the grayscale layers that must be combined as channels
-    :return: a tensor of the combined RGB images
-    """
-    if z is None:
-        z = [0, 0, 0]
-    roi_images = [
-        Image.compose_channels([Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
-                                                           sliceY=slice(roi.y, roi.y + roi.height),
-                                                           C=0, Z=z[0], T=t,
-                                                           drift=PyDetecDiv.app.apply_drift)).stretch_contrast(),
-                                Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
-                                                           sliceY=slice(roi.y, roi.y + roi.height),
-                                                           C=0, Z=z[1], T=t,
-                                                           drift=PyDetecDiv.app.apply_drift)).stretch_contrast(),
-                                Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
-                                                           sliceY=slice(roi.y, roi.y + roi.height),
-                                                           C=0, Z=z[2], T=t,
-                                                           drift=PyDetecDiv.app.apply_drift)).stretch_contrast(),
-                                ]).as_tensor(ImgDType.float32) for roi in roi_list]
-    return roi_images
-
-
-def get_rgb_images_from_stacks(imgdata, roi_list, t, z=None):
-    """
-    Combine 3 z-layers of a grayscale image resource into a RGB image where each of the z-layer is a channel
-
-    :param imgdata: the image data resource
-    :param roi_list: the list of ROIs
-    :param t: the frame index
-    :param z: a list of 3 z-layer indices defining the grayscale layers that must be combined as channels
-    :return: a tensor of the combined RGB images
-    """
-    if z is None:
-        z = [0, 0, 0]
-
-    image1 = Image(imgdata.image(T=t, Z=z[0], drift=PyDetecDiv.app.apply_drift))
-    image2 = Image(imgdata.image(T=t, Z=z[1], drift=PyDetecDiv.app.apply_drift))
-    image3 = Image(imgdata.image(T=t, Z=z[2], drift=PyDetecDiv.app.apply_drift))
-
-    roi_images = [Image.compose_channels([image1.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
-                                          image2.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
-                                          image3.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast()
-                                          ]).as_tensor(ImgDType.float32) for roi in roi_list]
-    return roi_images
-
-def loadWeights(model, filename=os.path.join(__path__[0], "weights.h5"), debug=False):
-    """
-    load the weights into the model
-
-    :param model: the model
-    :param filename: the H5 file name containing the weights
-    :param debug: debug mode
-    """
-    with h5py.File(filename, 'r') as f:
-        # try to read model weights as available in HDF5 file from Matlab export
-        try:
-            for g in f:
-                if isinstance(f[g], h5py.Group):
-                    group = f[g]
-                    layerName = group.attrs['Name']
-                    numVars = int(group.attrs['NumVars'])
-                    if debug:
-                        print("layerName:", layerName)
-                        print("    numVars:", numVars)
-                    # Find the layer index from its namevar
-                    layerIdx = layerNum(model, layerName)
-                    layer = model.layers[layerIdx]
-                    if debug:
-                        print("    layerIdx=", layerIdx)
-                    # Every weight is an h5 dataset in the layer group. Read the weights
-                    # into a list in the correct order
-                    weightList = [0] * numVars
-                    for d in group:
-                        dataset = group[d]
-                        varName = dataset.attrs['Name']
-                        shp = intList(dataset.attrs['Shape'])
-                        weightNum = int(dataset.attrs['WeightNum'])
-                        # Read the weight and put it into the right position in the list
-                        if debug:
-                            print("    varName:", varName)
-                            print("        shp:", shp)
-                            print("        weightNum:", weightNum)
-                        weightList[weightNum] = tf.constant(dataset[()], shape=shp)
-                    # Assign the weights into the layer
-                    for w in range(numVars):
-                        if debug:
-                            print("Copying variable of shape:")
-                            print(weightList[w].shape)
-                        layer.variables[w].assign(weightList[w])
-                        if debug:
-                            print("Assignment successful.")
-                            print("Set variable value:")
-                            print(layer.variables[w])
-                    # Finalize layer state
-                    if hasattr(layer, 'finalize_state'):
-                        layer.finalize_state()
-        except:
-            # otherwise, load the weights directly using Keras API
-            model.load_weights(filename)
-
-
-def layerNum(model, layerName):
-    """
-    Returns the index to the layer
-
-    :param model: the model
-    :param layerName: the name of the layer
-    :return: the index of the layer
-    """
-    layers = model.layers
-    for i in range(len(layers)):
-        if layerName == layers[i].name:
-            return i
-    print("")
-    print("WEIGHT LOADING FAILED. MODEL DOES NOT CONTAIN LAYER WITH NAME: ", layerName)
-    print("")
-    return -1
-
-
-def intList(myList: list[str]) -> list[int]:
-    """
-    Converts a list of numbers into a list of ints.
-
-    :param myList: the list to be converted
-    :return: the converted list
-    """
-    return list(map(int, myList))

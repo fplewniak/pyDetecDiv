@@ -50,6 +50,10 @@ class ROI(NamedDSO, BoxedDSO):
         self.validate()
 
     @property
+    def sizeT(self):
+        return self.fov.sizeT
+
+    @property
     def bottom_right(self):
         """
         The bottom-right corner of the ROI in the FOV

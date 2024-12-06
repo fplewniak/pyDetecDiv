@@ -15,7 +15,9 @@ def create_model(n_classes):
     conv2d_2 = keras.layers.Conv2D(16, (3, 3), activation='relu', padding='same')(dropout_1)
     max_pool_2 = keras.layers.MaxPooling2D(2, 2)(conv2d_2)
     dropout_2 = keras.layers.Dropout(0.2)(max_pool_2)
-    flatten_1 = keras.layers.Flatten()(dropout_2)
+    conv2d_3 = keras.layers.Conv2D(16, (3, 3), activation='relu', padding='same')(dropout_2)
+    max_pool_3 = keras.layers.MaxPooling2D(2, 2)(conv2d_3)
+    flatten_1 = keras.layers.Flatten()(max_pool_3)
     dense_1 = keras.layers.Dense(720, activation='relu')(flatten_1)
     dropout_3 = keras.layers.Dropout(0.2)(dense_1)
     # unfolding layer should be the same size as the output from the previous block
