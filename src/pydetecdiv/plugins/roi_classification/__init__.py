@@ -1040,7 +1040,7 @@ class Plugin(plugins.Plugin):
         return [zfiles[i] for i in [self.parameters['red_channel'].value, self.parameters['green_channel'].value,
                                     self.parameters['blue_channel'].value]]
 
-    def create_hdf5_annotated_rois(self, hdf5_file: str, z_channels: tuple[int] = None, channel: int = 0) -> None:
+    def create_hdf5_annotated_rois(self, hdf5_file: str, z_channels: list[int] = None, channel: int = 0) -> None:
         """
         Creates a HDF5 file containing the annotated ROI data and their targets
 
