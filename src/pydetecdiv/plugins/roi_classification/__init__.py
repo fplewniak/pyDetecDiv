@@ -58,7 +58,7 @@ class Results(Base):
     class_name = Column(String)
     score = Column(Float)
 
-    def save(self, project: Project, run: Run, roi: ROI, t: int, predictions: pd.DataFrame, class_names: list[str]) -> None:
+    def save(self, project: Project, run: Run, roi: ROI, t: int, predictions: np.ndarray, class_names: list[str]) -> None:
         """
         Save the results from a plugin run on a ROI at time t into the database
 
@@ -318,7 +318,7 @@ class Plugin(plugins.Plugin):
         PyDetecDiv.app.project_selected.connect(self.create_table)
         PyDetecDiv.app.viewer_roi_click.connect(self.add_context_action)
 
-    def update_parameters(self, groups: list[str] = None) -> None:
+    def update_parameters(self, groups: list[str] | str = None) -> None:
         """
         Updates parameters
 
