@@ -810,7 +810,7 @@ class Plugin(plugins.Plugin):
                 if class_id != -1:
                     Results().save(project, run, roi, t, pd.DataFrame([1]), [self.class_names(as_string=False)[class_id]])
 
-    def get_annotated_rois(self, run: Run = None, ids_only: bool = False) -> list[int] | list[ROI]:
+    def get_annotated_rois(self, run: Run = None, ids_only: bool = False) -> list[ROI] | list[int]:
         """
         Gets a list of annotated ROI frames
 
@@ -867,7 +867,7 @@ class Plugin(plugins.Plugin):
             print(f'Unannotated ROIs: {len(unannotated_roi_ids)}')
             return project.get_objects('ROI', list(unannotated_roi_ids)), project.get_objects('ROI', list(all_roi_ids))
 
-    def get_annotation(self, roi=ROI, as_index: bool = True) -> list[int] | list[str]:
+    def get_annotation(self, roi: ROI, as_index: bool = True) -> list[int] | list[str]:
         """
         Get the annotations for a ROI
 
