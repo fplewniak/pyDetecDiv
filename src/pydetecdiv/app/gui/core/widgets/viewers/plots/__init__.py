@@ -52,5 +52,5 @@ class ChartView(pg.GraphicsLayoutWidget):
         xline.setPos([x,0])
         self.chart(row, col).addItem(xline)
 
-    def clicked(self, plot, points):
+    def clicked(self, plot: pg.ScatterPlotItem, points: pg.SpotItem):
         pass
