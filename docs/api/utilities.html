@@ -1,23 +1,21 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Utilities and global classes &mdash; pyDetecDiv 0.3.0 documentation</title>
+  <title>Utilities and global classes &mdash; pyDetecDiv 0.4.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=e259d695"></script>
-        <script src="../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=6c02275b"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -36,9 +34,6 @@
           <a href="../index.html" class="icon icon-home">
             pyDetecDiv
           </a>
-              <div class="version">
-                0.3.0
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -63,10 +58,14 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#module-pydetecdiv.app">pydetecdiv.app</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.DrawingTools"><code class="docutils literal notranslate"><span class="pre">DrawingTools</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.PyDetecDiv"><code class="docutils literal notranslate"><span class="pre">PyDetecDiv</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.pydetecdiv_project"><code class="docutils literal notranslate"><span class="pre">pydetecdiv_project()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.PyDetecDivThread"><code class="docutils literal notranslate"><span class="pre">PyDetecDivThread</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.AbstractWaitDialog"><code class="docutils literal notranslate"><span class="pre">AbstractWaitDialog</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.WaitDialog"><code class="docutils literal notranslate"><span class="pre">WaitDialog</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.MessageDialog"><code class="docutils literal notranslate"><span class="pre">MessageDialog</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.StdoutWaitDialog"><code class="docutils literal notranslate"><span class="pre">StdoutWaitDialog</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.StreamRedirector"><code class="docutils literal notranslate"><span class="pre">StreamRedirector</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.get_settings"><code class="docutils literal notranslate"><span class="pre">get_settings()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.project_list"><code class="docutils literal notranslate"><span class="pre">project_list()</span></code></a></li>
 </ul>
@@ -78,6 +77,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.settings.get_config_value"><code class="docutils literal notranslate"><span class="pre">get_config_value()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.settings.get_appdata_dir"><code class="docutils literal notranslate"><span class="pre">get_appdata_dir()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.settings.get_plugins_dir"><code class="docutils literal notranslate"><span class="pre">get_plugins_dir()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.settings.get_default_workspace_dir"><code class="docutils literal notranslate"><span class="pre">get_default_workspace_dir()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#module-pydetecdiv.utils">pydetecdiv.utils</a><ul>
@@ -209,6 +209,18 @@
 <dd><p>Enumeration of available drawing tools</p>
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.app.PyDetecDiv">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">PyDetecDiv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.PyDetecDiv" title="Link to this definition"></a></dt>
+<dd><p>PyDetecDiv application class extending QApplication to keep track of the current project and main window</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.PyDetecDiv.load_plugins">
+<span class="sig-name descname"><span class="pre">load_plugins</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.PyDetecDiv.load_plugins" title="Link to this definition"></a></dt>
+<dd><p>Load the available plugins</p>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="pydetecdiv.app.pydetecdiv_project">
 <span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">pydetecdiv_project</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.pydetecdiv_project" title="Link to this definition"></a></dt>
@@ -248,6 +260,65 @@
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.app.AbstractWaitDialog">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">AbstractWaitDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancel_msg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_close_event</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.AbstractWaitDialog" title="Link to this definition"></a></dt>
+<dd><p>Generic dialog box asking the user to wait for a thread to be finished. This box closes automatically when the
+thread is complete and the parent window is hidden as well if it is specified. This should be used for processes
+that do not last too long and that might generate inconsistency if cancelled as there is no possibility to interrupt
+it</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.AbstractWaitDialog.wait_for">
+<span class="sig-name descname"><span class="pre">wait_for</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.AbstractWaitDialog.wait_for" title="Link to this definition"></a></dt>
+<dd><p>Run function in separate thread and launch local event loop to handle progress bar and cancellation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>func</strong> – the function to run</p></li>
+<li><p><strong>args</strong> – positional arguments for the function</p></li>
+<li><p><strong>kwargs</strong> – keyword arguments for the function</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.AbstractWaitDialog.close_window">
+<span class="sig-name descname"><span class="pre">close_window</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.AbstractWaitDialog.close_window" title="Link to this definition"></a></dt>
+<dd><p>Hide and destroy the Wait dialog window. The cursor is also set back to its normal aspect.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.AbstractWaitDialog.cancel">
+<span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.AbstractWaitDialog.cancel" title="Link to this definition"></a></dt>
+<dd><p>Set cancelling message and request for interruption of thread so that the running job can cleanly close
+processes and roll back any modification if needed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.AbstractWaitDialog.set_ignore_close_event">
+<span class="sig-name descname"><span class="pre">set_ignore_close_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ignore_close_event</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.AbstractWaitDialog.set_ignore_close_event" title="Link to this definition"></a></dt>
+<dd><p>Set the _ignore_close_event flag to prevent or allow closing the window</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ignore_close_event</strong> (<em>bool</em>) – value to set the flag to</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.AbstractWaitDialog.closeEvent">
+<span class="sig-name descname"><span class="pre">closeEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.AbstractWaitDialog.closeEvent" title="Link to this definition"></a></dt>
+<dd><p>Cancel the job if the window is closed unless close event is ignored by request.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> – close event</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.app.WaitDialog">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">WaitDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancel_msg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_close_event</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.WaitDialog" title="Link to this definition"></a></dt>
 <dd><p>Generic dialog box asking the user to wait for a thread to be finished. This box closes automatically when the
@@ -266,53 +337,10 @@ it</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.app.WaitDialog.wait_for">
-<span class="sig-name descname"><span class="pre">wait_for</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.WaitDialog.wait_for" title="Link to this definition"></a></dt>
-<dd><p>Run function in separate thread and launch local event loop to handle progress bar and cancellation</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>func</strong> – the function to run</p></li>
-<li><p><strong>args</strong> – positional arguments for the function</p></li>
-<li><p><strong>kwargs</strong> – keyword arguments for the function</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.app.WaitDialog.close_window">
-<span class="sig-name descname"><span class="pre">close_window</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.WaitDialog.close_window" title="Link to this definition"></a></dt>
-<dd><p>Hide and destroy the Wait dialog window. The cursor is also set back to its normal aspect.</p>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.WaitDialog.cancel">
 <span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.WaitDialog.cancel" title="Link to this definition"></a></dt>
 <dd><p>Set cancelling message and request for interruption of thread so that the running job can cleanly close
 processes and roll back any modification if needed.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.app.WaitDialog.set_ignore_close_event">
-<span class="sig-name descname"><span class="pre">set_ignore_close_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ignore_close_event</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.WaitDialog.set_ignore_close_event" title="Link to this definition"></a></dt>
-<dd><p>Set the _ignore_close_event flag to prevent or allow closing the window</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ignore_close_event</strong> (<em>bool</em>) – value to set the flag to</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.app.WaitDialog.closeEvent">
-<span class="sig-name descname"><span class="pre">closeEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.WaitDialog.closeEvent" title="Link to this definition"></a></dt>
-<dd><p>Cancel the job if the window is closed unless close event is ignored by request.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>event</strong> – close event</p>
-</dd>
-</dl>
 </dd></dl>
 
 </dd></dl>
@@ -321,6 +349,30 @@ processes and roll back any modification if needed.</p>
 <dt class="sig sig-object py" id="pydetecdiv.app.MessageDialog">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">MessageDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.MessageDialog" title="Link to this definition"></a></dt>
 <dd><p>Generic dialog to communicate a message to the user (error, warning or any other information)</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.app.StdoutWaitDialog">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">StdoutWaitDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancel_msg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_close_event</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.StdoutWaitDialog" title="Link to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.StdoutWaitDialog.cancel">
+<span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.StdoutWaitDialog.cancel" title="Link to this definition"></a></dt>
+<dd><p>Set cancelling message and request for interruption of thread so that the running job can cleanly close
+processes and roll back any modification if needed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.StdoutWaitDialog.close_window">
+<span class="sig-name descname"><span class="pre">close_window</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.StdoutWaitDialog.close_window" title="Link to this definition"></a></dt>
+<dd><p>Hide and destroy the Wait dialog window. The cursor is also set back to its normal aspect.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.app.StreamRedirector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">StreamRedirector</span></span><a class="headerlink" href="#pydetecdiv.app.StreamRedirector" title="Link to this definition"></a></dt>
+<dd><p>Custom stream redirector to emit stdout/stderr output.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -428,6 +480,21 @@ saving the configuration.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>the user plugin path</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Path</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pydetecdiv.settings.get_default_workspace_dir">
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">get_default_workspace_dir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.settings.get_default_workspace_dir" title="Link to this definition"></a></dt>
+<dd><p>Get the user workspace directory. The default directory is not created if it does not exist to avoid confusion. It is up to the
+user to make sure the directory exists or select an existing directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the user workspace path</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>Path</p>
