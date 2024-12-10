@@ -19,7 +19,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Utilities and global classes" href="utilities.html" />
+    <link rel="next" title="Utilities and global classes" href="utilities/index.html" />
     <link rel="prev" title="Getting started" href="../getting_started.html" /> 
 </head>
 
@@ -49,11 +49,11 @@
 <p class="caption" role="heading"><span class="caption-text">Developers' documentation</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">The pyDetecDiv API reference</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="utilities.html">Utilities and global classes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="domain.html">Domain layer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="persistence.html">Persistence layer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gui.html">Graphical user interface</a></li>
-<li class="toctree-l2"><a class="reference internal" href="plugins.html">Plugins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utilities/index.html">Utilities and global classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="domain/index.html">Domain layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence/index.html">Persistence layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/index.html">GUI layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/index.html">Plugins</a></li>
 </ul>
 </li>
 </ul>
@@ -74,7 +74,6 @@
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
       <li class="breadcrumb-item active">The pyDetecDiv API reference</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/api/index.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -85,54 +84,40 @@
   <section id="the-pydetecdiv-api-reference">
 <h1>The pyDetecDiv API reference<a class="headerlink" href="#the-pydetecdiv-api-reference" title="Link to this heading"></a></h1>
 <div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">Modules</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="utilities.html">Utilities and global classes</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="utilities.html#module-pydetecdiv">pydetecdiv</a></li>
-<li class="toctree-l2"><a class="reference internal" href="utilities.html#module-pydetecdiv.app">pydetecdiv.app</a></li>
-<li class="toctree-l2"><a class="reference internal" href="utilities.html#module-pydetecdiv.settings">pydetecdiv.settings</a></li>
-<li class="toctree-l2"><a class="reference internal" href="utilities.html#module-pydetecdiv.utils">pydetecdiv.utils</a></li>
-<li class="toctree-l2"><a class="reference internal" href="utilities.html#module-pydetecdiv.utils.path">pydetecdiv.utils.path</a></li>
-<li class="toctree-l2"><a class="reference internal" href="utilities.html#module-pydetecdiv.utils.ImageResource">pydetecdiv.utils.ImageResource</a></li>
-<li class="toctree-l2"><a class="reference internal" href="utilities.html#module-pydetecdiv.utils.Shapes">pydetecdiv.utils.Shapes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="utilities.html#module-pydetecdiv.exceptions">pydetecdiv.exceptions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utilities/index.html">Utilities and global classes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="utilities/global.html">Global functions and classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utilities/settings.html">Settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utilities/utilities.html">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utilities/exceptions.html">Exceptions</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="domain.html">Domain layer</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="domain.html#module-pydetecdiv.domain.dso">pydetecdiv.domain.dso</a></li>
-<li class="toctree-l2"><a class="reference internal" href="domain.html#domain-specific-classes">Domain-specific classes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="domain.html#module-pydetecdiv.domain.parameters">Parameters classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="domain/index.html">Domain layer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="domain/dso_common.html">pydetecdiv.domain.dso</a></li>
+<li class="toctree-l2"><a class="reference internal" href="domain/dso_classes.html">Domain-specific objects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="domain/image_data.html">Image data manipulation</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="persistence.html">Persistence layer</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="persistence.html#module-pydetecdiv.persistence.project">pydetecdiv.persistence.project</a></li>
-<li class="toctree-l2"><a class="reference internal" href="persistence.html#module-pydetecdiv.persistence.repository">pydetecdiv.persistence.repository</a></li>
-<li class="toctree-l2"><a class="reference internal" href="persistence.html#module-pydetecdiv.persistence.sqlalchemy.repositories">pydetecdiv.persistence.sqlalchemy</a></li>
-<li class="toctree-l2"><a class="reference internal" href="persistence.html#module-pydetecdiv.persistence.sqlalchemy.orm.main">pydetecdiv.persistence.sqlalchemy.orm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="persistence/index.html">Persistence layer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="persistence/project.html">pydetecdiv.persistence.project</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence/repositories.html">pydetecdiv.persistence.repository</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence/repositories.html#module-pydetecdiv.persistence.sqlalchemy.repositories">pydetecdiv.persistence.sqlalchemy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="persistence/sqlalchemy.html">pydetecdiv.persistence.sqlalchemy.orm</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="gui.html">Graphical user interface</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="gui.html#module-pydetecdiv.app.gui">pydetecdiv.app.gui</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gui.html#module-pydetecdiv.app.gui.Windows">pydetecdiv.app.gui.Windows</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gui.html#module-pydetecdiv.app.gui.core.widgets.TabWidgets">pydetecdiv.app.gui.core.widgets.TabWidgets</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gui.html#module-pydetecdiv.app.gui.core.widgets.viewers">pydetecdiv.app.gui.core.widgets.viewers</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gui.html#module-pydetecdiv.app.gui.Toolbox">pydetecdiv.app.gui.Toolbox</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gui.html#module-pydetecdiv.app.gui.Trees">pydetecdiv.app.gui.Trees</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gui.html#module-pydetecdiv.app.gui.ActionsSettings">pydetecdiv.app.gui.ActionsSettings</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gui.html#module-pydetecdiv.app.gui.ActionsProject">pydetecdiv.app.gui.ActionsProject</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gui.html#pydetecdiv-app-gui-actionsdata">pydetecdiv.app.gui.ActionsData</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gui.html#module-pydetecdiv.app.gui.RawData2FOV">pydetecdiv.app.gui.RawData2FOV</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gui.html#module-pydetecdiv.app.gui.parameters">pydetecdiv.app.gui.parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gui/index.html">GUI layer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gui/core.html">Core widgets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/gui.html">pydetecdiv.app.gui</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/gui.html#module-pydetecdiv.app.gui.Windows">pydetecdiv.app.gui.Windows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/gui.html#module-pydetecdiv.app.gui.ActionsSettings">pydetecdiv.app.gui.ActionsSettings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/gui.html#module-pydetecdiv.app.gui.ActionsProject">pydetecdiv.app.gui.ActionsProject</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/gui.html#pydetecdiv-app-gui-actionsdata">pydetecdiv.app.gui.ActionsData</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui/gui.html#module-pydetecdiv.app.gui.RawData2FOV">pydetecdiv.app.gui.RawData2FOV</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="plugins.html">Plugins</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="plugins.html#module-pydetecdiv.plugins">pydetecdiv.plugins</a></li>
-<li class="toctree-l2"><a class="reference internal" href="plugins.html#module-pydetecdiv.plugins.gui">pydetecdiv.plugins.gui</a></li>
-<li class="toctree-l2"><a class="reference internal" href="plugins.html#module-pydetecdiv.plugins.roi_classification">pydetecdiv.plugins.roi_classification</a></li>
-<li class="toctree-l2"><a class="reference internal" href="plugins.html#module-pydetecdiv.plugins.roi_classification.gui.classification">pydetecdiv.plugins.roi_classification.gui.classification</a></li>
-<li class="toctree-l2"><a class="reference internal" href="plugins.html#module-pydetecdiv.plugins.roi_classification.gui.ImportAnnotatedROIs">pydetecdiv.plugins.roi_classification.gui.ImportAnnotatedROIs</a></li>
-<li class="toctree-l2"><a class="reference internal" href="plugins.html#module-pydetecdiv.plugins.roi_classification.gui.training">pydetecdiv.plugins.roi_classification.gui.training</a></li>
-<li class="toctree-l2"><a class="reference internal" href="plugins.html#module-pydetecdiv.plugins.roi_classification.gui.prediction">pydetecdiv.plugins.roi_classification.gui.prediction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plugins/index.html">Plugins</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="plugins/plugins.html">Plugins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins/roi_classification/index.html">ROI classification</a></li>
 </ul>
 </li>
 </ul>
@@ -144,7 +129,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="../getting_started.html" class="btn btn-neutral float-left" title="Getting started" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="utilities.html" class="btn btn-neutral float-right" title="Utilities and global classes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="utilities/index.html" class="btn btn-neutral float-right" title="Utilities and global classes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

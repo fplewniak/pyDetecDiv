@@ -1,30 +1,17 @@
-Utilities and global classes
-----------------------------
-
-pydetecdiv
-''''''''''
-.. automodule:: pydetecdiv
-   :members:
-
-pydetecdiv.app
-''''''''''''''
-.. automodule:: pydetecdiv.app
-   :members:
-
-pydetecdiv.settings
-'''''''''''''''''''
-.. automodule:: pydetecdiv.settings
-   :members:
+Utilities
+---------
 
 pydetecdiv.utils
 ''''''''''''''''
 .. automodule:: pydetecdiv.utils
    :members:
+   :show-inheritance:
 
 pydetecdiv.utils.path
 '''''''''''''''''''''
 .. automodule:: pydetecdiv.utils.path
    :members:
+   :show-inheritance:
 
 pydetecdiv.utils.ImageResource
 ''''''''''''''''''''''''''''''
@@ -35,11 +22,5 @@ pydetecdiv.utils.ImageResource
 pydetecdiv.utils.Shapes
 '''''''''''''''''''''''
 .. automodule:: pydetecdiv.utils.Shapes
-   :members:
-   :show-inheritance:
-
-pydetecdiv.exceptions
-'''''''''''''''''''''
-.. automodule:: pydetecdiv.exceptions
    :members:
    :show-inheritance:
