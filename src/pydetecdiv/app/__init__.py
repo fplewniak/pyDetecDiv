@@ -41,7 +41,7 @@ class PyDetecDiv(QApplication):
     saved_rois = Signal(str)
     viewer_roi_click = Signal(tuple)
 
-    version = '0.4.0'
+    version = '0.5.0'
     project_name = None
     main_window = None
     current_drawing_tool = None
