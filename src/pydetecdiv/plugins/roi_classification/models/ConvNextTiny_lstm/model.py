@@ -6,7 +6,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
-def create_model():
+def create_model(n_classes=6):
     convnext = keras.applications.ConvNeXtTiny(input_shape=(60,60,3), weights='imagenet', include_top=False)
 
     input = keras.Input(shape=(None,60,60,3))
@@ -24,7 +24,7 @@ def create_model():
                                               return_sequences=True, return_state=False),
                                   name="bilstm_")(flatten_bilstm_input)
     drop = layers.Dropout(0.500000)(bilstm)
-    fc = layers.Dense(6, name="fc_")(drop)
+    fc = layers.Dense(n_classes, name="fc_")(drop)
     softmax = layers.Softmax()(fc)
     classification = softmax
 

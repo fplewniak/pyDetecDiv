@@ -10,7 +10,7 @@ from pydetecdiv.app.gui.parameters import ParameterWidgetFactory
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, WaitDialog
 from pydetecdiv.app.gui.Trees import TreeDictModel, TreeItem
-from pydetecdiv.domain.Run import Run
+from pydetecdiv.domain import Run
 from pydetecdiv.domain.CommandLineTool import list_tools
 
 
@@ -101,7 +101,7 @@ class ToolForm(QDialog):
         """
         Run the job within the context of the currently open project
         """
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
             job = Run(self.tool, project=project)
             if testing:
                 job.test()

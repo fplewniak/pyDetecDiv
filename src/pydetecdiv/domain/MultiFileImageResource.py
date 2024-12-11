@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from tifffile import tifffile
 import cv2
-from pydetecdiv.domain.ImageResourceData import ImageResourceData
+from pydetecdiv.domain import ImageResourceData
 
 
 def aics_indexer(path, pattern):
@@ -40,6 +40,7 @@ class MultiFileImageResource(ImageResourceData):
         self.max_mem = max_mem
         self._shape = image_resource.shape
         self._dims = image_resource.dims
+        self._drift = image_resource.drift
 
         # print(f'Multiple file image resource: {self.dims}')
 
@@ -93,7 +94,7 @@ class MultiFileImageResource(ImageResourceData):
         """
         return self._dims.X
 
-    def _image(self, C=0, Z=0, T=0, drift=None):
+    def _image(self, C=0, Z=0, T=0, drift=False):
         """
         A 2D grayscale image (on frame, one channel and one layer)
 
@@ -103,37 +104,37 @@ class MultiFileImageResource(ImageResourceData):
         :type Z: int
         :param T: the frame index
         :type T: int
+        :param drift: True if the drift correction should be applied
+        :type drift: bool
         :return: a 2D data array
         :rtype: 2D numpy.array
         """
         if self.image_files[T, C, Z]:
             data = tifffile.imread(self.image_files[T, C, Z])
-            if drift is not None:
+            if drift and self.drift is not None:
                 data = cv2.warpAffine(np.array(data),
                                       np.float32(
-                                          [[1, 0, -drift.dx],
-                                           [0, 1, -drift.dy]]),
+                                          [[1, 0, -self.drift.iloc[T].dx],
+                                           [0, 1, -self.drift.iloc[T].dy]]),
                                       (data.shape[1], data.shape[0]))
             data = tf.image.convert_image_dtype(data, dtype=tf.uint16, saturate=False).numpy()
             return data
         return np.zeros((self.sizeY, self.sizeX), np.uint16)
-        # return None
 
-    def _image_memmap(self,  sliceX=None, sliceY=None, C=0, Z=0, T=0, drift=None):
+    def _image_memmap(self, sliceX=None, sliceY=None, C=0, Z=0, T=0, drift=False):
         if sliceX is None:
             sliceX = slice(0, self.sizeX)
         if sliceY is None:
             sliceY = slice(0, self.sizeX)
-        deltaX = 0 if drift is None else drift.dx
-        deltaY = 0 if drift is None else drift.dy
+        deltaX = 0 if not drift or self.drift is None else int(round(self.drift.iloc[T].dx))
+        deltaY = 0 if not drift or self.drift is None else int(round(self.drift.iloc[T].dy))
 
-        sliceX = slice(sliceX.start - deltaX, sliceX.stop - deltaX)
-        sliceY = slice(sliceY.start - deltaY, sliceY.stop - deltaY)
+        sliceX = slice(sliceX.start + deltaX, sliceX.stop + deltaX)
+        sliceY = slice(sliceY.start + deltaY, sliceY.stop + deltaY)
 
         if self.image_files[T, C, Z]:
             return tifffile.memmap(self.image_files[T, C, Z])[sliceY, sliceX]
         return np.zeros((sliceY.stop - sliceY.start, sliceX.stop - sliceX.start), np.uint16)
-
 
     def data_sample(self, X=None, Y=None):
         """

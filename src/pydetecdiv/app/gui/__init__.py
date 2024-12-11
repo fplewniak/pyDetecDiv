@@ -9,7 +9,7 @@ from PySide6.QtCore import QTimer, QRect
 from PySide6.QtGui import QAction, QIcon, QFont
 from PySide6.QtWidgets import QToolBar, QStatusBar, QMenu, QApplication, QDialog, QDialogButtonBox, QSizePolicy, QLabel
 
-from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
+from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui import ActionsSettings, ActionsProject, ActionsData
 import pydetecdiv.app.gui.resources_rc
 
@@ -39,26 +39,33 @@ class DataMenu(QMenu):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(*args, **kwargs)
         menu = parent.menuBar().addMenu("Data")
+        import_metadata = ActionsData.ImportMetaData(menu)
+        import_metadata.setShortcut("Ctrl+M")
         import_data = ActionsData.ImportData(menu)
         import_data.setShortcut("Ctrl+I")
         create_fovs = ActionsData.CreateFOV(menu)
-        create_fovs.setShortcut("Ctrl+Alt+F")
-        PyDetecDiv().project_selected.connect(lambda e: import_data.setEnabled(True))
-        PyDetecDiv().raw_data_counted.connect(create_fovs.enable)
-
+        create_fovs.setShortcut("Ctrl+Alt+I")
+        compute_drift = ActionsData.ComputeDrift(menu)
+        apply_drift = ActionsData.ApplyDrift(menu)
+        PyDetecDiv.app.project_selected.connect(lambda e: import_data.setEnabled(True))
+        PyDetecDiv.app.project_selected.connect(lambda e: import_metadata.setEnabled(True))
+        PyDetecDiv.app.raw_data_counted.connect(create_fovs.enable)
+        PyDetecDiv.app.project_selected.connect(compute_drift.enable)
+        PyDetecDiv.app.project_selected.connect(apply_drift.enable)
+        apply_drift.triggered.connect(lambda b: PyDetecDiv.app.set_apply_drift(b))
 
 class PluginMenu(QMenu):
     """
     Plugin menus
     """
     def __init__(self, parent, *args, **kwargs):
-        if PyDetecDiv().plugin_list.len:
+        if PyDetecDiv.app.plugin_list.len:
             super().__init__(*args, **kwargs)
             menu = {}
-            for category in PyDetecDiv().plugin_list.categories:
+            for category in PyDetecDiv.app.plugin_list.categories:
                 if category not in menu:
                     menu[category] = parent.menuBar().addMenu(category)
-            for plugin in PyDetecDiv().plugin_list.plugins:
+            for plugin in PyDetecDiv.app.plugin_list.plugins:
                 plugin.addActions(menu[plugin.category])
 
 
@@ -156,7 +163,7 @@ class Help(QAction):
         label_5 = QLabel(about_dialog)
         label_5.setGeometry(QRect(130, 190, 131, 16))
         label.setText('pyDetecDiv')
-        label_2.setText('version 0.3.1')
+        label_2.setText(f'version {PyDetecDiv.version}')
         label_3.setText('CeCILL FREE SOFTWARE LICENSE AGREEMENT v2.1 (2013-06-21)')
         label_4.setText('https://github.com/fplewniak/pyDetecDiv')
         label_5.setText('f.plewniak@unistra.fr')

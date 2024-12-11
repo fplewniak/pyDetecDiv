@@ -6,7 +6,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
-def create_model():
+def create_model(n_classes):
     input = keras.Input(shape=(None,60,60,3))
     fold_out, fold_miniBatchSize = SequenceFoldingLayer((60,60,3))(input)
     conv2d_1 = keras.layers.Conv2D(8, (3, 3), activation='relu', padding='same')(fold_out)
@@ -15,7 +15,9 @@ def create_model():
     conv2d_2 = keras.layers.Conv2D(16, (3, 3), activation='relu', padding='same')(dropout_1)
     max_pool_2 = keras.layers.MaxPooling2D(2, 2)(conv2d_2)
     dropout_2 = keras.layers.Dropout(0.2)(max_pool_2)
-    flatten_1 = keras.layers.Flatten()(dropout_2)
+    conv2d_3 = keras.layers.Conv2D(16, (3, 3), activation='relu', padding='same')(dropout_2)
+    max_pool_3 = keras.layers.MaxPooling2D(2, 2)(conv2d_3)
+    flatten_1 = keras.layers.Flatten()(max_pool_3)
     dense_1 = keras.layers.Dense(720, activation='relu')(flatten_1)
     dropout_3 = keras.layers.Dropout(0.2)(dense_1)
     # unfolding layer should be the same size as the output from the previous block
@@ -25,7 +27,7 @@ def create_model():
     flatten_bilstm_input = flatten
     bilstm = layers.Bidirectional(layers.LSTM(150, activation='tanh', recurrent_activation='sigmoid', return_sequences=True, return_state=False), name="bilstm_")(flatten_bilstm_input)
     drop = layers.Dropout(0.500000)(bilstm)
-    fc = layers.Dense(6, name="fc_")(drop)
+    fc = layers.Dense(n_classes, name="fc_")(drop)
     softmax = layers.Softmax()(fc)
     classification = softmax
 

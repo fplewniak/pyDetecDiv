@@ -5,7 +5,7 @@
 """
 from pydetecdiv.exceptions import JuttingError
 from pydetecdiv.domain.dso import NamedDSO, BoxedDSO
-from pydetecdiv.domain.FOV import FOV
+from pydetecdiv.domain import FOV
 
 
 class ROI(NamedDSO, BoxedDSO):
@@ -13,9 +13,10 @@ class ROI(NamedDSO, BoxedDSO):
     A business-logic class defining valid operations and attributes of Regions of interest (ROI)
     """
 
-    def __init__(self, fov=None, **kwargs):
+    def __init__(self, fov=None, key_val=None,**kwargs):
         super().__init__(**kwargs)
         self._fov = fov.id_ if isinstance(fov, FOV) else fov
+        self.key_val = key_val
         self.validate(updated=False)
 
     def delete(self):
@@ -49,6 +50,10 @@ class ROI(NamedDSO, BoxedDSO):
         self.validate()
 
     @property
+    def sizeT(self):
+        return self.fov.sizeT
+
+    @property
     def bottom_right(self):
         """
         The bottom-right corner of the ROI in the FOV
@@ -80,7 +85,8 @@ class ROI(NamedDSO, BoxedDSO):
             'top_left': self.top_left,
             'bottom_right': self.bottom_right,
             'size': self.size,
-            'uuid': self.uuid
+            'uuid': self.uuid,
+            'key_val': self.key_val,
         }
         if not no_id:
             record['id_'] = self.id_

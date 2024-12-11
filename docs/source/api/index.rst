@@ -3,10 +3,9 @@ The pyDetecDiv API reference
 
 .. toctree::
    :maxdepth: 2
-   :caption: Modules
 
-   utilities.rst
-   domain.rst
-   persistence.rst
-   gui.rst
-   plugins.rst
+   utilities/index.rst
+   domain/index.rst
+   persistence/index.rst
+   gui/index.rst
+   plugins/index.rst

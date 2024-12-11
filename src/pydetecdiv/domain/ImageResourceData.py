@@ -3,11 +3,15 @@
 """
  Class to manipulate Image resources: loading data from files, etc
 """
+import os
+
 import numpy as np
 import pandas as pd
 import cv2 as cv
 from vidstab import VidStab
 import abc
+
+from pydetecdiv.settings import get_config_value
 
 
 class ImageResourceData(abc.ABC):
@@ -15,6 +19,18 @@ class ImageResourceData(abc.ABC):
     An abstract class to access image resources (files) on disk without having to load whole time series into memory
     """
     image_resource = None
+    fov = None
+    _drift = None
+
+    @property
+    def drift(self):
+        if self._drift is None:
+            self._drift = self.fov.project.get_object('ImageResource', self.image_resource, use_pool=False).drift
+        return self._drift
+
+    @property
+    def drift_method(self):
+        return self.fov.image_resource().drift_method
 
     @property
     @abc.abstractmethod
@@ -80,10 +96,14 @@ class ImageResourceData(abc.ABC):
         :rtype: 2D numpy.array
         """
 
-    def image(self, sliceX=None, sliceY=None, **kwargs):
+    def image(self, sliceX=None, sliceY=None, C=0, **kwargs):
+        if C is None:
+            if sliceX and sliceY:
+                return np.zeros((self.sizeY, self.sizeX), np.uint16)[sliceY, sliceX]
+            return np.zeros((self.sizeY, self.sizeX), np.uint16)
         if sliceX and sliceY:
-            return self._image(**kwargs)[sliceY, sliceX]
-        return self._image(**kwargs)
+            return self._image(C=C, **kwargs)[sliceY, sliceX]
+        return self._image(C=C, **kwargs)
 
     @abc.abstractmethod
     def _image_memmap(self, sliceX=None, sliceY=None, C=0, Z=0, T=0, drift=None):
@@ -103,7 +123,7 @@ class ImageResourceData(abc.ABC):
     def image_memmap(self, sliceX=None, sliceY=None, **kwargs):
         if sliceX and sliceY:
             return self._image_memmap(sliceX=sliceX, sliceY=sliceY, **kwargs)
-        return self._image(**kwargs)
+        return self._image_memmap(**kwargs)
 
     @abc.abstractmethod
     def data_sample(self, X=None, Y=None):
@@ -152,11 +172,24 @@ class ImageResourceData(abc.ABC):
         """
         match (method):
             case 'phase correlation':
-                return self.compute_drift_phase_correlation_cv2(**kwargs)
+                drift = pd.concat([pd.DataFrame([[0,0]],columns=['dx', 'dy']),
+                                  self.compute_drift_phase_correlation_cv2(**kwargs)], ignore_index=True)
             case 'vidstab':
-                return self.compute_drift_vidstab(**kwargs)
+                drift = pd.concat([pd.DataFrame([[0,0]],columns=['dx', 'dy']),
+                                  self.compute_drift_vidstab(**kwargs)], ignore_index=True)
             case _:
-                return pd.DataFrame([[0, 0]] * self.sizeT, columns=['dy', 'dx'])
+                drift = pd.DataFrame([[0, 0]] * self.sizeT, columns=['dx', 'dy'])
+        image_resource = self.fov.image_resource()
+        if image_resource.key_val is None:
+            image_resource.key_val = {}
+        drift_file = f'{self.fov.name}_drift_data.csv'
+        drift_path = os.path.join(get_config_value('project', 'workspace'),
+                                  self.fov.project.dbname, drift_file)
+        drift.to_csv(drift_path, float_format='%.3f', columns=['dx', 'dy'], index=False)
+        image_resource.key_val.update({'drift': drift_file, 'drift method': method})
+        image_resource.validate()
+        image_resource.project.commit()
+        return drift
 
     def compute_drift_phase_correlation_cv2(self, Z=0, C=0, thread=None):
         """
@@ -180,7 +213,7 @@ class ImageResourceData(abc.ABC):
                 return None
         return df.cumsum(axis=0)
 
-    def compute_drift_vidstab(self, Z=0, C=0, thread=None):
+    def compute_drift_vidstab(self, Z=0, C=0, thread=None, smoothing_window=1):
         """
         Compute the cumulative transforms (dx, dy, dr) to apply in order to stabilize the time series and correct drift
 
@@ -196,11 +229,11 @@ class ImageResourceData(abc.ABC):
         stabilizer = VidStab()
         for frame in range(0, self.sizeT):
             _ = stabilizer.stabilize_frame(
-                input_frame=np.uint8(np.array(self.image(T=frame, Z=Z, C=C)) / 65535 * 255), smoothing_window=1)
+                input_frame=np.uint8(np.array(self.image(T=frame, Z=Z, C=C)) / 65535 * 255), smoothing_window=smoothing_window)
             self.refresh()
             if thread and thread.isInterruptionRequested():
                 return None
-        return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)
+        return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)[['dx', 'dy']]
 
     def refresh(self):
         pass

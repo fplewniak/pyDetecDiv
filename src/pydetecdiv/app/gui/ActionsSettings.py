@@ -18,7 +18,7 @@ class SettingsDialog(QDialog):
     """
 
     def __init__(self):
-        super().__init__(PyDetecDiv().main_window)
+        super().__init__(PyDetecDiv.main_window)
         self.setWindowModality(Qt.WindowModal)
         self.setObjectName('Settings')
         self.setWindowTitle('Settings')

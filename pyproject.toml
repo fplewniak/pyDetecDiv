@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pydetecdiv"
-version = "0.3.1"
+version = "0.4.0"
 description = "Python tools for DetecDiv (https://github.com/gcharvin/DetecDiv/)"
 license = {text = "CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21"}
 authors = [{name = "Frédéric PLEWNIAK", email = "f.plewniak@unistra.fr"}]
@@ -20,9 +20,10 @@ classifiers=[
         "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 
-requires-python = ">=3.10.0"
+requires-python = ">=3.10.0, <3.12"
 dependencies = [
     "aicsimageio",
+    "fastremap",
     "h5py",
     "keras==2.15.0",
     "matplotlib",
@@ -33,12 +34,15 @@ dependencies = [
     "psutil",
     #"pylibjpeg",
     #"pylibjpeg-libjpeg",
+    "pyqtgraph",
     "pyside6",
     "pyxdg",
     "qimage2ndarray>=1.9.0",
     "scikit-image",
     #"scipy",
+    "scikit-learn",
     "sqlalchemy<2.0",
+    "tables",
     "tifffile",
     "tensorflow==2.15.0",
     "vidstab",

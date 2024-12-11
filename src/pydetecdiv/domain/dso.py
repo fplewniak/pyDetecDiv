@@ -71,6 +71,10 @@ class DomainSpecificObject:
         self.check_validity()
         if updated or self.id_ is None:
             self.id_ = self.project.save(self)
+        return self
+
+    def commit(self):
+        self.project.commit()
 
     def record(self, no_id=False):
         """

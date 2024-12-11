@@ -8,9 +8,9 @@ import sys
 from PySide6.QtGui import QAction
 
 import pydetecdiv
+from pydetecdiv.plugins.parameters import Parameters
 from pydetecdiv.settings import get_plugins_dir
-from pydetecdiv.domain.Run import Run
-from pydetecdiv.plugins.gui import Parameters, Dialog
+from pydetecdiv.domain import Run
 
 
 class Plugin:
@@ -25,7 +25,18 @@ class Plugin:
 
     def __init__(self):
         self.gui = None
-        self.parameters = Parameters()
+        self.parameters = Parameters([])
+        self.run = None
+
+    def update_parameters(self, groups=None):
+        self.parameters.update(groups)
+        self.parameters.reset(groups)
+
+    def register(self):
+        """
+        Abstract method to register the plugin. This method should be implemented by all plugins for them to work.
+        """
+        raise NotImplementedError
 
     def addActions(self, menu):
         """
@@ -53,8 +64,8 @@ class Plugin:
 
         :return: None or the parent plugin
         """
-        if self.parent in pydetecdiv.app.PyDetecDiv().plugin_list.plugins_dict:
-            return pydetecdiv.app.PyDetecDiv().plugin_list.plugins_dict[self.parent]
+        if self.parent in pydetecdiv.app.PyDetecDiv.plugin_list.plugins_dict:
+            return pydetecdiv.app.PyDetecDiv.plugin_list.plugins_dict[self.parent]
         return None
 
     def save_run(self, project, method, parameters):
@@ -74,21 +85,9 @@ class Plugin:
             'parameters': parameters,
             # 'uuid': self.uuid
         }
-        run = Run(project=project, **record)
+        self.run = Run(project=project, **record)
         # project.commit()
-        return run
-
-# def get_plugins_dir():
-#     """
-# Get the user directory where plugins are installed. The directory is created if it does not exist
-# :return: the user plugin path
-# :rtype: Path
-# """
-#     plugins_path = os.path.join(pydetecdiv.app.get_appdata_dir(), 'plugins')
-#     if not os.path.exists(plugins_path):
-#         os.mkdir(plugins_path)
-#     return [plugins_path]
-#     # return [pydetecdiv.plugins.__path__[0], plugins_path]
+        return self.run
 
 
 class PluginList:
@@ -125,8 +124,9 @@ class PluginList:
         :param name: the module name
         :return: the plugin module
         """
-        loader = finder.find_module(name)
-        spec = importlib.util.spec_from_file_location(name, loader.path)
+        # loader = finder.find_module(name)
+        # spec = importlib.util.spec_from_file_location(name, loader.path)
+        spec = finder.find_spec(name)
         module = importlib.util.module_from_spec(spec)
         # module = importlib.import_module(name)
         sys.modules[name] = module
@@ -137,6 +137,13 @@ class PluginList:
             self.plugins_dict[module.Plugin.id_] = module.Plugin()
             return module
         return None
+
+    def register_all(self):
+        """
+        Register plugins
+        """
+        for plugin in self.plugins_dict.values():
+            plugin.register()
 
     @property
     def len(self):

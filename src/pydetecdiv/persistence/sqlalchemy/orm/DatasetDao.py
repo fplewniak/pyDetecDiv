@@ -4,6 +4,7 @@
 Access to Dataset data
 """
 from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.types import JSON
 from sqlalchemy.orm import relationship, joinedload
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 
@@ -23,6 +24,7 @@ class DatasetDao(DAO, Base):
     type_ = Column(String)
     run = Column(String, ForeignKey('run.id_'), nullable=True, index=True)
     pattern = Column(String)
+    key_val = Column(JSON)
 
     data_list_ = relationship('DataDao')
 
@@ -61,4 +63,5 @@ class DatasetDao(DAO, Base):
                 'type_': self.type_,
                 'run': self.run,
                 'pattern': self.pattern,
+                'key_val': self.key_val,
                 }

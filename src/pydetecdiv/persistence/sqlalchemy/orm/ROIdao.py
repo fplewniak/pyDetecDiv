@@ -4,6 +4,7 @@
 Access to ROI data
 """
 from sqlalchemy import Column, Integer, String, ForeignKey, text
+from sqlalchemy.types import JSON
 from sqlalchemy.orm import joinedload, relationship
 from pydetecdiv.persistence.sqlalchemy.orm.associations import ROIdata
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
@@ -26,6 +27,7 @@ class ROIdao(DAO, Base):
     x1_ = Column(Integer, nullable=False, server_default=text('-1'))
     y1_ = Column(Integer, nullable=False, server_default=text('-1'))
     uuid = Column(String(36))
+    key_val = Column(JSON)
 
     # image_data_list = relationship('ImageDataDao')
     data_list = ROIdata.roi_to_data()
@@ -45,7 +47,8 @@ class ROIdao(DAO, Base):
                 'top_left': (self.x0_, self.y0_),
                 'bottom_right': (self.x1_, self.y1_),
                 'size': (self.x1_ - self.x0_ + 1, self.y1_ - self.y0_ + 1),
-                'uuid': self.uuid
+                'uuid': self.uuid,
+                'key_val': self.key_val,
                 }
 
     def data(self, roi_id):

@@ -2,6 +2,7 @@
 Handling actions to open, create and interact with projects
 """
 import glob
+import json
 import os
 
 import numpy as np
@@ -12,12 +13,15 @@ from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGrou
                                QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView,
                                QRadioButton, QButtonGroup)
 from pydetecdiv.app import PyDetecDiv, WaitDialog, pydetecdiv_project, MessageDialog
+from pydetecdiv.plugins.parameters import Parameter, ChoiceParameter
+
 from pydetecdiv.settings import get_config_value
 from pydetecdiv import delete_files
 from pydetecdiv.app.gui.RawData2FOV import RawData2FOV
+import pydetecdiv.plugins.gui as gui
 
 
-class ListView(QListView):
+class FileListView(QListView):
     """
     A class extending QListView to display source for image data. Defines a context menu to clear or toggle selection,
     remove selected sources, clear list
@@ -82,6 +86,151 @@ class ListView(QListView):
         self.model().removeRows(0, self.model().rowCount())
 
 
+class ImportMetaDataDialog(QDialog):
+    """
+    A dialog window to choose sources for metadata files to import images and create Image resources
+    """
+    progress = Signal(int)
+    chosen_directory = Signal(str)
+    finished = Signal(bool)
+
+    def __init__(self):
+        super().__init__(PyDetecDiv.main_window)
+        self.project_path = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv.project_name)
+        self.setWindowModality(Qt.WindowModal)
+        self.setMinimumWidth(450)
+        self.current_dir = '.'
+
+        self.setObjectName('ImportMetaData')
+        self.setWindowTitle('Import image data from metadata')
+
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Close | QDialogButtonBox.Cancel | QDialogButtonBox.Ok, self)
+        self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+
+        source_group_box = QGroupBox(self)
+        source_group_box.setTitle('Metadata files:')
+
+        buttons_widget = QWidget(source_group_box)
+        directory_button = QPushButton('Add directory', buttons_widget)
+        path_button = QPushButton('Add path', buttons_widget)
+        files_button = QPushButton('Add files', buttons_widget)
+        extension_widget = QWidget(source_group_box)
+        extension_label = QLabel('Default metadata file extension:', extension_widget)
+        self.default_extension = QComboBox(extension_widget)
+        self.default_extension.addItems(['*.txt', '*.json', '*', ])
+
+        list_view = FileListView(source_group_box)
+        self.list_model = QStringListModel()
+        list_view.setModel(self.list_model)
+
+        add_path_dialog = AddPathDialog(self)
+
+        vertical_layout = QVBoxLayout(self)
+        source_layout = QVBoxLayout(source_group_box)
+        buttons_layout = QHBoxLayout(buttons_widget)
+        extension_layout = QHBoxLayout(extension_widget)
+
+        source_layout.addWidget(list_view)
+        source_layout.addWidget(buttons_widget)
+        source_layout.addWidget(extension_widget)
+
+        buttons_layout.addWidget(path_button)
+        buttons_layout.addWidget(directory_button)
+        buttons_layout.addWidget(files_button)
+
+        source_layout.addWidget(list_view)
+        source_layout.addWidget(buttons_widget)
+        source_layout.addWidget(extension_widget)
+
+        buttons_layout.addWidget(path_button)
+        buttons_layout.addWidget(directory_button)
+        buttons_layout.addWidget(files_button)
+
+        extension_layout.addWidget(extension_label)
+        extension_layout.addWidget(self.default_extension)
+
+        vertical_layout.addWidget(source_group_box)
+
+        vertical_layout.addWidget(self.button_box)
+
+        files_button.clicked.connect(self.add_files)
+        directory_button.clicked.connect(self.add_dir)
+        path_button.clicked.connect(add_path_dialog.show)
+        add_path_dialog.path_validated.connect(self.add_path)
+
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.close)
+
+        self.exec()
+        for child in self.children():
+            child.deleteLater()
+        self.destroy(True)
+
+    def add_files(self):
+        """
+        Open a file chooser dialog box and add selected files to the source model
+        """
+        filters = ["TXT (*.txt)",
+                   "JSON (*.json)"]
+        files, _ = QFileDialog.getOpenFileNames(self, caption='Choose metadata files',
+                                                dir=self.current_dir,
+                                                filter=";;".join(filters),
+                                                selectedFilter=filters[0])
+        if files:
+            self.current_dir = os.path.dirname(files[0])
+            self.list_model.setStringList(self.list_model.stringList() + files)
+            self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+
+    def add_dir(self):
+        """
+        Open a directory chooser dialog box and add selected directory to the source model
+        """
+        directory = QFileDialog.getExistingDirectory(self, caption='Choose metadata directory', dir=self.current_dir,
+                                                     options=QFileDialog.ShowDirsOnly)
+        if directory:
+            self.current_dir = directory
+            self.chosen_directory.emit(str(os.path.join(directory, self.default_extension.currentText())))
+            self.list_model.setStringList(self.list_model.stringList()
+                                          + [os.path.join(directory, self.default_extension.currentText())])
+            self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+
+    def add_path(self, path):
+        """
+        Add the input path to the source model
+
+        :param path:
+        """
+        self.list_model.setStringList(self.list_model.stringList() + [path])
+        self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+
+    def accept(self):
+        """
+        Import files whose list is defined by the sources in self.list_model
+        """
+        wait_dialog = WaitDialog(f'Importing data into {PyDetecDiv.project_name}', self,
+                                 cancel_msg='Rollback of image import: please wait', progress_bar=True, )
+        self.finished.connect(wait_dialog.close_window)
+        self.progress.connect(wait_dialog.show_progress)
+        wait_dialog.wait_for(self.import_data)
+        self.list_model.removeRows(0, self.list_model.rowCount())
+        self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+
+    def import_data(self):
+        # destination = os.path.join(self.project_path, 'data', self.destination_directory.currentText())
+        self.progress.emit(0)
+        i = 0.0
+        metadata_file_names = [f for source_path in self.list_model.stringList() for f in glob.glob(source_path) if
+                               os.path.isfile(f)]
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            for metadata_file_name in metadata_file_names:
+                i += 1.0
+                project.import_images_from_metadata(metadata_file_name)
+                self.progress.emit(100 * i / len(metadata_file_names))
+        project.commit()
+        self.finished.emit(True)
+        PyDetecDiv.app.project_selected.emit(PyDetecDiv.project_name)
+
+
 class ImportDataDialog(QDialog):
     """
     A dialog window to choose sources for image data files to import into the project raw dataset
@@ -91,8 +240,8 @@ class ImportDataDialog(QDialog):
     finished = Signal(bool)
 
     def __init__(self):
-        super().__init__(PyDetecDiv().main_window)
-        self.project_path = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv().project_name)
+        super().__init__(PyDetecDiv.main_window)
+        self.project_path = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv.project_name)
         self.setWindowModality(Qt.WindowModal)
         self.setMinimumWidth(450)
         self.current_dir = '.'
@@ -111,9 +260,9 @@ class ImportDataDialog(QDialog):
         extension_widget = QWidget(source_group_box)
         extension_label = QLabel('Default image file extension:', extension_widget)
         self.default_extension = QComboBox(extension_widget)
-        self.default_extension.addItems(['*.tif', '*.tiff', '*.jpg', '*.jpeg', '*.png', '*', ])
+        self.default_extension.addItems(['*.tif', '*.tiff', '*.jpg', '*.jpeg', '*.png', '*.txt', '*', ])
 
-        list_view = ListView(source_group_box)
+        list_view = FileListView(source_group_box)
         self.list_model = QStringListModel()
         list_view.setModel(self.list_model)
 
@@ -181,9 +330,9 @@ class ImportDataDialog(QDialog):
         self.keep_copy_buttons.setExclusive(True)
 
         self.exec()
-        for child in self.children():
-            child.deleteLater()
-        self.destroy(True)
+        # for child in self.children():
+        #     child.deleteLater()
+        # self.destroy(True)
 
     def add_files(self):
         """
@@ -242,14 +391,20 @@ class ImportDataDialog(QDialog):
         """
         file_list = []
         for source_path in self.list_model.stringList():
-            file_list += [f for f in glob.glob(source_path) if os.path.isfile(f)]
+            if source_path.endswith('.txt'):
+                for metadata_file_name in [f for f in glob.glob(source_path) if os.path.isfile(f)]:
+                    with open(metadata_file_name) as metadata_file:
+                        metadata = json.load(metadata_file)
+                        file_list += [v["FileName"] for k, v in metadata.items() if k.startswith('Metadata-')]
+            else:
+                file_list += [f for f in glob.glob(source_path) if os.path.isfile(f)]
         return file_list
 
     def accept(self):
         """
         Import files whose list is defined by the sources in self.list_model
         """
-        wait_dialog = WaitDialog(f'Importing data into {PyDetecDiv().project_name}', self,
+        wait_dialog = WaitDialog(f'Importing data into {PyDetecDiv.project_name}', self,
                                  cancel_msg='Rollback of image import: please wait', progress_bar=True, )
         self.finished.connect(wait_dialog.close_window)
         self.progress.connect(wait_dialog.show_progress)
@@ -272,7 +427,7 @@ class ImportDataDialog(QDialog):
             MessageDialog('No data file to import in specified directories')
         else:
             n_files_to_copy = 0 if in_place else len(file_list)
-            with pydetecdiv_project(PyDetecDiv().project_name) as project:
+            with pydetecdiv_project(PyDetecDiv.project_name) as project:
                 initial_files = {d.url for d in project.get_objects('Data')}
                 n_files0 = sum(1 for item in os.listdir(destination) if os.path.isfile(os.path.join(destination, item)))
                 n_dso0 = project.count_objects('Data')
@@ -281,8 +436,8 @@ class ImportDataDialog(QDialog):
                 for batch in np.array_split(file_list,
                                             int(len(file_list) / int(get_config_value('project', 'batch'))) + 1):
                     if len(batch):
-                        imported, process = project.import_images(batch, in_place=in_place,
-                                                                  destination=self.destination_directory.currentText())
+                        process = project.import_images(batch, in_place=in_place,
+                                                        destination=self.destination_directory.currentText())
                         processes.append(process)
                         n_files = 0 if in_place else self.count_imported_files(destination, n_files0)
                         n_dso = project.count_objects('Data') - n_dso0
@@ -299,7 +454,7 @@ class ImportDataDialog(QDialog):
                     self.progress.emit(int(100 * (n_files + n_dso) / (len(file_list) + n_files_to_copy)))
                 n_raw_data_files = project.count_objects('Data')
             self.finished.emit(True)
-            PyDetecDiv().raw_data_counted.emit(n_raw_data_files)
+            PyDetecDiv.app.raw_data_counted.emit(n_raw_data_files)
 
     def count_imported_files(self, destination, n_start):
         """
@@ -383,6 +538,18 @@ class ImportData(QAction):
         parent.addAction(self)
 
 
+class ImportMetaData(QAction):
+    """
+    Action to import raw data images into a project
+    """
+
+    def __init__(self, parent):
+        super().__init__(QIcon(":icons/import_images"), "&Import metadata files", parent)
+        self.triggered.connect(ImportMetaDataDialog)
+        self.setEnabled(False)
+        parent.addAction(self)
+
+
 class AddPathDialog(QDialog):
     """
     A dialog window to select a path pointing to files or directories to import
@@ -441,7 +608,7 @@ class CreateFOV(QAction):
     """
 
     def __init__(self, parent):
-        super().__init__(QIcon(":icons/import_images"), "Create &FOV from raw data", parent)
+        super().__init__(QIcon(":icons/import_images"), "Build &Image resources from raw data", parent)
         self.triggered.connect(RawData2FOV)
         self.setEnabled(False)
         parent.addAction(self)
@@ -452,7 +619,138 @@ class CreateFOV(QAction):
 
         :param raw_data_count: the number of files in raw dataset
         """
-        if PyDetecDiv().project_name and (raw_data_count > 0):
+        if PyDetecDiv.project_name and (raw_data_count > 0):
             self.setEnabled(True)
+        else:
+            self.setEnabled(False)
+
+
+class ComputeDriftDialog(gui.Dialog):
+    """
+    A dialog window to run drift correction computations for a selection of FOVs
+    """
+    # progress = Signal(int)
+    finished = Signal(bool)
+
+    def __init__(self, title=None):
+        super().__init__(title=title)
+
+        self.drift = {}
+
+        self.select_FOV = self.addGroupBox('Select FOV')
+        self.fov_list = self.select_FOV.addOption(None, widget=gui.ListView,
+                                                  parameter=ChoiceParameter(name='FOVs', label='FOV',
+                                                                      items=self.update_fov_list(
+                                                                          PyDetecDiv.project_name)),
+                                                  multiselection=True, height=75)
+
+        self.method_box = self.addGroupBox('Method')
+        self.method = self.method_box.addOption(None, widget=gui.ComboBox,
+                                                parameter=ChoiceParameter(name='Method', label='Method', default='vidstab',
+                                                                    items={'vidstab': None, 'phase correlation': None})
+                                                )
+
+        self.button_box = self.addButtonBox()
+
+        self.arrangeWidgets([
+            self.select_FOV,
+            self.method_box,
+            self.button_box
+        ])
+
+        gui.set_connections({self.button_box.accepted: self.accept,
+                             self.button_box.rejected: self.close,
+                             PyDetecDiv.app.project_selected: self.update_fov_list,
+                             })
+
+        self.exec()
+        for child in self.children():
+            child.deleteLater()
+        self.destroy(True)
+
+    def update_fov_list(self, project_name):
+        with pydetecdiv_project(project_name) as project:
+            return {fov.name: fov for fov in project.get_objects('FOV')}
+
+    def accept(self):
+        self.wait = WaitDialog('Computing drift, please wait.', self,
+                               cancel_msg='Cancel drift computation please wait')
+        self.finished.connect(self.wait.close_window)
+        self.wait.wait_for(self.compute_drift, Z=0, C=0)
+
+        tab = PyDetecDiv.main_window.add_tabbed_window(
+            f'{PyDetecDiv.project_name} / Drift correction ({self.method.value()})')
+        tab.project_name = PyDetecDiv.project_name
+        for fov in self.fov_list.selection():
+            tab.show_plot(self.drift[fov.name], title=fov.name)
+
+    def compute_drift(self, Z=0, C=0):
+        for fov in self.fov_list.selection():
+            self.drift[fov.name] = fov.image_resource().image_resource_data().compute_drift(Z=Z, C=C,
+                                                                                            method=self.method.value())
+        self.finished.emit(True)
+
+
+class ComputeDrift(QAction):
+    """
+    Action to compute drift correction
+    """
+
+    def __init__(self, parent):
+        super().__init__("Compute drift", parent)
+        self.triggered.connect(self.open_dialog)
+        self.setEnabled(False)
+        parent.addAction(self)
+
+    def enable(self, project_name):
+        """
+        Enable or disable this action in the Data menu whether there are raw data or not.
+
+        :param raw_data_count: the number of files in raw dataset
+        """
+        if project_name:
+            with pydetecdiv_project(project_name) as project:
+                if project.count_objects('FOV'):
+                    self.setEnabled(True)
+                else:
+                    self.setEnabled(False)
+        else:
+            self.setEnabled(False)
+
+    def open_dialog(self):
+        gui = ComputeDriftDialog(title='Compute drift')
+
+
+class ApplyDrift(QAction):
+    """
+    Action to set or unset drift correction
+    """
+
+    def __init__(self, parent):
+        super().__init__("Apply drift", parent)
+        # self.triggered.connect(self.)
+        self.setCheckable(True)
+        self.setChecked(False)
+        self.setEnabled(False)
+        parent.addAction(self)
+
+    def enable(self, project_name):
+        """
+        Enable or disable this action in the Data menu whether there are raw data or not.
+
+        :param raw_data_count: the number of files in raw dataset
+        """
+        if project_name:
+            with pydetecdiv_project(project_name) as project:
+                if project.count_objects('FOV'):
+                    self.setEnabled(True)
+                else:
+                    self.setEnabled(False)
+                # # The following should allow to enable drift correction if there is drift information in the database
+                # # but it may be quite time-consuming if there are many FOVs
+                # if any([fov.image_resource().drift is not None for fov in project.get_objects('FOV')]):
+                #     self.setEnabled(True)
+                # else:
+                #     self.setEnabled(False)
         else:
             self.setEnabled(False)

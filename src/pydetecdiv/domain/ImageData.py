@@ -6,7 +6,7 @@
 from collections import namedtuple
 from pandas import DataFrame
 from pydetecdiv.domain.dso import NamedDSO
-from pydetecdiv.domain.ROI import ROI
+from pydetecdiv.domain import ROI
 
 
 class ImageData(NamedDSO):

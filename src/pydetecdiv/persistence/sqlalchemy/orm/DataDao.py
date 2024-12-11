@@ -4,6 +4,7 @@
 Access to data relative to Data file (images, tables, etc.)
 """
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, text
+from sqlalchemy.types import JSON
 from sqlalchemy.orm import composite, joinedload
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 from pydetecdiv.persistence.sqlalchemy.orm.associations import ROIdata
@@ -27,8 +28,8 @@ class DataDao(DAO, Base):
     url = Column(String)
     format = Column(String)
     source_dir = Column(String)
-    meta_data = Column(String)
-    key_val = Column(String)
+    meta_data = Column(JSON)
+    key_val = Column(JSON)
 
     # fov_list_ = FovData.data_to_fov()
     roi_list_ = ROIdata.data_to_roi()

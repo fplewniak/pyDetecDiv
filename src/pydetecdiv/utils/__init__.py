@@ -23,6 +23,7 @@ def singleton(class_):
 
     return getinstance
 
+
 class Singleton:
     instance = None
     initialized = False
@@ -36,6 +37,33 @@ class Singleton:
         if self.initialized:
             return
         self.initialized = True
+
+
+class BidirectionalIterator:
+    def __init__(self, data):
+        self.data = data
+        self.index = -1  # Start before the first element
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.index < len(self.data) - 1:
+            self.index += 1
+            return self.data[self.index]
+        else:
+            raise StopIteration
+
+    def __previous__(self):
+        if self.index > 0:
+            self.index -= 1
+            return self.data[self.index]
+        else:
+            raise StopIteration("No previous element")
+
+
+def previous(iterator):
+    return iterator.__previous__()
 
 
 def round_to_even(value, ceil=True):
@@ -57,6 +85,7 @@ def round_to_even(value, ceil=True):
         else:
             rounded -= 1
     return rounded
+
 
 def remove_keys_from_dict(dictionary, keys):
     """

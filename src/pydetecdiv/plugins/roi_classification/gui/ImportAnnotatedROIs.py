@@ -1,6 +1,7 @@
 """
 Dialog window handling the definition of patterns for FOV creation from raw data file names
 """
+import json
 import random
 import re
 
@@ -24,7 +25,7 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
 
     def __init__(self, annotation_file, plugin):
         # Base class
-        QDialog.__init__(self, PyDetecDiv().main_window)
+        QDialog.__init__(self, PyDetecDiv.main_window)
 
         # Initialize the UI widgets
         self.ui = Ui_FOV2ROIlinks()
@@ -36,7 +37,7 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
         self.colours = {
             'FOV': QColor.fromRgb(0, 200, 0, 255)
         }
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
             fov_names = [fov.name for fov in project.get_objects('FOV')]
             self.FOVsamples_text = random.sample(fov_names, min([len(fov_names), 5]))
 
@@ -48,6 +49,9 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
             self.FOVsamples[i].setText(label_text)
 
         self.df = pd.read_csv(annotation_file)
+        class_names = sorted(self.df['class_name'].unique().tolist())
+        self.plugin.parameters['class_names'].add_item({json.dumps(class_names): class_names})
+        # self.plugin.parameters['class_names'].set_value(sorted(self.df['class_name'].unique().tolist()))
         self.df['frame'] -= 1
         # self.class_index_mapping =  [-1] * len(self.plugin.class_names)
         # self.class_index_mapping = {row.ann: self.plugin.class_names.index(row.class_name)
@@ -276,7 +280,7 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
                 self.finished.connect(wait_dialog.close_window)
                 self.progress.connect(wait_dialog.show_progress)
                 wait_dialog.wait_for(self.create_annotated_rois, regex, run)
-                PyDetecDiv().project_selected.emit(PyDetecDiv().project_name)
+                PyDetecDiv.app.project_selected.emit(PyDetecDiv.project_name)
                 self.close()
             case QDialogButtonBox.StandardButton.Close:
                 self.close()
@@ -288,9 +292,9 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
         Save current run
         :return: the Run instance
         """
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
             return self.plugin.save_run(project, 'import_annotated_rois',
-                                        {'class_names': self.plugin.class_names,
+                                        {'class_names': self.plugin.parameters['class_names'].value,
                                          'annotator': get_config_value('project', 'user'),
                                          'file_name': self.annotation_file
                                          })
@@ -301,7 +305,7 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
 
         :param regex: the regular expression to use for data annotation
         """
-        with pydetecdiv_project(PyDetecDiv().project_name) as project:
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
             fov_list = {f.name: f.id_ for f in project.get_objects('FOV')}
             roi_list = {roi.name: roi for roi in project.get_objects('ROI')}
             for row in self.df.groupby(['roi', 'x', 'y', 'width', 'height']).size().reset_index(
@@ -318,7 +322,7 @@ class FOV2ROIlinks(QDialog, Ui_FOV2ROIlinks):
 
             for row in self.df.itertuples():
                 if row.roi in roi_list:
-                    self.plugin.save_results(project, run, roi_list[row.roi], row.frame, row.class_name)
+                    self.plugin.save_annotation(project, run, roi_list[row.roi], row.frame, row.class_name)
                 # print(row.roi, row.frame, row.ann, row.class_name)
                 self.progress.emit(100.0 * row.Index / len(self.df))
                 if QThread.currentThread().isInterruptionRequested():

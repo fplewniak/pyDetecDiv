@@ -11,9 +11,10 @@ class FOV(NamedDSO, BoxedDSO):
     A business-logic class defining valid operations and attributes of Fields of view (FOV)
     """
 
-    def __init__(self, comments=None, **kwargs):
+    def __init__(self, comments=None, key_val=None, **kwargs):
         super().__init__(**kwargs)
         self._comments = comments
+        self.key_val = key_val
         self.validate(updated=False)
 
     def delete(self):
@@ -36,10 +37,8 @@ class FOV(NamedDSO, BoxedDSO):
         record = {
             'name': self.name,
             'comments': self.comments,
-            # 'top_left': self.top_left,
-            # 'bottom_right': self.bottom_right,
-            # 'size': self.size,
-            'uuid': self.uuid
+            'uuid': self.uuid,
+            'key_val': self.key_val,
         }
         if not no_id:
             record['id_'] = self.id_
@@ -112,7 +111,7 @@ Comments:             {self.comments}
 
     def image_resource(self, dataset='data'):
         """
-        Return the image resource (single multipage file of a series of files) corresponding to the FOV in a specific
+        Return the image resource (single multipage file or a series of files) corresponding to the FOV in a specific
          dataset
 
         :param dataset: the dataset name
@@ -123,6 +122,18 @@ Comments:             {self.comments}
         image_resource = \
         [ir for ir in self.project.get_linked_objects('ImageResource', self) if ir.dataset.name == dataset][0]
         return image_resource
+
+    @property
+    def tscale(self):
+        return self.image_resource().tscale
+
+    @property
+    def tunit(self):
+        return self.image_resource().tunit
+
+    @property
+    def sizeT(self):
+        return self.image_resource().sizeT
 
     @property
     def size(self):

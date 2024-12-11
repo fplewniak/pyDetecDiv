@@ -1,55 +1,18 @@
 """
 Module defining widgets and other utilities for creating windows/forms with a minimum of code
 """
-import json
+from typing import Any, Self, Type, Union
 
-from PySide6.QtGui import QIcon
-from PySide6.QtSql import QSqlQueryModel
-from PySide6.QtWidgets import QDialog, QFrame, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox, \
+from PySide6.QtCore import QStringListModel, QItemSelection, QItemSelectionModel, Signal, Slot, QModelIndex
+from PySide6.QtGui import QIcon, QAction, QContextMenuEvent
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox, \
     QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView, QAbstractItemView, \
-    QPushButton, QApplication, QRadioButton
+    QPushButton, QApplication, QRadioButton, QListView, QMenu, QDataWidgetMapper, QWidget, QLayout
 
-class Parameters:
-    """
-    A class to handle plugin parameters from a Form gui
-    """
-    def __init__(self):
-        self.param_groups = {}
+from pydetecdiv.app.models import GenericModel, ItemModel, DictItemModel, StringList
+from pydetecdiv import plugins
+from pydetecdiv.plugins.parameters import Parameter
 
-    def add_groups(self, groups):
-        """
-        Add empty groups of parameters
-
-        :param groups: the list of groups
-        """
-        for group in groups:
-            self.add_group(group)
-    def add_group(self, group, param_dict=None):
-        """
-        Add a new group of parameters (in a dictionary)
-
-        :param group: the group to create
-        :param param_dict: the dictionary of parameters
-        """
-        self.param_groups[group] = param_dict if param_dict is not None else {}
-
-    def add(self, group, param_dict):
-        """
-        Add parameters (in a dictionary) to an existing group of parameters
-
-        :param group: the group of parameters to expand
-        :param param_dict: the parameters
-        """
-        self.param_groups[group].update(param_dict)
-
-    def get_values(self, group):
-        """
-        Get a dictionary containing all parameters key/values for a given group
-
-        :param group: the requested parameter group
-        :return: a dictionary of parameters
-        """
-        return {name: widget.value() for name, widget in self.param_groups[group].items()}
 
 class StyleSheets:
     """
@@ -72,55 +35,88 @@ class StyleSheets:
                 """
 
 
+StandardButtonCombination = Union["QDialogButtonBox.StandardButton", ...]
+
+
 class GroupBox(QGroupBox):
     """
     an extension of QGroupBox class
     """
-    def __init__(self, parent, title=None):
+
+    def __init__(self, parent: QWidget, title: str = None) -> None:
         super().__init__(parent)
         if title is not None:
             self.setTitle(title)
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
+        self.layout: QLayout = self.layout()
 
     @property
-    def plugin(self):
+    def plugin(self) -> plugins.Plugin | None:
         """
         Property returning the plugin from the top parent of the current widget
 
         :return: the plugin module or None if it was not found
         """
-        parent = self.parent()
+        parent: QWidget = self.parent()
         while parent:
             if hasattr(parent, 'plugin'):
                 return parent.plugin
         return None
 
+    def addSubBox(self, widget: Type[Self], **kwargs: dict[str, Any]) -> Self:
+        """
+        Adds a sub-box to the current GroupBox
 
-class FormGroupBox(GroupBox):
+        :param widget: the class of the GroupBox to add as a sub box
+        :param kwargs: keywords arguments to pass to the sub box
+        :return: the sub box object
+        """
+        sub_box = widget(self, **kwargs)
+        self.layout.addWidget(sub_box)
+        return sub_box
+
+
+class ParametersFormGroupBox(GroupBox):
     """
     an extension of GroupBox class to handle Forms
     """
-    def __init__(self, parent, title=None, show=True):
+
+    def __init__(self, parent: QWidget, title: str = None, show: bool = True) -> None:
         super().__init__(parent, title)
-        self.layout = QFormLayout(self)
+        self.layout: QLayout = QFormLayout(self)
+        self.setLayout(self.layout)
         self.setVisible(show)
 
-    def addOption(self, label=None, widget=None, parameter=None, **kwargs):
+    def addSubBox(self, widget: Type[GroupBox], **kwargs: dict[str, Any]) -> GroupBox:
+        """
+        Adds a sub-box to the current ParametersFormGroupBox
+
+        :param widget: the class of the GroupBox to add as a sub box
+        :param kwargs: keywords arguments to pass to the sub box
+        :return: the sub box object
+        """
+        sub_box: GroupBox = widget(self, **kwargs)
+        self.layout.addRow(sub_box)
+        return sub_box
+
+    def addOption(self, label: str = None, widget: Type[QWidget] = None, parameter: Parameter = None,
+                  enabled: bool = True, **kwargs: dict[str, Any]) -> QWidget:
         """
         add an option to the current Form
 
+        :param enabled: whether this option is enabled
+        :param parameter: the Parameter attached to the widget
         :param label: the label for the option
         :param widget: the widget to specify the option value, etc
         :param kwargs: extra args passed to the widget
         :return: the option widget
         """
-        option = widget(self, **kwargs)
-        if parameter is not None:
-            groups, param = parameter
-            if not isinstance(groups, list):
-                groups = [groups]
-            for group in groups:
-                self.plugin.parameters.add(group, {param: option})
+        if issubclass(widget, (QPushButton, QDialogButtonBox, QGroupBox)):
+            option: QWidget = widget(parent=self, **kwargs)
+        else:
+            option: QWidget = widget(parent=self, model=parameter.model, **parameter.kwargs(), **kwargs)
+
+        option.setEnabled(enabled)
 
         if label is None:
             self.layout.addRow(option)
@@ -128,7 +124,7 @@ class FormGroupBox(GroupBox):
             self.layout.addRow(QLabel(label), option)
         return option
 
-    def setRowVisible(self, index, on=True):
+    def setRowVisible(self, index: int, on: bool = True) -> None:
         """
         set the row defined by index or widget visible or invisible in the form layout
 
@@ -140,16 +136,30 @@ class FormGroupBox(GroupBox):
 
 class ComboBox(QComboBox):
     """
-    an extension of the QComboBox class
+    an extension of the QComboBox class with a custom model/view architecture
     """
-    def __init__(self, parent, items=None, selected=None):
-        super().__init__(parent)
-        if items is not None:
-            self.addItemDict(items)
-        if selected is not None:
-            self.setCurrentText(selected)
 
-    def addItemDict(self, options):
+    def __init__(self, parent: QWidget, model: GenericModel = None, editable: bool = False,
+                 enabled: bool = True, **kwargs: dict[str, Any]) -> None:
+        super().__init__(parent)
+        if model is not None and model.rows() is not None:
+            self.addItemDict(model.rows())
+            self.setModel(model)
+            self.setModelColumn(0)
+            self.currentIndexChanged.connect(self.model().set_selection)
+            self.model().selection_changed.connect(self.setCurrentIndex)
+        self.setEditable(editable)
+        self.setEnabled(enabled)
+
+    def setCurrentIndex(self, index: int) -> None:
+        """
+        sets the currently selected index
+
+        :param index: the index to select
+        """
+        super().setCurrentIndex(index)
+
+    def addItemDict(self, options: dict[str, Any]) -> None:
         """
         add items to the ComboBox as a dictionary
 
@@ -158,75 +168,323 @@ class ComboBox(QComboBox):
         for label, data in options.items():
             self.addItem(label, userData=data)
 
+    def setItemsDict(self, options: dict[str, Any]) -> None:
+        """
+        Defines items from a dictionary
+
+        :param options: the dictionary representing the options
+        """
+        self.clear()
+        self.addItemDict(options)
+
+    def setText(self, text: str) -> None:
+        """
+        sets the current text if text is already an option, otherwise, it adds a new item
+
+        :param text: the text to select or add
+        """
+        if self.findText(text) != -1:
+            self.setCurrentText(text)
+        else:
+            self.addItem(text)
+
+    def text(self) -> str:
+        """
+        returns the currently selected text
+
+        :return: the currently selected text
+        """
+        return self.currentText()
+
     @property
-    def selected(self):
+    def selected(self) -> Signal:
         """
         return property telling whether the current index of this ComboBox has changed
 
-        :return: boolean indication whether the current index has changed (i.e. new selection)
+        :return: Signal emitted when the current index has changed (i.e. new selection)
         """
         return self.currentIndexChanged
 
     @property
-    def changed(self):
+    def changed(self) -> Signal:
         """
         return property telling whether the current text of this ComboBox has changed. This overwrites the Pyside
         equivalent method in order to have the same method name for all widgets
 
-        :return: boolean indication whether the current text has changed (i.e. new selection)
+        :return: Signal emitted when the current text has changed (i.e. new selection)
         """
         return self.currentTextChanged
 
-    def value(self):
+    def value(self) -> str | Any:
         """
         method to standardize the way widget values from a form are returned
 
-        :return: the current data (if it can be json serialized) or the current text of the selected item
+        :return: the current data if it can be json serialized or the current text of the selected item if it can't
         """
         if self.currentData() is not None:
-            try:
-                _ = json.dumps(self.currentData())
-                return self.currentData()
-            except TypeError:
-                pass
+            return self.currentData()
         return self.currentText()
+
+    def setValue(self, value: str) -> None:
+        """
+        Defines the currently selected option of the ComboBox
+
+        :param value: the currently selected text
+        """
+        self.setCurrentText(value)
+
+
+class ListView(QListView):
+    """
+    an extension of the QComboBox class
+    """
+
+    def __init__(self, parent: QWidget, model: StringList = None, height: int = None, multiselection: bool = False,
+                 enabled: bool = True, **kwargs: dict[str, Any]) -> None:
+        super().__init__(parent)
+        if multiselection:
+            self.setSelectionMode(QAbstractItemView.MultiSelection)
+        if height is not None:
+            self.setFixedHeight(height)
+        self.setModel(QStringListModel())
+        if model is not None and model.items is not None:
+            self.addItemDict(model.items())
+        self.setEnabled(enabled)
+
+    def addItemDict(self, options: dict[str, Any]) -> None:
+        """
+        add items to the ComboBox as a dictionary
+
+        :param options: dictionary of options specifying labels and corresponding user data {label: userData, ...}
+        """
+        self.items = options
+        self.model().setStringList(list(options.keys()))
+
+    @property
+    def changed(self) -> Signal:
+        """
+        return property telling whether the current text of this ComboBox has changed. This overwrites the Pyside
+        equivalent method in order to have the same method name for all widgets
+
+        :return: PySide6.QtCore.QModelIndex the new selection model
+        """
+        return self.selectionModel().currentChanged
+
+    def selection(self) -> list[Any]:
+        """
+        method to standardize the way widget values from a form are returned
+
+        :return: the current data (if it is defined) or the current text of the selected item
+        """
+        return [self.items[self.model().data(idx)] for idx in
+                sorted(self.selectedIndexes(), key=lambda x: x.row(), reverse=False)]
+
+    def setValue(self):
+        """
+
+        """
+        # could use setSelectionModel(selectionModel) with selectionModel determined from parameter value
+        pass
+
+    def contextMenuEvent(self, e: QContextMenuEvent) -> None:
+        """
+        Definition of a context menu to clear or toggle selection of sources in list model, remove selected sources from
+        the list model, clear the source list model
+
+        :param e: mouse event providing the position of the context menu
+        :type e: PySide6.QtGui.QContextMenuEvent
+        """
+        if self.model().rowCount():
+            context = QMenu(self)
+            unselect = QAction("Unselect all", self)
+            unselect.triggered.connect(self.unselect)
+            context.addAction(unselect)
+            toggle = QAction("Toggle selection", self)
+            toggle.triggered.connect(self.toggle)
+            context.addAction(toggle)
+            context.addSeparator()
+            remove = QAction("Remove selected items", self)
+            remove.triggered.connect(self.remove_items)
+            context.addAction(remove)
+            clear_list = QAction("Clear list", self)
+            context.addAction(clear_list)
+            clear_list.triggered.connect(self.clear_list)
+            context.exec(e.globalPos())
+
+    def unselect(self) -> None:
+        """
+        Clear selection model
+        """
+        self.selectionModel().clear()
+
+    def toggle(self) -> None:
+        """
+        Toggle selection model, selected sources are deselected and unselected ones are selected
+        """
+        toggle_selection = QItemSelection()
+        top_left = self.model().index(0, 0)
+        bottom_right = self.model().index(self.model().rowCount() - 1, 0)
+        toggle_selection.select(top_left, bottom_right)
+        self.selectionModel().select(toggle_selection, QItemSelectionModel.Toggle)
+
+    def remove_items(self) -> None:
+        """
+        Delete selected sources
+        """
+        for idx in sorted(self.selectedIndexes(), key=lambda x: x.row(), reverse=True):
+            self.model().removeRow(idx.row())
+
+    def clear_list(self) -> None:
+        """
+        Clear the source list
+        """
+        self.model().removeRows(0, self.model().rowCount())
+
+
+class ListWidget(QListView):
+    """
+    An extension of the QListView providing consistency with other custom widgets.
+    """
+
+    def __init__(self, parent: QWidget, model: DictItemModel = None, height: int = None, editable: bool = False,
+                 multiselection: bool = False, enabled: bool = True,
+                 **kwargs: dict[str, Any]) -> None:
+        super().__init__(parent)
+        # self.setSelectionModel(QItemSelectionModel())
+        if multiselection:
+            self.setSelectionMode(QAbstractItemView.MultiSelection)
+        if model is not None and model.rows() is not None:
+            self.setModel(model)
+            self.setModelColumn(0)
+            self.addItemDict(model.rows())
+        self.setEnabled(enabled)
+        # self.currentIndexChanged.connect(self.model().set_selection)
+        self.selectionModel().currentChanged.connect(self.setCurrentIndex)
+
+    def setCurrentIndex(self, index: QModelIndex) -> None:
+        """
+        Sets the current index (current selection)
+
+        :param index: the index for the current selection
+        """
+        self.model().set_selection(index.row())
+
+    def addItemDict(self, options: dict[str, Any]) -> Any:
+        """
+        add items to the ListWidget as a dictionary
+
+        :param options: dictionary of options specifying labels and corresponding user data {label: userData, ...}
+        """
+        for text, data in options.items():
+            self.addItem(text, userData=data)
+
+    def addItem(self, text: str, userData: Any = None) -> None:
+        """
+        Adds an item to the list
+
+        :param text: the text to display in the List view
+        :param userData: the associated data (can be any type of object)
+        """
+        self.model().add_item({text: userData})
 
 
 class LineEdit(QLineEdit):
     """
     an extension of QLineEdit class
     """
-    def __init__(self, parent):
+
+    def __init__(self, parent: QWidget, model: ItemModel = None, editable: bool = True, enabled: bool = True,
+                 **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
+        self.setEditable(editable)
+        self.mapper = QDataWidgetMapper(self)
+        self.setModel(model)
+        self.setEnabled(enabled)
 
-    def value(self):
+    @property
+    def changed(self):
         """
-        method to standardize the way widget values from a form are returned
 
-        :return: the text in LineEdit
+        :return:
         """
-        return self.text()
+        return self.textChanged
+
+    @property
+    def edited(self) -> Signal:
+        """
+        returns the Signal that editing is finished
+
+        :return: the self.editingFinished signal
+        """
+        return self.editingFinished
+
+    def setEditable(self, editable: bool = True) -> None:
+        """
+        Sets the property editable for the LineEdit widget
+
+        :param editable: True if the LineEdit can be edited, False otherwise
+        """
+        self.setReadOnly(not editable)
+
+    def setModel(self, model: ItemModel) -> None:
+        """
+        Sets the model for the LineEdit widget
+
+        :param model: the item model containing a str value
+        """
+        self.mapper.setModel(model)
+        self.mapper.addMapping(self, 0, b"text")
+        self.mapper.toFirst()
+
+
+class Label(QLabel):
+    """
+    an extension of QLabel class
+    """
+
+    def __init__(self, parent: QWidget, model: ItemModel = None, **kwargs: dict[str, Any]) -> None:
+        super().__init__(parent)
+        self.mapper = QDataWidgetMapper(self)
+        self.setModel(model)
+
+    # @property
+    # def changed(self):
+    #     return self.textChanged
+
+    def setModel(self, model: ItemModel) -> None:
+        """
+        Sets the model for the Label
+
+        :param model: the item model containing a str value
+        """
+        self.mapper.setModel(model)
+        self.mapper.addMapping(self, 0, b"text")
+        self.mapper.toFirst()
 
 
 class PushButton(QPushButton):
     """
     an extension of QPushButton class
     """
-    def __init__(self, parent, text, icon=None, flat=False):
+
+    def __init__(self, parent: QWidget, text: str, icon: QIcon = None, flat: bool = False,
+                 enabled: bool = True) -> None:
         if icon is None:
             super().__init__(text, parent)
         else:
             super().__init__(icon, text, parent)
         self.setFlat(flat)
+        self.setEnabled(enabled)
 
 
 class AdvancedButton(PushButton):
     """
     an extension of PushButton class to control collapsible group boxes for advanced options
     """
-    def __init__(self, parent):
-        super().__init__(parent, text='Advanced options', icon=QIcon(':icons/show'), flat=True)
-        self.group_box = None
+
+    def __init__(self, parent: QWidget, text: str = 'Advanced options') -> None:
+        super().__init__(parent, text=text, icon=QIcon(':icons/show'), flat=True)
+        self.group_box: GroupBox = None
         self.clicked.connect(self.toggle)
 
     def hide(self):
@@ -237,7 +495,7 @@ class AdvancedButton(PushButton):
         self.setIcon(QIcon(':icons/show'))
         self.group_box.setVisible(False)
 
-    def linkGroupBox(self, group_box):
+    def linkGroupBox(self, group_box: GroupBox) -> None:
         """
         link this advanced button to a group box whose expansion or collapse should be controlled by this button
 
@@ -262,36 +520,77 @@ class RadioButton(QRadioButton):
     """
     an extension of the QRadioButton class
     """
-    def __init__(self, parent, exclusive=True):
-        super().__init__(None, parent)
+
+    def __init__(self, parent: QWidget, model: ItemModel = None, exclusive: bool = True, enabled: bool = True,
+                 **kwargs: dict[str, Any]) -> None:
+        super().__init__(parent)
         self.setAutoExclusive(exclusive)
+        self.mapper = QDataWidgetMapper(self)
+        self.setModel(model)
+        self.toggled.connect(self.on_toggled)
+        self.setEnabled(enabled)
 
-    def value(self):
+    def setModel(self, model: ItemModel) -> None:
         """
-        method to standardize the way widget values from a form are returned
+        Sets the model for the radio button
 
-        :return: boolean, True if button is checked, False otherwise
+        :param model: the item model containing a bool value
         """
-        return self.isChecked()
+        if model is not None:
+            self.mapper.setModel(model)
+            self.mapper.addMapping(self, 0)
+            self.mapper.setSubmitPolicy(QDataWidgetMapper.AutoSubmit)
+            self.mapper.toFirst()
+
+    @property
+    def changed(self) -> Signal:
+        """
+        return property telling whether the RadioButton value has changed. This overwrites the Pyside equivalent method
+         in order to have the same method name for all widgets
+
+        :return: boolean indication whether the value has changed
+        """
+        return self.toggled
+
+    @Slot(bool)
+    def on_toggled(self, checked: bool) -> None:
+        """
+        Slot setting the value of the bool model when the RadioButton is toggled
+
+        :param checked: bool value indicating whether the button has been checked or unchecked
+        """
+        self.mapper.model().set_value(checked)
 
 
 class SpinBox(QSpinBox):
     """
     an extension of the QSpinBox class
     """
-    def __init__(self, parent, range=(1, 4096), single_step=1, adaptive=False, value=None):
+
+    def __init__(self, parent: QWidget, model: ItemModel = None, minimum: int = 1, maximum: int = 4096,
+                 single_step: int = 1, adaptive: bool = False, enabled: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
-        self.setRange(*range[0:2])
+        self.setRange(minimum, maximum)
         self.setSingleStep(single_step)
         if adaptive:
             self.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
-        if value is None:
-            self.setValue(range[0])
-        else:
-            self.setValue(value)
+        self.mapper = QDataWidgetMapper(self)
+        self.setModel(model)
+        self.setEnabled(enabled)
+
+    def setModel(self, model: ItemModel):
+        """
+        Sets the model for the spin box
+
+        :param model: the item model containing an int value
+        """
+        if model is not None:
+            self.mapper.setModel(model)
+            self.mapper.addMapping(self, 0)
+            self.mapper.toFirst()
 
     @property
-    def changed(self):
+    def changed(self) -> Signal:
         """
         return property telling whether the spinbox value has changed. This overwrites the Pyside equivalent method in
          order to have the same method name for all widgets
@@ -305,18 +604,30 @@ class DoubleSpinBox(QDoubleSpinBox):
     """
     an extension of the QDoubleSpinBox class
     """
-    def __init__(self, parent, range=(0.1, 1.0), decimals=2, single_step=0.1, adaptive=False, value=0.1, enabled=True):
+
+    def __init__(self, parent: QWidget, model: ItemModel = None, minimum: float = 0.1, maximum: float = 1.0,
+                 decimals: int = 2, single_step: float = 0.1, adaptive: bool = False, enabled: bool = True,
+                 **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
-        self.setRange(*range[0:2])
+        self.setRange(minimum, maximum)
         self.setDecimals(decimals)
         self.setSingleStep(single_step)
         if adaptive:
             self.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
-        if value is None:
-            self.setValue(range[0])
-        else:
-            self.setValue(value)
+        self.mapper: QDataWidgetMapper = QDataWidgetMapper(self)
+        self.setModel(model)
         self.setEnabled(enabled)
+
+    def setModel(self, model: ItemModel) -> None:
+        """
+        Sets the model for the spin box
+
+        :param model: the item model containing a float value
+        """
+        if model is not None:
+            self.mapper.setModel(model)
+            self.mapper.addMapping(self, 0)
+            self.mapper.toFirst()
 
     @property
     def changed(self):
@@ -332,37 +643,53 @@ class TableView(QTableView):
     """
     an extension of the QTableView widget
     """
-    def __init__(self, parent, multiselection=True, behavior='rows'):
+
+    def __init__(self, parent, model=None, enabled=True, **kwargs):
         super().__init__(parent)
-        self.model = QSqlQueryModel()
-        self.setModel(self.model)
-        if multiselection:
-            self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
-        match behavior:
-            case 'rows':
-                self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-            case _:
-                pass
+        if model is not None:
+            self.setModel(model)
+        # if model is not None and model.rows() is not None:
+        #     self.addItemDict(model.rows())
+        #     self.setModel(model)
+        #     self.setModelColumn(0)
+        #     self.currentIndexChanged.connect(self.model().set_selection)
+        #     self.model().selection_changed.connect(self.setCurrentIndex)
+        self.setEnabled(enabled)
 
-    def setQuery(self, query):
-        """
-        set the SQL query used to feed the model of the table view
-
-        :param query: the query
-        """
-        self.model.setQuery(query)
+    # def __init__(self, parent, parameter, multiselection=True, behavior='rows', enabled=True):
+    #     super().__init__(parent)
+    #     self.model = QSqlQueryModel()
+    #     self.setModel(self.model)
+    #     if multiselection:
+    #         self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+    #     match behavior:
+    #         case 'rows':
+    #             self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+    #         case _:
+    #             pass
+    #     self.setEnabled(enabled)
+    #
+    # def setQuery(self, query):
+    #     """
+    #     set the SQL query used to feed the model of the table view
+    #
+    #     :param query: the query
+    #     """
+    #     self.model.setQuery(query)
 
 
 class DialogButtonBox(QDialogButtonBox):
     """
     A extension of QDialogButtonBox to add a button box
     """
-    def __init__(self, parent, buttons=(QDialogButtonBox.Ok, QDialogButtonBox.Close)):
+
+    def __init__(self, parent: QWidget,
+                 buttons: StandardButtonCombination = (QDialogButtonBox.Ok, QDialogButtonBox.Close)) -> None:
         super().__init__(parent)
         for button in buttons:
             self.addButton(button)
 
-    def connect_to(self, connections=None):
+    def connect_to(self, connections: dict[Signal, Slot] = None) -> None:
         """
         Specify the connections between the signal from this button box and slots specified in a directory
 
@@ -385,8 +712,9 @@ class Dialog(QDialog):
     """
     An extension of QDialog to define forms that may be used to specify plugin options
     """
-    def __init__(self, plugin, title=None):
-        super().__init__()
+
+    def __init__(self, plugin: plugins.Plugin = None, title: str = None, **kwargs: dict[str, Any]) -> None:
+        super().__init__(**kwargs)
         self.vert_layout = QVBoxLayout(self)
         self.setLayout(self.vert_layout)
         self.plugin = plugin
@@ -401,7 +729,7 @@ class Dialog(QDialog):
         QApplication.processEvents()
         self.adjustSize()
 
-    def addGroupBox(self, title, widget=FormGroupBox):
+    def addGroupBox(self, title: str = None, widget: Type[GroupBox] = ParametersFormGroupBox) -> GroupBox:
         """
         Add a group box to the Dialog window
 
@@ -414,7 +742,8 @@ class Dialog(QDialog):
         group_box.setStyleSheet(StyleSheets.groupBox)
         return group_box
 
-    def addButtonBox(self, buttons=QDialogButtonBox.Ok | QDialogButtonBox.Close, centered=True):
+    def addButtonBox(self, buttons: StandardButtonCombination = QDialogButtonBox.Ok | QDialogButtonBox.Close,
+                     centered: bool = True) -> DialogButtonBox:
         """
         Add a button box to the Dialog window
 
@@ -426,7 +755,8 @@ class Dialog(QDialog):
         button_box.setCenterButtons(centered)
         return button_box
 
-    def addButton(self, widget, text=None, icon=None, flat=False):
+    def addButton(self, widget: Type[QPushButton], text: str = None, icon: QIcon = None,
+                  flat: bool = False) -> QPushButton:
         """
         Add a button to the Dialog window
 
@@ -436,12 +766,12 @@ class Dialog(QDialog):
         :param flat: should the button be flat
         :return: the added button
         """
-        button = widget(text, icon)
+        button: QPushButton = widget(icon=icon, text=text)
         if flat:
             button.setFlat(True)
         return button
 
-    def arrangeWidgets(self, widget_list):
+    def arrangeWidgets(self, widget_list: list[QWidget]) -> None:
         """
         Arrange the widgets in the Dialog window vertical layout
 
@@ -451,7 +781,7 @@ class Dialog(QDialog):
             self.vert_layout.addWidget(widget)
 
 
-def set_connections(connections):
+def set_connections(connections: dict[Signal, Slot]) -> None:
     """
     connect a signal to a slot or a list of slots, as defined in a dictionary
 
