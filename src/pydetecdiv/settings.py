@@ -23,7 +23,7 @@ def get_default_settings() -> dict:
             'project.sqlite': {'database': 'pydetecdiv'},
             'project.conda': {'dir': '/opt/miniconda3/'},
             'paths': {'appdata': xdg.BaseDirectory.save_data_path('pyDetecDiv'),
-                      'toolbox': '/data/Fred/BioImageIT/bioimageit-toolboxes'}
+                      'toolbox': '/data/BioImageIT/bioimageit-toolboxes'}
             # 'project.mysql': {'database': 'pydetecdiv', 'host': 'localhost', 'credentials': 'mysql.credentials', },
             # 'omero': {'host': 'localhost', 'credentials': 'omero.credentials', },
             # 'bioimageit': {'config_file': '/data2/BioImageIT/config.json'}
