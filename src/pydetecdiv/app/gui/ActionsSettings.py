@@ -45,11 +45,11 @@ class SettingsDialog(QDialog):
         button_appdata = QPushButton(appdata_group)
         button_appdata.setIcon(icon)
 
-        # tools_group = QGroupBox(self)
-        # tools_group.setTitle('Toolbox:')
-        # self.toolbox = QLineEdit(tools_group)
-        # button_toolbox = QPushButton(tools_group)
-        # button_toolbox.setIcon(icon)
+        tools_group = QGroupBox(self)
+        tools_group.setTitle('Toolbox:')
+        self.toolbox = QLineEdit(tools_group)
+        button_toolbox = QPushButton(tools_group)
+        button_toolbox.setIcon(icon)
 
         user_group = QGroupBox(self)
         user_group.setTitle('User:')
@@ -78,7 +78,7 @@ class SettingsDialog(QDialog):
         dbms_layout = QHBoxLayout(dbms_group)
         user_layout = QHBoxLayout(user_group)
         appdata_layout = QHBoxLayout(appdata_group)
-        # tools_layout = QHBoxLayout(tools_group)
+        tools_layout = QHBoxLayout(tools_group)
         conda_layout = QHBoxLayout(conda_group)
         batch_layout = QHBoxLayout(batch_group)
 
@@ -88,8 +88,8 @@ class SettingsDialog(QDialog):
         appdata_layout.addWidget(self.appdata)
         appdata_layout.addWidget(button_appdata)
 
-        # tools_layout.addWidget(self.toolbox)
-        # tools_layout.addWidget(button_toolbox)
+        tools_layout.addWidget(self.toolbox)
+        tools_layout.addWidget(button_toolbox)
 
         conda_layout.addWidget(self.conda_path)
         conda_layout.addWidget(button_conda)
@@ -102,7 +102,7 @@ class SettingsDialog(QDialog):
 
         vertical_layout.addWidget(workspace_group)
         vertical_layout.addWidget(appdata_group)
-        # vertical_layout.addWidget(tools_group)
+        vertical_layout.addWidget(tools_group)
         vertical_layout.addWidget(conda_group)
         vertical_layout.addWidget(user_group)
         vertical_layout.addWidget(batch_group)
@@ -113,11 +113,11 @@ class SettingsDialog(QDialog):
         # Widget behaviour
         button_workspace.clicked.connect(self.select_workspace)
         button_appdata.clicked.connect(self.select_appdata_path)
-        # button_toolbox.clicked.connect(self.select_toolbox_path)
+        button_toolbox.clicked.connect(self.select_toolbox_path)
         self.button_box.clicked.connect(self.clicked)
         self.workspace.textChanged.connect(self.toggle_buttons)
         self.user.textChanged.connect(self.toggle_buttons)
-        # self.toolbox.textChanged.connect(self.toggle_buttons)
+        self.toolbox.textChanged.connect(self.toggle_buttons)
 
         self.reset()
         self.exec()
@@ -160,18 +160,18 @@ class SettingsDialog(QDialog):
         if directory:
             self.appdata.setText(directory)
 
-    # def select_toolbox_path(self):
-    #     """
-    #     Method opening a Directory chooser to select the toolbox directory
-    #     """
-    #     dir_name = str(os.path.join(os.path.dirname(self.settings.value("paths/toolbox")),
-    #                             os.path.basename(self.settings.value("paths/toolbox"))))
-    #     if dir_name != self.toolbox.text() and self.toolbox.text():
-    #         dir_name = self.toolbox.text()
-    #     directory = QFileDialog.getExistingDirectory(self, caption='Choose toolbox directory', dir=dir_name,
-    #                                                  options=QFileDialog.ShowDirsOnly)
-    #     if directory:
-    #         self.toolbox.setText(directory)
+    def select_toolbox_path(self):
+        """
+        Method opening a Directory chooser to select the toolbox directory
+        """
+        dir_name = str(os.path.join(os.path.dirname(self.settings.value("paths/toolbox")),
+                                os.path.basename(self.settings.value("paths/toolbox"))))
+        if dir_name != self.toolbox.text() and self.toolbox.text():
+            dir_name = self.toolbox.text()
+        directory = QFileDialog.getExistingDirectory(self, caption='Choose toolbox directory', dir=dir_name,
+                                                     options=QFileDialog.ShowDirsOnly)
+        if directory:
+            self.toolbox.setText(directory)
 
     @Slot()
     def clicked(self, button):
@@ -211,7 +211,7 @@ class SettingsDialog(QDialog):
         """
         self.workspace.setText(self.settings.value("project/workspace"))
         self.appdata.setText(self.settings.value("paths/appdata"))
-        # self.toolbox.setText(self.settings.value("paths/toolbox"))
+        self.toolbox.setText(self.settings.value("paths/toolbox"))
         self.conda_path.setText(self.settings.value("project.conda/dir"))
         self.user.setText(self.settings.value("project/user"))
         self.dbms.setCurrentIndex(implemented_dbms().index(self.settings.value("project/dbms")))
