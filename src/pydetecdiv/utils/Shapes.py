@@ -3,6 +3,7 @@
 """
 A utility module defining classes of shapes
 """
+from __future__ import annotations
 
 
 class Box:
@@ -10,7 +11,7 @@ class Box:
     A utility class defining a Box for use by all classes representing two-dimensional objects such as images.
     """
 
-    def __init__(self, top_left=None, bottom_right=None):
+    def __init__(self, top_left: tuple[int, int] = None, bottom_right: tuple[int, int] = None):
         """
         Create a box from the coordinates of top left and bottom right corners
 
@@ -23,15 +24,15 @@ class Box:
         self.bottom_right = bottom_right
 
     @property
-    def x(self):
+    def x(self) -> int:
         return self._top_left[0]
 
     @property
-    def y(self):
+    def y(self) -> int:
         return self._top_left[1]
 
     @property
-    def top_left(self):
+    def top_left(self) -> tuple[int, int]:
         """
         top left corner of the box
 
@@ -41,14 +42,14 @@ class Box:
         return self._top_left
 
     @top_left.setter
-    def top_left(self, top_left):
+    def top_left(self, top_left: tuple[int, int]) -> None:
         if top_left is None:
             self._top_left = (0, 0)
         else:
             self._top_left = top_left
 
     @property
-    def bottom_right(self):
+    def bottom_right(self) -> tuple[int, int]:
         """
         bottom right corner of the box
 
@@ -58,11 +59,11 @@ class Box:
         return self._bottom_right
 
     @bottom_right.setter
-    def bottom_right(self, bottom_right):
+    def bottom_right(self, bottom_right: tuple[int, int]):
         self._bottom_right = bottom_right
 
     @property
-    def width(self):
+    def width(self) -> int:
         """
         width of the box
 
@@ -72,7 +73,7 @@ class Box:
         return self.bottom_right[0] - self.top_left[0] + 1
 
     @property
-    def height(self):
+    def height(self) -> int:
         """
         height of the box
 
@@ -82,7 +83,7 @@ class Box:
         return self.bottom_right[1] - self.top_left[1] + 1
 
     @property
-    def size(self):
+    def size(self) -> tuple[int, int]:
         """
         size dimensions of the box, i.e. width and height
 
@@ -91,7 +92,7 @@ class Box:
         """
         return self.width, self.height
 
-    def lies_in(self, other):
+    def lies_in(self, other: Box) -> bool:
         """
         Checks whether the current object lies within the boundaries of another box
 

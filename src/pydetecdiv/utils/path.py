@@ -6,7 +6,7 @@ A utility module for path manipulation
 import os
 
 
-def stem(path):
+def stem(path: str) -> str:
     """
     Return the basename of a file without extension
 

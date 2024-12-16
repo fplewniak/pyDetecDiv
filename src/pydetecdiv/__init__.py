@@ -7,7 +7,7 @@ import uuid
 import platform
 
 
-def generate_uuid():
+def generate_uuid() -> str:
     """
     Generate a universal id
 
@@ -17,7 +17,7 @@ def generate_uuid():
     return str(uuid.uuid4())
 
 
-def copy_files(source, destination):
+def copy_files(source: str, destination: str) -> subprocess.Popen:
     """
     Copy files from source to destination with OS-specific command
 
@@ -38,7 +38,7 @@ def copy_files(source, destination):
     return subprocess.Popen(cmd)
 
 
-def delete_files(file_list):
+def delete_files(file_list: list[str]) -> subprocess.Popen:
     """
     Delete files with OS-specific command
 
