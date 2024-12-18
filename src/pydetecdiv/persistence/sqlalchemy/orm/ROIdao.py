@@ -3,6 +3,8 @@
 """
 Access to ROI data
 """
+from typing import Any
+
 from sqlalchemy import Column, Integer, String, ForeignKey, text
 from sqlalchemy.types import JSON
 from sqlalchemy.orm import joinedload, relationship
@@ -33,7 +35,7 @@ class ROIdao(DAO, Base):
     data_list = ROIdata.roi_to_data()
 
     @property
-    def record(self):
+    def record(self) -> dict[str, Any]:
         """
         A method creating a record dictionary from a roi row dictionary. This method is used to convert the SQL
         table columns into the ROI record fields expected by the domain layer
@@ -51,7 +53,7 @@ class ROIdao(DAO, Base):
                 'key_val': self.key_val,
                 }
 
-    def data(self, roi_id):
+    def data(self, roi_id: int) -> list[dict[str, Any]]:
         """
         Returns a list of DataDao objects linked to the ROIdao object with the specified id_
 

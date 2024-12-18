@@ -45,7 +45,7 @@ class DataDao(DAO, Base):
     image = composite(ImageResource.Image, z, c, t)
 
     @property
-    def record(self):
+    def record(self) -> dict[str, object]:
         """
         A method creating a record dictionary from a data row dictionary. This method is used to convert the SQL
         table columns into the data record fields expected by the domain layer
@@ -75,7 +75,7 @@ class DataDao(DAO, Base):
                 # 'fov': self.fov
                 }
 
-    def fov_list(self, data_id):
+    def fov_list(self, data_id: int) -> list[dict[str, object]]:
         """
         A method returning the list of FOV records whose parent Data has id_ == data_id
 
@@ -107,7 +107,7 @@ class DataDao(DAO, Base):
             fov_list = []
         return fov_list
 
-    def roi_list(self, data_id):
+    def roi_list(self, data_id: int) -> list[dict[str, object]]:
         """
         A method returning the list of FOV records whose parent Data has id_ == data_id
 

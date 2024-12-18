@@ -6,7 +6,10 @@ Creation of global mapper_registry and Base class for database access.
 Main DAO class for accessing data in SQL Tables. Subclasses are responsible for providing the domain layer with lists
 of compatible records for the creation of domain-specific objects.
 """
+from typing import Any
+
 from sqlalchemy.orm import registry
+import sqlalchemy.orm.session as Session
 from sqlalchemy.sql.expression import Insert, Update
 
 mapper_registry = registry()
@@ -22,10 +25,10 @@ class DAO:
     exclude = []
     translate = {}
 
-    def __init__(self, session):
+    def __init__(self, session: Session):
         self.session = session
 
-    def insert(self, rec):
+    def insert(self, rec: dict[str, Any]) -> int:
         """
         Inserts data in SQL database for a newly created object
 
@@ -41,7 +44,7 @@ class DAO:
         #     session.commit()
         return primary_key
 
-    def update(self, rec):
+    def update(self, rec: dict[str, Any]) -> int:
         """
         Updates data in SQL database for the object corresponding to the record, which should contain the id of the
         modified object

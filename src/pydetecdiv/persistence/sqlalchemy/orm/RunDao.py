@@ -3,6 +3,8 @@
 """
 Access to ROI data
 """
+from typing import Any
+
 from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.types import JSON
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
@@ -26,7 +28,7 @@ class RunDao(DAO, Base):
     key_val = Column(JSON)
 
     @property
-    def record(self):
+    def record(self) -> dict[str, Any]:
         """
         A method creating a record dictionary from a dataset row dictionary. This method is used to convert the SQL
         table columns into the dataset record fields expected by the domain layer

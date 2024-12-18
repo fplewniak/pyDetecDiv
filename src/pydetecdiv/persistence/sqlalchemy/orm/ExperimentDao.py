@@ -23,7 +23,7 @@ class ExperimentDao(DAO, Base):
     raw_dataset = Column(String, ForeignKey('dataset.id_'), index=True)
 
     @property
-    def record(self):
+    def record(self) -> dict[str, object]:
         """
         A method creating a record dictionary from a data row dictionary. This method is used to convert the SQL
         table columns into the data record fields expected by the domain layer

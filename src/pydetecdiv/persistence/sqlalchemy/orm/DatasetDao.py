@@ -28,7 +28,7 @@ class DatasetDao(DAO, Base):
 
     data_list_ = relationship('DataDao')
 
-    def data_list(self, dataset_id):
+    def data_list(self, dataset_id: int) -> list[dict[str, object]]:
         """
         A method returning the list of Data records whose parent Dataset has id_ == dataset_id
 
@@ -48,7 +48,7 @@ class DatasetDao(DAO, Base):
         return data_list
 
     @property
-    def record(self):
+    def record(self) -> dict[str, object]:
         """
         A method creating a record dictionary from a dataset row dictionary. This method is used to convert the SQL
         table columns into the dataset record fields expected by the domain layer

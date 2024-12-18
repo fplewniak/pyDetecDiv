@@ -17,7 +17,7 @@ def generate_uuid() -> str:
     return str(uuid.uuid4())
 
 
-def copy_files(source: str, destination: str) -> subprocess.Popen:
+def copy_files(source: list[str], destination: str) -> subprocess.Popen:
     """
     Copy files from source to destination with OS-specific command
 

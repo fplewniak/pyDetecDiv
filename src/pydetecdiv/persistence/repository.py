@@ -6,6 +6,10 @@ concrete repositories.
 """
 import abc
 import subprocess
+from datetime import datetime
+from typing import Any
+
+import pandas
 
 
 class ShallowDb(abc.ABC):
@@ -14,34 +18,34 @@ class ShallowDb(abc.ABC):
     """
 
     @abc.abstractmethod
-    def create(self):
+    def create(self) -> None:
         """
         Abstract method enforcing the implementation in all shallow persistence connectors of a create() method for
         creating the database if it does not exist
         """
 
     @abc.abstractmethod
-    def commit(self):
+    def commit(self) -> None:
         """
         Abstract method enforcing the implementation of a method to save creations and updates of objects in repository
         on disk
         """
 
     @abc.abstractmethod
-    def rollback(self):
+    def rollback(self) -> None:
         """
         Abstract method enforcing the implementation of a method cancelling operations that have not been committed
         """
 
     @abc.abstractmethod
-    def close(self):
+    def close(self) -> None:
         """
         Abstract method enforcing the implementation of a close() method in all shallow persistence connectors
         """
 
     @abc.abstractmethod
-    def import_images(self, image_files, data_dir_path, destination, author='', date='now', in_place=False,
-                      img_format='imagetiff') -> subprocess.Popen:
+    def import_images(self, image_files: list[str], data_dir_path: str, destination: str, author: str = '', date: datetime = 'now',
+                      in_place: bool = False, img_format: str = 'imagetiff') -> subprocess.Popen:
         """
         Import images specified in a list of files into a destination
 
@@ -64,7 +68,7 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
-    def save_object(self, class_name, record):
+    def save_object(self, class_name: str, record: dict[str, Any]) -> int:
         """
         Abstract method enforcing the implementation of a save_object() method in all shallow persistence connectors
 
@@ -75,7 +79,7 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
-    def delete_object(self, class_name, id_):
+    def delete_object(self, class_name: str, id_: int) -> None:
         """
         Abstract method enforcing the implementation of a delete_object() method in all shallow persistence connectors
 
@@ -86,7 +90,7 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
-    def count_records(self, class_name):
+    def count_records(self, class_name: str) -> int:
         """
         Get the number of objects of a given class in the current project
 
@@ -97,7 +101,7 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_dataframe(self, class_name, id_list=None):
+    def get_dataframe(self, class_name: str, id_list: list[int] = None) -> pandas.DataFrame:
         """
         Abstract method enforcing the implementation of a method returning a pandas DataFrame containing the list of
         objects of a given class in the current project whose id is in id_list
@@ -111,7 +115,7 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_record(self, class_name, id_):
+    def get_record(self, class_name: str, id_: int = None, uuid: str = None) -> dict[str, Any] | None:
         """
         Abstract method enforcing the implementation of a method returning an object record of a given
         class whose id is id_
@@ -125,7 +129,7 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_records(self, class_name, id_list):
+    def get_records(self, class_name: str, id_list: list[int] = None) -> list[dict[str, Any]]:
         """
         Abstract method enforcing the implementation of a method returning the list of all object records of a given
         class specified by its name or a list of objects whose id is in id_list
@@ -139,7 +143,7 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_linked_records(self, cls_name, parent_cls_name, parent_id):
+    def get_linked_records(self, cls_name:str, parent_cls_name: str, parent_id: int) -> list[dict[str, Any]]:
         """
         Abstract method enforcing the implementation of a method returning the list of records for all objects of class
          defined by class_name that are linked to object of class parent_class_name with id_ = parent_id
@@ -155,7 +159,7 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
-    def link(self, class1_name, id_1, class2_name, id_2):
+    def link(self, class1_name: str, id_1: int, class2_name: str, id_2: int) -> None:
         """
         Create a link between two domain-specific objects. There must be a direct link defined in Linker class,
         otherwise, the link cannot be created.
@@ -171,7 +175,7 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
-    def unlink(self, class1_name, id_1, class2_name, id_2):
+    def unlink(self, class1_name: str, id_1: int, class2_name: str, id_2: int) -> None:
         """
         Remove the link between two domain-specific objects. There must be a direct link defined in Linker class,
         otherwise, the link cannot be removed.
