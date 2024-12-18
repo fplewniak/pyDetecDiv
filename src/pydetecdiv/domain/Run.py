@@ -6,8 +6,10 @@
 import json
 import os
 from datetime import datetime
+from typing import Any
 
 from pydetecdiv import generate_uuid
+from pydetecdiv.domain.CommandLineTool import CommandLineTool
 from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.settings import get_config_value
 
@@ -17,7 +19,8 @@ class Run(DomainSpecificObject):
     A business-logic class defining valid operations and attributes of data
     """
 
-    def __init__(self, tool_name=None, tool_version=None, is_plugin=False, command=None, parameters=None, key_val=None,
+    def __init__(self, tool_name: str = None, tool_version: str = None, is_plugin: bool = False, command: str = None,
+                 parameters:  dict[str, object] = None, key_val: dict[str, Any] = None,
                  **kwargs):
         super().__init__(**kwargs)
         self.tool_name = tool_name
@@ -28,7 +31,7 @@ class Run(DomainSpecificObject):
         self.key_val = key_val
         self.validate()
 
-    def record(self, no_id=False):
+    def record(self, no_id: bool = False) -> dict[str, Any]:
         """
         Returns a record dictionary of the current Data
 
@@ -51,7 +54,8 @@ class Run(DomainSpecificObject):
             record['id_'] = self.id_
         return record
 
-    def execute(self, testing=False):
+# The following code is not working currently, and will need to be adapted to include command line tools integration
+    def execute(self, tool: CommandLineTool, testing: bool = False):
         """
         Execute the job after having installed requirements if necessary
         """

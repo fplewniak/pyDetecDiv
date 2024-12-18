@@ -3,6 +3,11 @@
 """
  A class defining the business logic methods that can be applied to Regions Of Interest
 """
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from pydetecdiv.domain import Data
+
 import os
 
 from pydetecdiv.domain.dso import NamedDSO
@@ -14,7 +19,7 @@ class Dataset(NamedDSO):
     A business-logic class defining valid operations and attributes of data
     """
 
-    def __init__(self, url='', type_=None, run=None, pattern=None, key_val=None, **kwargs):
+    def __init__(self, url: str = '', type_: str = None, run: int = None, pattern: str = None, key_val: dict = None, **kwargs):
         super().__init__(**kwargs)
         self.url_ = url
         self.type_ = type_
@@ -24,7 +29,7 @@ class Dataset(NamedDSO):
         self.validate(updated=False)
 
     @property
-    def url(self):
+    def url(self) -> str:
         """
         URL property of the data file, relative to the workspace directory or absolute path if file are stored in place
 
@@ -36,7 +41,7 @@ class Dataset(NamedDSO):
         return os.path.join(get_config_value('project', 'workspace'), self.project.dbname, self.name)
 
     @property
-    def data_list(self):
+    def data_list(self) -> list['Data']:
         """
         returns the list of data files in dataset
 
@@ -45,7 +50,7 @@ class Dataset(NamedDSO):
         """
         return self.project.get_linked_objects('Data', to=self)
 
-    def record(self, no_id=False):
+    def record(self, no_id: int = False) -> dict[str, Any]:
         """
         Returns a record dictionary of the current Dataset
 
@@ -55,20 +60,20 @@ class Dataset(NamedDSO):
         :rtype: dict
         """
         record = {
-            'name': self.name,
-            'url': self.url,
-            'type_': self.type_,
-            'run': self.run,
+            'name'   : self.name,
+            'url'    : self.url,
+            'type_'  : self.type_,
+            'run'    : self.run,
             'pattern': self.pattern,
-            'uuid': self.uuid,
+            'uuid'   : self.uuid,
             'key_val': self.key_val,
-        }
+            }
         if not no_id:
             record['id_'] = self.id_
         return record
 
     @property
-    def info(self):
+    def info(self) -> str:
         return f"""
    Name: {self.name}
    Path: {self.url}

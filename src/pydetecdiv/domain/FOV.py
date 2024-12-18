@@ -3,6 +3,13 @@
 """
  A class defining the business logic methods that can be applied to Fields Of View
 """
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pydetecdiv.domain.ImageResource import ImageResource
+    from pydetecdiv.domain.Data import Data
+    from pydetecdiv.domain.ROI import ROI
+
 from pydetecdiv.domain.dso import NamedDSO, BoxedDSO
 
 
@@ -11,13 +18,13 @@ class FOV(NamedDSO, BoxedDSO):
     A business-logic class defining valid operations and attributes of Fields of view (FOV)
     """
 
-    def __init__(self, comments=None, key_val=None, **kwargs):
+    def __init__(self, comments: str = None, key_val: dict = None, **kwargs):
         super().__init__(**kwargs)
         self._comments = comments
         self.key_val = key_val
         self.validate(updated=False)
 
-    def delete(self):
+    def delete(self) -> None:
         """
         Delete the current FOV, first deleting all linked ROIs that would be consequently left orphaned
         """
@@ -25,7 +32,7 @@ class FOV(NamedDSO, BoxedDSO):
             roi.delete()
         self.project.delete(self)
 
-    def record(self, no_id=False):
+    def record(self, no_id: bool = False) -> dict:
         """
         Returns a record dictionary of the current FOV
 
@@ -35,17 +42,17 @@ class FOV(NamedDSO, BoxedDSO):
         :rtype: dict
         """
         record = {
-            'name': self.name,
+            'name'    : self.name,
             'comments': self.comments,
-            'uuid': self.uuid,
-            'key_val': self.key_val,
-        }
+            'uuid'    : self.uuid,
+            'key_val' : self.key_val,
+            }
         if not no_id:
             record['id_'] = self.id_
         return record
 
     @property
-    def info(self):
+    def info(self) -> str:
         """
         Returns ready-to-print information about FOV
 
@@ -62,7 +69,7 @@ Comments:             {self.comments}
         """
 
     @property
-    def comments(self):
+    def comments(self) -> str:
         """
         comments property of FOV
 
@@ -72,12 +79,12 @@ Comments:             {self.comments}
         return self._comments
 
     @comments.setter
-    def comments(self, comments):
+    def comments(self, comments: str):
         self._comments = comments
         self.validate()
 
     @property
-    def data(self):
+    def data(self) -> list['Data']:
         """
         Property returning the Data objects associated to this FOV
 
@@ -88,7 +95,7 @@ Comments:             {self.comments}
         return data
 
     @property
-    def roi_list(self):
+    def roi_list(self) -> list['ROI']:
         """
         Returns the list of ROI objects whose parent if the current FOV
 
@@ -100,7 +107,7 @@ Comments:             {self.comments}
         # return roi_list if len(roi_list) == 1 else roi_list[1:]
 
     @property
-    def initial_roi(self):
+    def initial_roi(self) -> 'ROI':
         """
         Return the initial ROI, created at the creation of this FOV and representing the full FOV
 
@@ -109,7 +116,7 @@ Comments:             {self.comments}
         """
         return self.project.get_linked_objects('ROI', to=self)[0]
 
-    def image_resource(self, dataset='data'):
+    def image_resource(self, dataset: str = 'data') -> 'ImageResource':
         """
         Return the image resource (single multipage file or a series of files) corresponding to the FOV in a specific
          dataset
@@ -120,29 +127,29 @@ Comments:             {self.comments}
         :rtype: ImageResource
         """
         image_resource = \
-        [ir for ir in self.project.get_linked_objects('ImageResource', self) if ir.dataset.name == dataset][0]
+            [ir for ir in self.project.get_linked_objects('ImageResource', self) if ir.dataset.name == dataset][0]
         return image_resource
 
     @property
-    def tscale(self):
+    def tscale(self) -> float:
         return self.image_resource().tscale
 
     @property
-    def tunit(self):
+    def tunit(self) -> float:
         return self.image_resource().tunit
 
     @property
-    def sizeT(self):
+    def sizeT(self) -> int:
         return self.image_resource().sizeT
 
     @property
-    def size(self):
-        return (self.image_resource().sizeX, self.image_resource().sizeY)
+    def size(self) -> tuple[int, int]:
+        return self.image_resource().sizeX, self.image_resource().sizeY
 
     @property
-    def bottom_right(self):
-        return (self.image_resource().sizeX - 1, self.image_resource().sizeY - 1)
+    def bottom_right(self) -> tuple[int, int]:
+        return self.image_resource().sizeX - 1, self.image_resource().sizeY - 1
 
     @property
-    def top_left(self):
+    def top_left(self) -> tuple[int, int]:
         return (0, 0)

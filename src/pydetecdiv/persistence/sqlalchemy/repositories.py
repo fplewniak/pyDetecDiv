@@ -7,6 +7,7 @@ import json
 import os
 import re
 import sqlite3
+import subprocess
 from datetime import datetime
 from PIL import Image
 
@@ -115,7 +116,7 @@ class ShallowSQLite3(ShallowDb):
         self.engine.dispose()
 
     def import_images(self, image_files, data_dir_path, destination, author='', date='now', in_place=False,
-                      img_format='imagetiff'):
+                      img_format='imagetiff') -> subprocess.Popen:
         """
         Import images specified in a list of files into a destination
 

@@ -3,12 +3,17 @@
 """
  A class defining the business logic methods that can be applied to images
 """
+from __future__ import annotations
+
 from enum import Enum
 
 import cv2
+import matplotlib.axes
 import numpy as np
 import tensorflow as tf
 from skimage import exposure
+
+from pydetecdiv.domain import ImageResourceData, ROI
 
 
 class ImgDType(Enum):
@@ -27,28 +32,28 @@ class ImgDType(Enum):
     float32 = (np.float32, tf.float32)
     float64 = (np.float64, tf.float64)
 
-    def __init__(self, array_dtype, tensor_dtype):
+    def __init__(self, array_dtype: np.dtype, tensor_dtype: tf.dtypes.DType):
         self.array_dtype = array_dtype
         self.tensor_dtype = tensor_dtype
 
 
-class Image():
+class Image:
     """
     A business-logic class defining valid operations and attributes of 2D images
     """
 
-    def __init__(self, data=None):
+    def __init__(self, data: np.ndarray | tf.Tensor = None):
         self.tensor = data if tf.is_tensor(data) else tf.convert_to_tensor(data)
         self._initial_tensor = self.tensor
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Resets the tensor values to their initial state
         """
         self.tensor = self._initial_tensor
 
     @property
-    def shape(self):
+    def shape(self) -> tuple[int, int, int]:
         """
         the shape of this Image
 
@@ -57,7 +62,7 @@ class Image():
         return self.tensor.shape
 
     @property
-    def dtype(self):
+    def dtype(self) -> tf.dtypes.DType:
         """
         the dtype for this Image
 
@@ -65,7 +70,7 @@ class Image():
         """
         return self.tensor.dtype
 
-    def as_array(self, dtype=None, grayscale=False):
+    def as_array(self, dtype: ImgDType = None, grayscale: bool = False) -> np.ndarray:
         """
         property returning the image data for this image
 
@@ -74,7 +79,7 @@ class Image():
         """
         return self.as_tensor(dtype=dtype, grayscale=grayscale).numpy()
 
-    def as_tensor(self, dtype=None, grayscale=False):
+    def as_tensor(self, dtype: ImgDType = None, grayscale: bool = False) -> tf.Tensor:
         """
         Returns the Image as a tensor
 
@@ -87,7 +92,7 @@ class Image():
             return tf.image.rgb_to_grayscale(tensor)
         return tensor
 
-    def _convert_to_dtype(self, dtype=ImgDType.uint16):
+    def _convert_to_dtype(self, dtype: ImgDType = ImgDType.uint16) -> tf.Tensor:
         """
         Converts the Image to a specified dtype tensor
 
@@ -100,7 +105,7 @@ class Image():
                 not self.tensor.dtype.is_unsigned and dtype.is_unsigned)
         return tf.image.convert_image_dtype(self.tensor, dtype=dtype, saturate=saturate)
 
-    def rgb_to_gray(self):
+    def rgb_to_gray(self) -> Image:
         """
         Return a grayscale Image obtained from an RGB Image
 
@@ -108,7 +113,7 @@ class Image():
         """
         return Image(self._rgb_to_gray())
 
-    def _rgb_to_gray(self):
+    def _rgb_to_gray(self) -> tf.Tensor:
         """
         Return a grayscale 2D tensor obtained from an RGB 3D tensor
 
@@ -116,15 +121,15 @@ class Image():
         """
         return tf.image.rgb_to_grayscale(self.tensor)
 
-    def warp_affine(self, affine_matrix, in_place=True):
-        tensor = tf.convert_to_tensor(cv2.warpAffine(self.as_array(), np.float32(affine_matrix), self.shape[1], self.shape[0]))
+    def warp_affine(self, affine_matrix: np.ndarray, in_place: bool = True) -> Image:
+        tensor = tf.convert_to_tensor(cv2.warpAffine(self.as_array(), np.float32(affine_matrix), (self.shape[1], self.shape[0])))
         if in_place is False:
             return Image(tensor)
         self.tensor = tensor
         self.tensor = self._convert_to_dtype(dtype=self._initial_tensor.dtype)
         return self
 
-    def resize(self, shape=None, method='nearest', antialias=True):
+    def resize(self, shape: tuple[int, int] = None, method: str = 'nearest', antialias: bool = True) -> Image:
         """
         Resize image to the defined shape with the defined method.
 
@@ -149,17 +154,17 @@ class Image():
         tensor = tf.expand_dims(self.tensor, axis=-1) if len(self.shape) == 2 else self.tensor
         return Image(tf.squeeze(tf.image.resize(tensor, shape, method=method)))
 
-    def show(self, ax, grayscale=False, **kwargs):
+    def show(self, ax: matplotlib.axes.Axes, grayscale: bool = False, **kwargs):
         """
         Show the Image as a matplotlib image plot
 
-        :param ax: the matplotlib ax to plot the imge in
+        :param ax: the matplotlib ax to plot the image in
         :param grayscale: bool whether defining whether the image should be displayed as grayscale
         :param kwargs: keyword arguments passed to the imshow method
         """
         ax.imshow(self.as_array(ImgDType.uint8, grayscale), **kwargs)
 
-    def histogram(self, ax, bins='auto', color='black'):
+    def histogram(self, ax: matplotlib.axes.Axes, bins: str = 'auto', color: str = 'black'):
         """
         Display a histogram of values
 
@@ -169,7 +174,7 @@ class Image():
         """
         ax.hist(self.as_array().flatten(), bins=bins, histtype='step', color=color)
 
-    def channel_histogram(self, ax, bins='auto', ):
+    def channel_histogram(self, ax: matplotlib.axes.Axes, bins: str = 'auto', ):
         """
         Returns a histogram of channels' values
         :param ax: the matplotlib ax to plot the histogram in
@@ -183,7 +188,7 @@ class Image():
         else:
             self.histogram(ax, bins=bins)
 
-    def crop(self, offset_height, offset_width, target_height, target_width, new_image=True):
+    def crop(self, offset_height: int, offset_width: int, target_height: int, target_width: int, new_image: bool = True) -> Image:
         """
         Crop the current Image
 
@@ -203,7 +208,7 @@ class Image():
         self.tensor = tensor
         return self
 
-    def adjust_contrast(self, factor=2.0):
+    def adjust_contrast(self, factor: float = 2.0) -> Image:
         """
         Automatic contrast adjustment
 
@@ -213,7 +218,7 @@ class Image():
         self.tensor = tf.image.adjust_contrast(self.tensor, factor)
         return self
 
-    def stretch_contrast(self, q=None):
+    def stretch_contrast(self, q: tuple[int, int] = None) -> Image:
         """
         Stretches the contrast of the Image
 
@@ -227,7 +232,7 @@ class Image():
         self.tensor = tf.convert_to_tensor(exposure.rescale_intensity(img, in_range=(qlow, qhi)))
         return self
 
-    def equalize_hist(self, adapt=False):
+    def equalize_hist(self, adapt: bool = False) -> Image:
         """
         Adjust exposure using the histogram equalization method
 
@@ -241,7 +246,7 @@ class Image():
         self.tensor = self._convert_to_dtype(dtype=self._initial_tensor.dtype)
         return self
 
-    def sigmoid_correction(self):
+    def sigmoid_correction(self) -> Image:
         """
         Exposure correction using the sigmoid method
 
@@ -250,7 +255,7 @@ class Image():
         self.tensor = tf.convert_to_tensor(exposure.adjust_sigmoid(self.as_array()))
         return self
 
-    def decompose_channels(self):
+    def decompose_channels(self) -> list[Image]:
         """
         Split an RGB image in a list of channels
 
@@ -261,7 +266,7 @@ class Image():
         return [Image(array) for array in tf.unstack(self.tensor, axis=-1)]
 
     @staticmethod
-    def add(images):
+    def add(images: list[Image]) -> Image:
         """
         Pixelwise addition of images in a list
 
@@ -271,7 +276,7 @@ class Image():
         return Image(tf.math.add_n([i.tensor for i in images]))
 
     @staticmethod
-    def mean(images):
+    def mean(images: list[Image]) -> Image:
         """
         Compute the pixelwise mean of a list of images
 
@@ -284,7 +289,7 @@ class Image():
         return images[0]
 
     @staticmethod
-    def compose_channels(channels, alpha=None):
+    def compose_channels(channels: list[Image] | tuple[Image], alpha: bool = False) -> Image:
         """
         Compose 3 channels into an RGB image, optionally adding an alpha channel determined as the maximum of the three
         channels if alpha is True
@@ -299,7 +304,8 @@ class Image():
         return Image(tf.stack([c.as_tensor() for c in channels], axis=-1))
 
     @staticmethod
-    def auto_channels(image_resource_data, C=0, T=0, Z=0, crop=None, drift=False, alpha=None):
+    def auto_channels(image_resource_data: ImageResourceData, C: int = 0, T: int = 0, Z: int | list[int] | tuple[int] = 0,
+                      crop: tuple[slice, slice] = None, drift: bool = False, alpha: bool = False) -> Image:
         """
         Returns a RGB, RGBA or grayscale image depending upon the C or Z values. If C (or Z) is a tuple, it is used as
         RGB values. If alpha is set to True, then the maximum value of every pixel across all channels defines its
@@ -331,7 +337,8 @@ class Image():
         return img
 
 
-def get_images_sequences(imgdata, roi_list, t, seqlen=None, z=None, apply_drift=True):
+def get_images_sequences(imgdata: ImageResourceData, roi_list: list[ROI], t: int, seqlen: int = None, z: list[int, int, int] = None,
+                         apply_drift: bool = True) -> tf.Tensor:
     """
     Get a sequence of seqlen images for each roi
 
@@ -339,6 +346,8 @@ def get_images_sequences(imgdata, roi_list, t, seqlen=None, z=None, apply_drift=
     :param roi_list: the list of ROIs
     :param t: the starting time point (index of frame)
     :param seqlen: the number of frames
+    :param z: the z-layers to stack
+    :param apply_drift: True if drift must be applied, False otherwise
     :return: a tensor containing the sequences for all ROIs
     """
     maxt = min(imgdata.sizeT, t + seqlen) if seqlen else imgdata.sizeT
@@ -351,7 +360,8 @@ def get_images_sequences(imgdata, roi_list, t, seqlen=None, z=None, apply_drift=
     return roi_sequences
 
 
-def get_rgb_images_from_stacks_memmap(imgdata, roi_list, t, z=None, apply_drift=True):
+def get_rgb_images_from_stacks_memmap(imgdata: ImageResourceData, roi_list: list[ROI], t: int, z: list[int, int, int] = None,
+                                      apply_drift: bool = True) -> list[tf.Tensor]:
     """
     Combine 3 z-layers of a grayscale image resource into a RGB image where each of the z-layer is a channel
 
@@ -359,6 +369,7 @@ def get_rgb_images_from_stacks_memmap(imgdata, roi_list, t, z=None, apply_drift=
     :param roi_list: the list of ROIs
     :param t: the frame index
     :param z: a list of 3 z-layer indices defining the grayscale layers that must be combined as channels
+    :param apply_drift: True if drift must be applied, False otherwise
     :return: a tensor of the combined RGB images
     """
     if z is None:
@@ -380,13 +391,15 @@ def get_rgb_images_from_stacks_memmap(imgdata, roi_list, t, z=None, apply_drift=
     return roi_images
 
 
-def stack_fov_image(imgdata, t, z=None, apply_drift=True):
+def stack_fov_image(imgdata: ImageResourceData, t: int, z: list[int, int, int] = None, apply_drift: bool = True) -> tf.Tensor:
     """
+    Combine 3 z-layers of a grayscale full image resource (one complete FOV) into a RGB image where each of the z-layer is a channel
 
-    :param imgdata:
-    :param t:
-    :param z:
-    :return:
+    :param imgdata: the image data resource
+    :param t: the frame index
+    :param z: a list of 3 z-layer indices defining the grayscale layers that must be combined as channels
+    :param apply_drift: True if drift must be applied, False otherwise
+    :return: a tensor of the combined RGB images
     """
     if z is None:
         z = [0, 0, 0]
@@ -402,7 +415,8 @@ def stack_fov_image(imgdata, t, z=None, apply_drift=True):
     return rgb_image
 
 
-def get_rgb_images_from_stacks(imgdata, roi_list, t, z=None, apply_drift=True):
+def get_rgb_images_from_stacks(imgdata: ImageResourceData, roi_list: list[ROI], t: int, z: list[int, int, int] = None,
+                               apply_drift: bool = True) -> list[tf.Tensor]:
     """
     Combine 3 z-layers of a grayscale image resource into a RGB image where each of the z-layer is a channel
 
@@ -410,6 +424,7 @@ def get_rgb_images_from_stacks(imgdata, roi_list, t, z=None, apply_drift=True):
     :param roi_list: the list of ROIs
     :param t: the frame index
     :param z: a list of 3 z-layer indices defining the grayscale layers that must be combined as channels
+    :param apply_drift: True if drift must be applied, False otherwise
     :return: a tensor of the combined RGB images
     """
     if z is None:

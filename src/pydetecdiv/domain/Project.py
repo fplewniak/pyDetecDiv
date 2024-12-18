@@ -3,19 +3,28 @@
 """
 The central class for keeping track of all available objects in a project.
 """
+from typing import TypeVar
+
+import subprocess
+from typing import Callable, Any
+
 import json
 import os
 import itertools
 from collections import defaultdict
 from datetime import datetime
 import pandas
+import pandas as pd
 
 from pydetecdiv.domain.ImageResource import ImageResource
 from pydetecdiv.settings import get_config_value
 from pydetecdiv.persistence.project import open_project
 from pydetecdiv.domain.dso import DomainSpecificObject
-from pydetecdiv.domain import ROI, FOV, Experiment, Data, Run, Dataset, ImageResourceData
+from pydetecdiv.domain import ROI, FOV, Experiment, Data, Run, Dataset
 
+# TypeVar definitions to enable type checking for subclasses of DomainSpecificObject class
+DSO = TypeVar('DSO', bound=DomainSpecificObject)
+otherDSO = TypeVar('otherDSO', bound=DomainSpecificObject)
 
 class Project:
     """
@@ -25,22 +34,22 @@ class Project:
     achieved through the use of dict representing standardized records.
     """
     classes = {
-        'ROI': ROI,
-        'FOV': FOV,
-        'Experiment': Experiment,
-        'Data': Data,
-        'Dataset': Dataset,
+        'ROI'          : ROI,
+        'FOV'          : FOV,
+        'Experiment'   : Experiment,
+        'Data'         : Data,
+        'Dataset'      : Dataset,
         'ImageResource': ImageResource,
-        'Run': Run,
-    }
+        'Run'          : Run,
+        }
 
-    def __init__(self, dbname=None, dbms=None):
+    def __init__(self, dbname: str = None, dbms: str = None):
         self.repository = open_project(dbname, dbms)
         self.dbname = dbname
         self.pool = defaultdict(DomainSpecificObject)
 
     @property
-    def path(self):
+    def path(self) -> str:
         """
         Property returning the path of the project
 
@@ -49,7 +58,7 @@ class Project:
         return os.path.join(get_config_value('project', 'workspace'), self.dbname)
 
     @property
-    def uuid(self):
+    def uuid(self) -> str:
         """
         Property returning the uuid associated to this project
 
@@ -58,7 +67,7 @@ class Project:
         return self.get_named_object('Experiment', self.dbname).uuid
 
     @property
-    def author(self):
+    def author(self) -> str:
         """
         Property returning the author associated to this project
 
@@ -67,7 +76,7 @@ class Project:
         return self.get_named_object('Experiment', self.dbname).author
 
     @property
-    def date(self):
+    def date(self) -> datetime:
         """
         Property returning the date of this project
 
@@ -76,7 +85,7 @@ class Project:
         return self.get_named_object('Experiment', self.dbname).date
 
     @property
-    def raw_dataset(self):
+    def raw_dataset(self) -> Dataset:
         """
         Property returning the raw dataset object associated to this project
 
@@ -84,32 +93,32 @@ class Project:
         """
         return self.get_named_object('Experiment', self.dbname).raw_dataset
 
-    def commit(self):
+    def commit(self) -> None:
         """
         Commit operations performed on objects (creation and update) to save them into the repository.
         """
         self.repository.commit()
 
-    def cancel(self):
+    def cancel(self) -> None:
         """
         Cancel operations performed on objects since last commit
         """
         self.repository.rollback()
 
-    def image_resource(self, path, pattern=None):
-        """
-        Returns an image resource from a path and a pattern defining c, z and t in the case of multiple files
+    # def image_resource(self, path: str, pattern: str = None):
+    #     """
+    #     Returns an image resource from a path and a pattern defining c, z and t in the case of multiple files
+    #
+    #     :param path: image path
+    #     :type path: str or list of str
+    #     :param pattern: pattern defining c, z and t in the case of multiple files
+    #     :type pattern: str
+    #     :return: an image resource
+    #     :rtype: ImageResourceData
+    #     """
+    #     return ImageResourceData(path, pattern=pattern)
 
-        :param path: image path
-        :type path: str or list of str
-        :param pattern: pattern defining c, z and t in the case of multiple files
-        :type pattern: str
-        :return: an image resource
-        :rtype: ImageResourceData
-        """
-        return ImageResourceData(path, pattern=pattern)
-
-    def import_images(self, image_files, destination=None, **kwargs):
+    def import_images(self, image_files: list[str], destination: str = None, **kwargs) -> subprocess.Popen:
         """
         Import images specified in a list of files into a destination
 
@@ -124,7 +133,24 @@ class Project:
         data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
         return self.repository.import_images(image_files, data_dir_path, destination, **kwargs)
 
-    def import_images_from_metadata_off(self, metadata_file, destination=None, **kwargs):
+    # def import_images_from_metadata_off(self, metadata_file: str, destination: str = None, **kwargs) -> subprocess.Popen:
+    #     """
+    #     Import images specified in a list of files into a destination
+    #
+    #     :param metadata_files: list of metadata files to load and get information from for image import
+    #     :type metadata_files: list of str
+    #     :param destination: destination directory to import image files into
+    #     :type destination: str
+    #     :param kwargs: extra keyword arguments
+    #     :return: the list of imported files. This list can be used to roll the copy back if needed
+    #     :rtype: list of str
+    #     """
+    #     data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
+    #     return self.repository.import_images_from_metadata(metadata_file, data_dir_path, destination, **kwargs)
+
+    def import_images_from_metadata(self, metadata_files: str, destination: str = None, author: str = '',
+                                    date: datetime | str = 'now', in_place: bool = True,
+                                    img_format: str = 'imagetiff', **kwargs) -> None:
         """
         Import images specified in a list of files into a destination
 
@@ -133,14 +159,7 @@ class Project:
         :param destination: destination directory to import image files into
         :type destination: str
         :param kwargs: extra keyword arguments
-        :return: the list of imported files. This list can be used to roll the copy back if needed
-        :rtype: list of str
         """
-        data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
-        return self.repository.import_images_from_metadata(metadata_file, data_dir_path, destination, **kwargs)
-
-    def import_images_from_metadata(self, metadata_files, destination=None, author='', date='now', in_place=True,
-                                    img_format='imagetiff', **kwargs):
         # data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
         dataset = self.get_named_object('Dataset', 'data')
         author = get_config_value('project', 'user') if author == '' else author
@@ -168,8 +187,8 @@ class Project:
                 _ = Data(project=self, name=os.path.basename(image_file),
                          dataset=dataset, author=author, date=date_time,
                          url=image_file if in_place else os.path.join(destination, os.path.basename(image_file)),
-                         format_=img_format, source_dir=os.path.dirname(image_file), meta_data='{}',
-                         key_val='{}', image_resource=image_res,
+                         format_=img_format, source_dir=os.path.dirname(image_file), meta_data={},
+                         key_val={}, image_resource=image_res,
                          c=d["ChannelIndex"], t=d["FrameIndex"], z=d["SliceIndex"],
                          xdim=d["Width"], ydim=d['Height'])
                 maxT = max(sizeT, d["FrameIndex"])
@@ -177,7 +196,7 @@ class Project:
             image_res.xdim, image_res.ydim, image_res.tdim = d["Width"], d['Height'], (maxT + 1)
             image_res.validate()
 
-    def annotate(self, dataset, source, columns, regex):
+    def annotate(self, dataset: Dataset, source: str | Callable, columns: list[str], regex: str) -> pd.DataFrame:
         """
         Annotate data in a dataset using a regular expression applied to columns specified by source (column name or
         callable returning a str built from column names)
@@ -195,15 +214,10 @@ class Project:
         """
         return self.repository.annotate_data(dataset, source, columns, regex)
 
-    def create_fov_from_raw_data(self, df, multi):
+    def create_fov_from_raw_data(self, df: pd.DataFrame, multi: bool) -> None:
         """
         Create domain-specific objects from raw data using a regular expression applied to a database field
         or a combination thereof specified by source. DSOs to create are specified by the values in keys.
-
-        :param source: the database field or combination of fields to apply the regular expression to
-        :type source: str or callable returning a str
-        :param regex: regular expression defining the annotations
-        :type regex: regular expression str
         """
         yield 0
         fov_names = [f.name for f in self.get_objects('FOV')]
@@ -228,7 +242,7 @@ class Project:
             # for fov_id, image_res in new_image_resources.items():
             for fov_id, image_res in image_resources.items():
                 (image_res.zdim, image_res.cdim, image_res.tdim) = df.loc[df['FOV'] == fov_id, ['Z', 'C', 'T']].astype(
-                    int).max(axis=0).add(1)
+                        int).max(axis=0).add(1)
                 self.save(image_res)
         else:
             # for fov_id, image_res in new_image_resources.items():
@@ -247,7 +261,7 @@ class Project:
             yield int((i + len(new_fov_names)) * 100 / total)
         # _ = [image_res.set_image_shape_from_file() for image_res in new_image_resources.values()]
 
-    def id_mapping(self, class_name):
+    def id_mapping(self, class_name: str) -> dict[str, int]:
         """
         Return name to id_ mapping for objects of a given class
 
@@ -258,7 +272,7 @@ class Project:
         """
         return {obj.name: obj.id_ for obj in self.get_objects(class_name)}
 
-    def save_record(self, class_name, record):
+    def save_record(self, class_name: str, record: dict[str, Any]) -> int:
         """
         Creates and saves an object of class named class_name from its record without requiring the creation of a DSO.
         This method can be useful for creating associated objects with mutual dependency.
@@ -273,7 +287,7 @@ class Project:
         id_ = self.repository.save_object(class_name, record)
         return id_
 
-    def save(self, dso):
+    def save(self, dso: DSO) -> int:
         """
         Save an object to the repository if it is new or has been modified
 
@@ -287,7 +301,7 @@ class Project:
             self.pool[(dso.__class__.__name__, id_)] = dso
         return id_
 
-    def delete(self, dso):
+    def delete(self, dso: DSO) -> None:
         """
         Delete a domain-specific object
 
@@ -297,7 +311,7 @@ class Project:
         del self.pool[dso.__class__.__name__, dso.id_]
         self.repository.delete_object(dso.__class__.__name__, dso.id_)
 
-    def get_object(self, class_name, id_=None, uuid=None, use_pool=True) -> DomainSpecificObject:
+    def get_object(self, class_name: str, id_: int = None, uuid: str = None, use_pool: bool = True) -> DSO:
         """
         Get an object referenced by its id
 
@@ -305,12 +319,14 @@ class Project:
         :param id_: the id reference of the object
         :type class_name: class inheriting DomainSpecificObject
         :type id_: int
+        :param uuid: the uuid of the requested object
+        :param use_pool: True if object should be obtained from the pool unless if has not been created yet
         :return: the desired object
         :rtype: object (DomainSpecificObject)
         """
         return self.build_dso(class_name, self.repository.get_record(class_name, int(id_), uuid), use_pool)
 
-    def get_named_object(self, class_name, name=None) -> DomainSpecificObject:
+    def get_named_object(self, class_name, name=None) -> DSO:
         """
         Return a named object by its name
 
@@ -323,7 +339,7 @@ class Project:
         """
         return self.build_dso(class_name, self.repository.get_record_by_name(class_name, name))
 
-    def get_objects(self, class_name, id_list=None):
+    def get_objects(self, class_name: str, id_list: list[int] = None) -> list[DSO]:
         """
         Get a list of all domain objects of a given class in the current project retrieved from the repository
 
@@ -338,13 +354,13 @@ class Project:
             return self._get_rois(id_list)
         return [self.build_dso(class_name, rec) for rec in self.repository.get_records(class_name, id_list)]
 
-    def get_records(self, class_name, id_list=None):
+    def get_records(self, class_name: str, id_list: list[int] = None) -> list[dict[str, Any]]:
         return self.repository.get_records(class_name, id_list)
 
-    def get_dataframe(self, class_name, id_list=None):
+    def get_dataframe(self, class_name: str, id_list: list[int] = None) -> pandas.DataFrame:
         return pandas.DataFrame.from_records(self.get_records(class_name, id_list))
 
-    def count_objects(self, class_name):
+    def count_objects(self, class_name: str) -> int:
         """
         Count all objects of a given class in the current project
 
@@ -358,7 +374,7 @@ class Project:
         #     return len(self._get_rois(None))
         # return len(self.repository.get_records(class_name, None))
 
-    def _get_rois(self, id_list=None):
+    def _get_rois(self, id_list: list[int] = None) -> list[ROI]:
         """
         Gets ROIs using FOV.roi_list properties for all FOVs in order to show the initial ROIs only for FOVs that have
         no other defined ROI. This method is used by the generic get_objects method to deal with the special case of
@@ -374,7 +390,7 @@ class Project:
             return list(all_rois)
         return [roi for roi in all_rois if roi.id_ in id_list]
 
-    def has_links(self, class_name, to=None):
+    def has_links(self, class_name: str, to: DSO = None) -> bool:
         """
         Checks whether there are links to a given object from objects of a given class.
 
@@ -389,7 +405,7 @@ class Project:
             return True
         return False
 
-    def count_links(self, class_name, to=None):
+    def count_links(self, class_name: str, to: DSO = None) -> int:
         """
         Counts the number of objects of a given class having a link to an object
 
@@ -398,11 +414,11 @@ class Project:
         :param to: the object to which links are counted
         :type to: DomainSpecificObject object
         :return: the number of objects of class class_name that are linked to the specified object
-        :rtype: bool
+        :rtype: int
         """
         return len(self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_))
 
-    def get_linked_objects(self, class_name, to=None):
+    def get_linked_objects(self, class_name: str, to: DSO = None) -> list[otherDSO]:
         """
         A method returning the list of all objects of class defined by class_name that are linked to an object specified
         by argument to=
@@ -420,7 +436,7 @@ class Project:
                        self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_)]
         return object_list
 
-    def link_objects(self, dso1: DomainSpecificObject, dso2: DomainSpecificObject):
+    def link_objects(self, dso1: DSO, dso2: otherDSO) -> None:
         """
         Create a direct link between two objects. This method only works for objects that have a direct logical
         connection defined in an association table. It does not work to create transitive links with intermediate
@@ -433,7 +449,7 @@ class Project:
         """
         self.repository.link(dso1.__class__.__name__, dso1.id_, dso2.__class__.__name__, dso2.id_, )
 
-    def unlink_objects(self, dso1: DomainSpecificObject, dso2: DomainSpecificObject):
+    def unlink_objects(self, dso1: DSO, dso2: otherDSO) -> None:
         """
         Delete a direct link between two objects. This method only works for objects that have a direct logical
         connection defined in an association table. It does not work to delete transitive links with intermediate
@@ -446,7 +462,7 @@ class Project:
         """
         self.repository.unlink(dso1.__class__.__name__, dso1.id_, dso2.__class__.__name__, dso2.id_, )
 
-    def build_dso(self, class_name, rec, use_pool=True):
+    def build_dso(self, class_name:str, rec: dict[str, Any], use_pool: bool = True) -> DSO:
         """
         factory method to build a dso of class class_ from record rec or return the pooled object if it was already
         created. Note that if the object was already in the pool, values in the record are not used to update the
@@ -472,7 +488,7 @@ class Project:
         return obj
 
     @property
-    def info(self):
+    def info(self) -> str:
         """
         Returns ready-to-print information about project
 

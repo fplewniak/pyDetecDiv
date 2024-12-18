@@ -1,6 +1,13 @@
 """
  A class handling image resource in multiple files (one for each combination of T, C, Z dimensions)
 """
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pydetecdiv.domain import ImageResource
+
+from aicsimageio.dimensions import Dimensions
+
 import re
 import tensorflow as tf
 from aicsimageio import AICSImage
@@ -11,7 +18,7 @@ import cv2
 from pydetecdiv.domain import ImageResourceData
 
 
-def aics_indexer(path, pattern):
+def aics_indexer(path: str, pattern: str) -> pd.Series:
     """
     An indexer to determine dimensions (T, C, Z) from file names to be used with AICSImage reader when reading a list of
     files
@@ -31,7 +38,7 @@ class MultiFileImageResource(ImageResourceData):
     A business-logic class defining valid operations and attributes of Image resources stored in multiple files
     """
 
-    def __init__(self, max_mem=5000, image_resource=None):
+    def __init__(self, max_mem: int = 5000, image_resource: 'ImageResource' = None):
         self.image_files = image_resource.image_files_5d
         self.path = image_resource.image_files
         self.pattern = image_resource.pattern
@@ -45,14 +52,14 @@ class MultiFileImageResource(ImageResourceData):
         # print(f'Multiple file image resource: {self.dims}')
 
     @property
-    def shape(self):
+    def shape(self) -> tuple[int, int, int, int, int]:
         """
         The image resource shape (should be 5D with the following dimensions TCZYX)
         """
         return self._shape
 
     @property
-    def dims(self):
+    def dims(self) -> Dimensions:
         """
         the dimensions of the image resource
         :return:
@@ -60,41 +67,41 @@ class MultiFileImageResource(ImageResourceData):
         return self._dims
 
     @property
-    def sizeT(self):
+    def sizeT(self) -> int:
         """
         The number of frames
         """
         return self._dims.T
 
     @property
-    def sizeC(self):
+    def sizeC(self) -> int:
         """
         The number of channels
         """
         return self._dims.C
 
     @property
-    def sizeZ(self):
+    def sizeZ(self) -> int:
         """
         The number of layers
         """
         return self._dims.Z
 
     @property
-    def sizeY(self):
+    def sizeY(self) -> int:
         """
         The height of image
         """
         return self._dims.Y
 
     @property
-    def sizeX(self):
+    def sizeX(self) -> int:
         """
         The width of image
         """
         return self._dims.X
 
-    def _image(self, C=0, Z=0, T=0, drift=False):
+    def _image(self, C: int = 0, Z: int = 0, T: int = 0, drift: bool = False) -> np.ndarray:
         """
         A 2D grayscale image (on frame, one channel and one layer)
 
@@ -114,14 +121,15 @@ class MultiFileImageResource(ImageResourceData):
             if drift and self.drift is not None:
                 data = cv2.warpAffine(np.array(data),
                                       np.float32(
-                                          [[1, 0, -self.drift.iloc[T].dx],
-                                           [0, 1, -self.drift.iloc[T].dy]]),
+                                              [[1, 0, -self.drift.iloc[T].dx],
+                                               [0, 1, -self.drift.iloc[T].dy]]),
                                       (data.shape[1], data.shape[0]))
             data = tf.image.convert_image_dtype(data, dtype=tf.uint16, saturate=False).numpy()
             return data
         return np.zeros((self.sizeY, self.sizeX), np.uint16)
 
-    def _image_memmap(self, sliceX=None, sliceY=None, C=0, Z=0, T=0, drift=False):
+    def _image_memmap(self, sliceX: slice = None, sliceY: slice = None, C: int = 0, Z: int = 0, T: int = 0,
+                      drift: bool = False) -> np.ndarray:
         if sliceX is None:
             sliceX = slice(0, self.sizeX)
         if sliceY is None:
@@ -136,7 +144,7 @@ class MultiFileImageResource(ImageResourceData):
             return tifffile.memmap(self.image_files[T, C, Z])[sliceY, sliceX]
         return np.zeros((sliceY.stop - sliceY.start, sliceX.stop - sliceX.start), np.uint16)
 
-    def data_sample(self, X=None, Y=None):
+    def data_sample(self, X: slice = None, Y: slice = None) -> np.ndarray:
         """
         Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for
         regions of interest from a field of view.

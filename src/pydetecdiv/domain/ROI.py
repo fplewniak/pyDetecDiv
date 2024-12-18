@@ -3,6 +3,8 @@
 """
  A class defining the business logic methods that can be applied to Regions Of Interest
 """
+from typing import Any
+
 from pydetecdiv.exceptions import JuttingError
 from pydetecdiv.domain.dso import NamedDSO, BoxedDSO
 from pydetecdiv.domain import FOV
@@ -13,29 +15,29 @@ class ROI(NamedDSO, BoxedDSO):
     A business-logic class defining valid operations and attributes of Regions of interest (ROI)
     """
 
-    def __init__(self, fov=None, key_val=None,**kwargs):
+    def __init__(self, fov: int | FOV = None, key_val: dict[str, Any] = None,**kwargs):
         super().__init__(**kwargs)
         self._fov = fov.id_ if isinstance(fov, FOV) else fov
         self.key_val = key_val
         self.validate(updated=False)
 
-    def delete(self):
+    def delete(self) -> None:
         """
         Deletes this ROI if and only if it is not the full-FOV one which should serve to keep track of original data.
         """
         if self is not self.fov.initial_roi:
             self.project.delete(self)
 
-    def check_validity(self):
-        """
-        Checks the current ROI lies within its parent. If it does not, this method will throw a JuttingError exception
-        """
-        # if not self.box.lies_in(self.fov.box):
-        #     raise JuttingError(self, self.fov)
-        ...
+    # def check_validity(self) -> None:
+    #     """
+    #     Checks the current ROI lies within its parent. If it does not, this method will throw a JuttingError exception
+    #     """
+    #     # if not self.box.lies_in(self.fov.box):
+    #     #     raise JuttingError(self, self.fov)
+    #     ...
 
     @property
-    def fov(self):
+    def fov(self) -> FOV:
         """
         property returning the FOV object this ROI is a region of
 
@@ -45,16 +47,16 @@ class ROI(NamedDSO, BoxedDSO):
         return self.project.get_object('FOV', self._fov)
 
     @fov.setter
-    def fov(self, fov):
+    def fov(self, fov: FOV) -> None:
         self._fov = fov.id_ if isinstance(fov, FOV) else fov
         self.validate()
 
     @property
-    def sizeT(self):
+    def sizeT(self) -> int:
         return self.fov.sizeT
 
     @property
-    def bottom_right(self):
+    def bottom_right(self) -> tuple[int, int]:
         """
         The bottom-right corner of the ROI in the FOV
 
@@ -65,11 +67,11 @@ class ROI(NamedDSO, BoxedDSO):
                 self.fov.size[1] - 1 if self._bottom_right[1] == -1 else self._bottom_right[1])
 
     @bottom_right.setter
-    def bottom_right(self, bottom_right):
+    def bottom_right(self, bottom_right: tuple[int, int]) -> None:
         self._bottom_right = bottom_right
         self.validate()
 
-    def record(self, no_id=False):
+    def record(self, no_id: bool = False) -> dict[str, Any]:
         """
         Returns a record dictionary of the current ROI
 
@@ -93,7 +95,7 @@ class ROI(NamedDSO, BoxedDSO):
         return record
 
     @property
-    def info(self):
+    def info(self) -> str:
         return f"""
 Name:                 {self.name}
 FOV:                  {self.fov.name}
