@@ -6,7 +6,7 @@
 from typing import TYPE_CHECKING, TypeVar, Any
 
 if TYPE_CHECKING:
-    from pydetecdiv.domain import Data
+    from pydetecdiv.domain.Data import Data
 
 import os
 
@@ -15,7 +15,11 @@ import pandas
 from PIL import Image
 from aicsimageio.dimensions import Dimensions
 
-from pydetecdiv.domain import MultiFileImageResource, SingleFileImageResource, FOV, Dataset, ImageResourceData
+from pydetecdiv.domain.MultiFileImageResource import MultiFileImageResource
+from pydetecdiv.domain.SingleFileImageResource import SingleFileImageResource
+from pydetecdiv.domain.FOV import FOV
+from pydetecdiv.domain.Dataset import Dataset
+from pydetecdiv.domain.ImageResourceData import ImageResourceData
 from pydetecdiv.domain.Hdf5ImageResource import Hdf5ImageResource
 from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.settings import get_config_value

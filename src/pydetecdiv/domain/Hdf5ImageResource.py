@@ -4,7 +4,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pydetecdiv.domain import ImageResource
+    from pydetecdiv.domain.ImageResource import ImageResource
 
 import os
 
@@ -13,7 +13,7 @@ import h5py
 import numpy as np
 import cv2
 from aicsimageio.dimensions import Dimensions
-from pydetecdiv.domain import ImageResourceData, ImageResource
+from pydetecdiv.domain.ImageResourceData import ImageResourceData
 from pydetecdiv.settings import get_config_value
 
 

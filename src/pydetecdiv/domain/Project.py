@@ -20,7 +20,13 @@ from pydetecdiv.domain.ImageResource import ImageResource
 from pydetecdiv.settings import get_config_value
 from pydetecdiv.persistence.project import open_project
 from pydetecdiv.domain.dso import DomainSpecificObject
-from pydetecdiv.domain import ROI, FOV, Experiment, Data, Run, Dataset
+from pydetecdiv.domain.Dataset import Dataset
+from pydetecdiv.domain.Run import Run
+from pydetecdiv.domain.ROI import ROI
+from pydetecdiv.domain.FOV import FOV
+from pydetecdiv.domain.Experiment import Experiment
+from pydetecdiv.domain.Data import Data
+from pydetecdiv.domain.ImageResource import ImageResource
 
 # TypeVar definitions to enable type checking for subclasses of DomainSpecificObject class
 DSO = TypeVar('DSO', bound=DomainSpecificObject)
@@ -462,7 +468,7 @@ class Project:
         """
         self.repository.unlink(dso1.__class__.__name__, dso1.id_, dso2.__class__.__name__, dso2.id_, )
 
-    def build_dso(self, class_name:str, rec: dict[str, Any], use_pool: bool = True) -> DSO:
+    def build_dso(self, class_name: str, rec: dict[str, Any], use_pool: bool = True) -> DSO | None:
         """
         factory method to build a dso of class class_ from record rec or return the pooled object if it was already
         created. Note that if the object was already in the pool, values in the record are not used to update the

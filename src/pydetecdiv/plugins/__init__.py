@@ -10,7 +10,7 @@ from PySide6.QtGui import QAction
 import pydetecdiv
 from pydetecdiv.plugins.parameters import Parameters
 from pydetecdiv.settings import get_plugins_dir
-from pydetecdiv.domain import Run
+from pydetecdiv.domain.Run import Run
 
 
 class Plugin:

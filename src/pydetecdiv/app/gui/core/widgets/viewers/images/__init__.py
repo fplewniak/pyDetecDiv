@@ -9,7 +9,7 @@ from PySide6.QtWidgets import QGraphicsPixmapItem
 
 from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui.core.widgets.viewers import GraphicsView, Layer, BackgroundLayer
-from pydetecdiv.domain import Image, ImgDType
+from pydetecdiv.domain.Image import Image, ImgDType
 
 
 class ImageViewer(GraphicsView):

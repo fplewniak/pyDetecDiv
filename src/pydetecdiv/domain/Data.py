@@ -10,7 +10,9 @@ from typing import Any
 
 from pydetecdiv.domain.dso import NamedDSO
 from pydetecdiv.settings import get_config_value
-from pydetecdiv.domain import ImageResource, Dataset, FOV
+from pydetecdiv.domain.ImageResource import ImageResource
+from pydetecdiv.domain.Dataset import Dataset
+from pydetecdiv.domain.FOV import FOV
 
 
 class Data(NamedDSO):

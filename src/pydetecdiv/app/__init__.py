@@ -20,7 +20,7 @@ from pydetecdiv import plugins
 from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.settings import get_config_file, get_appdata_dir, get_config_value
 from pydetecdiv.persistence.project import list_projects
-from pydetecdiv.domain import Project
+from pydetecdiv.domain.Project import Project
 
 
 class DrawingTools(StrEnum):

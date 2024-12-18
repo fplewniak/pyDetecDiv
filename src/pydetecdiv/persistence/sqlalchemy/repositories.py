@@ -16,6 +16,8 @@ import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.expression import Delete
 from pandas import DataFrame
+
+from pydetecdiv.domain import Dataset
 from pydetecdiv.persistence.repository import ShallowDb
 from pydetecdiv.persistence.sqlalchemy.orm.main import mapper_registry
 from pydetecdiv.persistence.sqlalchemy.orm.dao import dso_dao_mapping as dao

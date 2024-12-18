@@ -4,7 +4,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pydetecdiv.domain import ImageResource
+    from pydetecdiv.domain.ImageResource import ImageResource
 
 from aicsimageio.dimensions import Dimensions
 
@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 from tifffile import tifffile
 import cv2
-from pydetecdiv.domain import ImageResourceData
+from pydetecdiv.domain.ImageResourceData import ImageResourceData
 
 
 def aics_indexer(path: str, pattern: str) -> pd.Series:

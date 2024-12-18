@@ -1,6 +1,11 @@
 """
 CommandLineTool module to handle tool definition, requirements and running them in an appropriate environment.
 """
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pydetecdiv.domain.Project import Project
+
 import json
 import os
 import platform
@@ -13,7 +18,7 @@ from xml.etree.ElementTree import Element
 
 import yaml
 
-from pydetecdiv.domain import Dataset, Project
+from pydetecdiv.domain.Dataset import Dataset
 from pydetecdiv.domain.tools import Plugins
 from pydetecdiv.settings import get_config_value
 from pydetecdiv.domain.parameters import ParameterFactory, Parameter
@@ -286,7 +291,7 @@ class CommandLineTool:
         self.requirements = Requirements(self.root.find('./requirements/package'))
         self.command = Command(self.root.find("command").text, self.requirements, self.path)
 
-    def init_dso_inputs(self, project: Project = None) -> None:
+    def init_dso_inputs(self, project: 'Project' = None) -> None:
         """
         Initialize the DSOs for input parameters and place them in the dso field.
 
@@ -295,7 +300,7 @@ class CommandLineTool:
         for i in self.inputs.values:
             i.set_dso(project)
 
-    def init_test(self, test_param: dict[str, str], project: Project = None):
+    def init_test(self, test_param: dict[str, str], project: 'Project' = None):
         """
         Initialize values of parameters for testing purposes. If an input defines a DSO then its dso field is set to the
         corresponding DSO or list thereof.

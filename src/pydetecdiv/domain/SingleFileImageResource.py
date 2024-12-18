@@ -4,7 +4,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pydetecdiv.domain import ImageResource
+    from pydetecdiv.domain.ImageResource import ImageResource
 
 import psutil
 import tensorflow as tf
@@ -14,7 +14,7 @@ from tifffile import tifffile
 import numpy as np
 import cv2
 
-from pydetecdiv.domain import ImageResourceData
+from pydetecdiv.domain.ImageResourceData import ImageResourceData
 
 
 class SingleFileImageResource(ImageResourceData):
