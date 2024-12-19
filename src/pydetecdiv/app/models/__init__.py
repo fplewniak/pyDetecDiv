@@ -75,7 +75,7 @@ class StringList(QStringListModel,  Generic[GenericModel]):
         """
         return self._data
 
-    def data(self, index: QModelIndex, role: IntEnum = Qt.DisplayRole) -> str | None:
+    def data(self, index: QModelIndex, role: IntEnum = Qt.ItemDataRole.DisplayRole) -> str | None:
         """
         Returns the data at the specified index
 
@@ -83,7 +83,7 @@ class StringList(QStringListModel,  Generic[GenericModel]):
         :param role: the role of data, typically Qt.DisplayRole
         :return: the data at the requested position
         """
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return self._data[index.row()]
         return None
 
@@ -117,7 +117,7 @@ class StringList(QStringListModel,  Generic[GenericModel]):
             self._data.pop(row)
             self.endRemoveRows()
 
-    def update_item(self, row: int, item: object) -> object:
+    def update_item(self, row: int, item: str) -> None:
         """
 
         :param row: 
@@ -125,7 +125,7 @@ class StringList(QStringListModel,  Generic[GenericModel]):
         """
         if 0 <= row < len(self._data):
             self._data[row] = item
-            self.dataChanged.emit(self.index(row, 0), self.index(row, 0), [Qt.DisplayRole])
+            self.dataChanged.emit(self.index(row, 0), self.index(row, 0), [Qt.ItemDataRole.DisplayRole])
 
 
 class DictItemModel(QStandardItemModel,  Generic[GenericModel]):
@@ -204,7 +204,7 @@ class DictItemModel(QStandardItemModel,  Generic[GenericModel]):
         
         :return: the rows in the model
         """
-        return {self.row(row).text(): self.row(row).data(Qt.UserRole) for row in range(self.rowCount())}
+        return {self.row(row).text(): self.row(row).data(Qt.ItemDataRole.UserRole) for row in range(self.rowCount())}
 
     def keys(self) -> list[str]:
         """
@@ -220,7 +220,7 @@ class DictItemModel(QStandardItemModel,  Generic[GenericModel]):
         
         :return: the list of values
         """
-        return [self.row(row).data(Qt.UserRole) for row in range(self.rowCount())]
+        return [self.row(row).data(Qt.ItemDataRole.UserRole) for row in range(self.rowCount())]
 
     def items(self) -> dict[str, Any]:
         """
@@ -249,11 +249,11 @@ class DictItemModel(QStandardItemModel,  Generic[GenericModel]):
         for key, value in item.items():
             if key not in self.keys():
                 key_item = QStandardItem(key)
-                key_item.setData(value, Qt.UserRole)
+                key_item.setData(value, Qt.ItemDataRole.UserRole)
                 self.appendRow([key_item])
             else:
                 key_item = self.item(self.keys().index(key))
-                key_item.setData(value, Qt.UserRole)
+                key_item.setData(value, Qt.ItemDataRole.UserRole)
 
     def remove_item(self, row: int) -> None:
         """
