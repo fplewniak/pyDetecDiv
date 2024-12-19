@@ -3,6 +3,11 @@
 """
 Definition of global objects and methods for easy access from all parts of the application
 """
+from typing import TYPE_CHECKING, Callable
+
+if TYPE_CHECKING:
+    from pydetecdiv.app.gui.Windows import MainWindow
+
 import os.path
 import sys
 from collections import defaultdict
@@ -10,9 +15,8 @@ from contextlib import contextmanager
 from enum import StrEnum
 import markdown
 
-from PySide6.QtGui import QCursor, QGuiApplication, QTextCursor
-from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox, QMessageBox, \
-    QTextEdit
+from PySide6.QtGui import QCursor, QTextCursor
+from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox, QTextEdit, QWidget)
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal, QObject
 import pyqtgraph as pg
 
@@ -56,7 +60,8 @@ class PyDetecDiv(QApplication):
         self.setApplicationName('pyDetecDiv')
         self.load_plugins()
 
-    def load_plugins(self):
+    @staticmethod
+    def load_plugins() -> None:
         """
         Load the available plugins
         """
@@ -64,17 +69,27 @@ class PyDetecDiv(QApplication):
         PyDetecDiv.plugin_list.load()
 
     @staticmethod
-    def set_main_window(main_window):
+    def set_main_window(main_window: 'MainWindow'):
+        """
+        Sets the main window global variable to make it accessible across the whole application
+
+        :param main_window: the Main Window object
+        """
         PyDetecDiv.main_window = main_window
         PyDetecDiv.main_window.show()
 
     @staticmethod
-    def set_apply_drift(apply_drift):
+    def set_apply_drift(apply_drift: bool):
+        """
+        Sets the global switch for drift correction, so it is available over the whole application
+
+        :param apply_drift: the global drift correction switch
+        """
         PyDetecDiv.apply_drift = apply_drift
 
 
 @contextmanager
-def pydetecdiv_project(project_name):
+def pydetecdiv_project(project_name: str) -> Project:
     """
     Context manager for projects.
 
@@ -102,11 +117,11 @@ class PyDetecDivThread(QThread):
         self.args = None
         self.kwargs = None
 
-    def set_function(self, func, *args, **kwargs):
+    def set_function(self, func: Callable, *args: list, **kwargs: dict):
         """
         Define the function to run in the thread
 
-        :param fn: the function to run
+        :param func: the function to run
         :param args: arguments passed to the function
         :param kwargs: keyword arguments passed to the function
         """
@@ -115,7 +130,7 @@ class PyDetecDivThread(QThread):
         self.kwargs = kwargs
 
     @Slot()
-    def run(self):
+    def run(self) -> None:
         """
         Run the function
         """
@@ -130,11 +145,11 @@ class AbstractWaitDialog(QDialog):
     it
     """
 
-    def __init__(self, parent, cancel_msg=None, ignore_close_event=True):
+    def __init__(self, parent: QWidget, cancel_msg=None, ignore_close_event=True):
         super().__init__(parent)
         self.cancel_msg = cancel_msg
         self._ignore_close_event = ignore_close_event
-        self.setWindowModality(Qt.WindowModal)
+        self.setWindowModality(Qt.WindowModality.WindowModal)
         self.pdd_thread = PyDetecDivThread()
 
     def wait_for(self, func, *args, **kwargs):
@@ -145,7 +160,7 @@ class AbstractWaitDialog(QDialog):
         :param args: positional arguments for the function
         :param kwargs: keyword arguments for the function
         """
-        PyDetecDiv.app.setOverrideCursor(QCursor(Qt.WaitCursor))
+        PyDetecDiv.app.setOverrideCursor(QCursor(Qt.CursorShape.WaitCursor))
         self.pdd_thread.set_function(func, *args, **kwargs)
         self.pdd_thread.start()
         self.exec()
@@ -195,7 +210,7 @@ class WaitDialog(AbstractWaitDialog):
     it
     """
 
-    def __init__(self, msg, parent, progress_bar=False, cancel_msg=None, ignore_close_event=True):
+    def __init__(self, msg, parent: QWidget , progress_bar: bool = False, cancel_msg: str = None, ignore_close_event: bool = True):
         super().__init__(parent, cancel_msg=cancel_msg, ignore_close_event=ignore_close_event)
         self.label = QLabel()
         self.label.setStyleSheet("""
@@ -208,14 +223,14 @@ class WaitDialog(AbstractWaitDialog):
             self.progress_bar_widget = QProgressBar()
             layout.addWidget(self.progress_bar_widget)
         if cancel_msg:
-            button_box = QDialogButtonBox(QDialogButtonBox.Cancel, self)
+            button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel, self)
             button_box.rejected.connect(self.cancel)
             button_box.rejected.connect(button_box.hide)
             button_box.rejected.connect(self.set_ignore_close_event)
             layout.addWidget(button_box)
         self.setLayout(layout)
 
-    def show_progress(self, i):
+    def show_progress(self, i: int) -> None:
         """
         Convenience method to send the progress value to the progress bar widget
 
@@ -224,7 +239,7 @@ class WaitDialog(AbstractWaitDialog):
         """
         self.progress_bar_widget.setValue(i)
 
-    def cancel(self):
+    def cancel(self) -> None:
         """
         Set cancelling message and request for interruption of thread so that the running job can cleanly close
         processes and roll back any modification if needed.
@@ -238,7 +253,7 @@ class MessageDialog(QDialog):
     Generic dialog to communicate a message to the user (error, warning or any other information)
     """
 
-    def __init__(self, msg):
+    def __init__(self, msg: str):
         super().__init__()
         # self.setWindowModality(Qt.WindowModal)
         label = QLabel()
@@ -248,7 +263,7 @@ class MessageDialog(QDialog):
         label.setText(msg)
         layout = QVBoxLayout(self)
         layout.addWidget(label)
-        button_box = QDialogButtonBox(QDialogButtonBox.Close, self)
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close, self)
         button_box.rejected.connect(self.close)
         layout.addWidget(button_box)
         self.setLayout(layout)
@@ -256,33 +271,41 @@ class MessageDialog(QDialog):
 
 
 class StdoutWaitDialog(AbstractWaitDialog):
-    def __init__(self, msg, parent, cancel_msg=None, ignore_close_event=True):
+    """
+    A Wait dialog that also captures and displays stdout output on the fly.
+    """
+    def __init__(self, msg: str, parent: QWidget, cancel_msg: str = None, ignore_close_event: bool = True):
         super().__init__(parent, cancel_msg=cancel_msg, ignore_close_event=ignore_close_event)
         self.log = QTextEdit(self)
         self.log.setReadOnly(True)
         self.addText(msg)
         layout = QVBoxLayout(self)
         layout.addWidget(self.log)
-        self.button_box = QDialogButtonBox(QDialogButtonBox.Close, self)
-        self.button_box.button(QDialogButtonBox.Close).clicked.connect(self.close_window)
-        self.button_box.button(QDialogButtonBox.Close).setEnabled(False)
+        self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close, self)
+        self.button_box.button(QDialogButtonBox.StandardButton.Close).clicked.connect(self.close_window)
+        self.button_box.button(QDialogButtonBox.StandardButton.Close).setEnabled(False)
         if self.cancel_msg:
-            self.button_box.addButton(QDialogButtonBox.Cancel)
-            self.button_box.button(QDialogButtonBox.Cancel).clicked(self.cancel)
-            self.button_box.button(QDialogButtonBox.Cancel).clicked.connect(self.set_ignore_close_event)
+            self.button_box.addButton(QDialogButtonBox.StandardButton.Cancel)
+            self.button_box.button(QDialogButtonBox.StandardButton.Cancel).clicked(self.cancel)
+            self.button_box.button(QDialogButtonBox.StandardButton.Cancel).clicked.connect(self.set_ignore_close_event)
         layout.addWidget(self.button_box)
         self.setLayout(layout)
         self.redirector = StreamRedirector()
         self.redirector.new_text.connect(self.addText)
         sys.stdout = self.redirector
 
-    def addText(self, text):
+    def addText(self, text: str):
+        """
+        Add text to the log window
+
+        :param text: the text to add
+        """
         html = markdown.markdown(text, extensions=['tables'])
-        self.log.moveCursor(QTextCursor.End)
+        self.log.moveCursor(QTextCursor.MoveOperation.End)
         self.log.insertHtml(html)
         self.log.insertHtml('<br>')
 
-    def cancel(self):
+    def cancel(self) -> None:
         """
         Set cancelling message and request for interruption of thread so that the running job can cleanly close
         processes and roll back any modification if needed.
@@ -290,14 +313,22 @@ class StdoutWaitDialog(AbstractWaitDialog):
         self.log.append(self.cancel_msg)
         super().cancel()
 
-    def close_window(self):
+    def close_window(self) -> None:
+        """
+        Closes the window and stops stdout capture
+        """
         sys.stdout = sys.__stdout__
         super().close_window()
 
-    def stop_redirection(self, signal):
+    def stop_redirection(self, signal: Signal):
+        """
+        Stops capturing the stdout output, which is therefore printed to the terminal again
+
+        :param signal: the signal triggered by the event requesting to stop redirection
+        """
         if self.cancel_msg:
-            self.button_box.button(QDialogButtonBox.Cancel).setEnabled(False)
-        self.button_box.button(QDialogButtonBox.Close).setEnabled(True)
+            self.button_box.button(QDialogButtonBox.StandardButton.Cancel).setEnabled(False)
+        self.button_box.button(QDialogButtonBox.StandardButton.Close).setEnabled(True)
         PyDetecDiv.app.restoreOverrideCursor()
         sys.stdout = sys.__stdout__
 
@@ -309,21 +340,29 @@ class StreamRedirector(QObject):
     def __init__(self):
         super().__init__()
 
-    def write(self, text):
+    def write(self, text: str) -> None:
+        """
+        Write text to the stream redirector
+
+        :param text: text to be written
+        """
         self.new_text.emit(text)
 
-    def flush(self):
+    def flush(self) -> None:
+        """
+        A dummy method required only for compatibility with the Python IO system
+        """
         pass  # Required for compatibility with Python's IO system
 
 
-def get_settings():
+def get_settings() -> QSettings:
     """
     Get settings in pydetecdiv.ini file
 
     :return: the settings
     :rtype: QSetting instance
     """
-    settings = QSettings(str(get_config_file()), QSettings.IniFormat)
+    settings = QSettings(str(get_config_file()), QSettings.Format.IniFormat)
     if settings.value("paths/appdata") is None:
         settings.setValue("paths/appdata", get_appdata_dir())
     return settings
@@ -340,14 +379,20 @@ def get_settings():
 #         os.mkdir(plugins_path)
 #     return plugins_path
 
-def get_project_dir(project_name=None):
+def get_project_dir(project_name: str = None) -> str:
+    """
+    Gets the directory of a project
+
+    :param project_name: the name of the project
+    :return: the directory path of the project
+    """
     if project_name is None:
         project_name = PyDetecDiv.project_name
     workspace_dir = get_config_value('project', 'workspace')
     return os.path.join(workspace_dir, project_name)
 
 
-def project_list():
+def project_list() -> list[str]:
     """
     Get the list of available projects. This method hides its persistence layer equivalent from other widgets.
 
@@ -357,7 +402,12 @@ def project_list():
     return list_projects()
 
 
-def create_app():
+def create_app() -> PyDetecDiv:
+    """
+    Creates a GUI application (the global controller for the display layer)
+
+    :return: the application
+    """
     PyDetecDiv.app = PyDetecDiv([])
     PyDetecDiv.plugin_list.register_all()
     pg.setConfigOptions(antialias=True, background='w')
