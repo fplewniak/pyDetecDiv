@@ -3,11 +3,12 @@ Dialog window handling the definition of patterns for FOV creation from raw data
 """
 import random
 import re
+from typing import Dict
 
 import pandas
 from PySide6.QtCore import Signal, QThread
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QDialog, QColorDialog, QDialogButtonBox
+from PySide6.QtWidgets import QDialog, QColorDialog, QDialogButtonBox, QPushButton
 
 from pydetecdiv.app.gui.ui.RawData2FOV import Ui_RawData2FOV
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, WaitDialog
@@ -72,7 +73,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
             child.deleteLater()
         self.destroy(True)
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset the form with default patterns and colours
         """
@@ -105,7 +106,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         self.show_chosen_colours()
         self.change_sample_style()
 
-    def get_regex(self):
+    def get_regex(self) -> dict[str, str]:
         """
         Build the complete regular expression from the individual patterns
 
@@ -146,7 +147,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
             regex['Z'] = f'({patterns[0]})(?P<Z>{patterns[1]})({patterns[2]})'
         return regex
 
-    def change_sample_style(self):
+    def change_sample_style(self) -> None:
         """
         Change the colours of file name samples showing the pattern matches.
         """
@@ -163,10 +164,12 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         if regex:
             self.colourize_matches(self.find_matches(self.samples_text, regex))
 
-    def find_matches(self, urls, regexes):
+    @staticmethod
+    def find_matches(urls: list[str], regexes: dict[str, str]) -> dict[str, list[re.Match]]:
         """
         Find a list of matches with the defined regular expressions
 
+        :param urls:
         :param regexes: the list of regular expressions to match
         :return: a list of matches
         """
@@ -177,7 +180,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         return matches
 
     @staticmethod
-    def get_match_spans(matches, group):
+    def get_match_spans(matches: dict[str, list[re.Match]], group: int) -> dict[str, list[tuple[int, int]]]:
         """
         Get the list of group positions for matches
 
@@ -188,7 +191,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         return {what: [RawData2FOV.get_match_span(match, group) for match in matches[what]] for what in matches}
 
     @staticmethod
-    def get_match_span(match, group=2):
+    def get_match_span(match, group: int = 2) -> tuple[int, int] | None:
         """
         Get the span of a given group in a match
 
@@ -200,7 +203,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
             return match.span(group)
         return None
 
-    def colourize_matches(self, matches):
+    def colourize_matches(self, matches: dict[str, list[re.Match]]) -> None:
         """
         Find matches in file name samples and colourize them accordingly. Non-matching pattern check boxes' background
         is set to orange. Conflicting patterns (having overlapping matches) are shown in red.
@@ -210,7 +213,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         df = pandas.DataFrame.from_dict(self.get_match_spans(matches, 0))
         columns = set(df.columns)
         conflicting_columns = set()
-        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(True)
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
         for col in columns:
             self.controls[col].setStyleSheet("")
         for i, file_name in enumerate(self.samples_text):
@@ -226,7 +229,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
                                 self.controls[col2].setStyleSheet("background-color: red")
                                 conflicting_columns.add(col1)
                                 conflicting_columns.add(col2)
-                                self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+                                self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
             df = pandas.DataFrame.from_dict(self.get_match_spans(matches, 2))
             for col in df.sort_values(0, axis=1, ascending=False):
                 if col not in conflicting_columns:
@@ -236,14 +239,15 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
                         file_name = f'{file_name[:start]}<span style="background-color: rgb({r}, {g}, {b})">{file_name[start:end]}</span>{file_name[end:]}'
                     else:
                         self.controls[col].setStyleSheet("background-color: orange")
-                        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+                        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
             try:
                 self.samples[i].setText(file_name)
             finally:
                 ...
                 # print(i, self.samples)
 
-    def overlap(self, start1, end1, start2, end2):
+    @staticmethod
+    def overlap(start1: int | None, end1: int | None, start2: int | None, end2: int | None) -> bool:
         """
         Checks whether positions overlap
 
@@ -256,7 +260,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         return ((start1 <= start2 < end1) or (start1 < end2 <= end1)
                 or (start2 <= start1 < end2) or (start2 < end1 <= end2))
 
-    def colourize_labels(self, pattern, colour):
+    def colourize_labels(self, pattern: str, colour: QColor) -> None:
         """
         Colourize the file name samples matching the pattern with the specified colour
 
@@ -268,14 +272,14 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         for i, _ in enumerate(self.samples):
             self.samples[i].setText(re.sub(pattern, style_sheet, self.samples[i].text()))
 
-    def clear_colours(self):
+    def clear_colours(self) -> None:
         """
         Clear colours to avoid overlapping style sheets
         """
         for i, _ in enumerate(self.samples):
             self.samples[i].setText(self.samples_text[i])
 
-    def choose_colour(self, object_name):
+    def choose_colour(self, object_name: str) -> None:
         """
         Choose colour for a given pattern specified by its object name
 
@@ -289,7 +293,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         self.show_chosen_colours()
         self.change_sample_style()
 
-    def show_chosen_colours(self):
+    def show_chosen_colours(self) -> None:
         """
         Show the chosen colour in the little square box on the right and the border of the pattern.
         """
@@ -310,7 +314,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
             colours[pattern].setStyleSheet(f"background-color: rgb({r}, {g}, {b});")
             borders[pattern].setStyleSheet(f"border: 2px solid rgb({r}, {g}, {b});")
 
-    def button_clicked(self, button):
+    def button_clicked(self, button: QPushButton):
         """
         React to clicked button
 
@@ -338,7 +342,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
             case QDialogButtonBox.StandardButton.Reset:
                 self.reset()
 
-    def create_fov_annotate(self, regex):
+    def create_fov_annotate(self, regex: str) -> None:
         """
         The actual FOV creation and data annotation method
 

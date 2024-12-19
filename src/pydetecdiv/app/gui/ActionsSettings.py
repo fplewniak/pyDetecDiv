@@ -7,7 +7,7 @@ import os.path
 from PySide6.QtCore import Slot, Qt, QDir
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import (QLineEdit, QDialogButtonBox, QPushButton, QFileDialog, QDialog, QHBoxLayout, QVBoxLayout,
-                               QGroupBox, QComboBox, QSpinBox)
+                               QGroupBox, QComboBox, QSpinBox, QWidget)
 from pydetecdiv.app import PyDetecDiv, get_settings
 from pydetecdiv.persistence import implemented_dbms
 
@@ -19,7 +19,7 @@ class SettingsDialog(QDialog):
 
     def __init__(self):
         super().__init__(PyDetecDiv.main_window)
-        self.setWindowModality(Qt.WindowModal)
+        self.setWindowModality(Qt.WindowModality.WindowModal)
         self.setObjectName('Settings')
         self.setWindowTitle('Settings')
 
@@ -66,11 +66,11 @@ class SettingsDialog(QDialog):
         button_workspace = QPushButton(workspace_group)
         button_workspace.setIcon(icon)
 
-        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok |
-                                           QDialogButtonBox.Cancel |
-                                           QDialogButtonBox.Apply |
-                                           QDialogButtonBox.Reset,
-                                           Qt.Horizontal)
+        self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok |
+                                           QDialogButtonBox.StandardButton.Cancel |
+                                           QDialogButtonBox.StandardButton.Apply |
+                                           QDialogButtonBox.StandardButton.Reset,
+                                           Qt.Orientation.Horizontal)
 
         # Layout
         vertical_layout = QVBoxLayout(self)
@@ -123,53 +123,53 @@ class SettingsDialog(QDialog):
         self.exec()
         self.destroy(True)
 
-    def toggle_buttons(self):
+    def toggle_buttons(self) -> None:
         """
         Enable or disable OK and Apply buttons depending upon the validity of input text
         """
         if self.workspace.text() and self.user.text():
-            self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
-            self.button_box.button(QDialogButtonBox.Apply).setEnabled(True)
+            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+            self.button_box.button(QDialogButtonBox.StandardButton.Apply).setEnabled(True)
         else:
-            self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
-            self.button_box.button(QDialogButtonBox.Apply).setEnabled(False)
+            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+            self.button_box.button(QDialogButtonBox.StandardButton.Apply).setEnabled(False)
 
-    def select_workspace(self):
+    def select_workspace(self) -> None:
         """
         Method opening a Directory chooser to select the workspace directory
         """
-        dir_name = str(os.path.join(os.path.dirname(self.settings.value("project/workspace")),
-                                os.path.basename(self.settings.value("project/workspace"))))
+        dir_name = str(os.path.join(os.path.dirname(str(self.settings.value("project/workspace"))),
+                                    os.path.basename(str(self.settings.value("project/workspace")))))
         if dir_name != self.workspace.text() and self.workspace.text():
             dir_name = self.workspace.text()
         directory = QFileDialog.getExistingDirectory(self, caption='Choose workspace directory', dir=dir_name,
-                                                     options=QFileDialog.ShowDirsOnly)
+                                                     options=QFileDialog.Option.ShowDirsOnly)
         if directory:
             self.workspace.setText(directory)
 
-    def select_appdata_path(self):
+    def select_appdata_path(self) -> None:
         """
         Method opening a Directory chooser to select the toolbox directory
         """
-        dir_name = str(os.path.join(os.path.dirname(self.settings.value("paths/appdata")),
-                                os.path.basename(self.settings.value("paths/appdata"))))
+        dir_name = str(os.path.join(os.path.dirname(str(self.settings.value("paths/appdata"))),
+                                    os.path.basename(str(self.settings.value("paths/appdata")))))
         if dir_name != self.appdata.text() and self.appdata.text():
             dir_name = self.appdata.text()
         directory = QFileDialog.getExistingDirectory(self, caption='Choose application data directory', dir=dir_name,
-                                                     options=QFileDialog.ShowDirsOnly)
+                                                     options=QFileDialog.Option.ShowDirsOnly)
         if directory:
             self.appdata.setText(directory)
 
-    def select_toolbox_path(self):
+    def select_toolbox_path(self) -> None:
         """
         Method opening a Directory chooser to select the toolbox directory
         """
-        dir_name = str(os.path.join(os.path.dirname(self.settings.value("paths/toolbox")),
-                                os.path.basename(self.settings.value("paths/toolbox"))))
+        dir_name = str(os.path.join(os.path.dirname(str(self.settings.value("paths/toolbox"))),
+                                    os.path.basename(str(self.settings.value("paths/toolbox")))))
         if dir_name != self.toolbox.text() and self.toolbox.text():
             dir_name = self.toolbox.text()
         directory = QFileDialog.getExistingDirectory(self, caption='Choose toolbox directory', dir=dir_name,
-                                                     options=QFileDialog.ShowDirsOnly)
+                                                     options=QFileDialog.Option.ShowDirsOnly)
         if directory:
             self.toolbox.setText(directory)
 
@@ -188,7 +188,7 @@ class SettingsDialog(QDialog):
             case QDialogButtonBox.ButtonRole.AcceptRole:
                 self.apply()
                 self.hide()
-            case QDialogButtonBox.RejectRole:
+            case QDialogButtonBox.ButtonRole.RejectRole:
                 self.hide()
 
     def apply(self):
@@ -209,13 +209,13 @@ class SettingsDialog(QDialog):
         """
         Reset the contents of the settings editor to the values currently in the settings file
         """
-        self.workspace.setText(self.settings.value("project/workspace"))
-        self.appdata.setText(self.settings.value("paths/appdata"))
-        self.toolbox.setText(self.settings.value("paths/toolbox"))
-        self.conda_path.setText(self.settings.value("project.conda/dir"))
-        self.user.setText(self.settings.value("project/user"))
+        self.workspace.setText(str(self.settings.value("project/workspace")))
+        self.appdata.setText(str(self.settings.value("paths/appdata")))
+        self.toolbox.setText(str(self.settings.value("paths/toolbox")))
+        self.conda_path.setText(str(self.settings.value("project.conda/dir")))
+        self.user.setText(str(self.settings.value("project/user")))
         self.dbms.setCurrentIndex(implemented_dbms().index(self.settings.value("project/dbms")))
-        self.batch_size.setValue(int(self.settings.value("project/batch")))
+        self.batch_size.setValue(int(str(self.settings.value("project/batch"))))
 
 
 class Settings(QAction):
@@ -223,7 +223,7 @@ class Settings(QAction):
     Action to open a session editor window
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent: QWidget):
         super().__init__(QIcon(":icons/settings"), "Settings", parent)
         self.triggered.connect(SettingsDialog)
         parent.addAction(self)

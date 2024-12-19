@@ -5,6 +5,7 @@ import os.path
 import subprocess
 import uuid
 import platform
+from typing import Sequence
 
 
 def generate_uuid() -> str:
@@ -38,7 +39,7 @@ def copy_files(source: list[str], destination: str) -> subprocess.Popen:
     return subprocess.Popen(cmd)
 
 
-def delete_files(file_list: list[str]) -> subprocess.Popen:
+def delete_files(file_list: Sequence[str]) -> subprocess.Popen:
     """
     Delete files with OS-specific command
 

@@ -5,9 +5,10 @@ Definition of widgets to display Tabs in a Tabbed window
 """
 import random
 
+import pandas
 from PySide6.QtCore import QCoreApplication
 from PySide6.QtGui import QCloseEvent
-from PySide6.QtWidgets import QTabWidget
+from PySide6.QtWidgets import QTabWidget, QWidget
 
 from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer
@@ -17,7 +18,7 @@ class TabbedWindow(QTabWidget):
     """
     A class for tabbed windows. These windows are displayed in the MDI area of the main window.
     """
-    def __init__(self, title):
+    def __init__(self, title: str):
         super().__init__()
         self.project_name = None
         self.top_widget = None
@@ -34,7 +35,7 @@ class TabbedWindow(QTabWidget):
         self.tabCloseRequested.connect(self.close_tab)
         self.show()
 
-    def set_top_tab(self, widget, title):
+    def set_top_tab(self, widget: QWidget, title: str) -> None:
         """
         Set the main tab for this tabbed window, i.e. the reference tab that cannot be closed
         :param widget: the widget to display in the top tab
@@ -46,7 +47,7 @@ class TabbedWindow(QTabWidget):
             new_tab = self.widget(self.addTab(widget, title))
             self.setCurrentWidget(new_tab)
 
-    def closeEvent(self, _):
+    def closeEvent(self, event: QCloseEvent) -> None:
         """
         Close the current tabbed widget window
 
@@ -57,7 +58,7 @@ class TabbedWindow(QTabWidget):
             QCoreApplication.sendEvent(PyDetecDiv.main_window.tabs[self.windowTitle()].widget(i), QCloseEvent())
         del PyDetecDiv.main_window.tabs[self.windowTitle()]
 
-    def close_tab(self, index):
+    def close_tab(self, index: int) -> None:
         """
         Close the tab with the specified index
 
@@ -67,7 +68,7 @@ class TabbedWindow(QTabWidget):
         if self.widget(index) != self.top_widget:
             self.removeTab(index)
 
-    def show_plot(self, df, title='Plot'):
+    def show_plot(self, df: pandas.DataFrame, title: str = 'Plot') -> None:
         """
         Open a viewer tab to plot a graphic from a pandas dataframe
 

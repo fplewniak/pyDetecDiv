@@ -24,7 +24,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setObjectName('PyDetecDiv main window')
 
-        self.addToolBar(MainToolBar('main toolbar'))
+        self.addToolBar(MainToolBar(self, 'Main Toolbar'))
 
         self.tabs = {}
 
