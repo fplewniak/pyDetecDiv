@@ -174,7 +174,7 @@ class SettingsDialog(QDialog):
             self.toolbox.setText(directory)
 
     @Slot()
-    def clicked(self, button):
+    def clicked(self, button: QPushButton):
         """
         Slot responding to a click on one of the buttons in the button box.
 
