@@ -1,17 +1,21 @@
 """
 Module defining classes for building a video player
 """
-import datetime
 import time
 import re
+from typing import TypeVar
 
 import numpy as np
-from PySide6.QtCore import QTimer, Signal, QSize, Qt, QRectF, QTimeLine
+from PySide6.QtCore import QTimer, Signal, QSize, Qt
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFrame, QToolButton, QLabel, QSlider, QSpinBox, \
-    QLineEdit, QSizePolicy, QSplitter
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame, QToolButton, QLabel, QSlider, QSpinBox,
+                               QLineEdit, QSizePolicy, QSplitter, QMenuBar, QGraphicsScene)
 
+from pydetecdiv.app.gui.core.widgets.viewers import Layer
 from pydetecdiv.app.gui.core.widgets.viewers.images import ImageViewer
+from pydetecdiv.domain.ImageResourceData import ImageResourceData
+
+VideoScene = TypeVar('VideoScene', bound=QGraphicsScene)
 
 
 class VideoPlayer(QWidget):
@@ -23,7 +27,7 @@ class VideoPlayer(QWidget):
     video_Z = Signal(int)
     finished = Signal(bool)
 
-    def __init__(self, parent=None, **kwargs):
+    def __init__(self, parent: QWidget = None, **kwargs):
         super().__init__(parent, **kwargs)
 
         self.T = 0
@@ -40,7 +44,7 @@ class VideoPlayer(QWidget):
         # self.viewer.setViewportUpdateMode(QGraphicsView.NoViewportUpdate)
 
     @property
-    def elapsed_time(self):
+    def elapsed_time(self) -> str:
         t = self.T * self.tscale
         hours = int(t / 3600)
         t = t - hours * 3600
@@ -51,7 +55,7 @@ class VideoPlayer(QWidget):
         return f'{hours:02d}:{minutes:02d}:{seconds:02d}.{ms:04d}'
 
     @property
-    def viewer(self):
+    def viewer(self) -> ImageViewer:
         return self.viewer_panel.video_viewer
 
     # def _create_viewer(self):
@@ -65,7 +69,7 @@ class VideoPlayer(QWidget):
     #     self.viewer_panel = VideoViewerPanel(self)
     #     return self.viewer_panel.video_viewer
 
-    def setup(self, menubar=None):
+    def setup(self, menubar: QMenuBar = None) -> None:
         """
         Sets the video player up
 
@@ -87,7 +91,7 @@ class VideoPlayer(QWidget):
         self.time_display.setGeometry(20, 30, 140, self.time_display.height())
 
     @property
-    def scene(self):
+    def scene(self) -> VideoScene:
         """
         Convenience property returning the scene associated with the viewer in this video player
 
@@ -95,7 +99,8 @@ class VideoPlayer(QWidget):
         """
         return self.viewer.scene()
 
-    def setBackgroundImage(self, image_resource_data, C=0, Z=0, T=0, crop=None):
+    def setBackgroundImage(self, image_resource_data: ImageResourceData, C: int = 0, Z: int = 0, T: int = 0,
+                           crop: tuple[slice, slice] = None) -> None:
         """
         Sets the background image for this video player
 
@@ -122,7 +127,7 @@ class VideoPlayer(QWidget):
         # # Clicking the push button will start the progress bar animation
         # self.control_panel.video_control.video_forward.clicked.connect(timeLine.start)
 
-    def addLayer(self):
+    def addLayer(self) -> Layer:
         """
         add a layer to the scene of the current Video player
 
@@ -130,7 +135,7 @@ class VideoPlayer(QWidget):
         """
         return self.viewer.addLayer()
 
-    def zoom_set_value(self, value):
+    def zoom_set_value(self, value: int) -> None:
         """
         Set the zoom to the specified value
 
@@ -143,7 +148,7 @@ class VideoPlayer(QWidget):
         # print(value)
         # self.scale_value.setText(f'Zoom: {self.scale}%')
 
-    def zoom_reset(self):
+    def zoom_reset(self) -> None:
         """
         Reset the zoom to 1:1
         """
@@ -152,7 +157,7 @@ class VideoPlayer(QWidget):
         self.control_panel.zoom_control.zoom_set.setText('100 %')
         # self.zoom_set_value(100)
 
-    def zoom_fit(self):
+    def zoom_fit(self) -> None:
         """
         Set the zoom value to fit the image in the viewer
         """
@@ -161,7 +166,7 @@ class VideoPlayer(QWidget):
         self.control_panel.zoom_control.zoom_set.setText(f'{self.viewer.scale_value} %')
         # self.control_panel.zoom_control.scale_value.setText(f'Zoom: {self.scale}%')
 
-    def play_video(self):
+    def play_video(self) -> None:
         """
         Play the video with a maximum of an image every 50 ms (i.e. 20 FPS). Note that if loading a frame takes longer
         than 50 ms, then the frame rate may be lower.
@@ -175,7 +180,7 @@ class VideoPlayer(QWidget):
         self.video_playing = True
         self.timer.start()
 
-    def show_next_frame(self):
+    def show_next_frame(self) -> None:
         """
         Show next frame when playing a video
         """
@@ -193,7 +198,7 @@ class VideoPlayer(QWidget):
             self.speed = speed
             # self.ui.FPS.setText(f'FPS: {speed}')
 
-    def change_frame(self, T=0):
+    def change_frame(self, T: int = 0) -> None:
         """
         Change the current frame to the specified time index and refresh the display
 
@@ -208,20 +213,20 @@ class VideoPlayer(QWidget):
             self.viewer.display(T=self.T)
             # self.viewer.scene().update()
 
-    def pause_video(self):
+    def pause_video(self) -> None:
         """
         Pause the video by setting the video_playing flag to False
         """
         self.video_playing = False
 
-    def video_back(self):
+    def video_back(self) -> None:
         """
         Reset the current frame to the first one
         """
         self.change_frame(T=0)
         self.control_panel.video_control.t_slider.setValue(0)
 
-    def synchronize_with(self, other):
+    def synchronize_with(self, other: 'VideoPlayer') -> None:
         """
         Synchronize the current viewer with another one. This is used to view a portion of an image in a new viewer
         with the same T coordinates as the original.
@@ -242,11 +247,11 @@ class VideoViewerPanel(QSplitter):
     A class defining the Video viewer panel (holding image viewer + any other viewer for graphs, etc...)
     """
 
-    def __init__(self, parent=None, **kwargs):
+    def __init__(self, parent: VideoPlayer = None, **kwargs):
         super().__init__(parent=parent, **kwargs)
         self.video_viewer = ImageViewer()
 
-    def setup(self, scene=None, **kwargs):
+    def setup(self, scene: VideoScene = None, **kwargs) -> None:
         self.video_viewer.setup(scene)
         layout = QVBoxLayout(self)
         layout.addWidget(self.video_viewer)
@@ -258,7 +263,7 @@ class VideoControlPanel(QFrame):
     A class defining the Video control panel (video control + zoom control)
     """
 
-    def __init__(self, parent=None, **kwargs):
+    def __init__(self, parent: VideoPlayer = None, **kwargs):
         super().__init__(parent=parent, **kwargs)
         layout = QHBoxLayout(self)
 
@@ -281,34 +286,35 @@ class VideoControlPanel(QFrame):
         self.zoom_control.zoom_set.returnPressed.connect(lambda: parent.zoom_set_value(int(self.zoom_control.zoom)))
         parent.viewer.zoom_value_changed.connect(lambda x: self.zoom_control.zoom_set.setText(f'{x} %'))
 
-    def addWidget(self, widget):
+    def addWidget(self, widget: QWidget) -> None:
         self.layout().addWidget(widget)
+
 
 class VideoControl(QFrame):
     """
     A class defining the frame Controls (frame, frame rate, play, pause, etc.) of a VideoPlayer
     """
 
-    def __init__(self, parent=None, **kwargs):
+    def __init__(self, parent: VideoControlPanel = None, **kwargs):
         super().__init__(parent=parent, **kwargs)
         layout = QHBoxLayout(self)
         self.video_back_btn = QToolButton(self)
         icon = QIcon()
-        icon.addFile(':/icons/video_back', QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(':/icons/video_back', QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.video_back_btn.setIcon(icon)
 
         layout.addWidget(self.video_back_btn)
 
         self.pauseButton = QToolButton(self)
         icon1 = QIcon()
-        icon1.addFile(':/icons/video_pause', QSize(), QIcon.Normal, QIcon.Off)
+        icon1.addFile(':/icons/video_pause', QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.pauseButton.setIcon(icon1)
 
         layout.addWidget(self.pauseButton)
 
         self.video_forward = QToolButton(self)
         icon2 = QIcon()
-        icon2.addFile(':/icons/video_play', QSize(), QIcon.Normal, QIcon.Off)
+        icon2.addFile(':/icons/video_play', QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.video_forward.setIcon(icon2)
 
         layout.addWidget(self.video_forward)
@@ -322,8 +328,8 @@ class VideoControl(QFrame):
         layout.addWidget(self.t_set)
 
         self.t_slider = QSlider(self)
-        self.t_slider.setOrientation(Qt.Horizontal)
-        self.t_slider.setTickPosition(QSlider.NoTicks)
+        self.t_slider.setOrientation(Qt.Orientation.Horizontal)
+        self.t_slider.setTickPosition(QSlider.TickPosition.NoTicks)
         self.t_slider.setTickInterval(10)
 
         layout.addWidget(self.t_slider)
@@ -336,7 +342,11 @@ class VideoControl(QFrame):
         layout.addWidget(self.t_step)
 
     @property
-    def frame(self):
+    def frame(self) -> int:
+        """
+        Get the current frame displayed by the Video Player
+        :return: the current frame number
+        """
         return int(self.t_set.text())
 
 
@@ -345,20 +355,20 @@ class ZoomControl(QFrame):
     A class defining a QFrame widget for controlling Zoom in a VideoPlayer
     """
 
-    def __init__(self, parent=None, **kwargs):
+    def __init__(self, parent: VideoControlPanel = None, **kwargs):
         super().__init__(parent=parent, **kwargs)
         layout = QHBoxLayout(self)
 
         self.zoom_actual = QToolButton(self)
         icon3 = QIcon()
-        icon3.addFile(':/icons/zoom_actual', QSize(), QIcon.Normal, QIcon.Off)
+        icon3.addFile(':/icons/zoom_actual', QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.zoom_actual.setIcon(icon3)
 
         layout.addWidget(self.zoom_actual)
 
         self.zoom_fit_btn = QToolButton(self)
         icon4 = QIcon()
-        icon4.addFile(":/icons/zoom_fit", QSize(), QIcon.Normal, QIcon.Off)
+        icon4.addFile(":/icons/zoom_fit", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.zoom_fit_btn.setIcon(icon4)
 
         layout.addWidget(self.zoom_fit_btn)
@@ -382,5 +392,9 @@ class ZoomControl(QFrame):
         # layout.addWidget(self.zoom_value)
 
     @property
-    def zoom(self):
+    def zoom(self) -> int:
+        """
+        Get the current zoom level
+        :return: the current zoom level
+        """
         return int(re.match(r'\d+', self.zoom_set.text()).group(0))

@@ -4,12 +4,13 @@ A module defining classes to view Images in a layered viewer
 import qimage2ndarray
 import numpy as np
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap, QBitmap
-from PySide6.QtWidgets import QGraphicsPixmapItem
+from PySide6.QtGui import QPixmap, QBitmap, QColor
+from PySide6.QtWidgets import QGraphicsPixmapItem, QWidget
 
 from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui.core.widgets.viewers import GraphicsView, Layer, BackgroundLayer
-from pydetecdiv.domain.Image import Image, ImgDType
+from pydetecdiv.domain.Image import Image
+from pydetecdiv.domain.ImageResourceData import ImageResourceData
 
 
 class ImageViewer(GraphicsView):
@@ -17,11 +18,11 @@ class ImageViewer(GraphicsView):
     A class defining an Image viewer
     """
 
-    def __init__(self, parent=None, **kwargs):
+    def __init__(self, parent: QWidget = None, **kwargs):
         super().__init__(parent=parent, **kwargs)
         self.image_resource_data = None
 
-    def _create_layer(self, background=False):
+    def _create_layer(self, background: bool = False) -> 'ImageLayer':
         """
         Create a new layer
 
@@ -32,7 +33,8 @@ class ImageViewer(GraphicsView):
             return BackgroundImageLayer(self)
         return ImageLayer(self)
 
-    def setBackgroundImage(self, image_resource_data, C=0, T=0, Z=0, crop=None):
+    def setBackgroundImage(self, image_resource_data: ImageResourceData, C: int = 0, T: int = 0, Z: int = 0,
+                           crop: tuple[slice, slice] = None) -> 'ImageItem':
         """
         Sets the background image
 
@@ -46,7 +48,7 @@ class ImageViewer(GraphicsView):
         self.image_resource_data = image_resource_data
         return self.background.setImage(image_resource_data, C=C, T=T, Z=Z, crop=crop)
 
-    def display(self, T=None):
+    def display(self, T: int = None):
         """
         Display the viewer at a given time frame
 
@@ -61,12 +63,14 @@ class ImageLayer(Layer):
     """
     A class defining an Image layer
     """
-    def __init__(self, viewer, **kwargs):
+
+    def __init__(self, viewer: ImageViewer, **kwargs):
         super().__init__(viewer, **kwargs)
         self.T = 0
         self.image = None
 
-    def setImage(self, image_resource_data, C=0, T=0, Z=0, crop=None, transparent=None, alpha=False):
+    def setImage(self, image_resource_data: ImageResourceData, C: int = 0, T: int = 0, Z: int = 0, crop: tuple[slice, slice] = None,
+                 transparent: QColor = None, alpha: bool = False):
         """
         Adds an image to the current layer
 
@@ -91,7 +95,8 @@ class BackgroundImageLayer(BackgroundLayer, ImageLayer):
     """
     A class defining a background image
     """
-    def __init__(self, viewer, **kwargs):
+
+    def __init__(self, viewer: ImageViewer, **kwargs):
         super().__init__(viewer, **kwargs)
 
 
@@ -99,13 +104,15 @@ class ImageItem(QGraphicsPixmapItem):
     """
     A class defining an ImageItem
     """
-    def __init__(self, image_resource_data=None, C=0, T=0, Z=0, crop=None, transparent=None, alpha=False, parent=None):
+
+    def __init__(self, image_resource_data: ImageResourceData = None, C=0, T=0, Z=0, crop: tuple[slice, slice] = None,
+                 transparent=None, alpha=False, parent=None):
         if image_resource_data:
             pixmap = ImageItem.get_pixmap(image_resource_data, C=C, T=T, Z=Z, crop=crop, alpha=alpha)
         else:
             pixmap = QPixmap()
         if transparent:
-            pixmap.setMask(pixmap.createMaskFromColor(transparent, Qt.MaskInColor))
+            pixmap.setMask(pixmap.createMaskFromColor(transparent, Qt.MaskMode.MaskInColor))
         super().__init__(pixmap, parent=parent)
         self.image_resource_data = image_resource_data
         self.C = C
@@ -148,7 +155,7 @@ class ImageItem(QGraphicsPixmapItem):
         pixmap = ImageItem.get_pixmap(self.image_resource_data, C=self.C, T=self.T, Z=self.Z, crop=self.crop,
                                       alpha=self.alpha)
         if transparent:
-            pixmap.setMask(pixmap.createMaskFromColor(transparent, Qt.MaskInColor))
+            pixmap.setMask(pixmap.createMaskFromColor(transparent, Qt.MaskMode.MaskInColor))
         self.setPixmap(pixmap)
 
     def set_channel(self, C):
@@ -181,7 +188,7 @@ class ImageItem(QGraphicsPixmapItem):
             self.T = T
 
     @staticmethod
-    def get_pixmap(image_resource_data, C=0, T=0, Z=0, crop=None, alpha=False):
+    def get_pixmap(image_resource_data, C=0, T=0, Z=0, crop: tuple[slice, slice] = None, alpha=False):
         """
         Gets a pixmap from image resource data
 
@@ -201,4 +208,4 @@ class ImageItem(QGraphicsPixmapItem):
         #     else:
         #         alpha_channel = np.max(arr, axis=2)
         #         arr = np.dstack((arr, alpha_channel))
-        return QPixmap.fromImage(qimage2ndarray.array2qimage(arr), Qt.AutoColor)
+        return QPixmap.fromImage(qimage2ndarray.array2qimage(arr), Qt.ImageConversionFlag.AutoColor)
