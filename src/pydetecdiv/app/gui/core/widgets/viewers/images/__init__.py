@@ -201,7 +201,7 @@ class ImageItem(QGraphicsPixmapItem):
         :return: a QPixmap object
         """
         arr = Image.auto_channels(image_resource_data, C=C, T=T, Z=Z, crop=crop,
-                                  drift=PyDetecDiv.apply_drift, alpha=alpha).as_array(np.uint8)
+                                  drift=PyDetecDiv.apply_drift, alpha=alpha).stretch_contrast().as_array(np.uint8)
         # if alpha:
         #     if len(arr.shape) == 2:
         #         arr = np.dstack((arr, arr, arr, arr))
