@@ -225,11 +225,12 @@ class Image:
         :param q: the quantile values for correction, the qlow will be set to 0 and the qhigh to 1
         :return: the current Image after correction
         """
-        if q is None:
-            q = [0.001, 0.999]
         img = self.as_array()
-        qlow, qhi = np.quantile(img[img > 0.0], q)
-        self.tensor = tf.convert_to_tensor(exposure.rescale_intensity(img, in_range=(qlow, qhi)))
+        if np.max(img) > np.min(img):
+            if q is None:
+                q = [0.001, 0.999]
+            qlow, qhi = np.quantile(img[img > 0.0], q)
+            self.tensor = tf.convert_to_tensor(exposure.rescale_intensity(img, in_range=(qlow, qhi)))
         return self
 
     def equalize_hist(self, adapt: bool = False) -> Image:

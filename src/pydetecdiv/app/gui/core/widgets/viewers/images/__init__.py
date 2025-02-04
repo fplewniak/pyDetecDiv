@@ -9,7 +9,7 @@ from PySide6.QtWidgets import QGraphicsPixmapItem, QWidget
 
 from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui.core.widgets.viewers import GraphicsView, Layer, BackgroundLayer
-from pydetecdiv.domain.Image import Image
+from pydetecdiv.domain.Image import Image, ImgDType
 from pydetecdiv.domain.ImageResourceData import ImageResourceData
 
 
@@ -201,7 +201,7 @@ class ImageItem(QGraphicsPixmapItem):
         :return: a QPixmap object
         """
         arr = Image.auto_channels(image_resource_data, C=C, T=T, Z=Z, crop=crop,
-                                  drift=PyDetecDiv.apply_drift, alpha=alpha).as_array(np.uint8)
+                                  drift=PyDetecDiv.apply_drift, alpha=alpha).stretch_contrast().as_array(np.uint8)
         # if alpha:
         #     if len(arr.shape) == 2:
         #         arr = np.dstack((arr, arr, arr, arr))
