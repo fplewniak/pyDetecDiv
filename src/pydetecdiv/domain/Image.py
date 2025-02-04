@@ -12,6 +12,7 @@ import matplotlib.axes
 import numpy as np
 import tensorflow as tf
 from skimage import exposure
+from PIL import Image as PILimage, ImageOps
 
 from pydetecdiv.domain import ImageResourceData, ROI
 
@@ -206,6 +207,16 @@ class Image:
         if new_image:
             return Image(tensor)
         self.tensor = tensor
+        return self
+
+    def auto_contrast(self, preserve_tone: bool = True) -> Image:
+        """
+        Adjust contrast automatically using PIL package. RGBA images cannot be used here
+        :param preserve_tone: if True, the tone is preserved
+        :return: the current Image after correction
+        """
+        self.tensor = tf.convert_to_tensor(
+            np.array(ImageOps.autocontrast(PILimage.fromarray(self.as_array(np.uint8)), preserve_tone=preserve_tone)))
         return self
 
     def adjust_contrast(self, factor: float = 2.0) -> Image:
