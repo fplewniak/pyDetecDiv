@@ -9,7 +9,7 @@ from PySide6.QtCore import QThread
 import numpy as np
 import pandas as pd
 import cv2 as cv
-from aicsimageio.dimensions import Dimensions
+from bioio_base.dimensions import Dimensions
 from vidstab import VidStab
 import abc
 
@@ -129,19 +129,19 @@ class ImageResourceData(abc.ABC):
             return self._image_memmap(sliceX=sliceX, sliceY=sliceY, **kwargs)
         return self._image_memmap(**kwargs)
 
-    @abc.abstractmethod
-    def data_sample(self, X: slice = None, Y: slice = None) -> np.ndarray:
-        """
-        Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for
-        regions of interest from a field of view.
-
-        :param X: the X slice
-        :type X: slice
-        :param Y: the Y slice
-        :type Y: slice
-        :return: the sample data (in-memory)
-        :rtype: ndarray
-        """
+    # @abc.abstractmethod
+    # def data_sample(self, X: slice = None, Y: slice = None) -> np.ndarray:
+    #     """
+    #     Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for
+    #     regions of interest from a field of view.
+    #
+    #     :param X: the X slice
+    #     :type X: slice
+    #     :param Y: the Y slice
+    #     :type Y: slice
+    #     :return: the sample data (in-memory)
+    #     :rtype: ndarray
+    #     """
 
     # def open(self):
     #     """

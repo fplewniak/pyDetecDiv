@@ -3,12 +3,12 @@
 """
 from typing import TYPE_CHECKING
 
-from aicsimageio.dimensions import Dimensions
+from bioio_base.dimensions import Dimensions
 
 if TYPE_CHECKING:
     from pydetecdiv.domain import ImageResource
 
-from aicsimageio import AICSImage
+from bioio import BioImage
 import numpy as np
 import cv2
 
@@ -20,7 +20,7 @@ class ArrayImageResource(ImageResourceData):
     A business-logic class defining valid operations and attributes of Image resources stored in a data array
     """
     def __init__(self, data: np.ndarray = None, image_resource: 'ImageResource' = None, max_mem=5000):
-        self.img_data = AICSImage(data)
+        self.img_data = BioImage(data)
         self.fov = image_resource.fov
         self.image_resource = image_resource.id_
         self.max_mem = max_mem

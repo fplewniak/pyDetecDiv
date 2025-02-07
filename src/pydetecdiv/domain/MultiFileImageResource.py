@@ -6,31 +6,31 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydetecdiv.domain.ImageResource import ImageResource
 
-from aicsimageio.dimensions import Dimensions
+from bioio_base.dimensions import Dimensions
 
-import re
+# import re
 import tensorflow as tf
-from aicsimageio import AICSImage
+# from aicsimageio import AICSImage
 import numpy as np
-import pandas as pd
+# import pandas as pd
 from tifffile import tifffile
 import cv2
 from pydetecdiv.domain.ImageResourceData import ImageResourceData
 
 
-def aics_indexer(path: str, pattern: str) -> pd.Series:
-    """
-    An indexer to determine dimensions (T, C, Z) from file names to be used with AICSImage reader when reading a list of
-    files
-
-    :param path: the path of the file name
-    :type path: str
-    :param pattern: the pattern defining the dimension indexes from file names
-    :type pattern: regex str
-    :return: the dimension indexes corresponding to the path
-    :rtype: pandas Series
-    """
-    return pd.Series({k: int(v) for k, v in re.search(pattern, path).groupdict().items()})
+# def aics_indexer(path: str, pattern: str) -> pd.Series:
+#     """
+#     An indexer to determine dimensions (T, C, Z) from file names to be used with AICSImage reader when reading a list of
+#     files
+#
+#     :param path: the path of the file name
+#     :type path: str
+#     :param pattern: the pattern defining the dimension indexes from file names
+#     :type pattern: regex str
+#     :return: the dimension indexes corresponding to the path
+#     :rtype: pandas Series
+#     """
+#     return pd.Series({k: int(v) for k, v in re.search(pattern, path).groupdict().items()})
 
 
 class MultiFileImageResource(ImageResourceData):
@@ -144,17 +144,17 @@ class MultiFileImageResource(ImageResourceData):
             return tifffile.memmap(self.image_files[T, C, Z])[sliceY, sliceX]
         return np.zeros((sliceY.stop - sliceY.start, sliceX.stop - sliceX.start), np.uint16)
 
-    def data_sample(self, X: slice = None, Y: slice = None) -> np.ndarray:
-        """
-        Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for
-        regions of interest from a field of view.
-
-        :param X: the X slice
-        :type X: slice
-        :param Y: the Y slice
-        :type Y: slice
-        :return: the sample data (in-memory)
-        :rtype: ndarray
-        """
-        return (AICSImage(self.path, indexer=lambda x: aics_indexer(x, self.pattern)).reader
-                .get_image_dask_data('TCZYX', X=X, Y=Y).compute())
+    # def data_sample(self, X: slice = None, Y: slice = None) -> np.ndarray:
+    #     """
+    #     Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for
+    #     regions of interest from a field of view.
+    #
+    #     :param X: the X slice
+    #     :type X: slice
+    #     :param Y: the Y slice
+    #     :type Y: slice
+    #     :return: the sample data (in-memory)
+    #     :rtype: ndarray
+    #     """
+    #     return (AICSImage(self.path, indexer=lambda x: aics_indexer(x, self.pattern)).reader
+    #             .get_image_dask_data('TCZYX', X=X, Y=Y).compute())

@@ -216,7 +216,7 @@ class Image:
         :return: the current Image after correction
         """
         self.tensor = tf.convert_to_tensor(
-            np.array(ImageOps.autocontrast(PILimage.fromarray(self.as_array(np.uint8)), preserve_tone=preserve_tone)))
+                np.array(ImageOps.autocontrast(PILimage.fromarray(self.as_array(np.uint8)), preserve_tone=preserve_tone)))
         return self
 
     def adjust_contrast(self, factor: float = 2.0) -> Image:

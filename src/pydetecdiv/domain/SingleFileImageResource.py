@@ -8,8 +8,8 @@ if TYPE_CHECKING:
 
 import psutil
 import tensorflow as tf
-from aicsimageio import AICSImage
-from aicsimageio.dimensions import Dimensions
+from bioio import BioImage
+from bioio_base.dimensions import Dimensions
 from tifffile import tifffile
 import numpy as np
 import cv2
@@ -28,7 +28,8 @@ class SingleFileImageResource(ImageResourceData):
         self.image_resource = image_resource.id_
         self.max_mem = max_mem
         self._memmap = tifffile.memmap(self.path, **kwargs)
-        self.img_reader = AICSImage(self.path).reader
+        # self.img_reader = AICSImage(self.path).reader
+        self.img_reader = BioImage(self.path)
         self._drift = image_resource.drift
 
         # print(f'Single file image resource: {self.dims}')

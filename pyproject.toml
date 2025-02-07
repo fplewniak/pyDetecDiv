@@ -22,7 +22,9 @@ classifiers=[
 
 requires-python = ">=3.10.0, <3.12"
 dependencies = [
-    "aicsimageio",
+    #"aicsimageio",
+    "bioio",
+    "bioio-tifffile",
     "fastremap",
     "h5py",
     "keras==2.15.0",

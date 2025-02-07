@@ -13,7 +13,7 @@ import os
 import numpy as np
 import pandas
 from PIL import Image
-from aicsimageio.dimensions import Dimensions
+from bioio_base.dimensions import Dimensions
 
 from pydetecdiv.domain.MultiFileImageResource import MultiFileImageResource
 from pydetecdiv.domain.SingleFileImageResource import SingleFileImageResource
