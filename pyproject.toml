@@ -40,6 +40,7 @@ dependencies = [
     "pyside6",
     "pyxdg",
     "qimage2ndarray>=1.9.0",
+    "sam2",
     "scikit-image",
     #"scipy",
     "scikit-learn",
@@ -47,6 +48,8 @@ dependencies = [
     "tables",
     "tifffile",
     "tensorflow==2.15.0",
+    "torch",
+    "torchvision",
     "vidstab",
     "xmltodict",
 ]
