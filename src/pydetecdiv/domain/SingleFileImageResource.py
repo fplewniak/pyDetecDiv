@@ -7,7 +7,6 @@ if TYPE_CHECKING:
     from pydetecdiv.domain.ImageResource import ImageResource
 
 import psutil
-import tensorflow as tf
 from bioio import BioImage
 from bioio_base.dimensions import Dimensions
 from tifffile import tifffile
@@ -15,6 +14,7 @@ import numpy as np
 import cv2
 
 from pydetecdiv.domain.ImageResourceData import ImageResourceData
+from pydetecdiv.domain.Image import Image, ImgDType
 
 
 class SingleFileImageResource(ImageResourceData):
@@ -84,7 +84,7 @@ class SingleFileImageResource(ImageResourceData):
         """
         return self.img_reader.dims.X
 
-    def _image(self, C: int = 0, Z: int = 0, T: int = 0, drift: bool = False) -> tf.Tensor:
+    def _image(self, C: int = 0, Z: int = 0, T: int = 0, drift: bool = False) -> np.ndarray:
         """
         A 2D grayscale image (on frame, one channel and one layer)
 
@@ -108,7 +108,8 @@ class SingleFileImageResource(ImageResourceData):
                                           [[1, 0, -self.drift.iloc[T].dx],
                                            [0, 1, -self.drift.iloc[T].dy]]),
                                   (data.shape[1], data.shape[0]))
-        data = tf.image.convert_image_dtype(data, dtype=tf.uint16, saturate=False).numpy()
+        # data = tf.image.convert_image_dtype(data, dtype=tf.uint16, saturate=False).numpy()
+        data = Image(data).as_array(dtype=ImgDType.uint16)
         return data
 
     def _image_memmap(self, sliceX: slice = None, sliceY: slice = None, C: int = 0, Z: int = 0, T: int = 0,

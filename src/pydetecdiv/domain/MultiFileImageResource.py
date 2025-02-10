@@ -8,14 +8,11 @@ if TYPE_CHECKING:
 
 from bioio_base.dimensions import Dimensions
 
-# import re
-import tensorflow as tf
-# from aicsimageio import AICSImage
 import numpy as np
-# import pandas as pd
 from tifffile import tifffile
 import cv2
 from pydetecdiv.domain.ImageResourceData import ImageResourceData
+from pydetecdiv.domain.Image import Image, ImgDType
 
 
 # def aics_indexer(path: str, pattern: str) -> pd.Series:
@@ -124,7 +121,8 @@ class MultiFileImageResource(ImageResourceData):
                                               [[1, 0, -self.drift.iloc[T].dx],
                                                [0, 1, -self.drift.iloc[T].dy]]),
                                       (data.shape[1], data.shape[0]))
-            data = tf.image.convert_image_dtype(data, dtype=tf.uint16, saturate=False).numpy()
+            # data = tf.image.convert_image_dtype(data, dtype=tf.uint16, saturate=False).numpy()
+            data = Image(data).as_array(dtype=ImgDType.uint16)
             return data
         return np.zeros((self.sizeY, self.sizeX), np.uint16)
 
