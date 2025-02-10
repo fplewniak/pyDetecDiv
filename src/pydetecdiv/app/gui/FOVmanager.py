@@ -12,7 +12,7 @@ from skimage.feature import peak_local_max
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 from pydetecdiv.app.gui.core.widgets.viewers import Scene
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer
-from pydetecdiv.domain.Image import Image
+from pydetecdiv.domain.Image import Image, ImgDType
 from pydetecdiv.domain.ROI import ROI
 from pydetecdiv.domain.ImageResourceData import ImageResourceData
 
@@ -117,7 +117,7 @@ class FOVmanager(VideoPlayer):
         y1, y2 = int(pos.y()), h + int(pos.y())
         (C, T, Z) = self.viewer.background.image.get_CTZ()
         return Image.auto_channels(self.viewer.image_resource_data, C=C, T=T, Z=Z, crop=(slice(x1, x2), slice(y1, y2)),
-                                   drift=PyDetecDiv.apply_drift, alpha=False).as_array(np.uint8)
+                                   drift=PyDetecDiv.apply_drift, alpha=False).as_array(ImgDType.uint8)
 
     def view_in_new_tab(self, rect: QGraphicsRectItem) -> None:
         """
@@ -167,7 +167,7 @@ class FOVmanager(VideoPlayer):
         """
         threshold = 0.3
         (C, T, Z) = self.viewer.background.image.get_CTZ()
-        img = Image.auto_channels(self.viewer.image_resource_data, C=C, Z=Z, T=T, alpha=False).as_array(np.uint8)
+        img = Image.auto_channels(self.viewer.image_resource_data, C=C, Z=Z, T=T, alpha=False).as_array(ImgDType.uint8)
         res = cv.matchTemplate(img, PyDetecDiv.roi_template, cv.TM_CCOEFF_NORMED)
         xy = peak_local_max(res, threshold_abs=threshold, exclude_border=False)
         w, h = PyDetecDiv.roi_template.shape[::-1]
