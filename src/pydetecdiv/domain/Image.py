@@ -13,7 +13,7 @@ import numpy as np
 import tensorflow as tf
 import torch
 import torchvision as tv
-from torchvision.transforms import v2
+from torchvision.transforms import v2, InterpolationMode
 from torchvision import tv_tensors
 from skimage import exposure
 from PIL import Image as PILimage, ImageOps
@@ -115,7 +115,7 @@ class Image:
         :param grayscale: bool indicating whether the tensor should be 2D (grayscale) or 3D (RGB)
         :return:
         """
-        tensor = self.tensor if dtype is None else self._convert_to_dtype(dtype=dtype)
+        tensor = self.tensor if dtype is None else self._convert_tensor_to_dtype(dtype=dtype)
         if grayscale:
             return tf.image.rgb_to_grayscale(tensor)
         return tensor
@@ -128,12 +128,13 @@ class Image:
         :param grayscale: bool indicating whether the tensor should be 2D (grayscale) or 3D (RGB)
         :return:
         """
-        tensor = self.torch if dtype is None else v2.ToDtype(dtype=dtype.torch_dtype, scale=True)(self.torch)
+        # tensor = self.torch if dtype is None else v2.ToDtype(dtype=dtype.torch_dtype, scale=True)(self.torch)
+        tensor = self.torch if dtype is None else self._convert_to_dtype(dtype=dtype)
         if grayscale:
             return torch.squeeze(v2.Grayscale()(tensor))
         return tensor
 
-    def _convert_to_dtype(self, dtype: ImgDType = ImgDType.uint16) -> tf.Tensor:
+    def _convert_tensor_to_dtype(self, dtype: ImgDType = ImgDType.uint16) -> tf.Tensor:
         """
         Converts the Image to a specified dtype tensor
 
@@ -145,6 +146,18 @@ class Image:
         saturate = (self.tensor.dtype.is_floating and dtype.is_integer) or (
                 not self.tensor.dtype.is_unsigned and dtype.is_unsigned)
         return tf.image.convert_image_dtype(self.tensor, dtype=dtype, saturate=saturate)
+
+    def _convert_to_dtype(self, dtype: ImgDType = ImgDType.uint16) -> torch.Tensor:
+        """
+        Converts the Image to a specified dtype tensor
+
+        :param dtype: the dtype for the tensor
+        :return: the tensor of the requiested dtype
+        """
+        dtype = dtype.torch_dtype
+        scale = (self.torch.dtype.is_floating_point and not (dtype.is_floating_point or dtype.is_complex)) or (
+                self.torch.dtype.is_signed and not dtype.is_signed)
+        return v2.ToDtype(dtype=dtype, scale=scale)(self.torch)
 
     def rgb_to_gray(self) -> Image:
         """
@@ -170,7 +183,7 @@ class Image:
         self.tensor = self._convert_to_dtype(dtype=self._initial_tensor.dtype)
         return self
 
-    def resize(self, shape: tuple[int, int] = None, method: str = 'nearest', antialias: bool = True) -> Image:
+    def resize(self, shape: tuple[int, int] = None, method: InterpolationMode = InterpolationMode.NEAREST, antialias: bool = True) -> Image:
         """
         Resize image to the defined shape with the defined method.
 
@@ -192,8 +205,9 @@ class Image:
               lacking proper prefiltering), less ringing than Keys cubic kernel but less sharp.
         :return: the resized Image object
         """
-        tensor = tf.expand_dims(self.tensor, axis=-1) if len(self.shape) == 2 else self.tensor
-        return Image(tf.squeeze(tf.image.resize(tensor, shape, method=method)))
+        # tensor = tf.expand_dims(self.tensor, axis=-1) if len(self.shape) == 2 else self.tensor
+        # return Image(tf.squeeze(tf.image.resize(tensor, shape, method=method)))
+        return Image(v2.Resize(size=shape, interpolation=method)(self.torch))
 
     def show(self, ax: matplotlib.axes.Axes, grayscale: bool = False, **kwargs):
         """
@@ -224,7 +238,7 @@ class Image:
         colours = ['red', 'green', 'blue', 'yellow']
         if len(self.shape) != 2:
             ax.hist(self._rgb_to_gray().numpy().flatten(), bins=bins, histtype='step', color='black')
-            for c in range(self.tensor.shape[-1]):
+            for c in range(self.torch.shape[-1]):
                 ax.hist(self.as_array()[..., c].flatten(), bins=bins, histtype='step', color=colours[c])
         else:
             self.histogram(ax, bins=bins)
@@ -303,11 +317,13 @@ class Image:
         :param adapt: bool to set adaptative method
         :return: the current Image after correction
         """
+        arr = self.as_array(ImgDType.float64)
+        arr = arr / np.max(arr)
         if adapt:
-            self.tensor = tf.convert_to_tensor(exposure.equalize_adapthist(self.as_array(ImgDType.float64)))
+            self.torch = torch.from_numpy(exposure.equalize_adapthist(arr))
         else:
-            self.tensor = tf.convert_to_tensor(exposure.equalize_hist(self.as_array(ImgDType.float64)))
-        self.tensor = self._convert_to_dtype(dtype=self._initial_tensor.dtype)
+            self.torch = torch.from_numpy(exposure.equalize_hist(arr))
+        self.torch = v2.ToDtype(dtype=self._initial_torch.dtype)(self.torch)
         return self
 
     def sigmoid_correction(self) -> Image:
@@ -316,7 +332,7 @@ class Image:
 
         :return: the current Image after correction
         """
-        self.tensor = tf.convert_to_tensor(exposure.adjust_sigmoid(self.as_array()))
+        self.torch = torch.from_numpy(exposure.adjust_sigmoid(self.as_array()))
         return self
 
     def decompose_channels(self) -> list[Image]:
@@ -327,7 +343,7 @@ class Image:
         """
         if len(self.shape) == 2:
             return [self]
-        return [Image(array) for array in tf.unstack(self.tensor, axis=-1)]
+        return [Image(array) for array in self.torch]
 
     @staticmethod
     def add(images: list[Image]) -> Image:
@@ -348,9 +364,17 @@ class Image:
         :return: the averaged image
         """
         if len(images) > 1:
-            tensor = tf.math.add_n([i.as_tensor(ImgDType.float32) / len(images) for i in images])
-            return Image(tf.image.convert_image_dtype(tensor, images[0].tensor.dtype))
+            tensor = images[0].as_torch(ImgDType.float32)
+            for i in images[1:]:
+                tensor = torch.add(tensor, i.as_torch(ImgDType.float32))
+            tensor = torch.div(tensor, len(images))
+            return Image(v2.ToDtype(images[0].torch.dtype)(tensor))
         return images[0]
+
+        # if len(images) > 1:
+        #     tensor = tf.math.add_n([i.as_tensor(ImgDType.float32) / len(images) for i in images])
+        #     return Image(tf.image.convert_image_dtype(tensor, images[0].tensor.dtype))
+        # return images[0]
 
     @staticmethod
     def compose_channels(channels: list[Image] | tuple[Image], alpha: bool = False) -> Image:
@@ -428,7 +452,7 @@ def get_images_sequences(imgdata: ImageResourceData, roi_list: list[ROI], t: int
 
 
 def get_rgb_images_from_stacks_memmap(imgdata: ImageResourceData, roi_list: list[ROI], t: int, z: list[int, int, int] = None,
-                                      apply_drift: bool = True) -> list[tf.Tensor]:
+                                      apply_drift: bool = True) -> list[torch.Tensor]:
     """
     Combine 3 z-layers of a grayscale image resource into a RGB image where each of the z-layer is a channel
 
@@ -454,11 +478,11 @@ def get_rgb_images_from_stacks_memmap(imgdata: ImageResourceData, roi_list: list
                                                            sliceY=slice(roi.y, roi.y + roi.height),
                                                            C=0, Z=z[2], T=t,
                                                            drift=apply_drift)).stretch_contrast(),
-                                ]).as_tensor(ImgDType.float32) for roi in roi_list]
+                                ]).as_torch(ImgDType.float32) for roi in roi_list]
     return roi_images
 
 
-def stack_fov_image(imgdata: ImageResourceData, t: int, z: list[int, int, int] = None, apply_drift: bool = True) -> tf.Tensor:
+def stack_fov_image(imgdata: ImageResourceData, t: int, z: list[int, int, int] = None, apply_drift: bool = True) -> torch.Tensor:
     """
     Combine 3 z-layers of a grayscale full image resource (one complete FOV) into a RGB image where each of the z-layer is a channel
 
@@ -478,12 +502,12 @@ def stack_fov_image(imgdata: ImageResourceData, t: int, z: list[int, int, int] =
     rgb_image = Image.compose_channels([image1.stretch_contrast(),
                                         image2.stretch_contrast(),
                                         image3.stretch_contrast()
-                                        ]).as_tensor(ImgDType.float32)
+                                        ]).as_torch(ImgDType.float32)
     return rgb_image
 
 
 def get_rgb_images_from_stacks(imgdata: ImageResourceData, roi_list: list[ROI], t: int, z: list[int, int, int] = None,
-                               apply_drift: bool = True) -> list[tf.Tensor]:
+                               apply_drift: bool = True) -> list[torch.Tensor]:
     """
     Combine 3 z-layers of a grayscale image resource into a RGB image where each of the z-layer is a channel
 
@@ -504,5 +528,5 @@ def get_rgb_images_from_stacks(imgdata: ImageResourceData, roi_list: list[ROI], 
     roi_images = [Image.compose_channels([image1.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
                                           image2.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
                                           image3.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast()
-                                          ]).as_tensor(ImgDType.float32) for roi in roi_list]
+                                          ]).as_torch(ImgDType.float32) for roi in roi_list]
     return roi_images
