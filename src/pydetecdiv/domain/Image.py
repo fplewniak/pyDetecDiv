@@ -11,6 +11,10 @@ import cv2
 import matplotlib.axes
 import numpy as np
 import tensorflow as tf
+import torch
+import torchvision as tv
+from torchvision.transforms import v2
+from torchvision import tv_tensors
 from skimage import exposure
 from PIL import Image as PILimage, ImageOps
 
@@ -21,21 +25,39 @@ class ImgDType(Enum):
     """
     Enumeration of common names for numpy array/tensor dtypes
     """
-    uint8 = (np.uint8, tf.uint8)
-    uint16 = (np.uint16, tf.uint16)
-    uint32 = (np.uint32, tf.uint32)
-    uint64 = (np.uint64, tf.uint64)
-    int8 = (np.int8, tf.int8)
-    int16 = (np.int16, tf.int16)
-    int32 = (np.int32, tf.int32)
-    int64 = (np.int64, tf.int64)
-    float16 = (np.float16, tf.float16)
-    float32 = (np.float32, tf.float32)
-    float64 = (np.float64, tf.float64)
+    uint8 = (np.uint8, tf.uint8, torch.uint8)
+    uint16 = (np.uint16, tf.uint16, torch.uint16)
+    uint32 = (np.uint32, tf.uint32, torch.uint32)
+    uint64 = (np.uint64, tf.uint64, torch.uint64)
+    int8 = (np.int8, tf.int8, torch.int8)
+    int16 = (np.int16, tf.int16, torch.int16)
+    int32 = (np.int32, tf.int32, torch.int32)
+    int64 = (np.int64, tf.int64, torch.int64)
+    float16 = (np.float16, tf.float16, torch.float16)
+    float32 = (np.float32, tf.float32, torch.float32)
+    float64 = (np.float64, tf.float64, torch.float64)
 
-    def __init__(self, array_dtype: np.dtype, tensor_dtype: tf.dtypes.DType):
+    def __init__(self, array_dtype: np.dtype, tensor_dtype: tf.dtypes.DType, torch_dtype: torch.dtype):
         self.array_dtype = array_dtype
         self.tensor_dtype = tensor_dtype
+        self.torch_dtype = torch_dtype
+
+    @staticmethod
+    def get_dtype(torch_dtype: torch.dtype) -> ImgDType:
+        types = {
+            torch.uint8: ImgDType.uint8,
+            torch.uint16: ImgDType.uint16,
+            torch.uint32: ImgDType.uint32,
+            torch.uint64: ImgDType.uint64,
+            torch.int8: ImgDType.int8,
+            torch.int16: ImgDType.int16,
+            torch.int32: ImgDType.int32,
+            torch.int64: ImgDType.int64,
+            torch.float16: ImgDType.float16,
+            torch.float32: ImgDType.float32,
+            torch.float64: ImgDType.float64,
+            }
+        return types[torch_dtype]
 
 
 class Image:
@@ -45,13 +67,16 @@ class Image:
 
     def __init__(self, data: np.ndarray | tf.Tensor = None):
         self.tensor = data if tf.is_tensor(data) else tf.convert_to_tensor(data)
+        self.torch = data if torch.is_tensor(data) else torch.from_numpy(data)
         self._initial_tensor = self.tensor
+        self._initial_torch = self.torch
 
     def reset(self) -> None:
         """
         Resets the tensor values to their initial state
         """
         self.tensor = self._initial_tensor
+        self.torch = self._initial_torch
 
     @property
     def shape(self) -> tuple[int, int, int]:
@@ -60,16 +85,17 @@ class Image:
 
         :return: shape tuple
         """
-        return self.tensor.shape
+        return tuple(self.torch.size())
 
     @property
-    def dtype(self) -> tf.dtypes.DType:
+    def dtype(self) -> ImgDType:
         """
         the dtype for this Image
 
         :return: dtype
         """
-        return self.tensor.dtype
+        return ImgDType.get_dtype(self.torch.dtype)
+        # return self.tensor.dtype
 
     def as_array(self, dtype: ImgDType = None, grayscale: bool = False) -> np.ndarray:
         """
@@ -78,7 +104,8 @@ class Image:
         :return: the image data
         :rtype: numpy.array
         """
-        return self.as_tensor(dtype=dtype, grayscale=grayscale).numpy()
+        array = self.as_torch(dtype=dtype, grayscale=grayscale).numpy()
+        return array
 
     def as_tensor(self, dtype: ImgDType = None, grayscale: bool = False) -> tf.Tensor:
         """
@@ -91,6 +118,19 @@ class Image:
         tensor = self.tensor if dtype is None else self._convert_to_dtype(dtype=dtype)
         if grayscale:
             return tf.image.rgb_to_grayscale(tensor)
+        return tensor
+
+    def as_torch(self, dtype: None | ImgDType = None, grayscale: bool = False) -> torch.Tensor:
+        """
+        Returns the Image as a tensor
+
+        :param dtype: the dtype for the tensor
+        :param grayscale: bool indicating whether the tensor should be 2D (grayscale) or 3D (RGB)
+        :return:
+        """
+        tensor = self.torch if dtype is None else v2.ToDtype(dtype=dtype.torch_dtype, scale=True)(self.torch)
+        if grayscale:
+            return torch.squeeze(v2.Grayscale()(tensor))
         return tensor
 
     def _convert_to_dtype(self, dtype: ImgDType = ImgDType.uint16) -> tf.Tensor:
@@ -215,9 +255,20 @@ class Image:
         :param preserve_tone: if True, the tone is preserved
         :return: the current Image after correction
         """
-        self.tensor = tf.convert_to_tensor(
-                np.array(ImageOps.autocontrast(PILimage.fromarray(self.as_array(np.uint8)), preserve_tone=preserve_tone)))
+        if self.torch.ndim == 3 and self.torch.size(0) == 4:
+            rgb = torch.squeeze(v2.ToPureTensor()(v2.functional.autocontrast(tv.tv_tensors.Image(self.torch[:3]))))
+            self.torch = torch.stack([rgb[0], rgb[1], rgb[2], self.torch[-1]], dim=-3)
+        else:
+            self.torch = torch.squeeze(v2.ToPureTensor()(v2.functional.autocontrast(tv.tv_tensors.Image(self.torch))))
+        # self.tensor = tf.convert_to_tensor(
+        #         np.array(ImageOps.autocontrast(PILimage.fromarray(self.as_array(ImgDType.uint8)), preserve_tone=preserve_tone)))
         return self
+
+    def channel_last(self, dtype: ImgDType = None):
+        tensor = self.torch if dtype is None else v2.ToDtype(dtype=dtype.torch_dtype, scale=True)(self.torch)
+        if self.torch.ndim == 3:
+            return torch.movedim(tensor, 0, 2)
+        return tensor
 
     def adjust_contrast(self, factor: float = 2.0) -> Image:
         """
@@ -241,7 +292,8 @@ class Image:
             if q is None:
                 q = [0.001, 0.999]
             qlow, qhi = np.quantile(img[img > 0.0], q)
-            self.tensor = tf.convert_to_tensor(exposure.rescale_intensity(img, in_range=(qlow, qhi)))
+            # self.tensor = tf.convert_to_tensor(exposure.rescale_intensity(img, in_range=(qlow, qhi)))
+            self.torch = torch.tensor(exposure.rescale_intensity(img, in_range=(qlow, qhi)))
         return self
 
     def equalize_hist(self, adapt: bool = False) -> Image:
@@ -311,9 +363,12 @@ class Image:
         :return:
         """
         if alpha:
-            channels.append(Image(tf.math.maximum(tf.math.maximum(channels[0].as_tensor(), channels[1].as_tensor()),
-                                                  channels[2].as_tensor())))
-        return Image(tf.stack([c.as_tensor() for c in channels], axis=-1))
+            # channels.append(Image(tf.math.maximum(tf.math.maximum(channels[0].as_tensor(), channels[1].as_tensor()),
+            #                                       channels[2].as_tensor())))
+            channels.append(Image(np.maximum(np.maximum(channels[0].as_array(), channels[1].as_array()),
+                                             channels[2].as_array())))
+        return Image(torch.stack([c.as_torch() for c in channels], dim=-3))
+        # return Image(tf.stack([c.as_tensor() for c in channels], axis=-1))
 
     @staticmethod
     def auto_channels(image_resource_data: ImageResourceData, C: int = 0, T: int = 0, Z: int | list[int] | tuple[int] = 0,
