@@ -13,6 +13,7 @@ import numpy as np
 import tensorflow as tf
 import torch
 import torchvision as tv
+import torchvision.transforms.v2
 from torchvision.transforms import v2, InterpolationMode
 from torchvision import tv_tensors
 from skimage import exposure
@@ -97,7 +98,7 @@ class Image:
         return ImgDType.get_dtype(self.torch.dtype)
         # return self.tensor.dtype
 
-    def as_array(self, dtype: ImgDType = None, grayscale: bool = False) -> np.ndarray:
+    def as_array(self, dtype: ImgDType = None, grayscale: bool = False, channel_last: bool = False) -> np.ndarray:
         """
         property returning the image data for this image
 
@@ -173,7 +174,8 @@ class Image:
 
         :return: 2D tensor
         """
-        return tf.image.rgb_to_grayscale(self.tensor)
+        return torchvision.transforms.v2.Grayscale()(self.torch)
+        # return tf.image.rgb_to_grayscale(self.tensor)
 
     def warp_affine(self, affine_matrix: np.ndarray, in_place: bool = True) -> Image:
         tensor = tf.convert_to_tensor(cv2.warpAffine(self.as_array(), np.float32(affine_matrix), (self.shape[1], self.shape[0])))
@@ -238,8 +240,8 @@ class Image:
         colours = ['red', 'green', 'blue', 'yellow']
         if len(self.shape) != 2:
             ax.hist(self._rgb_to_gray().numpy().flatten(), bins=bins, histtype='step', color='black')
-            for c in range(self.torch.shape[-1]):
-                ax.hist(self.as_array()[..., c].flatten(), bins=bins, histtype='step', color=colours[c])
+            for c in range(self.torch.shape[0]):
+                ax.hist(self.as_array()[c, ...].flatten(), bins=bins, histtype='step', color=colours[c])
         else:
             self.histogram(ax, bins=bins)
 
@@ -391,6 +393,7 @@ class Image:
             #                                       channels[2].as_tensor())))
             channels.append(Image(np.maximum(np.maximum(channels[0].as_array(), channels[1].as_array()),
                                              channels[2].as_array())))
+        # return Image(cv2.merge([img.as_array() for img in channels]))
         return Image(torch.stack([c.as_torch() for c in channels], dim=-3))
         # return Image(tf.stack([c.as_tensor() for c in channels], axis=-1))
 
