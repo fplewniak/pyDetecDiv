@@ -278,11 +278,13 @@ class DrawingToolsPalette(QDockWidget):
         self.cursor_button = Cursor(self)
         self.draw_ROI_button = DrawRect(self)
         self.create_ROIs_button = DuplicateItem(self)
-        self.tools = [self.cursor_button, self.draw_ROI_button, self.create_ROIs_button]
+        self.draw_point = DrawPoint(self)
+        self.tools = [self.cursor_button, self.draw_ROI_button, self.create_ROIs_button, self.draw_point]
 
         self.formLayout.addWidget(self.cursor_button, 0, 0)
         self.formLayout.addWidget(self.draw_ROI_button, 0, 1)
         self.formLayout.addWidget(self.create_ROIs_button, 0, 2)
+        self.formLayout.addWidget(self.draw_point, 0, 3)
 
         self.form.setLayout(self.formLayout)
 
@@ -416,6 +418,26 @@ class DuplicateItem(QToolButton):
         self.setChecked(True)
         PyDetecDiv.current_drawing_tool = DrawingTools.DuplicateItem
 
+class DrawPoint(QToolButton):
+    """
+    A QToolButton to activate the tool for duplicating a ROI
+    """
+
+    def __init__(self, parent: DrawingToolsPalette):
+        super().__init__(parent)
+        self.parent = parent
+        self.setIcon(QIcon(":icons/draw_Point"))
+        self.setToolTip(DrawingTools.DrawPoint)
+        self.setCheckable(True)
+        self.clicked.connect(self.select_tool)
+
+    def select_tool(self) -> None:
+        """
+        Select the DuplicateItem tool
+        """
+        self.parent.unset_tools()
+        self.setChecked(True)
+        PyDetecDiv.current_drawing_tool = DrawingTools.DrawPoint
 
 class AnalysisToolsTree(QDockWidget):
     """

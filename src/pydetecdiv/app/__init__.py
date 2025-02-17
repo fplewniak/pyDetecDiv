@@ -34,6 +34,7 @@ class DrawingTools(StrEnum):
     Cursor = 'Select/move'
     DrawRect = 'Draw Rectangle'
     DuplicateItem = 'Duplicate selected Item'
+    DrawPoint = 'Draw point'
 
 
 class PyDetecDiv(QApplication):

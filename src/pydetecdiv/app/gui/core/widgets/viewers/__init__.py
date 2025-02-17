@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, QPoint, QRect, QRectF, Signal, QPointF
 from PySide6.QtGui import QKeySequence, QTransform, QPen, QKeyEvent, QMouseEvent, QWheelEvent, QPainter
 from PySide6.QtWidgets import (QGraphicsView, QGraphicsScene, QGraphicsRectItem, QGraphicsItem,
                                QAbstractGraphicsShapeItem, QWidget, QGraphicsSceneWheelEvent, QGraphicsSceneMouseEvent,
-                               QStyleOptionGraphicsItem)
+                               QStyleOptionGraphicsItem, QGraphicsEllipseItem)
 
 from pydetecdiv.app import PyDetecDiv, DrawingTools
 from pydetecdiv.utils import round_to_even
@@ -154,6 +154,8 @@ class Scene(QGraphicsScene):
                     self.select_Item(event)
                 case DrawingTools.DuplicateItem:
                     self.duplicate_selected_Item(event)
+                case DrawingTools.DrawPoint:
+                    self.add_point(event)
 
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """
@@ -209,7 +211,7 @@ class Scene(QGraphicsScene):
         :rtype: QGraphicsRectItem
         """
         for selection in self.selectedItems():
-            if isinstance(selection, QGraphicsRectItem):
+            if isinstance(selection, (QGraphicsRectItem, QGraphicsEllipseItem)):
                 return selection
         return None
 
@@ -246,7 +248,7 @@ class Scene(QGraphicsScene):
         return [r for r in item.collidingItems(Qt.ItemSelectionMode.IntersectsItemBoundingRect) if
                 isinstance(r, QAbstractGraphicsShapeItem)]
 
-    def move_Item(self, event: QGraphicsSceneMouseEvent) -> QGraphicsRectItem:
+    def move_Item(self, event: QGraphicsSceneMouseEvent) -> QGraphicsRectItem | QGraphicsEllipseItem:
         """
         Move the currently selected Item if it is movable
 
@@ -317,6 +319,23 @@ class Scene(QGraphicsScene):
         PyDetecDiv.main_window.drawing_tools.roi_width.setValue(item.rect().width())
         PyDetecDiv.main_window.drawing_tools.roi_height.setValue(item.rect().height())
 
+    def add_point(self, event: QGraphicsSceneMouseEvent) -> QGraphicsEllipseItem:
+        """
+        Draw or redraw the currently selected Item if it is movable
+
+        :param event: the mouse press event
+        :type event: QGraphicsSceneMouseEvent
+        """
+        pos = event.scenePos()
+        item = QGraphicsEllipseItem(0, 0, 5, 5)
+        self.addItem(item)
+        item.setPen(self.pen)
+        item.setPos(QPointF(pos.x(), pos.y()))
+        item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable | QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
+        item.setData(0, f'Region{len(self.items())}')
+        item.setZValue(10)
+        item.setSelected(False)
+        return item
 
 class Layer(QGraphicsItem):
     """

@@ -1,19 +1,27 @@
 import os
 
 from PIL import Image as PILimage
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QPen
 from matplotlib import pyplot as plt
 
 import numpy as np
 import torch.cuda
-from PySide6.QtWidgets import QGraphicsSceneMouseEvent, QMenuBar, QGraphicsRectItem, QMenu
+from PySide6.QtWidgets import QGraphicsSceneMouseEvent, QMenuBar, QGraphicsRectItem, QMenu, QWidget, QGraphicsEllipseItem
 from sam2.build_sam import build_sam2_video_predictor
 
-from pydetecdiv.app import PyDetecDiv
+from pydetecdiv.app import PyDetecDiv, DrawingTools
 from pydetecdiv.app.gui.core.widgets.viewers import Scene
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer, VideoScene
 
 
 class SegmentationScene(Scene):
+    def __init__(self, parent: QWidget = None, **kwargs):
+        super().__init__(parent)
+        self.default_pen = QPen(Qt.GlobalColor.green, 1)
+        self.positive_pen = QPen(Qt.GlobalColor.green, 1)
+        self.negative_pen = QPen(Qt.GlobalColor.red, 1)
+
     def contextMenuEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """
         The context menu
@@ -25,6 +33,19 @@ class SegmentationScene(Scene):
         segment_action.triggered.connect(
                 lambda _: PyDetecDiv.main_window.active_subwindow.currentWidget().segment_from_prompt(self.items()))
         menu.exec(event.screenPos())
+
+    def add_point(self, event: QGraphicsSceneMouseEvent) -> QGraphicsEllipseItem:
+        label = 1
+        self.pen = self.positive_pen
+        if event.buttons() == Qt.MouseButton.LeftButton:
+            match PyDetecDiv.current_drawing_tool, event.modifiers():
+                case DrawingTools.DrawPoint, Qt.KeyboardModifier.ControlModifier:
+                    self.pen = self.negative_pen
+                    label = 0
+        item = super().add_point(event)
+        item.setData(0, label)
+        self.pen = self.default_pen
+        return item
 
 
 class SegmentationTool(VideoPlayer):
@@ -50,19 +71,17 @@ class SegmentationTool(VideoPlayer):
     #     super().setup(menubar=menubar)
     #     # self.menubar.setup()
 
-    def create_video(self):
-        os.makedirs(os.path.join('/data3/SegmentAnything2/videos/', self.region), exist_ok=True)
+    def create_video(self, video_dir):
+        os.makedirs(video_dir, exist_ok=True)
         for frame in range(self.viewer.background.image.image_resource_data.sizeT):
             self.change_frame(frame)
-
-            # print(f'/data3/SegmentAnything2/videos/{frame:05d}.jpg')
-            self.viewer.background.image.pixmap().toImage().save(f'/data3/SegmentAnything2/videos/{self.region}/{frame:05d}.jpg', format='jpg')
+            self.viewer.background.image.pixmap().toImage().save(f'{video_dir}/{frame:05d}.jpg', format='jpg')
 
     def segment_from_prompt(self, items):
         video_dir = os.path.join('/data3/SegmentAnything2/videos/', self.region)
         frame = self.T
         if not os.path.exists(video_dir):
-            self.create_video()
+            self.create_video(video_dir)
         self.change_frame(T=frame)
 
         if torch.cuda.is_available():
@@ -79,20 +98,20 @@ class SegmentationTool(VideoPlayer):
 
         predictor = build_sam2_video_predictor(model_cfg, sam2_checkpoint, device=device)
 
-        video_dir = os.path.join('/data3/SegmentAnything2/videos/', self.region)
         frame_names = [p for p in os.listdir(video_dir) if os.path.splitext(p)[-1] in ['.jpg', 'jpeg', '.JPG', '.JPEG']]
         frame_names.sort(key=lambda p: int(os.path.splitext(p)[0]))
 
         self.inference_state = predictor.init_state(video_dir)
 
-        boxes = [[i.x(), i.y(), i.x() + i.rect().width(),  i.y() + i.rect().height()] for i in items if isinstance(i, QGraphicsRectItem)]
+        boxes = [[i.x(), i.y(), i.x() + i.rect().width(), i.y() + i.rect().height()] for i in items if
+                 isinstance(i, QGraphicsRectItem)]
         obj_ids = list(range(len(boxes)))
         print(obj_ids, boxes)
 
         for ann_obj_id, box in zip(obj_ids, boxes):
             _, out_obj_ids, out_mask_logits = predictor.add_new_points_or_box(
-                    inference_state = self.inference_state,
-                    frame_idx = self.T,
+                    inference_state=self.inference_state,
+                    frame_idx=self.T,
                     obj_id=ann_obj_id,
                     box=box,
                     )
@@ -115,7 +134,7 @@ class SegmentationTool(VideoPlayer):
         num_frames = 5
         plt.close('all')
         for out_frame_idx in range(0, num_frames * vis_frame_stride, vis_frame_stride):
-            plt.figure(figsize=(6,4))
+            plt.figure(figsize=(6, 4))
             plt.title(f'frame {out_frame_idx}')
             plt.imshow(PILimage.open(os.path.join(video_dir, frame_names[out_frame_idx])))
             for out_obj_id, out_mask in video_segments[out_frame_idx].items():
@@ -125,7 +144,7 @@ class SegmentationTool(VideoPlayer):
 
 def show_mask(mask, ax, obj_id=None, random_color=False):
     if random_color:
-        color=np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
+        color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
     else:
         cmap = plt.get_cmap('tab10')
         cmap_idx = 0 if obj_id is None else obj_id + 1
@@ -134,16 +153,15 @@ def show_mask(mask, ax, obj_id=None, random_color=False):
     mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
     ax.imshow(mask_image)
 
+
 def show_points(coords, labels, ax, marker_size=20):
-    pos_points = coords[labels==1]
-    neg_points = coords[labels==0]
+    pos_points = coords[labels == 1]
+    neg_points = coords[labels == 0]
     ax.scatter(pos_points[:, 0], pos_points[:, 1], color='green', marker='o', s=marker_size, edge_color='white', linewidth=1.0)
     ax.scatter(neg_points[:, 0], neg_points[:, 1], color='red', marker='o', s=marker_size, edge_color='white', linewidth=1.0)
+
 
 def show_box(box, ax):
     x0, y0 = box[0], box[1]
     w, h = box[2] - box[0], box[3] - box[1]
     ax.add_patch(plt.Rectangle((x0, y0), w, h, edgecolor='green', facecolor=(0, 0, 0, 0), lw=2))
-
-
-
