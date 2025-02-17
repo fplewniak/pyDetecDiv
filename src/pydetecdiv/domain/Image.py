@@ -149,11 +149,12 @@ class Image:
         Converts the Image to a specified dtype tensor
 
         :param dtype: the dtype for the tensor
-        :return: the tensor of the requiested dtype
+        :return: the tensor of the requested dtype
         """
         dtype = dtype.torch_dtype
-        scale = (self.torch.dtype.is_floating_point and not (dtype.is_floating_point or dtype.is_complex)) or (
-                self.torch.dtype.is_signed and not dtype.is_signed)
+        # scale = (self.torch.dtype.is_floating_point and not (dtype.is_floating_point or dtype.is_complex)) or (
+        #         self.torch.dtype.is_signed and not dtype.is_signed)
+        scale = True
         return v2.ToDtype(dtype=dtype, scale=scale)(self.torch)
 
     def rgb_to_gray(self) -> Image:
