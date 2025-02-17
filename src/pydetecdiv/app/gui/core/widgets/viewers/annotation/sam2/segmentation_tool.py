@@ -103,24 +103,49 @@ class SegmentationTool(VideoPlayer):
 
         self.inference_state = predictor.init_state(video_dir)
 
-        boxes = [[i.x(), i.y(), i.x() + i.rect().width(), i.y() + i.rect().height()] for i in items if
-                 isinstance(i, QGraphicsRectItem)]
-        obj_ids = list(range(len(boxes)))
-        print(obj_ids, boxes)
-
-        for ann_obj_id, box in zip(obj_ids, boxes):
-            _, out_obj_ids, out_mask_logits = predictor.add_new_points_or_box(
-                    inference_state=self.inference_state,
-                    frame_idx=self.T,
-                    obj_id=ann_obj_id,
-                    box=box,
-                    )
+        # boxes = [[i.x(), i.y(), i.x() + i.rect().width(), i.y() + i.rect().height()] for i in items if
+        #          isinstance(i, QGraphicsRectItem)]
+        # obj_ids = list(range(len(boxes)))
+        # print(obj_ids, boxes)
+        # for ann_obj_id, box in zip(obj_ids, boxes):
+        #     _, out_obj_ids, out_mask_logits = predictor.add_new_points_or_box(
+        #             inference_state=self.inference_state,
+        #             frame_idx=self.T,
+        #             obj_id=ann_obj_id,
+        #             box=box,
+        #             )
+        #
         # image = PILimage.open(os.path.join(video_dir, frame_names[self.T]))
-        # plt.figure(figsize=(9,6))
+        # plt.figure(figsize=(9, 6))
         # plt.title(f'frame {self.T}')
         # plt.imshow(image)
         # for i, obj_id in enumerate(out_obj_ids):
         #     show_box(boxes[i], plt.gca())
+        #     show_mask((out_mask_logits[i] > 0.0).cpu().numpy(), plt.gca(), obj_id=obj_id)
+        # plt.show()
+
+        points = [[[i.x(), i.y()]] for i in items if isinstance(i, QGraphicsEllipseItem)]
+        labels = [[i.data(0)] for i in items if isinstance(i, QGraphicsEllipseItem)]
+        obj_ids = list(range(len(points)))
+
+        prompts = {}
+        for ann_obj_id, pts, lbls in zip(obj_ids, points, labels):
+            prompts[ann_obj_id] = pts, lbls
+            _, out_obj_ids, out_mask_logits = predictor.add_new_points_or_box(
+                    inference_state=self.inference_state,
+                    frame_idx=self.T,
+                    obj_id=ann_obj_id,
+                    points=pts,
+                    labels=lbls
+                    )
+
+        # image = PILimage.open(os.path.join(video_dir, frame_names[self.T]))
+        # plt.figure(figsize=(9,6))
+        # plt.title(f'frame {self.T}')
+        # plt.imshow(image)
+        # # show_points(pts, lbls, plt.gca())
+        # for i, obj_id in enumerate(out_obj_ids):
+        #     # show_points(*prompts[obj_id], plt.gca())
         #     show_mask((out_mask_logits[i]>0.0).cpu().numpy(), plt.gca(), obj_id=obj_id)
         # plt.show()
 
@@ -155,8 +180,11 @@ def show_mask(mask, ax, obj_id=None, random_color=False):
 
 
 def show_points(coords, labels, ax, marker_size=20):
+    print(coords, labels)
     pos_points = coords[labels == 1]
+    print('Pos:', pos_points)
     neg_points = coords[labels == 0]
+    print('Neg:', neg_points)
     ax.scatter(pos_points[:, 0], pos_points[:, 1], color='green', marker='o', s=marker_size, edge_color='white', linewidth=1.0)
     ax.scatter(neg_points[:, 0], neg_points[:, 1], color='red', marker='o', s=marker_size, edge_color='white', linewidth=1.0)
 
