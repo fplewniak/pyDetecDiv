@@ -11,6 +11,7 @@ from skimage.feature import peak_local_max
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 from pydetecdiv.app.gui.core.widgets.viewers import Scene
+from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.segmentation_tool import SegmentationTool, SegmentationScene
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer
 from pydetecdiv.domain.Image import Image, ImgDType
 from pydetecdiv.domain.ROI import ROI
@@ -120,16 +121,19 @@ class FOVmanager(VideoPlayer):
                                    drift=PyDetecDiv.apply_drift, alpha=False).as_array(ImgDType.uint8)
 
     def view_in_new_tab(self, rect: QGraphicsRectItem) -> None:
+        self._view_in_new_tab(rect, VideoPlayer())
+
+    def _view_in_new_tab(self, rect: QGraphicsRectItem, player: VideoPlayer, scene: Scene = None) -> None:
         """
         view a selection in a new tab
 
         :param rect: the rectangular selection
         """
         video_player = PyDetecDiv.main_window.active_subwindow.widget(
-                PyDetecDiv.main_window.active_subwindow.addTab(VideoPlayer(), rect.data(0)))
+                PyDetecDiv.main_window.active_subwindow.addTab(player, rect.data(0)))
         video_player.tscale = self.tscale
         video_player.setup()
-        video_player.viewer_panel.setup()
+        video_player.viewer_panel.setup(scene=scene)
         w, h = rect.rect().toRect().size().toTuple()
         pos = rect.pos()
         x1, x2 = int(pos.x()), w + int(pos.x())
@@ -142,6 +146,10 @@ class FOVmanager(VideoPlayer):
             video_player.addLayer().setImage(self.viewer.image_resource_data, C=C, Z=Z, T=T,
                                              crop=(slice(x1, x2), slice(y1, y2)), alpha=True)
         PyDetecDiv.main_window.active_subwindow.setCurrentWidget(video_player)
+
+    def open_in_segmentation_tool(self, rect: QGraphicsRectItem) -> None:
+        self._view_in_new_tab(rect, SegmentationTool(rect.data(0)), scene=SegmentationScene())
+        # PyDetecDiv.main_window.active_subwindow.currentWidget().create_video(rect.data(0))
 
     def set_roi_template(self) -> None:
         """
@@ -297,11 +305,14 @@ class FOVScene(Scene):
         """
         menu = QMenu()
         view_in_new_tab = menu.addAction("View in new tab")
+        open_in_segmentation_tool = menu.addAction("Manual segmentation")
         roi = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
         if isinstance(roi, QGraphicsRectItem):
             # view_in_new_tab.triggered.connect(lambda _: self.parent().view_roi_image(r))
             view_in_new_tab.triggered.connect(
                     lambda _: PyDetecDiv.main_window.active_subwindow.currentWidget().view_in_new_tab(roi))
+            open_in_segmentation_tool.triggered.connect(
+                    lambda _: PyDetecDiv.main_window.active_subwindow.currentWidget().open_in_segmentation_tool(roi))
             PyDetecDiv.app.viewer_roi_click.emit((roi, menu))
             menu.exec(event.screenPos())
 

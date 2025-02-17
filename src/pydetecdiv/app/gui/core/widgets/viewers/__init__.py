@@ -198,8 +198,8 @@ class Scene(QGraphicsScene):
         r = self.itemAt(event.scenePos(), self.viewer.transform())
         if r is not None:
             r.setSelected(True)
-            if hasattr(r, 'rect'):
-                self.display_Item_size(QGraphicsRectItem(r))
+            if isinstance(r, QGraphicsRectItem):
+                self.display_Item_size(r)
 
     def get_selected_Item(self) -> QGraphicsRectItem | None:
         """

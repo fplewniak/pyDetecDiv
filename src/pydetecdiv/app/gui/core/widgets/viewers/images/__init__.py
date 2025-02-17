@@ -5,7 +5,7 @@ import qimage2ndarray
 import numpy as np
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap, QBitmap, QColor
-from PySide6.QtWidgets import QGraphicsPixmapItem, QWidget
+from PySide6.QtWidgets import QGraphicsPixmapItem, QWidget, QGraphicsScene
 
 from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui.core.widgets.viewers import GraphicsView, Layer, BackgroundLayer
@@ -57,6 +57,9 @@ class ImageViewer(GraphicsView):
         for layer in self.layers:
             if layer.image:
                 layer.image.display(T=T)
+                
+    def setup(self, scene: QGraphicsScene = None) -> None:
+        super().setup(scene=scene)
 
 
 class ImageLayer(Layer):
