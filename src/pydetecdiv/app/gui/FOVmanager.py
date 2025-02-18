@@ -184,6 +184,7 @@ class FOVmanager(VideoPlayer):
             if not isinstance(self.scene.itemAt(QPoint(x, y), QTransform().scale(1, 1)), QGraphicsRectItem):
                 rect_item = self.scene.addRect(QRect(0, 0, w, h))
                 rect_item.setPos(x, y)
+                rect_item.setData(0, f'{self.fov.name}_{x}_{y}_{w + 1}_{h + 1}')
                 if [r for r in rect_item.collidingItems(Qt.ItemSelectionMode.IntersectsItemBoundingRect) if
                     isinstance(r, QGraphicsRectItem)]:
                     self.scene.removeItem(rect_item)
@@ -191,6 +192,7 @@ class FOVmanager(VideoPlayer):
                     rect_item.setPen(self.scene.match_pen)
                     rect_item.setFlags(
                         QGraphicsItem.GraphicsItemFlag.ItemIsMovable | QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
+        PyDetecDiv.app.scene_modified.emit(self.viewer.scene())
         self.actionSave_ROIs.setEnabled(True)
 
     def save_rois(self) -> None:
@@ -210,6 +212,7 @@ class FOVmanager(VideoPlayer):
                                   top_left=(x, y), bottom_right=(int(x) + w, int(y) + h))
                     rect_item.setData(0, new_roi.name)
         PyDetecDiv.app.saved_rois.emit(PyDetecDiv.project_name)
+        PyDetecDiv.app.scene_modified.emit(self.viewer.scene())
         self.fixate_saved_rois()
         self.actionSave_ROIs.setEnabled(False)
 

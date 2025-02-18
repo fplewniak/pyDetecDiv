@@ -80,7 +80,7 @@ class MainToolBar(QToolBar):
     """
 
     def __init__(self, parent: 'MainWindow', name: str = 'Main toolbar', **kwargs):
-        super().__init__(parent=parent, **kwargs)
+        super().__init__(name, parent=parent, **kwargs)
         self.setObjectName(name)
         ActionsProject.OpenProject(self)
         ActionsProject.NewProject(self)

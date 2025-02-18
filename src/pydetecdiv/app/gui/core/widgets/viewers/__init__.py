@@ -72,7 +72,7 @@ class GraphicsView(QGraphicsView):
             return BackgroundLayer(self)
         return Layer(self)
 
-    def addLayer(self, background: bool = False) -> 'Layer':
+    def addLayer(self, name: str = None, background: bool = False) -> 'Layer':
         """
         Adds a layer item to the Scene
 
@@ -80,9 +80,12 @@ class GraphicsView(QGraphicsView):
         :return: the added layer
         """
         layer = self._create_layer(background)
+        if name is not None:
+            layer.setData(0, name)
         self.scene().addItem(layer)
         layer.setZValue(len(self.layers))
         self.layers.append(layer)
+        PyDetecDiv.app.scene_modified.emit(self.scene())
         return layer
 
     def move_layer(self, origin: int, destination: int) -> None:
@@ -137,6 +140,7 @@ class Scene(QGraphicsScene):
         if event.matches(QKeySequence.StandardKey.Delete):
             for r in self.selectedItems():
                 self.removeItem(r)
+            PyDetecDiv.app.scene_modified.emit(self)
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """
@@ -232,9 +236,10 @@ class Scene(QGraphicsScene):
             w, h = item.rect().size().toTuple()
             item.setPos(QPoint(pos.x() - np.around(w / 2.0), pos.y() - np.around(h / 2.0)))
             item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable | QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
-            item.setData(0, f'Region{len(self.items())}')
+            item.setData(0, f'Region_{pos.x()}_{pos.y()}_{w + 1}_{h + 1}')
             item.setZValue(10)
             self.select_Item(event)
+            PyDetecDiv.app.scene_modified.emit(self)
             return item
         return None
 
@@ -273,7 +278,7 @@ class Scene(QGraphicsScene):
         if item and (item.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable):
             item_pos = item.scenePos()
             w, h = np.max([round_to_even(pos.x() - item_pos.x()), 5]), np.max(
-                [round_to_even(pos.y() - item_pos.y()), 5])
+                    [round_to_even(pos.y() - item_pos.y()), 5])
             rect = QRect(0, 0, w, h)
             item.setRect(rect)
         elif PyDetecDiv.current_drawing_tool == DrawingTools.DrawRect:
@@ -281,12 +286,16 @@ class Scene(QGraphicsScene):
             item.setPen(self.pen)
             item.setPos(QPointF(pos.x(), pos.y()))
             item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable | QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
-            item.setData(0, f'Region{len(self.items())}')
+            item.setData(0, f'Region_{pos.x()}_{pos.y()}')
             item.setZValue(10)
             item.setSelected(True)
+            PyDetecDiv.app.scene_modified.emit(self)
         if item:
             self.display_Item_size(item)
         return item
+
+    def regions(self):
+        return [p for p in self.items() if isinstance(p, QGraphicsRectItem)]
 
     def set_Item_width(self, width: int):
         """
@@ -332,10 +341,47 @@ class Scene(QGraphicsScene):
         item.setPen(self.pen)
         item.setPos(QPointF(pos.x(), pos.y()))
         item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable | QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
-        item.setData(0, f'Region{len(self.items())}')
+        item.setData(0, f'point{len(self.points())}')
         item.setZValue(10)
         item.setSelected(False)
+        PyDetecDiv.app.scene_modified.emit(self)
         return item
+
+    def points(self):
+        return [p for p in self.items() if isinstance(p, QGraphicsEllipseItem)]
+
+    def layers(self):
+        return [l for l in self.items() if isinstance(l, Layer)]
+
+    def _add_item_to_dict(self, item, item_dict):
+        item_name = item.data(0)
+        if item_name is None:
+            return
+        item_dict[item_name] = ''
+        # item_name = item.data(0)
+        # if item_name is None:
+        #     item_name = 'xxx'
+        #
+        # # Create the entry for the current item
+        # item_entry = {'item': item, 'children': {}}
+        #
+        # # Add the item to the dictionary
+        # item_dict[item_name] = item_entry
+        #
+        # # Recursively add child items
+        # for child_item in item.childItems():
+        #     self._add_item_to_dict(child_item, item_entry['children'])
+
+    def item_dict(self):
+        item_dict = {'layers': {}, 'regions': {}, 'points': {}}
+        for item in self.layers():
+            self._add_item_to_dict(item, item_dict['layers'])
+        for item in sorted(self.regions(), key=lambda x: x.data(0)):
+            self._add_item_to_dict(item, item_dict['regions'])
+        for item in sorted(self.points(), key=lambda x: x.data(0)):
+            self._add_item_to_dict(item, item_dict['points'])
+        return item_dict
+
 
 class Layer(QGraphicsItem):
     """
@@ -408,6 +454,10 @@ class BackgroundLayer(Layer):
     """
     A particular layer that is always at the bottom of a scene
     """
+
+    def __init__(self, viewer: GraphicsView, **kwargs):
+        super().__init__(viewer, **kwargs)
+        self.setData(0, 'background')
 
     @property
     def zIndex(self) -> int:

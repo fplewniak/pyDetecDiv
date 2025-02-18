@@ -1,6 +1,8 @@
 """
 Module for handling tree representations of data.
 """
+from typing import Any
+
 from PySide6.QtCore import QAbstractItemModel, Qt, QModelIndex
 
 
@@ -95,7 +97,7 @@ class TreeModel(QAbstractItemModel):
     column.
     """
 
-    def __init__(self, data, columns, parent=None):
+    def __init__(self, columns, data=None, parent=None):
         super().__init__(parent)
         self.root_item = TreeItem(columns)
         self.setup_model_data(data, self.root_item)
@@ -248,8 +250,8 @@ class TreeDictModel(TreeModel):
     A Tree model that can be created from dictionaries
     """
 
-    def __init__(self, data, columns, parent=None):
-        super().__init__(data, columns, parent=parent)
+    def __init__(self, columns: list[str], data: dict[str, Any] | None = None, parent=None):
+        super().__init__(columns, data=data, parent=parent)
 
     def setup_model_data(self, data, parent):
         """
@@ -261,7 +263,8 @@ class TreeDictModel(TreeModel):
         :type parent: TreeItem
         """
         self.parents = [parent]
-        self.append_children(data, parent)
+        if data is not None:
+            self.append_children(data, parent)
 
     def append_children(self, data, parent):
         """
@@ -277,7 +280,12 @@ class TreeDictModel(TreeModel):
             self.parents.append(TreeItem([key, ''], parent))
             parent.append_child(self.parents[-1])
             if isinstance(values, dict):
+                print(values, ' is dict')
                 self.append_children(values, self.parents[-1])
+            elif isinstance(values, str):
+                print(values, ' is str')
+                self.parents[-1].append_child(TreeItem(values, self.parents[-1]))
             else:
+                print(values, ' is list')
                 for v in values:
                     self.parents[-1].append_child(TreeItem(v, self.parents[-1]))

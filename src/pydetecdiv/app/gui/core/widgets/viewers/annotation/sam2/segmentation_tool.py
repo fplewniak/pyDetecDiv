@@ -43,7 +43,7 @@ class SegmentationScene(Scene):
                     self.pen = self.negative_pen
                     label = 0
         item = super().add_point(event)
-        item.setData(0, label)
+        item.setData(1, label)
         self.pen = self.default_pen
         return item
 

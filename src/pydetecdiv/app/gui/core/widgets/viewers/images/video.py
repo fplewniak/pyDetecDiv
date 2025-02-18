@@ -11,6 +11,7 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame, QToolButton, QLabel, QSlider, QSpinBox,
                                QLineEdit, QSizePolicy, QSplitter, QMenuBar, QGraphicsScene)
 
+from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui.core.widgets.viewers import Layer
 from pydetecdiv.app.gui.core.widgets.viewers.images import ImageViewer
 from pydetecdiv.domain.ImageResourceData import ImageResourceData
@@ -127,13 +128,13 @@ class VideoPlayer(QWidget):
         # # Clicking the push button will start the progress bar animation
         # self.control_panel.video_control.video_forward.clicked.connect(timeLine.start)
 
-    def addLayer(self) -> Layer:
+    def addLayer(self, name=None) -> Layer:
         """
         add a layer to the scene of the current Video player
 
         :return: ImageLayer, the new layer
         """
-        return self.viewer.addLayer()
+        return self.viewer.addLayer(name=name)
 
     def zoom_set_value(self, value: int) -> None:
         """

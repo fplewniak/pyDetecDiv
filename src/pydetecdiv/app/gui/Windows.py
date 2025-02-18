@@ -12,6 +12,7 @@ from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project, Drawing
 from pydetecdiv.app.gui.FOVmanager import FOVmanager
 
 from pydetecdiv.app.gui.Toolbox import ToolboxTreeView, ToolboxTreeModel
+from pydetecdiv.app.gui.core.widgets.palettes.objects import ObjectTreePalette
 from pydetecdiv.app.gui.core.widgets.TabWidgets import TabbedWindow
 
 
@@ -42,6 +43,9 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.drawing_tools, Qt.Orientation.Vertical)
         self.analysis_tools = AnalysisToolsTree(self)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.analysis_tools, Qt.Orientation.Vertical)
+        self.analysis_tools.hide()
+        self.object_tree_palette = ObjectTreePalette(self)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.object_tree_palette, Qt.Orientation.Vertical)
         self.mdi_area.subWindowActivated.connect(self.subwindow_activation)
         PyDetecDiv.app.project_selected.connect(self.setWindowTitle)
 
@@ -227,7 +231,7 @@ class ImageResourceChooser(QDockWidget):
                                             )
             tab.setTabText(tab.currentIndex(), 'FOV bright field')
             if self.fluorescence.isChecked():
-                current_widget.addLayer().setImage(image_resource_data,
+                current_widget.addLayer(name='fluorescence').setImage(image_resource_data,
                                                    C=(red_channel,
                                                       green_channel,
                                                       blue_channel),
