@@ -1,7 +1,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QDockWidget, QTreeView, QMenu
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.models.Trees import TreeDictModel, TreeItem
@@ -81,7 +81,7 @@ class ObjectTreePalette(QDockWidget):
 
     """
 
-    def __init__(self, parent: 'MainWindow', /):
+    def __init__(self, parent: 'MainWindow'):
         super().__init__('Objects tree', parent)
         self.setObjectName('Objects tree')
         tree_view = ObjectTreeView()
