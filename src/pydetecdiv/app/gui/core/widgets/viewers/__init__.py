@@ -207,7 +207,7 @@ class Scene(QGraphicsScene):
             if isinstance(r, QGraphicsRectItem):
                 self.display_Item_size(r)
 
-    def get_selected_Item(self, item_type: type | tuple[type] = QGraphicsRectItem) -> QAbstractGraphicsShapeItem | None:
+    def get_selected_Item(self) -> QAbstractGraphicsShapeItem | None:
         """
         Return the selected Item
 
@@ -215,8 +215,7 @@ class Scene(QGraphicsScene):
         :rtype: QGraphicsRectItem
         """
         for selection in self.selectedItems():
-            # if isinstance(selection, (QGraphicsRectItem, QGraphicsEllipseItem)):
-            if isinstance(selection, item_type):
+            if isinstance(selection, (QGraphicsRectItem, QGraphicsEllipseItem)):
                 return selection
         return None
 
@@ -229,7 +228,7 @@ class Scene(QGraphicsScene):
         """
         pos = event.scenePos()
         item = self.get_selected_Item()
-        if item:
+        if item and isinstance(item, QGraphicsRectItem):
             # item = self.addRect(item.rect())
             item = item.__class__(item.rect())
             self.addItem(item)
@@ -261,7 +260,7 @@ class Scene(QGraphicsScene):
         :param event: the mouse move event
         :type event: QGraphicsSceneMouseEvent
         """
-        item = self.get_selected_Item(QAbstractGraphicsShapeItem)
+        item = self.get_selected_Item()
         if item and (item.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable):
             if not (isinstance(item, QGraphicsEllipseItem) and PyDetecDiv.current_drawing_tool == DrawingTools.DuplicateItem):
                 pos = event.scenePos()
