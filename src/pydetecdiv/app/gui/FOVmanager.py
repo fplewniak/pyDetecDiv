@@ -191,7 +191,7 @@ class FOVmanager(VideoPlayer):
                 else:
                     rect_item.setPen(self.scene.match_pen)
                     rect_item.setFlags(
-                        QGraphicsItem.GraphicsItemFlag.ItemIsMovable | QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
+                            QGraphicsItem.GraphicsItemFlag.ItemIsMovable | QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
         PyDetecDiv.app.scene_modified.emit(self.viewer.scene())
         self.actionSave_ROIs.setEnabled(True)
 
@@ -325,7 +325,8 @@ class FOVScene(Scene):
 
         :param item: the item to check
         """
-        if self.get_colliding_ShapeItems(item):
+        if isinstance(item, QGraphicsRectItem) and [i for i in self.get_colliding_ShapeItems(item) if
+                                                    isinstance(i, QGraphicsRectItem)]:
             item.setPen(self.warning_pen)
         else:
             item.setPen(self.pen)

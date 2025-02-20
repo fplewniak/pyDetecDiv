@@ -207,7 +207,7 @@ class Scene(QGraphicsScene):
             if isinstance(r, QGraphicsRectItem):
                 self.display_Item_size(r)
 
-    def get_selected_Item(self) -> QGraphicsRectItem | None:
+    def get_selected_Item(self, item_type: type | tuple[type] = QGraphicsRectItem) -> QAbstractGraphicsShapeItem | None:
         """
         Return the selected Item
 
@@ -215,7 +215,8 @@ class Scene(QGraphicsScene):
         :rtype: QGraphicsRectItem
         """
         for selection in self.selectedItems():
-            if isinstance(selection, (QGraphicsRectItem, QGraphicsEllipseItem)):
+            # if isinstance(selection, (QGraphicsRectItem, QGraphicsEllipseItem)):
+            if isinstance(selection, item_type):
                 return selection
         return None
 
@@ -236,14 +237,14 @@ class Scene(QGraphicsScene):
             w, h = item.rect().size().toTuple()
             item.setPos(QPoint(pos.x() - np.around(w / 2.0), pos.y() - np.around(h / 2.0)))
             item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable | QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
-            item.setData(0, f'Region_{pos.x()}_{pos.y()}_{w + 1}_{h + 1}')
+            item.setData(0, f'Region_{item.x()}_{item.y()}_{w + 1}_{h + 1}')
             item.setZValue(10)
             self.select_Item(event)
             PyDetecDiv.app.scene_modified.emit(self)
             return item
         return None
 
-    def get_colliding_ShapeItems(self, item: QGraphicsRectItem) -> list[QAbstractGraphicsShapeItem]:
+    def get_colliding_ShapeItems(self, item: QAbstractGraphicsShapeItem) -> list[QAbstractGraphicsShapeItem]:
         """
         Retrieve all ShapeItems colliding with the item in this scene
 
@@ -260,10 +261,11 @@ class Scene(QGraphicsScene):
         :param event: the mouse move event
         :type event: QGraphicsSceneMouseEvent
         """
-        item = self.get_selected_Item()
+        item = self.get_selected_Item(QAbstractGraphicsShapeItem)
         if item and (item.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable):
-            pos = event.scenePos()
-            item.moveBy(pos.x() - event.lastScenePos().x(), pos.y() - event.lastScenePos().y())
+            if not (isinstance(item, QGraphicsEllipseItem) and PyDetecDiv.current_drawing_tool == DrawingTools.DuplicateItem):
+                pos = event.scenePos()
+                item.moveBy(pos.x() - event.lastScenePos().x(), pos.y() - event.lastScenePos().y())
         return item
 
     def draw_Item(self, event: QGraphicsSceneMouseEvent) -> QGraphicsRectItem:
@@ -341,7 +343,7 @@ class Scene(QGraphicsScene):
         item.setPen(self.pen)
         item.setPos(QPointF(pos.x(), pos.y()))
         item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable | QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
-        item.setData(0, f'point{len(self.points())}')
+        item.setData(0, f'point_{pos.x()}_{pos.y()}')
         item.setZValue(10)
         item.setSelected(False)
         PyDetecDiv.app.scene_modified.emit(self)
