@@ -158,8 +158,10 @@ class Scene(QGraphicsScene):
                     self.select_Item(event)
                 case DrawingTools.DuplicateItem:
                     self.duplicate_selected_Item(event)
+                    PyDetecDiv.app.scene_modified.emit(self)
                 case DrawingTools.DrawPoint:
                     self.add_point(event)
+                    PyDetecDiv.app.scene_modified.emit(self)
 
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """
@@ -175,8 +177,10 @@ class Scene(QGraphicsScene):
                     self.move_Item(event)
                 case DrawingTools.Cursor, Qt.KeyboardModifier.ControlModifier:
                     self.draw_Item(event)
+                    PyDetecDiv.app.scene_modified.emit(self)
                 case DrawingTools.DrawRect, Qt.KeyboardModifier.NoModifier:
                     self.draw_Item(event)
+                    PyDetecDiv.app.scene_modified.emit(self)
                 case DrawingTools.DrawRect, Qt.KeyboardModifier.ControlModifier:
                     self.move_Item(event)
                 case DrawingTools.DuplicateItem, Qt.KeyboardModifier.NoModifier:
@@ -236,10 +240,9 @@ class Scene(QGraphicsScene):
             w, h = item.rect().size().toTuple()
             item.setPos(QPoint(pos.x() - np.around(w / 2.0), pos.y() - np.around(h / 2.0)))
             item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable | QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
-            item.setData(0, f'Region_{item.x()}_{item.y()}_{w + 1}_{h + 1}')
+            item.setData(0, f'Region_{item.x():.2f}_{item.y():.2f}_{w + 1:.2f}_{h + 1:.2f}')
             item.setZValue(10)
             self.select_Item(event)
-            PyDetecDiv.app.scene_modified.emit(self)
             return item
         return None
 
@@ -287,10 +290,9 @@ class Scene(QGraphicsScene):
             item.setPen(self.pen)
             item.setPos(QPointF(pos.x(), pos.y()))
             item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable | QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
-            item.setData(0, f'Region_{pos.x()}_{pos.y()}')
+            item.setData(0, f'Region_{pos.x():.2f}_{pos.y():.2f}')
             item.setZValue(10)
             item.setSelected(True)
-            PyDetecDiv.app.scene_modified.emit(self)
         if item:
             self.display_Item_size(item)
         return item
@@ -342,10 +344,9 @@ class Scene(QGraphicsScene):
         item.setPen(self.pen)
         item.setPos(QPointF(pos.x(), pos.y()))
         item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable | QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
-        item.setData(0, f'point_{pos.x()}_{pos.y()}')
+        item.setData(0, f'point_{pos.x():.2f}_{pos.y():.2f}')
         item.setZValue(10)
         item.setSelected(False)
-        PyDetecDiv.app.scene_modified.emit(self)
         return item
 
     def points(self):
