@@ -7,12 +7,12 @@ from matplotlib import pyplot as plt
 
 import numpy as np
 import torch.cuda
-from PySide6.QtWidgets import QGraphicsSceneMouseEvent, QMenuBar, QGraphicsRectItem, QMenu, QWidget, QGraphicsEllipseItem
+from PySide6.QtWidgets import QGraphicsSceneMouseEvent, QMenu, QWidget, QGraphicsEllipseItem
 from sam2.build_sam import build_sam2_video_predictor
 
 from pydetecdiv.app import PyDetecDiv, DrawingTools
 from pydetecdiv.app.gui.core.widgets.viewers import Scene
-from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer, VideoScene
+from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer
 
 
 class SegmentationScene(Scene):
@@ -21,6 +21,7 @@ class SegmentationScene(Scene):
         self.default_pen = QPen(Qt.GlobalColor.green, 1)
         self.positive_pen = QPen(Qt.GlobalColor.green, 1)
         self.negative_pen = QPen(Qt.GlobalColor.red, 1)
+        self.pen = self.default_pen
 
     def contextMenuEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """
@@ -45,6 +46,24 @@ class SegmentationScene(Scene):
         item = super().add_point(event)
         item.setData(1, label)
         self.pen = self.default_pen
+        return item
+
+    def item_dict(self):
+        item_dict = {'boxes': {}, 'points': {}}
+        for item in sorted(self.regions(), key=lambda x: x.data(0)):
+            self._add_item_to_dict(item, item_dict['boxes'])
+        for item in sorted(self.points(), key=lambda x: x.data(0)):
+            self._add_item_to_dict(item, item_dict['points'])
+        return item_dict
+
+    def draw_Item(self, event):
+        item = super().draw_Item(event)
+        item.setData(0, f'bounding_box_{item.x():.1f}_{item.y():.1f}')
+        return item
+
+    def duplicate_selected_Item(self, event):
+        item = super().duplicate_selected_Item(event)
+        item.setData(0, f'bounding_box_{item.x():.1f}_{item.y():.1f}')
         return item
 
 
