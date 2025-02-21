@@ -102,7 +102,7 @@ class TreeModel(QAbstractItemModel):
         self.root_item = TreeItem(columns)
         self.setup_model_data(data, self.root_item)
 
-    def columnCount(self, parent):
+    def columnCount(self, parent=QModelIndex()):
         """
         Returns the number of columns for the children of the given parent
 
@@ -115,7 +115,7 @@ class TreeModel(QAbstractItemModel):
             return parent.internalPointer().column_count()
         return self.root_item.column_count()
 
-    def data(self, index, role):
+    def data(self, index, role=Qt.DisplayRole):
         """
         Returns the data stored under the given role for the item referred to by the index.
 
@@ -150,7 +150,7 @@ class TreeModel(QAbstractItemModel):
 
         return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
-    def headerData(self, section, orientation, role):
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
         """
         Returns the data for the given role and section in the header with the specified orientation
 
@@ -168,7 +168,7 @@ class TreeModel(QAbstractItemModel):
 
         return None
 
-    def index(self, row, column, parent):
+    def index(self, row, column, parent=QModelIndex()):
         """
         Returns the index of the item in the model specified by the given row, column and parent index.
 
@@ -194,7 +194,7 @@ class TreeModel(QAbstractItemModel):
             return self.createIndex(row, column, child_item)
         return QModelIndex()
 
-    def parent(self, index):
+    def parent(self, index=QModelIndex()):
         """
         Returns the parent of the model item with the given index.
 
@@ -214,7 +214,7 @@ class TreeModel(QAbstractItemModel):
 
         return self.createIndex(parent_item.row(), 0, parent_item)
 
-    def rowCount(self, parent):
+    def rowCount(self, parent=QModelIndex()):
         """
         Returns the number of rows under the given parent. When the parent is valid it means that rowCount is returning
         the number of children of parent.
