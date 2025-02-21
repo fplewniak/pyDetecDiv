@@ -24,6 +24,7 @@ class TreeItem:
         :type item: TreeItem
         """
         self.child_items.append(item)
+        item.parent_item = self
 
     def child(self, row):
         """

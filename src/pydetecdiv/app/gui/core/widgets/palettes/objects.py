@@ -4,11 +4,10 @@ from PySide6.QtWidgets import QDockWidget, QTreeView, QMenu
 from typing import TYPE_CHECKING
 
 from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.app.models.Trees import TreeDictModel, TreeItem
+from pydetecdiv.app.models.Trees import TreeDictModel, TreeItem, TreeModel
 
 if TYPE_CHECKING:
     from pydetecdiv.app.gui.Windows import MainWindow
-
 
 
 class ObjectItem(TreeItem):
@@ -43,7 +42,43 @@ class ObjectTreeView(QTreeView):
         print(selection.internalPointer().item_data)
         print(self.model().data(selection, Qt.DisplayRole))
 
-class ObjectTreeModel(TreeDictModel):
+
+class ObjectTreeModel(TreeModel):
+    def __init__(self, parent=None):
+        super().__init__([''], parent=parent)
+        PyDetecDiv.app.scene_modified.connect(self.update_model)
+        self.all_items = set()
+        self.layers_item = TreeItem(['layers'])
+        self.boxes_item = TreeItem(['boxes'])
+        self.points_item = TreeItem(['points'])
+        self.add_item(self.root_item, self.layers_item)
+        self.add_item(self.root_item, self.boxes_item)
+        self.add_item(self.root_item, self.points_item)
+
+    def add_item(self, parent_item: TreeItem, new_item: TreeItem):
+        parent_item.append_child(new_item)
+        self.all_items.add(new_item)
+        self.layoutChanged.emit()
+        return new_item
+
+    def update_model(self, scene):
+        layers_set = set([i.data(0) for i in scene.layers() if i.data(0) is not None])
+        layer_items = set([i.data(0) for i in self.layers_item.child_items])
+        for item in layers_set.difference(layer_items):
+            self.add_item(self.layers_item, TreeItem([item]))
+
+        boxes_set = set([i.data(0) for i in scene.regions() if i.data(0) is not None])
+        box_items = set([i.data(0) for i in self.boxes_item.child_items])
+        for item in boxes_set.difference(box_items):
+            self.add_item(self.boxes_item, TreeItem([item]))
+
+        points_set = set([i.data(0) for i in scene.points() if i.data(0) is not None])
+        point_items = set([i.data(0) for i in self.points_item.child_items])
+        for item in points_set.difference(point_items):
+            self.add_item(self.points_item, TreeItem([item]))
+
+
+class ObjectTreeDictModel(TreeDictModel):
     def __init__(self, parent=None):
         self.object_dict = {}
         super().__init__([''], data=self.object_dict, parent=parent)
