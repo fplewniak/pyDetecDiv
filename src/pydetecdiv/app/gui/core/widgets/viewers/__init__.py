@@ -151,15 +151,19 @@ class Scene(QGraphicsScene):
         :type event: QGraphicsSceneMouseEvent
         """
         if event.button() == Qt.MouseButton.LeftButton:
-            match PyDetecDiv.current_drawing_tool:
-                case DrawingTools.Cursor:
+            match PyDetecDiv.current_drawing_tool, event.modifiers():
+                case DrawingTools.Cursor, Qt.KeyboardModifier.NoModifier:
                     self.select_Item(event)
-                case DrawingTools.DrawRect:
+                case DrawingTools.DrawRect, Qt.KeyboardModifier.NoModifier:
+                    self.unselect_items(event)
+                case DrawingTools.DrawRect, Qt.KeyboardModifier.ControlModifier:
                     self.select_Item(event)
-                case DrawingTools.DuplicateItem:
+                case DrawingTools.DrawRect, Qt.KeyboardModifier.ShiftModifier:
+                    self.select_Item(event)
+                case DrawingTools.DuplicateItem, Qt.KeyboardModifier.NoModifier:
                     self.duplicate_selected_Item(event)
                     PyDetecDiv.app.scene_modified.emit(self)
-                case DrawingTools.DrawPoint:
+                case DrawingTools.DrawPoint, Qt.KeyboardModifier.NoModifier:
                     self.add_point(event)
                     PyDetecDiv.app.scene_modified.emit(self)
 
@@ -183,6 +187,8 @@ class Scene(QGraphicsScene):
                     PyDetecDiv.app.scene_modified.emit(self)
                 case DrawingTools.DrawRect, Qt.KeyboardModifier.ControlModifier:
                     self.move_Item(event)
+                case DrawingTools.DrawRect, Qt.KeyboardModifier.ShiftModifier:
+                    self.draw_Item(event)
                 case DrawingTools.DuplicateItem, Qt.KeyboardModifier.NoModifier:
                     self.move_Item(event)
 
@@ -197,6 +203,14 @@ class Scene(QGraphicsScene):
                 event.accept()
                 self.viewer.setTransformationAnchor(QGraphicsView.ViewportAnchor.NoAnchor)
 
+    def unselect_items(self, event: QGraphicsSceneMouseEvent) -> None:
+        """
+        Unselect all selected items
+
+        :param event: the mouse press event
+        :type event: QGraphicsSceneMouseEvent
+        """
+        _ = [r.setSelected(False) for r in self.selectedItems()]
     def select_Item(self, event: QGraphicsSceneMouseEvent) -> None:
         """
         Select the current area/Item
