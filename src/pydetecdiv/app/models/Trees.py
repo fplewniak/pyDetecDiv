@@ -235,6 +235,9 @@ class TreeModel(QAbstractItemModel):
 
         return parent_item.child_count()
 
+    def removeRow(self, row, parent=QModelIndex()):
+        ...
+
     def setup_model_data(self, data, parent):
         """
         Set the model up from data

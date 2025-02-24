@@ -46,6 +46,8 @@ class PyDetecDiv(QApplication):
     saved_rois = Signal(str)
     viewer_roi_click = Signal(tuple)
     scene_modified = Signal(object)
+    graphic_item_added = Signal(object)
+    graphic_item_deleted = Signal(object)
 
     version = '0.5.0'
     project_name = None

@@ -1,3 +1,4 @@
+import numpy as np
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QDockWidget, QTreeView, QMenu
 
@@ -47,13 +48,22 @@ class ObjectTreeModel(TreeModel):
     def __init__(self, parent=None):
         super().__init__([''], parent=parent)
         PyDetecDiv.app.scene_modified.connect(self.update_model)
+        PyDetecDiv.app.graphic_item_deleted.connect(self.delete_graphic_item)
         self.all_items = set()
-        self.layers_item = TreeItem(['layers'])
-        self.boxes_item = TreeItem(['boxes'])
-        self.points_item = TreeItem(['points'])
-        self.add_item(self.root_item, self.layers_item)
-        self.add_item(self.root_item, self.boxes_item)
-        self.add_item(self.root_item, self.points_item)
+        self.top_items = {
+            'layers': TreeItem(['layers']),
+            'boxes': TreeItem(['boxes']),
+            'points': TreeItem(['points']),
+            }
+        for i in self.top_items.values():
+            self.add_item(self.root_item, i)
+        self.current_scene = None
+        # self.layers_item = TreeItem(['layers'])
+        # self.boxes_item = TreeItem(['boxes'])
+        # self.points_item = TreeItem(['points'])
+        # self.add_item(self.root_item, self.layers_item)
+        # self.add_item(self.root_item, self.boxes_item)
+        # self.add_item(self.root_item, self.points_item)
 
     def add_item(self, parent_item: TreeItem, new_item: TreeItem):
         parent_item.append_child(new_item)
@@ -61,21 +71,29 @@ class ObjectTreeModel(TreeModel):
         self.layoutChanged.emit()
         return new_item
 
+    def delete_graphic_item(self, item):
+        item_list = {i.data(0): i for i in self.all_items}
+        if item in item_list:
+            item_list[item].parent().child_items.remove(item_list[item])
+            del(item_list[item])
+            self.layoutChanged.emit()
+
     def update_model(self, scene):
+        self.current_scene = scene
         layers_set = set([i.data(0) for i in scene.layers() if i.data(0) is not None])
-        layer_items = set([i.data(0) for i in self.layers_item.child_items])
+        layer_items = set([i.data(0) for i in self.top_items['layers'].child_items])
         for item in layers_set.difference(layer_items):
-            self.add_item(self.layers_item, TreeItem([item]))
+            self.add_item(self.top_items['layers'], TreeItem([item]))
 
         boxes_set = set([i.data(0) for i in scene.regions() if i.data(0) is not None])
-        box_items = set([i.data(0) for i in self.boxes_item.child_items])
+        box_items = set([i.data(0) for i in self.top_items['boxes'].child_items])
         for item in boxes_set.difference(box_items):
-            self.add_item(self.boxes_item, TreeItem([item]))
+            self.add_item(self.top_items['boxes'], TreeItem([item]))
 
         points_set = set([i.data(0) for i in scene.points() if i.data(0) is not None])
-        point_items = set([i.data(0) for i in self.points_item.child_items])
+        point_items = set([i.data(0) for i in self.top_items['points'].child_items])
         for item in points_set.difference(point_items):
-            self.add_item(self.points_item, TreeItem([item]))
+            self.add_item(self.top_items['points'], TreeItem([item]))
 
 
 class ObjectTreeDictModel(TreeDictModel):

@@ -139,8 +139,9 @@ class Scene(QGraphicsScene):
         """
         if event.matches(QKeySequence.StandardKey.Delete):
             for r in self.selectedItems():
+                PyDetecDiv.app.graphic_item_deleted.emit(r.data(0))
                 self.removeItem(r)
-            PyDetecDiv.app.scene_modified.emit(self)
+            # PyDetecDiv.app.scene_modified.emit(self)
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """
