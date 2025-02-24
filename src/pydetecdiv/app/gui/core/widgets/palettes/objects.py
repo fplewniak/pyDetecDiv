@@ -74,7 +74,7 @@ class ObjectTreeModel(TreeModel):
         item_list = {i.data(0): i for i in self.all_items}
         if item in item_list:
             item_list[item].parent().child_items.remove(item_list[item])
-            del(item_list[item])
+            del (item_list[item])
             self.layoutChanged.emit()
 
     def reset_model(self, scene):
