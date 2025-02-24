@@ -141,7 +141,6 @@ class Scene(QGraphicsScene):
             for r in self.selectedItems():
                 PyDetecDiv.app.graphic_item_deleted.emit(r.data(0))
                 self.removeItem(r)
-            # PyDetecDiv.app.scene_modified.emit(self)
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """
@@ -167,6 +166,9 @@ class Scene(QGraphicsScene):
                 case DrawingTools.DrawPoint, Qt.KeyboardModifier.NoModifier:
                     self.add_point(event)
                     PyDetecDiv.app.scene_modified.emit(self)
+                case DrawingTools.DrawPoint, Qt.KeyboardModifier.ControlModifier:
+                    self.add_point(event)
+                    PyDetecDiv.app.scene_modified.emit(self)
 
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """
@@ -182,7 +184,7 @@ class Scene(QGraphicsScene):
                     self.move_Item(event)
                 case DrawingTools.Cursor, Qt.KeyboardModifier.ControlModifier:
                     self.draw_Item(event)
-                    PyDetecDiv.app.scene_modified.emit(self)
+                    # PyDetecDiv.app.scene_modified.emit(self)
                 case DrawingTools.DrawRect, Qt.KeyboardModifier.NoModifier:
                     self.draw_Item(event)
                     PyDetecDiv.app.scene_modified.emit(self)
@@ -212,6 +214,7 @@ class Scene(QGraphicsScene):
         :type event: QGraphicsSceneMouseEvent
         """
         _ = [r.setSelected(False) for r in self.selectedItems()]
+
     def select_Item(self, event: QGraphicsSceneMouseEvent) -> None:
         """
         Select the current area/Item

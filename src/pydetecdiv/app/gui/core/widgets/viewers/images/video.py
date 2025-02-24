@@ -41,9 +41,12 @@ class VideoPlayer(QWidget):
         self.control_panel = None
         self.menubar = None
         self.tscale = 1
+        PyDetecDiv.main_window.active_subwindow.tabBarClicked.connect(self.other_scene_in_focus)
 
         # self.viewer.setViewportUpdateMode(QGraphicsView.NoViewportUpdate)
 
+    def other_scene_in_focus(self, tab):
+        ...
     @property
     def elapsed_time(self) -> str:
         t = self.T * self.tscale

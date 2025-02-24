@@ -63,7 +63,8 @@ class SegmentationScene(Scene):
 
     def duplicate_selected_Item(self, event):
         item = super().duplicate_selected_Item(event)
-        item.setData(0, f'bounding_box_{item.x():.1f}_{item.y():.1f}')
+        if item:
+            item.setData(0, f'bounding_box_{item.x():.1f}_{item.y():.1f}')
         return item
 
 
@@ -79,6 +80,11 @@ class SegmentationTool(VideoPlayer):
         self.viewport_rect = None
         self.prompt = {}
         self.inference_state = None
+
+    def other_scene_in_focus(self, tab):
+        if PyDetecDiv.main_window.active_subwindow.widget(tab).scene == self.scene:
+            PyDetecDiv.main_window.object_tree_palette.set_top_items(['boxes', 'points'])
+            PyDetecDiv.app.other_scene_in_focus.emit(self.scene)
 
     # def setup(self, menubar: QMenuBar = None) -> None:
     #     """

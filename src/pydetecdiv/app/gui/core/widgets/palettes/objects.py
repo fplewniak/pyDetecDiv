@@ -45,15 +45,14 @@ class ObjectTreeView(QTreeView):
 
 
 class ObjectTreeModel(TreeModel):
-    def __init__(self, parent=None):
-        super().__init__([''], parent=parent)
+    def __init__(self, top_items, parent=None):
+        super().__init__(['', ''], parent=parent)
         PyDetecDiv.app.scene_modified.connect(self.update_model)
         PyDetecDiv.app.graphic_item_deleted.connect(self.delete_graphic_item)
+        PyDetecDiv.app.other_scene_in_focus.connect(self.reset_model)
         self.all_items = set()
         self.top_items = {
-            'layers': TreeItem(['layers']),
-            'boxes': TreeItem(['boxes']),
-            'points': TreeItem(['points']),
+            item: TreeItem([item, None]) for item in top_items
             }
         for i in self.top_items.values():
             self.add_item(self.root_item, i)
@@ -78,22 +77,38 @@ class ObjectTreeModel(TreeModel):
             del(item_list[item])
             self.layoutChanged.emit()
 
+    def reset_model(self, scene):
+        self.all_items = set()
+        for item in self.top_items.values():
+            item.child_items = []
+        # self.top_items = {
+        #     'layers': TreeItem(['layers']),
+        #     'boxes' : TreeItem(['boxes']),
+        #     'points': TreeItem(['points']),
+        #     }
+        # for i in self.top_items.values():
+        #     self.add_item(self.root_item, i)
+        self.update_model(scene)
+
     def update_model(self, scene):
         self.current_scene = scene
-        layers_set = set([i.data(0) for i in scene.layers() if i.data(0) is not None])
-        layer_items = set([i.data(0) for i in self.top_items['layers'].child_items])
-        for item in layers_set.difference(layer_items):
-            self.add_item(self.top_items['layers'], TreeItem([item]))
+        if 'layers' in self.top_items:
+            layers_set = set([i for i in scene.layers() if i.data(0) is not None])
+            layer_items = set([i.data(1) for i in self.top_items['layers'].child_items])
+            for item in layers_set.difference(layer_items):
+                self.add_item(self.top_items['layers'], TreeItem([item.data(0), item]))
 
-        boxes_set = set([i.data(0) for i in scene.regions() if i.data(0) is not None])
-        box_items = set([i.data(0) for i in self.top_items['boxes'].child_items])
-        for item in boxes_set.difference(box_items):
-            self.add_item(self.top_items['boxes'], TreeItem([item]))
+        if 'boxes' in self.top_items:
+            boxes_set = set([i for i in scene.regions() if i.data(0) is not None])
+            box_items = set([i.data(1) for i in self.top_items['boxes'].child_items])
+            for item in boxes_set.difference(box_items):
+                self.add_item(self.top_items['boxes'], TreeItem([item.data(0), item]))
 
-        points_set = set([i.data(0) for i in scene.points() if i.data(0) is not None])
-        point_items = set([i.data(0) for i in self.top_items['points'].child_items])
-        for item in points_set.difference(point_items):
-            self.add_item(self.top_items['points'], TreeItem([item]))
+        if 'points' in self.top_items:
+            points_set = set([i for i in scene.points() if i.data(0) is not None])
+            point_items = set([i.data(1) for i in self.top_items['points'].child_items])
+            for item in points_set.difference(point_items):
+                self.add_item(self.top_items['points'], TreeItem([item.data(0), item]))
 
 
 class ObjectTreeDictModel(TreeDictModel):
@@ -105,7 +120,7 @@ class ObjectTreeDictModel(TreeDictModel):
     def update_model(self, scene):
         self.beginResetModel()
         self.object_dict = scene.item_dict()
-        self.root_item = TreeItem(self.root_item.item_data)
+        self.root_item = TreeItem(self.root_item.item_data, None)
         self.setup_model_data(self.object_dict, self.root_item)
         self.endResetModel()
 
@@ -137,6 +152,11 @@ class ObjectTreePalette(QDockWidget):
     def __init__(self, parent: 'MainWindow'):
         super().__init__('Objects tree', parent)
         self.setObjectName('Objects tree')
-        tree_view = ObjectTreeView()
-        tree_view.setModel(ObjectTreeModel(parent=self))
-        self.setWidget(tree_view)
+        self.tree_view = ObjectTreeView()
+        self.tree_view.setModel(ObjectTreeModel(top_items=['layers', 'boxes', 'points'], parent=self))
+        self.setWidget(self.tree_view)
+
+    def set_top_items(self, top_items=None):
+        if top_items is None:
+            top_items = ['layers', 'boxes', 'points']
+        self.tree_view.setModel(ObjectTreeModel(top_items=top_items, parent=self))

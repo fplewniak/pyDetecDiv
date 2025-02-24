@@ -29,6 +29,11 @@ class FOVmanager(VideoPlayer):
         self.menuROI = None
         self.setup(menubar=self._create_menu_bar())
 
+    def other_scene_in_focus(self, tab):
+        if PyDetecDiv.main_window.active_subwindow.widget(tab).scene == self.scene:
+            PyDetecDiv.main_window.object_tree_palette.set_top_items(['layers', 'boxes', 'points'])
+            PyDetecDiv.app.other_scene_in_focus.emit(self.scene)
+
     def _create_menu_bar(self) -> QMenuBar:
         """
         Adds a menu bar to the current widget
@@ -146,9 +151,11 @@ class FOVmanager(VideoPlayer):
             video_player.addLayer().setImage(self.viewer.image_resource_data, C=C, Z=Z, T=T,
                                              crop=(slice(x1, x2), slice(y1, y2)), alpha=True)
         PyDetecDiv.main_window.active_subwindow.setCurrentWidget(video_player)
+        PyDetecDiv.app.other_scene_in_focus.emit(scene)
 
     def open_in_segmentation_tool(self, rect: QGraphicsRectItem) -> None:
         self._view_in_new_tab(rect, SegmentationTool(rect.data(0)), scene=SegmentationScene())
+        PyDetecDiv.main_window.object_tree_palette.set_top_items(['boxes', 'points'])
         # PyDetecDiv.main_window.active_subwindow.currentWidget().create_video(rect.data(0))
 
     def set_roi_template(self) -> None:
