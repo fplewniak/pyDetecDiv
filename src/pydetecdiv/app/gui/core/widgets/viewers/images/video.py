@@ -46,7 +46,8 @@ class VideoPlayer(QWidget):
         # self.viewer.setViewportUpdateMode(QGraphicsView.NoViewportUpdate)
 
     def other_scene_in_focus(self, tab):
-        ...
+        if PyDetecDiv.main_window.active_subwindow.widget(tab).scene == self.scene:
+            PyDetecDiv.app.other_scene_in_focus.emit(self.scene)
     @property
     def elapsed_time(self) -> str:
         t = self.T * self.tscale

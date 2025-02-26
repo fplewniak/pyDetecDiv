@@ -12,7 +12,6 @@ from skimage.feature import peak_local_max
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 from pydetecdiv.app.gui.core.widgets.viewers import Scene
 from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.segmentation_tool import SegmentationTool, SegmentationScene
-from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.treemodel import SegmentationTreeModel
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer
 from pydetecdiv.domain.Image import Image, ImgDType
 from pydetecdiv.domain.ROI import ROI
@@ -30,10 +29,9 @@ class FOVmanager(VideoPlayer):
         self.menuROI = None
         self.setup(menubar=self._create_menu_bar())
 
-    def other_scene_in_focus(self, tab):
-        if PyDetecDiv.main_window.active_subwindow.widget(tab).scene == self.scene:
-            PyDetecDiv.main_window.object_tree_palette.set_top_items(['layers', 'boxes', 'points'])
-            PyDetecDiv.app.other_scene_in_focus.emit(self.scene)
+    # def other_scene_in_focus(self, tab):
+    #     if PyDetecDiv.main_window.active_subwindow.widget(tab).scene == self.scene:
+    #         PyDetecDiv.app.other_scene_in_focus.emit(self.scene)
 
     def _create_menu_bar(self) -> QMenuBar:
         """
@@ -110,6 +108,7 @@ class FOVmanager(VideoPlayer):
             rect_item.setPos(QPoint(roi.x, roi.y))
             rect_item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
             rect_item.setData(0, roi.name)
+        PyDetecDiv.app.other_scene_in_focus.emit(self.scene)
 
     def get_roi_image(self, roi: QGraphicsRectItem) -> np.ndarray:
         """
@@ -127,7 +126,7 @@ class FOVmanager(VideoPlayer):
                                    drift=PyDetecDiv.apply_drift, alpha=False).as_array(ImgDType.uint8)
 
     def view_in_new_tab(self, rect: QGraphicsRectItem) -> None:
-        self._view_in_new_tab(rect, VideoPlayer())
+        self._view_in_new_tab(rect, VideoPlayer(), scene=Scene())
 
     def _view_in_new_tab(self, rect: QGraphicsRectItem, player: VideoPlayer, scene: Scene = None) -> None:
         """
@@ -156,8 +155,8 @@ class FOVmanager(VideoPlayer):
 
     def open_in_segmentation_tool(self, rect: QGraphicsRectItem) -> None:
         self._view_in_new_tab(rect, SegmentationTool(rect.data(0)), scene=SegmentationScene())
-        PyDetecDiv.main_window.object_tree_palette.tree_view.setModel(SegmentationTreeModel(['boxes']))
-        # PyDetecDiv.main_window.object_tree_palette.set_top_items([])
+        # PyDetecDiv.main_window.scene_tree_palette.tree_view.setModel(SegmentationTreeModel(['boxes']))
+        # PyDetecDiv.main_window.scene_tree_palette.set_top_items([])
         # PyDetecDiv.main_window.active_subwindow.currentWidget().create_video(rect.data(0))
 
     def set_roi_template(self) -> None:
@@ -208,7 +207,6 @@ class FOVmanager(VideoPlayer):
         """
         Save the areas as ROIs
         """
-        print(self.fov)
         rois = [item for item in self.scene.items() if isinstance(item, QGraphicsRectItem)]
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             roi_list = [r.name for r in self.fov.roi_list]
@@ -221,7 +219,8 @@ class FOVmanager(VideoPlayer):
                                   top_left=(x, y), bottom_right=(int(x) + w, int(y) + h))
                     rect_item.setData(0, new_roi.name)
         PyDetecDiv.app.saved_rois.emit(PyDetecDiv.project_name)
-        PyDetecDiv.app.scene_modified.emit(self.viewer.scene())
+        PyDetecDiv.app.scene_modified.emit(self.scene)
+        PyDetecDiv.app.other_scene_in_focus.emit(self.scene)
         self.fixate_saved_rois()
         self.actionSave_ROIs.setEnabled(False)
 

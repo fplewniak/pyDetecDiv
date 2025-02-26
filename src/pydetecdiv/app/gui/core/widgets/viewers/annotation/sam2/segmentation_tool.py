@@ -38,7 +38,7 @@ class SegmentationScene(Scene):
         menu.exec(event.screenPos())
 
     def new_object(self):
-        self.current_object = f'obj{len(self.viewer.parent().parent().parent().prompt.keys()):2d}'
+        self.current_object = f'obj{len(self.viewer.parent().parent().parent().prompt.keys()):02d}'
         self.viewer.parent().parent().parent().prompt[self.current_object] = {'bounding_box': [],
                                                  'points': [[]],
                                                  }
@@ -55,7 +55,7 @@ class SegmentationScene(Scene):
             item = super().add_point(event)
             item.setData(1, label)
             self.pen = self.default_pen
-            self.object_dict[self.current_object]['points'].append([item.data(0), item])
+            self.viewer.parent().parent().parent().prompt[self.current_object]['points'].append([item.data(0), item])
             return item
         return None
 
@@ -96,10 +96,11 @@ class SegmentationTool(VideoPlayer):
         self.prompt = {}
         self.inference_state = None
 
-    def other_scene_in_focus(self, tab):
-        if PyDetecDiv.main_window.active_subwindow.widget(tab).scene == self.scene:
-            PyDetecDiv.main_window.object_tree_palette.set_top_items(list(self.prompt.keys()))
-            PyDetecDiv.app.other_scene_in_focus.emit(self.scene)
+    # def other_scene_in_focus(self, tab):
+    #     if PyDetecDiv.main_window.active_subwindow.widget(tab).scene == self.scene:
+    #         # PyDetecDiv.main_window.scene_tree_palette.set_top_items(['layers', 'boxes', 'points'])
+    #         # PyDetecDiv.main_window.scene_tree_palette.set_top_items(list(self.prompt.keys()))
+    #         PyDetecDiv.app.other_scene_in_focus.emit(self.scene)
 
     # def setup(self, menubar: QMenuBar = None) -> None:
     #     """

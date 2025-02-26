@@ -12,7 +12,7 @@ from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project, Drawing
 from pydetecdiv.app.gui.FOVmanager import FOVmanager
 
 from pydetecdiv.app.gui.Toolbox import ToolboxTreeView, ToolboxTreeModel
-from pydetecdiv.app.gui.core.widgets.palettes.objects import ObjectTreePalette
+from pydetecdiv.app.gui.core.widgets.palettes.scene import SceneTreePalette
 from pydetecdiv.app.gui.core.widgets.TabWidgets import TabbedWindow
 
 
@@ -44,8 +44,8 @@ class MainWindow(QMainWindow):
         self.analysis_tools = AnalysisToolsTree(self)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.analysis_tools, Qt.Orientation.Vertical)
         self.analysis_tools.hide()
-        self.object_tree_palette = ObjectTreePalette(self)
-        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.object_tree_palette, Qt.Orientation.Vertical)
+        self.scene_tree_palette = SceneTreePalette(self)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.scene_tree_palette, Qt.Orientation.Vertical)
         self.mdi_area.subWindowActivated.connect(self.subwindow_activation)
         PyDetecDiv.app.project_selected.connect(self.setWindowTitle)
 

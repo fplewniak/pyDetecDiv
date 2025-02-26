@@ -11,14 +11,14 @@ if TYPE_CHECKING:
     from pydetecdiv.app.gui.Windows import MainWindow
 
 
-class ObjectItem(TreeItem):
+class SceneTreeItem(TreeItem):
     def __init__(self, graphics_item, data, parent=None):
         super().__init__(data, parent)
         self.object = graphics_item
         self.item_data = [graphics_item.data(0)]
 
 
-class ObjectTreeView(QTreeView):
+class SceneTreeView(QTreeView):
     """
     A class expanding QTreeView with specific features to view objects in Image/Video viewer.
     """
@@ -44,7 +44,7 @@ class ObjectTreeView(QTreeView):
         print(self.model().data(selection, Qt.DisplayRole))
 
 
-class ObjectTreeModel(TreeModel):
+class SceneTreeModel(TreeModel):
     def __init__(self, top_items, parent=None):
         super().__init__([''], parent=parent)
         PyDetecDiv.app.scene_modified.connect(self.update_model)
@@ -88,7 +88,8 @@ class ObjectTreeModel(TreeModel):
         #     }
         # for i in self.top_items.values():
         #     self.add_item(self.root_item, i)
-        self.update_model(scene)
+        if scene is not None:
+            self.update_model(scene)
 
     def update_model(self, scene):
         self.current_scene = scene
@@ -141,23 +142,27 @@ class ObjectTreeModel(TreeModel):
 #                 self.append_children(values, self.parents[-1])
 #             else:
 #                 for v in values:
-#                     self.parents[-1].append_child(ObjectItem(v, self.parents[-1]))
+#                     self.parents[-1].append_child(SceneTreeItem(v, self.parents[-1]))
 
 
-class ObjectTreePalette(QDockWidget):
+class SceneTreePalette(QDockWidget):
     """
 
     """
 
     def __init__(self, parent: 'MainWindow'):
-        super().__init__('Objects tree', parent)
-        self.setObjectName('Objects tree')
-        self.tree_view = ObjectTreeView()
-        self.tree_view.setModel(ObjectTreeModel(top_items=['layers', 'boxes', 'points'], parent=self))
+        super().__init__('Scene palette', parent)
+        self.setObjectName('Scene palette')
+        self.tree_view = SceneTreeView()
+        self.tree_view.setModel(SceneTreeModel(top_items=['layers', 'boxes', 'points'], parent=self))
+        self.tree_view.setHeaderHidden(True)
         self.setWidget(self.tree_view)
 
     def set_top_items(self, top_items=None):
         if top_items is None:
             top_items = ['layers', 'boxes', 'points']
         # self.tree_view.model().top_items = {item: TreeItem([item, None]) for item in top_items}
-        self.tree_view.setModel(ObjectTreeModel(top_items=top_items, parent=self))
+        self.tree_view.setModel(SceneTreeModel(top_items=top_items, parent=self))
+
+    def reset(self):
+        self.set_top_items()

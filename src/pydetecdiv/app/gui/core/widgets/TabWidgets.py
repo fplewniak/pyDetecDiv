@@ -57,6 +57,7 @@ class TabbedWindow(QTabWidget):
         for i in range(PyDetecDiv.main_window.tabs[self.windowTitle()].count()):
             QCoreApplication.sendEvent(PyDetecDiv.main_window.tabs[self.windowTitle()].widget(i), QCloseEvent())
         del PyDetecDiv.main_window.tabs[self.windowTitle()]
+        PyDetecDiv.main_window.scene_tree_palette.reset()
 
     def close_tab(self, index: int) -> None:
         """
