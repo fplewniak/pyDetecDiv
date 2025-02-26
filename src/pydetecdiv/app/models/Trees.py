@@ -101,7 +101,7 @@ class TreeModel(QAbstractItemModel):
     def __init__(self, columns, data=None, parent=None):
         super().__init__(parent)
         self.root_item = TreeItem(columns)
-        self.setup_model_data(data, self.root_item)
+        self.setup_model_data(data)
 
     def columnCount(self, parent=QModelIndex()):
         """
@@ -238,7 +238,7 @@ class TreeModel(QAbstractItemModel):
     def removeRow(self, row, parent=QModelIndex()):
         ...
 
-    def setup_model_data(self, data, parent):
+    def setup_model_data(self, data):
         """
         Set the model up from data
 
@@ -255,9 +255,15 @@ class TreeDictModel(TreeModel):
     """
 
     def __init__(self, columns: list[str], data: dict[str, Any] | None = None, parent=None):
-        super().__init__(columns, data=data, parent=parent)
+        super().__init__(columns, data=None, parent=parent)
+        self.parents = [self.root_item]
+        if data is not None:
+            self.setup_model_data(data)
+            self.data_dict = data
+        else:
+            self.data_dict = {}
 
-    def setup_model_data(self, data, parent):
+    def setup_model_data(self, data):
         """
         Set the model up from the data stored in a dictionary
 
@@ -266,9 +272,8 @@ class TreeDictModel(TreeModel):
         :param parent: the root of the tree
         :type parent: TreeItem
         """
-        self.parents = [parent]
         if data is not None:
-            self.append_children(data, parent)
+            self.append_children(data, self.root_item)
 
     def append_children(self, data, parent):
         """

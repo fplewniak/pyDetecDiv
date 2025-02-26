@@ -253,7 +253,7 @@ class VideoViewerPanel(QSplitter):
 
     def __init__(self, parent: VideoPlayer = None, **kwargs):
         super().__init__(parent=parent, **kwargs)
-        self.video_viewer = ImageViewer()
+        self.video_viewer = ImageViewer(parent)
 
     def setup(self, scene: VideoScene = None, **kwargs) -> None:
         self.video_viewer.setup(scene)

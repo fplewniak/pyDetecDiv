@@ -46,7 +46,7 @@ class ObjectTreeView(QTreeView):
 
 class ObjectTreeModel(TreeModel):
     def __init__(self, top_items, parent=None):
-        super().__init__(['', ''], parent=parent)
+        super().__init__([''], parent=parent)
         PyDetecDiv.app.scene_modified.connect(self.update_model)
         PyDetecDiv.app.graphic_item_deleted.connect(self.delete_graphic_item)
         PyDetecDiv.app.other_scene_in_focus.connect(self.reset_model)
@@ -111,37 +111,37 @@ class ObjectTreeModel(TreeModel):
                 self.add_item(self.top_items['points'], TreeItem([item.data(0), item]))
 
 
-class ObjectTreeDictModel(TreeDictModel):
-    def __init__(self, parent=None):
-        self.object_dict = {}
-        super().__init__([''], data=self.object_dict, parent=parent)
-        PyDetecDiv.app.scene_modified.connect(self.update_model)
-
-    def update_model(self, scene):
-        self.beginResetModel()
-        self.object_dict = scene.item_dict()
-        self.root_item = TreeItem(self.root_item.item_data, None)
-        self.setup_model_data(self.object_dict, self.root_item)
-        self.endResetModel()
-
-    def append_children(self, data, parent):
-        """
-        Append children to an arbitrary node represented by a dictionary. This method is called recursively to load the
-        successive levels of nodes.
-
-        :param data: the dictionary to load at this node
-        :type data: dict
-        :param parent: the internal node
-        :type parent: TreeItem
-        """
-        for key, values in data.items():
-            self.parents.append(TreeItem([key, ''], parent))
-            parent.append_child(self.parents[-1])
-            if isinstance(values, dict):
-                self.append_children(values, self.parents[-1])
-            else:
-                for v in values:
-                    self.parents[-1].append_child(ObjectItem(v, self.parents[-1]))
+# class ObjectTreeDictModel(TreeDictModel):
+#     def __init__(self, parent=None):
+#         self.object_dict = {}
+#         super().__init__([''], data=self.object_dict, parent=parent)
+#         PyDetecDiv.app.scene_modified.connect(self.update_model)
+#
+#     def update_model(self, scene):
+#         self.beginResetModel()
+#         self.object_dict = scene.item_dict()
+#         self.root_item = TreeItem(self.root_item.item_data, None)
+#         self.setup_model_data(self.object_dict)
+#         self.endResetModel()
+#
+#     def append_children(self, data, parent):
+#         """
+#         Append children to an arbitrary node represented by a dictionary. This method is called recursively to load the
+#         successive levels of nodes.
+#
+#         :param data: the dictionary to load at this node
+#         :type data: dict
+#         :param parent: the internal node
+#         :type parent: TreeItem
+#         """
+#         for key, values in data.items():
+#             self.parents.append(TreeItem([key, ''], parent))
+#             parent.append_child(self.parents[-1])
+#             if isinstance(values, dict):
+#                 self.append_children(values, self.parents[-1])
+#             else:
+#                 for v in values:
+#                     self.parents[-1].append_child(ObjectItem(v, self.parents[-1]))
 
 
 class ObjectTreePalette(QDockWidget):
@@ -159,4 +159,5 @@ class ObjectTreePalette(QDockWidget):
     def set_top_items(self, top_items=None):
         if top_items is None:
             top_items = ['layers', 'boxes', 'points']
+        # self.tree_view.model().top_items = {item: TreeItem([item, None]) for item in top_items}
         self.tree_view.setModel(ObjectTreeModel(top_items=top_items, parent=self))

@@ -12,6 +12,7 @@ from skimage.feature import peak_local_max
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 from pydetecdiv.app.gui.core.widgets.viewers import Scene
 from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.segmentation_tool import SegmentationTool, SegmentationScene
+from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.treemodel import SegmentationTreeModel
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer
 from pydetecdiv.domain.Image import Image, ImgDType
 from pydetecdiv.domain.ROI import ROI
@@ -155,7 +156,8 @@ class FOVmanager(VideoPlayer):
 
     def open_in_segmentation_tool(self, rect: QGraphicsRectItem) -> None:
         self._view_in_new_tab(rect, SegmentationTool(rect.data(0)), scene=SegmentationScene())
-        PyDetecDiv.main_window.object_tree_palette.set_top_items(['boxes', 'points'])
+        PyDetecDiv.main_window.object_tree_palette.tree_view.setModel(SegmentationTreeModel(['boxes']))
+        # PyDetecDiv.main_window.object_tree_palette.set_top_items([])
         # PyDetecDiv.main_window.active_subwindow.currentWidget().create_video(rect.data(0))
 
     def set_roi_template(self) -> None:

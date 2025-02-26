@@ -18,6 +18,8 @@ from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer
 class SegmentationScene(Scene):
     def __init__(self, parent: QWidget = None, **kwargs):
         super().__init__(parent)
+        self.object_dict = {}
+        self.current_object = None
         self.default_pen = QPen(Qt.GlobalColor.green, 1)
         self.positive_pen = QPen(Qt.GlobalColor.green, 1)
         self.negative_pen = QPen(Qt.GlobalColor.red, 1)
@@ -35,18 +37,27 @@ class SegmentationScene(Scene):
                 lambda _: PyDetecDiv.main_window.active_subwindow.currentWidget().segment_from_prompt(self.items()))
         menu.exec(event.screenPos())
 
-    def add_point(self, event: QGraphicsSceneMouseEvent) -> QGraphicsEllipseItem:
-        label = 1
-        self.pen = self.positive_pen
-        if event.buttons() == Qt.MouseButton.LeftButton:
-            match PyDetecDiv.current_drawing_tool, event.modifiers():
-                case DrawingTools.DrawPoint, Qt.KeyboardModifier.ControlModifier:
-                    self.pen = self.negative_pen
-                    label = 0
-        item = super().add_point(event)
-        item.setData(1, label)
-        self.pen = self.default_pen
-        return item
+    def new_object(self):
+        self.current_object = f'obj{len(self.viewer.parent().parent().parent().prompt.keys()):2d}'
+        self.viewer.parent().parent().parent().prompt[self.current_object] = {'bounding_box': [],
+                                                 'points': [[]],
+                                                 }
+
+    def add_point(self, event: QGraphicsSceneMouseEvent) -> QGraphicsEllipseItem | None:
+        if self.current_object is not None:
+            label = 1
+            self.pen = self.positive_pen
+            if event.buttons() == Qt.MouseButton.LeftButton:
+                match PyDetecDiv.current_drawing_tool, event.modifiers():
+                    case DrawingTools.DrawPoint, Qt.KeyboardModifier.ControlModifier:
+                        self.pen = self.negative_pen
+                        label = 0
+            item = super().add_point(event)
+            item.setData(1, label)
+            self.pen = self.default_pen
+            self.object_dict[self.current_object]['points'].append([item.data(0), item])
+            return item
+        return None
 
     def item_dict(self):
         item_dict = {'boxes': {}, 'points': {}}
@@ -59,12 +70,16 @@ class SegmentationScene(Scene):
     def draw_Item(self, event):
         item = super().draw_Item(event)
         item.setData(0, f'bounding_box_{item.x():.1f}_{item.y():.1f}')
+        if self.current_object is None or item.data(0) not in self.viewer.parent().parent().parent().prompt[self.current_object]['bounding box']:
+            self.new_object()
+            self.viewer.parent().parent().parent().prompt[self.current_object]['bounding box'] = [item.data(0), item]
         return item
 
     def duplicate_selected_Item(self, event):
         item = super().duplicate_selected_Item(event)
         if item:
             item.setData(0, f'bounding_box_{item.x():.1f}_{item.y():.1f}')
+            self.object_dict[self.current_object]['bounding box'].append(item)
         return item
 
 
@@ -83,7 +98,7 @@ class SegmentationTool(VideoPlayer):
 
     def other_scene_in_focus(self, tab):
         if PyDetecDiv.main_window.active_subwindow.widget(tab).scene == self.scene:
-            PyDetecDiv.main_window.object_tree_palette.set_top_items(['boxes', 'points'])
+            PyDetecDiv.main_window.object_tree_palette.set_top_items(list(self.prompt.keys()))
             PyDetecDiv.app.other_scene_in_focus.emit(self.scene)
 
     # def setup(self, menubar: QMenuBar = None) -> None:
