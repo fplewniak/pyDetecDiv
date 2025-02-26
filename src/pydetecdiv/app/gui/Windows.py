@@ -97,6 +97,8 @@ class MainWindow(QMainWindow):
         """
         if subwindow is not None:
             for c in subwindow.children():
+                if (c in self.tabs.values()) and hasattr(c.currentWidget(), 'scene'):
+                    PyDetecDiv.app.other_scene_in_focus.emit(c.currentWidget().scene)
                 if (c in self.tabs.values()) and hasattr(c, 'project_name') and c.project_name:
                     PyDetecDiv.app.project_selected.emit(c.project_name)
                     PyDetecDiv.project_name = c.project_name

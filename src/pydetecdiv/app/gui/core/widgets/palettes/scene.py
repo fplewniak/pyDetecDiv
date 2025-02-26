@@ -156,6 +156,7 @@ class SceneTreePalette(QDockWidget):
         self.tree_view = SceneTreeView()
         self.tree_view.setModel(SceneTreeModel(top_items=['layers', 'boxes', 'points'], parent=self))
         self.tree_view.setHeaderHidden(True)
+        self.tree_view.expandAll()
         self.setWidget(self.tree_view)
 
     def set_top_items(self, top_items=None):
