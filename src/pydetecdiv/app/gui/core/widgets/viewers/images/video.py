@@ -12,11 +12,16 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame, QToolB
                                QLineEdit, QSizePolicy, QSplitter, QMenuBar, QGraphicsScene)
 
 from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.app.gui.core.widgets.viewers import Layer
+from pydetecdiv.app.gui.core.widgets.viewers import Layer, Scene
 from pydetecdiv.app.gui.core.widgets.viewers.images import ImageViewer
 from pydetecdiv.domain.ImageResourceData import ImageResourceData
 
-VideoScene = TypeVar('VideoScene', bound=QGraphicsScene)
+# VideoScene = TypeVar('VideoScene', bound=QGraphicsScene)
+
+class VideoScene(Scene):
+    def __init__(self, parent: QWidget = None, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.player = None
 
 
 class VideoPlayer(QWidget):
@@ -41,6 +46,7 @@ class VideoPlayer(QWidget):
         self.control_panel = None
         self.menubar = None
         self.tscale = 1
+        self.time_display = None
         PyDetecDiv.main_window.active_subwindow.tabBarClicked.connect(self.other_scene_in_focus)
 
         # self.viewer.setViewportUpdateMode(QGraphicsView.NoViewportUpdate)

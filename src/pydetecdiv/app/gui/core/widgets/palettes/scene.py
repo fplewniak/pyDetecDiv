@@ -45,7 +45,7 @@ class SceneTreeView(QTreeView):
 
 
 class SceneTreeModel(TreeModel):
-    def __init__(self, top_items, parent=None):
+    def __init__(self, top_items=None, parent=None):
         super().__init__([''], parent=parent)
         PyDetecDiv.app.scene_modified.connect(self.update_model)
         PyDetecDiv.app.graphic_item_deleted.connect(self.delete_graphic_item)
@@ -53,7 +53,7 @@ class SceneTreeModel(TreeModel):
         self.all_items = set()
         self.top_items = {
             item: TreeItem([item, None]) for item in top_items
-            }
+            } if top_items is not None else {}
         for i in self.top_items.values():
             self.add_item(self.root_item, i)
         self.current_scene = None

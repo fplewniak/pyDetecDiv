@@ -136,6 +136,7 @@ class FOVmanager(VideoPlayer):
         """
         video_player = PyDetecDiv.main_window.active_subwindow.widget(
                 PyDetecDiv.main_window.active_subwindow.addTab(player, rect.data(0)))
+        scene.player = video_player
         video_player.tscale = self.tscale
         video_player.setup()
         video_player.viewer_panel.setup(scene=scene)

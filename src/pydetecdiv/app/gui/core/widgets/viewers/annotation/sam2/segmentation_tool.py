@@ -1,4 +1,5 @@
 import os
+from pprint import pprint
 
 from PIL import Image as PILimage
 from PySide6.QtCore import Qt
@@ -7,18 +8,19 @@ from matplotlib import pyplot as plt
 
 import numpy as np
 import torch.cuda
-from PySide6.QtWidgets import QGraphicsSceneMouseEvent, QMenu, QWidget, QGraphicsEllipseItem
+from PySide6.QtWidgets import (QGraphicsSceneMouseEvent, QMenu, QWidget, QGraphicsEllipseItem, QMenuBar, QVBoxLayout, QLabel,
+                               QHBoxLayout, QSplitter)
 from sam2.build_sam import build_sam2_video_predictor
 
 from pydetecdiv.app import PyDetecDiv, DrawingTools
-from pydetecdiv.app.gui.core.widgets.viewers import Scene
-from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer
+from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.treemodel import ObjectsTreeView, ObjectTreeModel
+from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer, VideoViewerPanel, VideoControlPanel, VideoScene
 
 
-class SegmentationScene(Scene):
+class SegmentationScene(VideoScene):
     def __init__(self, parent: QWidget = None, **kwargs):
-        super().__init__(parent)
-        self.object_dict = {}
+        super().__init__(parent, **kwargs)
+        self.object_count = 0
         self.current_object = None
         self.default_pen = QPen(Qt.GlobalColor.green, 1)
         self.positive_pen = QPen(Qt.GlobalColor.green, 1)
@@ -34,14 +36,14 @@ class SegmentationScene(Scene):
         menu = QMenu()
         segment_action = menu.addAction('Run segmentation')
         segment_action.triggered.connect(
-                lambda _: PyDetecDiv.main_window.active_subwindow.currentWidget().segment_from_prompt(self.items()))
+                lambda _: self.player.segment_from_prompt(self.items()))
         menu.exec(event.screenPos())
 
     def new_object(self):
-        self.current_object = f'obj{len(self.viewer.parent().parent().parent().prompt.keys()):02d}'
-        self.viewer.parent().parent().parent().prompt[self.current_object] = {'bounding_box': [],
-                                                 'points': [[]],
-                                                 }
+        self.player.prompt[f'{self.player.T}'] = {f'{self.object_count}': {'box': [], 'points': []}}
+        self.current_object = self.object_count
+        self.object_count += 1
+        pprint(self.player.prompt)
 
     def add_point(self, event: QGraphicsSceneMouseEvent) -> QGraphicsEllipseItem | None:
         if self.current_object is not None:
@@ -55,7 +57,8 @@ class SegmentationScene(Scene):
             item = super().add_point(event)
             item.setData(1, label)
             self.pen = self.default_pen
-            self.viewer.parent().parent().parent().prompt[self.current_object]['points'].append([item.data(0), item])
+            self.player.prompt[f'{self.player.T}'][f'{self.current_object}']['points'].append([item.data(0), item])
+            pprint(self.player.prompt)
             return item
         return None
 
@@ -70,16 +73,20 @@ class SegmentationScene(Scene):
     def draw_Item(self, event):
         item = super().draw_Item(event)
         item.setData(0, f'bounding_box_{item.x():.1f}_{item.y():.1f}')
-        if self.current_object is None or item.data(0) not in self.viewer.parent().parent().parent().prompt[self.current_object]['bounding box']:
+        if f'{self.player.T}' not in self.player.prompt or self.current_object is None or item.data(0) not in \
+                self.player.prompt[f'{self.player.T}'][f'{self.current_object}']:
             self.new_object()
-            self.viewer.parent().parent().parent().prompt[self.current_object]['bounding box'] = [item.data(0), item]
+            self.player.prompt[f'{self.player.T}'][f'{self.current_object}']['box'] = [item.data(0), item]
+            pprint(self.player.prompt)
         return item
 
     def duplicate_selected_Item(self, event):
         item = super().duplicate_selected_Item(event)
-        if item:
-            item.setData(0, f'bounding_box_{item.x():.1f}_{item.y():.1f}')
-            self.object_dict[self.current_object]['bounding box'].append(item)
+        if f'{self.player.T}' not in self.player.prompt or self.current_object is None or item.data(0) not in \
+                self.player.prompt[f'{self.player.T}'][f'{self.current_object}']:
+            self.new_object()
+            self.player.prompt[f'{self.player.T}'][f'{self.current_object}']['box'] = [item.data(0), item]
+            pprint(self.player.prompt)
         return item
 
 
@@ -95,22 +102,49 @@ class SegmentationTool(VideoPlayer):
         self.viewport_rect = None
         self.prompt = {}
         self.inference_state = None
+        self.object_list = None
 
-    # def other_scene_in_focus(self, tab):
-    #     if PyDetecDiv.main_window.active_subwindow.widget(tab).scene == self.scene:
-    #         # PyDetecDiv.main_window.scene_tree_palette.set_top_items(['layers', 'boxes', 'points'])
-    #         # PyDetecDiv.main_window.scene_tree_palette.set_top_items(list(self.prompt.keys()))
-    #         PyDetecDiv.app.other_scene_in_focus.emit(self.scene)
+    def setup(self, menubar: QMenuBar = None) -> None:
+        """
+        Sets the video player up
 
-    # def setup(self, menubar: QMenuBar = None) -> None:
-    #     """
-    #     Sets the Manual segmentation tool up
-    #
-    #     :param scene: the scene
-    #     :param menubar: the menu bar
-    #     """
-    #     super().setup(menubar=menubar)
-    #     # self.menubar.setup()
+        :param menubar: whether a menubar should be added or not
+        """
+        layout = QVBoxLayout(self)
+        if menubar:
+            self.menubar = menubar
+            layout.addWidget(self.menubar)
+
+        video_widget = QWidget(self)
+        video_layout = QVBoxLayout(video_widget)
+        self.viewer_panel = VideoViewerPanel(self)
+        self.control_panel = VideoControlPanel(self)
+        video_layout.addWidget(self.viewer_panel)
+        video_layout.addWidget(self.control_panel)
+        video_widget.setLayout(video_layout)
+
+        self.object_list = ObjectsTreeView()
+        self.object_list.setModel(ObjectTreeModel())
+        self.object_list.setHeaderHidden(False)
+        self.object_list.expandAll()
+
+        splitter = QSplitter()
+        splitter.addWidget(video_widget)
+        splitter.addWidget(self.object_list)
+
+        # Set the initial stretch factors
+        splitter.setStretchFactor(0, 2)  # Left widget is twice as wide
+        splitter.setStretchFactor(1, 1)  # Right widget is normal width
+
+        h_layout = QHBoxLayout()
+        h_layout.addWidget(splitter)
+
+        layout.addLayout(h_layout)
+        self.setLayout(layout)
+
+        self.time_display = QLabel(self.elapsed_time, parent=self)
+        self.time_display.setStyleSheet("color: green; font-size: 18px;")
+        self.time_display.setGeometry(20, 30, 140, self.time_display.height())
 
     def create_video(self, video_dir):
         os.makedirs(video_dir, exist_ok=True)
