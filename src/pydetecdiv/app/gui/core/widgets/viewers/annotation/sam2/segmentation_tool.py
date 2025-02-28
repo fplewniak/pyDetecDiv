@@ -3,91 +3,142 @@ from pprint import pprint
 
 from PIL import Image as PILimage
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPen
+from PySide6.QtGui import QPen, QKeyEvent, QKeySequence
 from matplotlib import pyplot as plt
 
 import numpy as np
 import torch.cuda
 from PySide6.QtWidgets import (QGraphicsSceneMouseEvent, QMenu, QWidget, QGraphicsEllipseItem, QMenuBar, QVBoxLayout, QLabel,
-                               QHBoxLayout, QSplitter)
+                               QHBoxLayout, QSplitter, QGraphicsRectItem)
 from sam2.build_sam import build_sam2_video_predictor
 
 from pydetecdiv.app import PyDetecDiv, DrawingTools
-from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.treemodel import ObjectsTreeView, ObjectTreeModel
+from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.objectsmodel import ObjectsTreeView, ObjectTreeModel, Object
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer, VideoViewerPanel, VideoControlPanel, VideoScene
 
 
 class SegmentationScene(VideoScene):
     def __init__(self, parent: QWidget = None, **kwargs):
         super().__init__(parent, **kwargs)
-        self.object_count = 0
-        self.current_object = None
         self.default_pen = QPen(Qt.GlobalColor.green, 1)
         self.positive_pen = QPen(Qt.GlobalColor.green, 1)
         self.negative_pen = QPen(Qt.GlobalColor.red, 1)
         self.pen = self.default_pen
 
-    def contextMenuEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+        self.about_to_create_object = False
+        self.object_list = []
+        self.last_shape = None
+
+    @property
+    def current_object(self):
+        return self.player.current_object
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
         """
-        The context menu
+        Detect when a key is pressed and perform the corresponding action:
+        * QKeySequence.Delete: delete the selected item
 
-        :param event:
+        :param event: the key pressed event
+        :type event: QKeyEvent
         """
-        menu = QMenu()
-        segment_action = menu.addAction('Run segmentation')
-        segment_action.triggered.connect(
-                lambda _: self.player.segment_from_prompt(self.items()))
-        menu.exec(event.screenPos())
+        if event.matches(QKeySequence.StandardKey.Delete):
+            for r in self.selectedItems():
+                PyDetecDiv.app.graphic_item_deleted.emit(r.data(0))
+                self.removeItem(r)
+        elif event.key() == Qt.Key.Key_Insert:
+            current_object = Object(len(self.object_list))
+            self.object_list.append(current_object)
+            self.player.add_object(current_object)
 
-    def new_object(self):
-        self.player.prompt[f'{self.player.T}'] = {f'{self.object_count}': {'box': [], 'points': []}}
-        self.current_object = self.object_count
-        self.object_count += 1
-        pprint(self.player.prompt)
+    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent):
+        if event.button() == Qt.MouseButton.LeftButton:
+            match PyDetecDiv.current_drawing_tool, event.modifiers():
+                case DrawingTools.DrawRect, Qt.KeyboardModifier.NoModifier:
+                    self.current_object.set_bounding_box(self.player.T, self.last_shape)
 
-    def add_point(self, event: QGraphicsSceneMouseEvent) -> QGraphicsEllipseItem | None:
-        if self.current_object is not None:
-            label = 1
-            self.pen = self.positive_pen
-            if event.buttons() == Qt.MouseButton.LeftButton:
-                match PyDetecDiv.current_drawing_tool, event.modifiers():
-                    case DrawingTools.DrawPoint, Qt.KeyboardModifier.ControlModifier:
-                        self.pen = self.negative_pen
-                        label = 0
-            item = super().add_point(event)
-            item.setData(1, label)
-            self.pen = self.default_pen
-            self.player.prompt[f'{self.player.T}'][f'{self.current_object}']['points'].append([item.data(0), item])
-            pprint(self.player.prompt)
-            return item
-        return None
+    # def move_Item(self, event: QGraphicsSceneMouseEvent) -> QGraphicsRectItem | QGraphicsEllipseItem:
+    #     self.last_shape = super().move_Item(event)
+    #     return self.last_shape
 
-    def item_dict(self):
-        item_dict = {'boxes': {}, 'points': {}}
-        for item in sorted(self.regions(), key=lambda x: x.data(0)):
-            self._add_item_to_dict(item, item_dict['boxes'])
-        for item in sorted(self.points(), key=lambda x: x.data(0)):
-            self._add_item_to_dict(item, item_dict['points'])
-        return item_dict
+    def draw_Item(self, event: QGraphicsSceneMouseEvent) -> QGraphicsRectItem:
+        if self.player.current_object is not None:
+            self.last_shape = super().draw_Item(event)
+        else:
+            self.last_shape = None
+        return self.last_shape
 
-    def draw_Item(self, event):
-        item = super().draw_Item(event)
-        item.setData(0, f'bounding_box_{item.x():.1f}_{item.y():.1f}')
-        if f'{self.player.T}' not in self.player.prompt or self.current_object is None or item.data(0) not in \
-                self.player.prompt[f'{self.player.T}'][f'{self.current_object}']:
-            self.new_object()
-            self.player.prompt[f'{self.player.T}'][f'{self.current_object}']['box'] = [item.data(0), item]
-            pprint(self.player.prompt)
-        return item
+    def removeItem(self, item):
+        PyDetecDiv.app.graphic_item_deleted.emit(item.data(0))
+        super().removeItem(item)
 
-    def duplicate_selected_Item(self, event):
-        item = super().duplicate_selected_Item(event)
-        if f'{self.player.T}' not in self.player.prompt or self.current_object is None or item.data(0) not in \
-                self.player.prompt[f'{self.player.T}'][f'{self.current_object}']:
-            self.new_object()
-            self.player.prompt[f'{self.player.T}'][f'{self.current_object}']['box'] = [item.data(0), item]
-            pprint(self.player.prompt)
-        return item
+        # self.current_object.set_bounding_box(self.player.T, super().draw_Item(event))
+        # print(self.current_object.prompt(self.player.T).box)
+
+        # if self.about_to_create_object:
+        #     print('create object')
+        # self.about_to_create_object = False
+
+    # def contextMenuEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+    #     """
+    #     The context menu
+    #
+    #     :param event:
+    #     """
+    #     menu = QMenu()
+    #     segment_action = menu.addAction('Run segmentation')
+    #     segment_action.triggered.connect(
+    #             lambda _: self.player.segment_from_prompt(self.items()))
+    #     menu.exec(event.screenPos())
+    #
+    # def new_object(self):
+    #     self.player.prompt[f'{self.player.T}'] = {f'{self.object_count}': {'box': [], 'points': []}}
+    #     self.current_object = self.object_count
+    #     self.object_count += 1
+    #     pprint(self.player.prompt)
+    #
+    # def add_point(self, event: QGraphicsSceneMouseEvent) -> QGraphicsEllipseItem | None:
+    #     if self.current_object is not None:
+    #         label = 1
+    #         self.pen = self.positive_pen
+    #         if event.buttons() == Qt.MouseButton.LeftButton:
+    #             match PyDetecDiv.current_drawing_tool, event.modifiers():
+    #                 case DrawingTools.DrawPoint, Qt.KeyboardModifier.ControlModifier:
+    #                     self.pen = self.negative_pen
+    #                     label = 0
+    #         item = super().add_point(event)
+    #         item.setData(1, label)
+    #         self.pen = self.default_pen
+    #         self.player.prompt[f'{self.player.T}'][f'{self.current_object}']['points'].append([item.data(0), item])
+    #         pprint(self.player.prompt)
+    #         return item
+    #     return None
+    #
+    # def item_dict(self):
+    #     item_dict = {'boxes': {}, 'points': {}}
+    #     for item in sorted(self.regions(), key=lambda x: x.data(0)):
+    #         self._add_item_to_dict(item, item_dict['boxes'])
+    #     for item in sorted(self.points(), key=lambda x: x.data(0)):
+    #         self._add_item_to_dict(item, item_dict['points'])
+    #     return item_dict
+    #
+    # def draw_Item(self, event):
+    #     item = super().draw_Item(event)
+    #     item.setData(0, f'bounding_box_{item.x():.1f}_{item.y():.1f}')
+    #     if f'{self.player.T}' not in self.player.prompt or self.current_object is None or item.data(0) not in \
+    #             self.player.prompt[f'{self.player.T}'][f'{self.current_object}']:
+    #         self.new_object()
+    #         self.player.prompt[f'{self.player.T}'][f'{self.current_object}']['box'] = [item.data(0), item]
+    #         pprint(self.player.prompt)
+    #     return item
+    #
+    # def duplicate_selected_Item(self, event):
+    #     item = super().duplicate_selected_Item(event)
+    #     if f'{self.player.T}' not in self.player.prompt or self.current_object is None or item.data(0) not in \
+    #             self.player.prompt[f'{self.player.T}'][f'{self.current_object}']:
+    #         self.new_object()
+    #         self.player.prompt[f'{self.player.T}'][f'{self.current_object}']['box'] = [item.data(0), item]
+    #         pprint(self.player.prompt)
+    #     return item
 
 
 class SegmentationTool(VideoPlayer):
@@ -102,7 +153,22 @@ class SegmentationTool(VideoPlayer):
         self.viewport_rect = None
         self.prompt = {}
         self.inference_state = None
-        self.object_list = None
+        self.object_tree_view = None
+
+    @property
+    def model(self):
+        return self.object_tree_view.model()
+
+    @property
+    def current_object(self):
+        if self.object_tree_view.currentIndex().internalPointer() is not None:
+            return self.object_tree_view.currentIndex().internalPointer().data(1)
+        return None
+
+    def add_object(self, obj):
+        new_item = self.model.add_object(obj)
+        self.object_tree_view.select_item(new_item)
+        return new_item
 
     def setup(self, menubar: QMenuBar = None) -> None:
         """
@@ -123,14 +189,14 @@ class SegmentationTool(VideoPlayer):
         video_layout.addWidget(self.control_panel)
         video_widget.setLayout(video_layout)
 
-        self.object_list = ObjectsTreeView()
-        self.object_list.setModel(ObjectTreeModel())
-        self.object_list.setHeaderHidden(False)
-        self.object_list.expandAll()
+        self.object_tree_view = ObjectsTreeView()
+        self.object_tree_view.setModel(ObjectTreeModel())
+        self.object_tree_view.setHeaderHidden(False)
+        self.object_tree_view.expandAll()
 
         splitter = QSplitter()
         splitter.addWidget(video_widget)
-        splitter.addWidget(self.object_list)
+        splitter.addWidget(self.object_tree_view)
 
         # Set the initial stretch factors
         splitter.setStretchFactor(0, 2)  # Left widget is twice as wide
