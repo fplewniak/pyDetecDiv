@@ -43,8 +43,7 @@ class SegmentationScene(VideoScene):
         """
         if event.matches(QKeySequence.StandardKey.Delete):
             for r in self.selectedItems():
-                PyDetecDiv.app.graphic_item_deleted.emit(r.data(0))
-                self.removeItem(r)
+                self.delete_item(r)
         elif event.key() == Qt.Key.Key_Insert:
             current_object = Object(len(self.object_list))
             self.object_list.append(current_object)
@@ -66,17 +65,6 @@ class SegmentationScene(VideoScene):
         else:
             self.last_shape = None
         return self.last_shape
-
-    def removeItem(self, item):
-        PyDetecDiv.app.graphic_item_deleted.emit(item.data(0))
-        super().removeItem(item)
-
-        # self.current_object.set_bounding_box(self.player.T, super().draw_Item(event))
-        # print(self.current_object.prompt(self.player.T).box)
-
-        # if self.about_to_create_object:
-        #     print('create object')
-        # self.about_to_create_object = False
 
     # def contextMenuEvent(self, event: QGraphicsSceneMouseEvent) -> None:
     #     """

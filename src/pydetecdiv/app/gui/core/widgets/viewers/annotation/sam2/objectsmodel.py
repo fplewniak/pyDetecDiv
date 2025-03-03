@@ -12,7 +12,7 @@ class SAM2prompt:
 
     def set_bounding_box(self, box: QGraphicsRectItem):
         if self.box is not None:
-            box.scene().removeItem(self.box)
+            box.scene().delete_item(self.box)
         self.box = box
 
 

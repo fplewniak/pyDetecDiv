@@ -139,8 +139,7 @@ class Scene(QGraphicsScene):
         """
         if event.matches(QKeySequence.StandardKey.Delete):
             for r in self.selectedItems():
-                PyDetecDiv.app.graphic_item_deleted.emit(r.data(0))
-                self.removeItem(r)
+                self.delete_item(r)
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """
@@ -205,6 +204,10 @@ class Scene(QGraphicsScene):
                     self.viewer.zoom_set_value(self.viewer.scale_value / 1.2)
                 event.accept()
                 self.viewer.setTransformationAnchor(QGraphicsView.ViewportAnchor.NoAnchor)
+
+    def delete_item(self, r):
+        PyDetecDiv.app.graphic_item_deleted.emit(r.data(0))
+        self.removeItem(r)
 
     def unselect_items(self, event: QGraphicsSceneMouseEvent) -> None:
         """
