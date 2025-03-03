@@ -69,6 +69,9 @@ class TreeItem:
         except IndexError:
             return None
 
+    def set_data(self, column, data):
+        self.item_data[column] = data
+
     def parent(self):
         """
         Return the parent item of the node

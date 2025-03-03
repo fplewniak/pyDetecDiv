@@ -15,6 +15,7 @@ from sam2.build_sam import build_sam2_video_predictor
 from pydetecdiv.app import PyDetecDiv, DrawingTools
 from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.objectsmodel import ObjectsTreeView, ObjectTreeModel, Object
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer, VideoViewerPanel, VideoControlPanel, VideoScene
+from pydetecdiv.app.models.Trees import TreeItem
 
 
 class SegmentationScene(VideoScene):
@@ -53,7 +54,60 @@ class SegmentationScene(VideoScene):
         if event.button() == Qt.MouseButton.LeftButton:
             match PyDetecDiv.current_drawing_tool, event.modifiers():
                 case DrawingTools.DrawRect, Qt.KeyboardModifier.NoModifier:
-                    self.current_object.set_bounding_box(self.player.T, self.last_shape)
+                    if self.last_shape:
+                        self.player.model.set_bounding_box(self.player.T, self.current_object, self.last_shape)
+                        self.last_shape = None
+                case DrawingTools.DuplicateItem, Qt.KeyboardModifier.NoModifier:
+                    if self.selectedItems():
+                        self.player.model.set_bounding_box(self.player.T, self.current_object, self.duplicate_selected_Item(event))
+
+    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+        """
+        Detect when the left mouse button is pressed and perform the action corresponding to the currently checked
+        drawing tool
+
+        :param event: the mouse press event
+        :type event: QGraphicsSceneMouseEvent
+        """
+        if event.button() == Qt.MouseButton.LeftButton:
+            match PyDetecDiv.current_drawing_tool, event.modifiers():
+                case DrawingTools.Cursor, Qt.KeyboardModifier.NoModifier:
+                    self.select_Item(event)
+                case DrawingTools.DrawRect, Qt.KeyboardModifier.NoModifier:
+                    self.unselect_items(event)
+                case DrawingTools.DrawRect, Qt.KeyboardModifier.ControlModifier:
+                    self.select_Item(event)
+                case DrawingTools.DrawRect, Qt.KeyboardModifier.ShiftModifier:
+                    self.select_Item(event)
+                # case DrawingTools.DuplicateItem, Qt.KeyboardModifier.NoModifier:
+                #     self.duplicate_selected_Item(event)
+                case DrawingTools.DrawPoint, Qt.KeyboardModifier.NoModifier:
+                    self.add_point(event)
+                case DrawingTools.DrawPoint, Qt.KeyboardModifier.ControlModifier:
+                    self.add_point(event)
+
+    def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+        """
+        Detect mouse movement and apply the appropriate method according to the currently checked drawing tool and key
+        modifier
+
+        :param event: the mouse move event
+        :type event: QGraphicsSceneMouseEvent
+        """
+        if event.buttons() == Qt.MouseButton.LeftButton:
+            match PyDetecDiv.current_drawing_tool, event.modifiers():
+                case DrawingTools.Cursor, Qt.KeyboardModifier.NoModifier:
+                    self.move_Item(event)
+                case DrawingTools.Cursor, Qt.KeyboardModifier.ControlModifier:
+                    self.draw_Item(event)
+                case DrawingTools.DrawRect, Qt.KeyboardModifier.NoModifier:
+                    self.draw_Item(event)
+                case DrawingTools.DrawRect, Qt.KeyboardModifier.ControlModifier:
+                    self.move_Item(event)
+                case DrawingTools.DrawRect, Qt.KeyboardModifier.ShiftModifier:
+                    self.draw_Item(event)
+                case DrawingTools.DuplicateItem, Qt.KeyboardModifier.NoModifier:
+                    self.move_Item(event)
 
     # def move_Item(self, event: QGraphicsSceneMouseEvent) -> QGraphicsRectItem | QGraphicsEllipseItem:
     #     self.last_shape = super().move_Item(event)
@@ -65,6 +119,12 @@ class SegmentationScene(VideoScene):
         else:
             self.last_shape = None
         return self.last_shape
+
+    def duplicate_selected_Item(self, event) -> QGraphicsRectItem | None:
+        if self.player.current_object is not None:
+            item = super().duplicate_selected_Item(event)
+            return item
+        return None
 
     # def contextMenuEvent(self, event: QGraphicsSceneMouseEvent) -> None:
     #     """
@@ -119,14 +179,6 @@ class SegmentationScene(VideoScene):
     #         pprint(self.player.prompt)
     #     return item
     #
-    # def duplicate_selected_Item(self, event):
-    #     item = super().duplicate_selected_Item(event)
-    #     if f'{self.player.T}' not in self.player.prompt or self.current_object is None or item.data(0) not in \
-    #             self.player.prompt[f'{self.player.T}'][f'{self.current_object}']:
-    #         self.new_object()
-    #         self.player.prompt[f'{self.player.T}'][f'{self.current_object}']['box'] = [item.data(0), item]
-    #         pprint(self.player.prompt)
-    #     return item
 
 
 class SegmentationTool(VideoPlayer):
