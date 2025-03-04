@@ -66,7 +66,7 @@ class SAM2prompt:
         self.box.change_box(box)
         return self.box
 
-    def __dict__(self):
+    def to_dict(self):
         return {
             self.frame: {
                 'box'   : self.box.coords,
@@ -90,10 +90,10 @@ class Object:
             self._prompt.append(SAM2prompt(frame))
         return self.prompt(frame).set_bounding_box(box)
 
-    def __dict__(self):
+    def to_dict(self):
         return {
             self.id_: [
-                prompt.__dict__() for prompt in self._prompt
+                prompt.to_dict() for prompt in self._prompt
                 ]
             }
 
@@ -135,12 +135,12 @@ class ObjectTreeModel(TreeModel):
             del tree_item
             self.layoutChanged.emit()
 
-    # def delete_item(self, item: QGraphicsRectItem | QGraphicsEllipseItem):
-    #     tree_item = next((tree_item for tree_item in self.all_items if tree_item.data(1) == item), None)
-    #     if tree_item:
-    #         tree_item.parent().data(1).box.name = None
-    #         tree_item.parent().data(1).box.rect_item = None
-    #         tree_item.parent().child_items.remove(tree_item)
+            # def delete_item(self, item: QGraphicsRectItem | QGraphicsEllipseItem):
+            #     tree_item = next((tree_item for tree_item in self.all_items if tree_item.data(1) == item), None)
+            #     if tree_item:
+            #         tree_item.parent().data(1).box.name = None
+            #         tree_item.parent().data(1).box.rect_item = None
+            #         tree_item.parent().child_items.remove(tree_item)
 
             # del tree_item
             self.layoutChanged.emit()
@@ -150,5 +150,14 @@ class ObjectTreeModel(TreeModel):
 
 
 class ObjectsTreeView(QTreeView):
+    # def __init__(self, /):
+    #     super().__init__()
+        # self.clicked.connect(lambda x: self.select_item(x.internalPointer()))
+
     def select_item(self, item):
+        # print('Selecting an object')
+        # obj = item.data(1)
+        # if isinstance(obj, QGraphicsRectItem):
+        #     print(f'selecting a bounding box {obj}')
+        #     obj.setSelected(True)
         self.setCurrentIndex(self.model().index(item.row(), 0))

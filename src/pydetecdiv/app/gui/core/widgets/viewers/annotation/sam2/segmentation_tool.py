@@ -50,26 +50,30 @@ class SegmentationScene(VideoScene):
             self.object_list.append(current_object)
             self.player.add_object(current_object)
 
+    def select_from_tree_view(self, item):
+        _ = [r.setSelected(False) for r in self.selectedItems()]
+        item.setSelected(True)
+
     def delete_item(self, r):
         if isinstance(r, QGraphicsRectItem):
-            print('Before removing bounding box', self.player.current_object.__dict__())
+            print('Before removing bounding box', self.player.current_object.to_dict())
+            self.player.object_tree_view.select_item(self.player.current_object.tree_item)
             self.player.model.delete_bounding_box(self.player.T, r)
             print(f'removing item {r}')
             self.removeItem(r)
-            print('After removal of bounding box', self.player.current_object.__dict__())
+            print('After removal of bounding box', self.player.current_object.to_dict())
             print('box name', self.player.current_object.prompt(self.player.T).box.name)
-
 
     def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:
             match PyDetecDiv.current_drawing_tool, event.modifiers():
                 case DrawingTools.DrawRect, Qt.KeyboardModifier.NoModifier:
                     if self.last_shape:
-                        print('Before setting a new bounding box', self.player.current_object.__dict__())
+                        print('Before setting a new bounding box', self.player.current_object.to_dict())
                         self.player.model.set_bounding_box(self.player.T, self.current_object, self.last_shape)
                         self.player.object_tree_view.expandAll()
                         self.last_shape = None
-                        print('After having set a new bounding box', self.player.current_object.__dict__())
+                        print('After having set a new bounding box', self.player.current_object.to_dict())
                 case DrawingTools.DuplicateItem, Qt.KeyboardModifier.NoModifier:
                     if self.selectedItems():
                         self.player.model.set_bounding_box(self.player.T, self.current_object, self.duplicate_selected_Item(event))
@@ -215,8 +219,13 @@ class SegmentationTool(VideoPlayer):
 
     @property
     def current_object(self):
-        if self.object_tree_view.currentIndex().internalPointer() is not None:
-            return self.object_tree_view.currentIndex().internalPointer().data(1)
+        pointer = self.object_tree_view.currentIndex().internalPointer()
+        if pointer is not None:
+            obj = pointer.data(1)
+            if isinstance(obj, Object):
+                return obj
+            if isinstance(obj, QGraphicsRectItem):
+                return pointer.parent().data(1)
         return None
 
     def add_object(self, obj):
@@ -247,6 +256,7 @@ class SegmentationTool(VideoPlayer):
         self.object_tree_view.setModel(ObjectTreeModel())
         self.object_tree_view.setHeaderHidden(False)
         self.object_tree_view.expandAll()
+        self.object_tree_view.clicked.connect(self.select_from_tree_view)
 
         splitter = QSplitter()
         splitter.addWidget(video_widget)
@@ -265,6 +275,11 @@ class SegmentationTool(VideoPlayer):
         self.time_display = QLabel(self.elapsed_time, parent=self)
         self.time_display.setStyleSheet("color: green; font-size: 18px;")
         self.time_display.setGeometry(20, 30, 140, self.time_display.height())
+
+    def select_from_tree_view(self, index):
+        obj = index.internalPointer().data(1)
+        if isinstance(obj, QGraphicsRectItem):
+            self.scene.select_from_tree_view(obj)
 
     def create_video(self, video_dir):
         os.makedirs(video_dir, exist_ok=True)
