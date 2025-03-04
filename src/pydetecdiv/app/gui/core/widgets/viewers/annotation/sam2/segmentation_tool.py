@@ -280,6 +280,9 @@ class SegmentationTool(VideoPlayer):
         obj = index.internalPointer().data(1)
         if isinstance(obj, QGraphicsRectItem):
             self.scene.select_from_tree_view(obj)
+        elif isinstance(obj, Object):
+            if obj.prompt(self.T) is not None:
+                self.scene.select_from_tree_view(obj.prompt(self.T).box.rect_item)
 
     def create_video(self, video_dir):
         os.makedirs(video_dir, exist_ok=True)
