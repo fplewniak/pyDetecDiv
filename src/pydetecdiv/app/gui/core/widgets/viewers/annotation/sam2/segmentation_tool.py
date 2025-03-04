@@ -50,16 +50,30 @@ class SegmentationScene(VideoScene):
             self.object_list.append(current_object)
             self.player.add_object(current_object)
 
+    def delete_item(self, r):
+        if isinstance(r, QGraphicsRectItem):
+            print('Before removing bounding box', self.player.current_object.__dict__())
+            self.player.model.delete_bounding_box(self.player.T, r)
+            print(f'removing item {r}')
+            self.removeItem(r)
+            print('After removal of bounding box', self.player.current_object.__dict__())
+            print('box name', self.player.current_object.prompt(self.player.T).box.name)
+
+
     def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:
             match PyDetecDiv.current_drawing_tool, event.modifiers():
                 case DrawingTools.DrawRect, Qt.KeyboardModifier.NoModifier:
                     if self.last_shape:
+                        print('Before setting a new bounding box', self.player.current_object.__dict__())
                         self.player.model.set_bounding_box(self.player.T, self.current_object, self.last_shape)
+                        self.player.object_tree_view.expandAll()
                         self.last_shape = None
+                        print('After having set a new bounding box', self.player.current_object.__dict__())
                 case DrawingTools.DuplicateItem, Qt.KeyboardModifier.NoModifier:
                     if self.selectedItems():
                         self.player.model.set_bounding_box(self.player.T, self.current_object, self.duplicate_selected_Item(event))
+                        self.player.object_tree_view.expandAll()
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """
