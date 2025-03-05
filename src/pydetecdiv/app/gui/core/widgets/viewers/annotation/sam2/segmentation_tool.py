@@ -52,7 +52,8 @@ class SegmentationScene(VideoScene):
 
     def select_from_tree_view(self, item):
         _ = [r.setSelected(False) for r in self.selectedItems()]
-        item.setSelected(True)
+        if item is not None:
+            item.setSelected(True)
 
     def delete_item(self, r):
         if isinstance(r, QGraphicsRectItem):
@@ -281,7 +282,7 @@ class SegmentationTool(VideoPlayer):
         if isinstance(obj, QGraphicsRectItem):
             self.scene.select_from_tree_view(obj)
         elif isinstance(obj, Object):
-            if obj.prompt(self.T) is not None:
+            if obj.prompt(self.T) is not None and obj.prompt(self.T).box is not None:
                 self.scene.select_from_tree_view(obj.prompt(self.T).box.rect_item)
 
     def create_video(self, video_dir):
