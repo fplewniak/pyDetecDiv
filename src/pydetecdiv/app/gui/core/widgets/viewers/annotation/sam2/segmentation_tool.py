@@ -13,7 +13,8 @@ from PySide6.QtWidgets import (QGraphicsSceneMouseEvent, QMenu, QWidget, QGraphi
 from sam2.build_sam import build_sam2_video_predictor
 
 from pydetecdiv.app import PyDetecDiv, DrawingTools
-from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.objectsmodel import ObjectsTreeView, ObjectTreeModel, Object
+from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.objectsmodel import (ObjectsTreeView, ObjectTreeModel, Object,
+                                                                                  PromptModel)
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer, VideoViewerPanel, VideoControlPanel, VideoScene
 from pydetecdiv.app.models.Trees import TreeItem
 
@@ -49,6 +50,7 @@ class SegmentationScene(VideoScene):
             current_object = Object(len(self.object_list))
             self.object_list.append(current_object)
             self.player.add_object(current_object)
+            # self.player.prompt_model.add_object(current_object)
 
     def select_from_tree_view(self, item):
         _ = [r.setSelected(False) for r in self.selectedItems()]
@@ -57,6 +59,7 @@ class SegmentationScene(VideoScene):
 
     def delete_item(self, r):
         if isinstance(r, QGraphicsRectItem):
+            # self.player.prompt_model.remove_bounding_box(self.current_object, self.player.T)
             print('Before removing bounding box', self.player.current_object.to_dict())
             self.player.object_tree_view.select_item(self.player.current_object.tree_item)
             self.player.model.delete_bounding_box(self.player.T, r)
@@ -70,6 +73,7 @@ class SegmentationScene(VideoScene):
             match PyDetecDiv.current_drawing_tool, event.modifiers():
                 case DrawingTools.DrawRect, Qt.KeyboardModifier.NoModifier:
                     if self.last_shape:
+                        # self.player.prompt_model.add_bounding_box(self.current_object, self.player.T, self.last_shape)
                         print('Before setting a new bounding box', self.player.current_object.to_dict())
                         self.player.model.set_bounding_box(self.player.T, self.current_object, self.last_shape)
                         self.player.object_tree_view.expandAll()
@@ -77,7 +81,9 @@ class SegmentationScene(VideoScene):
                         print('After having set a new bounding box', self.player.current_object.to_dict())
                 case DrawingTools.DuplicateItem, Qt.KeyboardModifier.NoModifier:
                     if self.selectedItems():
-                        self.player.model.set_bounding_box(self.player.T, self.current_object, self.duplicate_selected_Item(event))
+                        rect_item = self.duplicate_selected_Item(event)
+                        # self.player.prompt_model.add_bounding_box(self.current_object, self.player.T, rect_item)
+                        self.player.model.set_bounding_box(self.player.T, self.current_object, rect_item)
                         self.player.object_tree_view.expandAll()
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
@@ -210,7 +216,7 @@ class SegmentationTool(VideoPlayer):
         self.region = region_name
         self.run = None
         self.viewport_rect = None
-        self.prompt = {}
+        self.prompt_model = PromptModel()
         self.inference_state = None
         self.object_tree_view = None
 

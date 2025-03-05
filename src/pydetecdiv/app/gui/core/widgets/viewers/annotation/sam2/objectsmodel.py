@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from PySide6.QtWidgets import QTreeView, QGraphicsRectItem, QGraphicsEllipseItem
 
 from pydetecdiv.app.models.Trees import TreeModel, TreeItem
@@ -41,13 +43,17 @@ class BoundingBox:
 
     def change_box(self, box):
         self.rect_item = box
-        self.name = box.data(0)
-        print(f'When changing box, {self.item=}')
-        if self.item is None:
-            self.item = TreeItem([self.name, self.rect_item])
+        if box is None:
+            self.name = None
+            self.item = None
         else:
-            self.item.set_data(0, self.name)
-            self.item.set_data(1, self.rect_item)
+            self.name = box.data(0)
+            print(f'When changing box, {self.item=}')
+            if self.item is None:
+                self.item = TreeItem([self.name, self.rect_item])
+            else:
+                self.item.set_data(0, self.name)
+                self.item.set_data(1, self.rect_item)
 
     def __repr__(self):
         return f'{self.name=}, {self.rect_item=}, {self.item=}'
@@ -61,8 +67,8 @@ class SAM2prompt:
         self.labels = []
 
     def set_bounding_box(self, box: QGraphicsRectItem) -> BoundingBox:
-        if self.box.name is not None:
-            box.scene().removeItem(self.box.rect_item)
+        if self.box.rect_item is not None:
+            self.box.rect_item.scene().removeItem(self.box.rect_item)
         self.box.change_box(box)
         return self.box
 
@@ -85,7 +91,7 @@ class Object:
     def prompt(self, frame: int) -> SAM2prompt:
         return next((prompt for prompt in self._prompt if prompt.frame == frame), None)
 
-    def set_bounding_box(self, frame: int, box: QGraphicsRectItem) -> BoundingBox:
+    def set_bounding_box(self, frame: int, box: QGraphicsRectItem | None) -> BoundingBox:
         if self.prompt(frame) is None:
             self._prompt.append(SAM2prompt(frame))
         return self.prompt(frame).set_bounding_box(box)
@@ -97,6 +103,36 @@ class Object:
                 ]
             }
 
+class PromptModel:
+    def __init__(self):
+        self.objects = []
+
+    def add_object(self, obj: Object):
+        self.objects.append(obj)
+        self.show()
+
+    def remove_object(self, obj: Object):
+        self.objects.remove(obj)
+        self.show()
+
+    def add_bounding_box(self, obj: Object, frame: int, box: QGraphicsRectItem):
+        obj.set_bounding_box(frame, box)
+        self.show()
+
+    def remove_bounding_box(self, obj: Object, frame: int):
+
+        obj.set_bounding_box(frame, None)
+        self.show()
+
+    def box2obj(self, box: QGraphicsRectItem):
+        for obj in self.objects:
+            if box in [p.box.rect_item for p in obj._prompt]:
+                return obj
+        return None
+
+    def show(self):
+        for obj in self.objects:
+            pprint(obj.__dict__)
 
 class ObjectTreeModel(TreeModel):
     def __init__(self):
