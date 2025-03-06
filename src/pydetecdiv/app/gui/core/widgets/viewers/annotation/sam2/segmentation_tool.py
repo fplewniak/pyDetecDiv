@@ -13,8 +13,8 @@ from PySide6.QtWidgets import (QGraphicsSceneMouseEvent, QMenu, QWidget, QGraphi
 from sam2.build_sam import build_sam2_video_predictor
 
 from pydetecdiv.app import PyDetecDiv, DrawingTools
-from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.objectsmodel import (ObjectsTreeView, ObjectTreeModel, Object,
-                                                                                  PromptModel)
+from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.objectsmodel import (ObjectsTreeView, Object, PromptProxyModel,
+                                                                                  PromptSourceModel)
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer, VideoViewerPanel, VideoControlPanel, VideoScene
 from pydetecdiv.app.models.Trees import TreeItem
 
@@ -216,13 +216,15 @@ class SegmentationTool(VideoPlayer):
         self.region = region_name
         self.run = None
         self.viewport_rect = None
-        self.prompt_model = PromptModel()
+        self.model = PromptSourceModel()
+        self.proxy_model = PromptProxyModel()
+        # self.prompt_model = PromptModel()
         self.inference_state = None
         self.object_tree_view = None
 
-    @property
-    def model(self):
-        return self.object_tree_view.model()
+    # @property
+    # def model(self):
+    #     return self.object_tree_view.source_model
 
     @property
     def current_object(self):
@@ -260,8 +262,10 @@ class SegmentationTool(VideoPlayer):
         video_widget.setLayout(video_layout)
 
         self.object_tree_view = ObjectsTreeView()
-        self.object_tree_view.setModel(ObjectTreeModel())
+        self.object_tree_view.setModel(self.proxy_model)
+        self.object_tree_view.setSourceModel(self.model)
         self.object_tree_view.setHeaderHidden(False)
+        self.object_tree_view.setColumnHidden(1, True)
         self.object_tree_view.expandAll()
         self.object_tree_view.clicked.connect(self.select_from_tree_view)
 
@@ -284,12 +288,13 @@ class SegmentationTool(VideoPlayer):
         self.time_display.setGeometry(20, 30, 140, self.time_display.height())
 
     def select_from_tree_view(self, index):
-        obj = index.internalPointer().data(1)
-        if isinstance(obj, QGraphicsRectItem):
-            self.scene.select_from_tree_view(obj)
-        elif isinstance(obj, Object):
-            if obj.prompt(self.T) is not None and obj.prompt(self.T).box is not None:
-                self.scene.select_from_tree_view(obj.prompt(self.T).box.rect_item)
+        ...
+        # obj = index.internalPointer().data(1)
+        # if isinstance(obj, QGraphicsRectItem):
+        #     self.scene.select_from_tree_view(obj)
+        # elif isinstance(obj, Object):
+        #     if obj.prompt(self.T) is not None and obj.prompt(self.T).box is not None:
+        #         self.scene.select_from_tree_view(obj.prompt(self.T).box.rect_item)
 
     def create_video(self, video_dir):
         os.makedirs(video_dir, exist_ok=True)

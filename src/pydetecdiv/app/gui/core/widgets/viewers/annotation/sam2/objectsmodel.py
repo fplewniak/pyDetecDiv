@@ -1,15 +1,16 @@
 from pprint import pprint
 
+from PySide6.QtCore import QSortFilterProxyModel, Qt
+from PySide6.QtGui import QStandardItemModel, QStandardItem
 from PySide6.QtWidgets import QTreeView, QGraphicsRectItem, QGraphicsEllipseItem
 
-from pydetecdiv.app.models.Trees import TreeModel, TreeItem
+ObjectReferenceRole = Qt.UserRole + 1
 
 
 class BoundingBox:
-    def __init__(self, name: str = None, box: QGraphicsRectItem = None, item: TreeItem = None):
+    def __init__(self, name: str = None, box: QGraphicsRectItem = None):
         self.name = name
         self.rect_item = box
-        self.item = item
 
     @property
     def x(self):
@@ -45,83 +46,78 @@ class BoundingBox:
         self.rect_item = box
         if box is None:
             self.name = None
-            self.item = None
         else:
             self.name = box.data(0)
-            print(f'When changing box, {self.item=}')
-            if self.item is None:
-                self.item = TreeItem([self.name, self.rect_item])
-            else:
-                self.item.set_data(0, self.name)
-                self.item.set_data(1, self.rect_item)
 
     def __repr__(self):
-        return f'{self.name=}, {self.rect_item=}, {self.item=}'
+        return f'{self.name=}, {self.rect_item=}'
 
 
-class SAM2prompt:
-    def __init__(self, frame: int):
-        self.frame = frame
-        self.box = BoundingBox()
-        self.points = []
-        self.labels = []
+class Point:
+    def __init__(self, name: str = None, point: QGraphicsEllipseItem = None, label: int = 1):
+        self.name = name
+        self.point_item = point
+        self.label = label
 
-    def set_bounding_box(self, box: QGraphicsRectItem) -> BoundingBox:
-        if self.box.rect_item is not None:
-            self.box.rect_item.scene().removeItem(self.box.rect_item)
-        self.box.change_box(box)
-        return self.box
+    @property
+    def x(self):
+        if self.point_item is not None:
+            return self.point_item.pos().x()
+        return None
 
-    def to_dict(self):
-        return {
-            self.frame: {
-                'box'   : self.box.coords,
-                'points': [[p.dot_item.pos().x(), p.dot_item.pos().y(), ] for p in self.points],
-                'labels': self.labels,
-                }
-            }
+    @property
+    def y(self):
+        if self.point_item is not None:
+            return self.point_item.pos().y()
+        return None
+
+    @property
+    def coords(self):
+        if self.x is None:
+            return []
+        return [self.x, self.y]
+
+    def change_point(self, point):
+        self.point_item = point
+        if point is None:
+            self.name = None
+        else:
+            self.name = point.data(0)
+
+    def __repr__(self):
+        return f'{self.name=}, {self.point_item=}'
 
 
 class Object:
     def __init__(self, id_: int):
         self.id_ = id_
-        self._prompt: list[SAM2prompt] = []
-        self.tree_item = TreeItem([id_, self])
+        self.prompt = None
 
-    def prompt(self, frame: int) -> SAM2prompt:
-        return next((prompt for prompt in self._prompt if prompt.frame == frame), None)
 
-    def set_bounding_box(self, frame: int, box: QGraphicsRectItem | None) -> BoundingBox:
-        if self.prompt(frame) is None:
-            self._prompt.append(SAM2prompt(frame))
-        return self.prompt(frame).set_bounding_box(box)
-
-    def to_dict(self):
-        return {
-            self.id_: [
-                prompt.to_dict() for prompt in self._prompt
-                ]
-            }
-
-class PromptModel:
+class PromptSourceModel(QStandardItemModel):
     def __init__(self):
+        super().__init__()
+        self.setHorizontalHeaderLabels(['object', '', 'coordinates', 'label'])
+        self.root_item = self.invisibleRootItem()
         self.objects = []
 
     def add_object(self, obj: Object):
-        self.objects.append(obj)
+        object_item = QStandardItem(f'{obj.id_}')
+        object_item.setData(obj, ObjectReferenceRole)
+        self.root_item.appendRow(object_item)
         self.show()
+        return object_item
 
     def remove_object(self, obj: Object):
         self.objects.remove(obj)
         self.show()
 
     def add_bounding_box(self, obj: Object, frame: int, box: QGraphicsRectItem):
-        obj.set_bounding_box(frame, box)
+        # obj.set_bounding_box(frame, box)
         self.show()
 
     def remove_bounding_box(self, obj: Object, frame: int):
-
-        obj.set_bounding_box(frame, None)
+        # obj.set_bounding_box(frame, None)
         self.show()
 
     def box2obj(self, box: QGraphicsRectItem):
@@ -131,69 +127,64 @@ class PromptModel:
         return None
 
     def show(self):
-        for obj in self.objects:
-            pprint(obj.__dict__)
+        for obj in [(self.root_item.child(r).model().index(r, 0, self.root_item.index()).data(),
+                     self.root_item.child(r).model().index(r, 1, self.root_item.index()).data(),
+                     self.root_item.child(r).model().index(r, 2, self.root_item.index()).data(),
+                     self.root_item.child(r).model().index(r, 3, self.root_item.index()).data(),
+                     ) for r in
+                    range(self.root_item.rowCount())]:
+            pprint(f'{obj=}')
 
-class ObjectTreeModel(TreeModel):
+
+class PromptProxyModel(QSortFilterProxyModel):
     def __init__(self):
-        super().__init__(['Objects to segment'])
-        self.all_items = set()
+        super().__init__()
+        self.frame = None
 
-    def add_object(self, obj: Object):
-        return self.add_item(self.root_item, obj.tree_item)
+    def set_frame(self, frame):
+        self.frame = str(frame)  # Ensure set_number is a string
+        self.invalidateFilter()  # Update the filter when the set number changes
 
-    def add_item(self, parent_item: TreeItem, new_item: TreeItem):
-        if new_item not in self.all_items:
-            parent_item.append_child(new_item)
-            self.all_items.add(new_item)
-        self.layoutChanged.emit()
-        return new_item
+    def filterAcceptsRow(self, source_row, source_parent):
+        if self.frame is None:
+            return True
 
-    def set_bounding_box(self, frame: int, obj: Object, box: QGraphicsRectItem):
-        bounding_box = obj.set_bounding_box(frame, box)
-        self.add_item(obj.tree_item, bounding_box.item)
-        self.layoutChanged.emit()
+        # Get the index of the current row in the set number column
+        index = self.sourceModel().index(source_row, 1, source_parent)
+        # Get the set number
+        frame = self.sourceModel().data(index, Qt.DisplayRole)
 
-    def reset_model(self, scene):
-        ...
-
-    def update_model(self, scene):
-        ...
-
-    def delete_bounding_box(self, frame: int, box: QGraphicsRectItem) -> None:
-        tree_item = next((tree_item for tree_item in self.all_items if tree_item.data(1) == box), None)
-        if tree_item:
-            tree_item.parent().data(1).prompt(frame).box.name = None
-            tree_item.parent().data(1).prompt(frame).box.rect_item = None
-            tree_item.parent().data(1).prompt(frame).box.item = None
-            self.all_items.remove(tree_item)
-            tree_item.parent().child_items.remove(tree_item)
-            del tree_item
-            self.layoutChanged.emit()
-
-            # def delete_item(self, item: QGraphicsRectItem | QGraphicsEllipseItem):
-            #     tree_item = next((tree_item for tree_item in self.all_items if tree_item.data(1) == item), None)
-            #     if tree_item:
-            #         tree_item.parent().data(1).box.name = None
-            #         tree_item.parent().data(1).box.rect_item = None
-            #         tree_item.parent().child_items.remove(tree_item)
-
-            # del tree_item
-            self.layoutChanged.emit()
-
-    def delete_object(self, obj):
-        ...
+        # Check if the item belongs to the desired set
+        return frame == self.frame
 
 
 class ObjectsTreeView(QTreeView):
-    # def __init__(self, /):
-    #     super().__init__()
-        # self.clicked.connect(lambda x: self.select_item(x.internalPointer()))
+    def __init__(self):
+        super().__init__()
+        self.source_model = None
+        # self.setColumnHidden(1, True)
+
+        # self.source_model = PromptSourceModel()
+        #
+        # # Add root item to the model
+        # root = self.source_model.invisibleRootItem()
+        #
+        # # Create a CustomProxyModel to filter grandchildren
+        # self.proxy_model = PromptProxyModel()
+        # self.setModel(self.proxy_model)
+        #
+        # self.proxy_model.setRecursiveFilteringEnabled(True)
+        #
+        # # Hide the set number column
+        # self.setColumnHidden(1, True)
+        # self.setHeaderHidden(False)
+        # self.expandAll()
+
+    # self.clicked.connect(lambda x: self.select_item(x.internalPointer()))
+
+    def setSourceModel(self, model: QStandardItemModel):
+        self.model().setSourceModel(model)
+        self.source_model = model
 
     def select_item(self, item):
-        # print('Selecting an object')
-        # obj = item.data(1)
-        # if isinstance(obj, QGraphicsRectItem):
-        #     print(f'selecting a bounding box {obj}')
-        #     obj.setSelected(True)
         self.setCurrentIndex(self.model().index(item.row(), 0))
