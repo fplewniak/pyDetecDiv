@@ -60,15 +60,13 @@ class SegmentationScene(VideoScene):
 
     def delete_item(self, r):
         if isinstance(r, QGraphicsRectItem):
-            print('Removing a bounding box')
-            # self.player.prompt_model.remove_bounding_box(self.current_object, self.player.T)
-            # print('Before removing bounding box', self.player.current_object.to_dict())
+            print('Removing bounding box for current object, but should actually select the object corresponding to the selected'
+                  'QGraphicsItem')
+            self.player.source_model.remove_bounding_box(self.current_object, self.player.T)
             # self.player.object_tree_view.select_item(self.player.current_object.tree_item)
             # self.player.source_model.delete_bounding_box(self.player.T, r)
-            print(f'removing item {r}')
-            self.removeItem(r)
-            # print('After removal of bounding box', self.player.current_object.to_dict())
-            # print('box name', self.player.current_object.prompt(self.player.T).box.name)
+            # print(f'removing item {r}')
+            # self.removeItem(r)
 
     def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:

@@ -176,8 +176,9 @@ class PromptSourceModel(QStandardItemModel):
                     None)
 
     def remove_bounding_box(self, obj: Object, frame: int):
-        # obj.set_bounding_box(frame, None)
-        self.show()
+        bounding_box = self.get_bounding_box(obj, frame)
+        bounding_box.rect_item.scene().removeItem(bounding_box.rect_item)
+        self.object_item(obj).removeRow(self.get_bounding_box_row(obj, frame))
 
     def box2obj(self, box: QGraphicsRectItem):
         for obj in self.objects:
