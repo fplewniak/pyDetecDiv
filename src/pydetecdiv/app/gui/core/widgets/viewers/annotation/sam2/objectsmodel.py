@@ -1,8 +1,8 @@
 from pprint import pprint
 
-from PySide6.QtCore import QSortFilterProxyModel, Qt
+from PySide6.QtCore import QSortFilterProxyModel, Qt, QModelIndex
 from PySide6.QtGui import QStandardItemModel, QStandardItem
-from PySide6.QtWidgets import QTreeView, QGraphicsRectItem, QGraphicsEllipseItem
+from PySide6.QtWidgets import QTreeView, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsItem
 
 ObjectReferenceRole = Qt.UserRole + 1
 
@@ -91,21 +91,55 @@ class Point:
 class Object:
     def __init__(self, id_: int):
         self.id_ = id_
-        self.prompt = None
+
+
+class ModelItem(QStandardItem):
+    def __init__(self, data, obj: Object | BoundingBox | None):
+        super().__init__(data)
+        self.setData(obj, ObjectReferenceRole)
+
+    @property
+    def object(self):
+        obj = self.data(ObjectReferenceRole)
+        if isinstance(obj, QGraphicsRectItem):
+            obj = obj.parentItem().data(ObjectReferenceRole)
+        return obj
+
+    @property
+    def graphics_item(self):
+        obj = self.data(ObjectReferenceRole)
+        if isinstance(obj, QGraphicsItem):
+            return obj
+        return None
+
+    @property
+    def name(self):
+        return self.data(0)
+
+    def children(self, frame: int = None):
+        if frame is None:
+            return [self.child(row) for row in range(self.rowCount())]
+        return [self.child(row) for row in range(self.rowCount()) if self.child(row, 1).data(0) == str(frame)]
 
 
 class PromptSourceModel(QStandardItemModel):
     def __init__(self):
         super().__init__()
-        self.setHorizontalHeaderLabels(['object', '', 'coordinates', 'label'])
+        # self.setHorizontalHeaderLabels(['object', '', 'coordinates', 'label'])
+        self.setHorizontalHeaderLabels(['object', '', 'x', 'y', 'width', 'height', 'label'])
         self.root_item = self.invisibleRootItem()
         self.objects = []
 
+    def object_item(self, obj: Object):
+        return next((model_item for model_item in [self.root_item.child(row) for row in range(self.root_item.rowCount())] if
+                     model_item.object == obj), None)
+
+    def has_bounding_box(self, obj: Object, frame: int):
+        return any([isinstance(child.object, BoundingBox) for child in self.object_item(obj).children(frame)])
+
     def add_object(self, obj: Object):
-        object_item = QStandardItem(f'{obj.id_}')
-        object_item.setData(obj, ObjectReferenceRole)
+        object_item = ModelItem(f'{obj.id_}', obj)
         self.root_item.appendRow(object_item)
-        self.show()
         return object_item
 
     def remove_object(self, obj: Object):
@@ -113,8 +147,33 @@ class PromptSourceModel(QStandardItemModel):
         self.show()
 
     def add_bounding_box(self, obj: Object, frame: int, box: QGraphicsRectItem):
-        # obj.set_bounding_box(frame, box)
-        self.show()
+        row = self.create_bounding_box_row(frame, box)
+        self.object_item(obj).appendRow(row)
+
+    def create_bounding_box_row(self, frame: int, box: QGraphicsRectItem):
+        bounding_box = BoundingBox(name=box.data(0), box=box)
+        box_item = ModelItem(bounding_box.name, bounding_box)
+        frame_item = QStandardItem(str(frame))
+        x_item = QStandardItem(f'{bounding_box.x}')
+        y_item = QStandardItem(f'{bounding_box.y}')
+        width_item = QStandardItem(f'{bounding_box.width}')
+        height_item = QStandardItem(f'{bounding_box.height}')
+        return [box_item, frame_item, x_item, y_item, width_item, height_item]
+
+    def change_bounding_box(self, obj: Object, frame: int, box: QGraphicsRectItem):
+        bounding_box = self.get_bounding_box(obj, frame)
+        bounding_box.rect_item.scene().removeItem(bounding_box.rect_item)
+        row = self.create_bounding_box_row(frame, box)
+        for column, item in enumerate(row):
+            self.object_item(obj).setChild(self.get_bounding_box_row(obj, frame), column, row[column])
+
+    def get_bounding_box(self, obj: Object, frame: int):
+        return next((child.object for child in self.object_item(obj).children(frame) if isinstance(child.object, BoundingBox)),
+                    None)
+
+    def get_bounding_box_row(self, obj: Object, frame: int):
+        return next((child.row() for child in self.object_item(obj).children(frame) if isinstance(child.object, BoundingBox)),
+                    None)
 
     def remove_bounding_box(self, obj: Object, frame: int):
         # obj.set_bounding_box(frame, None)
@@ -127,13 +186,8 @@ class PromptSourceModel(QStandardItemModel):
         return None
 
     def show(self):
-        for obj in [(self.root_item.child(r).model().index(r, 0, self.root_item.index()).data(),
-                     self.root_item.child(r).model().index(r, 1, self.root_item.index()).data(),
-                     self.root_item.child(r).model().index(r, 2, self.root_item.index()).data(),
-                     self.root_item.child(r).model().index(r, 3, self.root_item.index()).data(),
-                     ) for r in
-                    range(self.root_item.rowCount())]:
-            pprint(f'{obj=}')
+        for obj in [(self.root_item.child(r).name, self.root_item.child(r).object,) for r in range(self.root_item.rowCount())]:
+            print(f'{obj=}')
 
 
 class PromptProxyModel(QSortFilterProxyModel):

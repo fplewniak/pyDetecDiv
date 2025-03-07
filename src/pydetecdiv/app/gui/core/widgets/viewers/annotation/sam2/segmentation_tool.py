@@ -14,7 +14,8 @@ from sam2.build_sam import build_sam2_video_predictor
 
 from pydetecdiv.app import PyDetecDiv, DrawingTools
 from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.objectsmodel import (ObjectsTreeView, Object, PromptProxyModel,
-                                                                                  PromptSourceModel)
+                                                                                  PromptSourceModel, ObjectReferenceRole,
+                                                                                  BoundingBox)
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer, VideoViewerPanel, VideoControlPanel, VideoScene
 from pydetecdiv.app.models.Trees import TreeItem
 
@@ -52,39 +53,41 @@ class SegmentationScene(VideoScene):
             self.player.add_object(current_object)
             # self.player.prompt_model.add_object(current_object)
 
-    def select_from_tree_view(self, item):
+    def select_from_tree_view(self, graphics_item):
         _ = [r.setSelected(False) for r in self.selectedItems()]
-        if item is not None:
-            item.setSelected(True)
+        if graphics_item is not None:
+            graphics_item.setSelected(True)
 
     def delete_item(self, r):
         if isinstance(r, QGraphicsRectItem):
+            print('Removing a bounding box')
             # self.player.prompt_model.remove_bounding_box(self.current_object, self.player.T)
-            print('Before removing bounding box', self.player.current_object.to_dict())
-            self.player.object_tree_view.select_item(self.player.current_object.tree_item)
-            self.player.model.delete_bounding_box(self.player.T, r)
+            # print('Before removing bounding box', self.player.current_object.to_dict())
+            # self.player.object_tree_view.select_item(self.player.current_object.tree_item)
+            # self.player.source_model.delete_bounding_box(self.player.T, r)
             print(f'removing item {r}')
             self.removeItem(r)
-            print('After removal of bounding box', self.player.current_object.to_dict())
-            print('box name', self.player.current_object.prompt(self.player.T).box.name)
+            # print('After removal of bounding box', self.player.current_object.to_dict())
+            # print('box name', self.player.current_object.prompt(self.player.T).box.name)
 
     def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:
             match PyDetecDiv.current_drawing_tool, event.modifiers():
                 case DrawingTools.DrawRect, Qt.KeyboardModifier.NoModifier:
                     if self.last_shape:
-                        # self.player.prompt_model.add_bounding_box(self.current_object, self.player.T, self.last_shape)
-                        print('Before setting a new bounding box', self.player.current_object.to_dict())
-                        self.player.model.set_bounding_box(self.player.T, self.current_object, self.last_shape)
+                        if self.player.source_model.has_bounding_box(self.current_object, self.player.T):
+                            self.player.source_model.change_bounding_box(self.current_object, self.player.T, self.last_shape)
+                        else:
+                            self.player.source_model.add_bounding_box(self.current_object, self.player.T, self.last_shape)
                         self.player.object_tree_view.expandAll()
                         self.last_shape = None
-                        print('After having set a new bounding box', self.player.current_object.to_dict())
                 case DrawingTools.DuplicateItem, Qt.KeyboardModifier.NoModifier:
                     if self.selectedItems():
+                        print('Duplicating a bounding box')
                         rect_item = self.duplicate_selected_Item(event)
                         # self.player.prompt_model.add_bounding_box(self.current_object, self.player.T, rect_item)
-                        self.player.model.set_bounding_box(self.player.T, self.current_object, rect_item)
-                        self.player.object_tree_view.expandAll()
+                        # self.player.source_model.set_bounding_box(self.player.T, self.current_object, rect_item)
+                        # self.player.object_tree_view.expandAll()
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """
@@ -144,12 +147,12 @@ class SegmentationScene(VideoScene):
         else:
             self.last_shape = None
         return self.last_shape
-
-    def duplicate_selected_Item(self, event) -> QGraphicsRectItem | None:
-        if self.player.current_object is not None:
-            item = super().duplicate_selected_Item(event)
-            return item
-        return None
+    #
+    # def duplicate_selected_Item(self, event) -> QGraphicsRectItem | None:
+    #     if self.player.current_object is not None:
+    #         item = super().duplicate_selected_Item(event)
+    #         return item
+    #     return None
 
     # def contextMenuEvent(self, event: QGraphicsSceneMouseEvent) -> None:
     #     """
@@ -216,7 +219,7 @@ class SegmentationTool(VideoPlayer):
         self.region = region_name
         self.run = None
         self.viewport_rect = None
-        self.model = PromptSourceModel()
+        self.source_model = PromptSourceModel()
         self.proxy_model = PromptProxyModel()
         # self.prompt_model = PromptModel()
         self.inference_state = None
@@ -227,18 +230,26 @@ class SegmentationTool(VideoPlayer):
     #     return self.object_tree_view.source_model
 
     @property
+    def current_tree_index(self):
+        return self.proxy_model.mapToSource(self.object_tree_view.currentIndex())
+
+    @property
+    def current_tree_item(self):
+        return self.source_model.itemFromIndex(self.current_tree_index)
+
+    @property
     def current_object(self):
-        pointer = self.object_tree_view.currentIndex().internalPointer()
-        if pointer is not None:
-            obj = pointer.data(1)
+        item = self.current_tree_item
+        if item is not None:
+            obj = item.data(ObjectReferenceRole)
             if isinstance(obj, Object):
                 return obj
-            if isinstance(obj, QGraphicsRectItem):
-                return pointer.parent().data(1)
+            if isinstance(obj, BoundingBox):
+                return item.parent().data(ObjectReferenceRole)
         return None
 
     def add_object(self, obj):
-        new_item = self.model.add_object(obj)
+        new_item = self.source_model.add_object(obj)
         self.object_tree_view.select_item(new_item)
         return new_item
 
@@ -263,9 +274,9 @@ class SegmentationTool(VideoPlayer):
 
         self.object_tree_view = ObjectsTreeView()
         self.object_tree_view.setModel(self.proxy_model)
-        self.object_tree_view.setSourceModel(self.model)
+        self.object_tree_view.setSourceModel(self.source_model)
         self.object_tree_view.setHeaderHidden(False)
-        self.object_tree_view.setColumnHidden(1, True)
+        # self.object_tree_view.setColumnHidden(1, True)
         self.object_tree_view.expandAll()
         self.object_tree_view.clicked.connect(self.select_from_tree_view)
 
