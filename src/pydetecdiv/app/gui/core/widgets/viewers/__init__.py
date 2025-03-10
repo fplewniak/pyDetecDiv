@@ -231,6 +231,7 @@ class Scene(QGraphicsScene):
             r.setSelected(True)
             if isinstance(r, QGraphicsRectItem):
                 self.display_Item_size(r)
+        return r
 
     def get_selected_Item(self) -> QAbstractGraphicsShapeItem | None:
         """

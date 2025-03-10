@@ -58,6 +58,11 @@ class SegmentationScene(VideoScene):
         if graphics_item is not None:
             graphics_item.setSelected(True)
 
+    def select_Item(self, event: QGraphicsSceneMouseEvent) -> None:
+        graphics_item = super().select_Item(event)
+        if isinstance(graphics_item, (QGraphicsRectItem, QGraphicsEllipseItem)):
+            self.player.object_tree_view.select_object_from_graphics_item(graphics_item)
+
     def delete_item(self, r):
         if isinstance(r, QGraphicsRectItem):
             print('Removing bounding box for current object, but should actually select the object corresponding to the selected'
@@ -219,6 +224,7 @@ class SegmentationTool(VideoPlayer):
         self.viewport_rect = None
         self.source_model = PromptSourceModel()
         self.proxy_model = PromptProxyModel()
+        self.proxy_model.setRecursiveFilteringEnabled(True)
         # self.prompt_model = PromptModel()
         self.inference_state = None
         self.object_tree_view = None
@@ -274,7 +280,7 @@ class SegmentationTool(VideoPlayer):
         self.object_tree_view.setModel(self.proxy_model)
         self.object_tree_view.setSourceModel(self.source_model)
         self.object_tree_view.setHeaderHidden(False)
-        # self.object_tree_view.setColumnHidden(1, True)
+        self.object_tree_view.setColumnHidden(1, True)
         self.object_tree_view.expandAll()
         self.object_tree_view.clicked.connect(self.select_from_tree_view)
 
@@ -296,14 +302,16 @@ class SegmentationTool(VideoPlayer):
         self.time_display.setStyleSheet("color: green; font-size: 18px;")
         self.time_display.setGeometry(20, 30, 140, self.time_display.height())
 
+        self.video_frame.connect(self.proxy_model.set_frame)
+
     def select_from_tree_view(self, index):
-        ...
-        # obj = index.internalPointer().data(1)
-        # if isinstance(obj, QGraphicsRectItem):
-        #     self.scene.select_from_tree_view(obj)
-        # elif isinstance(obj, Object):
-        #     if obj.prompt(self.T) is not None and obj.prompt(self.T).box is not None:
-        #         self.scene.select_from_tree_view(obj.prompt(self.T).box.rect_item)
+        selected_model_item = self.source_model.itemFromIndex(self.proxy_model.mapToSource(index))
+        obj = selected_model_item.object
+        if isinstance(obj, BoundingBox):
+            self.scene.select_from_tree_view(obj.rect_item)
+        elif isinstance(obj, Object):
+            if self.source_model.get_bounding_box(obj, self.T) is not None:
+                self.scene.select_from_tree_view(self.source_model.get_bounding_box(obj, self.T).rect_item)
 
     def create_video(self, video_dir):
         os.makedirs(video_dir, exist_ok=True)

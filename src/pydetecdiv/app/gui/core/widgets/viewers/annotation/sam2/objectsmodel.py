@@ -128,11 +128,16 @@ class PromptSourceModel(QStandardItemModel):
         # self.setHorizontalHeaderLabels(['object', '', 'coordinates', 'label'])
         self.setHorizontalHeaderLabels(['object', '', 'x', 'y', 'width', 'height', 'label'])
         self.root_item = self.invisibleRootItem()
-        self.objects = []
 
-    def object_item(self, obj: Object):
-        return next((model_item for model_item in [self.root_item.child(row) for row in range(self.root_item.rowCount())] if
-                     model_item.object == obj), None)
+    @property
+    def objects(self):
+        return [item.object for item in self.object_items()]
+
+    def object_items(self, frame=None):
+        return [self.root_item.child(row) for row in range(self.root_item.rowCount())]
+
+    def object_item(self, obj: Object) -> ModelItem:
+        return next((model_item for model_item in self.object_items() if model_item.object == obj), None)
 
     def has_bounding_box(self, obj: Object, frame: int):
         return any([isinstance(child.object, BoundingBox) for child in self.object_item(obj).children(frame)])
@@ -175,14 +180,18 @@ class PromptSourceModel(QStandardItemModel):
         return next((child.row() for child in self.object_item(obj).children(frame) if isinstance(child.object, BoundingBox)),
                     None)
 
+    def get_bounding_boxes(self, obj: Object):
+        return [child.object for child in self.object_item(obj).children() if isinstance(child.object, BoundingBox)]
+
     def remove_bounding_box(self, obj: Object, frame: int):
         bounding_box = self.get_bounding_box(obj, frame)
-        bounding_box.rect_item.scene().removeItem(bounding_box.rect_item)
-        self.object_item(obj).removeRow(self.get_bounding_box_row(obj, frame))
+        if bounding_box is not None:
+            bounding_box.rect_item.scene().removeItem(bounding_box.rect_item)
+            self.object_item(obj).removeRow(self.get_bounding_box_row(obj, frame))
 
     def box2obj(self, box: QGraphicsRectItem):
         for obj in self.objects:
-            if box in [p.box.rect_item for p in obj._prompt]:
+            if box in [b.rect_item for b in self.get_bounding_boxes(obj)]:
                 return obj
         return None
 
@@ -206,11 +215,11 @@ class PromptProxyModel(QSortFilterProxyModel):
 
         # Get the index of the current row in the set number column
         index = self.sourceModel().index(source_row, 1, source_parent)
-        # Get the set number
+        # Get the frame number
         frame = self.sourceModel().data(index, Qt.DisplayRole)
 
         # Check if the item belongs to the desired set
-        return frame == self.frame
+        return (frame is None) or (frame == self.frame)
 
 
 class ObjectsTreeView(QTreeView):
@@ -243,3 +252,11 @@ class ObjectsTreeView(QTreeView):
 
     def select_item(self, item):
         self.setCurrentIndex(self.model().index(item.row(), 0))
+
+    def select_object_from_graphics_item(self, graphics_item: QGraphicsRectItem):
+        if isinstance(graphics_item, QGraphicsRectItem):
+            self.select_object_from_box(graphics_item)
+
+    def select_object_from_box(self, graphics_item: QGraphicsRectItem):
+        self.select_item(self.source_model.object_item(self.source_model.box2obj(graphics_item)))
+
