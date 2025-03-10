@@ -161,6 +161,7 @@ class Scene(QGraphicsScene):
                     self.select_Item(event)
                 case DrawingTools.DuplicateItem, Qt.KeyboardModifier.NoModifier:
                     self.duplicate_selected_Item(event)
+                    self.select_Item(event)
                     PyDetecDiv.app.scene_modified.emit(self)
                 case DrawingTools.DrawPoint, Qt.KeyboardModifier.NoModifier:
                     self.add_point(event)
@@ -264,7 +265,7 @@ class Scene(QGraphicsScene):
             item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable | QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
             item.setData(0, f'Region_{item.x():.2f}_{item.y():.2f}_{w + 1:.2f}_{h + 1:.2f}')
             item.setZValue(10)
-            self.select_Item(event)
+            # self.select_Item(event)
             return item
         return None
 

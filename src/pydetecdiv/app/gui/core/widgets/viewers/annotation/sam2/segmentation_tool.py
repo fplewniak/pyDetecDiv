@@ -65,8 +65,6 @@ class SegmentationScene(VideoScene):
 
     def delete_item(self, r):
         if isinstance(r, QGraphicsRectItem):
-            print('Removing bounding box for current object, but should actually select the object corresponding to the selected'
-                  'QGraphicsItem')
             self.player.source_model.remove_bounding_box(self.current_object, self.player.T)
             # self.player.object_tree_view.select_item(self.player.current_object.tree_item)
             # self.player.source_model.delete_bounding_box(self.player.T, r)
@@ -88,6 +86,9 @@ class SegmentationScene(VideoScene):
                     if self.selectedItems():
                         print('Duplicating a bounding box')
                         rect_item = self.duplicate_selected_Item(event)
+                        self.player.source_model.change_bounding_box(self.current_object, self.player.T, rect_item)
+                        # self.player.object_tree_view.select_object_from_graphics_item(rect_item)
+                        self.select_Item(event)
                         # self.player.prompt_model.add_bounding_box(self.current_object, self.player.T, rect_item)
                         # self.player.source_model.set_bounding_box(self.player.T, self.current_object, rect_item)
                         # self.player.object_tree_view.expandAll()

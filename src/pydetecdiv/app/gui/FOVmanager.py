@@ -275,6 +275,7 @@ class FOVScene(Scene):
         :type event: QGraphicsSceneMouseEvent
         """
         item = super().duplicate_selected_Item(event)
+        self.select_Item(event)
         if item:
             self.check_is_colliding(item)
             self.roi_selected.emit(self.get_selected_Item() is not None)
