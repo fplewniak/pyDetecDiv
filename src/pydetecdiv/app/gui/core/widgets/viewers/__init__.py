@@ -263,7 +263,7 @@ class Scene(QGraphicsScene):
             w, h = item.rect().size().toTuple()
             item.setPos(QPoint(pos.x() - np.around(w / 2.0), pos.y() - np.around(h / 2.0)))
             item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable | QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
-            item.setData(0, f'Region_{item.x():.2f}_{item.y():.2f}_{w + 1:.2f}_{h + 1:.2f}')
+            item.setData(0, f'Region_{item.x():.1f}_{item.y():.1f}')
             item.setZValue(10)
             # self.select_Item(event)
             return item
@@ -313,7 +313,7 @@ class Scene(QGraphicsScene):
             item.setPen(self.pen)
             item.setPos(QPointF(pos.x(), pos.y()))
             item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable | QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
-            item.setData(0, f'Region_{pos.x():.2f}_{pos.y():.2f}')
+            item.setData(0, f'Region_{pos.x():.1f}_{pos.y():.1f}')
             item.setZValue(10)
             item.setSelected(True)
         if item:
@@ -367,7 +367,7 @@ class Scene(QGraphicsScene):
         item.setPen(self.pen)
         item.setPos(QPointF(pos.x(), pos.y()))
         item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable | QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
-        item.setData(0, f'point_{pos.x():.2f}_{pos.y():.2f}')
+        item.setData(0, f'point_{pos.x():.1f}_{pos.y():.1f}')
         item.setZValue(10)
         item.setSelected(False)
         return item

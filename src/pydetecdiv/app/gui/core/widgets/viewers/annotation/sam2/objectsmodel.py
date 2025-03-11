@@ -160,10 +160,10 @@ class PromptSourceModel(QStandardItemModel):
         bounding_box = BoundingBox(name=box.data(0), box=box)
         box_item = ModelItem(bounding_box.name, bounding_box)
         frame_item = QStandardItem(str(frame))
-        x_item = QStandardItem(f'{bounding_box.x}')
-        y_item = QStandardItem(f'{bounding_box.y}')
-        width_item = QStandardItem(f'{bounding_box.width}')
-        height_item = QStandardItem(f'{bounding_box.height}')
+        x_item = QStandardItem(f'{bounding_box.x:.1f}')
+        y_item = QStandardItem(f'{bounding_box.y:.1f}')
+        width_item = QStandardItem(f'{int(bounding_box.width)}')
+        height_item = QStandardItem(f'{int(bounding_box.height)}')
         return [box_item, frame_item, x_item, y_item, width_item, height_item]
 
     def change_bounding_box(self, obj: Object, frame: int, box: QGraphicsRectItem):
@@ -201,8 +201,8 @@ class PromptSourceModel(QStandardItemModel):
         point = Point(name=point_graphics_item.data(0), point=point_graphics_item, label=label)
         point_item = ModelItem(point.name, point)
         frame_item = QStandardItem(str(frame))
-        x_item = QStandardItem(f'{point.x}')
-        y_item = QStandardItem(f'{point.y}')
+        x_item = QStandardItem(f'{point.x:.1f}')
+        y_item = QStandardItem(f'{point.y:.1f}')
         label_item = QStandardItem(f'{label}')
         return [point_item, frame_item, x_item, y_item, QStandardItem(''), QStandardItem(''), label_item]
 
