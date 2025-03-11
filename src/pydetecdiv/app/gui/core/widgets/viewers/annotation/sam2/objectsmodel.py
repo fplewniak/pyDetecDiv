@@ -167,10 +167,13 @@ class PromptSourceModel(QStandardItemModel):
 
     def change_bounding_box(self, obj: Object, frame: int, box: QGraphicsRectItem):
         bounding_box = self.get_bounding_box(obj, frame)
-        bounding_box.rect_item.scene().removeItem(bounding_box.rect_item)
-        row = self.create_bounding_box_row(frame, box)
-        for column, item in enumerate(row):
-            self.object_item(obj).setChild(self.get_bounding_box_row(obj, frame), column, row[column])
+        if bounding_box is not None:
+            bounding_box.rect_item.scene().removeItem(bounding_box.rect_item)
+            row = self.create_bounding_box_row(frame, box)
+            for column, item in enumerate(row):
+                self.object_item(obj).setChild(self.get_bounding_box_row(obj, frame), column, row[column])
+        else:
+            self.add_bounding_box(obj, frame, box)
 
     def get_bounding_box(self, obj: Object, frame: int):
         return next((child.object for child in self.object_item(obj).children(frame) if isinstance(child.object, BoundingBox)),
