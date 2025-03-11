@@ -89,7 +89,6 @@ class SegmentationScene(VideoScene):
                         self.last_shape = None
                 case DrawingTools.DuplicateItem, Qt.KeyboardModifier.NoModifier:
                     if self.selectedItems():
-                        print('Duplicating a bounding box')
                         rect_item = self.duplicate_selected_Item(event)
                         self.player.source_model.change_bounding_box(self.current_object, self.player.T, rect_item)
                         self.select_Item(event)
@@ -179,22 +178,23 @@ class SegmentationScene(VideoScene):
     #     self.object_count += 1
     #     pprint(self.player.prompt)
     #
-    # def add_point(self, event: QGraphicsSceneMouseEvent) -> QGraphicsEllipseItem | None:
-    #     if self.current_object is not None:
-    #         label = 1
-    #         self.pen = self.positive_pen
-    #         if event.buttons() == Qt.MouseButton.LeftButton:
-    #             match PyDetecDiv.current_drawing_tool, event.modifiers():
-    #                 case DrawingTools.DrawPoint, Qt.KeyboardModifier.ControlModifier:
-    #                     self.pen = self.negative_pen
-    #                     label = 0
-    #         item = super().add_point(event)
-    #         item.setData(1, label)
-    #         self.pen = self.default_pen
-    #         self.player.prompt[f'{self.player.T}'][f'{self.current_object}']['points'].append([item.data(0), item])
-    #         pprint(self.player.prompt)
-    #         return item
-    #     return None
+    def add_point(self, event: QGraphicsSceneMouseEvent) -> QGraphicsEllipseItem | None:
+        if self.current_object is not None:
+            label = 1
+            self.pen = self.positive_pen
+            if event.buttons() == Qt.MouseButton.LeftButton:
+                match PyDetecDiv.current_drawing_tool, event.modifiers():
+                    case DrawingTools.DrawPoint, Qt.KeyboardModifier.ControlModifier:
+                        self.pen = self.negative_pen
+                        label = 0
+            item = super().add_point(event)
+            item.setData(1, label)
+            self.pen = self.default_pen
+            self.player.source_model.add_point(self.current_object, self.player.T, item, label)
+            # self.player.prompt[f'{self.player.T}'][f'{self.current_object}']['points'].append([item.data(0), item])
+            # pprint(self.player.prompt)
+            return item
+        return None
     #
     # def item_dict(self):
     #     item_dict = {'boxes': {}, 'points': {}}
@@ -229,7 +229,6 @@ class SegmentationTool(VideoPlayer):
         self.source_model = PromptSourceModel()
         self.proxy_model = PromptProxyModel()
         self.proxy_model.setRecursiveFilteringEnabled(True)
-        # self.prompt_model = PromptModel()
         self.inference_state = None
         self.object_tree_view = None
 

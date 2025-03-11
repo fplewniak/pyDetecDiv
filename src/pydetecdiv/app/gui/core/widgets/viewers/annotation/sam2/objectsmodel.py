@@ -1,5 +1,6 @@
 from pprint import pprint
 
+import numpy as np
 from PySide6.QtCore import QSortFilterProxyModel, Qt, QModelIndex
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from PySide6.QtWidgets import QTreeView, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsItem
@@ -94,7 +95,7 @@ class Object:
 
 
 class ModelItem(QStandardItem):
-    def __init__(self, data, obj: Object | BoundingBox | None):
+    def __init__(self, data, obj: Object | BoundingBox | Point | None):
         super().__init__(data)
         self.setData(obj, ObjectReferenceRole)
 
@@ -192,6 +193,25 @@ class PromptSourceModel(QStandardItemModel):
             bounding_box.rect_item.scene().removeItem(bounding_box.rect_item)
             self.object_item(obj).removeRow(self.get_bounding_box_row(obj, frame))
 
+    def add_point(self, obj: Object, frame: int, point: QGraphicsEllipseItem, label: int = 1):
+        row = self.create_point_row(frame, point, label)
+        self.object_item(obj).appendRow(row)
+
+    def create_point_row(self, frame: int, point_graphics_item: QGraphicsEllipseItem, label: int = 1):
+        point = Point(name=point_graphics_item.data(0), point=point_graphics_item, label=label)
+        point_item = ModelItem(point.name, point)
+        frame_item = QStandardItem(str(frame))
+        x_item = QStandardItem(f'{point.x}')
+        y_item = QStandardItem(f'{point.y}')
+        label_item = QStandardItem(f'{label}')
+        return [point_item, frame_item, x_item, y_item, QStandardItem(''), QStandardItem(''), label_item]
+
+    def get_points(self, obj: Object, frame: int):
+        points = [child.object for child in self.object_item(obj).children(frame) if isinstance(child.object, Point)]
+        if points:
+            return points
+        return None
+
     def box2obj(self, box: QGraphicsRectItem):
         for obj in self.objects:
             if box in [b.rect_item for b in self.get_bounding_boxes(obj)]:
@@ -201,6 +221,10 @@ class PromptSourceModel(QStandardItemModel):
     def get_all_prompts(self, frame: int | None = None) -> tuple[list[BoundingBox], list[Point]]:
         boxes = [self.get_bounding_box(obj, frame) for obj in self.objects if self.get_bounding_box(obj, frame) is not None]
         points = []
+        for obj in self.objects:
+            point_list = self.get_points(obj, frame)
+            if point_list is not None:
+                points += point_list
         return boxes, points
 
     def show(self):
