@@ -206,7 +206,7 @@ class PromptSourceModel(QStandardItemModel):
         label_item = QStandardItem(f'{label}')
         return [point_item, frame_item, x_item, y_item, QStandardItem(''), QStandardItem(''), label_item]
 
-    def get_points(self, obj: Object, frame: int):
+    def get_points(self, obj: Object, frame: int | None = None):
         points = [child.object for child in self.object_item(obj).children(frame) if isinstance(child.object, Point)]
         if points:
             return points
@@ -215,6 +215,12 @@ class PromptSourceModel(QStandardItemModel):
     def box2obj(self, box: QGraphicsRectItem):
         for obj in self.objects:
             if box in [b.rect_item for b in self.get_bounding_boxes(obj)]:
+                return obj
+        return None
+
+    def point2obj(self, point: QGraphicsEllipseItem):
+        for obj in self.objects:
+            if self.get_points(obj) and point in [p.point_item for p in self.get_points(obj)]:
                 return obj
         return None
 
@@ -285,9 +291,14 @@ class ObjectsTreeView(QTreeView):
     def select_item(self, item):
         self.setCurrentIndex(self.model().index(item.row(), 0))
 
-    def select_object_from_graphics_item(self, graphics_item: QGraphicsRectItem):
+    def select_object_from_graphics_item(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem):
         if isinstance(graphics_item, QGraphicsRectItem):
             self.select_object_from_box(graphics_item)
+        elif isinstance(graphics_item, QGraphicsEllipseItem):
+            self.select_object_from_point(graphics_item)
 
     def select_object_from_box(self, graphics_item: QGraphicsRectItem):
         self.select_item(self.source_model.object_item(self.source_model.box2obj(graphics_item)))
+
+    def select_object_from_point(self, graphics_item: QGraphicsEllipseItem):
+        self.select_item(self.source_model.object_item(self.source_model.point2obj(graphics_item)))

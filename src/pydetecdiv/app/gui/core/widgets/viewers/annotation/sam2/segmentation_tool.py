@@ -15,7 +15,7 @@ from sam2.build_sam import build_sam2_video_predictor
 from pydetecdiv.app import PyDetecDiv, DrawingTools
 from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.objectsmodel import (ObjectsTreeView, Object, PromptProxyModel,
                                                                                   PromptSourceModel, ObjectReferenceRole,
-                                                                                  BoundingBox)
+                                                                                  BoundingBox, Point)
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer, VideoViewerPanel, VideoControlPanel, VideoScene
 from pydetecdiv.app.models.Trees import TreeItem
 
@@ -62,6 +62,8 @@ class SegmentationScene(VideoScene):
         _ = [r.setSelected(False) for r in self.selectedItems()]
         if graphics_item is not None:
             graphics_item.setSelected(True)
+            if isinstance(graphics_item, (QGraphicsRectItem, QGraphicsEllipseItem)):
+                self.player.object_tree_view.select_object_from_graphics_item(graphics_item)
 
     def select_Item(self, event: QGraphicsSceneMouseEvent) -> None:
         graphics_item = super().select_Item(event)
@@ -308,10 +310,14 @@ class SegmentationTool(VideoPlayer):
         self.video_frame.connect(self.proxy_model.set_frame)
 
     def select_from_tree_view(self, index):
-        selected_model_item = self.source_model.itemFromIndex(self.proxy_model.mapToSource(index))
+        source_index = self.proxy_model.mapToSource(index)
+        selected_model_index = self.proxy_model.mapToSource(index).sibling(source_index.row(), 0)
+        selected_model_item = self.source_model.itemFromIndex(selected_model_index)
         obj = selected_model_item.object
         if isinstance(obj, BoundingBox):
             self.scene.select_from_tree_view(obj.rect_item)
+        elif isinstance(obj, Point):
+            self.scene.select_from_tree_view(obj.point_item)
         elif isinstance(obj, Object):
             if self.source_model.get_bounding_box(obj, self.T) is not None:
                 self.scene.select_from_tree_view(self.source_model.get_bounding_box(obj, self.T).rect_item)
