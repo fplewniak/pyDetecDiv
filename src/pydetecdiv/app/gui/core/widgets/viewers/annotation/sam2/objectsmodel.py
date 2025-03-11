@@ -198,6 +198,11 @@ class PromptSourceModel(QStandardItemModel):
                 return obj
         return None
 
+    def get_all_prompts(self, frame: int | None = None) -> tuple[list[BoundingBox], list[Point]]:
+        boxes = [self.get_bounding_box(obj, frame) for obj in self.objects if self.get_bounding_box(obj, frame) is not None]
+        points = []
+        return boxes, points
+
     def show(self):
         for obj in [(self.root_item.child(r).name, self.root_item.child(r).object,) for r in range(self.root_item.rowCount())]:
             print(f'{obj=}')
@@ -262,4 +267,3 @@ class ObjectsTreeView(QTreeView):
 
     def select_object_from_box(self, graphics_item: QGraphicsRectItem):
         self.select_item(self.source_model.object_item(self.source_model.box2obj(graphics_item)))
-

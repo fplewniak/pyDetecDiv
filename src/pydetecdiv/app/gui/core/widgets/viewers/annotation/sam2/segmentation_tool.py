@@ -36,6 +36,11 @@ class SegmentationScene(VideoScene):
     def current_object(self):
         return self.player.current_object
 
+    def reset_graphics_items(self):
+        for item in self.items():
+            if isinstance(item, (QGraphicsRectItem, QGraphicsEllipseItem)):
+                self.removeItem(item)
+
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """
         Detect when a key is pressed and perform the corresponding action:
@@ -317,6 +322,15 @@ class SegmentationTool(VideoPlayer):
         for frame in range(self.viewer.background.image.image_resource_data.sizeT):
             self.change_frame(frame)
             self.viewer.background.image.pixmap().toImage().save(f'{video_dir}/{frame:05d}.jpg', format='jpg')
+
+    def change_frame(self, T: int = 0) -> None:
+        super().change_frame(T=T)
+        self.scene.reset_graphics_items()
+        boxes, points = self.source_model.get_all_prompts(self.T)
+        for box in boxes:
+            self.scene.addItem(box.rect_item)
+        for point in points:
+            self.scene.addItem(point.point_item)
 
     def segment_from_prompt(self, items):
         video_dir = os.path.join('/data3/SegmentAnything2/videos/', self.region)
