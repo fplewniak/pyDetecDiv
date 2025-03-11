@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import torch.cuda
 from PySide6.QtWidgets import (QGraphicsSceneMouseEvent, QMenu, QWidget, QGraphicsEllipseItem, QMenuBar, QVBoxLayout, QLabel,
-                               QHBoxLayout, QSplitter, QGraphicsRectItem)
+                               QHBoxLayout, QSplitter, QGraphicsRectItem, QHeaderView)
 from sam2.build_sam import build_sam2_video_predictor
 
 from pydetecdiv.app import PyDetecDiv, DrawingTools
@@ -286,6 +286,12 @@ class SegmentationTool(VideoPlayer):
         self.object_tree_view.setSourceModel(self.source_model)
         self.object_tree_view.setHeaderHidden(False)
         self.object_tree_view.setColumnHidden(1, True)
+        self.object_tree_view.header().resizeSection(0, 75)
+        self.object_tree_view.header().setSectionResizeMode(2, QHeaderView.Stretch)
+        self.object_tree_view.header().setSectionResizeMode(3, QHeaderView.Stretch)
+        self.object_tree_view.header().setSectionResizeMode(4, QHeaderView.Stretch)
+        self.object_tree_view.header().setSectionResizeMode(5, QHeaderView.Stretch)
+        self.object_tree_view.header().setSectionResizeMode(6, QHeaderView.Stretch)
         self.object_tree_view.expandAll()
         self.object_tree_view.clicked.connect(self.select_from_tree_view)
 
