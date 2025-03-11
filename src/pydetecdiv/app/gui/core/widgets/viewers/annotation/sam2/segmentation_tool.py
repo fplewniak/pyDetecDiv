@@ -87,11 +87,7 @@ class SegmentationScene(VideoScene):
                         print('Duplicating a bounding box')
                         rect_item = self.duplicate_selected_Item(event)
                         self.player.source_model.change_bounding_box(self.current_object, self.player.T, rect_item)
-                        # self.player.object_tree_view.select_object_from_graphics_item(rect_item)
                         self.select_Item(event)
-                        # self.player.prompt_model.add_bounding_box(self.current_object, self.player.T, rect_item)
-                        # self.player.source_model.set_bounding_box(self.player.T, self.current_object, rect_item)
-                        # self.player.object_tree_view.expandAll()
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """
@@ -148,15 +144,17 @@ class SegmentationScene(VideoScene):
     def draw_Item(self, event: QGraphicsSceneMouseEvent) -> QGraphicsRectItem:
         if self.player.current_object is not None:
             self.last_shape = super().draw_Item(event)
+            self.last_shape.setData(0, f'bounding_box{self.player.current_object.id_}')
         else:
             self.last_shape = None
         return self.last_shape
-    #
-    # def duplicate_selected_Item(self, event) -> QGraphicsRectItem | None:
-    #     if self.player.current_object is not None:
-    #         item = super().duplicate_selected_Item(event)
-    #         return item
-    #     return None
+
+    def duplicate_selected_Item(self, event) -> QGraphicsRectItem | None:
+        if self.player.current_object is not None:
+            item = super().duplicate_selected_Item(event)
+            item.setData(0, f'bounding_box{self.player.current_object.id_}')
+            return item
+        return None
 
     # def contextMenuEvent(self, event: QGraphicsSceneMouseEvent) -> None:
     #     """
