@@ -238,12 +238,16 @@ class PromptSourceModel(QStandardItemModel):
 
     def get_prompt(self, obj: Object, frame: int):
         box = self.get_bounding_box(obj, frame)
-        box_coords = [] if box is None else [box.x, box.y, box.x + box.width, box.y + box.height]
         points = self.get_points(obj, frame)
-        prompt = {frame: {'box_coords': box_coords,
-                          'points_coords': [[point.x, point.y] for point in points]},
-                          'points_labels': [[point.label for point in points]]
-                  }
+        if box is not None or points:
+            prompt = {frame: {}}
+            if box is not None:
+                prompt[frame]['box_coords'] = [box.x, box.y, box.x + box.width, box.y + box.height]
+            if points:
+                prompt[frame]['points_coords'] = [[point.x, point.y] for point in points]
+                prompt[frame]['points_labels'] = [[point.label for point in points]]
+        else:
+            prompt = None
         return prompt
 
     def graphics2model_item(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem, frame: int = None, column: int = 0):
