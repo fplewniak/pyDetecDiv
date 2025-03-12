@@ -73,6 +73,8 @@ class SegmentationScene(VideoScene):
     def delete_item(self, r):
         if isinstance(r, QGraphicsRectItem):
             self.player.source_model.remove_bounding_box(self.current_object, self.player.T)
+        if isinstance(r, QGraphicsEllipseItem):
+            self.player.source_model.remove_point(self.current_object, r, self.player.T)
             # self.player.object_tree_view.select_item(self.player.current_object.tree_item)
             # self.player.source_model.delete_bounding_box(self.player.T, r)
             # print(f'removing item {r}')

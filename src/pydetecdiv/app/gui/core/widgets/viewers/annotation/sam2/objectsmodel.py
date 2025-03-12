@@ -196,6 +196,12 @@ class PromptSourceModel(QStandardItemModel):
             bounding_box.graphics_item.scene().removeItem(bounding_box.graphics_item)
             self.object_item(obj).removeRow(self.get_bounding_box_row(obj, frame))
 
+    def remove_point(self, obj: Object, graphics_item: QGraphicsEllipseItem, frame: int = None):
+        point_item = self.get_point_from_graphics_item(obj, graphics_item, frame)
+        if point_item is not None:
+            point_item.object.graphics_item.scene().removeItem(graphics_item)
+            self.object_item(obj).removeRow(point_item.row())
+
     def add_point(self, obj: Object, frame: int, point: QGraphicsEllipseItem, label: int = 1):
         row = self.create_point_row(frame, point, label)
         self.object_item(obj).appendRow(row)
@@ -208,6 +214,9 @@ class PromptSourceModel(QStandardItemModel):
         y_item = QStandardItem(f'{point.y:.1f}')
         label_item = QStandardItem(f'{label}')
         return [point_item, frame_item, x_item, y_item, QStandardItem(''), QStandardItem(''), label_item]
+
+    def get_point_from_graphics_item(self, obj: Object, graphics_item: QGraphicsEllipseItem, frame: int | None = None):
+        return next((item for item in self.object_item(obj).children(frame) if item.object.graphics_item == graphics_item), None)
 
     def get_points(self, obj: Object, frame: int | None = None):
         points = [child.object for child in self.object_item(obj).children(frame) if isinstance(child.object, Point)]
