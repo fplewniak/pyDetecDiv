@@ -186,17 +186,18 @@ class SegmentationScene(VideoScene):
             return item
         return None
 
-    # def contextMenuEvent(self, event: QGraphicsSceneMouseEvent) -> None:
-    #     """
-    #     The context menu
-    #
-    #     :param event:
-    #     """
-    #     menu = QMenu()
-    #     segment_action = menu.addAction('Run segmentation')
-    #     segment_action.triggered.connect(
-    #             lambda _: self.player.segment_from_prompt(self.items()))
-    #     menu.exec(event.screenPos())
+    def contextMenuEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+        """
+        The context menu
+
+        :param event:
+        """
+        menu = QMenu()
+        segment_action = menu.addAction('Run segmentation')
+        segment_action.triggered.connect(lambda _: self.player.source_model.get_prompt(self.current_object, self.player.T))
+        # segment_action.triggered.connect(
+        #         lambda _: self.player.segment_from_prompt(self.items()))
+        menu.exec(event.screenPos())
     #
     # def new_object(self):
     #     self.player.prompt[f'{self.player.T}'] = {f'{self.object_count}': {'box': [], 'points': []}}
