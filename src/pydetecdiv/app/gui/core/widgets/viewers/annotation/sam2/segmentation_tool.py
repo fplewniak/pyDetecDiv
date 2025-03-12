@@ -344,6 +344,8 @@ class SegmentationTool(VideoPlayer):
         source_index = self.proxy_model.mapToSource(index)
         selected_model_index = self.proxy_model.mapToSource(index).sibling(source_index.row(), 0)
         selected_model_item = self.source_model.itemFromIndex(selected_model_index)
+        if selected_model_item:
+            self.object_tree_view.setCurrentIndex(self.proxy_model.mapFromSource(selected_model_index))
         obj = selected_model_item.object
         if isinstance(obj, BoundingBox):
             self.scene.select_from_tree_view(obj.graphics_item)
