@@ -93,6 +93,7 @@ class SegmentationScene(VideoScene):
                     if self.selectedItems():
                         rect_item = self.duplicate_selected_Item(event)
                         self.player.source_model.change_bounding_box(self.current_object, self.player.T, rect_item)
+                        self.player.object_tree_view.expandAll()
                         self.select_Item(event)
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
@@ -117,8 +118,10 @@ class SegmentationScene(VideoScene):
                 #     self.duplicate_selected_Item(event)
                 case DrawingTools.DrawPoint, Qt.KeyboardModifier.NoModifier:
                     self.add_point(event)
+                    self.player.object_tree_view.expandAll()
                 case DrawingTools.DrawPoint, Qt.KeyboardModifier.ControlModifier:
                     self.add_point(event)
+                    self.player.object_tree_view.expandAll()
 
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """
@@ -143,9 +146,15 @@ class SegmentationScene(VideoScene):
                 case DrawingTools.DuplicateItem, Qt.KeyboardModifier.NoModifier:
                     self.move_Item(event)
 
-    # def move_Item(self, event: QGraphicsSceneMouseEvent) -> QGraphicsRectItem | QGraphicsEllipseItem:
-    #     self.last_shape = super().move_Item(event)
-    #     return self.last_shape
+    def move_Item(self, event: QGraphicsSceneMouseEvent) -> QGraphicsRectItem | QGraphicsEllipseItem:
+        graphics_item = super().move_Item(event)
+        x_item = self.player.source_model.graphics2model_item(graphics_item, self.player.T, 2)
+        y_item = self.player.source_model.graphics2model_item(graphics_item, self.player.T, 3)
+        if x_item is not None:
+            x_item.setData(f'{graphics_item.pos().x():.1f}', 0)
+        if y_item is not None:
+            y_item.setData(f'{graphics_item.pos().y():.1f}', 0)
+        return graphics_item
 
     def draw_Item(self, event: QGraphicsSceneMouseEvent) -> QGraphicsRectItem:
         if self.player.current_object is not None:
@@ -321,12 +330,12 @@ class SegmentationTool(VideoPlayer):
         selected_model_item = self.source_model.itemFromIndex(selected_model_index)
         obj = selected_model_item.object
         if isinstance(obj, BoundingBox):
-            self.scene.select_from_tree_view(obj.rect_item)
+            self.scene.select_from_tree_view(obj.graphics_item)
         elif isinstance(obj, Point):
-            self.scene.select_from_tree_view(obj.point_item)
+            self.scene.select_from_tree_view(obj.graphics_item)
         elif isinstance(obj, Object):
             if self.source_model.get_bounding_box(obj, self.T) is not None:
-                self.scene.select_from_tree_view(self.source_model.get_bounding_box(obj, self.T).rect_item)
+                self.scene.select_from_tree_view(self.source_model.get_bounding_box(obj, self.T).graphics_item)
 
     def create_video(self, video_dir):
         os.makedirs(video_dir, exist_ok=True)
@@ -337,11 +346,11 @@ class SegmentationTool(VideoPlayer):
     def change_frame(self, T: int = 0) -> None:
         super().change_frame(T=T)
         self.scene.reset_graphics_items()
-        boxes, points = self.source_model.get_all_prompts(self.T)
+        boxes, points = self.source_model.get_all_prompt_items(self.T)
         for box in boxes:
-            self.scene.addItem(box.rect_item)
+            self.scene.addItem(box.graphics_item)
         for point in points:
-            self.scene.addItem(point.point_item)
+            self.scene.addItem(point.graphics_item)
 
     def segment_from_prompt(self, items):
         video_dir = os.path.join('/data3/SegmentAnything2/videos/', self.region)

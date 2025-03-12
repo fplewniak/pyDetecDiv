@@ -11,30 +11,30 @@ ObjectReferenceRole = Qt.UserRole + 1
 class BoundingBox:
     def __init__(self, name: str = None, box: QGraphicsRectItem = None):
         self.name = name
-        self.rect_item = box
+        self.graphics_item = box
 
     @property
     def x(self):
-        if self.rect_item is not None:
-            return self.rect_item.pos().x()
+        if self.graphics_item is not None:
+            return self.graphics_item.pos().x()
         return None
 
     @property
     def y(self):
-        if self.rect_item is not None:
-            return self.rect_item.pos().y()
+        if self.graphics_item is not None:
+            return self.graphics_item.pos().y()
         return None
 
     @property
     def width(self):
-        if self.rect_item is not None:
-            return self.rect_item.rect().width()
+        if self.graphics_item is not None:
+            return self.graphics_item.rect().width()
         return None
 
     @property
     def height(self):
-        if self.rect_item is not None:
-            return self.rect_item.rect().height()
+        if self.graphics_item is not None:
+            return self.graphics_item.rect().height()
         return None
 
     @property
@@ -44,32 +44,32 @@ class BoundingBox:
         return [self.x, self.y, self.x + self.width, self.y + self.height]
 
     def change_box(self, box):
-        self.rect_item = box
+        self.graphics_item = box
         if box is None:
             self.name = None
         else:
             self.name = box.data(0)
 
     def __repr__(self):
-        return f'{self.name=}, {self.rect_item=}'
+        return f'{self.name=}, {self.graphics_item=}'
 
 
 class Point:
     def __init__(self, name: str = None, point: QGraphicsEllipseItem = None, label: int = 1):
         self.name = name
-        self.point_item = point
+        self.graphics_item = point
         self.label = label
 
     @property
     def x(self):
-        if self.point_item is not None:
-            return self.point_item.pos().x()
+        if self.graphics_item is not None:
+            return self.graphics_item.pos().x()
         return None
 
     @property
     def y(self):
-        if self.point_item is not None:
-            return self.point_item.pos().y()
+        if self.graphics_item is not None:
+            return self.graphics_item.pos().y()
         return None
 
     @property
@@ -79,14 +79,14 @@ class Point:
         return [self.x, self.y]
 
     def change_point(self, point):
-        self.point_item = point
+        self.graphics_item = point
         if point is None:
             self.name = None
         else:
             self.name = point.data(0)
 
     def __repr__(self):
-        return f'{self.name=}, {self.point_item=}'
+        return f'{self.name=}, {self.graphics_item=}'
 
 
 class Object:
@@ -134,7 +134,7 @@ class PromptSourceModel(QStandardItemModel):
     def objects(self):
         return [item.object for item in self.object_items()]
 
-    def object_items(self, frame=None):
+    def object_items(self):
         return [self.root_item.child(row) for row in range(self.root_item.rowCount())]
 
     def object_item(self, obj: Object) -> ModelItem:
@@ -169,7 +169,7 @@ class PromptSourceModel(QStandardItemModel):
     def change_bounding_box(self, obj: Object, frame: int, box: QGraphicsRectItem):
         bounding_box = self.get_bounding_box(obj, frame)
         if bounding_box is not None:
-            bounding_box.rect_item.scene().removeItem(bounding_box.rect_item)
+            bounding_box.graphics_item.scene().removeItem(bounding_box.graphics_item)
             row = self.create_bounding_box_row(frame, box)
             for column, item in enumerate(row):
                 self.object_item(obj).setChild(self.get_bounding_box_row(obj, frame), column, row[column])
@@ -187,10 +187,13 @@ class PromptSourceModel(QStandardItemModel):
     def get_bounding_boxes(self, obj: Object):
         return [child.object for child in self.object_item(obj).children() if isinstance(child.object, BoundingBox)]
 
+    def get_bounding_box_items(self, obj: Object):
+        return [child for child in self.object_item(obj).children() if isinstance(child.object, BoundingBox)]
+
     def remove_bounding_box(self, obj: Object, frame: int):
         bounding_box = self.get_bounding_box(obj, frame)
         if bounding_box is not None:
-            bounding_box.rect_item.scene().removeItem(bounding_box.rect_item)
+            bounding_box.graphics_item.scene().removeItem(bounding_box.graphics_item)
             self.object_item(obj).removeRow(self.get_bounding_box_row(obj, frame))
 
     def add_point(self, obj: Object, frame: int, point: QGraphicsEllipseItem, label: int = 1):
@@ -210,21 +213,50 @@ class PromptSourceModel(QStandardItemModel):
         points = [child.object for child in self.object_item(obj).children(frame) if isinstance(child.object, Point)]
         if points:
             return points
+        return []
+
+    def get_point_items(self, obj: Object, frame: int | None = None):
+        point_items = [child for child in self.object_item(obj).children(frame) if isinstance(child.object, Point)]
+        if point_items:
+            return point_items
         return None
+
+    def get_prompt_items(self, obj: Object, frame: int | None = None):
+        prompt_items = [child for child in self.object_item(obj).children(frame)]
+        if prompt_items:
+            return prompt_items
+        return []
+
+    def graphics2model_item(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem, frame: int = None, column: int = 0):
+        row_items = self.graphics2model_row(graphics_item, frame)
+        if len(row_items) > column:
+            return row_items[column]
+        return None
+
+    def graphics2model_row(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem, frame: int = None):
+        all_items = []
+        for obj in self.objects:
+            all_items += [item for item in self.get_prompt_items(obj, frame)]
+        item = next((item for item in all_items if item.object.graphics_item == graphics_item), None)
+        if item is not None:
+            row = item.row()
+            items_in_row = [self.itemFromIndex(self.sibling(row, col, item.index())) for col in range(self.columnCount())]
+            return items_in_row
+        return []
 
     def box2obj(self, box: QGraphicsRectItem):
         for obj in self.objects:
-            if box in [b.rect_item for b in self.get_bounding_boxes(obj)]:
+            if box in [b.graphics_item for b in self.get_bounding_boxes(obj)]:
                 return obj
         return None
 
     def point2obj(self, point: QGraphicsEllipseItem):
         for obj in self.objects:
-            if self.get_points(obj) and point in [p.point_item for p in self.get_points(obj)]:
+            if self.get_points(obj) and point in [p.graphics_item for p in self.get_points(obj)]:
                 return obj
         return None
 
-    def get_all_prompts(self, frame: int | None = None) -> tuple[list[BoundingBox], list[Point]]:
+    def get_all_prompt_items(self, frame: int | None = None) -> tuple[list[BoundingBox], list[Point]]:
         boxes = [self.get_bounding_box(obj, frame) for obj in self.objects if self.get_bounding_box(obj, frame) is not None]
         points = []
         for obj in self.objects:
