@@ -84,6 +84,7 @@ class SegmentationScene(VideoScene):
                 case DrawingTools.DrawRect, Qt.KeyboardModifier.NoModifier:
                     if self.last_shape:
                         if self.player.source_model.has_bounding_box(self.current_object, self.player.T):
+                            # self.update_Item_size(self.last_shape)
                             self.player.source_model.change_bounding_box(self.current_object, self.player.T, self.last_shape)
                         else:
                             self.player.source_model.add_bounding_box(self.current_object, self.player.T, self.last_shape)
@@ -148,18 +149,30 @@ class SegmentationScene(VideoScene):
 
     def move_Item(self, event: QGraphicsSceneMouseEvent) -> QGraphicsRectItem | QGraphicsEllipseItem:
         graphics_item = super().move_Item(event)
+        self.update_Item_coordinates(graphics_item)
+        return graphics_item
+
+    def update_Item_coordinates(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem):
         x_item = self.player.source_model.graphics2model_item(graphics_item, self.player.T, 2)
         y_item = self.player.source_model.graphics2model_item(graphics_item, self.player.T, 3)
         if x_item is not None:
             x_item.setData(f'{graphics_item.pos().x():.1f}', 0)
         if y_item is not None:
             y_item.setData(f'{graphics_item.pos().y():.1f}', 0)
-        return graphics_item
+
+    def update_Item_size(self, graphics_item: QGraphicsRectItem):
+        width_item = self.player.source_model.graphics2model_item(graphics_item, self.player.T, 4)
+        height_item = self.player.source_model.graphics2model_item(graphics_item, self.player.T, 5)
+        if width_item is not None:
+            width_item.setData(f'{int(graphics_item.rect().width())}', 0)
+        if height_item is not None:
+            height_item.setData(f'{int(graphics_item.rect().height())}', 0)
 
     def draw_Item(self, event: QGraphicsSceneMouseEvent) -> QGraphicsRectItem:
         if self.player.current_object is not None:
             self.last_shape = super().draw_Item(event)
             self.last_shape.setData(0, f'bounding_box{self.player.current_object.id_}')
+            self.update_Item_size(self.last_shape)
         else:
             self.last_shape = None
         return self.last_shape
