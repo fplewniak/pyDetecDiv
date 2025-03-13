@@ -193,11 +193,17 @@ class SegmentationScene(VideoScene):
         :param event:
         """
         menu = QMenu()
-        segment_action = menu.addAction('Run segmentation')
-        segment_action.triggered.connect(lambda _: self.player.get_prompt(self.player.T))
+        frame_segment_action = menu.addAction('Run segmentation on current frame')
+        frame_segment_action.triggered.connect(lambda _: pprint(self.player.prompt))
+        video_segment_action = menu.addAction('Run segmentation on video')
+        video_segment_action.triggered.connect(lambda _: pprint(self.player.source_model.get_prompt()))
+
+        # segment_action.triggered.connect(lambda _: self.player.get_prompt(self.player.T))
+        # segment_action.triggered.connect(lambda _: self.player.source_model.key_frames(self.current_object))
         # segment_action.triggered.connect(
         #         lambda _: self.player.segment_from_prompt(self.items()))
         menu.exec(event.screenPos())
+
     # def new_object(self):
     #     self.player.prompt[f'{self.player.T}'] = {f'{self.object_count}': {'box': [], 'points': []}}
     #     self.current_object = self.object_count
@@ -283,16 +289,8 @@ class SegmentationTool(VideoPlayer):
 
     @property
     def prompt(self):
-        return self.get_prompt(self.T)
-    
-    def get_prompt(self, frame):
-        global_prompt = {}
-        for obj in self.source_model.objects:
-            prompt = self.source_model.get_prompt(obj, frame)
-            if prompt is not None:
-                global_prompt[obj.id_] = self.source_model.get_prompt(obj, frame)
-        pprint(global_prompt)
-        return global_prompt
+        return {obj.id_: {self.T: self.source_model.get_prompt_for_key_frame(obj, self.T)}
+                for obj in self.source_model.objects if self.T in self.source_model.key_frames(obj)}
 
     def add_object(self, obj):
         new_item = self.source_model.add_object(obj)

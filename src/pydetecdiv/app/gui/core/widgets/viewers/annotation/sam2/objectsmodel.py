@@ -236,19 +236,26 @@ class PromptSourceModel(QStandardItemModel):
             return prompt_items
         return []
 
-    def get_prompt(self, obj: Object, frame: int):
+    def get_prompt_for_key_frame(self, obj: Object, frame: int):
         box = self.get_bounding_box(obj, frame)
         points = self.get_points(obj, frame)
         if box is not None or points:
-            prompt = {frame: {}}
+            prompt = {}
             if box is not None:
-                prompt[frame]['box_coords'] = [box.x, box.y, box.x + box.width, box.y + box.height]
+                prompt['box_coords'] = [box.x, box.y, box.x + box.width, box.y + box.height]
             if points:
-                prompt[frame]['points_coords'] = [[point.x, point.y] for point in points]
-                prompt[frame]['points_labels'] = [[point.label for point in points]]
+                prompt['points_coords'] = [[point.x, point.y] for point in points]
+                prompt['points_labels'] = [[point.label for point in points]]
         else:
             prompt = None
         return prompt
+
+    def get_prompt_for_obj(self, obj: Object):
+        return {key_frame: self.get_prompt_for_key_frame(obj, key_frame) for key_frame in self.key_frames(obj)}
+
+    def get_prompt(self):
+        return {obj.id_: self.get_prompt_for_obj(obj) for obj in self.objects if self.key_frames(obj)}
+
 
     def graphics2model_item(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem, frame: int = None, column: int = 0):
         row_items = self.graphics2model_row(graphics_item, frame)
@@ -266,6 +273,12 @@ class PromptSourceModel(QStandardItemModel):
             items_in_row = [self.itemFromIndex(self.sibling(row, col, item.index())) for col in range(self.columnCount())]
             return items_in_row
         return []
+
+    def key_frames(self, obj: Object):
+        return sorted({self.model_item2frame(item) for item in self.get_prompt_items(obj)})
+
+    def model_item2frame(self, item: QStandardItem):
+        return int(self.itemFromIndex(self.sibling(item.row(), 1, item.index())).data(0))
 
     def box2obj(self, box: QGraphicsRectItem):
         for obj in self.objects:
