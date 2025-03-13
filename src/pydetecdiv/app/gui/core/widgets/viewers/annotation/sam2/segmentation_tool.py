@@ -24,6 +24,9 @@ from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer, Vi
 
 
 class SegmentationScene(VideoScene):
+    """
+    A class handling the VideoScene for the Segmentation tool
+    """
     def __init__(self, parent: QWidget = None, **kwargs):
         super().__init__(parent, **kwargs)
         self.default_pen = QPen(Qt.GlobalColor.green, 1)
@@ -429,6 +432,10 @@ class SegmentationTool(VideoPlayer):
             self.scene.addItem(point.graphics_item)
 
     def segment_from_prompt(self, items):
+        """
+
+        :param items:
+        """
         video_dir = os.path.join('/data3/SegmentAnything2/videos/', self.region)
         frame = self.T
         if not os.path.exists(video_dir):

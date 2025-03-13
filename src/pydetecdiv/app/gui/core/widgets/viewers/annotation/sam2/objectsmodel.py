@@ -227,7 +227,7 @@ class PromptSourceModel(QStandardItemModel):
         :param obj: the object
         :param frame: the frame
         """
-        return any([isinstance(child.object, BoundingBox) for child in self.object_item(obj).children(frame)])
+        return any((isinstance(child.object, BoundingBox) for child in self.object_item(obj).children(frame)))
 
     def add_object(self, obj: Object) -> ModelItem:
         """
@@ -244,7 +244,7 @@ class PromptSourceModel(QStandardItemModel):
         remove an object
         :param obj: the object to remove
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     def add_bounding_box(self, obj: Object, frame: int, box: QGraphicsRectItem) -> None:
         """
@@ -285,7 +285,7 @@ class PromptSourceModel(QStandardItemModel):
             bounding_box.graphics_item.scene().removeItem(bounding_box.graphics_item)
             row = self.create_bounding_box_row(frame, box)
             for column, item in enumerate(row):
-                self.object_item(obj).setChild(self.get_bounding_box_row(obj, frame), column, row[column])
+                self.object_item(obj).setChild(self.get_bounding_box_row(obj, frame), column, item)
         else:
             self.add_bounding_box(obj, frame, box)
 
@@ -429,7 +429,7 @@ class PromptSourceModel(QStandardItemModel):
         :param frame: the frame
         :return: the list of model items
         """
-        prompt_items = [child for child in self.object_item(obj).children(frame)]
+        prompt_items = list(self.object_item(obj).children(frame))
         if prompt_items:
             return prompt_items
         return []
@@ -493,7 +493,7 @@ class PromptSourceModel(QStandardItemModel):
         """
         all_items = []
         for obj in self.objects:
-            all_items += [item for item in self.get_prompt_items(obj, frame)]
+            all_items += list(self.get_prompt_items(obj, frame))
         item = next((item for item in all_items if item.object.graphics_item == graphics_item), None)
         if item is not None:
             row = item.row()
