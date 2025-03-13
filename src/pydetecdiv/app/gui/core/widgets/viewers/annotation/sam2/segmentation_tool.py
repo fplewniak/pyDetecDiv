@@ -1,23 +1,26 @@
+"""
+Computer Assisted Segmentation Tool: a tool for manual segmentation of images (annotation) using SegmentAnything2 by META to
+segment and propagate segmentation using prompts (bounding boxes, points and masks)
+"""
 import os
 from pprint import pprint
 
 from PIL import Image as PILimage
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QPen, QKeyEvent, QKeySequence
+from PySide6.QtCore import Qt, QModelIndex
+from PySide6.QtGui import QPen, QKeyEvent, QKeySequence, QStandardItem
 from matplotlib import pyplot as plt
 
 import numpy as np
 import torch.cuda
 from PySide6.QtWidgets import (QGraphicsSceneMouseEvent, QMenu, QWidget, QGraphicsEllipseItem, QMenuBar, QVBoxLayout, QLabel,
-                               QHBoxLayout, QSplitter, QGraphicsRectItem, QHeaderView)
+                               QHBoxLayout, QSplitter, QGraphicsRectItem, QHeaderView, QGraphicsItem)
 from sam2.build_sam import build_sam2_video_predictor
 
 from pydetecdiv.app import PyDetecDiv, DrawingTools
 from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.objectsmodel import (ObjectsTreeView, Object, PromptProxyModel,
                                                                                   PromptSourceModel, ObjectReferenceRole,
-                                                                                  BoundingBox, Point)
+                                                                                  BoundingBox, Point, ModelItem)
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer, VideoViewerPanel, VideoControlPanel, VideoScene
-from pydetecdiv.app.models.Trees import TreeItem
 
 
 class SegmentationScene(VideoScene):
@@ -28,15 +31,21 @@ class SegmentationScene(VideoScene):
         self.negative_pen = QPen(Qt.GlobalColor.red, 1)
         self.pen = self.default_pen
 
-        self.about_to_create_object = False
         self.object_list = []
         self.last_shape = None
 
     @property
-    def current_object(self):
+    def current_object(self) -> Object:
+        """
+        The currently selected object. All prompt item additions will be attached to this object.
+        """
         return self.player.current_object
 
-    def reset_graphics_items(self):
+    def reset_graphics_items(self) -> None:
+        """
+        Clear the scene before drawing new graphics item. This is used when changing frame, to ensure only items defined for the
+        current frame are displayed
+        """
         for item in self.items():
             if isinstance(item, (QGraphicsRectItem, QGraphicsEllipseItem)):
                 self.removeItem(item)
@@ -58,7 +67,11 @@ class SegmentationScene(VideoScene):
             self.player.add_object(current_object)
             # self.player.prompt_model.add_object(current_object)
 
-    def select_from_tree_view(self, graphics_item):
+    def select_from_tree_view(self, graphics_item: QGraphicsItem) -> None:
+        """
+        Selection of a graphics item responding to a click in the tree view
+        :param graphics_item: the graphics item to select
+        """
         _ = [r.setSelected(False) for r in self.selectedItems()]
         if graphics_item is not None:
             graphics_item.setSelected(True)
@@ -66,21 +79,30 @@ class SegmentationScene(VideoScene):
                 self.player.object_tree_view.select_object_from_graphics_item(graphics_item)
 
     def select_Item(self, event: QGraphicsSceneMouseEvent) -> None:
+        """
+        method overriding the select_Item method of QGraphicsScene in order to synchronize the selection in the Scene with a
+        selection in the tree view.
+        :param event:
+        """
         graphics_item = super().select_Item(event)
         if isinstance(graphics_item, (QGraphicsRectItem, QGraphicsEllipseItem)):
             self.player.object_tree_view.select_object_from_graphics_item(graphics_item)
 
-    def delete_item(self, r):
-        if isinstance(r, QGraphicsRectItem):
+    def delete_item(self, graphics_item: QGraphicsItem) -> None:
+        """
+        Delete a graphics item
+        :param graphics_item: the graphics item to delete
+        """
+        if isinstance(graphics_item, QGraphicsRectItem):
             self.player.source_model.remove_bounding_box(self.current_object, self.player.T)
-        if isinstance(r, QGraphicsEllipseItem):
-            self.player.source_model.remove_point(self.current_object, r, self.player.T)
-            # self.player.object_tree_view.select_item(self.player.current_object.tree_item)
-            # self.player.source_model.delete_bounding_box(self.player.T, r)
-            # print(f'removing item {r}')
-            # self.removeItem(r)
+        if isinstance(graphics_item, QGraphicsEllipseItem):
+            self.player.source_model.remove_point(self.current_object, graphics_item, self.player.T)
 
-    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent):
+    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+        """
+        Reactions to a mouse click release event in the scene, actualizing bounding box creation or modification
+        :param event: the QGraphicsSceneMouseEvent
+        """
         if event.button() == Qt.MouseButton.LeftButton:
             match PyDetecDiv.current_drawing_tool, event.modifiers():
                 case DrawingTools.DrawRect, Qt.KeyboardModifier.NoModifier:
@@ -150,11 +172,20 @@ class SegmentationScene(VideoScene):
                     self.move_Item(event)
 
     def move_Item(self, event: QGraphicsSceneMouseEvent) -> QGraphicsRectItem | QGraphicsEllipseItem:
+        """
+        Move the selected graphics item
+        :param event: the QGraphicsSceneMouseEvent
+        :return: the moved graphics item
+        """
         graphics_item = super().move_Item(event)
         self.update_Item_coordinates(graphics_item)
         return graphics_item
 
-    def update_Item_coordinates(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem):
+    def update_Item_coordinates(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem) -> None:
+        """
+        Update the coordinates of a graphics item in the source model for display in the tree view, after this item has been moved
+        :param graphics_item: the moved graphics item
+        """
         x_item = self.player.source_model.graphics2model_item(graphics_item, self.player.T, 2)
         y_item = self.player.source_model.graphics2model_item(graphics_item, self.player.T, 3)
         if x_item is not None:
@@ -162,7 +193,11 @@ class SegmentationScene(VideoScene):
         if y_item is not None:
             y_item.setData(f'{graphics_item.pos().y():.1f}', 0)
 
-    def update_Item_size(self, graphics_item: QGraphicsRectItem):
+    def update_Item_size(self, graphics_item: QGraphicsRectItem) -> None:
+        """
+        Update the bounding box size information in the source model for display in the tree view after the box has been resized
+        :param graphics_item: the bounding box graphics item
+        """
         width_item = self.player.source_model.graphics2model_item(graphics_item, self.player.T, 4)
         height_item = self.player.source_model.graphics2model_item(graphics_item, self.player.T, 5)
         if width_item is not None:
@@ -171,6 +206,11 @@ class SegmentationScene(VideoScene):
             height_item.setData(f'{int(graphics_item.rect().height())}', 0)
 
     def draw_Item(self, event: QGraphicsSceneMouseEvent) -> QGraphicsRectItem:
+        """
+        Draw a rectangular item representing a bounding box
+        :param event: the mouse event
+        :return: the rectangular item
+        """
         if self.player.current_object is not None:
             self.last_shape = super().draw_Item(event)
             self.last_shape.setData(0, f'bounding_box{self.player.current_object.id_}')
@@ -179,7 +219,12 @@ class SegmentationScene(VideoScene):
             self.last_shape = None
         return self.last_shape
 
-    def duplicate_selected_Item(self, event) -> QGraphicsRectItem | None:
+    def duplicate_selected_Item(self, event: QGraphicsSceneMouseEvent) -> QGraphicsRectItem | None:
+        """
+        Duplicate the selected bounding box
+        :param event: the mouse event
+        :return: the duplicated item
+        """
         if self.player.current_object is not None:
             item = super().duplicate_selected_Item(event)
             item.setData(0, f'bounding_box{self.player.current_object.id_}')
@@ -190,27 +235,21 @@ class SegmentationScene(VideoScene):
         """
         The context menu
 
-        :param event:
+        :param event: mouse event
         """
         menu = QMenu()
         frame_segment_action = menu.addAction('Run segmentation on current frame')
         frame_segment_action.triggered.connect(lambda _: pprint(self.player.prompt))
         video_segment_action = menu.addAction('Run segmentation on video')
         video_segment_action.triggered.connect(lambda _: pprint(self.player.source_model.get_prompt()))
-
-        # segment_action.triggered.connect(lambda _: self.player.get_prompt(self.player.T))
-        # segment_action.triggered.connect(lambda _: self.player.source_model.key_frames(self.current_object))
-        # segment_action.triggered.connect(
-        #         lambda _: self.player.segment_from_prompt(self.items()))
         menu.exec(event.screenPos())
 
-    # def new_object(self):
-    #     self.player.prompt[f'{self.player.T}'] = {f'{self.object_count}': {'box': [], 'points': []}}
-    #     self.current_object = self.object_count
-    #     self.object_count += 1
-    #     pprint(self.player.prompt)
-    #
     def add_point(self, event: QGraphicsSceneMouseEvent) -> QGraphicsEllipseItem | None:
+        """
+        Add a point (positive is green, negative is red) defining the interior of an object to segment
+        :param event: the mouse event
+        :return: the point (small ellipse) graphics item
+        """
         if self.current_object is not None:
             label = 1
             self.pen = self.positive_pen
@@ -223,29 +262,8 @@ class SegmentationScene(VideoScene):
             item.setData(1, label)
             self.pen = self.default_pen
             self.player.source_model.add_point(self.current_object, self.player.T, item, label)
-            # self.player.prompt[f'{self.player.T}'][f'{self.current_object}']['points'].append([item.data(0), item])
-            # pprint(self.player.prompt)
             return item
         return None
-    #
-    # def item_dict(self):
-    #     item_dict = {'boxes': {}, 'points': {}}
-    #     for item in sorted(self.regions(), key=lambda x: x.data(0)):
-    #         self._add_item_to_dict(item, item_dict['boxes'])
-    #     for item in sorted(self.points(), key=lambda x: x.data(0)):
-    #         self._add_item_to_dict(item, item_dict['points'])
-    #     return item_dict
-    #
-    # def draw_Item(self, event):
-    #     item = super().draw_Item(event)
-    #     item.setData(0, f'bounding_box_{item.x():.1f}_{item.y():.1f}')
-    #     if f'{self.player.T}' not in self.player.prompt or self.current_object is None or item.data(0) not in \
-    #             self.player.prompt[f'{self.player.T}'][f'{self.current_object}']:
-    #         self.new_object()
-    #         self.player.prompt[f'{self.player.T}'][f'{self.current_object}']['box'] = [item.data(0), item]
-    #         pprint(self.player.prompt)
-    #     return item
-    #
 
 
 class SegmentationTool(VideoPlayer):
@@ -264,35 +282,52 @@ class SegmentationTool(VideoPlayer):
         self.inference_state = None
         self.object_tree_view = None
 
-    # @property
-    # def model(self):
-    #     return self.object_tree_view.source_model
-
     @property
-    def current_tree_index(self):
+    def current_tree_index(self) -> QModelIndex:
+        """
+        the source index of the current selection obtained from the proxy model
+        :return:
+        """
         return self.proxy_model.mapToSource(self.object_tree_view.currentIndex())
 
     @property
-    def current_tree_item(self):
+    def current_tree_item(self) -> QStandardItem:
+        """
+        the currently selected item
+        :return:
+        """
         return self.source_model.itemFromIndex(self.current_tree_index)
 
     @property
-    def current_object(self):
+    def current_object(self) -> Object | None:
+        """
+        Returns the current object according to the selection in the tree view
+        :return: the current object
+        """
         item = self.current_tree_item
         if item is not None:
             obj = item.data(ObjectReferenceRole)
             if isinstance(obj, Object):
                 return obj
-            if isinstance(obj, BoundingBox):
+            if isinstance(obj, (BoundingBox, Point)):
                 return item.parent().data(ObjectReferenceRole)
         return None
 
     @property
-    def prompt(self):
+    def prompt(self) -> dict:
+        """
+        Returns the prompt for all objects in the current frame
+        :return: the prompt
+        """
         return {obj.id_: {self.T: self.source_model.get_prompt_for_key_frame(obj, self.T)}
                 for obj in self.source_model.objects if self.T in self.source_model.key_frames(obj)}
 
-    def add_object(self, obj):
+    def add_object(self, obj: Object) -> ModelItem:
+        """
+        Add a new object
+        :param obj: the new object
+        :return: the model item corresponding to the added object
+        """
         new_item = self.source_model.add_object(obj)
         self.object_tree_view.select_item(new_item)
         return new_item
@@ -350,7 +385,11 @@ class SegmentationTool(VideoPlayer):
 
         self.video_frame.connect(self.proxy_model.set_frame)
 
-    def select_from_tree_view(self, index):
+    def select_from_tree_view(self, index: QModelIndex) -> None:
+        """
+        Select the graphics item corresponding to the selected Model item
+        :param index: the model index of the selected item (relative to proxy model)
+        """
         source_index = self.proxy_model.mapToSource(index)
         selected_model_index = self.proxy_model.mapToSource(index).sibling(source_index.row(), 0)
         selected_model_item = self.source_model.itemFromIndex(selected_model_index)
@@ -365,13 +404,22 @@ class SegmentationTool(VideoPlayer):
             if self.source_model.get_bounding_box(obj, self.T) is not None:
                 self.scene.select_from_tree_view(self.source_model.get_bounding_box(obj, self.T).graphics_item)
 
-    def create_video(self, video_dir):
+    def create_video(self, video_dir: str) -> None:
+        """
+        Create a pseudo-video consisting of as many jpg files as there are frames. This pseudo-video will be fed info SAM2 for
+        segmentation propagation from frame to frame
+        :param video_dir: the destination directory for the jpg files
+        """
         os.makedirs(video_dir, exist_ok=True)
         for frame in range(self.viewer.background.image.image_resource_data.sizeT):
             self.change_frame(frame)
             self.viewer.background.image.pixmap().toImage().save(f'{video_dir}/{frame:05d}.jpg', format='jpg')
 
     def change_frame(self, T: int = 0) -> None:
+        """
+        Change the frame of the video
+        :param T: the new frame time index
+        """
         super().change_frame(T=T)
         self.scene.reset_graphics_items()
         boxes, points = self.source_model.get_all_prompt_items(self.T)
