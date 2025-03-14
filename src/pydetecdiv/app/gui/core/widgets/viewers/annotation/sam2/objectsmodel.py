@@ -446,10 +446,10 @@ class PromptSourceModel(QStandardItemModel):
         if box is not None or points:
             prompt = {}
             if box is not None:
-                prompt['box_coords'] = [box.x, box.y, box.x + box.width, box.y + box.height]
+                prompt['box'] = [box.x, box.y, box.x + box.width, box.y + box.height]
             if points:
-                prompt['points_coords'] = [[point.x, point.y] for point in points]
-                prompt['points_labels'] = [[point.label for point in points]]
+                prompt['points'] = [[point.x, point.y] for point in points]
+                prompt['labels'] = [[point.label for point in points]]
         else:
             prompt = None
         return prompt

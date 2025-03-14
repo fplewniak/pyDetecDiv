@@ -2,6 +2,7 @@
 Computer Assisted Segmentation Tool: a tool for manual segmentation of images (annotation) using SegmentAnything2 by META to
 segment and propagate segmentation using prompts (bounding boxes, points and masks)
 """
+import gc
 import os
 from pprint import pprint
 
@@ -21,12 +22,14 @@ from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.objectsmodel import
                                                                                   PromptSourceModel, ObjectReferenceRole,
                                                                                   BoundingBox, Point, ModelItem)
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer, VideoViewerPanel, VideoControlPanel, VideoScene
+from pydetecdiv.settings import get_config_value
 
 
 class SegmentationScene(VideoScene):
     """
     A class handling the VideoScene for the Segmentation tool
     """
+
     def __init__(self, parent: QWidget = None, **kwargs):
         super().__init__(parent, **kwargs)
         self.default_pen = QPen(Qt.GlobalColor.green, 1)
@@ -242,9 +245,14 @@ class SegmentationScene(VideoScene):
         """
         menu = QMenu()
         frame_segment_action = menu.addAction('Run segmentation on current frame')
-        frame_segment_action.triggered.connect(lambda _: pprint(self.player.prompt))
+        frame_segment_action.triggered.connect(self.player.segment_from_prompt)
         video_segment_action = menu.addAction('Run segmentation on video')
-        video_segment_action.triggered.connect(lambda _: pprint(self.player.source_model.get_prompt()))
+        video_segment_action.triggered.connect(self.player.segment_from_prompt)
+        show_frame_prompt = menu.addAction('Show current frame prompt')
+        show_frame_prompt.triggered.connect(lambda _: pprint(self.player.prompt))
+        show_video_prompt = menu.addAction('Show video prompt')
+        show_video_prompt.triggered.connect(lambda _: pprint(self.player.source_model.get_prompt()))
+
         menu.exec(event.screenPos())
 
     def add_point(self, event: QGraphicsSceneMouseEvent) -> QGraphicsEllipseItem | None:
@@ -282,6 +290,7 @@ class SegmentationTool(VideoPlayer):
         self.source_model = PromptSourceModel()
         self.proxy_model = PromptProxyModel()
         self.proxy_model.setRecursiveFilteringEnabled(True)
+        self.predictor = None
         self.inference_state = None
         self.object_tree_view = None
 
@@ -408,6 +417,7 @@ class SegmentationTool(VideoPlayer):
         os.makedirs(video_dir, exist_ok=True)
         for frame in range(self.viewer.background.image.image_resource_data.sizeT):
             self.change_frame(frame)
+            # self.viewer.background.image.change_frame(frame)
             self.viewer.background.image.pixmap().toImage().save(f'{video_dir}/{frame:05d}.jpg', format='jpg')
 
     def change_frame(self, T: int = 0) -> None:
@@ -423,12 +433,14 @@ class SegmentationTool(VideoPlayer):
         for point in points:
             self.scene.addItem(point.graphics_item)
 
-    def segment_from_prompt(self, items):
+    def segment_from_prompt(self):
         """
-
-        :param items:
         """
-        video_dir = os.path.join('/data3/SegmentAnything2/videos/', self.region)
+        video_dir = os.path.join(get_config_value('project', 'workspace'),
+                                 PyDetecDiv.project_name,
+                                 'data/SegmentAnything2/videos',
+                                 self.region)
+        print(f'{video_dir=}')
         frame = self.T
         if not os.path.exists(video_dir):
             self.create_video(video_dir)
@@ -443,15 +455,51 @@ class SegmentationTool(VideoPlayer):
         if device.type == 'cuda':
             torch.autocast('cuda', dtype=torch.bfloat16).__enter__()
 
-        sam2_checkpoint = '/data3/SegmentAnything2/checkpoints/sam2.1_hiera_large.pt'
-        model_cfg = 'configs/sam2.1/sam2.1_hiera_l.yaml'
+        sam2_checkpoint = get_config_value('paths', 'sam2_checkpoint')
+        model_cfg = get_config_value('paths', 'sam2_model_cfg')
 
-        predictor = build_sam2_video_predictor(model_cfg, sam2_checkpoint, device=device)
+        if self.predictor is None:
+            self.predictor = build_sam2_video_predictor(model_cfg, sam2_checkpoint, device=device)
+        else:
+            self.predictor.reset_state(self.inference_state)
 
         frame_names = [p for p in os.listdir(video_dir) if os.path.splitext(p)[-1] in ['.jpg', 'jpeg', '.JPG', '.JPEG']]
         frame_names.sort(key=lambda p: int(os.path.splitext(p)[0]))
 
-        self.inference_state = predictor.init_state(video_dir)
+        self.inference_state = self.predictor.init_state(video_dir)
+
+        for obj_id, frames in self.source_model.get_prompt().items():
+            for frame, box_points in frames.items():
+                _, out_obj_ids, out_mask_logits = self.predictor.add_new_points_or_box(
+                        inference_state=self.inference_state,
+                        frame_idx=frame,
+                        obj_id=obj_id,
+                        **box_points
+                        )
+
+        video_segments = {}
+        for out_frame_idx, out_obj_ids, out_mask_logits in self.predictor.propagate_in_video(self.inference_state):
+            video_segments[out_frame_idx] = {
+                out_obj_id: (out_mask_logits[i] > 0.0).cpu().numpy()
+                for i, out_obj_id in enumerate(out_obj_ids)
+                }
+        vis_frame_stride = 3
+        num_frames = 5
+        plt.close('all')
+        for out_frame_idx in range(0, num_frames * vis_frame_stride, vis_frame_stride):
+            plt.figure(figsize=(6, 4))
+            plt.title(f'frame {out_frame_idx}')
+            plt.imshow(PILimage.open(os.path.join(video_dir, frame_names[out_frame_idx])))
+            for out_obj_id, out_mask in video_segments[out_frame_idx].items():
+                show_mask(out_mask, plt.gca(), obj_id=out_obj_id)
+        plt.show()
+        del video_segments
+        del out_mask
+        del out_mask_logits
+        torch.cuda.empty_cache()
+        gc.collect()
+
+    def resume_segmentation(self, items):
 
         # boxes = [[i.x(), i.y(), i.x() + i.rect().width(), i.y() + i.rect().height()] for i in items if
         #          isinstance(i, QGraphicsRectItem)]
