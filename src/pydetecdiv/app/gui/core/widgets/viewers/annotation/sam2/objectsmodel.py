@@ -198,7 +198,7 @@ class PromptSourceModel(QStandardItemModel):
     """
 
     def __init__(self):
-        super().__init__()
+        super().__init__(0, 7)
         self.setHorizontalHeaderLabels(['object', '', 'x', 'y', 'width', 'height', 'label'])
         self.root_item = self.invisibleRootItem()
 
