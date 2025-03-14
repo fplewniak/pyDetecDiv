@@ -3,7 +3,7 @@ Classes defining the model and objects required to declare and manage the SAM2 p
 """
 from PySide6.QtCore import QSortFilterProxyModel, Qt, QModelIndex
 from PySide6.QtGui import QStandardItemModel, QStandardItem
-from PySide6.QtWidgets import QTreeView, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsItem
+from PySide6.QtWidgets import QTreeView, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsItem, QHeaderView
 
 ObjectReferenceRole = Qt.UserRole + 1
 
@@ -599,6 +599,18 @@ class ObjectsTreeView(QTreeView):
     def __init__(self):
         super().__init__()
         self.source_model = None
+
+    def setup(self):
+        """
+        Set the appearance of the tree view (hide frame column, ensure first column is wide enough to show box and point names, and
+        stretch other columns to accommodate the available space.
+        """
+        self.setHeaderHidden(False)
+        self.setColumnHidden(1, True)
+        self.header().resizeSection(0, 75)
+        for c in range(2, self.source_model.columnCount()):
+            self.header().setSectionResizeMode(c, QHeaderView.Stretch)
+        self.expandAll()
 
     def setSourceModel(self, model: PromptSourceModel) -> None:
         """
