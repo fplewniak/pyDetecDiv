@@ -3,7 +3,7 @@ Classes defining the model and objects required to declare and manage the SAM2 p
 """
 from PySide6.QtCore import QSortFilterProxyModel, Qt, QModelIndex
 from PySide6.QtGui import QStandardItemModel, QStandardItem
-from PySide6.QtWidgets import QTreeView, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsItem, QHeaderView
+from PySide6.QtWidgets import QTreeView, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsItem, QHeaderView, QGraphicsPolygonItem
 
 ObjectReferenceRole = Qt.UserRole + 1
 
@@ -134,6 +134,11 @@ class Point:
         """
         return f'{self.name=}, {self.graphics_item=}'
 
+class Mask:
+    def __init__(self, name: str = None, mask_item: QGraphicsPolygonItem = None):
+        self.name = name
+        self.graphics_item = mask_item
+
 
 class Object:
     """
@@ -149,7 +154,7 @@ class ModelItem(QStandardItem):
     A class defining a model item and its references to underlying object or graphics item
     """
 
-    def __init__(self, data, obj: Object | BoundingBox | Point | None):
+    def __init__(self, data, obj: Object | BoundingBox | Point | Mask | None):
         super().__init__(data)
         self.setData(obj, ObjectReferenceRole)
 
@@ -208,6 +213,9 @@ class PromptSourceModel(QStandardItemModel):
         all the objects to segment that were declared in the source model
         """
         return [item.object for item in self.object_items()]
+
+    def object(self, obj_id):
+        return next((obj for obj in self.objects if obj.id_ == obj_id), None)
 
     def object_items(self) -> list[ModelItem]:
         """
@@ -422,6 +430,26 @@ class PromptSourceModel(QStandardItemModel):
             return point_items
         return []
 
+    def add_mask(self, obj: Object, frame: int, mask: QGraphicsPolygonItem):
+        row = self.create_mask_row(frame, mask)
+        self.object_item(obj).appendRow(row)
+
+    @staticmethod
+    def create_mask_row(frame: int, mask_graphics_item: QGraphicsPolygonItem):
+        mask = Mask(name=mask_graphics_item.data(0), mask_item=mask_graphics_item)
+        mask_item = ModelItem(mask.name, mask)
+        frame_item = QStandardItem(str(frame))
+        return [mask_item, frame_item]
+
+    def get_mask(self, obj: Object, frame: int) -> Mask | None:
+        """
+        retrieve the bounding for object in specified frame
+        :param obj: the object
+        :param frame: the frame
+        :return: the BoundingBox object
+        """
+        return next((child.object for child in self.object_item(obj).children(frame) if isinstance(child.object, Mask)), None)
+
     def get_prompt_items(self, obj: Object, frame: int | None = None) -> list[ModelItem]:
         """
         retrieve the model items for points and bounding boxes of an object in one specific frame, or all frames (if frame is None)
@@ -429,7 +457,7 @@ class PromptSourceModel(QStandardItemModel):
         :param frame: the frame
         :return: the list of model items
         """
-        prompt_items = list(self.object_item(obj).children(frame))
+        prompt_items = [child for child in self.object_item(obj).children(frame) if not isinstance(child.object, Mask)]
         if prompt_items:
             return prompt_items
         return []
@@ -540,7 +568,7 @@ class PromptSourceModel(QStandardItemModel):
                 return obj
         return None
 
-    def get_all_prompt_items(self, frame: int | None = None) -> tuple[list[BoundingBox], list[Point]]:
+    def get_all_prompt_items(self, frame: int | None = None) -> tuple[list[BoundingBox], list[Point], list[Mask]]:
         """
         retrieve all model items for bounding boxes and points in a given frame or all frames
         :param frame: the frame
@@ -548,11 +576,12 @@ class PromptSourceModel(QStandardItemModel):
         """
         boxes = [self.get_bounding_box(obj, frame) for obj in self.objects if self.get_bounding_box(obj, frame) is not None]
         points = []
+        masks = [self.get_mask(obj, frame) for obj in self.objects if self.get_mask(obj, frame) is not None]
         for obj in self.objects:
             point_list = self.get_points(obj, frame)
             if point_list is not None:
                 points += point_list
-        return boxes, points
+        return boxes, points, masks
 
 
 class PromptProxyModel(QSortFilterProxyModel):
@@ -582,7 +611,7 @@ class PromptProxyModel(QSortFilterProxyModel):
         if self.frame is None:
             return True
 
-        # Get the index of the current row in the set number column
+        # Get the index of the current row in the frame column
         index = self.sourceModel().index(source_row, 1, source_parent)
         # Get the frame number
         frame = self.sourceModel().data(index, Qt.DisplayRole)

@@ -6,15 +6,16 @@ import gc
 import os
 from pprint import pprint
 
+import cv2
 from PIL import Image as PILimage
-from PySide6.QtCore import Qt, QModelIndex
-from PySide6.QtGui import QPen, QKeyEvent, QKeySequence, QStandardItem
+from PySide6.QtCore import Qt, QModelIndex, QPointF
+from PySide6.QtGui import QPen, QKeyEvent, QKeySequence, QStandardItem, QCloseEvent, QPolygonF
 from matplotlib import pyplot as plt
 
 import numpy as np
 import torch.cuda
 from PySide6.QtWidgets import (QGraphicsSceneMouseEvent, QMenu, QWidget, QGraphicsEllipseItem, QMenuBar, QVBoxLayout, QLabel,
-                               QHBoxLayout, QSplitter, QGraphicsRectItem, QHeaderView, QGraphicsItem)
+                               QHBoxLayout, QSplitter, QGraphicsRectItem, QHeaderView, QGraphicsItem, QGraphicsPolygonItem)
 from sam2.build_sam import build_sam2_video_predictor
 
 from pydetecdiv.app import PyDetecDiv, DrawingTools
@@ -53,7 +54,7 @@ class SegmentationScene(VideoScene):
         current frame are displayed
         """
         for item in self.items():
-            if isinstance(item, (QGraphicsRectItem, QGraphicsEllipseItem)):
+            if isinstance(item, (QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsPolygonItem)):
                 self.removeItem(item)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
@@ -292,6 +293,9 @@ class SegmentationTool(VideoPlayer):
         self.proxy_model.setRecursiveFilteringEnabled(True)
         self.predictor = None
         self.inference_state = None
+        self.video_segments = None
+        self.out_mask = None
+        self.out_mask_logits = None
         self.object_tree_view = None
 
     @property
@@ -427,11 +431,38 @@ class SegmentationTool(VideoPlayer):
         """
         super().change_frame(T=T)
         self.scene.reset_graphics_items()
-        boxes, points = self.source_model.get_all_prompt_items(self.T)
+        boxes, points, masks = self.source_model.get_all_prompt_items(self.T)
         for box in boxes:
             self.scene.addItem(box.graphics_item)
         for point in points:
             self.scene.addItem(point.graphics_item)
+        for mask in masks:
+            self.scene.addItem(mask.graphics_item)
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        print('Closing SegmentationTool')
+        self.release_memory()
+
+    def release_memory(self, keep_predictor=False):
+        for v in self.inference_state.values():
+            if torch.is_tensor(v):
+                del v
+                v = None
+        if keep_predictor is True:
+            self.predictor.reset_state(self.inference_state)
+        else:
+            self.predictor = None
+            self.inference_state = None
+        del self.video_segments
+        del self.out_mask
+        del self.out_mask_logits
+        self.video_segments = None
+        self.out_mask = None
+        self.out_mask_logits = None
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+
+        gc.collect()
 
     def segment_from_prompt(self):
         """
@@ -470,34 +501,57 @@ class SegmentationTool(VideoPlayer):
 
         for obj_id, frames in self.source_model.get_prompt().items():
             for frame, box_points in frames.items():
-                _, out_obj_ids, out_mask_logits = self.predictor.add_new_points_or_box(
+                _, out_obj_ids, self.out_mask_logits = self.predictor.add_new_points_or_box(
                         inference_state=self.inference_state,
                         frame_idx=frame,
                         obj_id=obj_id,
                         **box_points
                         )
 
-        video_segments = {}
-        for out_frame_idx, out_obj_ids, out_mask_logits in self.predictor.propagate_in_video(self.inference_state):
-            video_segments[out_frame_idx] = {
-                out_obj_id: (out_mask_logits[i] > 0.0).cpu().numpy()
+        self.video_segments = {}
+        start_frame_idx=None
+        max_frame_num_to_track=None
+        for out_frame_idx, out_obj_ids, self.out_mask_logits in self.predictor.propagate_in_video(self.inference_state,
+                                                                                             start_frame_idx=start_frame_idx,
+                                                                                             max_frame_num_to_track=max_frame_num_to_track,
+                                                                                             reverse=False):
+            self.video_segments[out_frame_idx] = {
+                out_obj_id: (self.out_mask_logits[i] > 0.0).cpu().numpy()
                 for i, out_obj_id in enumerate(out_obj_ids)
                 }
-        vis_frame_stride = 3
-        num_frames = 5
-        plt.close('all')
-        for out_frame_idx in range(0, num_frames * vis_frame_stride, vis_frame_stride):
-            plt.figure(figsize=(6, 4))
-            plt.title(f'frame {out_frame_idx}')
-            plt.imshow(PILimage.open(os.path.join(video_dir, frame_names[out_frame_idx])))
-            for out_obj_id, out_mask in video_segments[out_frame_idx].items():
-                show_mask(out_mask, plt.gca(), obj_id=out_obj_id)
-        plt.show()
-        del video_segments
-        del out_mask
-        del out_mask_logits
-        torch.cuda.empty_cache()
-        gc.collect()
+
+        for out_frame_idx in range(0, self.viewer.image_resource_data.sizeT):
+            for out_obj_id, out_mask in self.video_segments[out_frame_idx].items():
+                mask_item = self.mask_to_shape(out_mask)
+                if mask_item is not None:
+                    mask_item.setData(0, f'mask_{out_obj_id}')
+                    if out_frame_idx == self.T:
+                        self.scene.addItem(mask_item)
+                    self.source_model.add_mask(self.source_model.object(out_obj_id), out_frame_idx, mask_item)
+
+        # vis_frame_stride = 3
+        # num_frames = 5
+        # plt.close('all')
+        # for out_frame_idx in range(0, num_frames * vis_frame_stride, vis_frame_stride):
+        #     plt.figure(figsize=(6, 4))
+        #     plt.title(f'frame {out_frame_idx}')
+        #     plt.imshow(PILimage.open(os.path.join(video_dir, frame_names[out_frame_idx])))
+        #     for out_obj_id, self.out_mask in self.video_segments[out_frame_idx].items():
+        #         show_mask(self.out_mask, plt.gca(), obj_id=out_obj_id)
+        #         if out_frame_idx == 0:
+        #             print(f'{self.out_mask.shape=}')
+        # plt.show()
+        self.release_memory(keep_predictor=True)
+
+    def mask_to_shape(self, mask):
+        contour, _ = cv2.findContours(mask[0].astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        print(f'{contour=}')
+        if contour:
+            mask_shape = QPolygonF()
+            for point in contour[0]:
+                mask_shape.append(QPointF(point[0][0], point[0][1]))
+            return QGraphicsPolygonItem(mask_shape)
+        return None
 
     def resume_segmentation(self, items):
 

@@ -67,6 +67,7 @@ class TabbedWindow(QTabWidget):
         :type index: int
         """
         if self.widget(index) != self.top_widget:
+            QCoreApplication.sendEvent(PyDetecDiv.main_window.tabs[self.windowTitle()].widget(index), QCloseEvent())
             self.removeTab(index)
 
     def show_plot(self, df: pandas.DataFrame, title: str = 'Plot') -> None:
