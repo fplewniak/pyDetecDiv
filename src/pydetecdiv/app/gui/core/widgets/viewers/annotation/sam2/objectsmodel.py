@@ -134,6 +134,7 @@ class Point:
         """
         return f'{self.name=}, {self.graphics_item=}'
 
+
 class Mask:
     def __init__(self, name: str = None, mask_item: QGraphicsPolygonItem = None):
         self.name = name
@@ -430,6 +431,13 @@ class PromptSourceModel(QStandardItemModel):
             return point_items
         return []
 
+    def set_mask(self, obj: Object, frame: int, mask: QGraphicsPolygonItem):
+        current_mask = self.get_mask(obj, frame)
+        if current_mask is None:
+            self.add_mask(obj, frame, mask)
+        else:
+            current_mask.graphics_item = mask
+
     def add_mask(self, obj: Object, frame: int, mask: QGraphicsPolygonItem):
         row = self.create_mask_row(frame, mask)
         self.object_item(obj).appendRow(row)
@@ -449,6 +457,14 @@ class PromptSourceModel(QStandardItemModel):
         :return: the BoundingBox object
         """
         return next((child.object for child in self.object_item(obj).children(frame) if isinstance(child.object, Mask)), None)
+
+    def get_masks(self, obj: Object) -> list[Mask]:
+        """
+        retrieve the bounding boxes of an object for all frame
+        :param obj: the object
+        :return: the list of all bounding boxes
+        """
+        return [child.object for child in self.object_item(obj).children() if isinstance(child.object, Mask)]
 
     def get_prompt_items(self, obj: Object, frame: int | None = None) -> list[ModelItem]:
         """
@@ -538,6 +554,13 @@ class PromptSourceModel(QStandardItemModel):
         """
         return sorted({self.model_item2frame(item) for item in self.get_prompt_items(obj)})
 
+    @property
+    def all_key_frames(self) -> list[int]:
+        key_frames = set()
+        for obj in self.objects:
+            key_frames.union(self.key_frames(obj))
+        return sorted(key_frames)
+
     def model_item2frame(self, item: ModelItem | QStandardItem) -> int:
         """
         retrieve the frame for a model item
@@ -565,6 +588,17 @@ class PromptSourceModel(QStandardItemModel):
         """
         for obj in self.objects:
             if self.get_points(obj) and point in [p.graphics_item for p in self.get_points(obj)]:
+                return obj
+        return None
+
+    def mask2obj(self, mask: QGraphicsPolygonItem) -> Object | None:
+        """
+        retrieve the object corresponding to the specified bounding box
+        :param box: the bounding box
+        :return: the object
+        """
+        for obj in self.objects:
+            if mask in [m.graphics_item for m in self.get_masks(obj)]:
                 return obj
         return None
 
@@ -657,7 +691,8 @@ class ObjectsTreeView(QTreeView):
         """
         self.setCurrentIndex(self.model().index(item.row(), 0))
 
-    def select_object_from_graphics_item(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem) -> None:
+    def select_object_from_graphics_item(self,
+                                         graphics_item: QGraphicsRectItem | QGraphicsEllipseItem | QGraphicsPolygonItem) -> None:
         """
         Select the object corresponding to the selected graphics item
         :param graphics_item: the selected graphics item
@@ -666,6 +701,8 @@ class ObjectsTreeView(QTreeView):
             self.select_object_from_box(graphics_item)
         elif isinstance(graphics_item, QGraphicsEllipseItem):
             self.select_object_from_point(graphics_item)
+        elif isinstance(graphics_item, QGraphicsPolygonItem):
+            self.select_object_from_mask(graphics_item)
 
     def select_object_from_box(self, graphics_item: QGraphicsRectItem):
         """
@@ -680,3 +717,10 @@ class ObjectsTreeView(QTreeView):
         :param graphics_item: the QGraphicsEllipseItem
         """
         self.select_item(self.source_model.object_item(self.source_model.point2obj(graphics_item)))
+
+    def select_object_from_mask(self, graphics_item: QGraphicsPolygonItem):
+        """
+        Selects the object corresponding to the given mask
+        :param graphics_item: the QGraphicsPolygonItem
+        """
+        self.select_item(self.source_model.object_item(self.source_model.mask2obj(graphics_item)))

@@ -21,7 +21,7 @@ from sam2.build_sam import build_sam2_video_predictor
 from pydetecdiv.app import PyDetecDiv, DrawingTools
 from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.objectsmodel import (ObjectsTreeView, Object, PromptProxyModel,
                                                                                   PromptSourceModel, ObjectReferenceRole,
-                                                                                  BoundingBox, Point, ModelItem)
+                                                                                  BoundingBox, Point, ModelItem, Mask)
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer, VideoViewerPanel, VideoControlPanel, VideoScene
 from pydetecdiv.settings import get_config_value
 
@@ -82,7 +82,7 @@ class SegmentationScene(VideoScene):
         _ = [r.setSelected(False) for r in self.selectedItems()]
         if graphics_item is not None:
             graphics_item.setSelected(True)
-            if isinstance(graphics_item, (QGraphicsRectItem, QGraphicsEllipseItem)):
+            if isinstance(graphics_item, (QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsPolygonItem)):
                 self.player.object_tree_view.select_object_from_graphics_item(graphics_item)
 
     def select_Item(self, event: QGraphicsSceneMouseEvent) -> None:
@@ -92,7 +92,7 @@ class SegmentationScene(VideoScene):
         :param event:
         """
         graphics_item = super().select_Item(event)
-        if isinstance(graphics_item, (QGraphicsRectItem, QGraphicsEllipseItem)):
+        if isinstance(graphics_item, (QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsPolygonItem)):
             self.player.object_tree_view.select_object_from_graphics_item(graphics_item)
 
     def delete_item(self, graphics_item: QGraphicsItem) -> None:
@@ -408,6 +408,9 @@ class SegmentationTool(VideoPlayer):
             self.scene.select_from_tree_view(obj.graphics_item)
         elif isinstance(obj, Point):
             self.scene.select_from_tree_view(obj.graphics_item)
+        elif isinstance(obj, Mask):
+            self.scene.select_from_tree_view(obj.graphics_item)
+            print(obj.graphics_item.polygon())
         elif isinstance(obj, Object):
             if self.source_model.get_bounding_box(obj, self.T) is not None:
                 self.scene.select_from_tree_view(self.source_model.get_bounding_box(obj, self.T).graphics_item)
@@ -444,20 +447,19 @@ class SegmentationTool(VideoPlayer):
         self.release_memory()
 
     def release_memory(self, keep_predictor=False):
-        for v in self.inference_state.values():
-            if torch.is_tensor(v):
-                del v
-                v = None
-        if keep_predictor is True:
-            self.predictor.reset_state(self.inference_state)
-        else:
+        if keep_predictor is False:
+            for v in self.inference_state.values():
+                if torch.is_tensor(v):
+                    del v
+                    v = None
             self.predictor = None
             self.inference_state = None
+        # else:
+            # self.predictor.reset_state(self.inference_state)
+
         del self.video_segments
-        del self.out_mask
         del self.out_mask_logits
         self.video_segments = None
-        self.out_mask = None
         self.out_mask_logits = None
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
@@ -491,8 +493,8 @@ class SegmentationTool(VideoPlayer):
 
         if self.predictor is None:
             self.predictor = build_sam2_video_predictor(model_cfg, sam2_checkpoint, device=device)
-        else:
-            self.predictor.reset_state(self.inference_state)
+        # else:
+        #     self.predictor.reset_state(self.inference_state)
 
         frame_names = [p for p in os.listdir(video_dir) if os.path.splitext(p)[-1] in ['.jpg', 'jpeg', '.JPG', '.JPEG']]
         frame_names.sort(key=lambda p: int(os.path.splitext(p)[0]))
@@ -509,49 +511,65 @@ class SegmentationTool(VideoPlayer):
                         )
 
         self.video_segments = {}
-        start_frame_idx=None
-        max_frame_num_to_track=None
+        start_frame_idx = None
+        max_frame_num_to_track = None
         for out_frame_idx, out_obj_ids, self.out_mask_logits in self.predictor.propagate_in_video(self.inference_state,
-                                                                                             start_frame_idx=start_frame_idx,
-                                                                                             max_frame_num_to_track=max_frame_num_to_track,
-                                                                                             reverse=False):
+                                                                                                  start_frame_idx=self.T,
+                                                                                                  max_frame_num_to_track=None,
+                                                                                                  reverse=False):
             self.video_segments[out_frame_idx] = {
                 out_obj_id: (self.out_mask_logits[i] > 0.0).cpu().numpy()
                 for i, out_obj_id in enumerate(out_obj_ids)
                 }
 
-        for out_frame_idx in range(0, self.viewer.image_resource_data.sizeT):
+        for out_frame_idx in range(self.T, self.viewer.image_resource_data.sizeT):
             for out_obj_id, out_mask in self.video_segments[out_frame_idx].items():
-                mask_item = self.mask_to_shape(out_mask)
+
+                mask_item, contours = self.mask_to_shape(out_mask)
                 if mask_item is not None:
                     mask_item.setData(0, f'mask_{out_obj_id}')
+                    mask_item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
                     if out_frame_idx == self.T:
                         self.scene.addItem(mask_item)
-                    self.source_model.add_mask(self.source_model.object(out_obj_id), out_frame_idx, mask_item)
+                    self.source_model.set_mask(self.source_model.object(out_obj_id), out_frame_idx, mask_item)
+                    l = mask_item.polygon().length()
+                    b = mask_item.polygon().boundingRect()
+                else:
+                    l = 0
+                    b = None
 
-        # vis_frame_stride = 3
-        # num_frames = 5
-        # plt.close('all')
-        # for out_frame_idx in range(0, num_frames * vis_frame_stride, vis_frame_stride):
-        #     plt.figure(figsize=(6, 4))
-        #     plt.title(f'frame {out_frame_idx}')
-        #     plt.imshow(PILimage.open(os.path.join(video_dir, frame_names[out_frame_idx])))
-        #     for out_obj_id, self.out_mask in self.video_segments[out_frame_idx].items():
-        #         show_mask(self.out_mask, plt.gca(), obj_id=out_obj_id)
-        #         if out_frame_idx == 0:
-        #             print(f'{self.out_mask.shape=}')
-        # plt.show()
+                unique, counts = np.unique(out_mask[0], return_counts=True)
+                print(
+                    f'object: {out_obj_id} frame: {out_frame_idx} - {dict(zip(unique, counts))} - polygon length: {l} and bounding rect: {b}')
+                if l < 10:
+                    print(f'{contours}')
+
+        vis_frame_stride = 1
+        num_frames = 12
+        plt.close('all')
+        for out_frame_idx in range(self.T, num_frames * vis_frame_stride, vis_frame_stride):
+            plt.figure(figsize=(6, 4))
+            plt.title(f'frame {out_frame_idx}')
+            plt.imshow(PILimage.open(os.path.join(video_dir, frame_names[out_frame_idx])))
+            for out_obj_id, out_mask in self.video_segments[out_frame_idx].items():
+                show_mask(out_mask, plt.gca(), obj_id=out_obj_id)
+        plt.show()
         self.release_memory(keep_predictor=True)
 
     def mask_to_shape(self, mask):
-        contour, _ = cv2.findContours(mask[0].astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        print(f'{contour=}')
-        if contour:
-            mask_shape = QPolygonF()
-            for point in contour[0]:
-                mask_shape.append(QPointF(point[0][0], point[0][1]))
-            return QGraphicsPolygonItem(mask_shape)
-        return None
+        # contour, _ = cv2.findContours(mask[0].astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(mask[0].astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_KCOS)
+        if contours:
+            max_contour = QPolygonF()
+            for contour in contours:
+                mask_shape = QPolygonF()
+                for point in contour:
+                    mask_shape.append(QPointF(point[0][0], point[0][1]))
+                if mask_shape.size() > max_contour.size():
+                    max_contour = mask_shape
+            if max_contour.size() > 0:
+                return QGraphicsPolygonItem(max_contour), contours
+        return None, None
 
     def resume_segmentation(self, items):
 
