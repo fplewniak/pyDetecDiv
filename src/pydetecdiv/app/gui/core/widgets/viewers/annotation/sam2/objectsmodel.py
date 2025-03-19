@@ -558,7 +558,7 @@ class PromptSourceModel(QStandardItemModel):
     def all_key_frames(self) -> list[int]:
         key_frames = set()
         for obj in self.objects:
-            key_frames.union(self.key_frames(obj))
+            key_frames = key_frames.union(set(self.key_frames(obj)))
         return sorted(key_frames)
 
     def model_item2frame(self, item: ModelItem | QStandardItem) -> int:

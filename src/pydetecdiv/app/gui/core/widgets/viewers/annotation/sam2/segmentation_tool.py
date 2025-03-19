@@ -411,7 +411,6 @@ class SegmentationTool(VideoPlayer):
             self.scene.select_from_tree_view(obj.graphics_item)
         elif isinstance(obj, Mask):
             self.scene.select_from_tree_view(obj.graphics_item)
-            print(obj.graphics_item.polygon())
         elif isinstance(obj, Object):
             if self.source_model.get_bounding_box(obj, self.T) is not None:
                 self.scene.select_from_tree_view(self.source_model.get_bounding_box(obj, self.T).graphics_item)
@@ -523,7 +522,6 @@ class SegmentationTool(VideoPlayer):
                 for i, out_obj_id in enumerate(out_obj_ids)
                 }
 
-        painter = QPainter(self)
         for out_frame_idx in range(self.T, self.viewer.image_resource_data.sizeT):
             for out_obj_id, out_mask in self.video_segments[out_frame_idx].items():
                 ellipse_item, polygon_item = self.mask_to_shape(out_mask)
@@ -552,8 +550,27 @@ class SegmentationTool(VideoPlayer):
             for out_obj_id, out_mask in self.video_segments[out_frame_idx].items():
                 show_mask(out_mask, plt.gca(), obj_id=out_obj_id)
         plt.show()
-        print(f'key frames: {self.source_model.all_key_frames}')
+
+        print(f'key frames: {self.key_frames_intervals()}')
         self.release_memory(keep_predictor=True)
+
+    def key_frames_intervals(self):
+        # Start with the interval from 0 to the first element
+        key_frames  = self.source_model.all_key_frames
+
+        if key_frames[0] != 0:
+            intervals = [[0, key_frames[0]]]
+        else:
+            intervals = []
+
+        # Add intervals between successive elements
+        intervals.extend([key_frames[i], key_frames[i + 1]] for i in range(len(key_frames) - 1))
+
+        # Add the final interval if the last element is not equal to the max value
+        if key_frames[-1] != self.viewer.image_resource_data.sizeT:
+            intervals.append([key_frames[-1], -1])
+
+        return intervals
 
     def mask_to_shape(self, mask):
         contours, _ = cv2.findContours(mask[0].astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
@@ -574,7 +591,7 @@ class SegmentationTool(VideoPlayer):
                 ellipse_item = QGraphicsEllipseItem(e[0][0] - e[1][0] / 2.0, e[0][1] - e[1][1] / 2, e[1][0], e[1][1])
                 ellipse_item.setTransformOriginPoint(e[0][0], e[0][1])
                 ellipse_item.setRotation(e[2])
-                print(ellipse_item)
+                # print(ellipse_item)
                 return ellipse_item, QGraphicsPolygonItem(max_polygon)
         return None, None
 
