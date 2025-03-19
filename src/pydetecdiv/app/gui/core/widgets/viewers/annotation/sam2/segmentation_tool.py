@@ -5,11 +5,12 @@ segment and propagate segmentation using prompts (bounding boxes, points and mas
 import gc
 import os
 from pprint import pprint
+import random
 
 import cv2
 from PIL import Image as PILimage
 from PySide6.QtCore import Qt, QModelIndex, QPointF
-from PySide6.QtGui import QPen, QKeyEvent, QKeySequence, QStandardItem, QCloseEvent, QPolygonF
+from PySide6.QtGui import QPen, QKeyEvent, QKeySequence, QStandardItem, QCloseEvent, QPolygonF, QPainter, QBrush, QColor
 from matplotlib import pyplot as plt
 
 import numpy as np
@@ -522,27 +523,24 @@ class SegmentationTool(VideoPlayer):
                 for i, out_obj_id in enumerate(out_obj_ids)
                 }
 
+        painter = QPainter(self)
         for out_frame_idx in range(self.T, self.viewer.image_resource_data.sizeT):
             for out_obj_id, out_mask in self.video_segments[out_frame_idx].items():
-
-                mask_item, contours = self.mask_to_shape(out_mask)
+                ellipse_item, polygon_item = self.mask_to_shape(out_mask)
+                # mask_item = ellipse_item
+                mask_item = polygon_item
                 if mask_item is not None:
+                    # mask_item.setBrush(QBrush(QColor.fromRgbF(random.random(),
+                    #                           random.random(),
+                    #                           random.random(),
+                    #                           0.5)))
                     mask_item.setData(0, f'mask_{out_obj_id}')
                     mask_item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
                     if out_frame_idx == self.T:
                         self.scene.addItem(mask_item)
                     self.source_model.set_mask(self.source_model.object(out_obj_id), out_frame_idx, mask_item)
-                    l = mask_item.polygon().length()
-                    b = mask_item.polygon().boundingRect()
-                else:
-                    l = 0
-                    b = None
 
-                unique, counts = np.unique(out_mask[0], return_counts=True)
-                print(
-                    f'object: {out_obj_id} frame: {out_frame_idx} - {dict(zip(unique, counts))} - polygon length: {l} and bounding rect: {b}')
-                if l < 10:
-                    print(f'{contours}')
+        self.change_frame(self.T)
 
         vis_frame_stride = 1
         num_frames = 12
@@ -554,21 +552,30 @@ class SegmentationTool(VideoPlayer):
             for out_obj_id, out_mask in self.video_segments[out_frame_idx].items():
                 show_mask(out_mask, plt.gca(), obj_id=out_obj_id)
         plt.show()
+        print(f'key frames: {self.source_model.all_key_frames}')
         self.release_memory(keep_predictor=True)
 
     def mask_to_shape(self, mask):
-        # contour, _ = cv2.findContours(mask[0].astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        contours, _ = cv2.findContours(mask[0].astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_KCOS)
+        contours, _ = cv2.findContours(mask[0].astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        # contours, _ = cv2.findContours(mask[0].astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_KCOS)
         if contours:
-            max_contour = QPolygonF()
+            max_polygon = QPolygonF()
+            max_contour = []
             for contour in contours:
                 mask_shape = QPolygonF()
                 for point in contour:
                     mask_shape.append(QPointF(point[0][0], point[0][1]))
-                if mask_shape.size() > max_contour.size():
-                    max_contour = mask_shape
-            if max_contour.size() > 0:
-                return QGraphicsPolygonItem(max_contour), contours
+                if mask_shape.size() > max_polygon.size():
+                    max_contour = contour
+                    max_polygon = mask_shape
+            if max_polygon.size() > 0:
+                # print(cv2.fitEllipse(max_contour))
+                e = cv2.fitEllipse(max_contour)
+                ellipse_item = QGraphicsEllipseItem(e[0][0] - e[1][0] / 2.0, e[0][1] - e[1][1] / 2, e[1][0], e[1][1])
+                ellipse_item.setTransformOriginPoint(e[0][0], e[0][1])
+                ellipse_item.setRotation(e[2])
+                print(ellipse_item)
+                return ellipse_item, QGraphicsPolygonItem(max_polygon)
         return None, None
 
     def resume_segmentation(self, items):
