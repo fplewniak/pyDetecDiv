@@ -1,6 +1,7 @@
 """
 Classes defining the model and objects required to declare and manage the SAM2 prompts
 """
+import numpy as np
 from PySide6.QtCore import QSortFilterProxyModel, Qt, QModelIndex
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from PySide6.QtWidgets import QTreeView, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsItem, QHeaderView, QGraphicsPolygonItem
@@ -148,6 +149,7 @@ class Object:
 
     def __init__(self, id_: int):
         self.id_ = id_
+        self.exit_frame = np.Inf
 
 
 class ModelItem(QStandardItem):
@@ -394,7 +396,8 @@ class PromptSourceModel(QStandardItemModel):
         :param frame: the frame
         :return: the model item
         """
-        return next((item for item in self.object_item(obj).children(frame) if item.object.graphics_item == graphics_item), None)
+        return next((item for item in self.object_item(obj).children(frame) if
+                     item.object.graphics_item == graphics_item and not isinstance(item.object, Mask)), None)
 
     def get_point_from_graphics_item(self, obj: Object, graphics_item: QGraphicsEllipseItem, frame: int | None = None) -> Point:
         """
@@ -513,7 +516,7 @@ class PromptSourceModel(QStandardItemModel):
         """
         return {obj.id_: self.get_prompt_for_obj(obj) for obj in self.objects if self.key_frames(obj)}
 
-    def graphics2model_item(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem, frame: int = None,
+    def graphics2model_item(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem | QGraphicsPolygonItem, frame: int = None,
                             column: int = 0) -> ModelItem | QStandardItem | None:
         """
         retrieve the model item in a given column corresponding to a graphics item in the specified frame
@@ -527,8 +530,8 @@ class PromptSourceModel(QStandardItemModel):
             return row_items[column]
         return None
 
-    def graphics2model_row(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem, frame: int = None) -> list[
-        ModelItem | QStandardItem]:
+    def graphics2model_row(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem | QGraphicsPolygonItem,
+                           frame: int = None) -> list[ModelItem | QStandardItem]:
         """
         retrieve the model items in the row corresponding to a graphics item in the specified frame
         :param graphics_item: the graphics item
@@ -602,16 +605,20 @@ class PromptSourceModel(QStandardItemModel):
                 return obj
         return None
 
-    def get_all_prompt_items(self, frame: int | None = None) -> tuple[list[BoundingBox], list[Point], list[Mask]]:
+    def get_all_prompt_items(self, objects: list[Object] | None = None, frame: int | None = None) -> tuple[
+        list[BoundingBox], list[Point], list[Mask]]:
         """
         retrieve all model items for bounding boxes and points in a given frame or all frames
+        :param objects: the objects to retrieve prompt items for
         :param frame: the frame
         :return: the list of bounding boxes and the list of points
         """
-        boxes = [self.get_bounding_box(obj, frame) for obj in self.objects if self.get_bounding_box(obj, frame) is not None]
+        if objects is None:
+            objects = self.objects
+        boxes = [self.get_bounding_box(obj, frame) for obj in objects if self.get_bounding_box(obj, frame) is not None]
         points = []
-        masks = [self.get_mask(obj, frame) for obj in self.objects if self.get_mask(obj, frame) is not None]
-        for obj in self.objects:
+        masks = [self.get_mask(obj, frame) for obj in objects if self.get_mask(obj, frame) is not None]
+        for obj in objects:
             point_list = self.get_points(obj, frame)
             if point_list is not None:
                 points += point_list
@@ -691,18 +698,26 @@ class ObjectsTreeView(QTreeView):
         """
         self.setCurrentIndex(self.model().index(item.row(), 0))
 
-    def select_object_from_graphics_item(self,
-                                         graphics_item: QGraphicsRectItem | QGraphicsEllipseItem | QGraphicsPolygonItem) -> None:
+    def select_object_from_graphics_item(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem | QGraphicsPolygonItem,
+                                         frame: int = None) -> None:
         """
         Select the object corresponding to the selected graphics item
+        :param frame: the frame
         :param graphics_item: the selected graphics item
         """
-        if isinstance(graphics_item, QGraphicsRectItem):
+        boxes, points, masks = self.source_model.get_all_prompt_items(frame=frame)
+        if graphics_item in [box.graphics_item for box in boxes]:
             self.select_object_from_box(graphics_item)
-        elif isinstance(graphics_item, QGraphicsEllipseItem):
+        elif graphics_item in [point.graphics_item for point in points]:
             self.select_object_from_point(graphics_item)
-        elif isinstance(graphics_item, QGraphicsPolygonItem):
+        elif graphics_item in [mask.graphics_item for mask in masks]:
             self.select_object_from_mask(graphics_item)
+        # if isinstance(graphics_item, QGraphicsRectItem):
+        #     self.select_object_from_box(graphics_item)
+        # elif isinstance(graphics_item, QGraphicsEllipseItem):
+        #     self.select_object_from_point(graphics_item)
+        # elif isinstance(graphics_item, QGraphicsPolygonItem):
+        #     self.select_object_from_mask(graphics_item)
 
     def select_object_from_box(self, graphics_item: QGraphicsRectItem):
         """

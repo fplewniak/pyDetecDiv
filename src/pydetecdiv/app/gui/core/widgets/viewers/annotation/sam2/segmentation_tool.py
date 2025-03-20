@@ -10,7 +10,8 @@ import random
 import cv2
 from PIL import Image as PILimage
 from PySide6.QtCore import Qt, QModelIndex, QPointF
-from PySide6.QtGui import QPen, QKeyEvent, QKeySequence, QStandardItem, QCloseEvent, QPolygonF, QPainter, QBrush, QColor
+from PySide6.QtGui import (QPen, QKeyEvent, QKeySequence, QStandardItem, QCloseEvent, QPolygonF, QPainter, QBrush, QColor,
+                           QGuiApplication)
 from matplotlib import pyplot as plt
 
 import numpy as np
@@ -84,7 +85,7 @@ class SegmentationScene(VideoScene):
         if graphics_item is not None:
             graphics_item.setSelected(True)
             if isinstance(graphics_item, (QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsPolygonItem)):
-                self.player.object_tree_view.select_object_from_graphics_item(graphics_item)
+                self.player.object_tree_view.select_object_from_graphics_item(graphics_item, self.player.T)
 
     def select_Item(self, event: QGraphicsSceneMouseEvent) -> None:
         """
@@ -94,7 +95,7 @@ class SegmentationScene(VideoScene):
         """
         graphics_item = super().select_Item(event)
         if isinstance(graphics_item, (QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsPolygonItem)):
-            self.player.object_tree_view.select_object_from_graphics_item(graphics_item)
+            self.player.object_tree_view.select_object_from_graphics_item(graphics_item, self.player.T)
 
     def delete_item(self, graphics_item: QGraphicsItem) -> None:
         """
@@ -373,7 +374,7 @@ class SegmentationTool(VideoPlayer):
         self.object_tree_view.setModel(self.proxy_model)
         self.object_tree_view.setSourceModel(self.source_model)
         self.object_tree_view.setup()
-        self.object_tree_view.clicked.connect(self.select_from_tree_view)
+        self.object_tree_view.pressed.connect(self.select_from_tree_view)
 
         splitter = QSplitter()
         splitter.addWidget(video_widget)
@@ -405,16 +406,25 @@ class SegmentationTool(VideoPlayer):
         selected_model_item = self.source_model.itemFromIndex(selected_model_index)
         if selected_model_item:
             self.object_tree_view.setCurrentIndex(self.proxy_model.mapFromSource(selected_model_index))
-        obj = selected_model_item.object
-        if isinstance(obj, BoundingBox):
-            self.scene.select_from_tree_view(obj.graphics_item)
-        elif isinstance(obj, Point):
-            self.scene.select_from_tree_view(obj.graphics_item)
-        elif isinstance(obj, Mask):
-            self.scene.select_from_tree_view(obj.graphics_item)
-        elif isinstance(obj, Object):
-            if self.source_model.get_bounding_box(obj, self.T) is not None:
-                self.scene.select_from_tree_view(self.source_model.get_bounding_box(obj, self.T).graphics_item)
+            obj = selected_model_item.object
+            if QGuiApplication.mouseButtons() == Qt.LeftButton:
+                if isinstance(obj, BoundingBox):
+                    self.scene.select_from_tree_view(obj.graphics_item)
+                elif isinstance(obj, Point):
+                    self.scene.select_from_tree_view(obj.graphics_item)
+                elif isinstance(obj, Mask):
+                    self.scene.select_from_tree_view(obj.graphics_item)
+                elif isinstance(obj, Object):
+                    if self.source_model.get_bounding_box(obj, self.T) is not None:
+                        self.scene.select_from_tree_view(self.source_model.get_bounding_box(obj, self.T).graphics_item)
+            elif QGuiApplication.mouseButtons() == Qt.MiddleButton:
+                _ = [r.setSelected(False) for r in self.scene.selectedItems()]
+                if isinstance(obj, Object):
+                    boxes, points, masks = self.source_model.get_all_prompt_items([obj], self.T)
+                    for item in boxes + points + masks:
+                        item.graphics_item.setSelected(True)
+                else:
+                    obj.graphics_item.setSelected(True)
 
     def create_video(self, video_dir: str) -> None:
         """
@@ -435,7 +445,7 @@ class SegmentationTool(VideoPlayer):
         """
         super().change_frame(T=T)
         self.scene.reset_graphics_items()
-        boxes, points, masks = self.source_model.get_all_prompt_items(self.T)
+        boxes, points, masks = self.source_model.get_all_prompt_items(frame=self.T)
         for box in boxes:
             self.scene.addItem(box.graphics_item)
         for point in points:
@@ -531,8 +541,8 @@ class SegmentationTool(VideoPlayer):
             for out_frame in range(f1, f2):
                 for out_obj_id, out_mask in self.video_segments[out_frame].items():
                     ellipse_item, polygon_item = self.mask_to_shape(out_mask)
-                    # mask_item = ellipse_item
-                    mask_item = polygon_item
+                    mask_item = ellipse_item
+                    # mask_item = polygon_item
                     if mask_item is not None:
                         # mask_item.setBrush(QBrush(QColor.fromRgbF(random.random(),
                         #                           random.random(),
