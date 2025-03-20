@@ -1,10 +1,13 @@
 """
 Classes defining the model and objects required to declare and manage the SAM2 prompts
 """
+import sys
+
 import numpy as np
 from PySide6.QtCore import QSortFilterProxyModel, Qt, QModelIndex
 from PySide6.QtGui import QStandardItemModel, QStandardItem
-from PySide6.QtWidgets import QTreeView, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsItem, QHeaderView, QGraphicsPolygonItem
+from PySide6.QtWidgets import (QTreeView, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsItem, QHeaderView, QGraphicsPolygonItem,
+                               QMenu)
 
 ObjectReferenceRole = Qt.UserRole + 1
 
@@ -149,7 +152,7 @@ class Object:
 
     def __init__(self, id_: int):
         self.id_ = id_
-        self.exit_frame = np.Inf
+        self.exit_frame = sys.maxsize
 
 
 class ModelItem(QStandardItem):
@@ -555,7 +558,10 @@ class PromptSourceModel(QStandardItemModel):
         :param obj: the object
         :return: the list of frames
         """
-        return sorted({self.model_item2frame(item) for item in self.get_prompt_items(obj)})
+        key_frames = {self.model_item2frame(item) for item in self.get_prompt_items(obj)}
+        if obj.exit_frame < sys.maxsize:
+            key_frames.add(obj.exit_frame)
+        return sorted(key_frames)
 
     @property
     def all_key_frames(self) -> list[int]:
@@ -670,6 +676,20 @@ class ObjectsTreeView(QTreeView):
         super().__init__()
         self.source_model = None
 
+    def contextMenuEvent(self, event):
+        """
+        The context menu for area manipulation
+
+        :param event:
+        """
+        index = self.currentIndex()
+        rect = self.visualRect(index)
+        if index and rect.top() <= event.pos().y() <= rect.bottom():
+            menu = QMenu()
+            view_info = menu.addAction("Set object absent")
+            view_info.triggered.connect(self.object_exit)
+            menu.exec(self.viewport().mapToGlobal(event.pos()))
+
     def setup(self):
         """
         Set the appearance of the tree view (hide frame column, ensure first column is wide enough to show box and point names, and
@@ -689,6 +709,14 @@ class ObjectsTreeView(QTreeView):
         """
         self.model().setSourceModel(model)
         self.source_model = model
+
+    def object_exit(self):
+        index = self.model().mapToSource(self.currentIndex())
+        model_item = self.source_model.itemFromIndex(index)
+        if isinstance(model_item.object, Object):
+            model_item.object.exit_frame = int(self.model().frame)
+            print(f'Exit object {model_item.object.id_} at frame {model_item.object.exit_frame}')
+
 
     def select_item(self, item) -> None:
         """

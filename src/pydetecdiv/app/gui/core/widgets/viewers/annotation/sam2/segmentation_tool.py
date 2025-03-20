@@ -520,8 +520,8 @@ class SegmentationTool(VideoPlayer):
 
             for obj_id, frames in self.source_model.get_prompt().items():
                 for frame, box_points in frames.items():
-                    if frame < f2:
-                        # print(f'adding {box_points=} for {frame=}')
+                    if frame < f2 and f1 < self.source_model.object(obj_id).exit_frame:
+                        print(f'adding {box_points=} for object {obj_id} at {frame=}')
                         _, out_obj_ids, self.out_mask_logits = self.predictor.add_new_points_or_box(
                                 inference_state=self.inference_state,
                                 frame_idx=frame,
