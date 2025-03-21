@@ -4,7 +4,7 @@ Classes defining the model and objects required to declare and manage the SAM2 p
 import sys
 
 import numpy as np
-from PySide6.QtCore import QSortFilterProxyModel, Qt, QModelIndex
+from PySide6.QtCore import QSortFilterProxyModel, Qt, QModelIndex, QItemSelectionModel
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from PySide6.QtWidgets import (QTreeView, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsItem, QHeaderView, QGraphicsPolygonItem,
                                QMenu)
@@ -694,7 +694,7 @@ class PromptProxyModel(QSortFilterProxyModel):
         :param frame: the frame
         """
         self.frame = frame
-        self.invalidateFilter()  # Update the filter when the set number changes
+        self.invalidateFilter()  # Update the filter when the frame number changes
 
     def filterAcceptsRow(self, source_row: QModelIndex, source_parent: QModelIndex) -> bool:
         """
@@ -769,6 +769,7 @@ class ObjectsTreeView(QTreeView):
         model_item = self.source_model.itemFromIndex(index)
         if isinstance(model_item.object, Object):
             self.source_model.object_exit(model_item.object, self.model().frame)
+            self.model().invalidateFilter()
 
     def select_item(self, item) -> None:
         """
@@ -776,7 +777,12 @@ class ObjectsTreeView(QTreeView):
         that was selected in the tree view)
         :param item: the item
         """
+        self.selectionModel().select(self.model().index(item.row(), 0), QItemSelectionModel.ClearAndSelect)
         self.setCurrentIndex(self.model().index(item.row(), 0))
+
+    def select_index(self, index) -> None:
+        self.selectionModel().select(index, QItemSelectionModel.ClearAndSelect)
+        self.setCurrentIndex(index)
 
     def select_object_from_graphics_item(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem | QGraphicsPolygonItem,
                                          frame: int = None) -> None:

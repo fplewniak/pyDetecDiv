@@ -156,6 +156,8 @@ class SegmentationScene(VideoScene):
                 case DrawingTools.DrawPoint, Qt.KeyboardModifier.ControlModifier:
                     self.add_point(event)
                     self.player.object_tree_view.expandAll()
+                case DrawingTools.DrawPoint, Qt.KeyboardModifier.ShiftModifier:
+                    self.select_Item(event)
 
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """
@@ -405,7 +407,8 @@ class SegmentationTool(VideoPlayer):
         selected_model_index = self.proxy_model.mapToSource(index).sibling(source_index.row(), 0)
         selected_model_item = self.source_model.itemFromIndex(selected_model_index)
         if selected_model_item:
-            self.object_tree_view.setCurrentIndex(self.proxy_model.mapFromSource(selected_model_index))
+            self.object_tree_view.select_index(self.proxy_model.mapFromSource(selected_model_index))
+            # self.object_tree_view.setCurrentIndex(self.proxy_model.mapFromSource(selected_model_index))
             obj = selected_model_item.object
             if QGuiApplication.mouseButtons() == Qt.LeftButton:
                 if isinstance(obj, BoundingBox):
