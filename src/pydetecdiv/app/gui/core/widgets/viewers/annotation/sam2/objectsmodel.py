@@ -17,9 +17,10 @@ class BoundingBox:
     A class defining a bounding box with its properties and available methods
     """
 
-    def __init__(self, name: str = None, box: QGraphicsRectItem = None):
+    def __init__(self, name: str = None, box: QGraphicsRectItem = None, frame: int = None):
         self.name = name
         self.graphics_item = box
+        self.frame = frame
 
     @property
     def x(self) -> float | None:
@@ -89,10 +90,11 @@ class Point:
     A class defining a point with its properties and available methods
     """
 
-    def __init__(self, name: str = None, point: QGraphicsEllipseItem = None, label: int = 1):
+    def __init__(self, name: str = None, point: QGraphicsEllipseItem = None, label: int = 1, frame: int = None):
         self.name = name
         self.graphics_item = point
         self.label = label
+        self.frame = frame
 
     @property
     def x(self) -> float | None:
@@ -140,9 +142,10 @@ class Point:
 
 
 class Mask:
-    def __init__(self, name: str = None, mask_item: QGraphicsPolygonItem = None):
+    def __init__(self, name: str = None, mask_item: QGraphicsPolygonItem = None, frame: int = None):
         self.name = name
         self.graphics_item = mask_item
+        self.frame = frame
 
 
 class Object:
@@ -235,6 +238,12 @@ class PromptSourceModel(QStandardItemModel):
         """
         return next((model_item for model_item in self.object_items() if model_item.object == obj), None)
 
+    def is_present_at_frame(self, obj, frame):
+        key_frames = self.key_frames(obj)
+        if key_frames:
+            return key_frames[0] <= frame < obj.exit_frame
+        return True
+
     def has_bounding_box(self, obj: Object, frame: int) -> bool:
         """
         checks that the object has a bounding box in the specified frame
@@ -260,6 +269,16 @@ class PromptSourceModel(QStandardItemModel):
         """
         raise NotImplementedError
 
+    def object_exit(self, obj: Object, frame: int):
+        obj.exit_frame = frame
+        print(f'Exit object {obj.id_} at frame {frame}')
+        self.clean_masks(obj)
+        # for mask in self.get_masks(obj):
+        #     if mask.frame == frame:
+        #         self.remove_mask(obj, frame)
+        #     if mask.frame > frame:
+        #         self.object_item(obj).removeRow(self.get_mask_row(obj, mask.frame))
+
     def add_bounding_box(self, obj: Object, frame: int, box: QGraphicsRectItem) -> None:
         """
         Add a bounding box defined by box: QGraphicsRectItem in the frame to the specified object
@@ -278,7 +297,7 @@ class PromptSourceModel(QStandardItemModel):
         :param box: the bounding box
         :return: the row as a list of items
         """
-        bounding_box = BoundingBox(name=box.data(0), box=box)
+        bounding_box = BoundingBox(name=box.data(0), box=box, frame=frame)
         box_item = ModelItem(bounding_box.name, bounding_box)
         frame_item = QStandardItem(str(frame))
         x_item = QStandardItem(f'{bounding_box.x:.1f}')
@@ -315,7 +334,7 @@ class PromptSourceModel(QStandardItemModel):
 
     def get_bounding_box_row(self, obj: Object, frame: int) -> int:
         """
-        retrieve the row for the bounding of object in specified frame
+        retrieve the row for the bounding box of object in specified frame
         :param obj: the object
         :param frame: the frame
         :return: the row number
@@ -349,6 +368,7 @@ class PromptSourceModel(QStandardItemModel):
         if bounding_box is not None:
             bounding_box.graphics_item.scene().removeItem(bounding_box.graphics_item)
             self.object_item(obj).removeRow(self.get_bounding_box_row(obj, frame))
+            self.clean_masks(obj)
 
     def remove_point(self, obj: Object, graphics_item: QGraphicsEllipseItem, frame: int = None) -> None:
         """
@@ -361,6 +381,25 @@ class PromptSourceModel(QStandardItemModel):
         if point_item is not None:
             point_item.graphics_item.scene().removeItem(graphics_item)
             self.object_item(obj).removeRow(point_item.row())
+            self.clean_masks(obj)
+
+    def remove_mask(self, obj: Object, frame: int) -> None:
+        """
+        remove the mask from an object in the specified frame
+        :param obj: the object
+        :param frame: the frame
+        """
+        mask = self.get_mask(obj, frame)
+        if mask is not None:
+            if mask.graphics_item.scene() is not None:
+                mask.graphics_item.scene().removeItem(mask.graphics_item)
+            self.object_item(obj).removeRow(self.get_mask_row(obj, frame))
+
+    def clean_masks(self, obj: Object):
+        for mask in self.get_masks(obj):
+            # if not self.is_present_at_frame(obj, mask.frame):
+            if mask.frame < self.key_frames(obj)[0] or mask.frame >= obj.exit_frame:
+                self.remove_mask(obj, mask.frame)
 
     def add_point(self, obj: Object, frame: int, point: QGraphicsEllipseItem, label: int = 1) -> None:
         """
@@ -382,7 +421,7 @@ class PromptSourceModel(QStandardItemModel):
         :param label: the label
         :return: the row as a list of items
         """
-        point = Point(name=point_graphics_item.data(0), point=point_graphics_item, label=label)
+        point = Point(name=point_graphics_item.data(0), point=point_graphics_item, label=label, frame=frame)
         point_item = ModelItem(point.name, point)
         frame_item = QStandardItem(str(frame))
         x_item = QStandardItem(f'{point.x:.1f}')
@@ -450,7 +489,7 @@ class PromptSourceModel(QStandardItemModel):
 
     @staticmethod
     def create_mask_row(frame: int, mask_graphics_item: QGraphicsPolygonItem):
-        mask = Mask(name=mask_graphics_item.data(0), mask_item=mask_graphics_item)
+        mask = Mask(name=mask_graphics_item.data(0), mask_item=mask_graphics_item, frame=frame)
         mask_item = ModelItem(mask.name, mask)
         frame_item = QStandardItem(str(frame))
         return [mask_item, frame_item]
@@ -463,6 +502,15 @@ class PromptSourceModel(QStandardItemModel):
         :return: the BoundingBox object
         """
         return next((child.object for child in self.object_item(obj).children(frame) if isinstance(child.object, Mask)), None)
+
+    def get_mask_row(self, obj: Object, frame: int) -> int:
+        """
+        retrieve the row for the mask of object in specified frame
+        :param obj: the object
+        :param frame: the frame
+        :return: the row number
+        """
+        return next((child.row() for child in self.object_item(obj).children(frame) if isinstance(child.object, Mask)), None)
 
     def get_masks(self, obj: Object) -> list[Mask]:
         """
@@ -645,7 +693,7 @@ class PromptProxyModel(QSortFilterProxyModel):
         Set the frame to filter model items for display in tree view
         :param frame: the frame
         """
-        self.frame = str(frame)  # Ensure set_number is a string
+        self.frame = frame
         self.invalidateFilter()  # Update the filter when the set number changes
 
     def filterAcceptsRow(self, source_row: QModelIndex, source_parent: QModelIndex) -> bool:
@@ -658,13 +706,19 @@ class PromptProxyModel(QSortFilterProxyModel):
         if self.frame is None:
             return True
 
+        # index = self.sourceModel().index(source_row, 0, source_parent)
+        # model_item = self.sourceModel().itemFromIndex(index)
+        # if isinstance(model_item.object, Object):
+        #     return self.sourceModel().is_present_at_frame(model_item.object, self.frame)
+        # return model_item.object.frame == self.frame
+
         # Get the index of the current row in the frame column
         index = self.sourceModel().index(source_row, 1, source_parent)
         # Get the frame number
         frame = self.sourceModel().data(index, Qt.DisplayRole)
 
         # Check if the item belongs to the desired set
-        return (frame is None) or (frame == self.frame)
+        return (frame is None) or (frame == str(self.frame))
 
 
 class ObjectsTreeView(QTreeView):
@@ -714,9 +768,7 @@ class ObjectsTreeView(QTreeView):
         index = self.model().mapToSource(self.currentIndex())
         model_item = self.source_model.itemFromIndex(index)
         if isinstance(model_item.object, Object):
-            model_item.object.exit_frame = int(self.model().frame)
-            print(f'Exit object {model_item.object.id_} at frame {model_item.object.exit_frame}')
-
+            self.source_model.object_exit(model_item.object, self.model().frame)
 
     def select_item(self, item) -> None:
         """
@@ -761,9 +813,9 @@ class ObjectsTreeView(QTreeView):
         """
         self.select_item(self.source_model.object_item(self.source_model.point2obj(graphics_item)))
 
-    def select_object_from_mask(self, graphics_item: QGraphicsPolygonItem):
+    def select_object_from_mask(self, graphics_item: QGraphicsPolygonItem | QGraphicsEllipseItem):
         """
         Selects the object corresponding to the given mask
-        :param graphics_item: the QGraphicsPolygonItem
+        :param graphics_item: the QGraphicsPolygonItem or QGraphicsEllipseItem
         """
         self.select_item(self.source_model.object_item(self.source_model.mask2obj(graphics_item)))
