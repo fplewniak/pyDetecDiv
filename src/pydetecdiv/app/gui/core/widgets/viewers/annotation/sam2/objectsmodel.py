@@ -702,13 +702,27 @@ class PromptProxyModel(QSortFilterProxyModel):
         self.frame = frame
         self.invalidateFilter()  # Update the filter when the frame number changes
 
-    def filterAcceptsRow(self, source_row: QModelIndex, source_parent: QModelIndex) -> bool:
+    def filterAcceptsRow_off(self, source_row: QModelIndex, source_parent: QModelIndex) -> bool:
         """
         Filter the source model to display only rows whose frame is equal to self.frame
         :param source_row: the index of the row in the source model
         :param source_parent: the index of the parent in source model
         :return:
         """
+        if self.frame is None:
+            return True
+
+        model = self.sourceModel()
+        index = model.index(source_row, 0, source_parent)
+        item = self.sourceModel().itemFromIndex(index)
+        if isinstance(item.object, Object):
+            key_frames = model.key_frames(item.object)
+            first_frame = min(key_frames) if key_frames else 0
+            return first_frame <= self.frame < item.object.exit_frame
+        else:
+            return item.object.frame == self.frame
+
+    def filterAcceptsRow(self, source_row: QModelIndex, source_parent: QModelIndex) -> bool:
         if self.frame is None:
             return True
 
@@ -750,6 +764,30 @@ class ObjectsTreeView(QTreeView):
             view_info.triggered.connect(self.object_exit)
             menu.exec(self.viewport().mapToGlobal(event.pos()))
 
+
+    # def mousePressEvent(self, event):
+    #     index = self.indexAt(event.position().toPoint())
+    #
+    #     if not index.isValid():
+    #         return super().mousePressEvent(event)
+    #
+    #     model = self.model()
+    #     source_model = model.sourceModel() if isinstance(model, QSortFilterProxyModel) else model
+    #     item = source_model.itemFromIndex(model.mapToSource(index))
+    #
+    #     if event.button() == Qt.LeftButton and isinstance(item.object, (BoundingBox, Point, Mask)):
+    #         # Select the parent Object
+    #         parent_item = item.parent()
+    #         if parent_item:
+    #             parent_index = model.mapFromSource(source_model.indexFromItem(parent_item))
+    #             self.selectionModel().setCurrentIndex(parent_index, QTreeView.SelectionFlag.ClearAndSelect)
+    #
+    #     elif event.button() == Qt.RightButton:
+    #         # Select the clicked item
+    #         self.selectionModel().setCurrentIndex(index, QTreeView.SelectionFlag.ClearAndSelect)
+    #
+    #     return super().mousePressEvent(event)
+
     def setup(self):
         """
         Set the appearance of the tree view (hide frame column, ensure first column is wide enough to show box and point names, and
@@ -783,10 +821,12 @@ class ObjectsTreeView(QTreeView):
         that was selected in the tree view)
         :param item: the item
         """
+        self.model().invalidateFilter()
         self.selectionModel().select(self.model().index(item.row(), 0), QItemSelectionModel.ClearAndSelect)
         self.setCurrentIndex(self.model().index(item.row(), 0))
 
     def select_index(self, index) -> None:
+        self.model().invalidateFilter()
         self.selectionModel().select(index, QItemSelectionModel.ClearAndSelect)
         self.setCurrentIndex(index)
 

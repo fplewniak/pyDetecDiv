@@ -351,6 +351,7 @@ class SegmentationTool(VideoPlayer):
         """
         new_item = self.source_model.add_object(obj)
         self.object_tree_view.select_item(new_item)
+        self.proxy_model.invalidateFilter()
         return new_item
 
     def setup(self, menubar: QMenuBar = None) -> None:
@@ -408,14 +409,11 @@ class SegmentationTool(VideoPlayer):
         selected_model_item = self.source_model.itemFromIndex(selected_model_index)
         if selected_model_item:
             self.object_tree_view.select_index(self.proxy_model.mapFromSource(selected_model_index))
+            # self.object_tree_view.select_index(selected_model_index)
             # self.object_tree_view.setCurrentIndex(self.proxy_model.mapFromSource(selected_model_index))
             obj = selected_model_item.object
             if QGuiApplication.mouseButtons() == Qt.LeftButton:
-                if isinstance(obj, BoundingBox):
-                    self.scene.select_from_tree_view(obj.graphics_item)
-                elif isinstance(obj, Point):
-                    self.scene.select_from_tree_view(obj.graphics_item)
-                elif isinstance(obj, Mask):
+                if isinstance(obj, (BoundingBox, Point, Mask)):
                     self.scene.select_from_tree_view(obj.graphics_item)
                 elif isinstance(obj, Object):
                     if self.source_model.get_bounding_box(obj, self.T) is not None:
@@ -571,6 +569,7 @@ class SegmentationTool(VideoPlayer):
         # plt.show()
         #
         # print(f'key frames: {self.key_frames_intervals()}')
+        self.proxy_model.invalidateFilter()
         self.release_memory(keep_predictor=True)
 
     def key_frames_intervals(self):
