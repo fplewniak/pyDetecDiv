@@ -12,15 +12,26 @@ from PySide6.QtWidgets import (QTreeView, QGraphicsRectItem, QGraphicsEllipseIte
 ObjectReferenceRole = Qt.UserRole + 1
 
 
+class Object:
+    """
+    A class defining an object that will be segmented
+    """
+
+    def __init__(self, id_: int):
+        self.id_ = id_
+        self.exit_frame = sys.maxsize
+
+
 class BoundingBox:
     """
     A class defining a bounding box with its properties and available methods
     """
 
-    def __init__(self, name: str = None, box: QGraphicsRectItem = None, frame: int = None):
+    def __init__(self, name: str = None, box: QGraphicsRectItem = None, frame: int = None, obj: Object = None):
         self.name = name
         self.graphics_item = box
         self.frame = frame
+        self.object = obj
 
     @property
     def x(self) -> float | None:
@@ -90,11 +101,12 @@ class Point:
     A class defining a point with its properties and available methods
     """
 
-    def __init__(self, name: str = None, point: QGraphicsEllipseItem = None, label: int = 1, frame: int = None):
+    def __init__(self, name: str = None, point: QGraphicsEllipseItem = None, label: int = 1, frame: int = None, obj=None):
         self.name = name
         self.graphics_item = point
         self.label = label
         self.frame = frame
+        self.object = obj
 
     @property
     def x(self) -> float | None:
@@ -142,20 +154,11 @@ class Point:
 
 
 class Mask:
-    def __init__(self, name: str = None, mask_item: QGraphicsPolygonItem = None, frame: int = None):
+    def __init__(self, name: str = None, mask_item: QGraphicsPolygonItem = None, frame: int = None, obj=None):
         self.name = name
         self.graphics_item = mask_item
         self.frame = frame
-
-
-class Object:
-    """
-    A class defining an object that will be segmented
-    """
-
-    def __init__(self, id_: int):
-        self.id_ = id_
-        self.exit_frame = sys.maxsize
+        self.object = obj
 
 
 class ModelItem(QStandardItem):
@@ -286,18 +289,19 @@ class PromptSourceModel(QStandardItemModel):
         :param frame: the frame
         :param box: the QGraphicsRectItem
         """
-        row = self.create_bounding_box_row(frame, box)
+        row = self.create_bounding_box_row(frame, box, obj=obj)
         self.object_item(obj).appendRow(row)
 
     @staticmethod
-    def create_bounding_box_row(frame: int, box: QGraphicsRectItem) -> list[ModelItem | QStandardItem]:
+    def create_bounding_box_row(frame: int, box: QGraphicsRectItem, obj: Object = None) -> list[ModelItem | QStandardItem]:
         """
         Create a row of model items for a bounding box, to insert into the model.
+        :param obj:
         :param frame: the frame
         :param box: the bounding box
         :return: the row as a list of items
         """
-        bounding_box = BoundingBox(name=box.data(0), box=box, frame=frame)
+        bounding_box = BoundingBox(name=box.data(0), box=box, frame=frame, obj=obj)
         box_item = ModelItem(bounding_box.name, bounding_box)
         frame_item = QStandardItem(str(frame))
         x_item = QStandardItem(f'{bounding_box.x:.1f}')
@@ -316,7 +320,7 @@ class PromptSourceModel(QStandardItemModel):
         bounding_box = self.get_bounding_box(obj, frame)
         if bounding_box is not None:
             bounding_box.graphics_item.scene().removeItem(bounding_box.graphics_item)
-            row = self.create_bounding_box_row(frame, box)
+            row = self.create_bounding_box_row(frame, box, obj=obj)
             for column, item in enumerate(row):
                 self.object_item(obj).setChild(self.get_bounding_box_row(obj, frame), column, item)
         else:
@@ -409,19 +413,21 @@ class PromptSourceModel(QStandardItemModel):
         :param point: the point QGraphicsEllipseItem
         :param label: the label
         """
-        row = self.create_point_row(frame, point, label)
+        row = self.create_point_row(frame, point, label, obj=obj)
         self.object_item(obj).appendRow(row)
 
     @staticmethod
-    def create_point_row(frame: int, point_graphics_item: QGraphicsEllipseItem, label: int = 1) -> list[ModelItem | QStandardItem]:
+    def create_point_row(frame: int, point_graphics_item: QGraphicsEllipseItem, label: int = 1, obj: Object = None) -> list[
+        ModelItem | QStandardItem]:
         """
         Create a row of model items for a point, to insert into the model.
+        :param obj:
         :param frame: the frame
         :param point_graphics_item: the point QGraphicsEllipseItem
         :param label: the label
         :return: the row as a list of items
         """
-        point = Point(name=point_graphics_item.data(0), point=point_graphics_item, label=label, frame=frame)
+        point = Point(name=point_graphics_item.data(0), point=point_graphics_item, label=label, frame=frame, obj=obj)
         point_item = ModelItem(point.name, point)
         frame_item = QStandardItem(str(frame))
         x_item = QStandardItem(f'{point.x:.1f}')
@@ -484,12 +490,12 @@ class PromptSourceModel(QStandardItemModel):
             current_mask.graphics_item = mask
 
     def add_mask(self, obj: Object, frame: int, mask: QGraphicsPolygonItem):
-        row = self.create_mask_row(frame, mask)
+        row = self.create_mask_row(frame, mask, obj=obj)
         self.object_item(obj).appendRow(row)
 
     @staticmethod
-    def create_mask_row(frame: int, mask_graphics_item: QGraphicsPolygonItem):
-        mask = Mask(name=mask_graphics_item.data(0), mask_item=mask_graphics_item, frame=frame)
+    def create_mask_row(frame: int, mask_graphics_item: QGraphicsPolygonItem, obj: Object = None):
+        mask = Mask(name=mask_graphics_item.data(0), mask_item=mask_graphics_item, frame=frame, obj=obj)
         mask_item = ModelItem(mask.name, mask)
         frame_item = QStandardItem(str(frame))
         return [mask_item, frame_item]
@@ -792,12 +798,17 @@ class ObjectsTreeView(QTreeView):
         :param graphics_item: the selected graphics item
         """
         boxes, points, masks = self.source_model.get_all_prompt_items(frame=frame)
-        if graphics_item in [box.graphics_item for box in boxes]:
-            self.select_object_from_box(graphics_item)
-        elif graphics_item in [point.graphics_item for point in points]:
-            self.select_object_from_point(graphics_item)
-        elif graphics_item in [mask.graphics_item for mask in masks]:
-            self.select_object_from_mask(graphics_item)
+        for prompt in boxes + points + masks:
+            if graphics_item == prompt.graphics_item:
+                self.select_item(self.source_model.object_item(prompt.object))
+                break
+        # if graphics_item in [box.graphics_item for box in boxes]:
+        #     self.select_object_from_box(graphics_item)
+        # elif graphics_item in [point.graphics_item for point in points]:
+        #     self.select_object_from_point(graphics_item)
+        # elif graphics_item in [mask.graphics_item for mask in masks]:
+        #     self.select_object_from_mask(graphics_item)
+        ##############################################################
         # if isinstance(graphics_item, QGraphicsRectItem):
         #     self.select_object_from_box(graphics_item)
         # elif isinstance(graphics_item, QGraphicsEllipseItem):
