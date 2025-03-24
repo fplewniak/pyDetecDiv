@@ -576,10 +576,7 @@ class SegmentationTool(VideoPlayer):
         # Start with the interval from 0 to the first element
         key_frames = self.source_model.all_key_frames
 
-        if key_frames[0] != 0:
-            intervals = [[0, key_frames[0]]]
-        else:
-            intervals = []
+        intervals = []
 
         # Add intervals between successive elements
         intervals.extend([key_frames[i], key_frames[i + 1]] for i in range(len(key_frames) - 1))
