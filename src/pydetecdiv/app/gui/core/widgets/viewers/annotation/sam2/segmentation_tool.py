@@ -28,6 +28,40 @@ from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer, Vi
 from pydetecdiv.settings import get_config_value
 
 
+class Colours:
+    palette = [
+        QColor(255, 0, 0, 100),
+        QColor(0, 255, 0, 100),
+        QColor(0, 0, 255, 100),
+        QColor(128, 0, 0, 100),
+        QColor(0, 128, 0, 100),
+        QColor(0, 0, 128, 100),
+        QColor(128, 0, 128, 100),
+        QColor(128, 128, 0, 100),
+        QColor(0, 128, 128, 100),
+        QColor(128, 0, 255, 100),
+        QColor(255, 128, 0, 100),
+        QColor(0, 255, 128, 100),
+        QColor(255, 0, 128, 100),
+        QColor(128, 255, 0, 100),
+        QColor(0, 128, 255, 100),
+        QColor(64, 0, 0, 100),
+        QColor(0, 64, 0, 100),
+        QColor(0, 0, 64, 100),
+        QColor(64, 0, 255, 100),
+        QColor(64, 255, 0, 100),
+        QColor(0, 64, 255, 100),
+        QColor(255, 64, 0, 100),
+        QColor(0, 255, 64, 100),
+        QColor(255, 0, 64, 100),
+        QColor(64, 0, 128, 100),
+        QColor(64, 128, 0, 100),
+        QColor(0, 64, 128, 100),
+        QColor(128, 64, 0, 100),
+        QColor(0, 128, 64, 100),
+        QColor(128, 0, 64, 100),
+        ]
+
 class SegmentationScene(VideoScene):
     """
     A class handling the VideoScene for the Segmentation tool
@@ -545,10 +579,7 @@ class SegmentationTool(VideoPlayer):
                     mask_item = ellipse_item
                     # mask_item = polygon_item
                     if mask_item is not None:
-                        # mask_item.setBrush(QBrush(QColor.fromRgbF(random.random(),
-                        #                           random.random(),
-                        #                           random.random(),
-                        #                           0.5)))
+                        mask_item.setBrush(QBrush(Colours.palette[int(out_obj_id)%len(Colours.palette)]))
                         mask_item.setData(0, f'mask_{out_obj_id}')
                         mask_item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
                         # if out_frame == self.T:
