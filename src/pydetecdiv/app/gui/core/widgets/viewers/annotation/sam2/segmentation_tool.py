@@ -405,10 +405,10 @@ class SegmentationTool(VideoPlayer):
         :param index: the model index of the selected item (relative to proxy model)
         """
         source_index = self.proxy_model.mapToSource(index)
-        selected_model_index = self.proxy_model.mapToSource(index).sibling(source_index.row(), 0)
-        selected_model_item = self.source_model.itemFromIndex(selected_model_index)
+        # selected_model_index = self.proxy_model.mapToSource(index).sibling(source_index.row(), 0)
+        selected_model_item = self.source_model.itemFromIndex(source_index.siblingAtColumn(0))
         if selected_model_item:
-            self.object_tree_view.select_index(self.proxy_model.mapFromSource(selected_model_index))
+            self.object_tree_view.select_index(self.proxy_model.mapFromSource(source_index.siblingAtColumn(0)))
             # self.object_tree_view.select_index(selected_model_index)
             # self.object_tree_view.setCurrentIndex(self.proxy_model.mapFromSource(selected_model_index))
             obj = selected_model_item.object

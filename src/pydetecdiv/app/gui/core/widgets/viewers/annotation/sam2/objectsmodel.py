@@ -702,7 +702,7 @@ class PromptProxyModel(QSortFilterProxyModel):
         self.frame = frame
         self.invalidateFilter()  # Update the filter when the frame number changes
 
-    def filterAcceptsRow_off(self, source_row: QModelIndex, source_parent: QModelIndex) -> bool:
+    def filterAcceptsRow(self, source_row: int, source_parent: QModelIndex) -> bool:
         """
         Filter the source model to display only rows whose frame is equal to self.frame
         :param source_row: the index of the row in the source model
@@ -714,7 +714,7 @@ class PromptProxyModel(QSortFilterProxyModel):
 
         model = self.sourceModel()
         index = model.index(source_row, 0, source_parent)
-        item = self.sourceModel().itemFromIndex(index)
+        item = model.itemFromIndex(index)
         if isinstance(item.object, Object):
             key_frames = model.key_frames(item.object)
             first_frame = min(key_frames) if key_frames else 0
@@ -722,7 +722,7 @@ class PromptProxyModel(QSortFilterProxyModel):
         else:
             return item.object.frame == self.frame
 
-    def filterAcceptsRow(self, source_row: QModelIndex, source_parent: QModelIndex) -> bool:
+    def filterAcceptsRow_off(self, source_row: int, source_parent: QModelIndex) -> bool:
         if self.frame is None:
             return True
 
@@ -760,8 +760,11 @@ class ObjectsTreeView(QTreeView):
         rect = self.visualRect(index)
         if index and rect.top() <= event.pos().y() <= rect.bottom():
             menu = QMenu()
-            view_info = menu.addAction("Set object absent")
-            view_info.triggered.connect(self.object_exit)
+            view_info = menu.addAction("View info")
+            view_info.triggered.connect(lambda _: print(f'{index=}: {self.model().mapToSource(index)=}'))
+            if isinstance(self.source_model.itemFromIndex(self.model().mapToSource(index)).object, Object):
+                object_exit = menu.addAction("Object exits in current frame")
+                object_exit.triggered.connect(self.object_exit)
             menu.exec(self.viewport().mapToGlobal(event.pos()))
 
 
@@ -822,12 +825,13 @@ class ObjectsTreeView(QTreeView):
         :param item: the item
         """
         self.model().invalidateFilter()
-        self.selectionModel().select(self.model().index(item.row(), 0), QItemSelectionModel.ClearAndSelect)
-        self.setCurrentIndex(self.model().index(item.row(), 0))
+        index = self.model().mapFromSource(item.index())
+        # self.selectionModel().select(index, QItemSelectionModel.ClearAndSelect)
+        self.setCurrentIndex(index)
 
     def select_index(self, index) -> None:
         self.model().invalidateFilter()
-        self.selectionModel().select(index, QItemSelectionModel.ClearAndSelect)
+        # self.selectionModel().select(index, QItemSelectionModel.ClearAndSelect)
         self.setCurrentIndex(index)
 
     def select_object_from_graphics_item(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem | QGraphicsPolygonItem,
@@ -856,23 +860,23 @@ class ObjectsTreeView(QTreeView):
         # elif isinstance(graphics_item, QGraphicsPolygonItem):
         #     self.select_object_from_mask(graphics_item)
 
-    def select_object_from_box(self, graphics_item: QGraphicsRectItem):
-        """
-        Selects the object corresponding to the given bounding box
-        :param graphics_item: the QGraphicsRectItem
-        """
-        self.select_item(self.source_model.object_item(self.source_model.box2obj(graphics_item)))
-
-    def select_object_from_point(self, graphics_item: QGraphicsEllipseItem):
-        """
-        Selects the object corresponding to the given point
-        :param graphics_item: the QGraphicsEllipseItem
-        """
-        self.select_item(self.source_model.object_item(self.source_model.point2obj(graphics_item)))
-
-    def select_object_from_mask(self, graphics_item: QGraphicsPolygonItem | QGraphicsEllipseItem):
-        """
-        Selects the object corresponding to the given mask
-        :param graphics_item: the QGraphicsPolygonItem or QGraphicsEllipseItem
-        """
-        self.select_item(self.source_model.object_item(self.source_model.mask2obj(graphics_item)))
+    # def select_object_from_box(self, graphics_item: QGraphicsRectItem):
+    #     """
+    #     Selects the object corresponding to the given bounding box
+    #     :param graphics_item: the QGraphicsRectItem
+    #     """
+    #     self.select_item(self.source_model.object_item(self.source_model.box2obj(graphics_item)))
+    #
+    # def select_object_from_point(self, graphics_item: QGraphicsEllipseItem):
+    #     """
+    #     Selects the object corresponding to the given point
+    #     :param graphics_item: the QGraphicsEllipseItem
+    #     """
+    #     self.select_item(self.source_model.object_item(self.source_model.point2obj(graphics_item)))
+    #
+    # def select_object_from_mask(self, graphics_item: QGraphicsPolygonItem | QGraphicsEllipseItem):
+    #     """
+    #     Selects the object corresponding to the given mask
+    #     :param graphics_item: the QGraphicsPolygonItem or QGraphicsEllipseItem
+    #     """
+    #     self.select_item(self.source_model.object_item(self.source_model.mask2obj(graphics_item)))
