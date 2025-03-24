@@ -241,11 +241,19 @@ class PromptSourceModel(QStandardItemModel):
         """
         return next((model_item for model_item in self.object_items() if model_item.object == obj), None)
 
-    def is_present_at_frame(self, obj, frame):
+    def is_present_at_frame(self, obj: Object, frame: int) -> bool:
         key_frames = self.key_frames(obj)
         if key_frames:
             return key_frames[0] <= frame < obj.exit_frame
         return True
+
+    def get_presence_interval(self, obj: Object) -> tuple[int, int]:
+        key_frames = self.key_frames(obj)
+        return key_frames[0], obj.exit_frame
+
+    def get_entry_frame(self, obj: Object) -> int:
+        key_frames = self.key_frames(obj)
+        return key_frames[0]
 
     def has_bounding_box(self, obj: Object, frame: int) -> bool:
         """
@@ -654,10 +662,10 @@ class PromptSourceModel(QStandardItemModel):
                 return obj
         return None
 
-    def mask2obj(self, mask: QGraphicsPolygonItem) -> Object | None:
+    def mask2obj(self, mask: QGraphicsPolygonItem | QGraphicsEllipseItem) -> Object | None:
         """
-        retrieve the object corresponding to the specified bounding box
-        :param box: the bounding box
+        retrieve the object corresponding to the specified bounding mask
+        :param mask: the mask
         :return: the object
         """
         for obj in self.objects:
@@ -722,24 +730,6 @@ class PromptProxyModel(QSortFilterProxyModel):
         else:
             return item.object.frame == self.frame
 
-    def filterAcceptsRow_off(self, source_row: int, source_parent: QModelIndex) -> bool:
-        if self.frame is None:
-            return True
-
-        # index = self.sourceModel().index(source_row, 0, source_parent)
-        # model_item = self.sourceModel().itemFromIndex(index)
-        # if isinstance(model_item.object, Object):
-        #     return self.sourceModel().is_present_at_frame(model_item.object, self.frame)
-        # return model_item.object.frame == self.frame
-
-        # Get the index of the current row in the frame column
-        index = self.sourceModel().index(source_row, 1, source_parent)
-        # Get the frame number
-        frame = self.sourceModel().data(index, Qt.DisplayRole)
-
-        # Check if the item belongs to the desired set
-        return (frame is None) or (frame == str(self.frame))
-
 
 class ObjectsTreeView(QTreeView):
     """
@@ -766,30 +756,6 @@ class ObjectsTreeView(QTreeView):
                 object_exit = menu.addAction("Object exits in current frame")
                 object_exit.triggered.connect(self.object_exit)
             menu.exec(self.viewport().mapToGlobal(event.pos()))
-
-
-    # def mousePressEvent(self, event):
-    #     index = self.indexAt(event.position().toPoint())
-    #
-    #     if not index.isValid():
-    #         return super().mousePressEvent(event)
-    #
-    #     model = self.model()
-    #     source_model = model.sourceModel() if isinstance(model, QSortFilterProxyModel) else model
-    #     item = source_model.itemFromIndex(model.mapToSource(index))
-    #
-    #     if event.button() == Qt.LeftButton and isinstance(item.object, (BoundingBox, Point, Mask)):
-    #         # Select the parent Object
-    #         parent_item = item.parent()
-    #         if parent_item:
-    #             parent_index = model.mapFromSource(source_model.indexFromItem(parent_item))
-    #             self.selectionModel().setCurrentIndex(parent_index, QTreeView.SelectionFlag.ClearAndSelect)
-    #
-    #     elif event.button() == Qt.RightButton:
-    #         # Select the clicked item
-    #         self.selectionModel().setCurrentIndex(index, QTreeView.SelectionFlag.ClearAndSelect)
-    #
-    #     return super().mousePressEvent(event)
 
     def setup(self):
         """

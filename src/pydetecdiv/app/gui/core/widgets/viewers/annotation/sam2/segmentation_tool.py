@@ -547,6 +547,10 @@ class SegmentationTool(VideoPlayer):
         frame_names = [p for p in os.listdir(video_dir) if os.path.splitext(p)[-1] in ['.jpg', 'jpeg', '.JPG', '.JPEG']]
         frame_names.sort(key=lambda p: int(os.path.splitext(p)[0]))
 
+        present_objects = [obj for obj in self.source_model.objects if self.source_model.is_present_at_frame(obj, self.T)]
+        start_frame = min([self.source_model.get_entry_frame(obj) for obj in present_objects])
+        end_frame = max([obj.exit_frame for obj in present_objects])
+
         for f1, f2 in self.key_frames_intervals():
             self.predictor.reset_state(self.inference_state)
             self.video_segments = {}
