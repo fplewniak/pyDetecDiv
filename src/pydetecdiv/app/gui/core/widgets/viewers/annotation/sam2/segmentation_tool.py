@@ -565,42 +565,46 @@ class SegmentationTool(VideoPlayer):
             self.predictor.reset_state(self.inference_state)
             self.video_segments = {}
             f2 = min(f1 + self.max_frames_prop, self.viewer.image_resource_data.sizeT) if f2 == -1 else f2
-            print(f'{f2 - f1} frames starting from {f1}')
 
-            for obj_id, frames in self.source_model.get_prompt().items():
-                for frame, box_points in frames.items():
-                    if frame < f2 and f1 < self.source_model.object(obj_id).exit_frame:
-                        print(f'adding {box_points=} for object {obj_id} at {frame=}')
-                        _, out_obj_ids, self.out_mask_logits = self.predictor.add_new_points_or_box(
-                                inference_state=self.inference_state,
-                                frame_idx=frame,
-                                obj_id=obj_id,
-                                **box_points
-                                )
+            print(f'{start_frame=} - {end_frame=}')
+            if start_frame <= f1 < end_frame:
+                print(f'{f2 - f1} frames starting from {f1} to {f2}')
+                for obj_id, frames in self.source_model.get_prompt().items():
+                    for frame, box_points in frames.items():
+                        if frame < f2 and f1 < self.source_model.object(obj_id).exit_frame:
+                            print(f'adding {box_points=} for object {obj_id} at {frame=}')
+                            _, out_obj_ids, self.out_mask_logits = self.predictor.add_new_points_or_box(
+                                    inference_state=self.inference_state,
+                                    frame_idx=frame,
+                                    obj_id=obj_id,
+                                    **box_points
+                                    )
 
-            for out_frame, out_obj_ids, self.out_mask_logits in self.predictor.propagate_in_video(self.inference_state,
-                                                                                                  start_frame_idx=f1,
-                                                                                                  max_frame_num_to_track=f2 - f1,
-                                                                                                  reverse=False):
-                self.video_segments[out_frame] = {
-                    out_obj_id: (self.out_mask_logits[i] > 0.0).cpu().numpy()
-                    for i, out_obj_id in enumerate(out_obj_ids)
-                    }
+                for out_frame, out_obj_ids, self.out_mask_logits in self.predictor.propagate_in_video(self.inference_state,
+                                                                                                      start_frame_idx=f1,
+                                                                                                      max_frame_num_to_track=f2 - f1,
+                                                                                                      reverse=False):
+                    self.video_segments[out_frame] = {
+                        out_obj_id: (self.out_mask_logits[i] > 0.0).cpu().numpy()
+                        for i, out_obj_id in enumerate(out_obj_ids)
+                        }
 
-            for out_frame in range(f1, f2):
-                for out_obj_id, out_mask in self.video_segments[out_frame].items():
-                    ellipse_item, polygon_item = self.mask_to_shape(out_mask)
-                    mask_item = ellipse_item
-                    # mask_item = polygon_item
-                    if mask_item is not None:
-                        mask_item.setBrush(QBrush(Colours.palette[int(out_obj_id)%len(Colours.palette)]))
-                        mask_item.setData(0, f'mask_{out_obj_id}')
-                        mask_item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
-                        # if out_frame == self.T:
-                        #     self.scene.addItem(mask_item)
-                        self.source_model.set_mask(self.source_model.object(out_obj_id), out_frame, mask_item)
+                for out_frame in range(f1, f2):
+                    for out_obj_id, out_mask in self.video_segments[out_frame].items():
+                        ellipse_item, polygon_item = self.mask_to_shape(out_mask)
+                        mask_item = ellipse_item
+                        # mask_item = polygon_item
+                        if mask_item is not None:
+                            mask_item.setBrush(QBrush(Colours.palette[int(out_obj_id) % len(Colours.palette)]))
+                            mask_item.setData(0, f'mask_{out_obj_id}')
+                            mask_item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
+                            # if out_frame == self.T:
+                            #     self.scene.addItem(mask_item)
+                            self.source_model.set_mask(self.source_model.object(out_obj_id), out_frame, mask_item)
 
-            self.change_frame(self.T)
+                self.change_frame(self.T)
+            else:
+                continue
 
         # vis_frame_stride = 1
         # num_frames = 12
