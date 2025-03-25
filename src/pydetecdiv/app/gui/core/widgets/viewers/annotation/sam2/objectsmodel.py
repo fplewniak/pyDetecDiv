@@ -750,11 +750,13 @@ class ObjectsTreeView(QTreeView):
         rect = self.visualRect(index)
         if index and rect.top() <= event.pos().y() <= rect.bottom():
             menu = QMenu()
-            view_info = menu.addAction("View info")
-            view_info.triggered.connect(lambda _: print(f'{index=}: {self.model().mapToSource(index)=}'))
+            # view_info = menu.addAction("View info")
+            # view_info.triggered.connect(lambda _: print(f'{index=}: {self.model().mapToSource(index)=}'))
             if isinstance(self.source_model.itemFromIndex(self.model().mapToSource(index)).object, Object):
-                object_exit = menu.addAction("Object exits in current frame")
+                object_exit = menu.addAction("Set exit frame")
                 object_exit.triggered.connect(self.object_exit)
+                cancel_exit = menu.addAction("Cancel exit frame")
+                cancel_exit.triggered.connect(self.cancel_exit)
             menu.exec(self.viewport().mapToGlobal(event.pos()))
 
     def setup(self):
@@ -782,6 +784,13 @@ class ObjectsTreeView(QTreeView):
         model_item = self.source_model.itemFromIndex(index)
         if isinstance(model_item.object, Object):
             self.source_model.object_exit(model_item.object, self.model().frame)
+            self.model().invalidateFilter()
+
+    def cancel_exit(self):
+        index = self.model().mapToSource(self.currentIndex())
+        model_item = self.source_model.itemFromIndex(index)
+        if isinstance(model_item.object, Object):
+            self.source_model.object_exit(model_item.object, sys.maxsize)
             self.model().invalidateFilter()
 
     def select_item(self, item) -> None:

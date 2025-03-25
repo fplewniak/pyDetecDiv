@@ -11,7 +11,7 @@ import cv2
 from PIL import Image as PILimage
 from PySide6.QtCore import Qt, QModelIndex, QPointF
 from PySide6.QtGui import (QPen, QKeyEvent, QKeySequence, QStandardItem, QCloseEvent, QPolygonF, QPainter, QBrush, QColor,
-                           QGuiApplication)
+                           QGuiApplication, QTransform)
 from matplotlib import pyplot as plt
 
 import numpy as np
@@ -61,6 +61,7 @@ class Colours:
         QColor(0, 128, 64, 100),
         QColor(128, 0, 64, 100),
         ]
+
 
 class SegmentationScene(VideoScene):
     """
@@ -283,14 +284,19 @@ class SegmentationScene(VideoScene):
         :param event: mouse event
         """
         menu = QMenu()
-        frame_segment_action = menu.addAction('Run segmentation on current frame')
-        frame_segment_action.triggered.connect(self.player.segment_from_prompt)
+        # frame_segment_action = menu.addAction('Run segmentation on current frame')
+        # frame_segment_action.triggered.connect(self.player.segment_from_prompt)
         video_segment_action = menu.addAction('Run segmentation on video')
         video_segment_action.triggered.connect(self.player.segment_from_prompt)
-        show_frame_prompt = menu.addAction('Show current frame prompt')
-        show_frame_prompt.triggered.connect(lambda _: pprint(self.player.prompt))
-        show_video_prompt = menu.addAction('Show video prompt')
-        show_video_prompt.triggered.connect(lambda _: pprint(self.player.source_model.get_prompt()))
+        item_at_click = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
+        if isinstance(item_at_click, (QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsPolygonItem)):
+            self.select_Item(event)
+            exit_next_frame_action = menu.addAction('Set exit frame as next frame')
+            exit_next_frame_action.triggered.connect(self.player.object_exit_next_frame)
+        # show_frame_prompt = menu.addAction('Show current frame prompt')
+        # show_frame_prompt.triggered.connect(lambda _: pprint(self.player.prompt))
+        # show_video_prompt = menu.addAction('Show video prompt')
+        # show_video_prompt.triggered.connect(lambda _: pprint(self.player.source_model.get_prompt()))
 
         menu.exec(event.screenPos())
 
@@ -432,6 +438,10 @@ class SegmentationTool(VideoPlayer):
         self.time_display.setGeometry(20, 30, 140, self.time_display.height())
 
         self.video_frame.connect(self.proxy_model.set_frame)
+
+    def object_exit_next_frame(self):
+        if self.T < self.viewer.image_resource_data.sizeT - 1:
+            self.source_model.object_exit(self.current_object, self.T + 1)
 
     def select_from_tree_view(self, index: QModelIndex) -> None:
         """
