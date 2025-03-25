@@ -441,7 +441,10 @@ class SegmentationTool(VideoPlayer):
 
         self.video_frame.connect(self.proxy_model.set_frame)
 
-    def object_exit_next_frame(self):
+    def object_exit_next_frame(self) -> None:
+        """
+        Sets the exit frame of the current object to the next frame.
+        """
         if self.T < self.viewer.image_resource_data.sizeT - 1:
             self.source_model.object_exit(self.current_object, self.T + 1)
 
@@ -504,7 +507,12 @@ class SegmentationTool(VideoPlayer):
         print('Closing SegmentationTool')
         self.release_memory()
 
-    def release_memory(self, keep_predictor=False):
+    def release_memory(self, keep_predictor=False) -> None:
+        """
+        Releases GPU memory after processing
+
+        :param keep_predictor: True if predictor should be kept alive for reuse, False otherwise
+        """
         if keep_predictor is False and self.inference_state is not None:
             for v in self.inference_state.values():
                 if torch.is_tensor(v):
@@ -524,8 +532,9 @@ class SegmentationTool(VideoPlayer):
 
         gc.collect()
 
-    def segment_from_prompt(self):
+    def segment_from_prompt(self) -> None:
         """
+        Gets the prompt specified using bounding boxes and points and segments objects accordingly
         """
         video_dir = os.path.join(get_config_value('project', 'workspace'),
                                  PyDetecDiv.project_name,
@@ -613,7 +622,12 @@ class SegmentationTool(VideoPlayer):
         self.proxy_model.invalidateFilter()
         self.release_memory(keep_predictor=True)
 
-    def key_frames_intervals(self):
+    def key_frames_intervals(self) -> list[list[int, int]]:
+        """
+        Returns intervals from key frame to key frame
+
+        :return: the list of intervals
+        """
         # Start with the interval from 0 to the first element
         key_frames = self.source_model.all_key_frames
 
@@ -628,7 +642,13 @@ class SegmentationTool(VideoPlayer):
 
         return intervals
 
-    def mask_to_shape(self, mask):
+    def mask_to_shape(self, mask: list) -> tuple[QGraphicsEllipseItem, QGraphicsPolygonItem] | tuple[None, None]:
+        """
+        Creates graphics items from predicted masks
+
+        :param mask: the mask
+        :return: the ellipse approximation and the original polygon approximation of the mask
+        """
         all_contours = {}
         all_contours[cv2.CHAIN_APPROX_NONE], _ = cv2.findContours(mask[0].astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         all_contours[cv2.CHAIN_APPROX_SIMPLE], _ = cv2.findContours(mask[0].astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -653,96 +673,3 @@ class SegmentationTool(VideoPlayer):
                 ellipse_item.setRotation(e[2])
                 return ellipse_item, QGraphicsPolygonItem(max_polygon)
         return None, None
-
-    def resume_segmentation(self, items):
-
-        # boxes = [[i.x(), i.y(), i.x() + i.rect().width(), i.y() + i.rect().height()] for i in items if
-        #          isinstance(i, QGraphicsRectItem)]
-        # obj_ids = list(range(len(boxes)))
-        # print(obj_ids, boxes)
-        # for ann_obj_id, box in zip(obj_ids, boxes):
-        #     _, out_obj_ids, out_mask_logits = predictor.add_new_points_or_box(
-        #             inference_state=self.inference_state,
-        #             frame_idx=self.T,
-        #             obj_id=ann_obj_id,
-        #             box=box,
-        #             )
-        #
-        # image = PILimage.open(os.path.join(video_dir, frame_names[self.T]))
-        # plt.figure(figsize=(9, 6))
-        # plt.title(f'frame {self.T}')
-        # plt.imshow(image)
-        # for i, obj_id in enumerate(out_obj_ids):
-        #     show_box(boxes[i], plt.gca())
-        #     show_mask((out_mask_logits[i] > 0.0).cpu().numpy(), plt.gca(), obj_id=obj_id)
-        # plt.show()
-
-        points = [[[i.x(), i.y()]] for i in items if isinstance(i, QGraphicsEllipseItem)]
-        labels = [[i.data(0)] for i in items if isinstance(i, QGraphicsEllipseItem)]
-        obj_ids = list(range(len(points)))
-
-        prompts = {}
-        for ann_obj_id, pts, lbls in zip(obj_ids, points, labels):
-            prompts[ann_obj_id] = pts, lbls
-            _, out_obj_ids, out_mask_logits = predictor.add_new_points_or_box(
-                    inference_state=self.inference_state,
-                    frame_idx=self.T,
-                    obj_id=ann_obj_id,
-                    points=pts,
-                    labels=lbls
-                    )
-
-        # image = PILimage.open(os.path.join(video_dir, frame_names[self.T]))
-        # plt.figure(figsize=(9,6))
-        # plt.title(f'frame {self.T}')
-        # plt.imshow(image)
-        # # show_points(pts, lbls, plt.gca())
-        # for i, obj_id in enumerate(out_obj_ids):
-        #     # show_points(*prompts[obj_id], plt.gca())
-        #     show_mask((out_mask_logits[i]>0.0).cpu().numpy(), plt.gca(), obj_id=obj_id)
-        # plt.show()
-
-        video_segments = {}
-        for out_frame_idx, out_obj_ids, out_mask_logits in predictor.propagate_in_video(self.inference_state):
-            video_segments[out_frame_idx] = {
-                out_obj_id: (out_mask_logits[i] > 0.0).cpu().numpy()
-                for i, out_obj_id in enumerate(out_obj_ids)
-                }
-        vis_frame_stride = 3
-        num_frames = 5
-        plt.close('all')
-        for out_frame_idx in range(0, num_frames * vis_frame_stride, vis_frame_stride):
-            plt.figure(figsize=(6, 4))
-            plt.title(f'frame {out_frame_idx}')
-            plt.imshow(PILimage.open(os.path.join(video_dir, frame_names[out_frame_idx])))
-            for out_obj_id, out_mask in video_segments[out_frame_idx].items():
-                show_mask(out_mask, plt.gca(), obj_id=out_obj_id)
-        plt.show()
-
-
-def show_mask(mask, ax, obj_id=None, random_color=False):
-    if random_color:
-        color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
-    else:
-        cmap = plt.get_cmap('tab10')
-        cmap_idx = 0 if obj_id is None else obj_id + 1
-        color = np.array([*cmap(cmap_idx)[:3], 0.6])
-    h, w = mask.shape[-2:]
-    mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
-    ax.imshow(mask_image)
-
-
-def show_points(coords, labels, ax, marker_size=20):
-    print(coords, labels)
-    pos_points = coords[labels == 1]
-    print('Pos:', pos_points)
-    neg_points = coords[labels == 0]
-    print('Neg:', neg_points)
-    ax.scatter(pos_points[:, 0], pos_points[:, 1], color='green', marker='o', s=marker_size, edge_color='white', linewidth=1.0)
-    ax.scatter(neg_points[:, 0], neg_points[:, 1], color='red', marker='o', s=marker_size, edge_color='white', linewidth=1.0)
-
-
-def show_box(box, ax):
-    x0, y0 = box[0], box[1]
-    w, h = box[2] - box[0], box[3] - box[1]
-    ax.add_patch(plt.Rectangle((x0, y0), w, h, edgecolor='green', facecolor=(0, 0, 0, 0), lw=2))

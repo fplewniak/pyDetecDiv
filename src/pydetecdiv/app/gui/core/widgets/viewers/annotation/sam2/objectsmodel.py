@@ -171,14 +171,14 @@ class ModelItem(QStandardItem):
         self.setData(obj, ObjectReferenceRole)
 
     @property
-    def object(self) -> Object | BoundingBox | Point:
+    def object(self) -> Object | BoundingBox | Point | Mask:
         """
         returns the object corresponding to the model item
         :return:
         """
         obj = self.data(ObjectReferenceRole)
-        if isinstance(obj, QGraphicsRectItem):
-            obj = obj.parentItem().data(ObjectReferenceRole)
+        # if isinstance(obj, QGraphicsRectItem):
+        #     obj = obj.parentItem().data(ObjectReferenceRole)
         return obj
 
     @property
@@ -187,7 +187,7 @@ class ModelItem(QStandardItem):
         the graphics item corresponding to the model item
         """
         obj = self.data(ObjectReferenceRole)
-        if isinstance(obj, BoundingBox | Point):
+        if isinstance(obj, (BoundingBox, Point, Mask)):
             return obj.graphics_item
         return None
 
@@ -242,16 +242,32 @@ class PromptSourceModel(QStandardItemModel):
         return next((model_item for model_item in self.object_items() if model_item.object == obj), None)
 
     def is_present_at_frame(self, obj: Object, frame: int) -> bool:
+        """
+        Returns True if the object is present in the frame
+        :param obj: the Object
+        :param frame: the frame number
+        :return: True if object is in frame, False otherwise
+        """
         key_frames = self.key_frames(obj)
         if key_frames:
             return key_frames[0] <= frame < obj.exit_frame
         return True
 
     def get_presence_interval(self, obj: Object) -> tuple[int, int]:
+        """
+        Returns the time interval, in frames, that the object is present in-frame
+        :param obj: the object
+        :return: a tuple with entry frame and exit frame
+        """
         key_frames = self.key_frames(obj)
         return key_frames[0], obj.exit_frame
 
     def get_entry_frame(self, obj: Object) -> int:
+        """
+        Returns the entry frame of object
+        :param obj: the object
+        :return: the entry frame index
+        """
         key_frames = self.key_frames(obj)
         return key_frames[0]
 
@@ -280,7 +296,7 @@ class PromptSourceModel(QStandardItemModel):
         """
         raise NotImplementedError
 
-    def object_exit(self, obj: Object, frame: int):
+    def object_exit(self, obj: Object, frame: int) -> None:
         obj.exit_frame = frame
         print(f'Exit object {obj.id_} at frame {frame}')
         self.clean_masks(obj)
@@ -407,7 +423,13 @@ class PromptSourceModel(QStandardItemModel):
                 mask.graphics_item.scene().removeItem(mask.graphics_item)
             self.object_item(obj).removeRow(self.get_mask_row(obj, frame))
 
-    def clean_masks(self, obj: Object):
+    def clean_masks(self, obj: Object) -> None:
+        """
+        Cleans the masks for object, essentially used to remove masks that were predicted after the exit frame before it was defined
+        by the user
+
+        :param obj: the object
+        """
         for mask in self.get_masks(obj):
             # if not self.is_present_at_frame(obj, mask.frame):
             if mask.frame < self.key_frames(obj)[0] or mask.frame >= obj.exit_frame:
@@ -490,7 +512,14 @@ class PromptSourceModel(QStandardItemModel):
             return point_items
         return []
 
-    def set_mask(self, obj: Object, frame: int, mask: QGraphicsPolygonItem):
+    def set_mask(self, obj: Object, frame: int, mask: QGraphicsPolygonItem) -> None:
+        """
+        Sets the mask for the object in the specified frame, if the mask does not exist, it is created with add_mask method
+
+        :param obj: the object
+        :param frame: the frame
+        :param mask: the mask
+        """
         current_mask = self.get_mask(obj, frame)
         if current_mask is None:
             self.add_mask(obj, frame, mask)
@@ -498,11 +527,26 @@ class PromptSourceModel(QStandardItemModel):
             current_mask.graphics_item = mask
 
     def add_mask(self, obj: Object, frame: int, mask: QGraphicsPolygonItem):
+        """
+        Adds a new mask to the object in the specified frame
+
+        :param obj: the object
+        :param frame: the frame
+        :param mask: the mask
+        """
         row = self.create_mask_row(frame, mask, obj=obj)
         self.object_item(obj).appendRow(row)
 
     @staticmethod
-    def create_mask_row(frame: int, mask_graphics_item: QGraphicsPolygonItem, obj: Object = None):
+    def create_mask_row(frame: int, mask_graphics_item: QGraphicsPolygonItem | QGraphicsEllipseItem, obj: Object = None) -> list[
+        ModelItem | QStandardItem]:
+        """
+        Creates a row representing the mask for object in frame
+        :param frame: the frame
+        :param mask_graphics_item: the mask graphics item
+        :param obj: the object
+        :return: the model row for the mask
+        """
         mask = Mask(name=mask_graphics_item.data(0), mask_item=mask_graphics_item, frame=frame, obj=obj)
         mask_item = ModelItem(mask.name, mask)
         frame_item = QStandardItem(str(frame))
@@ -517,7 +561,7 @@ class PromptSourceModel(QStandardItemModel):
         """
         return next((child.object for child in self.object_item(obj).children(frame) if isinstance(child.object, Mask)), None)
 
-    def get_mask_row(self, obj: Object, frame: int) -> int:
+    def get_mask_row(self, obj: Object, frame: int) -> int | None:
         """
         retrieve the row for the mask of object in specified frame
         :param obj: the object
@@ -627,6 +671,10 @@ class PromptSourceModel(QStandardItemModel):
 
     @property
     def all_key_frames(self) -> list[int]:
+        """
+        All the key frames for the current video
+        :return: a sorted list of key frames
+        """
         key_frames = set()
         for obj in self.objects:
             key_frames = key_frames.union(set(self.key_frames(obj)))
@@ -779,14 +827,21 @@ class ObjectsTreeView(QTreeView):
         self.model().setSourceModel(model)
         self.source_model = model
 
-    def object_exit(self):
+    def object_exit(self) -> None:
+        """
+        Specifies that the object selected in the tree view is not in the current frame any more
+        """
         index = self.model().mapToSource(self.currentIndex())
         model_item = self.source_model.itemFromIndex(index)
         if isinstance(model_item.object, Object):
             self.source_model.object_exit(model_item.object, self.model().frame)
             self.model().invalidateFilter()
 
-    def cancel_exit(self):
+    def cancel_exit(self) -> None:
+        """
+        Cancels the definition of exit frame for the object selected in the tree view by setting the value of the exit frame to the
+        maximum integer value
+        """
         index = self.model().mapToSource(self.currentIndex())
         model_item = self.source_model.itemFromIndex(index)
         if isinstance(model_item.object, Object):
@@ -805,8 +860,11 @@ class ObjectsTreeView(QTreeView):
         self.setCurrentIndex(index)
 
     def select_index(self, index) -> None:
+        """
+        Selects the specified index
+        :param index: the index in the proxy model
+        """
         self.model().invalidateFilter()
-        # self.selectionModel().select(index, QItemSelectionModel.ClearAndSelect)
         self.setCurrentIndex(index)
 
     def select_object_from_graphics_item(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem | QGraphicsPolygonItem,
