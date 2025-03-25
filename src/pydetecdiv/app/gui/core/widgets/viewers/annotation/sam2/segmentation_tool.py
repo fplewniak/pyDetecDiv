@@ -342,6 +342,8 @@ class SegmentationTool(VideoPlayer):
         self.out_mask_logits = None
         self.object_tree_view = None
         self.max_frames_prop = 15
+        self.contour_method = cv2.CHAIN_APPROX_SIMPLE
+        self.display_ellipses = False
 
     @property
     def current_tree_index(self) -> QModelIndex:
@@ -566,13 +568,13 @@ class SegmentationTool(VideoPlayer):
             self.video_segments = {}
             f2 = min(f1 + self.max_frames_prop, self.viewer.image_resource_data.sizeT) if f2 == -1 else f2
 
-            print(f'{start_frame=} - {end_frame=}')
+            # print(f'{start_frame=} - {end_frame=}')
             if start_frame <= f1 < end_frame:
                 print(f'{f2 - f1} frames starting from {f1} to {f2}')
                 for obj_id, frames in self.source_model.get_prompt().items():
                     for frame, box_points in frames.items():
                         if frame < f2 and f1 < self.source_model.object(obj_id).exit_frame:
-                            print(f'adding {box_points=} for object {obj_id} at {frame=}')
+                            # print(f'adding {box_points=} for object {obj_id} at {frame=}')
                             _, out_obj_ids, self.out_mask_logits = self.predictor.add_new_points_or_box(
                                     inference_state=self.inference_state,
                                     frame_idx=frame,
@@ -592,32 +594,22 @@ class SegmentationTool(VideoPlayer):
                 for out_frame in range(f1, f2):
                     for out_obj_id, out_mask in self.video_segments[out_frame].items():
                         ellipse_item, polygon_item = self.mask_to_shape(out_mask)
-                        mask_item = ellipse_item
-                        # mask_item = polygon_item
+
+                        if self.display_ellipses:
+                            mask_item = ellipse_item
+                        else:
+                            mask_item = polygon_item
+
                         if mask_item is not None:
                             mask_item.setBrush(QBrush(Colours.palette[int(out_obj_id) % len(Colours.palette)]))
                             mask_item.setData(0, f'mask_{out_obj_id}')
                             mask_item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
-                            # if out_frame == self.T:
-                            #     self.scene.addItem(mask_item)
                             self.source_model.set_mask(self.source_model.object(out_obj_id), out_frame, mask_item)
 
                 self.change_frame(self.T)
             else:
                 continue
 
-        # vis_frame_stride = 1
-        # num_frames = 12
-        # plt.close('all')
-        # for out_frame_idx in range(self.T, num_frames * vis_frame_stride, vis_frame_stride):
-        #     plt.figure(figsize=(6, 4))
-        #     plt.title(f'frame {out_frame_idx}')
-        #     plt.imshow(PILimage.open(os.path.join(video_dir, frame_names[out_frame_idx])))
-        #     for out_obj_id, out_mask in self.video_segments[out_frame_idx].items():
-        #         show_mask(out_mask, plt.gca(), obj_id=out_obj_id)
-        # plt.show()
-        #
-        # print(f'key frames: {self.key_frames_intervals()}')
         self.proxy_model.invalidateFilter()
         self.release_memory(keep_predictor=True)
 
@@ -637,8 +629,13 @@ class SegmentationTool(VideoPlayer):
         return intervals
 
     def mask_to_shape(self, mask):
-        contours, _ = cv2.findContours(mask[0].astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-        # contours, _ = cv2.findContours(mask[0].astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_KCOS)
+        all_contours = {}
+        all_contours[cv2.CHAIN_APPROX_NONE], _ = cv2.findContours(mask[0].astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        all_contours[cv2.CHAIN_APPROX_SIMPLE], _ = cv2.findContours(mask[0].astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        all_contours[cv2.CHAIN_APPROX_TC89_L1], _ = cv2.findContours(mask[0].astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_L1)
+        all_contours[cv2.CHAIN_APPROX_TC89_KCOS], _ = cv2.findContours(mask[0].astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_KCOS)
+
+        contours = all_contours[self.contour_method]
         if contours:
             max_polygon = QPolygonF()
             max_contour = []
@@ -650,12 +647,10 @@ class SegmentationTool(VideoPlayer):
                     max_contour = contour
                     max_polygon = mask_shape
             if max_polygon.size() > 0:
-                # print(cv2.fitEllipse(max_contour))
                 e = cv2.fitEllipse(max_contour)
                 ellipse_item = QGraphicsEllipseItem(e[0][0] - e[1][0] / 2.0, e[0][1] - e[1][1] / 2, e[1][0], e[1][1])
                 ellipse_item.setTransformOriginPoint(e[0][0], e[0][1])
                 ellipse_item.setRotation(e[2])
-                # print(ellipse_item)
                 return ellipse_item, QGraphicsPolygonItem(max_polygon)
         return None, None
 
