@@ -27,13 +27,13 @@ class FOVmanager(VideoPlayer):
         super().__init__(parent, **kwargs)
         self.fov = fov
         self.menuROI = None
-        self.setup(menubar=self._create_menu_bar())
+        self.setup(menubar=self.create_menubar())
 
     # def other_scene_in_focus(self, tab):
     #     if PyDetecDiv.main_window.active_subwindow.widget(tab).scene == self.scene:
     #         PyDetecDiv.app.other_scene_in_focus.emit(self.scene)
 
-    def _create_menu_bar(self) -> QMenuBar:
+    def create_menubar(self) -> QMenuBar | None:
         """
         Adds a menu bar to the current widget
 
@@ -138,7 +138,7 @@ class FOVmanager(VideoPlayer):
                 PyDetecDiv.main_window.active_subwindow.addTab(player, rect.data(0)))
         scene.player = video_player
         video_player.tscale = self.tscale
-        video_player.setup()
+        video_player.setup(menubar=video_player.create_menubar())
         video_player.viewer_panel.setup(scene=scene)
         w, h = rect.rect().toRect().size().toTuple()
         pos = rect.pos()

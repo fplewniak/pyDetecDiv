@@ -84,6 +84,9 @@ class VideoPlayer(QWidget):
     #     self.viewer_panel = VideoViewerPanel(self)
     #     return self.viewer_panel.video_viewer
 
+    def create_menubar(self) -> QMenuBar | None:
+        return None
+
     def setup(self, menubar: QMenuBar = None) -> None:
         """
         Sets the video player up

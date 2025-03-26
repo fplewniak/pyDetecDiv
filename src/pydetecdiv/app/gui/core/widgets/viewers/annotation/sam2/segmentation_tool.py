@@ -11,13 +11,14 @@ import cv2
 from PIL import Image as PILimage
 from PySide6.QtCore import Qt, QModelIndex, QPointF
 from PySide6.QtGui import (QPen, QKeyEvent, QKeySequence, QStandardItem, QCloseEvent, QPolygonF, QPainter, QBrush, QColor,
-                           QGuiApplication, QTransform)
+                           QGuiApplication, QTransform, QActionGroup, QAction)
 from matplotlib import pyplot as plt
 
 import numpy as np
 import torch.cuda
 from PySide6.QtWidgets import (QGraphicsSceneMouseEvent, QMenu, QWidget, QGraphicsEllipseItem, QMenuBar, QVBoxLayout, QLabel,
-                               QHBoxLayout, QSplitter, QGraphicsRectItem, QHeaderView, QGraphicsItem, QGraphicsPolygonItem)
+                               QHBoxLayout, QSplitter, QGraphicsRectItem, QHeaderView, QGraphicsItem, QGraphicsPolygonItem,
+                               QSizePolicy)
 from sam2.build_sam import build_sam2_video_predictor
 
 from pydetecdiv.app import PyDetecDiv, DrawingTools
@@ -342,9 +343,24 @@ class SegmentationTool(VideoPlayer):
         self.out_mask_logits = None
         self.object_tree_view = None
         self.max_frames_prop = 15
-        self.contour_method = cv2.CHAIN_APPROX_SIMPLE
-        self.display_ellipses = False
+        self.no_approximation = None
+        self.simple_approximation = None
+        self.TCL1_approximation = None
+        self.TCKCOS_approximation = None
+        self.display_ellipses = None
 
+    @property
+    def contour_method(self):
+        checked_action = self.method_group.checkedAction()
+        match checked_action:
+            case self.no_approximation:
+                return cv2.CHAIN_APPROX_NONE
+            case self.simple_approximation:
+                return cv2.CHAIN_APPROX_SIMPLE
+            case self.TCL1_approximation:
+                return cv2.CHAIN_APPROX_TC89_L1
+            case self.TCKCOS_approximation:
+                return cv2.CHAIN_APPROX_TC89_KCOS
     @property
     def current_tree_index(self) -> QModelIndex:
         """
@@ -396,6 +412,34 @@ class SegmentationTool(VideoPlayer):
         self.proxy_model.invalidateFilter()
         return new_item
 
+    def create_menubar(self) -> QMenuBar | None:
+        menubar = QMenuBar()
+        menubar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.maskApproximation = menubar.addMenu('Mask approximation')
+        self.method_group = QActionGroup(self.maskApproximation)
+        self.no_approximation = QAction('No approximation')
+        self.no_approximation.setActionGroup(self.method_group)
+        self.no_approximation.setCheckable(True)
+        self.simple_approximation = QAction('Simple approximation')
+        self.simple_approximation.setActionGroup(self.method_group)
+        self.simple_approximation.setCheckable(True)
+        self.TCL1_approximation = QAction('Teh Chin L1  approximation')
+        self.TCL1_approximation.setActionGroup(self.method_group)
+        self.TCL1_approximation.setCheckable(True)
+        self.TCKCOS_approximation = QAction('Teh Chin KCOS approximation')
+        self.TCKCOS_approximation.setActionGroup(self.method_group)
+        self.TCKCOS_approximation.setCheckable(True)
+        self.maskApproximation.addAction(self.no_approximation)
+        self.maskApproximation.addAction(self.simple_approximation)
+        self.maskApproximation.addAction(self.TCL1_approximation)
+        self.maskApproximation.addAction(self.TCKCOS_approximation)
+        self.maskApproximation.addSeparator()
+        self.display_ellipses = QAction('Fit ellipse')
+        self.display_ellipses.setCheckable(True)
+        self.maskApproximation.addAction(self.display_ellipses)
+        self.simple_approximation.setChecked(True)
+        return menubar
+
     def setup(self, menubar: QMenuBar = None) -> None:
         """
         Sets the video player up
@@ -437,7 +481,7 @@ class SegmentationTool(VideoPlayer):
 
         self.time_display = QLabel(self.elapsed_time, parent=self)
         self.time_display.setStyleSheet("color: green; font-size: 18px;")
-        self.time_display.setGeometry(20, 30, 140, self.time_display.height())
+        self.time_display.setGeometry(20, 40, 140, self.time_display.height())
 
         self.video_frame.connect(self.proxy_model.set_frame)
 
@@ -604,7 +648,7 @@ class SegmentationTool(VideoPlayer):
                     for out_obj_id, out_mask in self.video_segments[out_frame].items():
                         ellipse_item, polygon_item = self.mask_to_shape(out_mask)
 
-                        if self.display_ellipses:
+                        if self.display_ellipses.isChecked():
                             mask_item = ellipse_item
                         else:
                             mask_item = polygon_item
