@@ -438,6 +438,9 @@ class SegmentationTool(VideoPlayer):
         self.display_ellipses.setCheckable(True)
         self.maskApproximation.addAction(self.display_ellipses)
         self.simple_approximation.setChecked(True)
+
+        self.method_group.triggered.connect(self.redraw_scene)
+        self.display_ellipses.toggled.connect(self.redraw_scene)
         return menubar
 
     def setup(self, menubar: QMenuBar = None) -> None:
@@ -538,6 +541,9 @@ class SegmentationTool(VideoPlayer):
         :param T: the new frame time index
         """
         super().change_frame(T=T)
+        self.redraw_scene()
+
+    def redraw_scene(self):
         self.scene.reset_graphics_items()
         boxes, points, masks = self.source_model.get_all_prompt_items(frame=self.T)
         for box in boxes:
@@ -545,7 +551,12 @@ class SegmentationTool(VideoPlayer):
         for point in points:
             self.scene.addItem(point.graphics_item)
         for mask in masks:
-            self.scene.addItem(mask.graphics_item)
+            mask.set_graphics_item(self.contour_method)
+            if self.display_ellipses.isChecked():
+                self.scene.addItem(mask.ellipse_item)
+            else:
+                self.scene.addItem(mask.graphics_item)
+
 
     def closeEvent(self, event: QCloseEvent) -> None:
         print('Closing SegmentationTool')
@@ -658,6 +669,10 @@ class SegmentationTool(VideoPlayer):
                             mask_item.setData(0, f'mask_{out_obj_id}')
                             mask_item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
                             self.source_model.set_mask(self.source_model.object(out_obj_id), out_frame, mask_item)
+                            mask = self.source_model.get_mask(self.source_model.object(out_obj_id), out_frame)
+                            mask.out_mask = out_mask
+                            mask.set_graphics_item(self.contour_method)
+                            mask.setBrush(QBrush(Colours.palette[int(out_obj_id) % len(Colours.palette)]))
 
                 self.change_frame(self.T)
             else:

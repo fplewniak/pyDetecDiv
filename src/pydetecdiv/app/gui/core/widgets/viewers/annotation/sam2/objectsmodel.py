@@ -3,9 +3,10 @@ Classes defining the model and objects required to declare and manage the SAM2 p
 """
 import sys
 
+import cv2
 import numpy as np
-from PySide6.QtCore import QSortFilterProxyModel, Qt, QModelIndex, QItemSelectionModel
-from PySide6.QtGui import QStandardItemModel, QStandardItem
+from PySide6.QtCore import QSortFilterProxyModel, Qt, QModelIndex, QItemSelectionModel, QPointF
+from PySide6.QtGui import QStandardItemModel, QStandardItem, QPolygonF, QBrush
 from PySide6.QtWidgets import (QTreeView, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsItem, QHeaderView, QGraphicsPolygonItem,
                                QMenu)
 
@@ -157,8 +158,57 @@ class Mask:
     def __init__(self, name: str = None, mask_item: QGraphicsPolygonItem = None, frame: int = None, obj=None):
         self.name = name
         self.graphics_item = mask_item
+        self._ellipse_item = None
         self.frame = frame
         self.object = obj
+        self.out_mask = None
+        self.contour_method = cv2.CHAIN_APPROX_SIMPLE
+        self.brush = QBrush()
+
+    @property
+    def contour(self):
+        contour = None
+        match self.contour_method:
+            case cv2.CHAIN_APPROX_NONE:
+                contour, _ = cv2.findContours(self.out_mask[0].astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+            case cv2.CHAIN_APPROX_SIMPLE:
+                contour, _ = cv2.findContours(self.out_mask[0].astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            case cv2.CHAIN_APPROX_TC89_L1:
+                contour, _ = cv2.findContours(self.out_mask[0].astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_L1)
+            case cv2.CHAIN_APPROX_TC89_KCOS:
+                contour, _ = cv2.findContours(self.out_mask[0].astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_KCOS)
+        if contour is not None:
+            contour = max(contour, key=cv2.contourArea, default=None)
+        return contour
+
+    def set_graphics_item(self, contour_method=cv2.CHAIN_APPROX_SIMPLE):
+        self.contour_method = contour_method
+        self.graphics_item = self.to_shape()
+        self.graphics_item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
+        self.setBrush()
+
+    def to_shape(self):
+        mask_shape = QPolygonF()
+        for point in self.contour:
+            mask_shape.append(QPointF(point[0][0], point[0][1]))
+        return QGraphicsPolygonItem(mask_shape)
+
+    @property
+    def ellipse_item(self):
+        if self._ellipse_item is None:
+            e = cv2.fitEllipse(self.contour)
+            ellipse_item = QGraphicsEllipseItem(e[0][0] - e[1][0] / 2.0, e[0][1] - e[1][1] / 2, e[1][0], e[1][1])
+            ellipse_item.setTransformOriginPoint(e[0][0], e[0][1])
+            ellipse_item.setRotation(e[2])
+            self._ellipse_item = ellipse_item
+            return ellipse_item
+        return self._ellipse_item
+
+    def setBrush(self, brush=None):
+        if brush is not None:
+            self.brush = brush
+        self.graphics_item.setBrush(self.brush)
+        self.ellipse_item.setBrush(self.brush)
 
 
 class ModelItem(QStandardItem):
