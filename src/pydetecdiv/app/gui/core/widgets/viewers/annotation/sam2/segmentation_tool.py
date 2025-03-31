@@ -467,6 +467,7 @@ class SegmentationTool(VideoPlayer):
         self.object_tree_view.setSourceModel(self.source_model)
         self.object_tree_view.setup()
         self.object_tree_view.pressed.connect(self.select_from_tree_view)
+        # self.object_tree_view.object_deleted.connect(self.delete_object)
 
         splitter = QSplitter()
         splitter.addWidget(video_widget)

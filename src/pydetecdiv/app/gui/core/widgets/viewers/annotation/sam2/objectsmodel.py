@@ -5,7 +5,7 @@ import sys
 
 import cv2
 import numpy as np
-from PySide6.QtCore import QSortFilterProxyModel, Qt, QModelIndex, QItemSelectionModel, QPointF
+from PySide6.QtCore import QSortFilterProxyModel, Qt, QModelIndex, QItemSelectionModel, QPointF, Signal
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QPolygonF, QBrush
 from PySide6.QtWidgets import (QTreeView, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsItem, QHeaderView, QGraphicsPolygonItem,
                                QMenu)
@@ -339,12 +339,30 @@ class PromptSourceModel(QStandardItemModel):
         self.root_item.appendRow(object_item)
         return object_item
 
-    def remove_object(self, obj: Object) -> None:
+    def delete_object(self, obj: Object) -> None:
         """
         remove an object
         :param obj: the object to remove
         """
-        raise NotImplementedError
+        for mask in self.get_masks(obj):
+            self.remove_mask(obj, mask.frame)
+            del mask.out_mask
+            del mask.graphics_item
+            del mask
+
+        for box in self.get_bounding_boxes(obj):
+            if box.graphics_item.scene() is not None:
+                box.graphics_item.scene().removeItem(box.graphics_item)
+                del box.graphics_item
+                del box
+
+        for point in self.get_points(obj):
+            if point.graphics_item.scene() is not None:
+                point.graphics_item.scene().removeItem(point.graphics_item)
+                del point.graphics_item
+                del point
+        self.root_item.removeRow(self.object_item(obj).row())
+        del obj
 
     def object_exit(self, obj: Object, frame: int) -> None:
         obj.exit_frame = frame
@@ -855,6 +873,8 @@ class ObjectsTreeView(QTreeView):
                 object_exit.triggered.connect(self.object_exit)
                 cancel_exit = menu.addAction("Cancel exit frame")
                 cancel_exit.triggered.connect(self.cancel_exit)
+                delete_object = menu.addAction("Delete object")
+                delete_object.triggered.connect(self.delete_object)
             menu.exec(self.viewport().mapToGlobal(event.pos()))
 
     def setup(self):
@@ -876,6 +896,13 @@ class ObjectsTreeView(QTreeView):
         """
         self.model().setSourceModel(model)
         self.source_model = model
+
+    def delete_object(self) -> None:
+        index = self.model().mapToSource(self.currentIndex())
+        model_item = self.source_model.itemFromIndex(index)
+        if isinstance(model_item.object, Object):
+            self.source_model.delete_object(model_item.object)
+            self.model().invalidateFilter()
 
     def object_exit(self) -> None:
         """
