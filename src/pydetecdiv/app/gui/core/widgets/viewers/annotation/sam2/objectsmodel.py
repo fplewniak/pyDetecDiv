@@ -613,6 +613,7 @@ class PromptSourceModel(QStandardItemModel):
             self.add_mask(obj, frame, mask)
         else:
             current_mask.graphics_item = mask
+            current_mask._ellipse_item = None
 
     def add_mask(self, obj: Object, frame: int, mask: QGraphicsPolygonItem):
         """
