@@ -658,27 +658,17 @@ class SegmentationTool(VideoPlayer):
 
                 for out_frame in range(f1, f2):
                     for out_obj_id, out_mask in self.video_segments[out_frame].items():
-                        ellipse_item, polygon_item = self.mask_to_shape(out_mask)
-
-                        if self.display_ellipses.isChecked():
-                            mask_item = ellipse_item
-                        else:
-                            mask_item = polygon_item
+                        mask_item = self.mask_to_shape(out_mask)
 
                         if mask_item is not None:
-                            mask_item.setBrush(QBrush(Colours.palette[int(out_obj_id) % len(Colours.palette)]))
                             mask_item.setData(0, f'mask_{out_obj_id}')
-                            mask_item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
                             self.source_model.set_mask(self.source_model.object(out_obj_id), out_frame, mask_item)
                             mask = self.source_model.get_mask(self.source_model.object(out_obj_id), out_frame)
                             mask.out_mask = out_mask[0]
-                            mask.set_graphics_item(self.contour_method)
                             mask.setBrush(QBrush(Colours.palette[int(out_obj_id) % len(Colours.palette)]))
-
-                self.change_frame(self.T)
             else:
                 continue
-
+        self.change_frame(self.T)
         self.proxy_model.invalidateFilter()
         self.release_memory(keep_predictor=True)
 
@@ -701,38 +691,18 @@ class SegmentationTool(VideoPlayer):
 
         return intervals
 
-    def mask_to_shape(self, mask: list) -> tuple[QGraphicsEllipseItem, QGraphicsPolygonItem] | tuple[None, None]:
+    def mask_to_shape(self, mask: list) -> QGraphicsPolygonItem | None:
         """
         Creates graphics items from predicted masks
 
         :param mask: the mask
         :return: the ellipse approximation and the original polygon approximation of the mask
         """
-        all_contours = {}
-        all_contours[cv2.CHAIN_APPROX_NONE], _ = cv2.findContours(mask[0].astype(np.uint8), cv2.RETR_EXTERNAL,
-                                                                  cv2.CHAIN_APPROX_NONE)
-        all_contours[cv2.CHAIN_APPROX_SIMPLE], _ = cv2.findContours(mask[0].astype(np.uint8), cv2.RETR_EXTERNAL,
-                                                                    cv2.CHAIN_APPROX_SIMPLE)
-        all_contours[cv2.CHAIN_APPROX_TC89_L1], _ = cv2.findContours(mask[0].astype(np.int32), cv2.RETR_FLOODFILL,
-                                                                     cv2.CHAIN_APPROX_TC89_L1)
-        all_contours[cv2.CHAIN_APPROX_TC89_KCOS], _ = cv2.findContours(mask[0].astype(np.int32), cv2.RETR_FLOODFILL,
-                                                                       cv2.CHAIN_APPROX_TC89_KCOS)
-
-        contours = all_contours[self.contour_method]
-        if contours:
-            max_polygon = QPolygonF()
-            max_contour = []
-            for contour in contours:
-                mask_shape = QPolygonF()
-                for point in contour:
-                    mask_shape.append(QPointF(point[0][0], point[0][1]))
-                if mask_shape.size() > max_polygon.size():
-                    max_contour = contour
-                    max_polygon = mask_shape
-            if max_polygon.size() > 0:
-                e = cv2.fitEllipse(max_contour)
-                ellipse_item = QGraphicsEllipseItem(e[0][0] - e[1][0] / 2.0, e[0][1] - e[1][1] / 2, e[1][0], e[1][1])
-                ellipse_item.setTransformOriginPoint(e[0][0], e[0][1])
-                ellipse_item.setRotation(e[2])
-                return ellipse_item, QGraphicsPolygonItem(max_polygon)
-        return None, None
+        mask_shape = QPolygonF()
+        contour = Mask.bitmap2contour(mask[0], self.contour_method)
+        if contour is not None:
+            for point in contour:
+                mask_shape.append(QPointF(point[0][0], point[0][1]))
+            if mask_shape.size() > 0:
+                return QGraphicsPolygonItem(mask_shape)
+        return None

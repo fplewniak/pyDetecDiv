@@ -159,20 +159,24 @@ class Mask:
         self.brush = QBrush()
 
     @property
-    def contour(self) -> np.ndarray | None:
+    def contour(self):
+        return self.bitmap2contour(self.out_mask, self.contour_method)
+
+    @staticmethod
+    def bitmap2contour(out_mask: np.ndarray, contour_method: int = cv2.CHAIN_APPROX_SIMPLE) -> np.ndarray | None:
         """
         Returns the contour approximation of the mask using according to the specified method stored in self.contour_method
         """
         contour = None
-        match self.contour_method:
+        match contour_method:
             case cv2.CHAIN_APPROX_NONE:
-                contour, _ = cv2.findContours(self.out_mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+                contour, _ = cv2.findContours(out_mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
             case cv2.CHAIN_APPROX_SIMPLE:
-                contour, _ = cv2.findContours(self.out_mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                contour, _ = cv2.findContours(out_mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             case cv2.CHAIN_APPROX_TC89_L1:
-                contour, _ = cv2.findContours(self.out_mask.astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_L1)
+                contour, _ = cv2.findContours(out_mask.astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_L1)
             case cv2.CHAIN_APPROX_TC89_KCOS:
-                contour, _ = cv2.findContours(self.out_mask.astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_KCOS)
+                contour, _ = cv2.findContours(out_mask.astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_KCOS)
         if contour is not None:
             contour = max(contour, key=cv2.contourArea, default=None)
         return contour
@@ -207,6 +211,7 @@ class Mask:
             ellipse_item.setTransformOriginPoint(e[0][0], e[0][1])
             ellipse_item.setRotation(e[2])
             self._ellipse_item = ellipse_item
+            self._ellipse_item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
             return ellipse_item
         return self._ellipse_item
 
