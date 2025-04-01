@@ -4,23 +4,16 @@ segment and propagate segmentation using prompts (bounding boxes, points and mas
 """
 import gc
 import os
-from pprint import pprint
-import random
 
 import cv2
-from PIL import Image as PILimage
 from PySide6.QtCore import Qt, QModelIndex, QPointF
-from PySide6.QtGui import (QPen, QKeyEvent, QKeySequence, QStandardItem, QCloseEvent, QPolygonF, QPainter, QBrush, QColor,
-                           QGuiApplication, QTransform, QActionGroup, QAction)
-from matplotlib import pyplot as plt
-
+from PySide6.QtGui import (QPen, QKeyEvent, QKeySequence, QStandardItem, QCloseEvent, QPolygonF, QBrush, QColor, QGuiApplication,
+                           QTransform, QActionGroup, QAction)
+from PySide6.QtWidgets import (QGraphicsSceneMouseEvent, QMenu, QWidget, QGraphicsEllipseItem, QMenuBar, QVBoxLayout, QLabel,
+                               QHBoxLayout, QSplitter, QGraphicsRectItem, QGraphicsItem, QGraphicsPolygonItem, QSizePolicy)
 import numpy as np
 import torch.cuda
-from PySide6.QtWidgets import (QGraphicsSceneMouseEvent, QMenu, QWidget, QGraphicsEllipseItem, QMenuBar, QVBoxLayout, QLabel,
-                               QHBoxLayout, QSplitter, QGraphicsRectItem, QHeaderView, QGraphicsItem, QGraphicsPolygonItem,
-                               QSizePolicy)
 from sam2.build_sam import build_sam2_video_predictor
-
 from pydetecdiv.app import PyDetecDiv, DrawingTools
 from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.objectsmodel import (ObjectsTreeView, Object, PromptProxyModel,
                                                                                   PromptSourceModel, ObjectReferenceRole,
@@ -30,6 +23,9 @@ from pydetecdiv.settings import get_config_value
 
 
 class Colours:
+    """
+    Colour definition for brushes used to display Mask graphics items
+    """
     palette = [
         QColor(255, 0, 0, 100),
         QColor(0, 255, 0, 100),
@@ -294,11 +290,6 @@ class SegmentationScene(VideoScene):
             self.select_Item(event)
             exit_next_frame_action = menu.addAction('Set exit frame as next frame')
             exit_next_frame_action.triggered.connect(self.player.object_exit_next_frame)
-        # show_frame_prompt = menu.addAction('Show current frame prompt')
-        # show_frame_prompt.triggered.connect(lambda _: pprint(self.player.prompt))
-        # show_video_prompt = menu.addAction('Show video prompt')
-        # show_video_prompt.triggered.connect(lambda _: pprint(self.player.source_model.get_prompt()))
-
         menu.exec(event.screenPos())
 
     def add_point(self, event: QGraphicsSceneMouseEvent) -> QGraphicsEllipseItem | None:
@@ -340,9 +331,10 @@ class SegmentationTool(VideoPlayer):
         self.inference_state = None
         self.video_segments = None
         self.out_mask = None
-        self.out_mask_logits = None
+        self.mask_logits = None
         self.object_tree_view = None
         self.max_frames_prop = 15
+        self.method_group = None
         self.no_approximation = None
         self.simple_approximation = None
         self.TCL1_approximation = None
@@ -350,7 +342,10 @@ class SegmentationTool(VideoPlayer):
         self.display_ellipses = None
 
     @property
-    def contour_method(self):
+    def contour_method(self) -> int:
+        """
+        Returns the selected contour approximation method to use to convert the binary masks to contours
+        """
         checked_action = self.method_group.checkedAction()
         match checked_action:
             case self.no_approximation:
@@ -361,6 +356,7 @@ class SegmentationTool(VideoPlayer):
                 return cv2.CHAIN_APPROX_TC89_L1
             case self.TCKCOS_approximation:
                 return cv2.CHAIN_APPROX_TC89_KCOS
+
     @property
     def current_tree_index(self) -> QModelIndex:
         """
@@ -415,8 +411,8 @@ class SegmentationTool(VideoPlayer):
     def create_menubar(self) -> QMenuBar | None:
         menubar = QMenuBar()
         menubar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.maskApproximation = menubar.addMenu('Mask approximation')
-        self.method_group = QActionGroup(self.maskApproximation)
+        maskApproximation = menubar.addMenu('Mask approximation')
+        self.method_group = QActionGroup(maskApproximation)
         self.no_approximation = QAction('No approximation')
         self.no_approximation.setActionGroup(self.method_group)
         self.no_approximation.setCheckable(True)
@@ -429,14 +425,14 @@ class SegmentationTool(VideoPlayer):
         self.TCKCOS_approximation = QAction('Teh Chin KCOS approximation')
         self.TCKCOS_approximation.setActionGroup(self.method_group)
         self.TCKCOS_approximation.setCheckable(True)
-        self.maskApproximation.addAction(self.no_approximation)
-        self.maskApproximation.addAction(self.simple_approximation)
-        self.maskApproximation.addAction(self.TCL1_approximation)
-        self.maskApproximation.addAction(self.TCKCOS_approximation)
-        self.maskApproximation.addSeparator()
+        maskApproximation.addAction(self.no_approximation)
+        maskApproximation.addAction(self.simple_approximation)
+        maskApproximation.addAction(self.TCL1_approximation)
+        maskApproximation.addAction(self.TCKCOS_approximation)
+        maskApproximation.addSeparator()
         self.display_ellipses = QAction('Fit ellipse')
         self.display_ellipses.setCheckable(True)
-        self.maskApproximation.addAction(self.display_ellipses)
+        maskApproximation.addAction(self.display_ellipses)
         self.simple_approximation.setChecked(True)
 
         self.method_group.triggered.connect(self.redraw_scene)
@@ -544,7 +540,10 @@ class SegmentationTool(VideoPlayer):
         super().change_frame(T=T)
         self.redraw_scene()
 
-    def redraw_scene(self):
+    def redraw_scene(self) -> None:
+        """
+        Redraw the scene whenever something has changed (current frame, contour approximation method, fit ellipse)
+        """
         self.scene.reset_graphics_items()
         boxes, points, masks = self.source_model.get_all_prompt_items(frame=self.T)
         for box in boxes:
@@ -558,12 +557,15 @@ class SegmentationTool(VideoPlayer):
             else:
                 self.scene.addItem(mask.graphics_item)
 
-
     def closeEvent(self, event: QCloseEvent) -> None:
+        """
+        Slot activated when the segmentation tool is closed, mainly useful for releasing GPU memory
+        :param event: the close event
+        """
         print('Closing SegmentationTool')
         self.release_memory()
 
-    def release_memory(self, keep_predictor=False) -> None:
+    def release_memory(self, keep_predictor: bool = False) -> None:
         """
         Releases GPU memory after processing
 
@@ -576,13 +578,11 @@ class SegmentationTool(VideoPlayer):
                     v = None
             self.predictor = None
             self.inference_state = None
-        # else:
-        # self.predictor.reset_state(self.inference_state)
 
         del self.video_segments
-        del self.out_mask_logits
+        del self.mask_logits
         self.video_segments = None
-        self.out_mask_logits = None
+        self.mask_logits = None
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
 
@@ -625,8 +625,8 @@ class SegmentationTool(VideoPlayer):
         frame_names.sort(key=lambda p: int(os.path.splitext(p)[0]))
 
         present_objects = [obj for obj in self.source_model.objects if self.source_model.is_present_at_frame(obj, self.T)]
-        start_frame = min([self.source_model.get_entry_frame(obj) for obj in present_objects])
-        end_frame = max([obj.exit_frame for obj in present_objects])
+        start_frame = min(self.source_model.get_entry_frame(obj) for obj in present_objects)
+        end_frame = max(obj.exit_frame for obj in present_objects)
 
         for f1, f2 in self.key_frames_intervals():
             self.predictor.reset_state(self.inference_state)
@@ -640,19 +640,19 @@ class SegmentationTool(VideoPlayer):
                     for frame, box_points in frames.items():
                         if frame < f2 and f1 < self.source_model.object(obj_id).exit_frame:
                             # print(f'adding {box_points=} for object {obj_id} at {frame=}')
-                            _, out_obj_ids, self.out_mask_logits = self.predictor.add_new_points_or_box(
+                            _, out_obj_ids, self.mask_logits = self.predictor.add_new_points_or_box(
                                     inference_state=self.inference_state,
                                     frame_idx=frame,
                                     obj_id=obj_id,
                                     **box_points
                                     )
 
-                for out_frame, out_obj_ids, self.out_mask_logits in self.predictor.propagate_in_video(self.inference_state,
-                                                                                                      start_frame_idx=f1,
-                                                                                                      max_frame_num_to_track=f2 - f1,
-                                                                                                      reverse=False):
+                for out_frame, out_obj_ids, self.mask_logits in self.predictor.propagate_in_video(self.inference_state,
+                                                                                                  start_frame_idx=f1,
+                                                                                                  max_frame_num_to_track=f2 - f1,
+                                                                                                  reverse=False):
                     self.video_segments[out_frame] = {
-                        out_obj_id: (self.out_mask_logits[i] > 0.0).cpu().numpy()
+                        out_obj_id: (self.mask_logits[i] > 0.0).cpu().numpy()
                         for i, out_obj_id in enumerate(out_obj_ids)
                         }
 
@@ -671,7 +671,7 @@ class SegmentationTool(VideoPlayer):
                             mask_item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
                             self.source_model.set_mask(self.source_model.object(out_obj_id), out_frame, mask_item)
                             mask = self.source_model.get_mask(self.source_model.object(out_obj_id), out_frame)
-                            mask.out_mask = out_mask
+                            mask.out_mask = out_mask[0]
                             mask.set_graphics_item(self.contour_method)
                             mask.setBrush(QBrush(Colours.palette[int(out_obj_id) % len(Colours.palette)]))
 
@@ -688,7 +688,6 @@ class SegmentationTool(VideoPlayer):
 
         :return: the list of intervals
         """
-        # Start with the interval from 0 to the first element
         key_frames = self.source_model.all_key_frames
 
         intervals = []
@@ -710,10 +709,14 @@ class SegmentationTool(VideoPlayer):
         :return: the ellipse approximation and the original polygon approximation of the mask
         """
         all_contours = {}
-        all_contours[cv2.CHAIN_APPROX_NONE], _ = cv2.findContours(mask[0].astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-        all_contours[cv2.CHAIN_APPROX_SIMPLE], _ = cv2.findContours(mask[0].astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        all_contours[cv2.CHAIN_APPROX_TC89_L1], _ = cv2.findContours(mask[0].astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_L1)
-        all_contours[cv2.CHAIN_APPROX_TC89_KCOS], _ = cv2.findContours(mask[0].astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_KCOS)
+        all_contours[cv2.CHAIN_APPROX_NONE], _ = cv2.findContours(mask[0].astype(np.uint8), cv2.RETR_EXTERNAL,
+                                                                  cv2.CHAIN_APPROX_NONE)
+        all_contours[cv2.CHAIN_APPROX_SIMPLE], _ = cv2.findContours(mask[0].astype(np.uint8), cv2.RETR_EXTERNAL,
+                                                                    cv2.CHAIN_APPROX_SIMPLE)
+        all_contours[cv2.CHAIN_APPROX_TC89_L1], _ = cv2.findContours(mask[0].astype(np.int32), cv2.RETR_FLOODFILL,
+                                                                     cv2.CHAIN_APPROX_TC89_L1)
+        all_contours[cv2.CHAIN_APPROX_TC89_KCOS], _ = cv2.findContours(mask[0].astype(np.int32), cv2.RETR_FLOODFILL,
+                                                                       cv2.CHAIN_APPROX_TC89_KCOS)
 
         contours = all_contours[self.contour_method]
         if contours:

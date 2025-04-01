@@ -1,5 +1,6 @@
 import numpy as np
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QContextMenuEvent
 from PySide6.QtWidgets import QDockWidget, QTreeView, QMenu
 
 from typing import TYPE_CHECKING
@@ -23,7 +24,7 @@ class SceneTreeView(QTreeView):
     A class expanding QTreeView with specific features to view objects in Image/Video viewer.
     """
 
-    def contextMenuEvent(self, event):
+    def contextMenuEvent(self, event: QContextMenuEvent) -> None:
         """
         The context menu for area manipulation
 

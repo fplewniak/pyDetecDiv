@@ -5,8 +5,8 @@ import sys
 
 import cv2
 import numpy as np
-from PySide6.QtCore import QSortFilterProxyModel, Qt, QModelIndex, QItemSelectionModel, QPointF, Signal
-from PySide6.QtGui import QStandardItemModel, QStandardItem, QPolygonF, QBrush
+from PySide6.QtCore import QSortFilterProxyModel, Qt, QModelIndex, QPointF
+from PySide6.QtGui import QStandardItemModel, QStandardItem, QPolygonF, QBrush, QContextMenuEvent
 from PySide6.QtWidgets import (QTreeView, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsItem, QHeaderView, QGraphicsPolygonItem,
                                QMenu)
 
@@ -92,9 +92,9 @@ class BoundingBox:
 
     def __repr__(self) -> str:
         """
-        returns a representation of the bounding box (name and corresponding graphics item)
+        returns a representation of the bounding box (name and coordinates)
         """
-        return f'{self.name=}, {self.graphics_item=}'
+        return f'{self.name=}, {self.coords=}'
 
 
 class Point:
@@ -102,7 +102,7 @@ class Point:
     A class defining a point with its properties and available methods
     """
 
-    def __init__(self, name: str = None, point: QGraphicsEllipseItem = None, label: int = 1, frame: int = None, obj=None):
+    def __init__(self, name: str = None, point: QGraphicsEllipseItem = None, label: int = 1, frame: int = None, obj: Object = None):
         self.name = name
         self.graphics_item = point
         self.label = label
@@ -136,26 +136,19 @@ class Point:
             return []
         return [self.x, self.y]
 
-    # def change_point(self, point):
-    #     """
-    #     change the point
-    #     :param point:
-    #     """
-    #     self.graphics_item = point
-    #     if point is None:
-    #         self.name = None
-    #     else:
-    #         self.name = point.data(0)
-
     def __repr__(self):
         """
-        returns a representation of the point (name and corresponding graphics item)
+        returns a representation of the point (name and coordinates)
         """
-        return f'{self.name=}, {self.graphics_item=}'
+        return f'{self.name=}, {self.coords=}'
 
 
 class Mask:
-    def __init__(self, name: str = None, mask_item: QGraphicsPolygonItem = None, frame: int = None, obj=None):
+    """
+    A class defining masks as predicted by SegmentAnything2 from the prompts
+    """
+
+    def __init__(self, name: str = None, mask_item: QGraphicsPolygonItem = None, frame: int = None, obj: Object = None):
         self.name = name
         self.graphics_item = mask_item
         self._ellipse_item = None
@@ -166,35 +159,48 @@ class Mask:
         self.brush = QBrush()
 
     @property
-    def contour(self):
+    def contour(self) -> np.ndarray | None:
+        """
+        Returns the contour approximation of the mask using according to the specified method stored in self.contour_method
+        """
         contour = None
         match self.contour_method:
             case cv2.CHAIN_APPROX_NONE:
-                contour, _ = cv2.findContours(self.out_mask[0].astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+                contour, _ = cv2.findContours(self.out_mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
             case cv2.CHAIN_APPROX_SIMPLE:
-                contour, _ = cv2.findContours(self.out_mask[0].astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                contour, _ = cv2.findContours(self.out_mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             case cv2.CHAIN_APPROX_TC89_L1:
-                contour, _ = cv2.findContours(self.out_mask[0].astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_L1)
+                contour, _ = cv2.findContours(self.out_mask.astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_L1)
             case cv2.CHAIN_APPROX_TC89_KCOS:
-                contour, _ = cv2.findContours(self.out_mask[0].astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_KCOS)
+                contour, _ = cv2.findContours(self.out_mask.astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_KCOS)
         if contour is not None:
             contour = max(contour, key=cv2.contourArea, default=None)
         return contour
 
-    def set_graphics_item(self, contour_method=cv2.CHAIN_APPROX_SIMPLE):
+    def set_graphics_item(self, contour_method: int = cv2.CHAIN_APPROX_SIMPLE) -> None:
+        """
+        Sets the approximation method of contour from the binary mask accordingly and sets the brush
+        :param contour_method: the contour approximation method to use
+        """
         self.contour_method = contour_method
         self.graphics_item = self.to_shape()
         self.graphics_item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
         self.setBrush()
 
-    def to_shape(self):
+    def to_shape(self) -> QGraphicsPolygonItem:
+        """
+        Returns a polygon approximation of the original binary mask
+        """
         mask_shape = QPolygonF()
         for point in self.contour:
             mask_shape.append(QPointF(point[0][0], point[0][1]))
         return QGraphicsPolygonItem(mask_shape)
 
     @property
-    def ellipse_item(self):
+    def ellipse_item(self) -> QGraphicsEllipseItem:
+        """
+        return a graphics item to display the mask as an ellipse
+        """
         if self._ellipse_item is None:
             e = cv2.fitEllipse(self.contour)
             ellipse_item = QGraphicsEllipseItem(e[0][0] - e[1][0] / 2.0, e[0][1] - e[1][1] / 2, e[1][0], e[1][1])
@@ -204,7 +210,11 @@ class Mask:
             return ellipse_item
         return self._ellipse_item
 
-    def setBrush(self, brush=None):
+    def setBrush(self, brush: QBrush = None) -> None:
+        """
+        Set the brush for all representation of the mask (polygon or ellipse)
+        :param brush: the brush to use with this mask
+        """
         if brush is not None:
             self.brush = brush
         self.graphics_item.setBrush(self.brush)
@@ -276,7 +286,12 @@ class PromptSourceModel(QStandardItemModel):
         """
         return [item.object for item in self.object_items()]
 
-    def object(self, obj_id):
+    def object(self, obj_id: int) -> Object:
+        """
+        return the object with the specified id
+        :param obj_id: the object id
+        :return: the object
+        """
         return next((obj for obj in self.objects if obj.id_ == obj_id), None)
 
     def object_items(self) -> list[ModelItem]:
@@ -365,14 +380,14 @@ class PromptSourceModel(QStandardItemModel):
         del obj
 
     def object_exit(self, obj: Object, frame: int) -> None:
+        """
+        Set the status of obj at the specified frame to exited
+        :param obj: the object
+        :param frame: the exit frame
+        """
         obj.exit_frame = frame
         print(f'Exit object {obj.id_} at frame {frame}')
         self.clean_masks(obj)
-        # for mask in self.get_masks(obj):
-        #     if mask.frame == frame:
-        #         self.remove_mask(obj, frame)
-        #     if mask.frame > frame:
-        #         self.object_item(obj).removeRow(self.get_mask_row(obj, mask.frame))
 
     def add_bounding_box(self, obj: Object, frame: int, box: QGraphicsRectItem) -> None:
         """
@@ -843,8 +858,7 @@ class PromptProxyModel(QSortFilterProxyModel):
             key_frames = model.key_frames(item.object)
             first_frame = min(key_frames) if key_frames else 0
             return first_frame <= self.frame < item.object.exit_frame
-        else:
-            return item.object.frame == self.frame
+        return item.object.frame == self.frame
 
 
 class ObjectsTreeView(QTreeView):
@@ -856,7 +870,7 @@ class ObjectsTreeView(QTreeView):
         super().__init__()
         self.source_model = None
 
-    def contextMenuEvent(self, event):
+    def contextMenuEvent(self, event: QContextMenuEvent) -> None:
         """
         The context menu for area manipulation
 
@@ -866,8 +880,6 @@ class ObjectsTreeView(QTreeView):
         rect = self.visualRect(index)
         if index and rect.top() <= event.pos().y() <= rect.bottom():
             menu = QMenu()
-            # view_info = menu.addAction("View info")
-            # view_info.triggered.connect(lambda _: print(f'{index=}: {self.model().mapToSource(index)=}'))
             if isinstance(self.source_model.itemFromIndex(self.model().mapToSource(index)).object, Object):
                 object_exit = menu.addAction("Set exit frame")
                 object_exit.triggered.connect(self.object_exit)
@@ -898,6 +910,9 @@ class ObjectsTreeView(QTreeView):
         self.source_model = model
 
     def delete_object(self) -> None:
+        """
+        Delete the object selected in the Tree View
+        """
         index = self.model().mapToSource(self.currentIndex())
         model_item = self.source_model.itemFromIndex(index)
         if isinstance(model_item.object, Object):
@@ -925,7 +940,7 @@ class ObjectsTreeView(QTreeView):
             self.source_model.object_exit(model_item.object, sys.maxsize)
             self.model().invalidateFilter()
 
-    def select_item(self, item) -> None:
+    def select_item(self, item: ModelItem | QStandardItem) -> None:
         """
         Sets the index to the item in column 0 of the row corresponding to the given item (generally, an item from another column
         that was selected in the tree view)
@@ -933,10 +948,9 @@ class ObjectsTreeView(QTreeView):
         """
         self.model().invalidateFilter()
         index = self.model().mapFromSource(item.index())
-        # self.selectionModel().select(index, QItemSelectionModel.ClearAndSelect)
         self.setCurrentIndex(index)
 
-    def select_index(self, index) -> None:
+    def select_index(self, index: QModelIndex) -> None:
         """
         Selects the specified index
         :param index: the index in the proxy model
@@ -956,37 +970,3 @@ class ObjectsTreeView(QTreeView):
             if graphics_item == prompt.graphics_item:
                 self.select_item(self.source_model.object_item(prompt.object))
                 break
-        # if graphics_item in [box.graphics_item for box in boxes]:
-        #     self.select_object_from_box(graphics_item)
-        # elif graphics_item in [point.graphics_item for point in points]:
-        #     self.select_object_from_point(graphics_item)
-        # elif graphics_item in [mask.graphics_item for mask in masks]:
-        #     self.select_object_from_mask(graphics_item)
-        ##############################################################
-        # if isinstance(graphics_item, QGraphicsRectItem):
-        #     self.select_object_from_box(graphics_item)
-        # elif isinstance(graphics_item, QGraphicsEllipseItem):
-        #     self.select_object_from_point(graphics_item)
-        # elif isinstance(graphics_item, QGraphicsPolygonItem):
-        #     self.select_object_from_mask(graphics_item)
-
-    # def select_object_from_box(self, graphics_item: QGraphicsRectItem):
-    #     """
-    #     Selects the object corresponding to the given bounding box
-    #     :param graphics_item: the QGraphicsRectItem
-    #     """
-    #     self.select_item(self.source_model.object_item(self.source_model.box2obj(graphics_item)))
-    #
-    # def select_object_from_point(self, graphics_item: QGraphicsEllipseItem):
-    #     """
-    #     Selects the object corresponding to the given point
-    #     :param graphics_item: the QGraphicsEllipseItem
-    #     """
-    #     self.select_item(self.source_model.object_item(self.source_model.point2obj(graphics_item)))
-    #
-    # def select_object_from_mask(self, graphics_item: QGraphicsPolygonItem | QGraphicsEllipseItem):
-    #     """
-    #     Selects the object corresponding to the given mask
-    #     :param graphics_item: the QGraphicsPolygonItem or QGraphicsEllipseItem
-    #     """
-    #     self.select_item(self.source_model.object_item(self.source_model.mask2obj(graphics_item)))

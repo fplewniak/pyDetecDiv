@@ -206,9 +206,9 @@ class Scene(QGraphicsScene):
                 event.accept()
                 self.viewer.setTransformationAnchor(QGraphicsView.ViewportAnchor.NoAnchor)
 
-    def delete_item(self, r):
-        PyDetecDiv.app.graphic_item_deleted.emit(r.data(0))
-        self.removeItem(r)
+    def delete_item(self, graphics_item: QGraphicsItem) -> None:
+        PyDetecDiv.app.graphic_item_deleted.emit(graphics_item.data(0))
+        self.removeItem(graphics_item)
 
     def unselect_items(self, event: QGraphicsSceneMouseEvent) -> None:
         """
