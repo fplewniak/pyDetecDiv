@@ -314,7 +314,8 @@ class Project:
         :param dso: the object to delete
         :type dso: object (DomainSpecificObject)
         """
-        del self.pool[dso.__class__.__name__, dso.id_]
+        if (dso.__class__.__name__, dso.id_) in self.pool:
+            del self.pool[dso.__class__.__name__, dso.id_]
         self.repository.delete_object(dso.__class__.__name__, dso.id_)
 
     def get_object(self, class_name: str, id_: int = None, uuid: str = None, use_pool: bool = True) -> DSO:

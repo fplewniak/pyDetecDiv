@@ -226,7 +226,7 @@ class ShallowSQLite3(ShallowDb):
         :type id_: int
         """
         self.session.execute(Delete(dao[class_name], whereclause=dao[class_name].id_ == id_))
-        # self.session.commit()
+        self.session.commit()
 
     def _get_records(self, class_name: str = None, query: list[str] = None) -> list[dict[str, object]]:
         """
