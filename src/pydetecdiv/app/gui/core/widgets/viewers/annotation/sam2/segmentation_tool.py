@@ -11,14 +11,15 @@ from PySide6.QtGui import (QPen, QKeyEvent, QKeySequence, QStandardItem, QCloseE
                            QTransform, QActionGroup, QAction)
 from PySide6.QtWidgets import (QGraphicsSceneMouseEvent, QMenu, QWidget, QGraphicsEllipseItem, QMenuBar, QVBoxLayout, QLabel,
                                QHBoxLayout, QSplitter, QGraphicsRectItem, QGraphicsItem, QGraphicsPolygonItem, QSizePolicy)
-import numpy as np
 import torch.cuda
 from sam2.build_sam import build_sam2_video_predictor
-from pydetecdiv.app import PyDetecDiv, DrawingTools
-from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.objectsmodel import (ObjectsTreeView, Object, PromptProxyModel,
+
+from pydetecdiv.app import PyDetecDiv, DrawingTools, pydetecdiv_project
+from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.objectsmodel import (ObjectsTreeView, PromptProxyModel,
                                                                                   PromptSourceModel, ObjectReferenceRole,
                                                                                   BoundingBox, Point, ModelItem, Mask)
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer, VideoViewerPanel, VideoControlPanel, VideoScene
+from pydetecdiv.domain.Entity import Entity
 from pydetecdiv.settings import get_config_value
 
 
@@ -76,7 +77,7 @@ class SegmentationScene(VideoScene):
         self.last_shape = None
 
     @property
-    def current_object(self) -> Object:
+    def current_object(self) -> Entity:
         """
         The currently selected object. All prompt item additions will be attached to this object.
         """
@@ -103,7 +104,9 @@ class SegmentationScene(VideoScene):
             for r in self.selectedItems():
                 self.delete_item(r)
         elif event.key() == Qt.Key.Key_Insert:
-            current_object = Object(len(self.object_list))
+            with pydetecdiv_project(PyDetecDiv.project_name) as project:
+                current_object = Entity(project=project, name=f'cell{len(self.object_list)}', roi=self.player.roi)
+                current_object.name = f'cell_{current_object.id_}'
             self.object_list.append(current_object)
             self.player.add_object(current_object)
             # self.player.prompt_model.add_object(current_object)
@@ -319,9 +322,11 @@ class SegmentationTool(VideoPlayer):
     Annotator class extending the VideoPlayer class to define functionalities specific to ROI image annotation
     """
 
-    def __init__(self, region_name: str):
+    def __init__(self, roi_name: str):
         super().__init__()
-        self.region = region_name
+        self.roi_name = roi_name
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            self.roi = project.get_named_object('ROI', name=roi_name)
         self.run = None
         self.viewport_rect = None
         self.source_model = PromptSourceModel()
@@ -374,7 +379,7 @@ class SegmentationTool(VideoPlayer):
         return self.source_model.itemFromIndex(self.current_tree_index)
 
     @property
-    def current_object(self) -> Object | None:
+    def current_object(self) -> Entity | None:
         """
         Returns the current object according to the selection in the tree view
         :return: the current object
@@ -382,7 +387,7 @@ class SegmentationTool(VideoPlayer):
         item = self.current_tree_item
         if item is not None:
             obj = item.data(ObjectReferenceRole)
-            if isinstance(obj, Object):
+            if isinstance(obj, Entity):
                 return obj
             if isinstance(obj, (BoundingBox, Point)):
                 return item.parent().data(ObjectReferenceRole)
@@ -397,7 +402,7 @@ class SegmentationTool(VideoPlayer):
         return {obj.id_: {self.T: self.source_model.get_prompt_for_key_frame(obj, self.T)}
                 for obj in self.source_model.objects if self.T in self.source_model.key_frames(obj)}
 
-    def add_object(self, obj: Object) -> ModelItem:
+    def add_object(self, obj: Entity) -> ModelItem:
         """
         Add a new object
         :param obj: the new object
@@ -508,12 +513,12 @@ class SegmentationTool(VideoPlayer):
             if QGuiApplication.mouseButtons() == Qt.LeftButton:
                 if isinstance(obj, (BoundingBox, Point, Mask)):
                     self.scene.select_from_tree_view(obj.graphics_item)
-                elif isinstance(obj, Object):
+                elif isinstance(obj, Entity):
                     if self.source_model.get_bounding_box(obj, self.T) is not None:
                         self.scene.select_from_tree_view(self.source_model.get_bounding_box(obj, self.T).graphics_item)
             elif QGuiApplication.mouseButtons() == Qt.MiddleButton:
                 _ = [r.setSelected(False) for r in self.scene.selectedItems()]
-                if isinstance(obj, Object):
+                if isinstance(obj, Entity):
                     boxes, points, masks = self.source_model.get_all_prompt_items([obj], self.T)
                     for item in boxes + points + masks:
                         item.graphics_item.setSelected(True)
@@ -595,7 +600,7 @@ class SegmentationTool(VideoPlayer):
         video_dir = os.path.join(get_config_value('project', 'workspace'),
                                  PyDetecDiv.project_name,
                                  'data/SegmentAnything2/videos',
-                                 self.region)
+                                 self.roi_name)
         print(f'{video_dir=}')
         frame = self.T
         if not os.path.exists(video_dir):
@@ -666,7 +671,7 @@ class SegmentationTool(VideoPlayer):
                             self.source_model.set_mask(self.source_model.object(out_obj_id), out_frame, mask_item)
                             mask = self.source_model.get_mask(self.source_model.object(out_obj_id), out_frame)
                             mask.out_mask = out_mask[0]
-                            mask.setBrush(QBrush(Colours.palette[int(out_obj_id) % len(Colours.palette)]))
+                            mask.setBrush(QBrush(Colours.palette[int(out_obj_id) % len(Colours.palette) - 1]))
             else:
                 continue
         self.change_frame(frame)
