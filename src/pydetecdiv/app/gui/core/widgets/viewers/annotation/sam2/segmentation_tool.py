@@ -669,8 +669,8 @@ class SegmentationTool(VideoPlayer):
                             mask.setBrush(QBrush(Colours.palette[int(out_obj_id) % len(Colours.palette)]))
             else:
                 continue
-        self.change_frame(self.T)
-        self.proxy_model.invalidateFilter()
+        self.change_frame(frame)
+        self.proxy_model.set_frame(frame)
         self.release_memory(keep_predictor=True)
 
     def key_frames_intervals(self) -> list[list[int, int]]:
