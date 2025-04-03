@@ -162,7 +162,10 @@ class Mask:
         self.brush = QBrush()
 
     @property
-    def contour(self):
+    def contour(self) -> np.ndarray | None:
+        """
+        The mask contour as determined according to the specified method
+        """
         return self.bitmap2contour(self.out_mask, self.contour_method)
 
     @staticmethod
@@ -217,6 +220,10 @@ class Mask:
             self._ellipse_item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
             return ellipse_item
         return self._ellipse_item
+
+    @ellipse_item.setter
+    def ellipse_item(self, item: QGraphicsEllipseItem) -> None:
+        self._ellipse_item = item
 
     def setBrush(self, brush: QBrush = None) -> None:
         """
@@ -617,7 +624,7 @@ class PromptSourceModel(QStandardItemModel):
             self.add_mask(obj, frame, mask)
         else:
             current_mask.graphics_item = mask
-            current_mask._ellipse_item = None
+            current_mask.ellipse_item = None
 
     def add_mask(self, obj: Entity, frame: int, mask: QGraphicsPolygonItem):
         """

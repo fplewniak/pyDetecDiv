@@ -1,3 +1,8 @@
+#  CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21
+#  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
+"""
+Access to Entity data
+"""
 from typing import Any
 
 from sqlalchemy import Column, Integer, String, JSON, ForeignKey
@@ -23,10 +28,10 @@ class EntityDao(DAO, Base):
     @property
     def record(self) -> dict[str, Any]:
         """
-        A method creating a record dictionary from a roi row dictionary. This method is used to convert the SQL
-        table columns into the ROI record fields expected by the domain layer
+        A method creating a record dictionary from an entity row dictionary. This method is used to convert the SQL
+        table columns into the Entity record fields expected by the domain layer
 
-        :return: a ROI record as a dictionary with keys() appropriate for handling by the domain layer
+        :return: an Entity record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """
         return {'id_'     : self.id_,
