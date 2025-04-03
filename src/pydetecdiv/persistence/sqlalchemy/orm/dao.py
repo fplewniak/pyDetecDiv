@@ -5,6 +5,7 @@ Convenience file allowing import of several DAO classes in one line. It is thus 
 from pydetecdiv.persistence.sqlalchemy.orm.dao import FOVdao, ROIdao, DataDao, DatasetDao
 The dso_dao_mapping dictionary maps the correspondence between domain-specific class names and DAO classes
 """
+from pydetecdiv.persistence.sqlalchemy.orm.BoundingBoxDao import BoundingBoxDao
 from pydetecdiv.persistence.sqlalchemy.orm.EntityDao import EntityDao
 from pydetecdiv.persistence.sqlalchemy.orm.FOVdao import FOVdao
 from pydetecdiv.persistence.sqlalchemy.orm.ROIdao import ROIdao
@@ -23,4 +24,5 @@ dso_dao_mapping = {
     'ImageResource': ImageResourceDao,
     'Run': RunDao,
     'Entity': EntityDao,
+    'BoundingBox': BoundingBoxDao,
 }

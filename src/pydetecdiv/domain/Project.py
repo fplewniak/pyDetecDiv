@@ -16,6 +16,7 @@ from datetime import datetime
 import pandas
 import pandas as pd
 
+from pydetecdiv.domain.BoundingBox import BoundingBox
 from pydetecdiv.domain.Entity import Entity
 from pydetecdiv.domain.ImageResource import ImageResource
 from pydetecdiv.settings import get_config_value
@@ -49,6 +50,7 @@ class Project:
         'ImageResource': ImageResource,
         'Run'          : Run,
         'Entity'       : Entity,
+        'BoundingBox'  : BoundingBox,
         }
 
     def __init__(self, dbname: str = None, dbms: str = None):

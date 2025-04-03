@@ -17,9 +17,10 @@ from sam2.build_sam import build_sam2_video_predictor
 from pydetecdiv.app import PyDetecDiv, DrawingTools, pydetecdiv_project
 from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.objectsmodel import (ObjectsTreeView, PromptProxyModel,
                                                                                   PromptSourceModel, ObjectReferenceRole,
-                                                                                  BoundingBox, Point, ModelItem, Mask)
+                                                                                  Point, ModelItem, Mask)
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer, VideoViewerPanel, VideoControlPanel, VideoScene
 from pydetecdiv.domain.Entity import Entity
+from pydetecdiv.domain.BoundingBox import BoundingBox
 from pydetecdiv.settings import get_config_value
 
 
@@ -72,8 +73,6 @@ class SegmentationScene(VideoScene):
         self.positive_pen = QPen(Qt.GlobalColor.green, 1)
         self.negative_pen = QPen(Qt.GlobalColor.red, 1)
         self.pen = self.default_pen
-
-        self.object_list = []
         self.last_shape = None
 
     @property
@@ -104,12 +103,11 @@ class SegmentationScene(VideoScene):
             for r in self.selectedItems():
                 self.delete_item(r)
         elif event.key() == Qt.Key.Key_Insert:
-            with pydetecdiv_project(PyDetecDiv.project_name) as project:
-                current_object = Entity(project=project, name=f'cell{len(self.object_list)}', roi=self.player.roi)
-                current_object.name = f'cell_{current_object.id_}'
-            self.object_list.append(current_object)
+            project = self.player.roi.project
+            current_object = Entity(project=project, name=f'{project.count_objects("Entity")}', roi=self.player.roi)
+            current_object.name = f'cell_{current_object.id_}'
+            project.commit()
             self.player.add_object(current_object)
-            # self.player.prompt_model.add_object(current_object)
 
     def select_from_tree_view(self, graphics_item: QGraphicsItem) -> None:
         """
@@ -150,14 +148,17 @@ class SegmentationScene(VideoScene):
         if event.button() == Qt.MouseButton.LeftButton:
             match PyDetecDiv.current_drawing_tool, event.modifiers():
                 case DrawingTools.DrawRect, Qt.KeyboardModifier.NoModifier:
+                    # print(f'{self.last_shape=}')
                     if self.last_shape:
                         if self.player.source_model.has_bounding_box(self.current_object, self.player.T):
-                            # self.update_Item_size(self.last_shape)
+                            # print(f'replacing box with {self.last_shape=}')
                             self.player.source_model.change_bounding_box(self.current_object, self.player.T, self.last_shape)
                         else:
                             self.player.source_model.add_bounding_box(self.current_object, self.player.T, self.last_shape)
                         self.player.object_tree_view.expandAll()
                         self.last_shape = None
+                    # print(f'{self.player.source_model.get_bounding_box(self.current_object, self.player.T)=}')
+                    self.player.source_model.project.commit()
                 case DrawingTools.DuplicateItem, Qt.KeyboardModifier.NoModifier:
                     if self.selectedItems():
                         rect_item = self.duplicate_selected_Item(event)
@@ -224,32 +225,20 @@ class SegmentationScene(VideoScene):
         :return: the moved graphics item
         """
         graphics_item = super().move_Item(event)
-        self.update_Item_coordinates(graphics_item)
+        self.player.source_model.update_Item(graphics_item, self.player.T)
         return graphics_item
 
-    def update_Item_coordinates(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem) -> None:
-        """
-        Update the coordinates of a graphics item in the source model for display in the tree view, after this item has been moved
-        :param graphics_item: the moved graphics item
-        """
-        x_item = self.player.source_model.graphics2model_item(graphics_item, self.player.T, 2)
-        y_item = self.player.source_model.graphics2model_item(graphics_item, self.player.T, 3)
-        if x_item is not None:
-            x_item.setData(f'{graphics_item.pos().x():.1f}', 0)
-        if y_item is not None:
-            y_item.setData(f'{graphics_item.pos().y():.1f}', 0)
-
-    def update_Item_size(self, graphics_item: QGraphicsRectItem) -> None:
-        """
-        Update the bounding box size information in the source model for display in the tree view after the box has been resized
-        :param graphics_item: the bounding box graphics item
-        """
-        width_item = self.player.source_model.graphics2model_item(graphics_item, self.player.T, 4)
-        height_item = self.player.source_model.graphics2model_item(graphics_item, self.player.T, 5)
-        if width_item is not None:
-            width_item.setData(f'{int(graphics_item.rect().width())}', 0)
-        if height_item is not None:
-            height_item.setData(f'{int(graphics_item.rect().height())}', 0)
+    # def update_Item_size(self, graphics_item: QGraphicsRectItem) -> None:
+    #     """
+    #     Update the bounding box size information in the source model for display in the tree view after the box has been resized
+    #     :param graphics_item: the bounding box graphics item
+    #     """
+    #     width_item = self.player.source_model.graphics2model_item(graphics_item, self.player.T, 4)
+    #     height_item = self.player.source_model.graphics2model_item(graphics_item, self.player.T, 5)
+    #     if width_item is not None:
+    #         width_item.setData(f'{int(graphics_item.rect().width())}', 0)
+    #     if height_item is not None:
+    #         height_item.setData(f'{int(graphics_item.rect().height())}', 0)
 
     def draw_Item(self, event: QGraphicsSceneMouseEvent) -> QGraphicsRectItem:
         """
@@ -260,7 +249,8 @@ class SegmentationScene(VideoScene):
         if self.player.current_object is not None:
             self.last_shape = super().draw_Item(event)
             self.last_shape.setData(0, f'bounding_box{self.player.current_object.id_}')
-            self.update_Item_size(self.last_shape)
+            self.player.source_model.update_Item(self.last_shape, self.player.T)
+            # self.update_Item_size(self.last_shape)
         else:
             self.last_shape = None
         return self.last_shape
@@ -329,7 +319,7 @@ class SegmentationTool(VideoPlayer):
             self.roi = project.get_named_object('ROI', name=roi_name)
         self.run = None
         self.viewport_rect = None
-        self.source_model = PromptSourceModel()
+        self.source_model = PromptSourceModel(self.roi.project)
         self.proxy_model = PromptProxyModel()
         self.proxy_model.setRecursiveFilteringEnabled(True)
         self.predictor = None

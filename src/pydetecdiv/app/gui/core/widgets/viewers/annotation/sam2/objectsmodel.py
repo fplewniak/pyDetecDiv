@@ -10,7 +10,9 @@ from PySide6.QtGui import QStandardItemModel, QStandardItem, QPolygonF, QBrush, 
 from PySide6.QtWidgets import (QTreeView, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsItem, QHeaderView, QGraphicsPolygonItem,
                                QMenu)
 
+from pydetecdiv.domain.BoundingBox import BoundingBox
 from pydetecdiv.domain.Entity import Entity
+from pydetecdiv.domain.Project import Project
 
 ObjectReferenceRole = Qt.UserRole + 1
 
@@ -26,78 +28,78 @@ ObjectReferenceRole = Qt.UserRole + 1
 #         # self.exit_frame = sys.maxsize
 
 
-class BoundingBox:
-    """
-    A class defining a bounding box with its properties and available methods
-    """
-
-    def __init__(self, name: str = None, box: QGraphicsRectItem = None, frame: int = None, obj: Entity = None):
-        self.name = name
-        self.graphics_item = box
-        self.frame = frame
-        self.object = obj
-
-    @property
-    def x(self) -> float | None:
-        """
-        the x coordinate of the bounding box (top-left corner)
-        """
-        if self.graphics_item is not None:
-            return self.graphics_item.pos().x()
-        return None
-
-    @property
-    def y(self) -> float | None:
-        """
-        the y coordinate of the bounding box (top-left corner)
-        """
-        if self.graphics_item is not None:
-            return self.graphics_item.pos().y()
-        return None
-
-    @property
-    def width(self) -> int | None:
-        """
-        the width of the bounding box
-        """
-        if self.graphics_item is not None:
-            return self.graphics_item.rect().width()
-        return None
-
-    @property
-    def height(self) -> int | None:
-        """
-        the height of the bounding box
-        """
-        if self.graphics_item is not None:
-            return self.graphics_item.rect().height()
-        return None
-
-    @property
-    def coords(self) -> list[float]:
-        """
-        the coordinates of the bounding box (top-left corner / bottom-right corner)
-        """
-        if self.x is None:
-            return []
-        return [self.x, self.y, self.x + self.width, self.y + self.height]
-
-    def change_box(self, box: QGraphicsRectItem) -> None:
-        """
-        changes the specified bounding box
-        :param box: the new graphics item for the bounding box
-        """
-        self.graphics_item = box
-        if box is None:
-            self.name = None
-        else:
-            self.name = box.data(0)
-
-    def __repr__(self) -> str:
-        """
-        returns a representation of the bounding box (name and coordinates)
-        """
-        return f'{self.name=}, {self.coords=}'
+# class BoundingBox:
+#     """
+#     A class defining a bounding box with its properties and available methods
+#     """
+#
+#     def __init__(self, name: str = None, box: QGraphicsRectItem = None, frame: int = None, obj: Entity = None):
+#         self.name = name
+#         self.graphics_item = box
+#         self.frame = frame
+#         self.object = obj
+#
+#     @property
+#     def x(self) -> float | None:
+#         """
+#         the x coordinate of the bounding box (top-left corner)
+#         """
+#         if self.graphics_item is not None:
+#             return self.graphics_item.pos().x()
+#         return None
+#
+#     @property
+#     def y(self) -> float | None:
+#         """
+#         the y coordinate of the bounding box (top-left corner)
+#         """
+#         if self.graphics_item is not None:
+#             return self.graphics_item.pos().y()
+#         return None
+#
+#     @property
+#     def width(self) -> int | None:
+#         """
+#         the width of the bounding box
+#         """
+#         if self.graphics_item is not None:
+#             return self.graphics_item.rect().width()
+#         return None
+#
+#     @property
+#     def height(self) -> int | None:
+#         """
+#         the height of the bounding box
+#         """
+#         if self.graphics_item is not None:
+#             return self.graphics_item.rect().height()
+#         return None
+#
+#     @property
+#     def coords(self) -> list[float]:
+#         """
+#         the coordinates of the bounding box (top-left corner / bottom-right corner)
+#         """
+#         if self.x is None:
+#             return []
+#         return [self.x, self.y, self.x + self.width, self.y + self.height]
+#
+#     def change_box(self, box: QGraphicsRectItem) -> None:
+#         """
+#         changes the specified bounding box
+#         :param box: the new graphics item for the bounding box
+#         """
+#         self.graphics_item = box
+#         if box is None:
+#             self.name = None
+#         else:
+#             self.name = box.data(0)
+#
+#     def __repr__(self) -> str:
+#         """
+#         returns a representation of the bounding box (name and coordinates)
+#         """
+#         return f'{self.name=}, {self.coords=}'
 
 
 class Point:
@@ -289,10 +291,11 @@ class PromptSourceModel(QStandardItemModel):
     The source model for the SAM2 prompt
     """
 
-    def __init__(self):
+    def __init__(self, project: Project):
         super().__init__(0, 7)
         self.setHorizontalHeaderLabels(['entity', '', 'x', 'y', 'width', 'height', 'label'])
         self.root_item = self.invisibleRootItem()
+        self.project = project
 
     @property
     def objects(self) -> list[Entity]:
@@ -415,8 +418,8 @@ class PromptSourceModel(QStandardItemModel):
         row = self.create_bounding_box_row(frame, box, obj=obj)
         self.object_item(obj).appendRow(row)
 
-    @staticmethod
-    def create_bounding_box_row(frame: int, box: QGraphicsRectItem, obj: Entity = None) -> list[ModelItem | QStandardItem]:
+    def create_bounding_box_row(self, frame: int, box: QGraphicsRectItem, obj: Entity = None,
+                                bounding_box: BoundingBox = None) -> list[ModelItem | QStandardItem]:
         """
         Create a row of model items for a bounding box, to insert into the model.
         :param obj:
@@ -424,8 +427,13 @@ class PromptSourceModel(QStandardItemModel):
         :param box: the bounding box
         :return: the row as a list of items
         """
-        bounding_box = BoundingBox(name=box.data(0), box=box, frame=frame, obj=obj)
-        box_item = ModelItem(bounding_box.name, bounding_box)
+        if bounding_box is None:
+            bounding_box = BoundingBox(project=self.project, name=box.data(0), box=box, frame=frame, entity=obj)
+            box_item = ModelItem(bounding_box.name, bounding_box)
+        else:
+            bounding_box.change_box(box)
+            box_item = self.graphics2model_item(box, frame, 0)
+        self.project.commit()
         frame_item = QStandardItem(str(frame))
         x_item = QStandardItem(f'{bounding_box.x:.1f}')
         y_item = QStandardItem(f'{bounding_box.y:.1f}')
@@ -441,9 +449,11 @@ class PromptSourceModel(QStandardItemModel):
         :param box: the new bounding box
         """
         bounding_box = self.get_bounding_box(obj, frame)
+        # print(f'{obj.name=}, {frame=}: {bounding_box=} {box=}')
         if bounding_box is not None:
+            # if box != bounding_box.graphics_item:
             bounding_box.graphics_item.scene().removeItem(bounding_box.graphics_item)
-            row = self.create_bounding_box_row(frame, box, obj=obj)
+            row = self.create_bounding_box_row(frame, box, obj=obj, bounding_box=bounding_box)
             for column, item in enumerate(row):
                 self.object_item(obj).setChild(self.get_bounding_box_row(obj, frame), column, item)
         else:
@@ -839,6 +849,29 @@ class PromptSourceModel(QStandardItemModel):
             if point_list is not None:
                 points += point_list
         return boxes, points, masks
+
+    def update_Item(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem, frame: int) -> None:
+        model_item = self.graphics2model_item(graphics_item, frame, 0)
+        if model_item is not None:
+            obj = self.graphics2model_item(graphics_item, frame, 0).object
+            # print(f'{obj=}')
+            if isinstance(obj, BoundingBox):
+                print(f'changing box to {graphics_item} for {obj.name}')
+                obj.change_box(graphics_item)
+                self.project.commit()
+                width_item = self.graphics2model_item(graphics_item, frame, 4)
+                height_item = self.graphics2model_item(graphics_item, frame, 5)
+                if width_item is not None:
+                    width_item.setData(f'{int(graphics_item.rect().width())}', 0)
+                if height_item is not None:
+                    height_item.setData(f'{int(graphics_item.rect().height())}', 0)
+
+            x_item = self.graphics2model_item(graphics_item, frame, 2)
+            y_item = self.graphics2model_item(graphics_item, frame, 3)
+            if x_item is not None:
+                x_item.setData(f'{graphics_item.pos().x():.1f}', 0)
+            if y_item is not None:
+                y_item.setData(f'{graphics_item.pos().y():.1f}', 0)
 
 
 class PromptProxyModel(QSortFilterProxyModel):
