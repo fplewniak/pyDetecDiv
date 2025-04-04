@@ -19,6 +19,7 @@ import pandas as pd
 from pydetecdiv.domain.BoundingBox import BoundingBox
 from pydetecdiv.domain.Entity import Entity
 from pydetecdiv.domain.ImageResource import ImageResource
+from pydetecdiv.domain.Point import Point
 from pydetecdiv.settings import get_config_value
 from pydetecdiv.persistence.project import open_project
 from pydetecdiv.domain.dso import DomainSpecificObject
@@ -51,6 +52,7 @@ class Project:
         'Run'          : Run,
         'Entity'       : Entity,
         'BoundingBox'  : BoundingBox,
+        'Point'        : Point,
         }
 
     def __init__(self, dbname: str = None, dbms: str = None):

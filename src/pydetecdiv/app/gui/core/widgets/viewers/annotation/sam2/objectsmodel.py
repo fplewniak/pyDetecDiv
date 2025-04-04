@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (QTreeView, QGraphicsRectItem, QGraphicsEllipseIte
 
 from pydetecdiv.domain.BoundingBox import BoundingBox
 from pydetecdiv.domain.Entity import Entity
+from pydetecdiv.domain.Point import Point
 from pydetecdiv.domain.Project import Project
 
 ObjectReferenceRole = Qt.UserRole + 1
@@ -102,50 +103,50 @@ ObjectReferenceRole = Qt.UserRole + 1
 #         return f'{self.name=}, {self.coords=}'
 
 
-class Point:
-    """
-    A class defining a point with its properties and available methods
-    """
-
-    def __init__(self, name: str = None, point: QGraphicsEllipseItem = None, label: int = 1, frame: int = None, obj: Entity = None):
-        self.name = name
-        self.graphics_item = point
-        self.label = label
-        self.frame = frame
-        self.object = obj
-
-    @property
-    def x(self) -> float | None:
-        """
-        the x coordinate of the point
-        """
-        if self.graphics_item is not None:
-            return self.graphics_item.pos().x()
-        return None
-
-    @property
-    def y(self) -> float | None:
-        """
-        the y coordinate of the point
-        """
-        if self.graphics_item is not None:
-            return self.graphics_item.pos().y()
-        return None
-
-    @property
-    def coords(self) -> list[float]:
-        """
-        the coordinates of the point
-        """
-        if self.x is None:
-            return []
-        return [self.x, self.y]
-
-    def __repr__(self):
-        """
-        returns a representation of the point (name and coordinates)
-        """
-        return f'{self.name=}, {self.coords=}'
+# class Point:
+#     """
+#     A class defining a point with its properties and available methods
+#     """
+#
+#     def __init__(self, name: str = None, point: QGraphicsEllipseItem = None, label: int = 1, frame: int = None, obj: Entity = None):
+#         self.name = name
+#         self.graphics_item = point
+#         self.label = label
+#         self.frame = frame
+#         self.object = obj
+#
+#     @property
+#     def x(self) -> float | None:
+#         """
+#         the x coordinate of the point
+#         """
+#         if self.graphics_item is not None:
+#             return self.graphics_item.pos().x()
+#         return None
+#
+#     @property
+#     def y(self) -> float | None:
+#         """
+#         the y coordinate of the point
+#         """
+#         if self.graphics_item is not None:
+#             return self.graphics_item.pos().y()
+#         return None
+#
+#     @property
+#     def coords(self) -> list[float]:
+#         """
+#         the coordinates of the point
+#         """
+#         if self.x is None:
+#             return []
+#         return [self.x, self.y]
+#
+#     def __repr__(self):
+#         """
+#         returns a representation of the point (name and coordinates)
+#         """
+#         return f'{self.name=}, {self.coords=}'
 
 
 class Mask:
@@ -377,11 +378,19 @@ class PromptSourceModel(QStandardItemModel):
         remove an object
         :param obj: the object to remove
         """
-        for mask in self.get_masks(obj):
+        bounding_boxes, points, masks = self.get_all_prompt_items([obj])
+        # print(f'{len(bounding_boxes)}: {bounding_boxes=}')
+        for mask in masks:
             self.remove_mask(obj, mask.frame)
-            del mask.out_mask
-            del mask.graphics_item
+            # del mask.out_mask
+            # del mask.graphics_item
             del mask
+        for bounding_box in bounding_boxes:
+            self.remove_bounding_box(obj, bounding_box.frame)
+            del bounding_box
+        for point in points:
+            self.remove_point(obj, point.graphics_item)
+            del point
 
         for box in self.get_bounding_boxes(obj):
             if box.graphics_item.scene() is not None:
@@ -502,10 +511,14 @@ class PromptSourceModel(QStandardItemModel):
         :param frame: the frame
         """
         bounding_box = self.get_bounding_box(obj, frame)
+        # print(f'{obj=}, {frame=}, {bounding_box=}')
         if bounding_box is not None:
-            bounding_box.graphics_item.scene().removeItem(bounding_box.graphics_item)
+            if bounding_box.graphics_item.scene() is not None:
+                bounding_box.graphics_item.scene().removeItem(bounding_box.graphics_item)
             self.object_item(obj).removeRow(self.get_bounding_box_row(obj, frame))
             self.clean_masks(obj)
+            self.project.delete(bounding_box)
+            self.project.commit()
 
     def remove_point(self, obj: Entity, graphics_item: QGraphicsEllipseItem, frame: int = None) -> None:
         """
@@ -514,11 +527,15 @@ class PromptSourceModel(QStandardItemModel):
         :param graphics_item: the point QGraphicsEllipseItem
         :param frame: the frame
         """
-        point_item = self.get_point_item_from_graphics_item(obj, graphics_item, frame)
-        if point_item is not None:
-            point_item.graphics_item.scene().removeItem(graphics_item)
-            self.object_item(obj).removeRow(point_item.row())
+        # point_item = self.get_point_item_from_graphics_item(obj, graphics_item, frame)
+        point = self.get_point_from_graphics_item(obj, graphics_item, frame)
+        if point is not None:
+            if point.graphics_item.scene() is not None:
+                point.graphics_item.scene().removeItem(graphics_item)
+            self.object_item(obj).removeRow(self.get_point_item_from_graphics_item(obj, graphics_item, frame).row())
             self.clean_masks(obj)
+            self.project.delete(point)
+            self.project.commit()
 
     def remove_mask(self, obj: Entity, frame: int) -> None:
         """
@@ -555,8 +572,7 @@ class PromptSourceModel(QStandardItemModel):
         row = self.create_point_row(frame, point, label, obj=obj)
         self.object_item(obj).appendRow(row)
 
-    @staticmethod
-    def create_point_row(frame: int, point_graphics_item: QGraphicsEllipseItem, label: int = 1, obj: Entity = None) -> list[
+    def create_point_row(self, frame: int, point_graphics_item: QGraphicsEllipseItem, label: int = 1, obj: Entity = None) -> list[
         ModelItem | QStandardItem]:
         """
         Create a row of model items for a point, to insert into the model.
@@ -566,7 +582,9 @@ class PromptSourceModel(QStandardItemModel):
         :param label: the label
         :return: the row as a list of items
         """
-        point = Point(name=point_graphics_item.data(0), point=point_graphics_item, label=label, frame=frame, obj=obj)
+        point = Point(project=self.project, name=point_graphics_item.data(0), point=point_graphics_item, label=label, frame=frame,
+                      entity=obj)
+        self.project.commit()
         point_item = ModelItem(point.name, point)
         frame_item = QStandardItem(str(frame))
         x_item = QStandardItem(f'{point.x:.1f}')
@@ -841,13 +859,28 @@ class PromptSourceModel(QStandardItemModel):
         """
         if objects is None:
             objects = self.objects
-        boxes = [self.get_bounding_box(obj, frame) for obj in objects if self.get_bounding_box(obj, frame) is not None]
+        # boxes = [self.get_bounding_box(obj, frame) for obj in objects if self.get_bounding_box(obj, frame) is not None]
+        boxes = []
         points = []
-        masks = [self.get_mask(obj, frame) for obj in objects if self.get_mask(obj, frame) is not None]
+        # masks = [self.get_mask(obj, frame) for obj in objects if self.get_mask(obj, frame) is not None]
+        masks = []
         for obj in objects:
+            if frame is None:
+                boxes_list = self.get_bounding_boxes(obj)
+                masks_list = self.get_masks(obj)
+            else:
+                box = self.get_bounding_box(obj, frame)
+                mask = self.get_mask(obj, frame)
+                boxes_list = [self.get_bounding_box(obj, frame)] if box is not None else None
+                masks_list = [self.get_mask(obj, frame)] if mask is not None else None
             point_list = self.get_points(obj, frame)
+
+            if boxes_list is not None:
+                boxes += boxes_list
             if point_list is not None:
                 points += point_list
+            if masks_list is not None:
+                masks += masks_list
         return boxes, points, masks
 
     def update_Item(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem, frame: int) -> None:
@@ -856,7 +889,7 @@ class PromptSourceModel(QStandardItemModel):
             obj = self.graphics2model_item(graphics_item, frame, 0).object
             # print(f'{obj=}')
             if isinstance(obj, BoundingBox):
-                print(f'changing box to {graphics_item} for {obj.name}')
+                # print(f'changing box to {graphics_item} for {obj.name}')
                 obj.change_box(graphics_item)
                 self.project.commit()
                 width_item = self.graphics2model_item(graphics_item, frame, 4)
@@ -865,6 +898,9 @@ class PromptSourceModel(QStandardItemModel):
                     width_item.setData(f'{int(graphics_item.rect().width())}', 0)
                 if height_item is not None:
                     height_item.setData(f'{int(graphics_item.rect().height())}', 0)
+            elif isinstance(obj, Point):
+                obj.change_point(graphics_item)
+                self.project.commit()
 
             x_item = self.graphics2model_item(graphics_item, frame, 2)
             y_item = self.graphics2model_item(graphics_item, frame, 3)

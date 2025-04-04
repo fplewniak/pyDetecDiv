@@ -10,11 +10,11 @@ from sqlalchemy import Column, Integer, String, JSON, ForeignKey, text
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 
 
-class BoundingBoxDao(DAO, Base):
+class PointDao(DAO, Base):
     """
     DAO class for access to Entity records from the SQL database
     """
-    __tablename__ = 'BoundingBox'
+    __tablename__ = 'Point'
     exclude = ['id_']
     translate = {}
 
@@ -25,8 +25,7 @@ class BoundingBoxDao(DAO, Base):
     frame = Column(Integer, nullable=False, server_default=text('0'))
     x = Column(Integer, nullable=False, server_default=text('0'))
     y = Column(Integer, nullable=False, server_default=text('0'))
-    width = Column(Integer, nullable=False, server_default=text('-1'))
-    height = Column(Integer, nullable=False, server_default=text('-1'))
+    label = Column(Integer, nullable=False, server_default=text('1'))
     key_val = Column(JSON)
 
     @property
@@ -44,7 +43,6 @@ class BoundingBoxDao(DAO, Base):
                 'name'   : self.name,
                 'x'      : self.x,
                 'y'      : self.y,
-                'width'  : self.width,
-                'height' : self.height,
+                'label'  : self.label,
                 'key_val': self.key_val,
                 }

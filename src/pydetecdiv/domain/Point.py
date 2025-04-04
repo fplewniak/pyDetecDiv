@@ -1,19 +1,21 @@
 from typing import Any
 
-from PySide6.QtWidgets import QGraphicsRectItem
+from PySide6.QtWidgets import QGraphicsEllipseItem
 
 from pydetecdiv.domain.Entity import Entity
-from pydetecdiv.domain.dso import DomainSpecificObject, NamedDSO
+from pydetecdiv.domain.dso import NamedDSO
 
 
-class BoundingBox(NamedDSO):
+class Point(NamedDSO):
     """
-    A class defining a bounding box with its properties and available methods
+    A class defining a point with its properties and available methods
     """
 
-    def __init__(self, box: QGraphicsRectItem = None, frame: int = None, entity: Entity = None, key_val: dict = None, **kwargs):
+    def __init__(self, point: QGraphicsEllipseItem = None, label: int = 1, frame: int = None, entity: Entity = None,
+                 key_val: dict = None, **kwargs):
         super().__init__(**kwargs)
-        self.graphics_item = box
+        self.graphics_item = point
+        self.label = label
         self.frame = frame
         self._entity = entity.id_ if isinstance(entity, Entity) else entity
         self.key_val = key_val
@@ -32,10 +34,21 @@ class BoundingBox(NamedDSO):
         """
         return self.project.get_object('Entity', self._entity)
 
+    def change_point(self, point: QGraphicsEllipseItem) -> None:
+        """
+        changes the specified bounding box
+        :param box: the new graphics item for the bounding box
+        """
+        self.graphics_item = point
+        if point is None:
+            self.name = None
+        else:
+            self.name = point.data(0)
+
     @property
     def x(self) -> float | None:
         """
-        the x coordinate of the bounding box (top-left corner)
+        the x coordinate of the point
         """
         if self.graphics_item is not None:
             return self.graphics_item.pos().x()
@@ -44,55 +57,26 @@ class BoundingBox(NamedDSO):
     @property
     def y(self) -> float | None:
         """
-        the y coordinate of the bounding box (top-left corner)
+        the y coordinate of the point
         """
         if self.graphics_item is not None:
             return self.graphics_item.pos().y()
         return None
 
     @property
-    def width(self) -> int | None:
-        """
-        the width of the bounding box
-        """
-        if self.graphics_item is not None:
-            return self.graphics_item.rect().width()
-        return None
-
-    @property
-    def height(self) -> int | None:
-        """
-        the height of the bounding box
-        """
-        if self.graphics_item is not None:
-            return self.graphics_item.rect().height()
-        return None
-
-    @property
     def coords(self) -> list[float]:
         """
-        the coordinates of the bounding box (top-left corner / bottom-right corner)
+        the coordinates of the point
         """
         if self.x is None:
             return []
-        return [self.x, self.y, self.x + self.width, self.y + self.height]
+        return [self.x, self.y]
 
-    def change_box(self, box: QGraphicsRectItem) -> None:
+    def __repr__(self):
         """
-        changes the specified bounding box
-        :param box: the new graphics item for the bounding box
+        returns a representation of the point (name and coordinates)
         """
-        self.graphics_item = box
-        if box is None:
-            self.name = None
-        else:
-            self.name = box.data(0)
-
-    def __repr__(self) -> str:
-        """
-        returns a representation of the bounding box (name and coordinates)
-        """
-        return f'Bounding box[{self.name=}, {self.frame=}: {self.coords=}]'
+        return f'{self.name=}, {self.coords=}'
 
     def record(self, no_id: bool = False) -> dict[str, Any]:
         """
@@ -110,8 +94,7 @@ class BoundingBox(NamedDSO):
             'frame'  : self.frame,
             'x'      : self.x,
             'y'      : self.y,
-            'width'  : self.width,
-            'height' : self.height,
+            'label'  : self.label,
             'key_val': self.key_val,
             }
         if not no_id:
