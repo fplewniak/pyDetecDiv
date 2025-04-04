@@ -546,6 +546,8 @@ class PromptSourceModel(QStandardItemModel):
         if mask is not None:
             if mask.graphics_item.scene() is not None:
                 mask.graphics_item.scene().removeItem(mask.graphics_item)
+            if mask.ellipse_item.scene() is not None:
+                mask.ellipse_item.scene().removeItem(mask.ellipse_item)
             self.object_item(obj).removeRow(self.get_mask_row(obj, frame))
             self.project.delete(mask)
             self.project.commit()

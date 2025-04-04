@@ -39,6 +39,7 @@ class MaskDao(DAO, Base):
                 'uuid'    : self.uuid,
                 'entity'  : self.entity,
                 'name'    : self.name,
+                'frame'   : self.frame,
                 'bin_mask': self.bin_mask,
                 'key_val' : self.key_val,
                 }

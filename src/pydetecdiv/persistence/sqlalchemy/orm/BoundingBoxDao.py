@@ -42,6 +42,7 @@ class BoundingBoxDao(DAO, Base):
                 'uuid'   : self.uuid,
                 'entity' : self.entity,
                 'name'   : self.name,
+                'frame'  : self.frame,
                 'x'      : self.x,
                 'y'      : self.y,
                 'width'  : self.width,

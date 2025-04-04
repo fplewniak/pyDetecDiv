@@ -15,17 +15,29 @@ class Mask(NamedDSO):
     A class defining masks as predicted by SegmentAnything2 from the prompts
     """
 
-    def __init__(self, mask_item: QGraphicsPolygonItem = None, frame: int = None, entity: Entity = None, key_val: dict = None, **kwargs):
+    def __init__(self, mask_item: QGraphicsPolygonItem = None, frame: int = None, entity: Entity = None, key_val: dict = None,
+                 **kwargs):
         super().__init__(**kwargs)
         self.graphics_item = mask_item
         self._ellipse_item = None
         self.frame = frame
         self._entity = entity.id_ if isinstance(entity, Entity) else entity
-        self.bin_mask = None
+        self._bin_mask = None
         self.contour_method = cv2.CHAIN_APPROX_SIMPLE
         self.brush = QBrush()
         self.key_val = key_val
-        self.validate()
+        self.validate(updated=False)
+
+    @property
+    def bin_mask(self):
+        if self._bin_mask is not None:
+            shape = self.entity.roi.size
+            return np.frombuffer(self._bin_mask, dtype=bool).reshape((shape[1], shape[0]))
+        return None
+
+    @bin_mask.setter
+    def bin_mask(self, bin_mask):
+        self._bin_mask = bin_mask.tobytes()
 
     @property
     def object(self):
@@ -68,12 +80,13 @@ class Mask(NamedDSO):
 
     def change_mask(self, mask: np.ndarray) -> None:
         """
-        changes the specified bounding box
-        :param box: the new graphics item for the bounding box
+        changes the specified mask array
+        :param mask: the new array for the mask
         """
         self.bin_mask = mask
         if mask is None:
             self.name = None
+        self.project.save(self)
 
     def set_graphics_item(self, contour_method: int = cv2.CHAIN_APPROX_SIMPLE) -> None:
         """
@@ -137,7 +150,7 @@ class Mask(NamedDSO):
             'entity'  : self._entity,
             'name'    : self.name,
             'frame'   : self.frame,
-            'bin_mask': self.bin_mask,
+            'bin_mask': self._bin_mask,
             'key_val' : self.key_val,
             }
         if not no_id:

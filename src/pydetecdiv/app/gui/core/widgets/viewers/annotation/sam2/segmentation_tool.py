@@ -6,6 +6,7 @@ import gc
 import os
 
 import cv2
+import numpy as np
 from PySide6.QtCore import Qt, QModelIndex, QPointF
 from PySide6.QtGui import (QPen, QKeyEvent, QKeySequence, QStandardItem, QCloseEvent, QPolygonF, QBrush, QColor, QGuiApplication,
                            QTransform, QActionGroup, QAction)
@@ -660,10 +661,11 @@ class SegmentationTool(VideoPlayer):
                             self.source_model.set_mask(self.source_model.object(out_obj_id), out_frame, mask_item)
                             mask = self.source_model.get_mask(self.source_model.object(out_obj_id), out_frame)
                             mask.change_mask(out_mask[0])
-                            self.source_model.project.commit()
+                            # self.source_model.project.save(mask)
                             mask.setBrush(QBrush(Colours.palette[int(out_obj_id) % len(Colours.palette) - 1]))
             else:
                 continue
+        self.source_model.project.commit()
         self.change_frame(frame)
         self.proxy_model.set_frame(frame)
         self.release_memory(keep_predictor=True)

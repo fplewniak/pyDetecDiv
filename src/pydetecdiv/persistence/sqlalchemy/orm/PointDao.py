@@ -41,6 +41,7 @@ class PointDao(DAO, Base):
                 'uuid'   : self.uuid,
                 'entity' : self.entity,
                 'name'   : self.name,
+                'frame'  : self.frame,
                 'x'      : self.x,
                 'y'      : self.y,
                 'label'  : self.label,
