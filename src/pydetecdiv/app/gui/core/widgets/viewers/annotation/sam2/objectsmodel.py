@@ -3,15 +3,14 @@ Classes defining the model and objects required to declare and manage the SAM2 p
 """
 import sys
 
-import cv2
-import numpy as np
-from PySide6.QtCore import QSortFilterProxyModel, Qt, QModelIndex, QPointF
-from PySide6.QtGui import QStandardItemModel, QStandardItem, QPolygonF, QBrush, QContextMenuEvent
+from PySide6.QtCore import QSortFilterProxyModel, Qt, QModelIndex
+from PySide6.QtGui import QStandardItemModel, QStandardItem, QContextMenuEvent
 from PySide6.QtWidgets import (QTreeView, QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsItem, QHeaderView, QGraphicsPolygonItem,
                                QMenu)
 
 from pydetecdiv.domain.BoundingBox import BoundingBox
 from pydetecdiv.domain.Entity import Entity
+from pydetecdiv.domain.Mask import Mask
 from pydetecdiv.domain.Point import Point
 from pydetecdiv.domain.Project import Project
 
@@ -149,94 +148,94 @@ ObjectReferenceRole = Qt.UserRole + 1
 #         return f'{self.name=}, {self.coords=}'
 
 
-class Mask:
-    """
-    A class defining masks as predicted by SegmentAnything2 from the prompts
-    """
-
-    def __init__(self, name: str = None, mask_item: QGraphicsPolygonItem = None, frame: int = None, obj: Entity = None):
-        self.name = name
-        self.graphics_item = mask_item
-        self._ellipse_item = None
-        self.frame = frame
-        self.object = obj
-        self.out_mask = None
-        self.contour_method = cv2.CHAIN_APPROX_SIMPLE
-        self.brush = QBrush()
-
-    @property
-    def contour(self) -> np.ndarray | None:
-        """
-        The mask contour as determined according to the specified method
-        """
-        return self.bitmap2contour(self.out_mask, self.contour_method)
-
-    @staticmethod
-    def bitmap2contour(out_mask: np.ndarray, contour_method: int = cv2.CHAIN_APPROX_SIMPLE) -> np.ndarray | None:
-        """
-        Returns the contour approximation of the mask using according to the specified method stored in self.contour_method
-        """
-        contour = None
-        match contour_method:
-            case cv2.CHAIN_APPROX_NONE:
-                contour, _ = cv2.findContours(out_mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-            case cv2.CHAIN_APPROX_SIMPLE:
-                contour, _ = cv2.findContours(out_mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            case cv2.CHAIN_APPROX_TC89_L1:
-                contour, _ = cv2.findContours(out_mask.astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_L1)
-            case cv2.CHAIN_APPROX_TC89_KCOS:
-                contour, _ = cv2.findContours(out_mask.astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_KCOS)
-        if contour is not None:
-            contour = max(contour, key=cv2.contourArea, default=None)
-        return contour
-
-    def set_graphics_item(self, contour_method: int = cv2.CHAIN_APPROX_SIMPLE) -> None:
-        """
-        Sets the approximation method of contour from the binary mask accordingly and sets the brush
-        :param contour_method: the contour approximation method to use
-        """
-        self.contour_method = contour_method
-        self.graphics_item = self.to_shape()
-        self.graphics_item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
-        self.setBrush()
-
-    def to_shape(self) -> QGraphicsPolygonItem:
-        """
-        Returns a polygon approximation of the original binary mask
-        """
-        mask_shape = QPolygonF()
-        for point in self.contour:
-            mask_shape.append(QPointF(point[0][0], point[0][1]))
-        return QGraphicsPolygonItem(mask_shape)
-
-    @property
-    def ellipse_item(self) -> QGraphicsEllipseItem:
-        """
-        return a graphics item to display the mask as an ellipse
-        """
-        if self._ellipse_item is None:
-            e = cv2.fitEllipse(self.contour)
-            ellipse_item = QGraphicsEllipseItem(e[0][0] - e[1][0] / 2.0, e[0][1] - e[1][1] / 2, e[1][0], e[1][1])
-            ellipse_item.setTransformOriginPoint(e[0][0], e[0][1])
-            ellipse_item.setRotation(e[2])
-            self._ellipse_item = ellipse_item
-            self._ellipse_item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
-            return ellipse_item
-        return self._ellipse_item
-
-    @ellipse_item.setter
-    def ellipse_item(self, item: QGraphicsEllipseItem) -> None:
-        self._ellipse_item = item
-
-    def setBrush(self, brush: QBrush = None) -> None:
-        """
-        Set the brush for all representation of the mask (polygon or ellipse)
-        :param brush: the brush to use with this mask
-        """
-        if brush is not None:
-            self.brush = brush
-        self.graphics_item.setBrush(self.brush)
-        self.ellipse_item.setBrush(self.brush)
+# class Mask:
+#     """
+#     A class defining masks as predicted by SegmentAnything2 from the prompts
+#     """
+#
+#     def __init__(self, name: str = None, mask_item: QGraphicsPolygonItem = None, frame: int = None, obj: Entity = None):
+#         self.name = name
+#         self.graphics_item = mask_item
+#         self._ellipse_item = None
+#         self.frame = frame
+#         self.object = obj
+#         self.out_mask = None
+#         self.contour_method = cv2.CHAIN_APPROX_SIMPLE
+#         self.brush = QBrush()
+#
+#     @property
+#     def contour(self) -> np.ndarray | None:
+#         """
+#         The mask contour as determined according to the specified method
+#         """
+#         return self.bitmap2contour(self.out_mask, self.contour_method)
+#
+#     @staticmethod
+#     def bitmap2contour(out_mask: np.ndarray, contour_method: int = cv2.CHAIN_APPROX_SIMPLE) -> np.ndarray | None:
+#         """
+#         Returns the contour approximation of the mask using according to the specified method stored in self.contour_method
+#         """
+#         contour = None
+#         match contour_method:
+#             case cv2.CHAIN_APPROX_NONE:
+#                 contour, _ = cv2.findContours(out_mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+#             case cv2.CHAIN_APPROX_SIMPLE:
+#                 contour, _ = cv2.findContours(out_mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+#             case cv2.CHAIN_APPROX_TC89_L1:
+#                 contour, _ = cv2.findContours(out_mask.astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_L1)
+#             case cv2.CHAIN_APPROX_TC89_KCOS:
+#                 contour, _ = cv2.findContours(out_mask.astype(np.int32), cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_TC89_KCOS)
+#         if contour is not None:
+#             contour = max(contour, key=cv2.contourArea, default=None)
+#         return contour
+#
+#     def set_graphics_item(self, contour_method: int = cv2.CHAIN_APPROX_SIMPLE) -> None:
+#         """
+#         Sets the approximation method of contour from the binary mask accordingly and sets the brush
+#         :param contour_method: the contour approximation method to use
+#         """
+#         self.contour_method = contour_method
+#         self.graphics_item = self.to_shape()
+#         self.graphics_item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
+#         self.setBrush()
+#
+#     def to_shape(self) -> QGraphicsPolygonItem:
+#         """
+#         Returns a polygon approximation of the original binary mask
+#         """
+#         mask_shape = QPolygonF()
+#         for point in self.contour:
+#             mask_shape.append(QPointF(point[0][0], point[0][1]))
+#         return QGraphicsPolygonItem(mask_shape)
+#
+#     @property
+#     def ellipse_item(self) -> QGraphicsEllipseItem:
+#         """
+#         return a graphics item to display the mask as an ellipse
+#         """
+#         if self._ellipse_item is None:
+#             e = cv2.fitEllipse(self.contour)
+#             ellipse_item = QGraphicsEllipseItem(e[0][0] - e[1][0] / 2.0, e[0][1] - e[1][1] / 2, e[1][0], e[1][1])
+#             ellipse_item.setTransformOriginPoint(e[0][0], e[0][1])
+#             ellipse_item.setRotation(e[2])
+#             self._ellipse_item = ellipse_item
+#             self._ellipse_item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
+#             return ellipse_item
+#         return self._ellipse_item
+#
+#     @ellipse_item.setter
+#     def ellipse_item(self, item: QGraphicsEllipseItem) -> None:
+#         self._ellipse_item = item
+#
+#     def setBrush(self, brush: QBrush = None) -> None:
+#         """
+#         Set the brush for all representation of the mask (polygon or ellipse)
+#         :param brush: the brush to use with this mask
+#         """
+#         if brush is not None:
+#             self.brush = brush
+#         self.graphics_item.setBrush(self.brush)
+#         self.ellipse_item.setBrush(self.brush)
 
 
 class ModelItem(QStandardItem):
@@ -548,6 +547,8 @@ class PromptSourceModel(QStandardItemModel):
             if mask.graphics_item.scene() is not None:
                 mask.graphics_item.scene().removeItem(mask.graphics_item)
             self.object_item(obj).removeRow(self.get_mask_row(obj, frame))
+            self.project.delete(mask)
+            self.project.commit()
 
     def clean_masks(self, obj: Entity) -> None:
         """
@@ -665,8 +666,7 @@ class PromptSourceModel(QStandardItemModel):
         row = self.create_mask_row(frame, mask, obj=obj)
         self.object_item(obj).appendRow(row)
 
-    @staticmethod
-    def create_mask_row(frame: int, mask_graphics_item: QGraphicsPolygonItem | QGraphicsEllipseItem, obj: Entity = None) -> list[
+    def create_mask_row(self, frame: int, mask_graphics_item: QGraphicsPolygonItem | QGraphicsEllipseItem, obj: Entity = None) -> list[
         ModelItem | QStandardItem]:
         """
         Creates a row representing the mask for object in frame
@@ -675,7 +675,8 @@ class PromptSourceModel(QStandardItemModel):
         :param obj: the object
         :return: the model row for the mask
         """
-        mask = Mask(name=mask_graphics_item.data(0), mask_item=mask_graphics_item, frame=frame, obj=obj)
+        mask = Mask(project=self.project, name=mask_graphics_item.data(0), mask_item=mask_graphics_item, frame=frame, entity=obj)
+        self.project.commit()
         mask_item = ModelItem(mask.name, mask)
         frame_item = QStandardItem(str(frame))
         return [mask_item, frame_item]

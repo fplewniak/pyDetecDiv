@@ -325,7 +325,6 @@ class SegmentationTool(VideoPlayer):
         self.predictor = None
         self.inference_state = None
         self.video_segments = None
-        self.out_mask = None
         self.mask_logits = None
         self.object_tree_view = None
         self.max_frames_prop = 15
@@ -660,7 +659,8 @@ class SegmentationTool(VideoPlayer):
                             mask_item.setData(0, f'mask_{out_obj_id}')
                             self.source_model.set_mask(self.source_model.object(out_obj_id), out_frame, mask_item)
                             mask = self.source_model.get_mask(self.source_model.object(out_obj_id), out_frame)
-                            mask.out_mask = out_mask[0]
+                            mask.change_mask(out_mask[0])
+                            self.source_model.project.commit()
                             mask.setBrush(QBrush(Colours.palette[int(out_obj_id) % len(Colours.palette) - 1]))
             else:
                 continue

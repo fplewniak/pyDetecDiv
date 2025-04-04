@@ -8,6 +8,7 @@ The dso_dao_mapping dictionary maps the correspondence between domain-specific c
 from pydetecdiv.persistence.sqlalchemy.orm.BoundingBoxDao import BoundingBoxDao
 from pydetecdiv.persistence.sqlalchemy.orm.EntityDao import EntityDao
 from pydetecdiv.persistence.sqlalchemy.orm.FOVdao import FOVdao
+from pydetecdiv.persistence.sqlalchemy.orm.MaskDao import MaskDao
 from pydetecdiv.persistence.sqlalchemy.orm.PointDao import PointDao
 from pydetecdiv.persistence.sqlalchemy.orm.ROIdao import ROIdao
 from pydetecdiv.persistence.sqlalchemy.orm.ExperimentDao import ExperimentDao
@@ -27,4 +28,5 @@ dso_dao_mapping = {
     'Entity': EntityDao,
     'BoundingBox': BoundingBoxDao,
     'Point': PointDao,
+    'Mask': MaskDao,
 }
