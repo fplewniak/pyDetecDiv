@@ -282,7 +282,7 @@ class SegmentationScene(VideoScene):
         item_at_click = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
         if isinstance(item_at_click, (QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsPolygonItem)):
             self.select_Item(event)
-            exit_next_frame_action = menu.addAction('Set exit frame as next frame')
+            exit_next_frame_action = menu.addAction('Set next frame as exit frame')
             exit_next_frame_action.triggered.connect(self.player.object_exit_next_frame)
         menu.exec(event.screenPos())
 
@@ -320,7 +320,7 @@ class SegmentationTool(VideoPlayer):
             self.roi = project.get_named_object('ROI', name=roi_name)
         self.run = None
         self.viewport_rect = None
-        self.source_model = PromptSourceModel(self.roi.project)
+        self.source_model = PromptSourceModel(self.roi.project, self.roi)
         self.proxy_model = PromptProxyModel()
         self.proxy_model.setRecursiveFilteringEnabled(True)
         self.predictor = None
@@ -335,6 +335,10 @@ class SegmentationTool(VideoPlayer):
         self.TCL1_approximation = None
         self.TCKCOS_approximation = None
         self.display_ellipses = None
+
+    def reset(self):
+        self.redraw_scene()
+        self.proxy_model.invalidateFilter()
 
     @property
     def contour_method(self) -> int:

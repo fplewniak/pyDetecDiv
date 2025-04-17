@@ -352,6 +352,14 @@ class ShallowSQLite3(ShallowDb):
             #     linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['roi'])]
             case ['ROI', ('FOV' | 'Data')]:
                 linked_rec = dao[parent_cls_name](self.session).roi_list(parent_id)
+            case ['Entity', ('ROI')]:
+                linked_rec = dao[parent_cls_name](self.session).entities(parent_id)
+            case ['BoundingBox', 'Entity']:
+                linked_rec = dao[parent_cls_name](self.session).bounding_boxes(parent_id)
+            case ['Point', 'Entity']:
+                linked_rec = dao[parent_cls_name](self.session).points(parent_id)
+            case ['Mask', 'Entity']:
+                linked_rec = dao[parent_cls_name](self.session).masks(parent_id)
             # case ['ROI', 'Image']:
             #     linked_rec = dao[parent_cls_name](self.session).roi(parent_id)
             # case ['Image', ('ImageData' | 'FOV' | 'ROI')]:

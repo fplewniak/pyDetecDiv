@@ -15,10 +15,10 @@ class Entity(NamedDSO):
     A class defining an entity that can be segmented, tracked, etc in a time-lapse microscopy video
     """
 
-    def __init__(self, roi: int | ROI, category: str = 'cell', key_val: dict = None, **kwargs):
+    def __init__(self, roi: int | ROI, category: str = 'cell', exit_frame: int = sys.maxsize, key_val: dict = None, **kwargs):
         super().__init__(**kwargs)
         self._roi = roi.id_ if isinstance(roi, ROI) else roi
-        self.exit_frame = sys.maxsize
+        self._exit_frame = exit_frame
         self.category = category
         self.key_val = key_val
         self.validate(updated=False)
@@ -37,6 +37,27 @@ class Entity(NamedDSO):
         self._roi = roi.id_ if isinstance(roi, ROI) else roi
         self.validate()
 
+    @property
+    def exit_frame(self) -> int:
+        return self._exit_frame
+
+    @exit_frame.setter
+    def exit_frame(self, exit_frame: int) -> None:
+        self._exit_frame = exit_frame
+        self.validate()
+
+    def bounding_boxes(self, frame: int = None):
+        all_bounding_boxes = self.project.get_linked_objects('BoundingBox', self)
+        return [bb for bb in all_bounding_boxes if bb.frame == frame] if frame is not None else all_bounding_boxes
+
+    def points(self, frame: int = None):
+        all_points = self.project.get_linked_objects('Point', self)
+        return [p for p in all_points if p.frame == frame] if frame is not None else all_points
+
+    def masks(self, frame: int = None):
+        all_masks = self.project.get_linked_objects('Mask', self)
+        return [m for m in all_masks if m.frame == frame] if frame is not None else all_masks
+
     def record(self, no_id: bool = False) -> dict[str, Any]:
         """
         Returns a record dictionary of the current Entity
@@ -47,11 +68,12 @@ class Entity(NamedDSO):
         :rtype: dict
         """
         record = {
-            'name'    : self.name,
-            'roi'     : self._roi,
-            'uuid'    : self.uuid,
-            'category': self.category,
-            'key_val' : self.key_val,
+            'name'      : self.name,
+            'roi'       : self._roi,
+            'uuid'      : self.uuid,
+            'category'  : self.category,
+            'exit_frame': self._exit_frame,
+            'key_val'   : self.key_val,
             }
         if not no_id:
             record['id_'] = self.id_

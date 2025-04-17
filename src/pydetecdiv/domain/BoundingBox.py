@@ -11,13 +11,21 @@ class BoundingBox(NamedDSO):
     A class defining a bounding box with its properties and available methods
     """
 
-    def __init__(self, box: QGraphicsRectItem = None, frame: int = None, entity: Entity = None, key_val: dict = None, **kwargs):
+    def __init__(self, box: QGraphicsRectItem = None, frame: int = None, entity: Entity = None, key_val: dict = None,
+                 x: float = 0, y: float = 0, width: int = 0, height: int = 0, **kwargs):
         super().__init__(**kwargs)
         self.graphics_item = box
         self.frame = frame
         self._entity = entity.id_ if isinstance(entity, Entity) else entity
         self.key_val = key_val
         self.validate(updated=False)
+        self._x = x
+        self._y = y
+        self._width = width
+        self._height = height
+        if self.graphics_item is None:
+            self.graphics_item = QGraphicsRectItem(0, 0, self._width, self._height)
+            self.graphics_item.setPos(self._x, self._y)
 
     @property
     def object(self):
@@ -37,36 +45,40 @@ class BoundingBox(NamedDSO):
         """
         the x coordinate of the bounding box (top-left corner)
         """
-        if self.graphics_item is not None:
-            return self.graphics_item.pos().x()
-        return None
+        if self.graphics_item is None:
+            self.graphics_item = QGraphicsRectItem(0, 0, self._width, self._height)
+            self.graphics_item.setPos(self._x, self._y)
+        return self.graphics_item.pos().x()
 
     @property
     def y(self) -> float | None:
         """
         the y coordinate of the bounding box (top-left corner)
         """
-        if self.graphics_item is not None:
-            return self.graphics_item.pos().y()
-        return None
+        if self.graphics_item is None:
+            self.graphics_item = QGraphicsRectItem(0, 0, self._width, self._height)
+            self.graphics_item.setPos(self._x, self._y)
+        return self.graphics_item.pos().y()
 
     @property
     def width(self) -> int | None:
         """
         the width of the bounding box
         """
-        if self.graphics_item is not None:
-            return self.graphics_item.rect().width()
-        return None
+        if self.graphics_item is None:
+            self.graphics_item = QGraphicsRectItem(0, 0, self._width, self._height)
+            self.graphics_item.setPos(self._x, self._y)
+        return self.graphics_item.rect().width()
 
     @property
     def height(self) -> int | None:
         """
         the height of the bounding box
         """
-        if self.graphics_item is not None:
-            return self.graphics_item.rect().height()
-        return None
+        if self.graphics_item is None:
+            self.graphics_item = QGraphicsRectItem(0, 0, self._width, self._height)
+            self.graphics_item.setPos(self._x, self._y)
+        return self.graphics_item.rect().height()
 
     @property
     def coords(self) -> list[float]:

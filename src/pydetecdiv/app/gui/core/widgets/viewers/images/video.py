@@ -16,6 +16,7 @@ from pydetecdiv.app.gui.core.widgets.viewers import Layer, Scene
 from pydetecdiv.app.gui.core.widgets.viewers.images import ImageViewer
 from pydetecdiv.domain.ImageResourceData import ImageResourceData
 
+
 # VideoScene = TypeVar('VideoScene', bound=QGraphicsScene)
 
 class VideoScene(Scene):
@@ -51,6 +52,9 @@ class VideoPlayer(QWidget):
 
         # self.viewer.setViewportUpdateMode(QGraphicsView.NoViewportUpdate)
 
+    def reset(self):
+        ...
+
     def other_scene_in_focus(self, tab):
         if tab == -1:
             scene = PyDetecDiv.main_window.active_subwindow.currentWidget().scene
@@ -58,6 +62,7 @@ class VideoPlayer(QWidget):
             scene = PyDetecDiv.main_window.active_subwindow.widget(tab).scene
         if scene == self.scene:
             PyDetecDiv.app.other_scene_in_focus.emit(self.scene)
+
     @property
     def elapsed_time(self) -> str:
         t = self.T * self.tscale

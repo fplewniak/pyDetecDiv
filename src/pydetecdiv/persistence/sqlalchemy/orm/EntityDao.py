@@ -6,6 +6,7 @@ Access to Entity data
 from typing import Any
 
 from sqlalchemy import Column, Integer, String, JSON, ForeignKey
+from sqlalchemy.orm import joinedload, relationship
 
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 
@@ -23,7 +24,29 @@ class EntityDao(DAO, Base):
     roi = Column(Integer, ForeignKey('ROI.id_'), nullable=False, index=True)
     name = Column(String, unique=True, nullable=False)
     category = Column(String)
+    exit_frame = Column(Integer, nullable=False)
     key_val = Column(JSON)
+
+    bounding_boxes_ = relationship('BoundingBoxDao')
+
+    def bounding_boxes(self, entity_id: int) -> list[dict[str, object]]:
+        """
+        A method returning the list of Entity records whose parent ROI has id == roi_id
+
+        :param entity_id: the id of the ROI
+        :type entity_id: int
+        :return: a list of Entity records with parent Entity_id id == entity_id
+        :rtype: list
+        """
+        if self.session.query(EntityDao).filter(EntityDao.id_ == entity_id).first() is not None:
+            bounding_boxes = [bounding_box.record
+                              for bounding_box in self.session.query(EntityDao)
+                              .options(joinedload(EntityDao.bounding_boxes_))
+                              .filter(EntityDao.id_ == entity_id)
+                              .first().bounding_boxes_]
+        else:
+            bounding_boxes = []
+        return bounding_boxes
 
     @property
     def record(self) -> dict[str, Any]:
@@ -34,10 +57,11 @@ class EntityDao(DAO, Base):
         :return: an Entity record as a dictionary with keys() appropriate for handling by the domain layer
         :rtype: dict
         """
-        return {'id_'     : self.id_,
-                'uuid'    : self.uuid,
-                'roi'     : self.roi,
-                'name'    : self.name,
-                'category': self.category,
-                'key_val' : self.key_val,
+        return {'id_'       : self.id_,
+                'uuid'      : self.uuid,
+                'roi'       : self.roi,
+                'name'      : self.name,
+                'category'  : self.category,
+                'exit_frame': self.exit_frame,
+                'key_val'   : self.key_val,
                 }

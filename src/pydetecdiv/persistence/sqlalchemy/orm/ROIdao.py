@@ -34,6 +34,8 @@ class ROIdao(DAO, Base):
     # image_data_list = relationship('ImageDataDao')
     data_list = ROIdata.roi_to_data()
 
+    entities_ = relationship('EntityDao')
+
     @property
     def record(self) -> dict[str, Any]:
         """
@@ -67,6 +69,25 @@ class ROIdao(DAO, Base):
                 .filter(ROIdata.data == dao.DataDao.id_)
                 .filter(ROIdata.roi == roi_id)
                 ]
+
+    def entities(self, roi_id: int) -> list[dict[str, object]]:
+        """
+        A method returning the list of Entity records whose parent ROI has id == roi_id
+
+        :param roi_id: the id of the ROI
+        :type roi_id: int
+        :return: a list of Entity records with parent ROI id == roi_id
+        :rtype: list
+        """
+        if self.session.query(ROIdao).filter(ROIdao.id_ == roi_id).first() is not None:
+            entities = [entity.record
+                        for entity in self.session.query(ROIdao)
+                        .options(joinedload(ROIdao.entities_))
+                        .filter(ROIdao.id_ == roi_id)
+                        .first().entities_]
+        else:
+            entities = []
+        return entities
 
     # def image_data(self, roi_id):
     #     """

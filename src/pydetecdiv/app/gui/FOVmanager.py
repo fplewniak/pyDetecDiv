@@ -153,6 +153,7 @@ class FOVmanager(VideoPlayer):
                                              crop=(slice(x1, x2), slice(y1, y2)), alpha=True)
         PyDetecDiv.main_window.active_subwindow.setCurrentWidget(video_player)
         PyDetecDiv.app.other_scene_in_focus.emit(scene)
+        video_player.reset()
 
     def open_in_segmentation_tool(self, rect: QGraphicsRectItem) -> None:
         self._view_in_new_tab(rect, SegmentationTool(rect.data(0)), scene=SegmentationScene())

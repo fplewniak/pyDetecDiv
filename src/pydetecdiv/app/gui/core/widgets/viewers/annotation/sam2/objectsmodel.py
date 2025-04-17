@@ -13,6 +13,7 @@ from pydetecdiv.domain.Entity import Entity
 from pydetecdiv.domain.Mask import Mask
 from pydetecdiv.domain.Point import Point
 from pydetecdiv.domain.Project import Project
+from pydetecdiv.domain.ROI import ROI
 
 ObjectReferenceRole = Qt.UserRole + 1
 
@@ -70,11 +71,39 @@ class PromptSourceModel(QStandardItemModel):
     The source model for the SAM2 prompt
     """
 
-    def __init__(self, project: Project):
+    def __init__(self, project: Project, roi: ROI):
         super().__init__(0, 7)
         self.setHorizontalHeaderLabels(['entity', '', 'x', 'y', 'width', 'height', 'label'])
         self.root_item = self.invisibleRootItem()
         self.project = project
+        self.roi = roi
+        self.load_from_repository()
+
+    def load_from_repository(self) -> None:
+        for entity in self.roi.entities:
+            self.add_object(entity)
+            self.load_bounding_boxes(entity)
+            self.load_points(entity)
+            self.load_masks(entity)
+
+    def load_bounding_boxes(self, entity: Entity):
+        print(f'loading bounding boxes for {entity.name}')
+        for bounding_box in entity.bounding_boxes():
+            box_item = ModelItem(bounding_box.name, bounding_box)
+            frame_item = QStandardItem(str(bounding_box.frame))
+            x_item = QStandardItem(f'{bounding_box.x:.1f}')
+            y_item = QStandardItem(f'{bounding_box.y:.1f}')
+            width_item = QStandardItem(f'{int(bounding_box.width)}')
+            height_item = QStandardItem(f'{int(bounding_box.height)}')
+            self.object_item(entity).appendRow([box_item, frame_item, x_item, y_item, width_item, height_item])
+        # print(f'{bb.name}/{bb.frame}: {bb.x=} {bb.y=} {bb.width=} {bb.height=}')
+
+    def load_points(self, entity: Entity):
+        print(f'loading points for {entity.name}')
+
+    def load_masks(self, entity: Entity):
+        print(f'loading masks for {entity.name}')
+
 
     @property
     def objects(self) -> list[Entity]:

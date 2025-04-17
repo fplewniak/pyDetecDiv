@@ -3,6 +3,11 @@
 """
  A class defining the business logic methods that can be applied to Regions Of Interest
 """
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pydetecdiv.domain.Entity import Entity
+
 from typing import Any
 
 from pydetecdiv.exceptions import JuttingError
@@ -35,6 +40,10 @@ class ROI(NamedDSO, BoxedDSO):
     #     # if not self.box.lies_in(self.fov.box):
     #     #     raise JuttingError(self, self.fov)
     #     ...
+
+    @property
+    def entities(self) -> list['Entity']:
+        return self.project.get_linked_objects('Entity', to=self)
 
     @property
     def fov(self) -> FOV:
