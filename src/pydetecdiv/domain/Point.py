@@ -12,12 +12,14 @@ class Point(NamedDSO):
     """
 
     def __init__(self, point: QGraphicsEllipseItem = None, label: int = 1, frame: int = None, entity: Entity = None,
-                 key_val: dict = None, **kwargs):
+                 x: float = 0, y: float = 0, key_val: dict = None, **kwargs):
         super().__init__(**kwargs)
         self.graphics_item = point
         self.label = label
         self.frame = frame
         self._entity = entity.id_ if isinstance(entity, Entity) else entity
+        self._x = x
+        self._y = y
         self.key_val = key_val
         self.validate(updated=False)
 
@@ -50,18 +52,20 @@ class Point(NamedDSO):
         """
         the x coordinate of the point
         """
-        if self.graphics_item is not None:
-            return self.graphics_item.pos().x()
-        return None
+        if self.graphics_item is None:
+            self.graphics_item = QGraphicsEllipseItem(0, 0, 5, 5)
+            self.graphics_item.setPos(self._x, self._y)
+        return self.graphics_item.pos().x()
 
     @property
     def y(self) -> float | None:
         """
         the y coordinate of the point
         """
-        if self.graphics_item is not None:
-            return self.graphics_item.pos().y()
-        return None
+        if self.graphics_item is None:
+            self.graphics_item = QGraphicsEllipseItem(0, 0, 5, 5)
+            self.graphics_item.setPos(self._x, self._y)
+        return self.graphics_item.pos().y()
 
     @property
     def coords(self) -> list[float]:

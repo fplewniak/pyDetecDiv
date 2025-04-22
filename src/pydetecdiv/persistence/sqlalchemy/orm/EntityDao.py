@@ -28,14 +28,16 @@ class EntityDao(DAO, Base):
     key_val = Column(JSON)
 
     bounding_boxes_ = relationship('BoundingBoxDao')
+    masks_ = relationship('MaskDao')
+    points_ = relationship('PointDao')
 
     def bounding_boxes(self, entity_id: int) -> list[dict[str, object]]:
         """
-        A method returning the list of Entity records whose parent ROI has id == roi_id
+        A method returning the list of BoundingBox records whose parent Entity has id == entity_id
 
-        :param entity_id: the id of the ROI
+        :param entity_id: the id of the Entity
         :type entity_id: int
-        :return: a list of Entity records with parent Entity_id id == entity_id
+        :return: a list of BoundingBox records with parent Entity_id id == entity_id
         :rtype: list
         """
         if self.session.query(EntityDao).filter(EntityDao.id_ == entity_id).first() is not None:
@@ -47,6 +49,44 @@ class EntityDao(DAO, Base):
         else:
             bounding_boxes = []
         return bounding_boxes
+
+    def masks(self, entity_id: int) -> list[dict[str, object]]:
+        """
+        A method returning the list of Mask records whose parent Entity has id == entity_id
+
+        :param entity_id: the id of the Entity
+        :type entity_id: int
+        :return: a list of Mask records with parent Entity_id id == entity_id
+        :rtype: list
+        """
+        if self.session.query(EntityDao).filter(EntityDao.id_ == entity_id).first() is not None:
+            masks = [mask.record
+                     for mask in self.session.query(EntityDao)
+                     .options(joinedload(EntityDao.masks_))
+                     .filter(EntityDao.id_ == entity_id)
+                     .first().masks_]
+        else:
+            masks = []
+        return masks
+
+    def points(self, entity_id: int) -> list[dict[str, object]]:
+        """
+        A method returning the list of Mask records whose parent Entity has id == entity_id
+
+        :param entity_id: the id of the Entity
+        :type entity_id: int
+        :return: a list of Mask records with parent Entity_id id == entity_id
+        :rtype: list
+        """
+        if self.session.query(EntityDao).filter(EntityDao.id_ == entity_id).first() is not None:
+            points = [point.record
+                      for point in self.session.query(EntityDao)
+                      .options(joinedload(EntityDao.points_))
+                      .filter(EntityDao.id_ == entity_id)
+                      .first().points_]
+        else:
+            points = []
+        return points
 
     @property
     def record(self) -> dict[str, Any]:

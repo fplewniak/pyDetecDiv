@@ -80,14 +80,20 @@ class PromptSourceModel(QStandardItemModel):
         self.load_from_repository()
 
     def load_from_repository(self) -> None:
+        """
+        Load prompt model from repository database
+        """
         for entity in self.roi.entities:
             self.add_object(entity)
             self.load_bounding_boxes(entity)
             self.load_points(entity)
             self.load_masks(entity)
 
-    def load_bounding_boxes(self, entity: Entity):
-        print(f'loading bounding boxes for {entity.name}')
+    def load_bounding_boxes(self, entity: Entity) -> None:
+        """
+        Load Entity's bounding boxes from the database repository
+        :param entity: the Entity
+        """
         for bounding_box in entity.bounding_boxes():
             box_item = ModelItem(bounding_box.name, bounding_box)
             frame_item = QStandardItem(str(bounding_box.frame))
@@ -96,14 +102,31 @@ class PromptSourceModel(QStandardItemModel):
             width_item = QStandardItem(f'{int(bounding_box.width)}')
             height_item = QStandardItem(f'{int(bounding_box.height)}')
             self.object_item(entity).appendRow([box_item, frame_item, x_item, y_item, width_item, height_item])
-        # print(f'{bb.name}/{bb.frame}: {bb.x=} {bb.y=} {bb.width=} {bb.height=}')
 
-    def load_points(self, entity: Entity):
-        print(f'loading points for {entity.name}')
+    def load_points(self, entity: Entity) -> None:
+        """
+        Load Entity's points from the database repository
+        :param entity: the Entity
+        """
+        for point in entity.points():
+            self.project.commit()
+            point_item = ModelItem(point.name, point)
+            frame_item = QStandardItem(str(point.frame))
+            x_item = QStandardItem(f'{point.x:.1f}')
+            y_item = QStandardItem(f'{point.y:.1f}')
+            label_item = QStandardItem(f'{point.label}')
+            self.object_item(entity).appendRow(
+                    [point_item, frame_item, x_item, y_item, QStandardItem(''), QStandardItem(''), label_item])
 
-    def load_masks(self, entity: Entity):
-        print(f'loading masks for {entity.name}')
-
+    def load_masks(self, entity: Entity) -> None:
+        """
+        Load Entity's Masks from the database repository
+        :param entity: the Entity
+        """
+        for mask in entity.masks():
+            mask_item = ModelItem(mask.name, mask)
+            frame_item = QStandardItem(str(mask.frame))
+            self.object_item(entity).appendRow([mask_item, frame_item])
 
     @property
     def objects(self) -> list[Entity]:
@@ -221,7 +244,7 @@ class PromptSourceModel(QStandardItemModel):
         :param frame: the exit frame
         """
         obj.exit_frame = frame
-        print(f'Exit object {obj.id_} at frame {frame}')
+        print(f'Exit entity {obj.id_} at frame {frame}')
         self.clean_masks(obj)
 
     def add_bounding_box(self, obj: Entity, frame: int, box: QGraphicsRectItem) -> None:
@@ -477,8 +500,8 @@ class PromptSourceModel(QStandardItemModel):
         self.object_item(obj).appendRow(row)
 
     def create_mask_row(self, frame: int, mask_graphics_item: QGraphicsPolygonItem | QGraphicsEllipseItem, obj: Entity = None) -> \
-    list[
-        ModelItem | QStandardItem]:
+            list[
+                ModelItem | QStandardItem]:
         """
         Creates a row representing the mask for object in frame
         :param frame: the frame
@@ -793,7 +816,7 @@ class ObjectsTreeView(QTreeView):
         stretch other columns to accommodate the available space.
         """
         self.setHeaderHidden(False)
-        # self.setColumnHidden(1, True)
+        self.setColumnHidden(1, True)
         self.header().resizeSection(0, 75)
         for c in range(2, self.source_model.columnCount()):
             self.header().setSectionResizeMode(c, QHeaderView.Stretch)

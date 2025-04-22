@@ -337,7 +337,7 @@ class SegmentationTool(VideoPlayer):
         self.display_ellipses = None
 
     def reset(self):
-        self.redraw_scene()
+        self.change_frame(self.T, force_redraw=True)
         self.proxy_model.invalidateFilter()
 
     @property
@@ -531,12 +531,12 @@ class SegmentationTool(VideoPlayer):
             # self.viewer.background.image.change_frame(frame)
             self.viewer.background.image.pixmap().toImage().save(f'{video_dir}/{frame:05d}.jpg', format='jpg')
 
-    def change_frame(self, T: int = 0) -> None:
+    def change_frame(self, T: int = 0, force_redraw=False) -> None:
         """
         Change the frame of the video
         :param T: the new frame time index
         """
-        super().change_frame(T=T)
+        super().change_frame(T=T, force_redraw=force_redraw)
         self.redraw_scene()
 
     def redraw_scene(self) -> None:
@@ -546,11 +546,17 @@ class SegmentationTool(VideoPlayer):
         self.scene.reset_graphics_items()
         boxes, points, masks = self.source_model.get_all_prompt_items(frame=self.T)
         for box in boxes:
+            box.graphics_item.setPen(self.scene.default_pen)
             self.scene.addItem(box.graphics_item)
         for point in points:
+            if point.label == 1:
+                point.graphics_item.setPen(self.scene.positive_pen)
+            else:
+                point.graphics_item.setPen(self.scene.negative_pen)
             self.scene.addItem(point.graphics_item)
         for mask in masks:
             mask.set_graphics_item(self.contour_method)
+            mask.setBrush(QBrush(Colours.palette[int(mask.entity.id_) % len(Colours.palette) - 1]))
             if self.display_ellipses.isChecked():
                 self.scene.addItem(mask.ellipse_item)
             else:

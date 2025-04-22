@@ -15,14 +15,14 @@ class Mask(NamedDSO):
     A class defining masks as predicted by SegmentAnything2 from the prompts
     """
 
-    def __init__(self, mask_item: QGraphicsPolygonItem = None, frame: int = None, entity: Entity = None, key_val: dict = None,
-                 **kwargs):
+    def __init__(self, mask_item: QGraphicsPolygonItem = None, frame: int = None, entity: Entity = None, bin_mask=None,
+                 key_val: dict = None, **kwargs):
         super().__init__(**kwargs)
         self.graphics_item = mask_item
         self._ellipse_item = None
         self.frame = frame
         self._entity = entity.id_ if isinstance(entity, Entity) else entity
-        self._bin_mask = None
+        self._bin_mask = bin_mask
         self.contour_method = cv2.CHAIN_APPROX_SIMPLE
         self.brush = QBrush()
         self.key_val = key_val
