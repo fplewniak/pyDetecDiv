@@ -59,6 +59,22 @@ class Mask(NamedDSO):
         """
         return self.bitmap2contour(self.bin_mask, self.contour_method)
 
+    @property
+    def normalised_contour(self) -> np.ndarray | None:
+        """
+        The mask contour as determined according to the specified method and relative to ROI size
+        """
+        contour = self.bitmap2contour(self.bin_mask, self.contour_method)
+        shape = self.entity.roi.size
+        normalised_contour = np.array([[[float(c[0][0] / shape[0]), float(c[0][1] / shape[1])]] for c in contour])
+        # normalised_contour = []
+        # for c in contour:
+        #     x = float(c[0][0] / shape[1])
+        #     y = float(c[0][1] / shape[0])
+        #     normalised_contour.append([[x, y]])
+        # normalised_contour = np.array(normalised_contour)
+        return normalised_contour
+
     @staticmethod
     def bitmap2contour(out_mask: np.ndarray, contour_method: int = cv2.CHAIN_APPROX_SIMPLE) -> np.ndarray | None:
         """

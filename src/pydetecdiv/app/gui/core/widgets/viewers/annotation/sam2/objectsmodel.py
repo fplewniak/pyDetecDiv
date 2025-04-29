@@ -541,6 +541,16 @@ class PromptSourceModel(QStandardItemModel):
         """
         return [child.object for child in self.object_item(obj).children() if isinstance(child.object, Mask)]
 
+    def get_all_masks(self):
+        frames = {}
+        for entity in self.objects:
+            for mask in self.get_masks(entity):
+                f = str(mask.frame)
+                if f not in frames:
+                    frames[f] = []
+                frames[str(mask.frame)].append(mask)
+        return frames
+
     def get_prompt_items(self, obj: Entity, frame: int | None = None) -> list[ModelItem]:
         """
         retrieve the model items for points and bounding boxes of an object in one specific frame, or all frames (if frame is None)

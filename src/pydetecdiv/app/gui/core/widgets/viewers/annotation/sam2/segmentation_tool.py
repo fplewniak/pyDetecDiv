@@ -62,6 +62,12 @@ class Colours:
         QColor(128, 0, 64, 100),
         ]
 
+class Categories:
+    """
+    Entity default categories
+    """
+    cell = ['background', 'cell']
+    mother_daughter = ['background', 'mother', 'daughter']
 
 class SegmentationScene(VideoScene):
     """
@@ -410,6 +416,10 @@ class SegmentationTool(VideoPlayer):
     def create_menubar(self) -> QMenuBar | None:
         menubar = QMenuBar()
         menubar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        fileMenu = menubar.addMenu('File')
+        self.export_masks_action = QAction('Export masks for YOLO')
+        self.export_masks_action.triggered.connect(self.export_masks)
+        fileMenu.addAction(self.export_masks_action)
         maskApproximation = menubar.addMenu('Mask approximation')
         self.method_group = QActionGroup(maskApproximation)
         self.no_approximation = QAction('No approximation')
@@ -714,3 +724,32 @@ class SegmentationTool(VideoPlayer):
             if mask_shape.size() > 0:
                 return QGraphicsPolygonItem(mask_shape)
         return None
+
+    def export_masks(self) -> None:
+        """
+        Export masks to the text files with name corresponding to images in the video directory. These files can serve for training
+        YOLO model for segmentation/tracking
+        """
+        video_dir = os.path.join(get_config_value('project', 'workspace'),
+                                 PyDetecDiv.project_name,
+                                 'data/SegmentAnything2/videos',
+                                 self.roi_name)
+        annotation_dir = os.path.join(get_config_value('project', 'workspace'),
+                                 PyDetecDiv.project_name,
+                                 'data/SegmentAnything2/masks',
+                                 self.roi_name)
+        os.makedirs(annotation_dir, exist_ok=True)
+
+        frame_names = [p for p in os.listdir(video_dir) if os.path.splitext(p)[-1] in ['.jpg', 'jpeg', '.JPG', '.JPEG']]
+        frame_names.sort(key=lambda p: int(os.path.splitext(p)[0]))
+
+        frames = self.source_model.get_all_masks()
+        for frame, masks in frames.items():
+            annotation_path = os.path.join(annotation_dir, os.path.splitext(frame_names[int(frame)])[0]+'.txt')
+            annotation_file = open(annotation_path, 'w')
+            for mask in masks:
+                mask.contour_method = self.contour_method
+                annotation_file.write(f'{Categories.cell.index(mask.entity.category)} ')
+                annotation_file.write(' '.join(format(k, '7.6f') for k in mask.normalised_contour.flatten()))
+                annotation_file.write('\n')
+            annotation_file.close()
