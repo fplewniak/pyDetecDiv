@@ -75,6 +75,17 @@ class Mask(NamedDSO):
         # normalised_contour = np.array(normalised_contour)
         return normalised_contour
 
+    @property
+    def ellipse_contour(self) -> np.ndarray | None:
+        centre, axes, angle = cv2.fitEllipse(self.contour)
+        centre = tuple(map(int, centre)) # Convert to integers
+        axes = tuple(map(int, (axes[0] / 2, axes[1] / 2)))  # radius, not diameter
+        ellipse_pts = cv2.ellipse2Poly(center=centre, axes=axes, angle=int(angle), arcStart=0, arcEnd=360, delta=5)
+        ellipse_pts = np.array(ellipse_pts, dtype=np.float32)
+        shape = self.entity.roi.size
+        normalized_pts = np.array([[[float(x / shape[0]), float(y / shape[1])]] for x, y in ellipse_pts])
+        return normalized_pts
+
     @staticmethod
     def bitmap2contour(out_mask: np.ndarray, contour_method: int = cv2.CHAIN_APPROX_SIMPLE) -> np.ndarray | None:
         """

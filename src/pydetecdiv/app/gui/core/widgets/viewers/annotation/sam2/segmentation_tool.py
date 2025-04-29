@@ -750,6 +750,9 @@ class SegmentationTool(VideoPlayer):
             for mask in masks:
                 mask.contour_method = self.contour_method
                 annotation_file.write(f'{Categories.cell.index(mask.entity.category)} ')
-                annotation_file.write(' '.join(format(k, '7.6f') for k in mask.normalised_contour.flatten()))
+                if self.display_ellipses.isChecked():
+                    annotation_file.write(' '.join(format(k, '7.6f') for k in mask.ellipse_contour.flatten()))
+                else:
+                    annotation_file.write(' '.join(format(k, '7.6f') for k in mask.normalised_contour.flatten()))
                 annotation_file.write('\n')
             annotation_file.close()
