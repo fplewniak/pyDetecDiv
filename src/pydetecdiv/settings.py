@@ -23,6 +23,8 @@ def get_default_settings() -> dict:
             'project.sqlite': {'database': 'pydetecdiv'},
             'project.conda': {'dir': '/opt/miniconda3/'},
             'paths': {'appdata': xdg.BaseDirectory.save_data_path('pyDetecDiv'),
+                      'sam2_checkpoint': '/data/SegmentAnything2/checkpoints/sam2.1_hiera_large.pt',
+                      'sam2_model_cfg': 'configs/sam2.1/sam2.1_hiera_l.yaml',
                       'toolbox': '/data/BioImageIT/bioimageit-toolboxes'}
             # 'project.mysql': {'database': 'pydetecdiv', 'host': 'localhost', 'credentials': 'mysql.credentials', },
             # 'omero': {'host': 'localhost', 'credentials': 'omero.credentials', },
