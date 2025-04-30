@@ -3,13 +3,12 @@ Module defining classes for building a video player
 """
 import time
 import re
-from typing import TypeVar
 
 import numpy as np
 from PySide6.QtCore import QTimer, Signal, QSize, Qt
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame, QToolButton, QLabel, QSlider, QSpinBox,
-                               QLineEdit, QSizePolicy, QSplitter, QMenuBar, QGraphicsScene)
+                               QLineEdit, QSizePolicy, QSplitter, QMenuBar, QMdiArea)
 
 from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui.core.widgets.viewers import Layer, Scene
@@ -17,9 +16,10 @@ from pydetecdiv.app.gui.core.widgets.viewers.images import ImageViewer
 from pydetecdiv.domain.ImageResourceData import ImageResourceData
 
 
-# VideoScene = TypeVar('VideoScene', bound=QGraphicsScene)
-
 class VideoScene(Scene):
+    """
+    A generic class for video scenes
+    """
     def __init__(self, parent: QWidget = None, **kwargs):
         super().__init__(parent, **kwargs)
         self.player = None
@@ -53,9 +53,16 @@ class VideoPlayer(QWidget):
         # self.viewer.setViewportUpdateMode(QGraphicsView.NoViewportUpdate)
 
     def reset(self):
+        """
+        abstract method to reset the current player
+        """
         ...
 
-    def other_scene_in_focus(self, tab):
+    def other_scene_in_focus(self, tab: QMdiArea):
+        """
+        sets another scene in focus, generally when switching to another tab
+        :param tab: the newly displayed tab
+        """
         if tab == -1:
             scene = PyDetecDiv.main_window.active_subwindow.currentWidget().scene
         else:
@@ -65,6 +72,9 @@ class VideoPlayer(QWidget):
 
     @property
     def elapsed_time(self) -> str:
+        """
+        the clock time corresponding to the current frame
+        """
         t = self.T * self.tscale
         hours = int(t / 3600)
         t = t - hours * 3600
@@ -76,6 +86,9 @@ class VideoPlayer(QWidget):
 
     @property
     def viewer(self) -> ImageViewer:
+        """
+        the video viewer
+        """
         return self.viewer_panel.video_viewer
 
     # def _create_viewer(self):
@@ -90,6 +103,9 @@ class VideoPlayer(QWidget):
     #     return self.viewer_panel.video_viewer
 
     def create_menubar(self) -> QMenuBar | None:
+        """
+        Menu bar creation, returning None here as the basic video player does not have any
+        """
         return None
 
     def setup(self, menubar: QMenuBar = None) -> None:
@@ -275,6 +291,11 @@ class VideoViewerPanel(QSplitter):
         self.video_viewer = ImageViewer(parent)
 
     def setup(self, scene: VideoScene = None, **kwargs) -> None:
+        """
+        Initializes the viewer panel
+        :param scene: the video scene
+        :param kwargs: extra kwargs (for consistency with subclasses)
+        """
         self.video_viewer.setup(scene)
         layout = QVBoxLayout(self)
         layout.addWidget(self.video_viewer)
@@ -310,6 +331,9 @@ class VideoControlPanel(QFrame):
         parent.viewer.zoom_value_changed.connect(lambda x: self.zoom_control.zoom_set.setText(f'{x} %'))
 
     def addWidget(self, widget: QWidget) -> None:
+        """
+        Add a widget to the control panel. This may be used to add controls in sub classes
+        """
         self.layout().addWidget(widget)
 
 

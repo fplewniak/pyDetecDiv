@@ -6,7 +6,6 @@ import gc
 import os
 
 import cv2
-import numpy as np
 from PySide6.QtCore import Qt, QModelIndex, QPointF
 from PySide6.QtGui import (QPen, QKeyEvent, QKeySequence, QStandardItem, QCloseEvent, QPolygonF, QBrush, QColor, QGuiApplication,
                            QTransform, QActionGroup, QAction)
@@ -76,9 +75,9 @@ class SegmentationScene(VideoScene):
 
     def __init__(self, parent: QWidget = None, **kwargs):
         super().__init__(parent, **kwargs)
-        self.default_pen = QPen(Qt.GlobalColor.green, 1)
-        self.positive_pen = QPen(Qt.GlobalColor.green, 1)
-        self.negative_pen = QPen(Qt.GlobalColor.red, 1)
+        self.default_pen = QPen(Qt.GlobalColor.green, 0.8)
+        self.positive_pen = QPen(Qt.GlobalColor.green, 0.8)
+        self.negative_pen = QPen(Qt.GlobalColor.red, 0.8)
         self.pen = self.default_pen
         self.last_shape = None
 
@@ -336,6 +335,7 @@ class SegmentationTool(VideoPlayer):
         self.object_tree_view = None
         self.max_frames_prop = 15
         self.method_group = None
+        self.export_masks_action = None
         self.no_approximation = None
         self.simple_approximation = None
         self.TCL1_approximation = None
@@ -414,10 +414,14 @@ class SegmentationTool(VideoPlayer):
         return new_item
 
     def create_menubar(self) -> QMenuBar | None:
+        """
+        Create the menu bar for Segmentation tool
+        :return: the menu bar object
+        """
         menubar = QMenuBar()
         menubar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         fileMenu = menubar.addMenu('File')
-        self.export_masks_action = QAction('Export masks for YOLO')
+        self.export_masks_action = QAction('Export masks in YOLO format')
         self.export_masks_action.triggered.connect(self.export_masks)
         fileMenu.addAction(self.export_masks_action)
         maskApproximation = menubar.addMenu('Mask approximation')
@@ -746,13 +750,12 @@ class SegmentationTool(VideoPlayer):
         frames = self.source_model.get_all_masks()
         for frame, masks in frames.items():
             annotation_path = os.path.join(annotation_dir, os.path.splitext(frame_names[int(frame)])[0]+'.txt')
-            annotation_file = open(annotation_path, 'w')
-            for mask in masks:
-                mask.contour_method = self.contour_method
-                annotation_file.write(f'{Categories.cell.index(mask.entity.category)} ')
-                if self.display_ellipses.isChecked():
-                    annotation_file.write(' '.join(format(k, '7.6f') for k in mask.ellipse_contour.flatten()))
-                else:
-                    annotation_file.write(' '.join(format(k, '7.6f') for k in mask.normalised_contour.flatten()))
-                annotation_file.write('\n')
-            annotation_file.close()
+            with open(annotation_path, 'w', encoding='utf-8') as annotation_file:
+                for mask in masks:
+                    mask.contour_method = self.contour_method
+                    annotation_file.write(f'{Categories.cell.index(mask.entity.category)} ')
+                    if self.display_ellipses.isChecked():
+                        annotation_file.write(' '.join(format(k, '7.6f') for k in mask.ellipse_contour.flatten()))
+                    else:
+                        annotation_file.write(' '.join(format(k, '7.6f') for k in mask.normalised_contour.flatten()))
+                    annotation_file.write('\n')

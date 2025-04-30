@@ -53,7 +53,7 @@ class Point(NamedDSO):
         the x coordinate of the point
         """
         if self.graphics_item is None:
-            self.graphics_item = QGraphicsEllipseItem(0, 0, 5, 5)
+            self.graphics_item = QGraphicsEllipseItem(0, 0, 2, 2)
             self.graphics_item.setPos(self._x, self._y)
         return self.graphics_item.pos().x()
 
@@ -63,7 +63,7 @@ class Point(NamedDSO):
         the y coordinate of the point
         """
         if self.graphics_item is None:
-            self.graphics_item = QGraphicsEllipseItem(0, 0, 5, 5)
+            self.graphics_item = QGraphicsEllipseItem(0, 0, 2, 2)
             self.graphics_item.setPos(self._x, self._y)
         return self.graphics_item.pos().y()
 
