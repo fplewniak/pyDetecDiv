@@ -196,6 +196,10 @@ class Scene(QGraphicsScene):
                     self.move_Item(event)
 
     def wheelEvent(self, event: QGraphicsSceneWheelEvent) -> None:
+        """
+        DOES NOT WORK
+        Action triggered by using the mouse wheel
+        """
         match event.modifiers():
             case Qt.KeyboardModifier.ControlModifier:
                 self.viewer.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
@@ -207,6 +211,10 @@ class Scene(QGraphicsScene):
                 self.viewer.setTransformationAnchor(QGraphicsView.ViewportAnchor.NoAnchor)
 
     def delete_item(self, graphics_item: QGraphicsItem) -> None:
+        """
+        remove a graphics item from the scene. The QGraphicsItem object is not deleted though and can be added back to the scene
+        :param graphics_item: the graphics item to remove
+        """
         PyDetecDiv.app.graphic_item_deleted.emit(graphics_item.data(0))
         self.removeItem(graphics_item)
 
@@ -320,7 +328,10 @@ class Scene(QGraphicsScene):
             self.display_Item_size(item)
         return item
 
-    def regions(self):
+    def regions(self) -> list[QGraphicsRectItem]:
+        """
+        the list of regions in the scene
+        """
         return [p for p in self.items() if isinstance(p, QGraphicsRectItem)]
 
     def set_Item_width(self, width: int):
@@ -356,13 +367,12 @@ class Scene(QGraphicsScene):
 
     def add_point(self, event: QGraphicsSceneMouseEvent) -> QGraphicsEllipseItem:
         """
-        Draw or redraw the currently selected Item if it is movable
-
+        Draw a point
         :param event: the mouse press event
         :type event: QGraphicsSceneMouseEvent
         """
         pos = event.scenePos()
-        item = QGraphicsEllipseItem(0, 0, 5, 5)
+        item = QGraphicsEllipseItem(0, 0, 2, 2)
         self.addItem(item)
         item.setPen(self.pen)
         item.setPos(QPointF(pos.x(), pos.y()))
@@ -372,17 +382,28 @@ class Scene(QGraphicsScene):
         item.setSelected(False)
         return item
 
-    def points(self):
+    def points(self) -> list[QGraphicsEllipseItem]:
+        """
+        the list of points in the scene
+        """
         return [p for p in self.items() if isinstance(p, QGraphicsEllipseItem)]
 
-    def layers(self):
+    def layers(self) -> list:
+        """
+        the list of layers in the scene
+        """
         return [l for l in self.items() if isinstance(l, Layer)]
 
-    def _add_item_to_dict(self, item, item_dict):
+    def _add_item_to_dict(self, item, item_dict) -> None:
+        """
+        Adds an item to the item dictionary
+        :param item: the item to add
+        :param item_dict: the item dictionary
+        :return:
+        """
         item_name = item.data(0)
-        if item_name is None:
-            return
-        item_dict[item_name] = ''
+        if item_name is not None:
+            item_dict[item_name] = ''
         # item_name = item.data(0)
         # if item_name is None:
         #     item_name = 'xxx'
@@ -397,7 +418,10 @@ class Scene(QGraphicsScene):
         # for child_item in item.childItems():
         #     self._add_item_to_dict(child_item, item_entry['children'])
 
-    def item_dict(self):
+    def item_dict(self) -> dict:
+        """
+        Returns a dictionary with all items in a scene
+        """
         item_dict = {'layers': {}, 'regions': {}, 'points': {}}
         for item in self.layers():
             self._add_item_to_dict(item, item_dict['layers'])

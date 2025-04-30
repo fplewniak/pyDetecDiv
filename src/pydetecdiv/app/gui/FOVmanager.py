@@ -126,13 +126,15 @@ class FOVmanager(VideoPlayer):
                                    drift=PyDetecDiv.apply_drift, alpha=False).as_array(ImgDType.uint8)
 
     def view_in_new_tab(self, rect: QGraphicsRectItem) -> None:
+        """
+        view a selection in a new tab
+        :param rect: the rectangular selection to view
+        """
         self._view_in_new_tab(rect, VideoPlayer(), scene=Scene())
 
     def _view_in_new_tab(self, rect: QGraphicsRectItem, player: VideoPlayer, scene: Scene = None) -> None:
         """
-        view a selection in a new tab
-
-        :param rect: the rectangular selection
+        view a selection in a new tab with a given player and scene
         """
         video_player = PyDetecDiv.main_window.active_subwindow.widget(
                 PyDetecDiv.main_window.active_subwindow.addTab(player, rect.data(0)))
@@ -156,6 +158,9 @@ class FOVmanager(VideoPlayer):
         video_player.reset()
 
     def open_in_segmentation_tool(self, rect: QGraphicsRectItem) -> None:
+        """
+        open the selected rectangle area (which should actually be a ROI) in the segmentation tool
+        """
         self._view_in_new_tab(rect, SegmentationTool(rect.data(0)), scene=SegmentationScene())
         # PyDetecDiv.main_window.scene_tree_palette.tree_view.setModel(SegmentationTreeModel(['boxes']))
         # PyDetecDiv.main_window.scene_tree_palette.set_top_items([])
@@ -320,7 +325,11 @@ class FOVScene(Scene):
         menu = QMenu()
         view_in_new_tab = menu.addAction("View in new tab")
         open_in_segmentation_tool = menu.addAction("Manual segmentation")
+        open_in_segmentation_tool.setEnabled(False)
         roi = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            if project.get_named_object('ROI', roi.data(0)):
+                open_in_segmentation_tool.setEnabled(True)
         if isinstance(roi, QGraphicsRectItem):
             # view_in_new_tab.triggered.connect(lambda _: self.parent().view_roi_image(r))
             view_in_new_tab.triggered.connect(
@@ -348,5 +357,4 @@ class FOVScene(Scene):
 
         :return: bool
         """
-        return any(
-                [item.pen() in [self.pen, self.match_pen] for item in self.items() if isinstance(item, QGraphicsRectItem)])
+        return any(item.pen() in [self.pen, self.match_pen] for item in self.items() if isinstance(item, QGraphicsRectItem))

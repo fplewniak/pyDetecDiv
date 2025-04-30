@@ -109,7 +109,7 @@ class PromptSourceModel(QStandardItemModel):
         :param entity: the Entity
         """
         for point in entity.points():
-            self.project.commit()
+            # self.project.commit()
             point_item = ModelItem(point.name, point)
             frame_item = QStandardItem(str(point.frame))
             x_item = QStandardItem(f'{point.x:.1f}')
@@ -246,6 +246,7 @@ class PromptSourceModel(QStandardItemModel):
         obj.exit_frame = frame
         print(f'Exit entity {obj.id_} at frame {frame}')
         self.clean_masks(obj)
+        self.clean_prompt(obj)
 
     def add_bounding_box(self, obj: Entity, frame: int, box: QGraphicsRectItem) -> None:
         """
@@ -394,6 +395,19 @@ class PromptSourceModel(QStandardItemModel):
             # if not self.is_present_at_frame(obj, mask.frame):
             if mask.frame < self.key_frames(obj)[0] or mask.frame >= obj.exit_frame:
                 self.remove_mask(obj, mask.frame)
+
+    def clean_prompt(self, entity: Entity) -> None:
+        """
+        Removes the bounding boxes and points for entity that may have been defined in frames after the exit frame
+
+        :param entity: the Entity
+        """
+        for bounding_box in self.get_bounding_boxes(entity):
+            if bounding_box.frame >= entity.exit_frame:
+                self.remove_bounding_box(entity, bounding_box.frame)
+        for point in self.get_points(entity):
+            if point.frame >= entity.exit_frame:
+                self.remove_point(entity, point.graphics_item, point.frame)
 
     def add_point(self, obj: Entity, frame: int, point: QGraphicsEllipseItem, label: int = 1) -> None:
         """
