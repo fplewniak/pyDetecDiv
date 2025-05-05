@@ -391,7 +391,8 @@ class PromptSourceModel(QStandardItemModel):
 
         :param obj: the object
         """
-        for mask in self.get_masks(obj):
+        # for mask in self.get_masks(obj):
+        for mask in obj.masks():
             # if not self.is_present_at_frame(obj, mask.frame):
             if mask.frame < self.key_frames(obj)[0] or mask.frame >= obj.exit_frame:
                 self.remove_mask(obj, mask.frame)
