@@ -543,7 +543,7 @@ class SegmentationTool(VideoPlayer):
         for frame in range(self.viewer.background.image.image_resource_data.sizeT):
             self.change_frame(frame)
             # self.viewer.background.image.change_frame(frame)
-            self.viewer.background.image.pixmap().toImage().save(f'{video_dir}/{frame:05d}.jpg', format='jpg')
+            self.viewer.background.image.pixmap().toImage().save(f'{video_dir}/{frame:05d}.jpg', format='jpg', quality=100)
 
     def change_frame(self, T: int = 0, force_redraw=False) -> None:
         """
