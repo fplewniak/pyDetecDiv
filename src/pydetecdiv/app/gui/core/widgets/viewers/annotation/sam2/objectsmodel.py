@@ -222,13 +222,15 @@ class PromptSourceModel(QStandardItemModel):
             self.remove_point(obj, point.graphics_item)
             del point
 
-        for box in self.get_bounding_boxes(obj):
+        # for box in self.get_bounding_boxes(obj):
+        for box in obj.bounding_boxes():
             if box.graphics_item.scene() is not None:
                 box.graphics_item.scene().removeItem(box.graphics_item)
                 del box.graphics_item
                 del box
 
-        for point in self.get_points(obj):
+        # for point in self.get_points(obj):
+        for point in obj.points():
             if point.graphics_item.scene() is not None:
                 point.graphics_item.scene().removeItem(point.graphics_item)
                 del point.graphics_item
@@ -288,8 +290,8 @@ class PromptSourceModel(QStandardItemModel):
         :param frame: the frame
         :param box: the new bounding box
         """
-        bounding_box = self.get_bounding_box(obj, frame)
-        # print(f'{obj.name=}, {frame=}: {bounding_box=} {box=}')
+        # bounding_box = self.get_bounding_box(obj, frame)
+        bounding_box = obj.bounding_box(frame)
         if bounding_box is not None:
             # if box != bounding_box.graphics_item:
             bounding_box.graphics_item.scene().removeItem(bounding_box.graphics_item)
@@ -299,15 +301,15 @@ class PromptSourceModel(QStandardItemModel):
         else:
             self.add_bounding_box(obj, frame, box)
 
-    def get_bounding_box(self, obj: Entity, frame: int) -> BoundingBox | None:
-        """
-        retrieve the bounding for object in specified frame
-        :param obj: the object
-        :param frame: the frame
-        :return: the BoundingBox object
-        """
-        return next((child.object for child in self.object_item(obj).children(frame) if isinstance(child.object, BoundingBox)),
-                    None)
+    # def get_bounding_box(self, obj: Entity, frame: int) -> BoundingBox | None:
+    #     """
+    #     retrieve the bounding for object in specified frame
+    #     :param obj: the object
+    #     :param frame: the frame
+    #     :return: the BoundingBox object
+    #     """
+    #     return next((child.object for child in self.object_item(obj).children(frame) if isinstance(child.object, BoundingBox)),
+    #                 None)
 
     def get_bounding_box_row(self, obj: Entity, frame: int) -> int:
         """
@@ -319,21 +321,21 @@ class PromptSourceModel(QStandardItemModel):
         return next((child.row() for child in self.object_item(obj).children(frame) if isinstance(child.object, BoundingBox)),
                     None)
 
-    def get_bounding_boxes(self, obj: Entity) -> list[BoundingBox]:
-        """
-        retrieve the bounding boxes of an object for all frame
-        :param obj: the object
-        :return: the list of all bounding boxes
-        """
-        return [child.object for child in self.object_item(obj).children() if isinstance(child.object, BoundingBox)]
-
-    def get_bounding_box_items(self, obj: Entity) -> list[ModelItem]:
-        """
-        retrieve the model items for bounding boxes of an object for all frame
-        :param obj: the object
-        :return: the list of model items
-        """
-        return [child for child in self.object_item(obj).children() if isinstance(child.object, BoundingBox)]
+    # def get_bounding_boxes(self, obj: Entity) -> list[BoundingBox]:
+    #     """
+    #     retrieve the bounding boxes of an object for all frame
+    #     :param obj: the object
+    #     :return: the list of all bounding boxes
+    #     """
+    #     return [child.object for child in self.object_item(obj).children() if isinstance(child.object, BoundingBox)]
+    #
+    # def get_bounding_box_items(self, obj: Entity) -> list[ModelItem]:
+    #     """
+    #     retrieve the model items for bounding boxes of an object for all frame
+    #     :param obj: the object
+    #     :return: the list of model items
+    #     """
+    #     return [child for child in self.object_item(obj).children() if isinstance(child.object, BoundingBox)]
 
     def remove_bounding_box(self, obj: Entity, frame: int) -> None:
         """
@@ -341,8 +343,8 @@ class PromptSourceModel(QStandardItemModel):
         :param obj: the object
         :param frame: the frame
         """
-        bounding_box = self.get_bounding_box(obj, frame)
-        # print(f'{obj=}, {frame=}, {bounding_box=}')
+        # bounding_box = self.get_bounding_box(obj, frame)
+        bounding_box = obj.bounding_box(frame)
         if bounding_box is not None:
             if bounding_box.graphics_item.scene() is not None:
                 bounding_box.graphics_item.scene().removeItem(bounding_box.graphics_item)
@@ -374,7 +376,8 @@ class PromptSourceModel(QStandardItemModel):
         :param obj: the object
         :param frame: the frame
         """
-        mask = self.get_mask(obj, frame)
+        # mask = self.get_mask(obj, frame)
+        mask = obj.mask(frame)
         if mask is not None:
             if mask.graphics_item.scene() is not None:
                 mask.graphics_item.scene().removeItem(mask.graphics_item)
@@ -403,10 +406,12 @@ class PromptSourceModel(QStandardItemModel):
 
         :param entity: the Entity
         """
-        for bounding_box in self.get_bounding_boxes(entity):
+        # for bounding_box in self.get_bounding_boxes(entity):
+        for bounding_box in entity.bounding_boxes():
             if bounding_box.frame >= entity.exit_frame:
                 self.remove_bounding_box(entity, bounding_box.frame)
-        for point in self.get_points(entity):
+        # for point in self.get_points(entity):
+        for point in entity.points():
             if point.frame >= entity.exit_frame:
                 self.remove_point(entity, point.graphics_item, point.frame)
 
@@ -464,29 +469,29 @@ class PromptSourceModel(QStandardItemModel):
         return next((item.object for item in self.object_item(obj).children(frame) if item.object.graphics_item == graphics_item),
                     None)
 
-    def get_points(self, obj: Entity, frame: int | None = None) -> list[Point]:
-        """
-        retrieve the points of an object in one specific frame, or all frames (if frame is None)
-        :param obj: the object
-        :param frame: the frame
-        :return: the list of Points
-        """
-        points = [child.object for child in self.object_item(obj).children(frame) if isinstance(child.object, Point)]
-        if points:
-            return points
-        return []
+    # def get_points(self, obj: Entity, frame: int | None = None) -> list[Point]:
+    #     """
+    #     retrieve the points of an object in one specific frame, or all frames (if frame is None)
+    #     :param obj: the object
+    #     :param frame: the frame
+    #     :return: the list of Points
+    #     """
+    #     points = [child.object for child in self.object_item(obj).children(frame) if isinstance(child.object, Point)]
+    #     if points:
+    #         return points
+    #     return []
 
-    def get_point_items(self, obj: Entity, frame: int | None = None) -> list[ModelItem]:
-        """
-        retrieve the model items for points of an object in one specific frame, or all frames (if frame is None)
-        :param obj:
-        :param frame:
-        :return:
-        """
-        point_items = [child for child in self.object_item(obj).children(frame) if isinstance(child.object, Point)]
-        if point_items:
-            return point_items
-        return []
+    # def get_point_items(self, obj: Entity, frame: int | None = None) -> list[ModelItem]:
+    #     """
+    #     retrieve the model items for points of an object in one specific frame, or all frames (if frame is None)
+    #     :param obj:
+    #     :param frame:
+    #     :return:
+    #     """
+    #     point_items = [child for child in self.object_item(obj).children(frame) if isinstance(child.object, Point)]
+    #     if point_items:
+    #         return point_items
+    #     return []
 
     def set_mask(self, obj: Entity, frame: int, mask: QGraphicsPolygonItem) -> None:
         """
@@ -559,7 +564,8 @@ class PromptSourceModel(QStandardItemModel):
     def get_all_masks(self):
         frames = {}
         for entity in self.objects:
-            for mask in self.get_masks(entity):
+            # for mask in self.get_masks(entity):
+            for mask in entity.masks():
                 f = str(mask.frame)
                 if f not in frames:
                     frames[f] = []
@@ -585,8 +591,10 @@ class PromptSourceModel(QStandardItemModel):
         :param frame: the frame
         :return: the prompt as a dictionary
         """
-        box = self.get_bounding_box(obj, frame)
-        points = self.get_points(obj, frame)
+        # box = self.get_bounding_box(obj, frame)
+        box = obj.bounding_box(frame)
+        # points = self.get_points(obj, frame)
+        points = obj.points(frame=frame)
         if box is not None or points:
             prompt = {}
             if box is not None:
@@ -676,38 +684,38 @@ class PromptSourceModel(QStandardItemModel):
         """
         return int(self.itemFromIndex(self.sibling(item.row(), 1, item.index())).data(0))
 
-    def box2obj(self, box: QGraphicsRectItem) -> Entity | None:
-        """
-        retrieve the object corresponding to the specified bounding box
-        :param box: the bounding box
-        :return: the object
-        """
-        for obj in self.objects:
-            if box in [b.graphics_item for b in self.get_bounding_boxes(obj)]:
-                return obj
-        return None
-
-    def point2obj(self, point: QGraphicsEllipseItem) -> Entity | None:
-        """
-        retrieve the object corresponding to the specified point
-        :param point: the point
-        :return: the object
-        """
-        for obj in self.objects:
-            if self.get_points(obj) and point in [p.graphics_item for p in self.get_points(obj)]:
-                return obj
-        return None
-
-    def mask2obj(self, mask: QGraphicsPolygonItem | QGraphicsEllipseItem) -> Entity | None:
-        """
-        retrieve the object corresponding to the specified bounding mask
-        :param mask: the mask
-        :return: the object
-        """
-        for obj in self.objects:
-            if mask in [m.graphics_item for m in self.get_masks(obj)]:
-                return obj
-        return None
+    # def box2obj(self, box: QGraphicsRectItem) -> Entity | None:
+    #     """
+    #     retrieve the object corresponding to the specified bounding box
+    #     :param box: the bounding box
+    #     :return: the object
+    #     """
+    #     for obj in self.objects:
+    #         if box in [b.graphics_item for b in obj.bounding_boxes()]:
+    #             return obj
+    #     return None
+    #
+    # def point2obj(self, point: QGraphicsEllipseItem) -> Entity | None:
+    #     """
+    #     retrieve the object corresponding to the specified point
+    #     :param point: the point
+    #     :return: the object
+    #     """
+    #     for obj in self.objects:
+    #         if self.get_points(obj) and point in [p.graphics_item for p in self.get_points(obj)]:
+    #             return obj
+    #     return None
+    #
+    # def mask2obj(self, mask: QGraphicsPolygonItem | QGraphicsEllipseItem) -> Entity | None:
+    #     """
+    #     retrieve the object corresponding to the specified bounding mask
+    #     :param mask: the mask
+    #     :return: the object
+    #     """
+    #     for obj in self.objects:
+    #         if mask in [m.graphics_item for m in self.get_masks(obj)]:
+    #             return obj
+    #     return None
 
     def get_all_prompt_items(self, objects: list[Entity] | None = None, frame: int | None = None) -> tuple[
         list[BoundingBox], list[Point], list[Mask]]:
@@ -725,22 +733,30 @@ class PromptSourceModel(QStandardItemModel):
         # masks = [self.get_mask(obj, frame) for obj in objects if self.get_mask(obj, frame) is not None]
         masks = []
         for obj in objects:
-            if frame is None:
-                boxes_list = self.get_bounding_boxes(obj)
-                masks_list = self.get_masks(obj)
-            else:
-                box = self.get_bounding_box(obj, frame)
-                mask = self.get_mask(obj, frame)
-                boxes_list = [self.get_bounding_box(obj, frame)] if box is not None else None
-                masks_list = [self.get_mask(obj, frame)] if mask is not None else None
-            point_list = self.get_points(obj, frame)
-
-            if boxes_list is not None:
-                boxes += boxes_list
-            if point_list is not None:
-                points += point_list
-            if masks_list is not None:
-                masks += masks_list
+            boxes += obj.bounding_boxes(frame=frame)
+            points += obj.points(frame=frame)
+            masks += obj.masks(frame=frame)
+        # for obj in objects:
+        #     if frame is None:
+        #         boxes_list = obj.bounding_boxes()
+        #         masks_list = obj.masks()
+        #         # boxes_list = self.get_bounding_boxes(obj)
+        #         # masks_list = self.get_masks(obj)
+        #     else:
+        #         # box = self.get_bounding_box(obj, frame)
+        #         # mask = self.get_mask(obj, frame)
+        #         # boxes_list = [self.get_bounding_box(obj, frame)] if box is not None else None
+        #         # masks_list = [self.get_mask(obj, frame)] if mask is not None else None
+        #         boxes_list = [obj.bounding_boxes(frame=frame)] if obj.bounding_boxes(frame=frame) is not None else None
+        #         masks_list = [obj.masks(frame=frame)] if obj.masks(frame=frame) is not None else None
+        #     point_list = self.get_points(obj, frame)
+        #
+        #     if boxes_list is not None:
+        #         boxes += boxes_list
+        #     if point_list is not None:
+        #         points += point_list
+        #     if masks_list is not None:
+        #         masks += masks_list
         return boxes, points, masks
 
     def update_Item(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem, frame: int) -> None:

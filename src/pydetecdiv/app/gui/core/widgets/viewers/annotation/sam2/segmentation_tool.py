@@ -346,6 +346,20 @@ class SegmentationTool(VideoPlayer):
         self.change_frame(self.T, force_redraw=True)
         self.proxy_model.invalidateFilter()
 
+    # def keyPressEvent(self, event: QKeyEvent) -> None:
+    #     """
+    #     Detect when a key is pressed and perform the corresponding action:
+    #     * QKeySequence.Delete: delete the selected item
+    #
+    #     :param event: the key pressed event
+    #     :type event: QKeyEvent
+    #     """
+    #     if event.key() == Qt.Key.Key_Insert:
+    #         project = self.roi.project
+    #         current_object = Entity(project=project, name=f'{project.count_objects("Entity")}', roi=self.roi)
+    #         current_object.name = f'cell_{current_object.id_}'
+    #         project.commit()
+    #         self.add_object(current_object)
     @property
     def contour_method(self) -> int:
         """
@@ -522,8 +536,10 @@ class SegmentationTool(VideoPlayer):
                 if isinstance(obj, (BoundingBox, Point, Mask)):
                     self.scene.select_from_tree_view(obj.graphics_item)
                 elif isinstance(obj, Entity):
-                    if self.source_model.get_bounding_box(obj, self.T) is not None:
-                        self.scene.select_from_tree_view(self.source_model.get_bounding_box(obj, self.T).graphics_item)
+                    # if self.source_model.get_bounding_box(obj, self.T) is not None:
+                    #     self.scene.select_from_tree_view(self.source_model.get_bounding_box(obj, self.T).graphics_item)
+                    if obj.bounding_box(self.T) is not None:
+                        self.scene.select_from_tree_view(obj.bounding_box(self.T).graphics_item)
             elif QGuiApplication.mouseButtons() == Qt.MiddleButton:
                 _ = [r.setSelected(False) for r in self.scene.selectedItems()]
                 if isinstance(obj, Entity):
