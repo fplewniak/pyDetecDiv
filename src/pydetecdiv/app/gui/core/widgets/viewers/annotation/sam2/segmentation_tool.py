@@ -6,6 +6,9 @@ import gc
 import os
 
 import cv2
+import matplotlib.pyplot as plt
+import pandas as pd
+import sqlalchemy
 from PySide6.QtCore import Qt, QModelIndex, QPointF
 from PySide6.QtGui import (QPen, QKeyEvent, QKeySequence, QStandardItem, QCloseEvent, QPolygonF, QBrush, QColor, QGuiApplication,
                            QTransform, QActionGroup, QAction)
@@ -22,7 +25,6 @@ from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer, Vi
 from pydetecdiv.domain.Entity import Entity
 from pydetecdiv.domain.BoundingBox import BoundingBox
 from pydetecdiv.settings import get_config_value
-
 
 class Colours:
     """
@@ -556,10 +558,55 @@ class SegmentationTool(VideoPlayer):
         :param video_dir: the destination directory for the jpg files
         """
         os.makedirs(video_dir, exist_ok=True)
-        for frame in range(self.viewer.background.image.image_resource_data.sizeT):
-            self.change_frame(frame)
-            # self.viewer.background.image.change_frame(frame)
-            self.viewer.background.image.pixmap().toImage().save(f'{video_dir}/{frame:05d}.jpg', format='jpg', quality=100)
+        if self.viewer.background.image.image_resource_data.sizeZ > 2:
+            fov_data = self.get_fov_data(z_layers=(0, 1, 2))
+            y0, y1 = self.roi.y, self.roi.y + self.roi.height
+            x0, x1 = self.roi.x, self.roi.x + self.roi.width
+            for row in fov_data.itertuples():
+                fov_img = cv2.merge([cv2.imread(z_file, cv2.IMREAD_UNCHANGED) for z_file in reversed(row.channel_files)])
+                img = cv2.normalize(fov_img[y0:y1, x0:x1], dst=None, dtype=cv2.CV_8U, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+                cv2.imwrite(os.path.join(video_dir, f'{row.t:05d}.jpg'), img)
+        else:
+            for frame in range(self.viewer.background.image.image_resource_data.sizeT):
+                self.change_frame(frame)
+                # self.viewer.background.image.change_frame(frame)
+                self.viewer.background.image.pixmap().toImage().save(f'{video_dir}/{frame:05d}.jpg', format='jpg', quality=100)
+
+    def get_fov_data(self, z_layers: tuple[int, int, int] = None, channel: int = None) -> pd.DataFrame:
+        """
+        Gets FOV data, i.e. FOV id, time frame and the list of files with the z layers to be used as RGB channels
+
+        :param z_layers: the z layer files to use as RGB channels
+        :param channel: the channel of the original image to be loaded
+        :return: a pandas DataFrame with the FOV data
+        """
+        if z_layers is None:
+            z_layers = (0,)
+        if channel is None:
+            channel = 0
+            # channel = self.parameters['channel']
+
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            results = pd.DataFrame(project.repository.session.execute(
+                    sqlalchemy.text(f"SELECT img.fov, data.t, data.url "
+                                    f"FROM data, ImageResource as img "
+                                    f"WHERE data.image_resource=img.id_ "
+                                    f"AND data.z in {tuple(z_layers)} "
+                                    f"AND data.c={channel} "
+                                    f"ORDER BY img.fov, data.url ASC;")))
+            fov_data = results.groupby(['fov', 't'])['url'].apply(self.layers2channels).reset_index()
+        fov_data.columns = ['fov', 't', 'channel_files']
+        return fov_data
+
+    def layers2channels(self, zfiles) -> list[str]:
+        """
+        Gets the image file names for red, green and blue channels
+
+        :param zfiles: the list of files corresponding to one z layer each
+        :return: the list of zfiles
+        """
+        zfiles = list(zfiles)
+        return [zfiles[i] for i in [0, 1, 2]]
 
     def change_frame(self, T: int = 0, force_redraw=False) -> None:
         """
