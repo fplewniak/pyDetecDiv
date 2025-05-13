@@ -18,7 +18,7 @@ class Mask(NamedDSO):
     def __init__(self, mask_item: QGraphicsPolygonItem = None, frame: int = None, entity: Entity = None, bin_mask=None,
                  key_val: dict = None, **kwargs):
         super().__init__(**kwargs)
-        self.graphics_item = mask_item
+        self._graphics_item = mask_item
         self._ellipse_item = None
         self.frame = frame
         self._entity = entity.id_ if isinstance(entity, Entity) else entity
@@ -27,6 +27,12 @@ class Mask(NamedDSO):
         self.brush = QBrush()
         self.key_val = key_val
         self.validate(updated=False)
+
+    @property
+    def graphics_item(self):
+        if self._graphics_item is None:
+            self.set_graphics_item(self.contour_method)
+        return self._graphics_item
 
     @property
     def bin_mask(self):
@@ -78,7 +84,7 @@ class Mask(NamedDSO):
     @property
     def ellipse_contour(self) -> np.ndarray | None:
         centre, axes, angle = cv2.fitEllipse(self.contour)
-        centre = tuple(map(int, centre)) # Convert to integers
+        centre = tuple(map(int, centre))  # Convert to integers
         axes = tuple(map(int, (axes[0] / 2, axes[1] / 2)))  # radius, not diameter
         ellipse_pts = cv2.ellipse2Poly(center=centre, axes=axes, angle=int(angle), arcStart=0, arcEnd=360, delta=5)
         ellipse_pts = np.array(ellipse_pts, dtype=np.float32)
@@ -121,8 +127,8 @@ class Mask(NamedDSO):
         :param contour_method: the contour approximation method to use
         """
         self.contour_method = contour_method
-        self.graphics_item = self.to_shape()
-        self.graphics_item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
+        self._graphics_item = self.to_shape()
+        self._graphics_item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
         self.setBrush()
 
     def to_shape(self) -> QGraphicsPolygonItem:

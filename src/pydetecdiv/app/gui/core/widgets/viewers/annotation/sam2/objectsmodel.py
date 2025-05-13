@@ -209,34 +209,31 @@ class PromptSourceModel(QStandardItemModel):
         :param obj: the object to remove
         """
         bounding_boxes, points, masks = self.get_all_prompt_items([obj])
-        # print(f'{len(bounding_boxes)}: {bounding_boxes=}')
-        for mask in masks:
-            self.remove_mask(obj, mask.frame)
-            # del mask.out_mask
-            # del mask.graphics_item
-            del mask
         for bounding_box in bounding_boxes:
             self.remove_bounding_box(obj, bounding_box.frame)
             del bounding_box
         for point in points:
             self.remove_point(obj, point.graphics_item)
             del point
-
-        # for box in self.get_bounding_boxes(obj):
-        for box in obj.bounding_boxes():
-            if box.graphics_item.scene() is not None:
-                box.graphics_item.scene().removeItem(box.graphics_item)
-                del box.graphics_item
-                del box
+        for mask in masks:
+            self.remove_mask(obj, mask.frame)
+            del mask
+        # # for box in self.get_bounding_boxes(obj):
+        # for box in obj.bounding_boxes():
+        #     if box.graphics_item.scene() is not None:
+        #         box.graphics_item.scene().removeItem(box.graphics_item)
+        #         del box.graphics_item
+        #         del box
 
         # for point in self.get_points(obj):
-        for point in obj.points():
-            if point.graphics_item.scene() is not None:
-                point.graphics_item.scene().removeItem(point.graphics_item)
-                del point.graphics_item
-                del point
+        # for point in obj.points():
+        #     if point.graphics_item.scene() is not None:
+        #         point.graphics_item.scene().removeItem(point.graphics_item)
+        #         del point.graphics_item
+        #         del point
         self.root_item.removeRow(self.object_item(obj).row())
         obj.delete()
+        self.project.commit()
         del obj
 
     def object_exit(self, obj: Entity, frame: int) -> None:
