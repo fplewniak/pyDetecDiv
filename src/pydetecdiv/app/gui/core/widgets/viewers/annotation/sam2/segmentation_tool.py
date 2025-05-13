@@ -343,6 +343,7 @@ class SegmentationTool(VideoPlayer):
         self.TCL1_approximation = None
         self.TCKCOS_approximation = None
         self.display_ellipses = None
+        self.show_masks = None
 
     def reset(self):
         self.change_frame(self.T, force_redraw=True)
@@ -463,9 +464,15 @@ class SegmentationTool(VideoPlayer):
         self.display_ellipses.setCheckable(True)
         maskApproximation.addAction(self.display_ellipses)
         self.simple_approximation.setChecked(True)
+        view_menu = menubar.addMenu('View')
+        self.show_masks = QAction('Show masks')
+        self.show_masks.setCheckable(True)
+        self.show_masks.setChecked(True)
+        view_menu.addAction(self.show_masks)
 
         self.method_group.triggered.connect(self.redraw_scene)
         self.display_ellipses.toggled.connect(self.redraw_scene)
+        self.show_masks.toggled.connect(self.redraw_scene)
         return menubar
 
     def setup(self, menubar: QMenuBar = None) -> None:
@@ -635,10 +642,15 @@ class SegmentationTool(VideoPlayer):
             self.scene.addItem(point.graphics_item)
         for mask in masks:
             mask.set_graphics_item(self.contour_method)
-            mask.setBrush(QBrush(Colours.palette[int(mask.entity.id_) % len(Colours.palette) - 1]))
+            if self.show_masks.isChecked():
+                mask.setBrush(QBrush(Colours.palette[int(mask.entity.id_) % len(Colours.palette) - 1]))
+            else:
+                mask.setBrush(QBrush())
             if self.display_ellipses.isChecked():
+                mask.ellipse_item.setPen(QPen(Colours.palette[int(mask.entity.id_) % len(Colours.palette) - 1]))
                 self.scene.addItem(mask.ellipse_item)
             else:
+                mask.graphics_item.setPen(QPen(Colours.palette[int(mask.entity.id_) % len(Colours.palette) - 1]))
                 self.scene.addItem(mask.graphics_item)
 
     def closeEvent(self, event: QCloseEvent) -> None:
