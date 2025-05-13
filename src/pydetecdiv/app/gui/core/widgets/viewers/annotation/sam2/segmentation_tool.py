@@ -608,12 +608,14 @@ class SegmentationTool(VideoPlayer):
         zfiles = list(zfiles)
         return [zfiles[i] for i in [0, 1, 2]]
 
-    def change_frame(self, T: int = 0, force_redraw=False) -> None:
+    def change_frame(self, T: int = 0, force_redraw: bool = False, **kwargs) -> None:
         """
         Change the frame of the video
+        :param force_redraw: force redrawing the frame if True
         :param T: the new frame time index
         """
-        super().change_frame(T=T, force_redraw=force_redraw)
+        z_layers = [0, 1, 2] if self.viewer.background.image.image_resource_data.sizeZ > 2 else self.viewer.background.Z
+        super().change_frame(T=T, force_redraw=force_redraw, Z=z_layers)
         self.redraw_scene()
 
     def redraw_scene(self) -> None:

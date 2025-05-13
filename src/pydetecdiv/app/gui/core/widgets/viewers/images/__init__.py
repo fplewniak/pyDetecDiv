@@ -48,7 +48,7 @@ class ImageViewer(GraphicsView):
         self.image_resource_data = image_resource_data
         return self.background.setImage(image_resource_data, C=C, T=T, Z=Z, crop=crop)
 
-    def display(self, T: int = None):
+    def display(self, T: int = None, **kwargs):
         """
         Display the viewer at a given time frame
 
@@ -56,7 +56,7 @@ class ImageViewer(GraphicsView):
         """
         for layer in self.layers:
             if layer.image:
-                layer.image.display(T=T)
+                layer.image.display(T=T, **kwargs)
                 
     def setup(self, scene: QGraphicsScene = None) -> None:
         super().setup(scene=scene)

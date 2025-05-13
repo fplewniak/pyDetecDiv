@@ -237,7 +237,7 @@ class VideoPlayer(QWidget):
             self.speed = speed
             # self.ui.FPS.setText(f'FPS: {speed}')
 
-    def change_frame(self, T: int = 0, force_redraw: bool = False) -> None:
+    def change_frame(self, T: int = 0, force_redraw: bool = False, **kwargs) -> None:
         """
         Change the current frame to the specified time index and refresh the display
 
@@ -249,7 +249,7 @@ class VideoPlayer(QWidget):
             self.video_frame.emit(self.T)
             self.control_panel.video_control.t_slider.setValue(self.T)
             self.control_panel.video_control.t_set.setText(str(self.T))
-            self.viewer.display(T=self.T)
+            self.viewer.display(T=self.T, **kwargs)
             # self.viewer.scene().update()
 
     def pause_video(self) -> None:
