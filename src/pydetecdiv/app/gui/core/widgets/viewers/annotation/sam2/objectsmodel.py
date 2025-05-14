@@ -844,7 +844,7 @@ class ObjectsTreeView(QTreeView):
                 object_exit.triggered.connect(self.object_exit)
                 cancel_exit = menu.addAction("Cancel exit frame")
                 cancel_exit.triggered.connect(self.cancel_exit)
-                delete_object = menu.addAction("Delete object")
+                delete_object = menu.addAction("Delete entity")
                 delete_object.triggered.connect(self.delete_object)
             menu.exec(self.viewport().mapToGlobal(event.pos()))
 
