@@ -587,19 +587,23 @@ class SegmentationTool(VideoPlayer):
         :param video_dir: the destination directory for the jpg files
         """
         os.makedirs(video_dir, exist_ok=True)
-        if self.viewer.background.image.image_resource_data.sizeZ > 2:
-            fov_data = self.get_fov_data(z_layers=(0, 1, 2))
-            y0, y1 = self.roi.y, self.roi.y + self.roi.height
-            x0, x1 = self.roi.x, self.roi.x + self.roi.width
-            for row in fov_data.itertuples():
-                fov_img = cv2.merge([cv2.imread(z_file, cv2.IMREAD_UNCHANGED) for z_file in reversed(row.channel_files)])
-                img = cv2.normalize(fov_img[y0:y1, x0:x1], dst=None, dtype=cv2.CV_8U, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
-                cv2.imwrite(os.path.join(video_dir, f'{row.t:05d}.jpg'), img)
-        else:
-            for frame in range(self.viewer.background.image.image_resource_data.sizeT):
-                self.change_frame(frame)
-                # self.viewer.background.image.change_frame(frame)
-                self.viewer.background.image.pixmap().toImage().save(f'{video_dir}/{frame:05d}.jpg', format='jpg', quality=100)
+        for frame in range(self.viewer.background.image.image_resource_data.sizeT):
+            self.change_frame(frame)
+            self.viewer.background.image.pixmap().toImage().save(f'{video_dir}/{frame:05d}.jpg', format='jpg', quality=100)
+
+        # if self.viewer.background.image.image_resource_data.sizeZ > 2:
+        #     fov_data = self.get_fov_data(z_layers=(0, 1, 2))
+        #     y0, y1 = self.roi.y, self.roi.y + self.roi.height
+        #     x0, x1 = self.roi.x, self.roi.x + self.roi.width
+        #     for row in fov_data.itertuples():
+        #         fov_img = cv2.merge([cv2.imread(z_file, cv2.IMREAD_UNCHANGED) for z_file in reversed(row.channel_files)])
+        #         img = cv2.normalize(fov_img[y0:y1, x0:x1], dst=None, dtype=cv2.CV_8U, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+        #         cv2.imwrite(os.path.join(video_dir, f'{row.t:05d}.jpg'), img)
+        # else:
+        #     for frame in range(self.viewer.background.image.image_resource_data.sizeT):
+        #         self.change_frame(frame)
+        #         # self.viewer.background.image.change_frame(frame)
+        #         self.viewer.background.image.pixmap().toImage().save(f'{video_dir}/{frame:05d}.jpg', format='jpg', quality=100)
 
     def get_fov_data(self, z_layers: tuple[int, int, int] = None, channel: int = None) -> pd.DataFrame:
         """

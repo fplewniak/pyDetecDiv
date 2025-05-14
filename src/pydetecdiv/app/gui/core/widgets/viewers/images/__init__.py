@@ -54,9 +54,10 @@ class ImageViewer(GraphicsView):
 
         :param T: the time frame index
         """
-        for layer in self.layers:
+        self.layers[0].image.display(T=T, C=0, **kwargs)
+        for layer in self.layers[1:]:
             if layer.image:
-                layer.image.display(T=T, **kwargs)
+                layer.image.display(T=T)
                 
     def setup(self, scene: QGraphicsScene = None) -> None:
         super().setup(scene=scene)
