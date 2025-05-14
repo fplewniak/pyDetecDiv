@@ -502,7 +502,7 @@ class PromptSourceModel(QStandardItemModel):
         if current_mask is None:
             self.add_mask(obj, frame, mask)
         else:
-            current_mask.graphics_item = mask
+            current_mask._graphics_item = mask
             current_mask.ellipse_item = None
 
     def add_mask(self, obj: Entity, frame: int, mask: QGraphicsPolygonItem):
