@@ -243,6 +243,7 @@ class VideoPlayer(QWidget):
 
         :param T:
         """
+        T = min(max(T, 0), self.viewer.background.image.image_resource_data.sizeT - 1)
         if force_redraw or self.T != T:
             self.T = T
             self.time_display.setText(self.elapsed_time)
