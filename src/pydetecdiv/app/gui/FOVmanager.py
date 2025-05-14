@@ -108,6 +108,7 @@ class FOVmanager(VideoPlayer):
             rect_item.setPos(QPoint(roi.x, roi.y))
             rect_item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
             rect_item.setData(0, roi.name)
+            rect_item.setZValue(len(self.viewer.layers))
         PyDetecDiv.app.other_scene_in_focus.emit(self.scene)
 
     def get_roi_image(self, roi: QGraphicsRectItem) -> np.ndarray:
