@@ -110,12 +110,13 @@ class SegmentationScene(VideoScene):
         if event.matches(QKeySequence.StandardKey.Delete):
             for r in self.selectedItems():
                 self.delete_item(r)
-        elif event.key() == Qt.Key.Key_Insert:
-            project = self.player.roi.project
-            current_object = Entity(project=project, name=f'{project.count_objects("Entity")}', roi=self.player.roi)
-            current_object.name = f'cell_{current_object.id_}'
-            project.commit()
-            self.player.add_object(current_object)
+        # elif event.key() == Qt.Key.Key_Insert:
+        #     self.player.create_entity()
+            # project = self.player.roi.project
+            # current_object = Entity(project=project, name=f'{project.count_objects("Entity")}', roi=self.player.roi)
+            # current_object.name = f'cell_{current_object.id_}'
+            # project.commit()
+            # self.player.add_object(current_object)
 
     def select_from_tree_view(self, graphics_item: QGraphicsItem) -> None:
         """
@@ -430,6 +431,13 @@ class SegmentationTool(VideoPlayer):
         self.proxy_model.invalidateFilter()
         return new_item
 
+    def create_entity(self) -> ModelItem:
+        project = self.roi.project
+        current_object = Entity(project=project, name=f'{project.count_objects("Entity")}', roi=self.roi)
+        current_object.name = f'cell_{current_object.id_}'
+        project.commit()
+        return self.add_object(current_object)
+
     def create_menubar(self) -> QMenuBar | None:
         """
         Create the menu bar for Segmentation tool
@@ -441,6 +449,10 @@ class SegmentationTool(VideoPlayer):
         self.export_masks_action = QAction('Export masks in YOLO format')
         self.export_masks_action.triggered.connect(self.export_masks)
         fileMenu.addAction(self.export_masks_action)
+        entities = menubar.addMenu('Entities')
+        self.new_entity = QAction('Create a new entity')
+        self.new_entity.setShortcut(Qt.Key.Key_Insert)
+        entities.addAction(self.new_entity)
         maskApproximation = menubar.addMenu('Mask approximation')
         self.method_group = QActionGroup(maskApproximation)
         self.no_approximation = QAction('No approximation')
@@ -468,11 +480,21 @@ class SegmentationTool(VideoPlayer):
         self.show_masks = QAction('Show masks')
         self.show_masks.setCheckable(True)
         self.show_masks.setChecked(True)
+        self.show_masks.setShortcut('M')
         view_menu.addAction(self.show_masks)
+        self.next_frame = QAction('Next frame')
+        self.next_frame.setShortcut(QKeySequence.StandardKey.MoveToNextChar)
+        self.prev_frame = QAction('Previous frame')
+        self.prev_frame.setShortcut(QKeySequence.StandardKey.MoveToPreviousChar)
+        view_menu.addAction(self.next_frame)
+        view_menu.addAction(self.prev_frame)
 
         self.method_group.triggered.connect(self.redraw_scene)
         self.display_ellipses.toggled.connect(self.redraw_scene)
         self.show_masks.toggled.connect(self.redraw_scene)
+        self.next_frame.triggered.connect(lambda _: self.change_frame(T=self.T + 1))
+        self.prev_frame.triggered.connect(lambda _: self.change_frame(T=self.T - 1))
+        self.new_entity.triggered.connect(self.create_entity)
         return menubar
 
     def setup(self, menubar: QMenuBar = None) -> None:
