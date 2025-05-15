@@ -11,7 +11,7 @@ import pandas as pd
 import sqlalchemy
 from PySide6.QtCore import Qt, QModelIndex, QPointF
 from PySide6.QtGui import (QPen, QKeyEvent, QKeySequence, QStandardItem, QCloseEvent, QPolygonF, QBrush, QColor, QGuiApplication,
-                           QTransform, QActionGroup, QAction)
+                           QTransform, QActionGroup, QAction, QImage, QPainter)
 from PySide6.QtWidgets import (QGraphicsSceneMouseEvent, QMenu, QWidget, QGraphicsEllipseItem, QMenuBar, QVBoxLayout, QLabel,
                                QHBoxLayout, QSplitter, QGraphicsRectItem, QGraphicsItem, QGraphicsPolygonItem, QSizePolicy)
 import torch.cuda
@@ -587,9 +587,18 @@ class SegmentationTool(VideoPlayer):
         :param video_dir: the destination directory for the jpg files
         """
         os.makedirs(video_dir, exist_ok=True)
+        # for frame in range(self.viewer.background.image.image_resource_data.sizeT):
+        #     self.change_frame(frame)
+        #     self.viewer.background.image.pixmap().toImage().save(f'{video_dir}/{frame:05d}.jpg', format='jpg', quality=100)
+
         for frame in range(self.viewer.background.image.image_resource_data.sizeT):
             self.change_frame(frame)
-            self.viewer.background.image.pixmap().toImage().save(f'{video_dir}/{frame:05d}.jpg', format='jpg', quality=100)
+            image = self.viewer.background.image.pixmap().toImage().convertToFormat(QImage.Format_RGB32)
+            painter = QPainter(image)
+            painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+            _ = [painter.drawPixmap(0, 0, layer.image.pixmap()) for layer in self.viewer.layers[1:]]
+            painter.end()
+            image.save(f'{video_dir}/{frame:05d}.jpg', format='jpg', quality=100)
 
         # if self.viewer.background.image.image_resource_data.sizeZ > 2:
         #     fov_data = self.get_fov_data(z_layers=(0, 1, 2))
