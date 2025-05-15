@@ -26,6 +26,7 @@ from pydetecdiv.domain.Entity import Entity
 from pydetecdiv.domain.BoundingBox import BoundingBox
 from pydetecdiv.settings import get_config_value
 
+
 class Colours:
     """
     Colour definition for brushes used to display Mask graphics items
@@ -63,12 +64,14 @@ class Colours:
         QColor(128, 0, 64, 100),
         ]
 
+
 class Categories:
     """
     Entity default categories
     """
     cell = ['background', 'cell']
     mother_daughter = ['background', 'mother', 'daughter']
+
 
 class SegmentationScene(VideoScene):
     """
@@ -112,11 +115,11 @@ class SegmentationScene(VideoScene):
                 self.delete_item(r)
         # elif event.key() == Qt.Key.Key_Insert:
         #     self.player.create_entity()
-            # project = self.player.roi.project
-            # current_object = Entity(project=project, name=f'{project.count_objects("Entity")}', roi=self.player.roi)
-            # current_object.name = f'cell_{current_object.id_}'
-            # project.commit()
-            # self.player.add_object(current_object)
+        # project = self.player.roi.project
+        # current_object = Entity(project=project, name=f'{project.count_objects("Entity")}', roi=self.player.roi)
+        # current_object.name = f'cell_{current_object.id_}'
+        # project.commit()
+        # self.player.add_object(current_object)
 
     def select_from_tree_view(self, graphics_item: QGraphicsItem) -> None:
         """
@@ -350,20 +353,6 @@ class SegmentationTool(VideoPlayer):
         self.change_frame(self.T, force_redraw=True)
         self.proxy_model.invalidateFilter()
 
-    # def keyPressEvent(self, event: QKeyEvent) -> None:
-    #     """
-    #     Detect when a key is pressed and perform the corresponding action:
-    #     * QKeySequence.Delete: delete the selected item
-    #
-    #     :param event: the key pressed event
-    #     :type event: QKeyEvent
-    #     """
-    #     if event.key() == Qt.Key.Key_Insert:
-    #         project = self.roi.project
-    #         current_object = Entity(project=project, name=f'{project.count_objects("Entity")}', roi=self.roi)
-    #         current_object.name = f'cell_{current_object.id_}'
-    #         project.commit()
-    #         self.add_object(current_object)
     @property
     def contour_method(self) -> int:
         """
@@ -668,12 +657,14 @@ class SegmentationTool(VideoPlayer):
         boxes, points, masks = self.source_model.get_all_prompt_items(frame=self.T)
         for box in boxes:
             box.graphics_item.setPen(self.scene.default_pen)
+            box.graphics_item.setZValue(len(self.viewer.layers))
             self.scene.addItem(box.graphics_item)
         for point in points:
             if point.label == 1:
                 point.graphics_item.setPen(self.scene.positive_pen)
             else:
                 point.graphics_item.setPen(self.scene.negative_pen)
+            point.graphics_item.setZValue(len(self.viewer.layers))
             self.scene.addItem(point.graphics_item)
         for mask in masks:
             mask.set_graphics_item(self.contour_method)
@@ -683,9 +674,11 @@ class SegmentationTool(VideoPlayer):
                 mask.setBrush(QBrush())
             if self.display_ellipses.isChecked():
                 mask.ellipse_item.setPen(QPen(Colours.palette[int(mask.entity.id_) % len(Colours.palette) - 1]))
+                mask.ellipse_item.setZValue(len(self.viewer.layers))
                 self.scene.addItem(mask.ellipse_item)
             else:
                 mask.graphics_item.setPen(QPen(Colours.palette[int(mask.entity.id_) % len(Colours.palette) - 1]))
+                mask.graphics_item.setZValue(len(self.viewer.layers))
                 self.scene.addItem(mask.graphics_item)
 
     def closeEvent(self, event: QCloseEvent) -> None:
@@ -851,9 +844,9 @@ class SegmentationTool(VideoPlayer):
                                  'data/SegmentAnything2/videos',
                                  self.roi_name)
         annotation_dir = os.path.join(get_config_value('project', 'workspace'),
-                                 PyDetecDiv.project_name,
-                                 'data/SegmentAnything2/masks',
-                                 self.roi_name)
+                                      PyDetecDiv.project_name,
+                                      'data/SegmentAnything2/masks',
+                                      self.roi_name)
         os.makedirs(annotation_dir, exist_ok=True)
 
         frame_names = [p for p in os.listdir(video_dir) if os.path.splitext(p)[-1] in ['.jpg', 'jpeg', '.JPG', '.JPEG']]
@@ -861,7 +854,7 @@ class SegmentationTool(VideoPlayer):
 
         frames = self.source_model.get_all_masks()
         for frame, masks in frames.items():
-            annotation_path = os.path.join(annotation_dir, os.path.splitext(frame_names[int(frame)])[0]+'.txt')
+            annotation_path = os.path.join(annotation_dir, os.path.splitext(frame_names[int(frame)])[0] + '.txt')
             with open(annotation_path, 'w', encoding='utf-8') as annotation_file:
                 for mask in masks:
                     mask.contour_method = self.contour_method
