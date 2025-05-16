@@ -9,7 +9,7 @@ import cv2
 import matplotlib.pyplot as plt
 import pandas as pd
 import sqlalchemy
-from PySide6.QtCore import Qt, QModelIndex, QPointF
+from PySide6.QtCore import Qt, QModelIndex, QPointF, QRect
 from PySide6.QtGui import (QPen, QKeyEvent, QKeySequence, QStandardItem, QCloseEvent, QPolygonF, QBrush, QColor, QGuiApplication,
                            QTransform, QActionGroup, QAction, QImage, QPainter)
 from PySide6.QtWidgets import (QGraphicsSceneMouseEvent, QMenu, QWidget, QGraphicsEllipseItem, QMenuBar, QVBoxLayout, QLabel,
@@ -450,8 +450,8 @@ class SegmentationTool(VideoPlayer):
         self.new_entity.setShortcut(Qt.Key.Key_Insert)
         entities.addAction(self.new_entity)
 
-        maskApproximation = menubar.addMenu('Mask approximation')
-        self.method_group = QActionGroup(maskApproximation)
+        maskMenu = menubar.addMenu('Masks')
+        self.method_group = QActionGroup(maskMenu)
         self.no_approximation = QAction('No approximation')
         self.no_approximation.setActionGroup(self.method_group)
         self.no_approximation.setCheckable(True)
@@ -464,15 +464,20 @@ class SegmentationTool(VideoPlayer):
         self.TCKCOS_approximation = QAction('Teh Chin KCOS approximation')
         self.TCKCOS_approximation.setActionGroup(self.method_group)
         self.TCKCOS_approximation.setCheckable(True)
-        maskApproximation.addAction(self.no_approximation)
-        maskApproximation.addAction(self.simple_approximation)
-        maskApproximation.addAction(self.TCL1_approximation)
-        maskApproximation.addAction(self.TCKCOS_approximation)
-        maskApproximation.addSeparator()
+        maskMenu.addAction(self.no_approximation)
+        maskMenu.addAction(self.simple_approximation)
+        maskMenu.addAction(self.TCL1_approximation)
+        maskMenu.addAction(self.TCKCOS_approximation)
+        maskMenu.addSeparator()
         self.display_ellipses = QAction('Fit ellipse')
         self.display_ellipses.setCheckable(True)
-        maskApproximation.addAction(self.display_ellipses)
+        maskMenu.addAction(self.display_ellipses)
         self.simple_approximation.setChecked(True)
+        maskMenu.addSeparator()
+        self.confirm_mask_bbox = QAction('Validate bounding box')
+        maskMenu.addAction(self.confirm_mask_bbox)
+        self.confirm_mask_bbox.setShortcut(Qt.Key.Key_Space)
+        self.confirm_mask_bbox.triggered.connect(self.bounding_box_from_mask)
 
         view_menu = menubar.addMenu('View')
         self.show_masks = QAction('Show masks')
@@ -485,6 +490,7 @@ class SegmentationTool(VideoPlayer):
         self.show_bf.setChecked(False)
         self.show_bf.setShortcut('B')
         view_menu.addAction(self.show_bf)
+        view_menu.addSeparator()
         self.next_frame = QAction('Next frame')
         self.next_frame.setShortcut(QKeySequence.StandardKey.MoveToNextChar)
         self.prev_frame = QAction('Previous frame')
@@ -851,6 +857,22 @@ class SegmentationTool(VideoPlayer):
             if mask_shape.size() > 0:
                 return QGraphicsPolygonItem(mask_shape)
         return None
+
+    def bounding_box_from_mask(self):
+        mask_item = self.current_object.mask(self.T).graphics_item
+        if mask_item.isSelected():
+            bounding_rect = mask_item.boundingRect()
+            item = self.scene.addRect(QRect(0, 0, bounding_rect.width(), bounding_rect.height()))
+            item.setPos(QPointF(bounding_rect.x(), bounding_rect.y()))
+            item.setData(0, f'bounding_box{self.current_object.id_}')
+            item.setPen(self.scene.pen)
+            item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
+            item.setZValue(len(self.viewer.layers))
+
+            if self.current_object.bounding_box(self.T):
+                self.source_model.change_bounding_box(self.current_object, self.T, item)
+            else:
+                self.source_model.add_bounding_box(self.current_object, self.T, item)
 
     def export_masks(self) -> None:
         """
