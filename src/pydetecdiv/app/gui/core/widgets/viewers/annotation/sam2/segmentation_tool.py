@@ -438,10 +438,18 @@ class SegmentationTool(VideoPlayer):
         self.export_masks_action = QAction('Export masks in YOLO format')
         self.export_masks_action.triggered.connect(self.export_masks)
         fileMenu.addAction(self.export_masks_action)
+
+        segmentation = menubar.addMenu('Segmentation')
+        self.segment_video = QAction('Run segmentation on video')
+        segmentation.addAction(self.segment_video)
+        self.segment_video.setShortcut(Qt.Key.Key_Enter)
+        self.segment_video.triggered.connect(self.segment_from_prompt)
+
         entities = menubar.addMenu('Entities')
         self.new_entity = QAction('Create a new entity')
         self.new_entity.setShortcut(Qt.Key.Key_Insert)
         entities.addAction(self.new_entity)
+
         maskApproximation = menubar.addMenu('Mask approximation')
         self.method_group = QActionGroup(maskApproximation)
         self.no_approximation = QAction('No approximation')
@@ -465,6 +473,7 @@ class SegmentationTool(VideoPlayer):
         self.display_ellipses.setCheckable(True)
         maskApproximation.addAction(self.display_ellipses)
         self.simple_approximation.setChecked(True)
+
         view_menu = menubar.addMenu('View')
         self.show_masks = QAction('Show masks')
         self.show_masks.setCheckable(True)
