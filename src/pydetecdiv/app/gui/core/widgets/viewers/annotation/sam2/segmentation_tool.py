@@ -471,6 +471,11 @@ class SegmentationTool(VideoPlayer):
         self.show_masks.setChecked(True)
         self.show_masks.setShortcut('M')
         view_menu.addAction(self.show_masks)
+        self.show_bf = QAction('Bright Field only')
+        self.show_bf.setCheckable(True)
+        self.show_bf.setChecked(False)
+        self.show_bf.setShortcut('B')
+        view_menu.addAction(self.show_bf)
         self.next_frame = QAction('Next frame')
         self.next_frame.setShortcut(QKeySequence.StandardKey.MoveToNextChar)
         self.prev_frame = QAction('Previous frame')
@@ -481,6 +486,7 @@ class SegmentationTool(VideoPlayer):
         self.method_group.triggered.connect(self.redraw_scene)
         self.display_ellipses.toggled.connect(self.redraw_scene)
         self.show_masks.toggled.connect(self.redraw_scene)
+        self.show_bf.toggled.connect(self.redraw_scene)
         self.next_frame.triggered.connect(lambda _: self.change_frame(T=self.T + 1))
         self.prev_frame.triggered.connect(lambda _: self.change_frame(T=self.T - 1))
         self.new_entity.triggered.connect(self.create_entity)
@@ -646,7 +652,8 @@ class SegmentationTool(VideoPlayer):
         :param T: the new frame time index
         """
         z_layers = [0, 1, 2] if self.viewer.background.image.image_resource_data.sizeZ > 2 else self.viewer.background.Z
-        super().change_frame(T=T, force_redraw=force_redraw, Z=z_layers)
+        # super().change_frame(T=T, force_redraw=force_redraw, Z=z_layers)
+        super().change_frame(T=T, force_redraw=force_redraw, Z=z_layers, bg_only=self.show_bf.isChecked())
         self.redraw_scene()
 
     def redraw_scene(self) -> None:
@@ -654,6 +661,8 @@ class SegmentationTool(VideoPlayer):
         Redraw the scene whenever something has changed (current frame, contour approximation method, fit ellipse)
         """
         self.scene.reset_graphics_items()
+        for layer in self.viewer.layers[1:]:
+                layer.setVisible(not self.show_bf.isChecked())
         boxes, points, masks = self.source_model.get_all_prompt_items(frame=self.T)
         for box in boxes:
             box.graphics_item.setPen(self.scene.default_pen)

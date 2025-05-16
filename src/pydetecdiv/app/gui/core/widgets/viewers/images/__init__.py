@@ -48,16 +48,18 @@ class ImageViewer(GraphicsView):
         self.image_resource_data = image_resource_data
         return self.background.setImage(image_resource_data, C=C, T=T, Z=Z, crop=crop)
 
-    def display(self, T: int = None, **kwargs):
+    def display(self, T: int = None, bg_only: bool = False, **kwargs):
         """
         Display the viewer at a given time frame
 
         :param T: the time frame index
+        :param bg_only: if True, display only the background image and no other layer
         """
         self.layers[0].image.display(T=T, C=0, **kwargs)
         for layer in self.layers[1:]:
             if layer.image:
                 layer.image.display(T=T)
+                layer.setVisible(not bg_only)
                 
     def setup(self, scene: QGraphicsScene = None) -> None:
         super().setup(scene=scene)

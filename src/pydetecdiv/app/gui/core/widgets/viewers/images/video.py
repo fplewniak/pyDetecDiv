@@ -49,7 +49,6 @@ class VideoPlayer(QWidget):
         self.tscale = 1
         self.time_display = None
         PyDetecDiv.main_window.active_subwindow.tabBarClicked.connect(self.other_scene_in_focus)
-
         # self.viewer.setViewportUpdateMode(QGraphicsView.NoViewportUpdate)
 
     def reset(self):
@@ -266,14 +265,14 @@ class VideoPlayer(QWidget):
         self.change_frame(T=0)
         self.control_panel.video_control.t_slider.setValue(0)
 
-    def synchronize_with(self, other: 'VideoPlayer') -> None:
+    def synchronize_with(self, other: 'VideoPlayer', **kwargs) -> None:
         """
         Synchronize the current viewer with another one. This is used to view a portion of an image in a new viewer
         with the same T coordinates as the original.
 
         :param other: the other viewer to synchronize with
         """
-        self.change_frame(other.T)
+        self.change_frame(other.T, **kwargs)
         # if self.T != other.T:
         #     self.T = other.T
         #     self.video_frame.emit(self.T)
