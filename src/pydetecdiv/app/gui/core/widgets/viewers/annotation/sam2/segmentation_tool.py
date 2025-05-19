@@ -287,8 +287,9 @@ class SegmentationScene(VideoScene):
         menu = QMenu()
         # frame_segment_action = menu.addAction('Run segmentation on current frame')
         # frame_segment_action.triggered.connect(self.player.segment_from_prompt)
-        video_segment_action = menu.addAction('Run segmentation on video')
-        video_segment_action.triggered.connect(self.player.segment_from_prompt)
+        if self.player.source_model.all_key_frames:
+            video_segment_action = menu.addAction('Run segmentation on video')
+            video_segment_action.triggered.connect(self.player.segment_from_prompt)
         item_at_click = self.itemAt(event.scenePos(), QTransform().scale(1, 1))
         if isinstance(item_at_click, (QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsPolygonItem)):
             self.select_Item(event)
