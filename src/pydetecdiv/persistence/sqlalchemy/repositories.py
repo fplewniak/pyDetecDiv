@@ -163,8 +163,8 @@ class ShallowSQLite3(ShallowDb):
                     record['xdim'], record['ydim'] = img.size
                 self.save_object('Data', record)
                 # urls.append(record['url'])
-        except:
-            raise ImportImagesError('Could not import images')
+        except Exception as error:
+            raise ImportImagesError('Could not import images') from error
         # return urls, process
         return process
 
