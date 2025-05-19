@@ -727,8 +727,9 @@ class SegmentationTool(VideoPlayer):
         del self.mask_logits
         self.video_segments = None
         self.mask_logits = None
-        torch.cuda.empty_cache()
-        torch.cuda.ipc_collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
 
         gc.collect()
 
