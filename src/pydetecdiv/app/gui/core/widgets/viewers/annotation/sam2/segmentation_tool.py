@@ -6,7 +6,6 @@ import gc
 import os
 
 import cv2
-import matplotlib.pyplot as plt
 import pandas as pd
 import sqlalchemy
 from PySide6.QtCore import Qt, QModelIndex, QPointF, QRect
@@ -348,6 +347,12 @@ class SegmentationTool(VideoPlayer):
         self.TCKCOS_approximation = None
         self.display_ellipses = None
         self.show_masks = None
+        self.segment_video = None
+        self.new_entity = None
+        self.confirm_mask_bbox = None
+        self.show_bf = None
+        self.next_frame = None
+        self.prev_frame = None
 
     def reset(self):
         self.change_frame(self.T, force_redraw=True)
@@ -421,6 +426,10 @@ class SegmentationTool(VideoPlayer):
         return new_item
 
     def create_entity(self) -> ModelItem:
+        """
+        Create a new entity and save it to database
+        :return: return the newly created Entity object
+        """
         project = self.roi.project
         current_object = Entity(project=project, name=f'{project.count_objects("Entity")}', roi=self.roi)
         current_object.name = f'cell_{current_object.id_}'
@@ -434,10 +443,10 @@ class SegmentationTool(VideoPlayer):
         """
         menubar = QMenuBar()
         menubar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        fileMenu = menubar.addMenu('File')
+        file_menu = menubar.addMenu('File')
         self.export_masks_action = QAction('Export masks in YOLO format')
         self.export_masks_action.triggered.connect(self.export_masks)
-        fileMenu.addAction(self.export_masks_action)
+        file_menu.addAction(self.export_masks_action)
 
         segmentation = menubar.addMenu('Segmentation')
         self.segment_video = QAction('Run segmentation on video')
@@ -450,8 +459,8 @@ class SegmentationTool(VideoPlayer):
         self.new_entity.setShortcut(Qt.Key.Key_Insert)
         entities.addAction(self.new_entity)
 
-        maskMenu = menubar.addMenu('Masks')
-        self.method_group = QActionGroup(maskMenu)
+        mask_menu = menubar.addMenu('Masks')
+        self.method_group = QActionGroup(mask_menu)
         self.no_approximation = QAction('No approximation')
         self.no_approximation.setActionGroup(self.method_group)
         self.no_approximation.setCheckable(True)
@@ -464,18 +473,18 @@ class SegmentationTool(VideoPlayer):
         self.TCKCOS_approximation = QAction('Teh Chin KCOS approximation')
         self.TCKCOS_approximation.setActionGroup(self.method_group)
         self.TCKCOS_approximation.setCheckable(True)
-        maskMenu.addAction(self.no_approximation)
-        maskMenu.addAction(self.simple_approximation)
-        maskMenu.addAction(self.TCL1_approximation)
-        maskMenu.addAction(self.TCKCOS_approximation)
-        maskMenu.addSeparator()
+        mask_menu.addAction(self.no_approximation)
+        mask_menu.addAction(self.simple_approximation)
+        mask_menu.addAction(self.TCL1_approximation)
+        mask_menu.addAction(self.TCKCOS_approximation)
+        mask_menu.addSeparator()
         self.display_ellipses = QAction('Fit ellipse')
         self.display_ellipses.setCheckable(True)
-        maskMenu.addAction(self.display_ellipses)
+        mask_menu.addAction(self.display_ellipses)
         self.simple_approximation.setChecked(True)
-        maskMenu.addSeparator()
+        mask_menu.addSeparator()
         self.confirm_mask_bbox = QAction('Validate bounding box')
-        maskMenu.addAction(self.confirm_mask_bbox)
+        mask_menu.addAction(self.confirm_mask_bbox)
         self.confirm_mask_bbox.setShortcut(Qt.Key.Key_Space)
         self.confirm_mask_bbox.triggered.connect(self.bounding_box_from_mask)
 
@@ -610,20 +619,6 @@ class SegmentationTool(VideoPlayer):
             painter.end()
             image.save(f'{video_dir}/{frame:05d}.jpg', format='jpg', quality=100)
 
-        # if self.viewer.background.image.image_resource_data.sizeZ > 2:
-        #     fov_data = self.get_fov_data(z_layers=(0, 1, 2))
-        #     y0, y1 = self.roi.y, self.roi.y + self.roi.height
-        #     x0, x1 = self.roi.x, self.roi.x + self.roi.width
-        #     for row in fov_data.itertuples():
-        #         fov_img = cv2.merge([cv2.imread(z_file, cv2.IMREAD_UNCHANGED) for z_file in reversed(row.channel_files)])
-        #         img = cv2.normalize(fov_img[y0:y1, x0:x1], dst=None, dtype=cv2.CV_8U, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
-        #         cv2.imwrite(os.path.join(video_dir, f'{row.t:05d}.jpg'), img)
-        # else:
-        #     for frame in range(self.viewer.background.image.image_resource_data.sizeT):
-        #         self.change_frame(frame)
-        #         # self.viewer.background.image.change_frame(frame)
-        #         self.viewer.background.image.pixmap().toImage().save(f'{video_dir}/{frame:05d}.jpg', format='jpg', quality=100)
-
     def get_fov_data(self, z_layers: tuple[int, int, int] = None, channel: int = None) -> pd.DataFrame:
         """
         Gets FOV data, i.e. FOV id, time frame and the list of files with the z layers to be used as RGB channels
@@ -677,7 +672,7 @@ class SegmentationTool(VideoPlayer):
         """
         self.scene.reset_graphics_items()
         for layer in self.viewer.layers[1:]:
-                layer.setVisible(not self.show_bf.isChecked())
+            layer.setVisible(not self.show_bf.isChecked())
         boxes, points, masks = self.source_model.get_all_prompt_items(frame=self.T)
         for box in boxes:
             box.graphics_item.setPen(self.scene.default_pen)
@@ -859,6 +854,9 @@ class SegmentationTool(VideoPlayer):
         return None
 
     def bounding_box_from_mask(self):
+        """
+        Create a bounding box based on the bounding rectangle of the currently selected mask.
+        """
         mask_item = self.current_object.mask(self.T).graphics_item
         if mask_item.isSelected():
             bounding_rect = mask_item.boundingRect()

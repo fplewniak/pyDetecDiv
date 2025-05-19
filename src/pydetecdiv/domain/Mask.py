@@ -1,3 +1,8 @@
+#  CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21
+#  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
+"""
+ A class defining the business logic methods that can be applied to segmentation masks
+"""
 from typing import Any
 
 import cv2
@@ -29,13 +34,25 @@ class Mask(NamedDSO):
         self.validate(updated=False)
 
     @property
-    def graphics_item(self):
+    def graphics_item(self) -> QGraphicsItem:
+        """
+        Determines and return the graphics item representing the current mask in the Segmentation Tool scene
+        :return: the graphics item
+        """
         if self._graphics_item is None:
             self.set_graphics_item(self.contour_method)
         return self._graphics_item
 
+    @graphics_item.setter
+    def graphics_item(self, graphics_item):
+        self._graphics_item = graphics_item
+
     @property
-    def bin_mask(self):
+    def bin_mask(self) -> np.ndarray | None:
+        """
+        The binary mask, i.e. the masks raw data
+        :return: the bianry mask
+        """
         if self._bin_mask is not None:
             shape = self.entity.roi.size
             return np.frombuffer(self._bin_mask, dtype=bool).reshape((shape[1], shape[0]))
@@ -46,15 +63,19 @@ class Mask(NamedDSO):
         self._bin_mask = bin_mask.tobytes()
 
     @property
-    def object(self):
+    def object(self) -> Entity:
+        """
+        return the corresponding entity (this is a legacy method expected to be removed not to be used)
+        :return:
+        """
         return self.entity
 
     @property
     def entity(self) -> Entity:
         """
-        property returning the ROI object this entity belongs to
+        property returning the Entity object this mask corresponds to
 
-        :return: the parent ROI object
+        :return: the Entity object
         """
         return self.project.get_object('Entity', self._entity)
 
@@ -83,6 +104,10 @@ class Mask(NamedDSO):
 
     @property
     def ellipse_contour(self) -> np.ndarray | None:
+        """
+
+        :return:
+        """
         centre, axes, angle = cv2.fitEllipse(self.contour)
         centre = tuple(map(int, centre))  # Convert to integers
         axes = tuple(map(int, (axes[0] / 2, axes[1] / 2)))  # radius, not diameter

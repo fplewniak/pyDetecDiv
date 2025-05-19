@@ -1,3 +1,8 @@
+#  CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21
+#  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
+"""
+ A class defining the business logic methods that can be applied to points
+"""
 from typing import Any
 
 from PySide6.QtWidgets import QGraphicsEllipseItem
@@ -25,6 +30,10 @@ class Point(NamedDSO):
 
     @property
     def object(self):
+        """
+        property returning the Entity object this point corresponds to. (this is a legacy method expected to be removed
+        not to be used)
+        """
         return self.entity
 
     @property

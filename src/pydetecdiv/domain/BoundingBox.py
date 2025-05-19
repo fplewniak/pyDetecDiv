@@ -1,9 +1,14 @@
+#  CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21
+#  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
+"""
+ A class defining the business logic methods that can be applied to bounding boxes
+"""
 from typing import Any
 
 from PySide6.QtWidgets import QGraphicsRectItem
 
 from pydetecdiv.domain.Entity import Entity
-from pydetecdiv.domain.dso import DomainSpecificObject, NamedDSO
+from pydetecdiv.domain.dso import NamedDSO
 
 
 class BoundingBox(NamedDSO):
@@ -28,15 +33,19 @@ class BoundingBox(NamedDSO):
             self.graphics_item.setPos(self._x, self._y)
 
     @property
-    def object(self):
+    def object(self) -> Entity:
+        """
+        property returning the Entity object this bounding box corresponds to. (this is a legacy method expected to be removed
+        not to be used)
+        """
         return self.entity
 
     @property
     def entity(self) -> Entity:
         """
-        property returning the ROI object this entity belongs to
+        property returning the Entity object this bounding box corresponds to
 
-        :return: the parent ROI object
+        :return: the Entity object
         """
         return self.project.get_object('Entity', self._entity)
 

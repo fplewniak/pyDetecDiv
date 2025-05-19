@@ -3,22 +3,18 @@
 """
 The central class for keeping track of all available objects in a project.
 """
-from typing import TypeVar
-
 import subprocess
-from typing import Callable, Any
+from typing import Callable, Any, TypeVar
 
 import json
 import os
 import itertools
 from collections import defaultdict
 from datetime import datetime
-import pandas
 import pandas as pd
 
 from pydetecdiv.domain.BoundingBox import BoundingBox
 from pydetecdiv.domain.Entity import Entity
-from pydetecdiv.domain.ImageResource import ImageResource
 from pydetecdiv.domain.Mask import Mask
 from pydetecdiv.domain.Point import Point
 from pydetecdiv.settings import get_config_value
@@ -370,10 +366,20 @@ class Project:
         return [self.build_dso(class_name, rec) for rec in self.repository.get_records(class_name, id_list)]
 
     def get_records(self, class_name: str, id_list: list[int] = None) -> list[dict[str, Any]]:
+        """
+        get list of dictionary records of DSOs of the specified class with id in list
+        :param class_name: the name of the class
+        :param id_list: the list of ids
+        """
         return self.repository.get_records(class_name, id_list)
 
-    def get_dataframe(self, class_name: str, id_list: list[int] = None) -> pandas.DataFrame:
-        return pandas.DataFrame.from_records(self.get_records(class_name, id_list))
+    def get_dataframe(self, class_name: str, id_list: list[int] = None) -> pd.DataFrame:
+        """
+        get a pandas DataFrame with records of DSOs of the specified class with id in list
+        :param class_name: the name of the class
+        :param id_list: the list of ids
+        """
+        return pd.DataFrame.from_records(self.get_records(class_name, id_list))
 
     def count_objects(self, class_name: str) -> int:
         """

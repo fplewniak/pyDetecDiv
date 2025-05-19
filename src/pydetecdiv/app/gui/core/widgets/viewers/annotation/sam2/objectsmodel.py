@@ -502,7 +502,7 @@ class PromptSourceModel(QStandardItemModel):
         if current_mask is None:
             self.add_mask(obj, frame, mask)
         else:
-            current_mask._graphics_item = mask
+            current_mask.graphics_item = mask
             current_mask.ellipse_item = None
 
     def add_mask(self, obj: Entity, frame: int, mask: QGraphicsPolygonItem):
@@ -559,6 +559,10 @@ class PromptSourceModel(QStandardItemModel):
         return [child.object for child in self.object_item(obj).children() if isinstance(child.object, Mask)]
 
     def get_all_masks(self):
+        """
+        Return the list of masks for all entities in every frame
+        :return: the list of masks
+        """
         frames = {}
         for entity in self.objects:
             # for mask in self.get_masks(entity):
@@ -757,6 +761,11 @@ class PromptSourceModel(QStandardItemModel):
         return boxes, points, masks
 
     def update_Item(self, graphics_item: QGraphicsRectItem | QGraphicsEllipseItem, frame: int) -> None:
+        """
+        Update the data for a prompt item (position and size of bounding box, position of points, ...) and save it in database
+        :param graphics_item: the modified graphics item
+        :param frame: the frame
+        """
         model_item = self.graphics2model_item(graphics_item, frame, 0)
         if model_item is not None:
             obj = self.graphics2model_item(graphics_item, frame, 0).object
