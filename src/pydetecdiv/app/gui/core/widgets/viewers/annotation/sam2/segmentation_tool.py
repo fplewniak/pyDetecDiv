@@ -86,11 +86,11 @@ class SegmentationScene(VideoScene):
         self.last_shape = None
 
     @property
-    def current_object(self) -> Entity:
+    def current_entity(self) -> Entity:
         """
-        The currently selected object. All prompt item additions will be attached to this object.
+        The currently selected entity. All prompt item additions will be attached to this entity.
         """
-        return self.player.current_object
+        return self.player.current_entity
 
     def reset_graphics_items(self) -> None:
         """
@@ -112,13 +112,6 @@ class SegmentationScene(VideoScene):
         if event.matches(QKeySequence.StandardKey.Delete):
             for r in self.selectedItems():
                 self.delete_item(r)
-        # elif event.key() == Qt.Key.Key_Insert:
-        #     self.player.create_entity()
-        # project = self.player.roi.project
-        # current_object = Entity(project=project, name=f'{project.count_objects("Entity")}', roi=self.player.roi)
-        # current_object.name = f'cell_{current_object.id_}'
-        # project.commit()
-        # self.player.add_object(current_object)
 
     def select_from_tree_view(self, graphics_item: QGraphicsItem) -> None:
         """
@@ -129,7 +122,7 @@ class SegmentationScene(VideoScene):
         if graphics_item is not None:
             graphics_item.setSelected(True)
             if isinstance(graphics_item, (QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsPolygonItem)):
-                self.player.object_tree_view.select_object_from_graphics_item(graphics_item, self.player.T)
+                self.player.object_tree_view.select_entity_from_graphics_item(graphics_item, self.player.T)
 
     def select_Item(self, event: QGraphicsSceneMouseEvent) -> None:
         """
@@ -139,7 +132,7 @@ class SegmentationScene(VideoScene):
         """
         graphics_item = super().select_Item(event)
         if isinstance(graphics_item, (QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsPolygonItem)):
-            self.player.object_tree_view.select_object_from_graphics_item(graphics_item, self.player.T)
+            self.player.object_tree_view.select_entity_from_graphics_item(graphics_item, self.player.T)
 
     def delete_item(self, graphics_item: QGraphicsItem) -> None:
         """
@@ -147,9 +140,9 @@ class SegmentationScene(VideoScene):
         :param graphics_item: the graphics item to delete
         """
         if isinstance(graphics_item, QGraphicsRectItem):
-            self.player.source_model.remove_bounding_box(self.current_object, self.player.T)
+            self.player.source_model.remove_bounding_box(self.current_entity, self.player.T)
         if isinstance(graphics_item, QGraphicsEllipseItem):
-            self.player.source_model.remove_point(self.current_object, graphics_item, self.player.T)
+            self.player.source_model.remove_point(self.current_entity, graphics_item, self.player.T)
 
     def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """
@@ -159,21 +152,18 @@ class SegmentationScene(VideoScene):
         if event.button() == Qt.MouseButton.LeftButton:
             match PyDetecDiv.current_drawing_tool, event.modifiers():
                 case DrawingTools.DrawRect, Qt.KeyboardModifier.NoModifier:
-                    # print(f'{self.last_shape=}')
                     if self.last_shape:
-                        if self.player.source_model.has_bounding_box(self.current_object, self.player.T):
-                            # print(f'replacing box with {self.last_shape=}')
-                            self.player.source_model.change_bounding_box(self.current_object, self.player.T, self.last_shape)
+                        if self.player.source_model.has_bounding_box(self.current_entity, self.player.T):
+                            self.player.source_model.change_bounding_box(self.current_entity, self.player.T, self.last_shape)
                         else:
-                            self.player.source_model.add_bounding_box(self.current_object, self.player.T, self.last_shape)
+                            self.player.source_model.add_bounding_box(self.current_entity, self.player.T, self.last_shape)
                         self.player.object_tree_view.expandAll()
                         self.last_shape = None
-                    # print(f'{self.player.source_model.get_bounding_box(self.current_object, self.player.T)=}')
                     self.player.source_model.project.commit()
                 case DrawingTools.DuplicateItem, Qt.KeyboardModifier.NoModifier:
                     if self.selectedItems():
                         rect_item = self.duplicate_selected_Item(event)
-                        self.player.source_model.change_bounding_box(self.current_object, self.player.T, rect_item)
+                        self.player.source_model.change_bounding_box(self.current_entity, self.player.T, rect_item)
                         self.player.object_tree_view.expandAll()
                         self.select_Item(event)
 
@@ -239,27 +229,15 @@ class SegmentationScene(VideoScene):
         self.player.source_model.update_Item(graphics_item, self.player.T)
         return graphics_item
 
-    # def update_Item_size(self, graphics_item: QGraphicsRectItem) -> None:
-    #     """
-    #     Update the bounding box size information in the source model for display in the tree view after the box has been resized
-    #     :param graphics_item: the bounding box graphics item
-    #     """
-    #     width_item = self.player.source_model.graphics2model_item(graphics_item, self.player.T, 4)
-    #     height_item = self.player.source_model.graphics2model_item(graphics_item, self.player.T, 5)
-    #     if width_item is not None:
-    #         width_item.setData(f'{int(graphics_item.rect().width())}', 0)
-    #     if height_item is not None:
-    #         height_item.setData(f'{int(graphics_item.rect().height())}', 0)
-
     def draw_Item(self, event: QGraphicsSceneMouseEvent) -> QGraphicsRectItem:
         """
         Draw a rectangular item representing a bounding box
         :param event: the mouse event
         :return: the rectangular item
         """
-        if self.player.current_object is not None:
+        if self.player.current_entity is not None:
             self.last_shape = super().draw_Item(event)
-            self.last_shape.setData(0, f'bounding_box{self.player.current_object.id_}')
+            self.last_shape.setData(0, f'bounding_box{self.player.current_entity.id_}')
             self.player.source_model.update_Item(self.last_shape, self.player.T)
             # self.update_Item_size(self.last_shape)
         else:
@@ -272,9 +250,9 @@ class SegmentationScene(VideoScene):
         :param event: the mouse event
         :return: the duplicated item
         """
-        if self.player.current_object is not None:
+        if self.player.current_entity is not None:
             item = super().duplicate_selected_Item(event)
-            item.setData(0, f'bounding_box{self.player.current_object.id_}')
+            item.setData(0, f'bounding_box{self.player.current_entity.id_}')
             return item
         return None
 
@@ -285,8 +263,6 @@ class SegmentationScene(VideoScene):
         :param event: mouse event
         """
         menu = QMenu()
-        # frame_segment_action = menu.addAction('Run segmentation on current frame')
-        # frame_segment_action.triggered.connect(self.player.segment_from_prompt)
         if self.player.source_model.all_key_frames:
             video_segment_action = menu.addAction('Run segmentation on video')
             video_segment_action.triggered.connect(self.player.segment_from_prompt)
@@ -294,7 +270,7 @@ class SegmentationScene(VideoScene):
         if isinstance(item_at_click, (QGraphicsRectItem, QGraphicsEllipseItem, QGraphicsPolygonItem)):
             self.select_Item(event)
             exit_next_frame_action = menu.addAction('Set next frame as exit frame')
-            exit_next_frame_action.triggered.connect(self.player.object_exit_next_frame)
+            exit_next_frame_action.triggered.connect(self.player.entity_exit_next_frame)
         menu.exec(event.screenPos())
 
     def add_point(self, event: QGraphicsSceneMouseEvent) -> QGraphicsEllipseItem | None:
@@ -303,7 +279,7 @@ class SegmentationScene(VideoScene):
         :param event: the mouse event
         :return: the point (small ellipse) graphics item
         """
-        if self.current_object is not None:
+        if self.current_entity is not None:
             label = 1
             self.pen = self.positive_pen
             if event.buttons() == Qt.MouseButton.LeftButton:
@@ -314,7 +290,7 @@ class SegmentationScene(VideoScene):
             item = super().add_point(event)
             item.setData(1, label)
             self.pen = self.default_pen
-            self.player.source_model.add_point(self.current_object, self.player.T, item, label)
+            self.player.source_model.add_point(self.current_entity, self.player.T, item, label)
             return item
         return None
 
@@ -392,7 +368,7 @@ class SegmentationTool(VideoPlayer):
         return self.source_model.itemFromIndex(self.current_tree_index)
 
     @property
-    def current_object(self) -> Entity | None:
+    def current_entity(self) -> Entity | None:
         """
         Returns the current object according to the selection in the tree view
         :return: the current object
@@ -412,16 +388,16 @@ class SegmentationTool(VideoPlayer):
         Returns the prompt for all objects in the current frame
         :return: the prompt
         """
-        return {obj.id_: {self.T: self.source_model.get_prompt_for_key_frame(obj, self.T)}
-                for obj in self.source_model.objects if self.T in self.source_model.key_frames(obj)}
+        return {entity.id_: {self.T: self.source_model.get_prompt_for_key_frame(entity, self.T)}
+                for entity in self.source_model.entities if self.T in self.source_model.key_frames(entity)}
 
-    def add_object(self, obj: Entity) -> ModelItem:
+    def add_entity(self, obj: Entity) -> ModelItem:
         """
         Add a new object
         :param obj: the new object
         :return: the model item corresponding to the added object
         """
-        new_item = self.source_model.add_object(obj)
+        new_item = self.source_model.add_entity(obj)
         self.object_tree_view.select_item(new_item)
         self.proxy_model.invalidateFilter()
         return new_item
@@ -432,10 +408,10 @@ class SegmentationTool(VideoPlayer):
         :return: return the newly created Entity object
         """
         project = self.roi.project
-        current_object = Entity(project=project, name=f'{project.count_objects("Entity")}', roi=self.roi)
-        current_object.name = f'cell_{current_object.id_}'
+        current_entity = Entity(project=project, name=f'{project.count_objects("Entity")}', roi=self.roi)
+        current_entity.name = f'cell_{current_entity.id_}'
         project.commit()
-        return self.add_object(current_object)
+        return self.add_entity(current_entity)
 
     def create_menubar(self) -> QMenuBar | None:
         """
@@ -563,12 +539,12 @@ class SegmentationTool(VideoPlayer):
 
         self.video_frame.connect(self.proxy_model.set_frame)
 
-    def object_exit_next_frame(self) -> None:
+    def entity_exit_next_frame(self) -> None:
         """
         Sets the exit frame of the current object to the next frame.
         """
         if self.T < self.viewer.image_resource_data.sizeT - 1:
-            self.source_model.object_exit(self.current_object, self.T + 1)
+            self.source_model.entity_exit(self.current_entity, self.T + 1)
 
     def select_from_tree_view(self, index: QModelIndex) -> None:
         """
@@ -769,10 +745,10 @@ class SegmentationTool(VideoPlayer):
         frame_names = [p for p in os.listdir(video_dir) if os.path.splitext(p)[-1] in ['.jpg', 'jpeg', '.JPG', '.JPEG']]
         frame_names.sort(key=lambda p: int(os.path.splitext(p)[0]))
 
-        present_objects = [obj for obj in self.source_model.objects if self.source_model.is_present_at_frame(obj, self.T)]
-        # start_frame = min(self.source_model.get_entry_frame(obj) for obj in present_objects)
+        present_entities = [entity for entity in self.source_model.entities if
+                            self.source_model.is_present_at_frame(entity, self.T)]
         start_frame = self.T
-        end_frame = max(obj.exit_frame for obj in present_objects)
+        end_frame = max(obj.exit_frame for obj in present_entities)
 
         for f1, f2 in self.key_frames_intervals():
             self.predictor.reset_state(self.inference_state)
@@ -784,8 +760,7 @@ class SegmentationTool(VideoPlayer):
                 print(f'{f2 - f1} frames starting from {f1} to {f2}')
                 for obj_id, frames in self.source_model.get_prompt().items():
                     for frame, box_points in frames.items():
-                        if frame < f2 and f1 < self.source_model.object(obj_id).exit_frame:
-                            # print(f'adding {box_points=} for object {obj_id} at {frame=}')
+                        if frame < f2 and f1 < self.source_model.entity(obj_id).exit_frame:
                             _, out_obj_ids, self.mask_logits = self.predictor.add_new_points_or_box(
                                     inference_state=self.inference_state,
                                     frame_idx=frame,
@@ -808,10 +783,9 @@ class SegmentationTool(VideoPlayer):
 
                         if mask_item is not None:
                             mask_item.setData(0, f'mask_{out_obj_id}')
-                            self.source_model.set_mask(self.source_model.object(out_obj_id), out_frame, mask_item)
-                            mask = self.source_model.get_mask(self.source_model.object(out_obj_id), out_frame)
+                            self.source_model.set_mask(self.source_model.entity(out_obj_id), out_frame, mask_item)
+                            mask = self.source_model.get_mask(self.source_model.entity(out_obj_id), out_frame)
                             mask.change_mask(out_mask[0])
-                            # self.source_model.project.save(mask)
                             mask.setBrush(QBrush(Colours.palette[int(out_obj_id) % len(Colours.palette) - 1]))
             else:
                 continue
@@ -859,20 +833,20 @@ class SegmentationTool(VideoPlayer):
         """
         Create a bounding box based on the bounding rectangle of the currently selected mask.
         """
-        mask_item = self.current_object.mask(self.T).graphics_item
+        mask_item = self.current_entity.mask(self.T).graphics_item
         if mask_item.isSelected():
             bounding_rect = mask_item.boundingRect()
             item = self.scene.addRect(QRect(0, 0, bounding_rect.width(), bounding_rect.height()))
             item.setPos(QPointF(bounding_rect.x(), bounding_rect.y()))
-            item.setData(0, f'bounding_box{self.current_object.id_}')
+            item.setData(0, f'bounding_box{self.current_entity.id_}')
             item.setPen(self.scene.pen)
             item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
             item.setZValue(len(self.viewer.layers))
 
-            if self.current_object.bounding_box(self.T):
-                self.source_model.change_bounding_box(self.current_object, self.T, item)
+            if self.current_entity.bounding_box(self.T):
+                self.source_model.change_bounding_box(self.current_entity, self.T, item)
             else:
-                self.source_model.add_bounding_box(self.current_object, self.T, item)
+                self.source_model.add_bounding_box(self.current_entity, self.T, item)
 
     def export_masks(self) -> None:
         """
