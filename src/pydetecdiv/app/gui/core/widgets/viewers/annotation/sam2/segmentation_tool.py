@@ -748,7 +748,7 @@ class SegmentationTool(VideoPlayer):
         present_entities = [entity for entity in self.source_model.entities if
                             self.source_model.is_present_at_frame(entity, self.T)]
         start_frame = self.T
-        end_frame = max(obj.exit_frame for obj in present_entities)
+        end_frame = max(obj.exit_frame for obj in present_entities) if present_entities else self.T
 
         for f1, f2 in self.key_frames_intervals():
             self.predictor.reset_state(self.inference_state)
@@ -800,17 +800,16 @@ class SegmentationTool(VideoPlayer):
 
         :return: the list of intervals
         """
+        intervals = []
         key_frames = self.source_model.all_key_frames
 
-        intervals = []
+        if key_frames:
+            # Add intervals between successive elements
+            intervals.extend([key_frames[i], key_frames[i + 1]] for i in range(len(key_frames) - 1))
 
-        # Add intervals between successive elements
-        intervals.extend([key_frames[i], key_frames[i + 1]] for i in range(len(key_frames) - 1))
-
-        # Add the final interval if the last element is not equal to the max value
-        if key_frames[-1] != self.viewer.image_resource_data.sizeT:
-            intervals.append([key_frames[-1], -1])
-
+            # Add the final interval if the last element is not equal to the max value
+            if key_frames[-1] != self.viewer.image_resource_data.sizeT:
+                intervals.append([key_frames[-1], -1])
         return intervals
 
     def mask_to_shape(self, mask: list) -> QGraphicsPolygonItem | None:
