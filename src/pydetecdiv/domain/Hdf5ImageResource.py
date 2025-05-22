@@ -1,14 +1,19 @@
 """
  A class handling image resource in HDF5 file
 """
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pydetecdiv.domain.ImageResource import ImageResource
+
 import os
 
-import tensorflow as tf
 import h5py
 import numpy as np
 import cv2
-from aicsimageio.dimensions import Dimensions
-from pydetecdiv.domain import ImageResourceData
+from bioio_base.dimensions import Dimensions
+from pydetecdiv.domain.ImageResourceData import ImageResourceData
+from pydetecdiv.domain.Image import Image, ImgDType
 from pydetecdiv.settings import get_config_value
 
 
@@ -17,7 +22,7 @@ class Hdf5ImageResource(ImageResourceData):
     A business-logic class defining valid operations and attributes of Image resources stored in HDF5 file
     """
 
-    def __init__(self, max_mem=5000, image_resource=None):
+    def __init__(self, max_mem: int = 5000, image_resource: 'ImageResource' = None):
         print('HDF5')
         self.path = os.path.join(get_config_value('project', 'workspace'),
                                  image_resource.fov.project.dbname, 'data',
@@ -31,7 +36,7 @@ class Hdf5ImageResource(ImageResourceData):
         # print(f'Multiple file image resource: {self.dims}')
 
     @property
-    def shape(self):
+    def shape(self) -> tuple[int, ...]:
         """
         The image resource shape (should be 5D with the following dimensions TCZYX)
         """
@@ -39,7 +44,7 @@ class Hdf5ImageResource(ImageResourceData):
             return hdf5_file[self.fov.name].shape
 
     @property
-    def dims(self):
+    def dims(self) -> Dimensions:
         """
         the dimensions of the image resource
         :return:
@@ -48,7 +53,7 @@ class Hdf5ImageResource(ImageResourceData):
         # return self._dims
 
     @property
-    def sizeT(self):
+    def sizeT(self) -> int:
         """
         The number of frames
         """
@@ -56,7 +61,7 @@ class Hdf5ImageResource(ImageResourceData):
         # return self._dims.T
 
     @property
-    def sizeC(self):
+    def sizeC(self) -> int:
         """
         The number of channels
         """
@@ -64,7 +69,7 @@ class Hdf5ImageResource(ImageResourceData):
         # return self._dims.C
 
     @property
-    def sizeZ(self):
+    def sizeZ(self) -> int:
         """
         The number of layers
         """
@@ -72,7 +77,7 @@ class Hdf5ImageResource(ImageResourceData):
         # return self._dims.Z
 
     @property
-    def sizeY(self):
+    def sizeY(self) -> int:
         """
         The height of image
         """
@@ -80,14 +85,14 @@ class Hdf5ImageResource(ImageResourceData):
         # return self._dims.Y
 
     @property
-    def sizeX(self):
+    def sizeX(self) -> int:
         """
         The width of image
         """
         return self.shape[4]
         # return self._dims.X
 
-    def _image(self, C=0, Z=0, T=0, drift=False):
+    def _image(self, C: int = 0, Z: int = 0, T: int = 0, drift: bool = False) -> np.ndarray:
         """
         A 2D grayscale image (on frame, one channel and one layer)
 
@@ -107,13 +112,15 @@ class Hdf5ImageResource(ImageResourceData):
             if drift and self.drift is not None:
                 data = cv2.warpAffine(np.array(data),
                                       np.float32(
-                                          [[1, 0, -self.drift.iloc[T].dx],
-                                           [0, 1, -self.drift.iloc[T].dy]]),
+                                              [[1, 0, -self.drift.iloc[T].dx],
+                                               [0, 1, -self.drift.iloc[T].dy]]),
                                       (data.shape[1], data.shape[0]))
-            data = tf.image.convert_image_dtype(data, dtype=tf.uint16, saturate=False).numpy()
+            # data = tf.image.convert_image_dtype(data, dtype=tf.uint16, saturate=False).numpy()
+            data = Image(data).as_array(ImgDType.uint16)
             return data
 
-    def _image_memmap(self, sliceX=None, sliceY=None, C=0, Z=0, T=0, drift=False):
+    def _image_memmap(self, sliceX: slice = None, sliceY: slice = None, C: int = 0, Z: int = 0, T: int = 0,
+                      drift: bool = False) -> np.ndarray:
         if sliceX is None:
             sliceX = slice(0, self.sizeX)
         if sliceY is None:
@@ -127,7 +134,7 @@ class Hdf5ImageResource(ImageResourceData):
         with h5py.File(self.path, 'r') as hdf5_file:
             return hdf5_file[self.fov.name][T, C, Z, sliceY, sliceX]
 
-    def data_sample(self, X=None, Y=None):
+    def data_sample(self, X: slice = None, Y: slice = None) -> np.ndarray:
         """
         Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for
         regions of interest from a field of view.

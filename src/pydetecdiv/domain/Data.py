@@ -3,12 +3,16 @@
 """
  A class defining the business logic methods that can be applied to Regions Of Interest
 """
+import datetime
 import json
 import os
+from typing import Any
 
 from pydetecdiv.domain.dso import NamedDSO
 from pydetecdiv.settings import get_config_value
-from pydetecdiv.domain import ImageResource, Dataset
+from pydetecdiv.domain.ImageResource import ImageResource
+from pydetecdiv.domain.Dataset import Dataset
+from pydetecdiv.domain.FOV import FOV
 
 
 class Data(NamedDSO):
@@ -16,8 +20,9 @@ class Data(NamedDSO):
     A business-logic class defining valid operations and attributes of data
     """
 
-    def __init__(self, dataset, author, date, url, format_, source_dir, meta_data, key_val, image_resource,
-                 c=None, t=None, z=None, xdim=-1, ydim=-1, uuid=None, **kwargs):
+    def __init__(self, dataset: int | Dataset, author: str, date: str | datetime.datetime, url: str, format_: str, source_dir: str,
+                 meta_data: dict, key_val: dict, image_resource: int | ImageResource, c: int = None, t: int = None, z: int = None,
+                 xdim: int = -1, ydim: int = -1, uuid: str = None, **kwargs):
         super().__init__(**kwargs)
         self.uuid = uuid
         self.dataset_ = dataset.id_ if isinstance(dataset, Dataset) else dataset
@@ -37,7 +42,7 @@ class Data(NamedDSO):
         self.validate(updated=False)
 
     @property
-    def image_resource(self):
+    def image_resource(self) -> ImageResource:
         """
         property returning the Image resource object this Data file is part of
 
@@ -47,12 +52,12 @@ class Data(NamedDSO):
         return self.project.get_object('ImageResource', self._image_resource)
 
     @image_resource.setter
-    def image_resource(self, image_resource):
+    def image_resource(self, image_resource: ImageResource):
         self._image_resource = image_resource.id_ if isinstance(image_resource, ImageResource) else image_resource
         self.validate()
 
     @property
-    def dataset(self):
+    def dataset(self) -> Dataset:
         """
         Property returning the Dataset object this data belongs to
 
@@ -62,7 +67,7 @@ class Data(NamedDSO):
         return self.project.get_object('Dataset', id_=self.dataset_)
 
     @property
-    def url(self):
+    def url(self) -> str:
         """
         URL property of the data file, relative to the workspace directory or absolute path if file are stored in place
 
@@ -74,7 +79,7 @@ class Data(NamedDSO):
         return os.path.join(get_config_value('project', 'workspace'), self.project.dbname, self.dataset.name, self.url_)
 
     @property
-    def fov(self):
+    def fov(self) -> list[FOV]:
         """
         Returns the list of FOV objects associated to the current data
 
@@ -83,40 +88,37 @@ class Data(NamedDSO):
         """
         return self.project.get_linked_objects('FOV', to=self)
 
-    def record(self, no_id=False):
+    def record(self, no_id: bool = False) -> dict[str, Any]:
         """
         Returns a record dictionary of the current Data
 
-        :param no_id: if True, the id_ is not passed included in the record to allow transfer from one project to
-        another
-        :type no_id: bool
+        :param no_id: if True, the id\_ is not passed included in the record to allow transfer from one project to another
         :return: record dictionary
-        :rtype: dict
         """
         record = {
-            'name': self.name,
-            'dataset': self.dataset_,
-            'author': self.author,
-            'date': self.date,
-            'url': self.url,
-            'format': self.format_,
-            'source_dir': self.source_dir,
-            'meta_data': self.meta_data,
-            'key_val': self.key_val,
-            'uuid': self.uuid,
+            'name'          : self.name,
+            'dataset'       : self.dataset_,
+            'author'        : self.author,
+            'date'          : self.date,
+            'url'           : self.url,
+            'format'        : self.format_,
+            'source_dir'    : self.source_dir,
+            'meta_data'     : self.meta_data,
+            'key_val'       : self.key_val,
+            'uuid'          : self.uuid,
             'image_resource': self._image_resource,
-            'xdim': self.xdim,
-            'ydim': self.ydim,
-            'z': self.z,
-            'c': self.c,
-            't': self.t,
-        }
+            'xdim'          : self.xdim,
+            'ydim'          : self.ydim,
+            'z'             : self.z,
+            'c'             : self.c,
+            't'             : self.t,
+            }
         if not no_id:
             record['id_'] = self.id_
         return record
 
     @property
-    def info(self):
+    def info(self) -> str:
         return f"""
 Name:             {self.name}
 Dataset:          {self.dataset.name} (type: {self.dataset.type_}, run: {self.dataset.run})

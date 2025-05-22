@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Exceptions &mdash; pyDetecDiv 0.4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+  <title>Exceptions &mdash; pyDetecDiv 0.5.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=6c02275b"></script>
+      <script src="../../_static/documentation_options.js?v=1dd76d02"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -99,35 +99,35 @@
 <p>Custom exceptions to handle errors and enforce requirements</p>
 <dl class="py exception">
 <dt class="sig sig-object py" id="pydetecdiv.exceptions.MissingNameError">
-<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.exceptions.</span></span><span class="sig-name descname"><span class="pre">MissingNameError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.exceptions.MissingNameError" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.exceptions.</span></span><span class="sig-name descname"><span class="pre">MissingNameError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../domain/dso_common.html#pydetecdiv.domain.dso.NamedDSO" title="pydetecdiv.domain.dso.NamedDSO"><span class="pre">NamedDSO</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.exceptions.MissingNameError" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Warning</span></code></p>
 <p>Exception raised for missing name in data when creating a NamedDSO</p>
 </dd></dl>
 
 <dl class="py exception">
 <dt class="sig sig-object py" id="pydetecdiv.exceptions.JuttingError">
-<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.exceptions.</span></span><span class="sig-name descname"><span class="pre">JuttingError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">region</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.exceptions.JuttingError" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.exceptions.</span></span><span class="sig-name descname"><span class="pre">JuttingError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">region</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../domain/dso_common.html#pydetecdiv.domain.dso.BoxedDSO" title="pydetecdiv.domain.dso.BoxedDSO"><span class="pre">BoxedDSO</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../domain/dso_common.html#pydetecdiv.domain.dso.BoxedDSO" title="pydetecdiv.domain.dso.BoxedDSO"><span class="pre">BoxedDSO</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.exceptions.JuttingError" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Warning</span></code></p>
 <p>Exception raised when a portion of a region (ROI, FOV, image,…) protrudes out of its parent.</p>
 </dd></dl>
 
 <dl class="py exception">
 <dt class="sig sig-object py" id="pydetecdiv.exceptions.OpenProjectError">
-<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.exceptions.</span></span><span class="sig-name descname"><span class="pre">OpenProjectError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.exceptions.OpenProjectError" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.exceptions.</span></span><span class="sig-name descname"><span class="pre">OpenProjectError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.exceptions.OpenProjectError" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
 <p>Exception raised when a project cannot be opened</p>
 </dd></dl>
 
 <dl class="py exception">
 <dt class="sig sig-object py" id="pydetecdiv.exceptions.ImportImagesError">
-<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.exceptions.</span></span><span class="sig-name descname"><span class="pre">ImportImagesError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.exceptions.ImportImagesError" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.exceptions.</span></span><span class="sig-name descname"><span class="pre">ImportImagesError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.exceptions.ImportImagesError" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
 <p>Exception raised when images cannot be imported</p>
 </dd></dl>
 
 <dl class="py exception">
 <dt class="sig sig-object py" id="pydetecdiv.exceptions.UnknownRepositoryTypeError">
-<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.exceptions.</span></span><span class="sig-name descname"><span class="pre">UnknownRepositoryTypeError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.exceptions.UnknownRepositoryTypeError" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.exceptions.</span></span><span class="sig-name descname"><span class="pre">UnknownRepositoryTypeError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.exceptions.UnknownRepositoryTypeError" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
 <p>Exception raised when images cannot be imported</p>
 </dd></dl>
@@ -146,7 +146,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2024, Frédéric PLEWNIAK.</p>
+    <p>&#169; Copyright 2025, Frédéric PLEWNIAK.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

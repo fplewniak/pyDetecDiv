@@ -23,14 +23,21 @@ def get_default_settings() -> dict:
             'project.sqlite': {'database': 'pydetecdiv'},
             'project.conda': {'dir': '/opt/miniconda3/'},
             'paths': {'appdata': xdg.BaseDirectory.save_data_path('pyDetecDiv'),
-                      'toolbox': '/data/Fred/BioImageIT/bioimageit-toolboxes'}
+                      'sam2_checkpoint': '/data/SegmentAnything2/checkpoints/sam2.1_hiera_large.pt',
+                      'sam2_model_cfg': 'configs/sam2.1/sam2.1_hiera_l.yaml',
+                      'toolbox': '/data/BioImageIT/bioimageit-toolboxes'}
             # 'project.mysql': {'database': 'pydetecdiv', 'host': 'localhost', 'credentials': 'mysql.credentials', },
             # 'omero': {'host': 'localhost', 'credentials': 'omero.credentials', },
             # 'bioimageit': {'config_file': '/data2/BioImageIT/config.json'}
             }
 
 
-def get_config_dir():
+def get_config_dir() -> Path:
+    """
+    Returns the directory containing the pyDetecDiv configuration files
+
+    :return: the config directory path
+    """
     if 'APPDATA' in os.environ:
         config_dir = Path(os.environ['APPDATA']).joinpath('pyDetecDiv')
     else:
@@ -38,7 +45,7 @@ def get_config_dir():
     return config_dir
 
 
-def get_config_files():
+def get_config_files() -> list[Path]:
     """
     Get a list configuration files conforming to the XDG Base directory specification for Linux and Mac OS or located
     in APPDATA folder for Microsoft Windows. This function does not check whether files exist as this is done anyway
@@ -53,11 +60,16 @@ def get_config_files():
     return config_files
 
 
-def get_config_file():
+def get_config_file() -> Path:
+    """
+    Gets the first configuration file in the list of available configuration files
+
+    :return: the path f the configuration file
+    """
     return get_config_files()[0]
 
 
-def get_config():
+def get_config() -> configparser.ConfigParser:
     """
     Get configuration parser from configuration files. If no file exists, then one is created in the favourite
     location with default values. Note that if the favourite directory does not exist either, it is created prior to
@@ -76,7 +88,7 @@ def get_config():
     return config
 
 
-def get_config_value(section: str, key: str):
+def get_config_value(section: str, key: str) -> str:
     """
     Get value for a key in a section of the configuration file.
 
@@ -88,7 +100,7 @@ def get_config_value(section: str, key: str):
     return config.get(section, key)
 
 
-def get_appdata_dir():
+def get_appdata_dir() -> Path:
     """
     get the local Application directory (.local/share/pyDetecDiv on Linux, AppData\pyDetecDiv on Windows)
 
@@ -96,31 +108,29 @@ def get_appdata_dir():
     """
     if not get_config().has_option('paths', 'appdata'):
         return xdg.BaseDirectory.save_data_path('pyDetecDiv')
-    return get_config_value('paths', 'appdata')
+    return Path(get_config_value('paths', 'appdata'))
 
 
-def get_plugins_dir():
+def get_plugins_dir() -> Path:
     """
     Get the user directory where plugins are installed. The directory is created if it does not exist
 
     :return: the user plugin path
-    :rtype: Path
     """
-    plugins_path = os.path.join(get_appdata_dir(), 'plugins')
+    plugins_path = Path(os.path.join(get_appdata_dir(), 'plugins'))
     if not os.path.exists(plugins_path):
         os.mkdir(plugins_path)
     return plugins_path
 
 
-def get_default_workspace_dir():
+def get_default_workspace_dir() -> Path:
     """
     Get the user workspace directory. The default directory is not created if it does not exist to avoid confusion. It is up to the
     user to make sure the directory exists or select an existing directory.
 
     :return: the user workspace path
-    :rtype: Path
     """
-    default_workspace_dir = os.path.join('/data', getpass.getuser(), 'workspace')
+    default_workspace_dir = Path(os.path.join('/data', getpass.getuser(), 'workspace'))
     # if not os.path.exists(default_workspace_dir):
     #     os.mkdir(default_workspace_dir)
     return default_workspace_dir

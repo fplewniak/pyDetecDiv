@@ -1,13 +1,14 @@
 """
 Module defining widgets and other utilities for creating windows/forms with a minimum of code
 """
-from typing import Any, Self, Type, Union
+from typing import Any, Self, Type, Union, TypeVar, Callable
 
 from PySide6.QtCore import QStringListModel, QItemSelection, QItemSelectionModel, Signal, Slot, QModelIndex
 from PySide6.QtGui import QIcon, QAction, QContextMenuEvent
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox, \
-    QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView, QAbstractItemView, \
-    QPushButton, QApplication, QRadioButton, QListView, QMenu, QDataWidgetMapper, QWidget, QLayout
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox,
+                               QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView,
+                               QAbstractItemView,
+                               QPushButton, QApplication, QRadioButton, QListView, QMenu, QDataWidgetMapper, QWidget, QLayout)
 
 from pydetecdiv.app.models import GenericModel, ItemModel, DictItemModel, StringList
 from pydetecdiv import plugins
@@ -36,6 +37,8 @@ class StyleSheets:
 
 
 StandardButtonCombination = Union["QDialogButtonBox.StandardButton", ...]
+
+GenericGroupBox = TypeVar('GenericGroupBox', bound=QGroupBox)
 
 
 class GroupBox(QGroupBox):
@@ -74,6 +77,20 @@ class GroupBox(QGroupBox):
         sub_box = widget(self, **kwargs)
         self.layout.addWidget(sub_box)
         return sub_box
+
+    def addOption(self, label: str = None, widget: Type[QWidget] = None, parameter: Parameter = None,
+                  enabled: bool = True, **kwargs: dict[str, Any]) -> QWidget:
+        """
+        add an option to the current Form
+
+        :param enabled: whether this option is enabled
+        :param parameter: the Parameter attached to the widget
+        :param label: the label for the option
+        :param widget: the widget to specify the option value, etc
+        :param kwargs: extra args passed to the widget
+        :return: the option widget
+        """
+        ...
 
 
 class ParametersFormGroupBox(GroupBox):
@@ -689,7 +706,7 @@ class DialogButtonBox(QDialogButtonBox):
         for button in buttons:
             self.addButton(button)
 
-    def connect_to(self, connections: dict[Signal, Slot] = None) -> None:
+    def connect_to(self, connections: dict[Signal, Callable] = None) -> None:
         """
         Specify the connections between the signal from this button box and slots specified in a directory
 
@@ -722,14 +739,14 @@ class Dialog(QDialog):
             self.setWindowTitle(title)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
 
-    def fit_to_contents(self):
+    def fit_to_contents(self) -> None:
         """
         Adjust the size of the window to fit its contents
         """
         QApplication.processEvents()
         self.adjustSize()
 
-    def addGroupBox(self, title: str = None, widget: Type[GroupBox] = ParametersFormGroupBox) -> GroupBox:
+    def addGroupBox(self, title: str = None, widget: Type[GroupBox] = ParametersFormGroupBox) -> GenericGroupBox:
         """
         Add a group box to the Dialog window
 
@@ -781,7 +798,7 @@ class Dialog(QDialog):
             self.vert_layout.addWidget(widget)
 
 
-def set_connections(connections: dict[Signal, Slot]) -> None:
+def set_connections(connections: dict[Signal, Callable]) -> None:
     """
     connect a signal to a slot or a list of slots, as defined in a dictionary
 

@@ -3,6 +3,8 @@
 """
 Access to ROI data
 """
+from typing import Any
+
 from sqlalchemy import Column, Integer, String, ForeignKey, text
 from sqlalchemy.types import JSON
 from sqlalchemy.orm import joinedload, relationship
@@ -32,14 +34,15 @@ class ROIdao(DAO, Base):
     # image_data_list = relationship('ImageDataDao')
     data_list = ROIdata.roi_to_data()
 
+    entities_ = relationship('EntityDao')
+
     @property
-    def record(self):
+    def record(self) -> dict[str, Any]:
         """
         A method creating a record dictionary from a roi row dictionary. This method is used to convert the SQL
         table columns into the ROI record fields expected by the domain layer
 
         :return: a ROI record as a dictionary with keys() appropriate for handling by the domain layer
-        :rtype: dict
         """
         return {'id_': self.id_,
                 'name': self.name,
@@ -51,20 +54,35 @@ class ROIdao(DAO, Base):
                 'key_val': self.key_val,
                 }
 
-    def data(self, roi_id):
+    def data(self, roi_id: int) -> list[dict[str, Any]]:
         """
-        Returns a list of DataDao objects linked to the ROIdao object with the specified id_
+        Returns a list of DataDao objects linked to the ROIdao object with the specified id\_
 
-        :param roi_id: the id_ of the ROI
-        :type roi_id: int
+        :param roi_id: the id\_ of the ROI
         :return: the list of Data records linked to the ROI
-        :type: list of dict
         """
         return [i.record
                 for i in self.session.query(dao.DataDao)
                 .filter(ROIdata.data == dao.DataDao.id_)
                 .filter(ROIdata.roi == roi_id)
                 ]
+
+    def entities(self, roi_id: int) -> list[dict[str, object]]:
+        """
+        A method returning the list of Entity records whose parent ROI has id\_ == roi_id
+
+        :param roi_id: the id of the ROI
+        :return: a list of Entity records with parent ROI id\_ == roi_id
+        """
+        if self.session.query(ROIdao).filter(ROIdao.id_ == roi_id).first() is not None:
+            entities = [entity.record
+                        for entity in self.session.query(ROIdao)
+                        .options(joinedload(ROIdao.entities_))
+                        .filter(ROIdao.id_ == roi_id)
+                        .first().entities_]
+        else:
+            entities = []
+        return entities
 
     # def image_data(self, roi_id):
     #     """

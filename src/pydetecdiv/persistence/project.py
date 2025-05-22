@@ -34,14 +34,12 @@ def open_project(dbname: str = None, dbms: str = None) -> ShallowDb:
     return db
 
 
-def list_projects(dbms: str = None):
+def list_projects(dbms: str = None) -> list[str]:
     """
     Return a list of projects corresponding to a given database manager system
 
     :param dbms: the dbms
-    :type dbms: str
     :return: the list of projects
-    :rtype: list of str
     """
     dbms = get_config_value('project', 'dbms') if dbms is None else dbms
     project_list = []
@@ -53,12 +51,13 @@ def list_projects(dbms: str = None):
             raise UnknownRepositoryTypeError(f'{dbms} is not implemented')
     return project_list
 
-def delete_project(dbname: str = None, dbms: str = None):
+
+def delete_project(dbname: str = None, dbms: str = None) -> None:
     """
     Deletes the project from its name
 
+    :param dbname: the name of the database to delete
     :param dbms: the dbms
-    :type dbms: str
     """
     dbms = get_config_value('project', 'dbms') if dbms is None else dbms
     project_list = list_projects()

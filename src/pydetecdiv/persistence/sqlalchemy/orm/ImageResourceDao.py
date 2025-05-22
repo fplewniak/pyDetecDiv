@@ -46,14 +46,12 @@ class ImageResourceDao(DAO, Base):
 
     data_list_ = relationship('DataDao')
 
-    def data_list(self, image_res_id):
+    def data_list(self, image_res_id: int) -> list[dict[str, object]]:
         """
-        A method returning the list of Data records whose parent Dataset has id_ == dataset_id
+        A method returning the list of Data records whose parent Dataset has id\_ == dataset_id
 
         :param dataset_id: the id of the Dataset
-        :type dataset_id: str
-        :return: a list of Data records whose parent Dataset has id_ == dataset_id
-        :rtype: list of dict
+        :return: a list of Data records whose parent Dataset has id\_ == dataset_id
         """
         if self.session.query(ImageResourceDao).filter(ImageResourceDao.id_ == image_res_id).first() is not None:
             data_list = [data.record
@@ -66,13 +64,12 @@ class ImageResourceDao(DAO, Base):
         return data_list
 
     @property
-    def record(self):
+    def record(self) -> dict[str, object]:
         """
         A method creating a DAO record dictionary from a fov row dictionary. This method is used to convert the SQL
         table columns into the FOV record fields expected by the domain layer
 
         :return: a FOV record as a dictionary with keys() appropriate for handling by the domain layer
-        :rtype: dict
         """
         return {'id_': self.id_,
                 # 'dims': self.dims,

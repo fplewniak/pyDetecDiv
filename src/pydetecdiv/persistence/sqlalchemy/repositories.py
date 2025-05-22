@@ -3,11 +3,13 @@
 """
 Concrete Repositories using a SQL database with the sqlalchemy toolkit
 """
-import json
 import os
 import re
 import sqlite3
+import subprocess
 from datetime import datetime
+from typing import Any
+
 from PIL import Image
 
 import pandas
@@ -15,8 +17,10 @@ import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.expression import Delete
 from pandas import DataFrame
+
+from pydetecdiv.domain import Dataset
 from pydetecdiv.persistence.repository import ShallowDb
-from pydetecdiv.persistence.sqlalchemy.orm.main import mapper_registry
+from pydetecdiv.persistence.sqlalchemy.orm.main import mapper_registry, DAO
 from pydetecdiv.persistence.sqlalchemy.orm.dao import dso_dao_mapping as dao
 from pydetecdiv.persistence.sqlalchemy.orm.associations import Linker
 from pydetecdiv.settings import get_config_value
@@ -29,7 +33,7 @@ class ShallowSQLite3(ShallowDb):
     A concrete shallow SQLite3 persistence inheriting ShallowDb and implementing SQLite3-specific engine
     """
 
-    def __init__(self, dbname=None):
+    def __init__(self, dbname: str = None):
         self.name = dbname
         try:
             self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}?check_same_thread=True')
@@ -40,7 +44,7 @@ class ShallowSQLite3(ShallowDb):
         self.create()
 
     @property
-    def session(self):
+    def session(self) -> sqlalchemy.orm.Session:
         """
         Property returning the sqlalchemy Session object attached to the repository
 
@@ -50,14 +54,14 @@ class ShallowSQLite3(ShallowDb):
             self.session_ = self.session_maker()
         return self.session_
 
-    def commit(self):
+    def commit(self) -> None:
         """
         Commit the current transaction
         """
         if self.session_ is not None:
             self.session_.commit()
 
-    def rollback(self):
+    def rollback(self) -> None:
         """
         Rollback the current transaction
         """
@@ -79,7 +83,7 @@ class ShallowSQLite3(ShallowDb):
         except sqlalchemy.exc.OperationalError as exc:
             print(exc)
 
-    def create(self):
+    def create(self) -> None:
         """
         Gets SqlAlchemy classes defining the project database schema and creates the database if it does not exist.
         """
@@ -88,34 +92,34 @@ class ShallowSQLite3(ShallowDb):
             mapper_registry.metadata.create_all(self.engine)
             experiment_path = os.path.join(get_config_value('project', 'workspace'), exp_name)
             os.mkdir(experiment_path)
-            dataset_record = {'id_': None,
-                              'uuid': generate_uuid(),
-                              'name': 'data',
-                              'url': experiment_path,
-                              'type_': 'raw',
-                              'run': None,
+            dataset_record = {'id_'    : None,
+                              'uuid'   : generate_uuid(),
+                              'name'   : 'data',
+                              'url'    : experiment_path,
+                              'type_'  : 'raw',
+                              'run'    : None,
                               'pattern': None,
                               }
             self.save_object('Dataset', dataset_record)
             os.mkdir(os.path.join(experiment_path, dataset_record['name']))
-            experiment_record = {'id_': None,
-                                 'uuid': generate_uuid(),
-                                 'name': exp_name,
-                                 'author': get_config_value('project', 'user'),
-                                 'date': datetime.now(),
+            experiment_record = {'id_'        : None,
+                                 'uuid'       : generate_uuid(),
+                                 'name'       : exp_name,
+                                 'author'     : get_config_value('project', 'user'),
+                                 'date'       : datetime.now(),
                                  'raw_dataset': self.get_record_by_name('Dataset', dataset_record['name'])['id_'],
                                  }
             self.save_object('Experiment', experiment_record)
             self.commit()
 
-    def close(self):
+    def close(self) -> None:
         """
         Close the current connexion
         """
         self.engine.dispose()
 
-    def import_images(self, image_files, data_dir_path, destination, author='', date='now', in_place=False,
-                      img_format='imagetiff'):
+    def import_images(self, image_files: list[str], data_dir_path: str, destination: str, author: str = '', date: datetime = 'now',
+                      in_place: bool = False, img_format: str = 'imagetiff') -> subprocess.Popen:
         """
         Import images specified in a list of files into a destination
 
@@ -143,28 +147,28 @@ class ShallowSQLite3(ShallowDb):
             process = copy_files(image_files, data_dir_path) if not in_place else None
             for image_file in image_files:
                 record = {
-                    'id_': None,
-                    'uuid': generate_uuid(),
-                    'name': os.path.basename(image_file),
-                    'dataset': self.get_record_by_name('Dataset', 'data')['id_'],
-                    'author': get_config_value('project', 'user') if author == '' else author,
-                    'date': datetime.now() if date == 'now' else datetime.fromisoformat(date),
-                    'url': image_file if in_place else os.path.join(destination, os.path.basename(image_file)),
-                    'format': img_format,
+                    'id_'       : None,
+                    'uuid'      : generate_uuid(),
+                    'name'      : os.path.basename(image_file),
+                    'dataset'   : self.get_record_by_name('Dataset', 'data')['id_'],
+                    'author'    : get_config_value('project', 'user') if author == '' else author,
+                    'date'      : datetime.now() if date == 'now' else datetime.fromisoformat(date),
+                    'url'       : image_file if in_place else os.path.join(destination, os.path.basename(image_file)),
+                    'format'    : img_format,
                     'source_dir': os.path.dirname(image_file),
-                    'meta_data': '{}',
-                    'key_val': '{}',
-                }
+                    'meta_data' : '{}',
+                    'key_val'   : '{}',
+                    }
                 with Image.open(record['url']) as img:
                     record['xdim'], record['ydim'] = img.size
                 self.save_object('Data', record)
                 # urls.append(record['url'])
-        except:
-            raise ImportImagesError('Could not import images')
+        except Exception as error:
+            raise ImportImagesError('Could not import images') from error
         # return urls, process
         return process
 
-    def annotate_data(self, dataset, source, keys_, regex):
+    def annotate_data(self, dataset: Dataset, source: str, keys_: tuple[str, ...], regex: str) -> pandas.DataFrame:
         """
         Method to annotate data files in a dataset according to a regular expression applied to a source. The resulting
         key-value pairs are placed in a key_val column.
@@ -197,7 +201,7 @@ class ShallowSQLite3(ShallowDb):
                     df.loc[i, k] = m.group(k)
         return df
 
-    def save_object(self, class_name, record):
+    def save_object(self, class_name: str, record: dict[str, object]) -> int:
         """
         Save the object represented by the record
 
@@ -212,19 +216,17 @@ class ShallowSQLite3(ShallowDb):
             return dao[class_name](self.session).insert(record)
         return dao[class_name](self.session).update(record)
 
-    def delete_object(self, class_name, id_):
+    def delete_object(self, class_name: str, id_: int) -> None:
         """
-        Delete an object of class name = class_name with id = id_
+        Delete an object of class name = class_name with id = id\_
 
         :param class_name: the class name of the object to delete
-        :type class_name: str
-        :param id_: the id of the object to delete
-        :type id_: int
+        :param id\_: the id of the object to delete
         """
         self.session.execute(Delete(dao[class_name], whereclause=dao[class_name].id_ == id_))
-        # self.session.commit()
+        self.session.commit()
 
-    def _get_records(self, class_name=None, query=None):
+    def _get_records(self, class_name: str = None, query: list[str] = None) -> list[dict[str, object]]:
         """
         A private method returning the list of all object records of a given class specified by its name and verifying a
         query built from a list of where clauses
@@ -243,7 +245,7 @@ class ShallowSQLite3(ShallowDb):
 
         return [obj.record for obj in dao_list]
 
-    def count_records(self, class_name):
+    def count_records(self, class_name: str) -> int:
         """
         Get the number of objects of a given class in the current project
 
@@ -254,7 +256,7 @@ class ShallowSQLite3(ShallowDb):
         """
         return self.session.query(dao[class_name]).count()
 
-    def get_dataframe(self, class_name, id_list=None):
+    def get_dataframe(self, class_name: str, id_list: list[int] = None) -> pandas.DataFrame:
         """
         Get a DataFrame containing the list of all domain objects of a given class in the current project
 
@@ -267,7 +269,7 @@ class ShallowSQLite3(ShallowDb):
         """
         return DataFrame(self.get_records(class_name, id_list))
 
-    def get_record(self, class_name, id_=None, uuid=None):
+    def get_record(self, class_name: str, id_: int = None, uuid: str = None) -> dict[str, Any] | None:
         """
         A method returning an object record of a given class from its id
 
@@ -286,7 +288,7 @@ class ShallowSQLite3(ShallowDb):
             return self.session.query(dao[class_name]).filter(dao[class_name].uuid == uuid).first().record
         return None
 
-    def get_record_by_name(self, class_name, name=None):
+    def get_record_by_name(self, class_name: str, name: str = None) -> dict[str, Any] | None:
         """
         Return a record from its name
 
@@ -302,7 +304,7 @@ class ShallowSQLite3(ShallowDb):
             return obj.record
         return None
 
-    def get_records(self, class_name, id_list=None):
+    def get_records(self, class_name: str, id_list: list[int] = None) -> list[dict[str, Any]]:
         """
         A method returning the list of all object records of a given class or select those whose id is in id_list
 
@@ -319,19 +321,15 @@ class ShallowSQLite3(ShallowDb):
             dao_list = self.session.query(dao[class_name])
         return [obj.record for obj in dao_list]
 
-    def get_linked_records(self, cls_name, parent_cls_name, parent_id):
+    def get_linked_records(self, cls_name:str, parent_cls_name: str, parent_id: int) -> list[dict[str, Any]]:
         """
         A method returning the list of records for all objects of class defined by cls_name that are linked to object
-        of class parent_cls_name with id_ = parent_id
+        of class parent_cls_name with id\_ = parent_id
 
         :param cls_name: the class name of the objects to retrieve records for
-        :type cls_name: str
         :param parent_cls_name: the class nae of the parent object
-        :type parent_cls_name: str
         :param parent_id: the id of the parent object
-        :type parent_id: int
         :return: a list of records
-        :rtype: list of dict
         """
         match (cls_name, parent_cls_name):
             # case ['ImageData', 'Image']:
@@ -348,6 +346,14 @@ class ShallowSQLite3(ShallowDb):
             #     linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['roi'])]
             case ['ROI', ('FOV' | 'Data')]:
                 linked_rec = dao[parent_cls_name](self.session).roi_list(parent_id)
+            case ['Entity', ('ROI')]:
+                linked_rec = dao[parent_cls_name](self.session).entities(parent_id)
+            case ['BoundingBox', 'Entity']:
+                linked_rec = dao[parent_cls_name](self.session).bounding_boxes(parent_id)
+            case ['Point', 'Entity']:
+                linked_rec = dao[parent_cls_name](self.session).points(parent_id)
+            case ['Mask', 'Entity']:
+                linked_rec = dao[parent_cls_name](self.session).masks(parent_id)
             # case ['ROI', 'Image']:
             #     linked_rec = dao[parent_cls_name](self.session).roi(parent_id)
             # case ['Image', ('ImageData' | 'FOV' | 'ROI')]:
@@ -366,7 +372,7 @@ class ShallowSQLite3(ShallowDb):
                 linked_rec = []
         return linked_rec
 
-    def _get_dao(self, class_name, id_=None):
+    def _get_dao(self, class_name: str, id_: int = None) -> DAO:
         """
         A method returning a DAO of a given class from its id
 
@@ -381,7 +387,7 @@ class ShallowSQLite3(ShallowDb):
         obj.session = self.session
         return obj
 
-    def link(self, class1_name, id_1, class2_name, id_2):
+    def link(self, class1_name: str, id_1: int, class2_name: str, id_2: int) -> None:
         """
         Create a link between two domain-specific objects. There must be a direct link defined in Linker class,
         otherwise, the link cannot be created.
@@ -399,7 +405,7 @@ class ShallowSQLite3(ShallowDb):
         obj2 = self._get_dao(class2_name, id_2)
         Linker.link(obj1, obj2)
 
-    def unlink(self, class1_name, id_1, class2_name, id_2):
+    def unlink(self, class1_name: str, id_1: int, class2_name: str, id_2: int) -> None:
         """
         Remove the link between two domain-specific objects. There must be a direct link defined in Linker class,
         otherwise, the link cannot be removed.

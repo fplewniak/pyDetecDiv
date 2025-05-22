@@ -5,9 +5,11 @@
 """
 import os
 
+from PySide6.QtCore import QThread
 import numpy as np
 import pandas as pd
 import cv2 as cv
+from bioio_base.dimensions import Dimensions
 from vidstab import VidStab
 import abc
 
@@ -23,46 +25,46 @@ class ImageResourceData(abc.ABC):
     _drift = None
 
     @property
-    def drift(self):
+    def drift(self) -> pd.DataFrame | None:
         if self._drift is None:
             self._drift = self.fov.project.get_object('ImageResource', self.image_resource, use_pool=False).drift
         return self._drift
 
     @property
-    def drift_method(self):
+    def drift_method(self) -> str:
         return self.fov.image_resource().drift_method
 
     @property
     @abc.abstractmethod
-    def shape(self):
+    def shape(self) -> tuple[int]:
         """
         The image resource shape (should habitually be 5D with the following dimensions TCZYX)
         """
 
     @property
     @abc.abstractmethod
-    def dims(self):
+    def dims(self) -> Dimensions:
         """
         The image resource dimensions with their size
         """
 
     @property
     @abc.abstractmethod
-    def sizeT(self):
+    def sizeT(self) -> int:
         """
         The number of time frames
         """
 
     @property
     @abc.abstractmethod
-    def sizeC(self):
+    def sizeC(self) -> int:
         """
         The number of channels
         """
 
     @property
     @abc.abstractmethod
-    def sizeZ(self):
+    def sizeZ(self) -> int:
         """
         The number of layers
         """
@@ -76,13 +78,13 @@ class ImageResourceData(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def sizeX(self):
+    def sizeX(self) -> int:
         """
         the image width
         """
 
     @abc.abstractmethod
-    def _image(self, C=0, Z=0, T=0, drift=None):
+    def _image(self, C: int = 0, Z: int = 0, T: int = 0, drift: bool = False) -> np.ndarray:
         """
         A 2D grayscale image (one frame, one channel and one layer)
 
@@ -96,7 +98,7 @@ class ImageResourceData(abc.ABC):
         :rtype: 2D numpy.array
         """
 
-    def image(self, sliceX=None, sliceY=None, C=0, **kwargs):
+    def image(self, sliceX: slice = None, sliceY: slice = None, C: int = 0, **kwargs) -> np.ndarray:
         if C is None:
             if sliceX and sliceY:
                 return np.zeros((self.sizeY, self.sizeX), np.uint16)[sliceY, sliceX]
@@ -106,7 +108,9 @@ class ImageResourceData(abc.ABC):
         return self._image(C=C, **kwargs)
 
     @abc.abstractmethod
-    def _image_memmap(self, sliceX=None, sliceY=None, C=0, Z=0, T=0, drift=None):
+    def _image_memmap(self, sliceX: slice = None, sliceY: slice = None, C: int = 0, Z: int = 0, T: int = 0,
+                      drift: bool = False) -> np.ndarray:
+
         """
         A 2D grayscale memory mapped image (one frame, one channel and one layer)
 
@@ -120,24 +124,24 @@ class ImageResourceData(abc.ABC):
         :rtype: 2D numpy.array
         """
 
-    def image_memmap(self, sliceX=None, sliceY=None, **kwargs):
+    def image_memmap(self, sliceX: slice = None, sliceY: slice = None, **kwargs) -> np.ndarray:
         if sliceX and sliceY:
             return self._image_memmap(sliceX=sliceX, sliceY=sliceY, **kwargs)
         return self._image_memmap(**kwargs)
 
-    @abc.abstractmethod
-    def data_sample(self, X=None, Y=None):
-        """
-        Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for
-        regions of interest from a field of view.
-
-        :param X: the X slice
-        :type X: slice
-        :param Y: the Y slice
-        :type Y: slice
-        :return: the sample data (in-memory)
-        :rtype: ndarray
-        """
+    # @abc.abstractmethod
+    # def data_sample(self, X: slice = None, Y: slice = None) -> np.ndarray:
+    #     """
+    #     Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for
+    #     regions of interest from a field of view.
+    #
+    #     :param X: the X slice
+    #     :type X: slice
+    #     :param Y: the Y slice
+    #     :type Y: slice
+    #     :return: the sample data (in-memory)
+    #     :rtype: ndarray
+    #     """
 
     # def open(self):
     #     """
@@ -160,7 +164,7 @@ class ImageResourceData(abc.ABC):
     #     of changes.
     #     """
 
-    def compute_drift(self, method='phase correlation', **kwargs):
+    def compute_drift(self, method: str = 'phase correlation', **kwargs) -> pd.DataFrame:
         """
         Compute drift along time using the specified method
 
@@ -172,11 +176,11 @@ class ImageResourceData(abc.ABC):
         """
         match (method):
             case 'phase correlation':
-                drift = pd.concat([pd.DataFrame([[0,0]],columns=['dx', 'dy']),
-                                  self.compute_drift_phase_correlation_cv2(**kwargs)], ignore_index=True)
+                drift = pd.concat([pd.DataFrame([[0, 0]], columns=['dx', 'dy']),
+                                   self.compute_drift_phase_correlation_cv2(**kwargs)], ignore_index=True)
             case 'vidstab':
-                drift = pd.concat([pd.DataFrame([[0,0]],columns=['dx', 'dy']),
-                                  self.compute_drift_vidstab(**kwargs)], ignore_index=True)
+                drift = pd.concat([pd.DataFrame([[0, 0]], columns=['dx', 'dy']),
+                                   self.compute_drift_vidstab(**kwargs)], ignore_index=True)
             case _:
                 drift = pd.DataFrame([[0, 0]] * self.sizeT, columns=['dx', 'dy'])
         image_resource = self.fov.image_resource()
@@ -191,7 +195,7 @@ class ImageResourceData(abc.ABC):
         image_resource.project.commit()
         return drift
 
-    def compute_drift_phase_correlation_cv2(self, Z=0, C=0, thread=None):
+    def compute_drift_phase_correlation_cv2(self, Z: int = 0, C: int = 0, thread: QThread = None) -> pd.DataFrame | None:
         """
         Compute the cumulative transforms (dx, dy) to apply in order to correct the drift using phase correlation
 
@@ -213,7 +217,8 @@ class ImageResourceData(abc.ABC):
                 return None
         return df.cumsum(axis=0)
 
-    def compute_drift_vidstab(self, Z=0, C=0, thread=None, smoothing_window=1):
+    def compute_drift_vidstab(self, Z: int = 0, C: int = 0, thread: QThread = None,
+                              smoothing_window: int = 1) -> pd.DataFrame | None:
         """
         Compute the cumulative transforms (dx, dy, dr) to apply in order to stabilize the time series and correct drift
 
@@ -229,13 +234,13 @@ class ImageResourceData(abc.ABC):
         stabilizer = VidStab()
         for frame in range(0, self.sizeT):
             _ = stabilizer.stabilize_frame(
-                input_frame=np.uint8(np.array(self.image(T=frame, Z=Z, C=C)) / 65535 * 255), smoothing_window=smoothing_window)
+                    input_frame=np.uint8(np.array(self.image(T=frame, Z=Z, C=C)) / 65535 * 255), smoothing_window=smoothing_window)
             self.refresh()
             if thread and thread.isInterruptionRequested():
                 return None
         return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)[['dx', 'dy']]
 
-    def refresh(self):
+    def refresh(self) -> None:
         pass
 
     # def correct_drift(self, drift, filename=None, max_mem=5000):

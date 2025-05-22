@@ -3,14 +3,23 @@
 """
  A class defining the business logic methods that can be applied to Fields Of View
 """
+from typing import TYPE_CHECKING, TypeVar, Any
+
+if TYPE_CHECKING:
+    from pydetecdiv.domain.Data import Data
+
 import os
 
 import numpy as np
 import pandas
 from PIL import Image
-from aicsimageio.dimensions import Dimensions
+from bioio_base.dimensions import Dimensions
 
-from pydetecdiv.domain import MultiFileImageResource, SingleFileImageResource, FOV, Dataset
+from pydetecdiv.domain.MultiFileImageResource import MultiFileImageResource
+from pydetecdiv.domain.SingleFileImageResource import SingleFileImageResource
+from pydetecdiv.domain.FOV import FOV
+from pydetecdiv.domain.Dataset import Dataset
+from pydetecdiv.domain.ImageResourceData import ImageResourceData
 from pydetecdiv.domain.Hdf5ImageResource import Hdf5ImageResource
 from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.settings import get_config_value
@@ -21,10 +30,10 @@ class ImageResource(DomainSpecificObject):
     A business-logic class defining valid operations and attributes of Image resources
     """
 
-    def __init__(self, dataset, fov, multi,
-                 xdim=-1, ydim=-1, zdim=-1, cdim=-1, tdim=-1,
-                 xyscale=1, tscale=1, zscale=1,
-                 xyunit=1e-6, zunit=1e-6, tunit=1e-3, key_val=None,
+    def __init__(self, dataset: int | Dataset, fov: int | FOV, multi: bool,
+                 xdim: int = -1, ydim: int = -1, zdim: int = -1, cdim: int = -1, tdim: int = -1,
+                 xyscale: float = 1, tscale: float = 1, zscale: float = 1,
+                 xyunit: float = 1e-6, zunit: float = 1e-6, tunit: float = 1e-3, key_val: dict = None,
                  **kwargs):
         super().__init__(**kwargs)
         self._dataset = dataset.id_ if isinstance(dataset, Dataset) else dataset
@@ -47,24 +56,24 @@ class ImageResource(DomainSpecificObject):
         self._image_files_5d = None
         self._image_files = None
         self.pattern = self._pattern
-        self.fov = self._fov
+        # self.fov = self._fov
 
     @property
-    def dataset(self):
+    def dataset(self) -> Dataset:
         """
         the dataset corresponding to this image resource
         """
         return self.project.get_object('Dataset', self._dataset)
 
     @property
-    def _fov(self):
+    def fov(self) -> FOV:
         """
         the FOV corresponding to this image resource
         """
         return self.project.get_object('FOV', self.fov_id)
 
     @property
-    def drift(self):
+    def drift(self) -> pandas.DataFrame | None:
         if self.key_val is not None and 'drift' in self.key_val:
             drift_path = os.path.join(get_config_value('project', 'workspace'),
                                       self.fov.project.dbname, self.key_val['drift'])
@@ -72,13 +81,13 @@ class ImageResource(DomainSpecificObject):
         return None
 
     @property
-    def drift_method(self):
+    def drift_method(self) -> str | None:
         if self.key_val is not None and 'drift_method' in self.key_val:
             return self.key_val['drift_method']
         return None
 
     @property
-    def data_list(self):
+    def data_list(self) -> list['Data']:
         """
         Property returning the Data objects associated to this FOV
 
@@ -88,21 +97,21 @@ class ImageResource(DomainSpecificObject):
         return self.project.get_linked_objects('Data', to=self)
 
     @property
-    def shape(self):
+    def shape(self) -> tuple[int, int, int, int, int]:
         """
         The image resource shape (should habitually be 5D with the following dimensions TCZYX)
         """
         return (self.tdim, self.cdim, self.zdim, self.ydim, self.xdim)
 
     @property
-    def dims(self):
+    def dims(self) -> Dimensions:
         """
         The image resource dimensions with their size
         """
         return Dimensions("TCZYX", (self.tdim, self.cdim, self.zdim, self.ydim, self.xdim))
 
     @property
-    def xdim(self):
+    def xdim(self) -> int:
         """
         The image resource X dimension size determined from file
         """
@@ -111,11 +120,11 @@ class ImageResource(DomainSpecificObject):
         return self._xdim
 
     @xdim.setter
-    def xdim(self, xdim):
+    def xdim(self, xdim: int) -> None:
         self._xdim = xdim
 
     @property
-    def ydim(self):
+    def ydim(self) -> int:
         """
         The image resource Y dimension size determined from file
         """
@@ -124,11 +133,11 @@ class ImageResource(DomainSpecificObject):
         return self._ydim
 
     @ydim.setter
-    def ydim(self, ydim):
+    def ydim(self, ydim: int) -> None:
         self._ydim = ydim
 
     @property
-    def tdim(self):
+    def tdim(self) -> int:
         """
         The image resource Y dimension size determined from file
         """
@@ -137,11 +146,11 @@ class ImageResource(DomainSpecificObject):
         return self._tdim
 
     @tdim.setter
-    def tdim(self, tdim):
+    def tdim(self, tdim: int) -> None:
         self._tdim = tdim
 
     @property
-    def cdim(self):
+    def cdim(self) -> int:
         """
         The image resource Y dimension size determined from file
         """
@@ -150,11 +159,11 @@ class ImageResource(DomainSpecificObject):
         return self._cdim
 
     @cdim.setter
-    def cdim(self, cdim):
+    def cdim(self, cdim: int) -> None:
         self._cdim = cdim
 
     @property
-    def zdim(self):
+    def zdim(self) -> int:
         """
         The image resource Y dimension size determined from file
         """
@@ -163,10 +172,10 @@ class ImageResource(DomainSpecificObject):
         return self._zdim
 
     @zdim.setter
-    def zdim(self, zdim):
+    def zdim(self, zdim: int) -> None:
         self._zdim = zdim
 
-    def set_image_shape_from_file(self):
+    def set_image_shape_from_file(self) -> tuple[int, int]:
         """
         The image shape determined from first file
         """
@@ -174,17 +183,17 @@ class ImageResource(DomainSpecificObject):
         with Image.open(self.image_files[0]) as img:
             self._xdim, self._ydim = img.size
         self.project.save(self)
-        return (self._ydim, self._xdim)
+        return self._ydim, self._xdim
 
     @property
-    def sizeT(self):
+    def sizeT(self) -> int:
         """
         The number of frames
         """
         return self.dims.T
 
     @property
-    def sizeC(self):
+    def sizeC(self) -> int:
         """
         the number of channels
         :return:
@@ -192,7 +201,7 @@ class ImageResource(DomainSpecificObject):
         return self.dims.C
 
     @property
-    def sizeZ(self):
+    def sizeZ(self) -> int:
         """
         the number of layers
         :return:
@@ -200,20 +209,20 @@ class ImageResource(DomainSpecificObject):
         return self.dims.Z
 
     @property
-    def sizeY(self):
+    def sizeY(self) -> int:
         """
         the height of the images
         """
         return self.dims.Y
 
     @property
-    def sizeX(self):
+    def sizeX(self) -> int:
         """
         the width of the images
         """
         return self.dims.X
 
-    def image_resource_data(self):
+    def image_resource_data(self) -> ImageResourceData:
         """
         Creates a ImageResourceData object with the appropriate sub-class according to the multi parameter
         :return: the ImageResourceData object
@@ -226,7 +235,7 @@ class ImageResource(DomainSpecificObject):
         return MultiFileImageResource(image_resource=self)
 
     @property
-    def image_files_5d(self):
+    def image_files_5d(self) -> np.ndarray[str] | None:
         """
         property returning the list of file paths as a 3D array. Each file contains a XY 2D image, and there is one
         file for each T, C,Z combination of coordinates
@@ -245,7 +254,7 @@ class ImageResource(DomainSpecificObject):
         return self._image_files_5d
 
     @property
-    def image_files(self):
+    def image_files(self) -> list[str]:
         """
         property returning the list of all files associated with this image resource
         :return: list of image files
@@ -257,7 +266,7 @@ class ImageResource(DomainSpecificObject):
         return self._image_files
 
     @property
-    def _pattern(self):
+    def _pattern(self) -> str:
         """
         property returning the pattern defining the dimensions for the dataset associated with this image resource
         :return: pattern
@@ -265,29 +274,29 @@ class ImageResource(DomainSpecificObject):
         """
         return self.dataset.pattern
 
-    def record(self, no_id=False):
+    def record(self, no_id: bool = False) -> dict[str, Any]:
         """
         Returns a record dictionary of the current Image resource
 
-        :param no_id: if True, does not return id_ (useful for transferring from one project to another)
+        :param no_id: if True, does not return id\_ (useful for transferring from one project to another)
         :type no_id: bool
         :return: record dictionary
         :rtype: dict
         """
         record = {
             'dataset': self._dataset,
-            'shape': (self.tdim, self.cdim, self.zdim, self.ydim, self.xdim),
+            'shape'  : (self.tdim, self.cdim, self.zdim, self.ydim, self.xdim),
             'xyscale': self.xyscale,
-            'xyunit': self.xyunit,
-            'zscale': self.zscale,
-            'zunit': self.zunit,
-            'tscale': self.tscale,
-            'tunit': self.tunit,
-            'fov': self.fov_id,
-            'multi': self.multi,
-            'uuid': self.uuid,
+            'xyunit' : self.xyunit,
+            'zscale' : self.zscale,
+            'zunit'  : self.zunit,
+            'tscale' : self.tscale,
+            'tunit'  : self.tunit,
+            'fov'    : self.fov_id,
+            'multi'  : self.multi,
+            'uuid'   : self.uuid,
             'key_val': self.key_val,
-        }
+            }
         if not no_id:
             record['id_'] = self.id_
         return record

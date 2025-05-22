@@ -133,3 +133,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 /bin/pydetecdiv
+
+#appmap files
+tmp/
+appmap.yml
+appmap.log

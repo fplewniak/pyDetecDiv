@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Settings &mdash; pyDetecDiv 0.4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+  <title>Settings &mdash; pyDetecDiv 0.5.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=6c02275b"></script>
+      <script src="../../_static/documentation_options.js?v=1dd76d02"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -110,8 +110,19 @@
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="pydetecdiv.settings.get_config_dir">
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">get_config_dir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Path</span></span></span><a class="headerlink" href="#pydetecdiv.settings.get_config_dir" title="Link to this definition"></a></dt>
+<dd><p>Returns the directory containing the pyDetecDiv configuration files</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the config directory path</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="pydetecdiv.settings.get_config_files">
-<span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">get_config_files</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.settings.get_config_files" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">get_config_files</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Path</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pydetecdiv.settings.get_config_files" title="Link to this definition"></a></dt>
 <dd><p>Get a list configuration files conforming to the XDG Base directory specification for Linux and Mac OS or located
 in APPDATA folder for Microsoft Windows. This function does not check whether files exist as this is done anyway
 while trying to read configuration.</p>
@@ -123,8 +134,19 @@ while trying to read configuration.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="pydetecdiv.settings.get_config_file">
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">get_config_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Path</span></span></span><a class="headerlink" href="#pydetecdiv.settings.get_config_file" title="Link to this definition"></a></dt>
+<dd><p>Gets the first configuration file in the list of available configuration files</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the path f the configuration file</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="pydetecdiv.settings.get_config">
-<span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.settings.get_config" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ConfigParser</span></span></span><a class="headerlink" href="#pydetecdiv.settings.get_config" title="Link to this definition"></a></dt>
 <dd><p>Get configuration parser from configuration files. If no file exists, then one is created in the favourite
 location with default values. Note that if the favourite directory does not exist either, it is created prior to
 saving the configuration.</p>
@@ -137,7 +159,7 @@ saving the configuration.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydetecdiv.settings.get_config_value">
-<span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">get_config_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">section</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.settings.get_config_value" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">get_config_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">section</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#pydetecdiv.settings.get_config_value" title="Link to this definition"></a></dt>
 <dd><p>Get value for a key in a section of the configuration file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -154,7 +176,7 @@ saving the configuration.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydetecdiv.settings.get_appdata_dir">
-<span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">get_appdata_dir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.settings.get_appdata_dir" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">get_appdata_dir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Path</span></span></span><a class="headerlink" href="#pydetecdiv.settings.get_appdata_dir" title="Link to this definition"></a></dt>
 <dd><p>get the local Application directory (.local/share/pyDetecDiv on Linux, AppDatapyDetecDiv on Windows)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -165,29 +187,23 @@ saving the configuration.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydetecdiv.settings.get_plugins_dir">
-<span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">get_plugins_dir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.settings.get_plugins_dir" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">get_plugins_dir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Path</span></span></span><a class="headerlink" href="#pydetecdiv.settings.get_plugins_dir" title="Link to this definition"></a></dt>
 <dd><p>Get the user directory where plugins are installed. The directory is created if it does not exist</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>the user plugin path</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Path</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydetecdiv.settings.get_default_workspace_dir">
-<span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">get_default_workspace_dir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.settings.get_default_workspace_dir" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">get_default_workspace_dir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Path</span></span></span><a class="headerlink" href="#pydetecdiv.settings.get_default_workspace_dir" title="Link to this definition"></a></dt>
 <dd><p>Get the user workspace directory. The default directory is not created if it does not exist to avoid confusion. It is up to the
 user to make sure the directory exists or select an existing directory.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>the user workspace path</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Path</p>
 </dd>
 </dl>
 </dd></dl>
@@ -206,7 +222,7 @@ user to make sure the directory exists or select an existing directory.</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2024, Frédéric PLEWNIAK.</p>
+    <p>&#169; Copyright 2025, Frédéric PLEWNIAK.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

@@ -25,6 +25,7 @@
         <file alias="cursor">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/cursor.png</file>
         <file alias="draw_Rect">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/layer.png</file>
         <file alias="duplicate_Item">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/layers-stack-arrange.png</file>
+        <file alias="draw_Point">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/geolocation.png</file>
 
         <file alias="expand">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/control.png</file>
         <file alias="collapse">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/control-270.png</file>

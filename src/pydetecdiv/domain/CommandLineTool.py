@@ -1,6 +1,11 @@
 """
 CommandLineTool module to handle tool definition, requirements and running them in an appropriate environment.
 """
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pydetecdiv.domain.Project import Project
+
 import json
 import os
 import platform
@@ -8,15 +13,18 @@ import re
 import subprocess
 import xml
 from datetime import datetime
+from typing import Callable
+from xml.etree.ElementTree import Element
 
 import yaml
 
+from pydetecdiv.domain.Dataset import Dataset
 from pydetecdiv.domain.tools import Plugins
 from pydetecdiv.settings import get_config_value
-from pydetecdiv.domain.parameters import ParameterFactory
+from pydetecdiv.domain.parameters import ParameterFactory, Parameter
 
 
-def list_tools():
+def list_tools() -> dict:
     """
     Provide a list of available tools arranged by categories
     :return: the list of available tools and categories
@@ -39,11 +47,11 @@ class Requirements:
     Class to handle tool requirements, install an environment and the required packages.
     """
 
-    def __init__(self, element):
+    def __init__(self, element: Element) -> None:
         self.element = element
 
     @property
-    def packages(self):
+    def packages(self) -> str:
         """
         Return a list of required packages for the tool
 
@@ -53,7 +61,7 @@ class Requirements:
         return self.element.text
 
     @property
-    def environment(self):
+    def environment(self) -> dict:
         """
         Return the environment for the current tool, specifying the type of environment ('conda' or docker')
         and its name
@@ -63,7 +71,7 @@ class Requirements:
         """
         return self.element.attrib
 
-    def check_env(self):
+    def check_env(self) -> bool:
         """
         Check the environment for this tool already exists
 
@@ -81,7 +89,7 @@ class Requirements:
                 print('Unknown environment type')
         return False
 
-    def _check_conda_env(self):
+    def _check_conda_env(self) -> bool:
         """
         Check whether the required conda environment exists or not
 
@@ -101,14 +109,14 @@ class Requirements:
             return True
         return False
 
-    def install(self):
+    def install(self) -> None:
         """
         Install the requirements if needed
         """
         if not self.check_env():
             self.install_env()
 
-    def install_env(self):
+    def install_env(self) -> None:
         """
         Install the environment
         """
@@ -120,7 +128,7 @@ class Requirements:
             case _:
                 print('Unknown environment type')
 
-    def _create_conda_env(self):
+    def _create_conda_env(self) -> None:
         """
         Create the required conda environment with the necessary packages
         """
@@ -140,19 +148,20 @@ class Inputs:
     A class to handle CommandLineTool's input as defined in the configuration file
     """
 
-    def __init__(self, tool):
-        self.element = tool.root.find('./inputs')
-        self.list = {p.attrib['name']: ParameterFactory().create(p, tool) for p in self.element.findall('.//param')}
+    def __init__(self, tool: 'CommandLineTool'):
+        self.element: Element = tool.root.find('./inputs')
+        self.list: dict[str, Parameter] = {p.attrib['name']: ParameterFactory().create(p, tool) for p in
+                                           self.element.findall('.//param')}
 
     @property
-    def values(self):
+    def values(self) -> list[Parameter]:
         """
         Convenience property returning the values of all input parameters in the self.list
 
         :return: the values of all input parameters in the self.list
         :rtype: list
         """
-        return self.list.values()
+        return list(self.list.values())
 
 
 class Outputs:
@@ -160,7 +169,7 @@ class Outputs:
     A class to handle CommandLineTool's input as defined in the configuration file
     """
 
-    def __init__(self, tool):
+    def __init__(self, tool: 'CommandLineTool') -> None:
         self.element = tool.root.find('./outputs')
         self.list = {p.attrib['name']: ParameterFactory().create(p, tool) for p in self.element.findall('.//data')}
 
@@ -171,7 +180,7 @@ class Command:
     class inheriting from CommandLineTool (i.e. generic tool) and representing a particular tool
     """
 
-    def __init__(self, command, requirements, tool_path):
+    def __init__(self, command: str, requirements: Requirements, tool_path: str):
         self.code = command
         if tool_path:
             self.code = self.code.replace('$__tool_directory__', os.path.join(tool_path, ''))
@@ -180,7 +189,7 @@ class Command:
         self.parameters = {}
         self.dataset = None
 
-    def set_env_command(self):
+    def set_env_command(self) -> str | Callable | None:
         """
         Return the command to set up the environment required to run the tool
 
@@ -196,7 +205,7 @@ class Command:
                 print('Unknown environment type')
                 return None
 
-    def _set_conda_env_command(self):
+    def _set_conda_env_command(self) -> str:
         """
         Return the command to set up the conda environment required to run the tool
 
@@ -212,7 +221,7 @@ class Command:
             cmd = f'conda run -n {env_name} --cwd {self.working_dir}'
         return cmd
 
-    def set_dataset(self, dataset):
+    def set_dataset(self, dataset: Dataset) -> 'Command':
         self.dataset = dataset
         return self
 
@@ -234,7 +243,7 @@ class Command:
         """
         os.chdir(self.working_dir)
 
-    def set_parameters(self, parameters):
+    def set_parameters(self, parameters: dict[str, Parameter]) -> 'Command':
         """
         Set the parameters for running the command
 
@@ -246,7 +255,7 @@ class Command:
         self.parameters = parameters
         return self
 
-    def execute(self):
+    def execute(self) -> dict[str, str]:
         """
         Execute the command
 
@@ -271,7 +280,7 @@ class CommandLineTool:
     tools must inherit from this class with the addition of a supplementary method implementing the tool's algorithm.
     """
 
-    def __init__(self, path):
+    def __init__(self, path: str):
         self.path = os.path.dirname(path) if path else None
         self.xml_tree = xml.etree.ElementTree.parse(path)
         shed_file = os.path.join(os.path.dirname(path), '.shed.yml')
@@ -282,7 +291,7 @@ class CommandLineTool:
         self.requirements = Requirements(self.root.find('./requirements/package'))
         self.command = Command(self.root.find("command").text, self.requirements, self.path)
 
-    def init_dso_inputs(self, project=None):
+    def init_dso_inputs(self, project: 'Project' = None) -> None:
         """
         Initialize the DSOs for input parameters and place them in the dso field.
 
@@ -291,7 +300,7 @@ class CommandLineTool:
         for i in self.inputs.values:
             i.set_dso(project)
 
-    def init_test(self, test_param, project=None):
+    def init_test(self, test_param: dict[str, str], project: 'Project' = None):
         """
         Initialize values of parameters for testing purposes. If an input defines a DSO then its dso field is set to the
         corresponding DSO or list thereof.
@@ -310,7 +319,7 @@ class CommandLineTool:
         self.init_dso_inputs(project=project)
 
     @property
-    def root(self):
+    def root(self) -> Element:
         """
         Convenience property returning the root of the CommandLineTool's XML configuration
 
@@ -320,7 +329,7 @@ class CommandLineTool:
         return self.xml_tree.getroot()
 
     @property
-    def name(self):
+    def name(self) -> str:
         """
         Property returning the name of the tool
 
@@ -330,7 +339,7 @@ class CommandLineTool:
         return self.root.get('name')
 
     @property
-    def version(self):
+    def version(self) -> str:
         """
         Property returning the version of the tool
 
@@ -340,7 +349,7 @@ class CommandLineTool:
         return self.root.get('version')
 
     @property
-    def categories(self):
+    def categories(self) -> list[str]:
         """
         Property returning the categories the tool belongs to
 
@@ -350,7 +359,7 @@ class CommandLineTool:
         return self.shed_content["categories"]
 
     @property
-    def command_line(self):
+    def command_line(self) -> str:
         """
         Property returning the command line
 
@@ -359,7 +368,7 @@ class CommandLineTool:
         return f'{self.command.set_env_command()} \'{self.command.code}\''
 
     @property
-    def attributes(self):
+    def attributes(self) -> dict:
         """
         Convenience property returning the tool's attributes as defined in the root node
 
@@ -368,7 +377,7 @@ class CommandLineTool:
         """
         return self.root.attrib
 
-    def tests(self):
+    def tests(self) -> str:
         """
         Return the parameters for running the testing
         """
@@ -378,7 +387,7 @@ class CommandLineTool:
             yield params
 
     @property
-    def parameters(self):
+    def parameters(self) -> dict[str, Parameter]:
         """
         Return the all the input and output parameters for running the tool
 
@@ -390,7 +399,7 @@ class CommandLineTool:
         return params
 
     @property
-    def dataset(self):
+    def dataset(self) -> str:
         if 'dataset' in self.parameters:
             return self.parameters['dataset'].value
         dataset_name = f'{self.name}_{datetime.now()}'

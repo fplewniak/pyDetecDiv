@@ -1,95 +1,97 @@
 """
  A class handling image resource in a single 5D TIFF file
 """
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pydetecdiv.domain.ImageResource import ImageResource
+
 import psutil
-import tensorflow as tf
-from aicsimageio import AICSImage
+from bioio import BioImage
+from bioio_base.dimensions import Dimensions
 from tifffile import tifffile
 import numpy as np
 import cv2
 
-from pydetecdiv.domain import ImageResourceData
+from pydetecdiv.domain.ImageResourceData import ImageResourceData
+from pydetecdiv.domain.Image import Image, ImgDType
 
 
 class SingleFileImageResource(ImageResourceData):
     """
     A business-logic class defining valid operations and attributes of Image resources stored in a single 5D file
     """
-    def __init__(self, image_resource=None, max_mem=5000, **kwargs):
+
+    def __init__(self, image_resource: 'ImageResource' = None, max_mem: int = 5000, **kwargs):
         self.path = image_resource.image_files[0]
         self.fov = image_resource.fov
         self.image_resource = image_resource.id_
         self.max_mem = max_mem
         self._memmap = tifffile.memmap(self.path, **kwargs)
-        self.img_reader = AICSImage(self.path).reader
+        # self.img_reader = AICSImage(self.path).reader
+        self.img_reader = BioImage(self.path)
         self._drift = image_resource.drift
 
         # print(f'Single file image resource: {self.dims}')
 
     @property
-    def shape(self):
+    def shape(self) -> tuple[int, ...]:
         """
         The image resource shape (should be 5D with the following dimensions TCZYX)
         """
         return self.img_reader.shape
 
     @property
-    def dims(self):
+    def dims(self) -> Dimensions:
         """
         the image dimensions
-        :return:
         """
         return self.img_reader.dims
 
     @property
-    def sizeT(self):
+    def sizeT(self) -> int:
         """
         The number of frames
         """
         return self.img_reader.dims.T
 
     @property
-    def sizeC(self):
+    def sizeC(self) -> int:
         """
         The number of channels
         """
         return self.img_reader.dims.C
 
     @property
-    def sizeZ(self):
+    def sizeZ(self) -> int:
         """
         The number of layers
         """
         return self.img_reader.dims.Z
 
     @property
-    def sizeY(self):
+    def sizeY(self) -> int:
         """
         The height of image
         """
         return self.img_reader.dims.Y
 
     @property
-    def sizeX(self):
+    def sizeX(self) -> int:
         """
         The width of image
         """
         return self.img_reader.dims.X
 
-    def _image(self, C=0, Z=0, T=0, drift=False):
+    def _image(self, C: int = 0, Z: int = 0, T: int = 0, drift: bool = False) -> np.ndarray:
         """
         A 2D grayscale image (on frame, one channel and one layer)
 
         :param C: the channel index
-        :type C: int
         :param Z: the layer index
-        :type Z: int
         :param T: the frame index
-        :type T: int
         :param drift: True if the drift correction should be applied
-        :type drift: bool
         :return: a 2D data array
-        :rtype: 2D numpy.array
         """
         s = self.shape
         data = np.expand_dims(self._memmap, axis=tuple(i for i in range(len(s)) if s[i] == 1))[T, C, Z, ...]
@@ -97,13 +99,15 @@ class SingleFileImageResource(ImageResourceData):
         if drift and self.drift is not None:
             data = cv2.warpAffine(np.array(data),
                                   np.float32(
-                                      [[1, 0, -self.drift.iloc[T].dx],
-                                       [0, 1, -self.drift.iloc[T].dy]]),
+                                          [[1, 0, -self.drift.iloc[T].dx],
+                                           [0, 1, -self.drift.iloc[T].dy]]),
                                   (data.shape[1], data.shape[0]))
-        data = tf.image.convert_image_dtype(data, dtype=tf.uint16, saturate=False).numpy()
+        # data = tf.image.convert_image_dtype(data, dtype=tf.uint16, saturate=False).numpy()
+        data = Image(data).as_array(dtype=ImgDType.uint16)
         return data
 
-    def _image_memmap(self,  sliceX=None, sliceY=None, C=0, Z=0, T=0, drift=False):
+    def _image_memmap(self, sliceX: slice = None, sliceY: slice = None, C: int = 0, Z: int = 0, T: int = 0,
+                      drift: bool = False) -> np.ndarray:
         if sliceX is None:
             sliceX = slice(0, self.sizeX)
         if sliceY is None:
@@ -118,44 +122,40 @@ class SingleFileImageResource(ImageResourceData):
         data = np.expand_dims(self._memmap, axis=tuple(i for i in range(len(s)) if s[i] == 1))[T, C, Z, sliceY, sliceX]
         return data
 
-
-    def data_sample(self, X=None, Y=None):
+    def data_sample(self, X: slice = None, Y: slice = None) -> np.ndarray:
         """
         Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for
         regions of interest from a field of view.
 
         :param X: the X slice
-        :type X: slice
         :param Y: the Y slice
-        :type Y: slice
         :return: the sample data (in-memory)
-        :rtype: ndarray
         """
         s = self.shape
         data = np.expand_dims(self._memmap, axis=tuple(i for i in range(len(s)) if s[i] == 1))[..., Y, X]
         return data
 
-    def open(self):
+    def open(self) -> None:
         """
         Open the memory mapped file to access data
         """
         self._memmap = tifffile.memmap(self.path)
 
-    def close(self):
+    def close(self) -> None:
         """
         Close the memory mapped file
         """
         if not self._memmap._mmap.closed:
             self._memmap._mmap.close()
 
-    def flush(self):
+    def flush(self) -> None:
         """
-        Flush the data to save changes to the meory mapped file
+        Flush the data to save changes to the memory mapped file
         """
         if not self._memmap._mmap.closed:
             self._memmap._mmap.flush()
 
-    def refresh(self):
+    def refresh(self) -> None:
         """
         Close and open the memory mapped file to save memory if needed. Useful when creating a new file or making lots
         of changes.

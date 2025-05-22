@@ -85,7 +85,7 @@ class Parameter:
         self.set_value(value)
 
     @property
-    def json(self):
+    def json(self) -> Any:
         """
         Returns the current value in a json-compatible format. This method should be overridden for types that cannot
         be dumped with json.dumps.
@@ -94,20 +94,20 @@ class Parameter:
         """
         return self.value
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset the value to the specified default
         """
         self.set_value(self.default)
 
-    def update(self):
+    def update(self) -> None:
         """
         Runs the specify updater callable if it was set, to update the parameter's value or choice
         """
         if self.updater is not None:
             self.updater(**self.updater_kwargs)
 
-    def validate(self, value):
+    def validate(self, value: Any) -> None:
         """
         Validates the value using the specified validator callable or always returning True if validator is None.
         This method should be overridden for more specific needs of particular Parameter types
@@ -385,7 +385,7 @@ class ChoiceParameter(Parameter):
         replaced with the new set.
 
         :param items: a dictionary containing the items to add to the ChoiceParameter. Key is the name/representation
-        of the corresponding option, value is the actual object
+         of the corresponding option, value is the actual object
         """
         self.model.set_items(items)
 
@@ -394,7 +394,7 @@ class ChoiceParameter(Parameter):
         Add an item to the ChoiceParameter object
 
         :param item: the dictionary containing the choice item to add to the ChoiceParameter. Key is the
-        name/representation of the corresponding option, value is the actual object.
+         name/representation of the corresponding option, value is the actual object.
         """
         self.model.add_item(item)
 
@@ -403,7 +403,7 @@ class ChoiceParameter(Parameter):
         Add items to the ChoiceParameter object
 
         :param items: a dictionary containing the choice items to add to the ChoiceParameter. Key is the
-        name/representation of the corresponding option, value is the actual object.
+         name/representation of the corresponding option, value is the actual object.
         """
         for k, v in items.items():
             self.add_item({k: v})
@@ -460,7 +460,7 @@ class Parameters:
 
         :param groups: the groups
         :param union: a boolean, if True, a parameter is returned if it belongs to at least one group, if False, it is
-        returned only if it belongs to all groups
+         returned only if it belongs to all groups
 
         :return: a list of parameters
         """

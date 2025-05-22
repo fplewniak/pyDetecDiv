@@ -1,17 +1,20 @@
 #  CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21
 #  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
 """
- A class defining the business logic methods that can be applied to Regions Of Interest
+ A module defining the business logic classes and methods that can be applied to Experiment
 """
+import datetime
+
+from pydetecdiv.domain.Dataset import Dataset
 from pydetecdiv.domain.dso import NamedDSO
 
 
 class Experiment(NamedDSO):
     """
-    A business-logic class defining valid operations and attributes of data
+    A business-logic class defining valid operations and attributes of an experiment
     """
 
-    def __init__(self, uuid, author, date, raw_dataset, **kwargs):
+    def __init__(self, uuid: str, author: str, date: datetime.datetime, raw_dataset: int, **kwargs):
         super().__init__(**kwargs)
         self.uuid = uuid
         self.author = author
@@ -20,31 +23,28 @@ class Experiment(NamedDSO):
         self.validate(updated=False)
 
     @property
-    def raw_dataset(self):
+    def raw_dataset(self) -> Dataset:
         """
         property returning the raw dataset object for this experiment
 
         :return: raw dataset
-        :rtype: Dataset object
         """
         return self.project.get_object('Dataset', id_=self.raw_dataset_)
 
-    def record(self, no_id=False):
+    def record(self, no_id: bool = False) -> dict:
         """
         Returns a record dictionary of the current Experiment object
 
-        :param no_id: if True, the id_ is not passed included in the record to allow transfer from one project to another
-        :type no_id: bool
+        :param no_id: if True, the id\_ is not passed included in the record to allow transfer from one project to another
         :return: record dictionary
-        :rtype: dict
         """
         record = {
-            'name': self.name,
-            'author': self.author,
-            'date': self.date,
+            'name'       : self.name,
+            'author'     : self.author,
+            'date'       : self.date,
             'raw_dataset': self.raw_dataset_,
-            'uuid': self.uuid
-        }
+            'uuid'       : self.uuid
+            }
         if not no_id:
             record['id_'] = self.id_
         return record

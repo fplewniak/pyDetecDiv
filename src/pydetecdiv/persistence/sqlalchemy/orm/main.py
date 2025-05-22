@@ -6,7 +6,10 @@ Creation of global mapper_registry and Base class for database access.
 Main DAO class for accessing data in SQL Tables. Subclasses are responsible for providing the domain layer with lists
 of compatible records for the creation of domain-specific objects.
 """
+from typing import Any
+
 from sqlalchemy.orm import registry
+import sqlalchemy.orm.session as Session
 from sqlalchemy.sql.expression import Insert, Update
 
 mapper_registry = registry()
@@ -22,17 +25,15 @@ class DAO:
     exclude = []
     translate = {}
 
-    def __init__(self, session):
+    def __init__(self, session: Session):
         self.session = session
 
-    def insert(self, rec):
+    def insert(self, rec: dict[str, Any]) -> int:
         """
         Inserts data in SQL database for a newly created object
 
         :param rec: the record representing the object
-        :type rec: dict
         :return: the primary key of the newly created object
-        :rtype: int
         """
         record = self.translate_record(rec, self.exclude, self.translate)
         primary_key = self.session.execute(Insert(self.__class__).values(record)).inserted_primary_key[0]
@@ -41,15 +42,13 @@ class DAO:
         #     session.commit()
         return primary_key
 
-    def update(self, rec):
+    def update(self, rec: dict[str, Any]) -> int:
         """
         Updates data in SQL database for the object corresponding to the record, which should contain the id of the
         modified object
 
         :param rec: the record representing the object
-        :type rec: dict
         :return: the primary key of the updated object
-        :rtype: int
         """
         id_ = rec['id_']
         record = self.translate_record(rec, self.exclude, self.translate)
@@ -57,35 +56,30 @@ class DAO:
         #self.session.commit()
         return id_
 
-    def get_records(self, where_clause):
+    def get_records(self, where_clause) -> list[dict]:
         """
         A method to get from the SQL database, all records verifying the specified where clause
-        Example of use:
-        roi_records = roidao.get_records((ROIdao.fov == FOVdao.id_) & (FOVdao.name == 'fov1')) retrieves all ROI records
-        associated with FOV whose name is 'fov1'
+
+        **Example of use:**
+        ``roi_records = roidao.get_records((ROIdao.fov == FOVdao.id_) & (FOVdao.name == 'fov1'))``
+        retrieves all ROI records associated with FOV whose name is 'fov1'
 
         :param where_clause: the selection 'where clause' that can be specified using DAO classes or tables
-        :type where_clause: a sqlachemy where clause defining the SQL selection query
         :return: a list of records as dictionaries
-        :rtype: list of dict
         """
         dao_list = self.session.query(self.__class__).where(where_clause)
         return [obj.record for obj in dao_list]
 
     @staticmethod
-    def translate_record(record, exclude, translate):
+    def translate_record(record: dict, exclude: list[str], translate: dict) -> dict:
         """
         The actual translation engine reading the record fields and translating or excluding them if they occur in the
         translate or exclude variables
 
         :param record: the record to be translated
-        :type record: dict
         :param exclude: a list of fields that must not be passed to the SQL engine
-        :type exclude: list
         :param translate: a list of fields that must be translated and the corresponding columns
-        :type translate: dict
         :return: the translated record
-        :rtype: dict
         """
         rec = {}
         for key in record:
@@ -104,11 +98,10 @@ class DAO:
         return rec
 
     @property
-    def record(self):
+    def record(self) -> dict:
         """
         Template for method converting a DAO row dictionary into a DSO record
 
         :return: a DSO record
-        :rtype: dict
         """
         raise NotImplementedError('Call to a record() method that is not implemented')

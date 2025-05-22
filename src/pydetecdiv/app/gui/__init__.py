@@ -3,6 +3,11 @@
 """
 Main widgets to use with persistent windows
 """
+from typing import TYPE_CHECKING, Callable
+
+if TYPE_CHECKING:
+    from pydetecdiv.app.gui.Windows import MainWindow
+
 import psutil
 import numpy as np
 from PySide6.QtCore import QTimer, QRect
@@ -19,7 +24,7 @@ class FileMenu(QMenu):
     The main window File menu
     """
 
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, parent: 'MainWindow', *args, **kwargs):
         super().__init__(*args, **kwargs)
         menu = parent.menuBar().addMenu("&File")
         ActionsProject.OpenProject(menu).setShortcut("Ctrl+O")
@@ -36,7 +41,7 @@ class DataMenu(QMenu):
     The main window File menu
     """
 
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, parent: 'MainWindow', *args, **kwargs):
         super().__init__(*args, **kwargs)
         menu = parent.menuBar().addMenu("Data")
         import_metadata = ActionsData.ImportMetaData(menu)
@@ -58,7 +63,7 @@ class PluginMenu(QMenu):
     """
     Plugin menus
     """
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, parent: 'MainWindow', *args, **kwargs):
         if PyDetecDiv.app.plugin_list.len:
             super().__init__(*args, **kwargs)
             menu = {}
@@ -74,9 +79,9 @@ class MainToolBar(QToolBar):
     The main toolbar of the main window
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.setObjectName('Main toolbar')
+    def __init__(self, parent: 'MainWindow', name: str = 'Main toolbar', **kwargs):
+        super().__init__(name, parent=parent, **kwargs)
+        self.setObjectName(name)
         ActionsProject.OpenProject(self)
         ActionsProject.NewProject(self)
         ActionsProject.DeleteProject(self)
@@ -97,7 +102,7 @@ class MainStatusBar(QStatusBar):
         self.timer.setInterval(10000)
         self.timer.start()
 
-    def show_memory_usage(self):
+    def show_memory_usage(self) -> None:
         """
         Show memory usage in status bar
         """
@@ -110,7 +115,7 @@ class Quit(QAction):
     Quit action, interrupting the application
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent: 'MainWindow | MainToolBar'):
         super().__init__(QIcon(":icons/exit"), "&Quit", parent)
         self.triggered.connect(QApplication.quit)
         parent.addAction(self)
@@ -121,18 +126,21 @@ class Help(QAction):
     Action requesting global help
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent: 'MainWindow | MainToolBar'):
         super().__init__(QIcon(":icons/help"), "&Help", parent)
         self.triggered.connect(self.show_info)
         parent.addAction(self)
 
-    def show_info(self):
+    def show_info(self) -> None:
+        """
+        Shows information about the application (version, authors, licence)
+        """
         about_dialog = QDialog(self.parent())
         about_dialog.resize(402, 268)
-        sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         about_dialog.setSizePolicy(sizePolicy)
 
-        button_box = QDialogButtonBox(QDialogButtonBox.Ok, about_dialog)
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok, about_dialog)
         button_box.setGeometry(QRect(10, 220, 371, 32))
         button_box.setCenterButtons(True)
         button_box.accepted.connect(about_dialog.close)

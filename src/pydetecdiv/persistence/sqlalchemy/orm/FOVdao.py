@@ -3,13 +3,10 @@
 """
 Access to FOV data
 """
-import itertools
 from sqlalchemy import Column, Integer, String, text, select
 from sqlalchemy.types import JSON
 from sqlalchemy.orm import relationship, joinedload
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
-from pydetecdiv.persistence.sqlalchemy.orm import dao
-# from pydetecdiv.persistence.sqlalchemy.orm.associations import FovData
 
 
 class FOVdao(DAO, Base):
@@ -36,14 +33,12 @@ class FOVdao(DAO, Base):
 
     image_resources_ = relationship('ImageResourceDao')
 
-    def image_resources(self, fov_id):
+    def image_resources(self, fov_id: int) -> list[dict[str, object]]:
         """
-        A method returning the list of ImageResource records whose parent FOV has id_ == fov_id
+        A method returning the list of ImageResource records whose parent FOV has id\_ == fov_id
 
         :param fov_id: the id of the FOV
-        :type fov_id: str
-        :return: a list of ImageResource records whose parent FOV has id_ == fov_id
-        :rtype: list of dict
+        :return: a list of ImageResource records whose parent FOV has id\_ == fov_id
         """
         if self.session.query(FOVdao).filter(FOVdao.id_ == fov_id).first() is not None:
             data_list = [data.record
@@ -56,13 +51,12 @@ class FOVdao(DAO, Base):
         return data_list
 
     @property
-    def record(self):
+    def record(self) -> dict[str, object]:
         """
         A method creating a DAO record dictionary from a fov row dictionary. This method is used to convert the SQL
         table columns into the FOV record fields expected by the domain layer
 
         :return: a FOV record as a dictionary with keys() appropriate for handling by the domain layer
-        :rtype: dict
         """
         return {'id_': self.id_,
                 'name': self.name,
@@ -101,14 +95,12 @@ class FOVdao(DAO, Base):
     #                                            .all()])]
     #     return image_data
 
-    def roi_list(self, fov_id):
+    def roi_list(self, fov_id: int) -> list[dict[str, object]]:
         """
         A method returning the list of ROI records whose parent FOV has id == fov_id
 
         :param fov_id: the id of the FOV
-        :type fov_id: int
         :return: a list of ROI records with parent FOV id == fov_id
-        :rtype: list
         """
         if self.session.query(FOVdao).filter(FOVdao.id_ == fov_id).first() is not None:
             roi_list = [roi.record

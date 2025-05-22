@@ -22,20 +22,18 @@ class DatasetDao(DAO, Base):
     name = Column(String, unique=True, nullable=False)
     url = Column(String)
     type_ = Column(String)
-    run = Column(String, ForeignKey('run.id_'), nullable=True, index=True)
+    run = Column(Integer, ForeignKey('run.id_'), nullable=True, index=True)
     pattern = Column(String)
     key_val = Column(JSON)
 
     data_list_ = relationship('DataDao')
 
-    def data_list(self, dataset_id):
+    def data_list(self, dataset_id: int) -> list[dict[str, object]]:
         """
-        A method returning the list of Data records whose parent Dataset has id_ == dataset_id
+        A method returning the list of Data records whose parent Dataset has id\_ == dataset_id
 
         :param dataset_id: the id of the Dataset
-        :type dataset_id: str
-        :return: a list of Data records whose parent Dataset has id_ == dataset_id
-        :rtype: list of dict
+        :return: a list of Data records whose parent Dataset has id\_ == dataset_id
         """
         if self.session.query(DatasetDao).filter(DatasetDao.id_ == dataset_id).first() is not None:
             data_list = [data.record
@@ -48,13 +46,12 @@ class DatasetDao(DAO, Base):
         return data_list
 
     @property
-    def record(self):
+    def record(self) -> dict[str, object]:
         """
         A method creating a record dictionary from a dataset row dictionary. This method is used to convert the SQL
         table columns into the dataset record fields expected by the domain layer
 
         :return: a dataset record as a dictionary with keys() appropriate for handling by the domain layer
-        :rtype: dict
         """
         return {'id_': self.id_,
                 'uuid': self.uuid,

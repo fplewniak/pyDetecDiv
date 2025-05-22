@@ -3,10 +3,13 @@ A set of general utility functions
 """
 #  CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21
 #  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
+from __future__ import annotations
 import numpy as np
+from typing import Callable, Any
 
 
-def singleton(class_):
+
+def singleton(class_) -> Callable:
     """
     Definition of a singleton annotation, creating an object if it does not exist yet or returning the current one if
     it exists
@@ -16,7 +19,7 @@ def singleton(class_):
     """
     instances = {}
 
-    def getinstance(*args, **kwargs):
+    def getinstance(*args, **kwargs) -> Any:
         if class_ not in instances:
             instances[class_] = class_(*args, **kwargs)
         return instances[class_]
@@ -28,7 +31,7 @@ class Singleton:
     instance = None
     initialized = False
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args, **kwargs) -> Any:
         if cls.instance is None:
             cls.instance = super(Singleton, cls).__new__(cls)
         return cls.instance
@@ -40,21 +43,21 @@ class Singleton:
 
 
 class BidirectionalIterator:
-    def __init__(self, data):
+    def __init__(self, data: list[Any]):
         self.data = data
         self.index = -1  # Start before the first element
 
-    def __iter__(self):
+    def __iter__(self) -> BidirectionalIterator:
         return self
 
-    def __next__(self):
+    def __next__(self) -> Any:
         if self.index < len(self.data) - 1:
             self.index += 1
             return self.data[self.index]
         else:
             raise StopIteration
 
-    def __previous__(self):
+    def __previous__(self) -> Any:
         if self.index > 0:
             self.index -= 1
             return self.data[self.index]
@@ -62,11 +65,11 @@ class BidirectionalIterator:
             raise StopIteration("No previous element")
 
 
-def previous(iterator):
+def previous(iterator) -> Any:
     return iterator.__previous__()
 
 
-def round_to_even(value, ceil=True):
+def round_to_even(value: float, ceil: bool=True) -> int:
     """
     Round a float value to an even integer. If ceil is True then the returned integer is the first even number equal to
     or larger than the rounded integer, otherwise, it is the first smaller or equal even number
@@ -87,7 +90,7 @@ def round_to_even(value, ceil=True):
     return rounded
 
 
-def remove_keys_from_dict(dictionary, keys):
+def remove_keys_from_dict(dictionary: dict[str | Any, Any], keys: list[str | Any]):
     """
     Remove the dictionary entries whose keys are in the key list
 
@@ -101,7 +104,7 @@ def remove_keys_from_dict(dictionary, keys):
     return dict(filter(lambda item: item[0] not in keys, dictionary.items()))
 
 
-def split_list(arr, sep, max_length=None, constant_length=True):
+def split_list(arr: list[Any] | np.ndarray[Any], sep: list[Any] | Any, max_length: int=None, constant_length: bool=True) -> list:
     arr = np.array(arr)
     sep = sep if isinstance(sep, list) else [sep]
     indices = np.where(np.diff([arr == s for s in sep]))[0] + 1

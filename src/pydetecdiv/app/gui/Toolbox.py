@@ -9,7 +9,7 @@ from PySide6.QtWidgets import QTreeView, QMenu, QDialogButtonBox, QDialog, QPush
 from pydetecdiv.app.gui.parameters import ParameterWidgetFactory
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, WaitDialog
-from pydetecdiv.app.gui.Trees import TreeDictModel, TreeItem
+from pydetecdiv.app.models.Trees import TreeDictModel, TreeItem
 from pydetecdiv.domain import Run
 from pydetecdiv.domain.CommandLineTool import list_tools
 
@@ -85,7 +85,6 @@ class ToolForm(QDialog):
 
         self.layout.addWidget(self.button_box)
 
-
     def run(self, testing=False):
         """
         Accept the form, run the job and open a dialog waiting for the job to finish
@@ -125,7 +124,7 @@ class ToolboxTreeModel(TreeDictModel):
     """
 
     def __init__(self, parent=None):
-        super().__init__(list_tools(), ["CommandLineTool", "version"], parent=parent)
+        super().__init__(["CommandLineTool", "version"], data=list_tools(), parent=parent)
 
     def is_category(self, index):
         """
