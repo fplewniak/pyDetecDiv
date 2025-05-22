@@ -13,6 +13,9 @@ from pydetecdiv.exceptions import OpenProjectError, UnknownRepositoryTypeError
 
 
 class ProjectAction(Enum):
+    """
+    An Enum class of the various actions applicable to projects (New, Open, Delete)
+    """
     New = 1
     Open = 2
     Delete = 3
@@ -72,7 +75,6 @@ class ProjectDialog(QDialog):
         Name validator to filter invalid character in project name
 
         :return: the validator
-        :rtype: QRegularExpressionValidator
         """
         name_filter = QRegularExpression()
         name_filter.setPattern('\\w[\\w-]*')
@@ -95,7 +97,6 @@ class ProjectDialog(QDialog):
         Method returning the chosen project name, either from QLineEdit (new project) or QComboBox (open project)
 
         :return: the project name
-        :rtype: str
         """
         if isinstance(self.project_name, QLineEdit):
             return self.project_name.text()
@@ -139,7 +140,6 @@ class ProjectDialog(QDialog):
         accordingly before closing the project connexion.
 
         :param project_name: the name of the project to open/create
-        :type project_name: str
         """
 
         try:
@@ -156,7 +156,6 @@ class ProjectDialog(QDialog):
         Delete project called project_name,
 
         :param project_name: the name of the project to delete
-        :type project_name: str
         """
         delete_project(project_name)
         self.finished.emit(True)

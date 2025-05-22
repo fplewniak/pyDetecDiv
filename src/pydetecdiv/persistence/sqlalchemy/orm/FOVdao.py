@@ -35,12 +35,10 @@ class FOVdao(DAO, Base):
 
     def image_resources(self, fov_id: int) -> list[dict[str, object]]:
         """
-        A method returning the list of ImageResource records whose parent FOV has id_ == fov_id
+        A method returning the list of ImageResource records whose parent FOV has id\_ == fov_id
 
         :param fov_id: the id of the FOV
-        :type fov_id: str
-        :return: a list of ImageResource records whose parent FOV has id_ == fov_id
-        :rtype: list of dict
+        :return: a list of ImageResource records whose parent FOV has id\_ == fov_id
         """
         if self.session.query(FOVdao).filter(FOVdao.id_ == fov_id).first() is not None:
             data_list = [data.record
@@ -59,7 +57,6 @@ class FOVdao(DAO, Base):
         table columns into the FOV record fields expected by the domain layer
 
         :return: a FOV record as a dictionary with keys() appropriate for handling by the domain layer
-        :rtype: dict
         """
         return {'id_': self.id_,
                 'name': self.name,
@@ -103,9 +100,7 @@ class FOVdao(DAO, Base):
         A method returning the list of ROI records whose parent FOV has id == fov_id
 
         :param fov_id: the id of the FOV
-        :type fov_id: int
         :return: a list of ROI records with parent FOV id == fov_id
-        :rtype: list
         """
         if self.session.query(FOVdao).filter(FOVdao.id_ == fov_id).first() is not None:
             roi_list = [roi.record

@@ -3,7 +3,7 @@ Classes for persistent windows of the GUI
 """
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QCursor, QIcon
+from PySide6.QtGui import QCursor, QIcon, QCloseEvent
 from PySide6.QtWidgets import QMainWindow, QMdiArea, QDockWidget, QLabel, QComboBox, \
     QDialogButtonBox, QFrame, QVBoxLayout, QGridLayout, QToolButton, QSpinBox, QGroupBox, QHBoxLayout, QCheckBox
 
@@ -55,7 +55,7 @@ class MainWindow(QMainWindow):
 
         self.current_tool = None
 
-    def closeEvent(self, _):
+    def closeEvent(self, _: QCloseEvent) -> None:
         """
         Response to close event signal. Settings are saved in order to save the current window geometry and state.
         """
@@ -109,6 +109,7 @@ class MainWindow(QMainWindow):
     def active_subwindow(self) -> QMdiArea | None:
         """
         A property returning the currently active subwindow in the MDI area
+
         :return: the currently active tabbed window in the MDI area
         """
         active_subwindow = self.mdi_area.activeSubWindow()
@@ -174,7 +175,6 @@ class ImageResourceChooser(QDockWidget):
         Set the available values for FOVs, datasets and channels given a project name
 
         :param p_name: the project name
-        :type p_name: str
         """
         with pydetecdiv_project(p_name) as project:
             self.position_choice.clear()
@@ -335,7 +335,6 @@ class DrawingToolsPalette(QDockWidget):
         Return the currently checked tool
 
         :return: the currently checked tool
-        :rtype: QToolButton
         """
         for t in self.tools:
             if t.isChecked():
@@ -345,6 +344,7 @@ class DrawingToolsPalette(QDockWidget):
     def set_item_width(self, width: int):
         """
         Sets the width of the currently selected item, using the spinbox in drawing tools
+
         :param width: the desired width
         """
         PyDetecDiv.main_window.active_subwindow.currentWidget().scene.set_Item_width(width)
@@ -352,6 +352,7 @@ class DrawingToolsPalette(QDockWidget):
     def set_item_height(self, height: int):
         """
         Sets the height of the currently selected item, using the spinbox in drawing tools
+
         :param height: the desired height
         """
         PyDetecDiv.main_window.active_subwindow.currentWidget().scene.set_Item_height(height)

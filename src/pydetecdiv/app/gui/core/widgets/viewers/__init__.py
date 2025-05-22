@@ -135,7 +135,6 @@ class Scene(QGraphicsScene):
         * QKeySequence.Delete: delete the selected item
 
         :param event: the key pressed event
-        :type event: QKeyEvent
         """
         if event.matches(QKeySequence.StandardKey.Delete):
             for r in self.selectedItems():
@@ -147,7 +146,6 @@ class Scene(QGraphicsScene):
         drawing tool
 
         :param event: the mouse press event
-        :type event: QGraphicsSceneMouseEvent
         """
         if event.button() == Qt.MouseButton.LeftButton:
             match PyDetecDiv.current_drawing_tool, event.modifiers():
@@ -176,7 +174,6 @@ class Scene(QGraphicsScene):
         modifier
 
         :param event: the mouse move event
-        :type event: QGraphicsSceneMouseEvent
         """
         if event.buttons() == Qt.MouseButton.LeftButton:
             match PyDetecDiv.current_drawing_tool, event.modifiers():
@@ -213,6 +210,7 @@ class Scene(QGraphicsScene):
     def delete_item(self, graphics_item: QGraphicsItem) -> None:
         """
         remove a graphics item from the scene. The QGraphicsItem object is not deleted though and can be added back to the scene
+
         :param graphics_item: the graphics item to remove
         """
         PyDetecDiv.app.graphic_item_deleted.emit(graphics_item.data(0))
@@ -223,7 +221,6 @@ class Scene(QGraphicsScene):
         Unselect all selected items
 
         :param event: the mouse press event
-        :type event: QGraphicsSceneMouseEvent
         """
         _ = [r.setSelected(False) for r in self.selectedItems()]
 
@@ -232,7 +229,6 @@ class Scene(QGraphicsScene):
         Select the current area/Item
 
         :param event: the mouse press event
-        :type event: QGraphicsSceneMouseEvent
         """
         _ = [r.setSelected(False) for r in self.selectedItems()]
         r = self.itemAt(event.scenePos(), self.viewer.transform())
@@ -247,7 +243,6 @@ class Scene(QGraphicsScene):
         Return the selected Item
 
         :return: the selected Item
-        :rtype: QGraphicsRectItem
         """
         for selection in self.selectedItems():
             if isinstance(selection, (QGraphicsRectItem, QGraphicsEllipseItem)):
@@ -259,7 +254,6 @@ class Scene(QGraphicsScene):
         Duplicate the currently selected Item at the current mouse position
 
         :param event: the mouse press event
-        :type event: QGraphicsSceneMouseEvent
         """
         pos = event.scenePos()
         item = self.get_selected_Item()
@@ -292,7 +286,6 @@ class Scene(QGraphicsScene):
         Move the currently selected Item if it is movable
 
         :param event: the mouse move event
-        :type event: QGraphicsSceneMouseEvent
         """
         item = self.get_selected_Item()
         if item and (item.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable):
@@ -306,7 +299,6 @@ class Scene(QGraphicsScene):
         Draw or redraw the currently selected Item if it is movable
 
         :param event: the mouse press event
-        :type event: QGraphicsSceneMouseEvent
         """
         item = self.get_selected_Item()
         pos = event.scenePos()
@@ -369,7 +361,6 @@ class Scene(QGraphicsScene):
         """
         Draw a point
         :param event: the mouse press event
-        :type event: QGraphicsSceneMouseEvent
         """
         pos = event.scenePos()
         item = QGraphicsEllipseItem(0, 0, 2, 2)
@@ -399,7 +390,6 @@ class Scene(QGraphicsScene):
         Adds an item to the item dictionary
         :param item: the item to add
         :param item_dict: the item dictionary
-        :return:
         """
         item_name = item.data(0)
         if item_name is not None:

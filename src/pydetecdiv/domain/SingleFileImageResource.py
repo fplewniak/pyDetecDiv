@@ -45,7 +45,6 @@ class SingleFileImageResource(ImageResourceData):
     def dims(self) -> Dimensions:
         """
         the image dimensions
-        :return:
         """
         return self.img_reader.dims
 
@@ -89,15 +88,10 @@ class SingleFileImageResource(ImageResourceData):
         A 2D grayscale image (on frame, one channel and one layer)
 
         :param C: the channel index
-        :type C: int
         :param Z: the layer index
-        :type Z: int
         :param T: the frame index
-        :type T: int
         :param drift: True if the drift correction should be applied
-        :type drift: bool
         :return: a 2D data array
-        :rtype: 2D numpy.array
         """
         s = self.shape
         data = np.expand_dims(self._memmap, axis=tuple(i for i in range(len(s)) if s[i] == 1))[T, C, Z, ...]
@@ -134,11 +128,8 @@ class SingleFileImageResource(ImageResourceData):
         regions of interest from a field of view.
 
         :param X: the X slice
-        :type X: slice
         :param Y: the Y slice
-        :type Y: slice
         :return: the sample data (in-memory)
-        :rtype: ndarray
         """
         s = self.shape
         data = np.expand_dims(self._memmap, axis=tuple(i for i in range(len(s)) if s[i] == 1))[..., Y, X]
@@ -159,7 +150,7 @@ class SingleFileImageResource(ImageResourceData):
 
     def flush(self) -> None:
         """
-        Flush the data to save changes to the meory mapped file
+        Flush the data to save changes to the memory mapped file
         """
         if not self._memmap._mmap.closed:
             self._memmap._mmap.flush()

@@ -54,7 +54,7 @@ class Dataset(NamedDSO):
         """
         Returns a record dictionary of the current Dataset
 
-        :param no_id: if True, the id_ is not passed included in the record to allow transfer from one project to another
+        :param no_id: if True, the id\_ is not passed included in the record to allow transfer from one project to another
         :type no_id: bool
         :return: record dictionary
         :rtype: dict

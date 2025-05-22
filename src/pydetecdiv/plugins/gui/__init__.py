@@ -739,7 +739,7 @@ class Dialog(QDialog):
             self.setWindowTitle(title)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
 
-    def fit_to_contents(self):
+    def fit_to_contents(self) -> None:
         """
         Adjust the size of the window to fit its contents
         """

@@ -59,7 +59,6 @@ class MultiFileImageResource(ImageResourceData):
     def dims(self) -> Dimensions:
         """
         the dimensions of the image resource
-        :return:
         """
         return self._dims
 
@@ -103,15 +102,10 @@ class MultiFileImageResource(ImageResourceData):
         A 2D grayscale image (on frame, one channel and one layer)
 
         :param C: the channel index
-        :type C: int
         :param Z: the layer index
-        :type Z: int
         :param T: the frame index
-        :type T: int
         :param drift: True if the drift correction should be applied
-        :type drift: bool
         :return: a 2D data array
-        :rtype: 2D numpy.array
         """
         if self.image_files[T, C, Z]:
             data = tifffile.imread(self.image_files[T, C, Z])

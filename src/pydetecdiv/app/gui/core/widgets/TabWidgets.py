@@ -38,6 +38,7 @@ class TabbedWindow(QTabWidget):
     def set_top_tab(self, widget: QWidget, title: str) -> None:
         """
         Set the main tab for this tabbed window, i.e. the reference tab that cannot be closed
+
         :param widget: the widget to display in the top tab
         :param title: the title of the top tab
         """
@@ -52,7 +53,6 @@ class TabbedWindow(QTabWidget):
         Close the current tabbed widget window
 
         :param event: the close event
-        :type event: QCloseEvent
         """
         for i in range(PyDetecDiv.main_window.tabs[self.windowTitle()].count()):
             QCoreApplication.sendEvent(PyDetecDiv.main_window.tabs[self.windowTitle()].widget(i), QCloseEvent())
@@ -64,7 +64,6 @@ class TabbedWindow(QTabWidget):
         Close the tab with the specified index
 
         :param index: the index of the tab to close
-        :type index: int
         """
         if self.widget(index) != self.top_widget:
             QCoreApplication.sendEvent(PyDetecDiv.main_window.tabs[self.windowTitle()].widget(index), QCloseEvent())
@@ -75,9 +74,7 @@ class TabbedWindow(QTabWidget):
         Open a viewer tab to plot a graphic from a pandas dataframe
 
         :param df: the data to plot
-        :type df: pandas DataFrame
         :param title: the title for the plot tab
-        :type title: str
         """
         plot_viewer = MatplotViewer(self)
         self.addTab(plot_viewer, title)

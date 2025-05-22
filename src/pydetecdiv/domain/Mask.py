@@ -66,7 +66,6 @@ class Mask(NamedDSO):
     def object(self) -> Entity:
         """
         return the corresponding entity (this is a legacy method expected to be removed not to be used)
-        :return:
         """
         return self.entity
 
@@ -105,8 +104,7 @@ class Mask(NamedDSO):
     @property
     def ellipse_contour(self) -> np.ndarray | None:
         """
-
-        :return:
+        The mask contour as an ellipse approximation
         """
         centre, axes, angle = cv2.fitEllipse(self.contour)
         centre = tuple(map(int, centre))  # Convert to integers
@@ -198,7 +196,7 @@ class Mask(NamedDSO):
         """
         Returns a record dictionary of the current Entity
 
-        :param no_id: if True, the id_ is not passed included in the record to allow transfer from one project to another
+        :param no_id: if True, the id\_ is not passed included in the record to allow transfer from one project to another
         :type no_id: bool
         :return: record dictionary
         :rtype: dict

@@ -40,7 +40,6 @@ class FileListView(QListView):
         the list model, clear the source list model
 
         :param e: mouse event providing the position of the context menu
-        :type e: PySide6.QtGui.QContextMenuEvent
         """
         if self.model().rowCount():
             context = QMenu(self)
@@ -203,7 +202,7 @@ class ImportMetaDataDialog(QDialog):
         """
         Add the input path to the source model
 
-        :param path:
+        :param path: the metadata file path
         """
         self.list_model.setStringList(self.list_model.stringList() + [path])
         self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
@@ -378,7 +377,7 @@ class ImportDataDialog(QDialog):
         """
         Add the input path to the source model
 
-        :param path:
+        :param path: the Data path
         """
         self.list_model.setStringList(self.list_model.stringList() + [path])
         self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
@@ -388,7 +387,6 @@ class ImportDataDialog(QDialog):
         Get the list of subdirectories in the destination raw dataset directory
 
         :return: list of subdirectories in the destination raw dataset directory
-        :rtype: list of str
         """
         return [''] + [d.name for d in os.scandir(os.path.join(self.project_path, 'data')) if d.is_dir()]
 
@@ -397,7 +395,6 @@ class ImportDataDialog(QDialog):
         Expands all source specification to return a list of files to import
 
         :return: file name list
-        :rtype: list of str
         """
         file_list = []
         for source_path in self.list_model.stringList():
@@ -471,11 +468,8 @@ class ImportDataDialog(QDialog):
         Count imported files in destination directory to assess progress
 
         :param destination: destination directory which files are imported into
-        :type destination: str
         :param n_start: the number of files already in the destination directory before import
-        :type n_start: int
         :return: the number of imported files
-        :rtype: int
         """
         return sum(1 for item in os.listdir(destination) if os.path.isfile(os.path.join(destination, item))) - n_start
 
@@ -528,7 +522,6 @@ class ImportDataDialog(QDialog):
         Name validator to filter invalid character in directory name
 
         :return: the validator
-        :rtype: QRegularExpressionValidator
         """
         name_filter = QRegularExpression()
         name_filter.setPattern('\\w[\\w-]*')
@@ -682,10 +675,19 @@ class ComputeDriftDialog(gui.Dialog):
         self.destroy(True)
 
     def update_fov_list(self, project_name: str) -> dict[str, FOV]:
+        """
+        Return the list of FOVs in the project as a dictionary mapping actual FOV objects to their names
+
+        :param project_name: the name of the project
+        :return: a dictionary of FOVs in project
+        """
         with pydetecdiv_project(project_name) as project:
             return {fov.name: fov for fov in project.get_objects('FOV')}
 
     def accept(self) -> None:
+        """
+        Launch the drift computation and the associated waiting dialog
+        """
         self.wait = WaitDialog('Computing drift, please wait.', self,
                                cancel_msg='Cancel drift computation please wait')
         self.finished.connect(self.wait.close_window)
@@ -699,9 +701,10 @@ class ComputeDriftDialog(gui.Dialog):
 
     def compute_drift(self, Z: int = 0, C: int = 0) -> None:
         """
+        Compute the drift for the given Z and C as references
 
-        :param Z:
-        :param C:
+        :param Z: the reference z-layer
+        :param C: the reference channel
         """
         for fov in self.fov_list.selection():
             self.drift[fov.name] = fov.image_resource().image_resource_data().compute_drift(Z=Z, C=C,
@@ -724,7 +727,7 @@ class ComputeDrift(QAction):
         """
         Enable or disable this action in the Data menu whether there are raw data or not.
 
-        :param project_name:
+        :param project_name: the name of the project
         """
         if project_name:
             with pydetecdiv_project(project_name) as project:
@@ -737,7 +740,7 @@ class ComputeDrift(QAction):
 
     def open_dialog(self) -> None:
         """
-
+        Open the Compute-drift dialog window
         """
         _ = ComputeDriftDialog(title='Compute drift')
 
@@ -759,7 +762,7 @@ class ApplyDrift(QAction):
         """
         Enable or disable this action in the Data menu whether there are raw data or not.
 
-        :param project_name:
+        :param project_name: the name of the project
         """
         if project_name:
             with pydetecdiv_project(project_name) as project:

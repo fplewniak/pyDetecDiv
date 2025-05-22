@@ -30,12 +30,10 @@ class DatasetDao(DAO, Base):
 
     def data_list(self, dataset_id: int) -> list[dict[str, object]]:
         """
-        A method returning the list of Data records whose parent Dataset has id_ == dataset_id
+        A method returning the list of Data records whose parent Dataset has id\_ == dataset_id
 
         :param dataset_id: the id of the Dataset
-        :type dataset_id: str
-        :return: a list of Data records whose parent Dataset has id_ == dataset_id
-        :rtype: list of dict
+        :return: a list of Data records whose parent Dataset has id\_ == dataset_id
         """
         if self.session.query(DatasetDao).filter(DatasetDao.id_ == dataset_id).first() is not None:
             data_list = [data.record
@@ -54,7 +52,6 @@ class DatasetDao(DAO, Base):
         table columns into the dataset record fields expected by the domain layer
 
         :return: a dataset record as a dictionary with keys() appropriate for handling by the domain layer
-        :rtype: dict
         """
         return {'id_': self.id_,
                 'uuid': self.uuid,

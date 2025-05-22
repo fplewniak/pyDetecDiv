@@ -218,12 +218,10 @@ class ShallowSQLite3(ShallowDb):
 
     def delete_object(self, class_name: str, id_: int) -> None:
         """
-        Delete an object of class name = class_name with id = id_
+        Delete an object of class name = class_name with id = id\_
 
         :param class_name: the class name of the object to delete
-        :type class_name: str
-        :param id_: the id of the object to delete
-        :type id_: int
+        :param id\_: the id of the object to delete
         """
         self.session.execute(Delete(dao[class_name], whereclause=dao[class_name].id_ == id_))
         self.session.commit()
@@ -326,16 +324,12 @@ class ShallowSQLite3(ShallowDb):
     def get_linked_records(self, cls_name:str, parent_cls_name: str, parent_id: int) -> list[dict[str, Any]]:
         """
         A method returning the list of records for all objects of class defined by cls_name that are linked to object
-        of class parent_cls_name with id_ = parent_id
+        of class parent_cls_name with id\_ = parent_id
 
         :param cls_name: the class name of the objects to retrieve records for
-        :type cls_name: str
         :param parent_cls_name: the class nae of the parent object
-        :type parent_cls_name: str
         :param parent_id: the id of the parent object
-        :type parent_id: int
         :return: a list of records
-        :rtype: list of dict
         """
         match (cls_name, parent_cls_name):
             # case ['ImageData', 'Image']:

@@ -10,7 +10,6 @@ from enum import Enum
 import cv2
 import matplotlib.axes
 import numpy as np
-# import tensorflow as tf
 import torch
 import torchvision as tv
 import torchvision.transforms.v2
@@ -78,8 +77,6 @@ class Image:
     def shape(self) -> tuple[int, int, int]:
         """
         the shape of this Image
-
-        :return: shape tuple
         """
         return tuple(self.torch.size())
 
@@ -87,8 +84,6 @@ class Image:
     def dtype(self) -> ImgDType:
         """
         the dtype for this Image
-
-        :return: dtype
         """
         return ImgDType.get_dtype(self.torch.dtype)
         # return self.tensor.dtype
@@ -96,9 +91,6 @@ class Image:
     def as_array(self, dtype: ImgDType = None, grayscale: bool = False, channel_last: bool = False) -> np.ndarray:
         """
         property returning the image data for this image
-
-        :return: the image data
-        :rtype: numpy.array
         """
         array = self.as_torch(dtype=dtype, grayscale=grayscale).numpy()
         return array
@@ -109,7 +101,7 @@ class Image:
 
         :param dtype: the dtype for the tensor
         :param grayscale: bool indicating whether the tensor should be 2D (grayscale) or 3D (RGB)
-        :return:
+        :return: the image as a tensor
         """
         return self.as_torch(dtype=dtype, grayscale=grayscale)
         # tensor = self.tensor if dtype is None else self._convert_tensor_to_dtype(dtype=dtype)
@@ -123,7 +115,7 @@ class Image:
 
         :param dtype: the dtype for the tensor
         :param grayscale: bool indicating whether the tensor should be 2D (grayscale) or 3D (RGB)
-        :return:
+        :return: the image as a Torch tensor
         """
         # tensor = self.torch if dtype is None else v2.ToDtype(dtype=dtype.torch_dtype, scale=True)(self.torch)
         tensor = self.torch if dtype is None else self._convert_to_dtype(dtype=dtype)
@@ -188,20 +180,23 @@ class Image:
 
         :param shape: the target shape
         :param method: the resizing method
-            * bilinear: Bilinear interpolation. If antialias is true, becomes a hat/tent filter function with radius 1
-              when downsampling.
-            * lanczos3: Lanczos kernel with radius 3. High-quality practical filter but may have some ringing,
-              especially on synthetic images.
-            * lanczos5: Lanczos kernel with radius 5. Very-high-quality filter but may have stronger ringing.
-            * bicubic: Cubic interpolant of Keys. Equivalent to Catmull-Rom kernel. Reasonably good quality and faster
-              than Lanczos3Kernel, particularly when upsampling.
-            * gaussian: Gaussian kernel with radius 3, sigma = 1.5 / 3.0.
-            * nearest: (default) Nearest neighbour interpolation. antialias has no effect when used with nearest
-              neighbour interpolation.
-            * area: Anti-aliased resampling with area interpolation. antialias has no effect when used with area
-              interpolation; it always anti-aliases.
-            * mitchellcubic: Mitchell-Netravali Cubic non-interpolating filter. For synthetic images (especially those
-              lacking proper prefiltering), less ringing than Keys cubic kernel but less sharp.
+
+         * **bilinear: Bilinear interpolation.** If antialias is true, becomes a hat/tent filter function with radius 1 when downsampling.
+
+         * **lanczos3: Lanczos kernel with radius 3.** High-quality practical filter but may have some ringing, especially on synthetic images.
+
+         * **lanczos5: Lanczos kernel with radius 5.** Very-high-quality filter but may have stronger ringing.
+
+         * **bicubic: Cubic interpolant of Keys.** Equivalent to Catmull-Rom kernel. Reasonably good quality and faster than Lanczos3Kernel, particularly when upsampling.
+
+         * **gaussian: Gaussian kernel** with radius 3, sigma = 1.5 / 3.0.
+
+         * **nearest: (default) Nearest neighbour interpolation.** antialias has no effect when used with nearest neighbour interpolation.
+
+         * **area: Anti-aliased resampling with area interpolation.** antialias has no effect when used with area interpolation; it always anti-aliases.
+
+         * **mitchellcubic: Mitchell-Netravali Cubic non-interpolating filter.** For synthetic images (especially those lacking proper prefiltering), less ringing than Keys cubic kernel but less sharp.
+
         :return: the resized Image object
         """
         # tensor = tf.expand_dims(self.tensor, axis=-1) if len(self.shape) == 2 else self.tensor
@@ -231,6 +226,7 @@ class Image:
     def channel_histogram(self, ax: matplotlib.axes.Axes, bins: str = 'auto', ):
         """
         Returns a histogram of channels' values
+
         :param ax: the matplotlib ax to plot the histogram in
         :param bins: the number of bins
         """
@@ -251,7 +247,7 @@ class Image:
         :param target_height: the height of the cropped image
         :param target_width: the width of the cropped image
         :param new_image: if True, returns a new Image, otherwise, the current Image is replaced with its cropped
-        version
+         version
         :return: the cropped Image
         """
         tensor = v2.functional.crop(self.torch, offset_height, offset_width, target_height, target_width)
@@ -263,6 +259,7 @@ class Image:
     def auto_contrast(self, preserve_tone: bool = True) -> Image:
         """
         Adjust contrast automatically using PIL package. RGBA images cannot be used here
+
         :param preserve_tone: if True, the tone is preserved
         :return: the current Image after correction
         """

@@ -876,7 +876,7 @@ class Plugin(plugins.Plugin):
 
         :param roi: the ROI
         :param as_index: bool set to True to return annotations as indices of class_names list, set to False to return
-        annotations as class names
+         annotations as class names
         :return: the list of annotated classes by frame
         """
         roi_classes = [-1] * roi.fov.image_resource().image_resource_data().sizeT

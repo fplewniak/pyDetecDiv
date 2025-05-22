@@ -4,10 +4,14 @@ Generic classes to discover and handle plugins
 import importlib
 import pkgutil
 import sys
+from modulefinder import ModuleFinder
+from typing import ValuesView, Self
 
 from PySide6.QtGui import QAction
+from PySide6.QtWidgets import QMenu
 
 import pydetecdiv
+from pydetecdiv.domain.Project import Project
 from pydetecdiv.plugins.parameters import Parameters
 from pydetecdiv.settings import get_plugins_dir
 from pydetecdiv.domain.Run import Run
@@ -28,28 +32,33 @@ class Plugin:
         self.parameters = Parameters([])
         self.run = None
 
-    def update_parameters(self, groups=None):
+    def update_parameters(self, groups: list[str] | str = None) -> None:
+        """
+        Update the parameters in the provided list of group names
+
+        :param groups: the list of group names or single group name
+        """
         self.parameters.update(groups)
         self.parameters.reset(groups)
 
-    def register(self):
+    def register(self) -> None:
         """
         Abstract method to register the plugin. This method should be implemented by all plugins for them to work.
         """
         raise NotImplementedError
 
-    def addActions(self, menu):
+    def addActions(self, menu: QMenu) -> None:
         """
         Method to add an action to a menu. This action triggers the launch method. If a submenu needs to be implemented
         or if arguments need to be passed to the launch method, this method may be overriden
 
-        :param menu:
+        :param menu: the menu to add actions to
         """
         action = QAction(self.name, menu)
         action.triggered.connect(self.launch)
         menu.addAction(action)
 
-    def launch(self):
+    def launch(self) -> None:
         """
         Abstract method that needs to be implemented in each concrete Plugin implementation to launch the plugin (with
         or without a GUI)
@@ -57,7 +66,7 @@ class Plugin:
         raise NotImplementedError
 
     @property
-    def parent_plugin(self):
+    def parent_plugin(self) -> Self:
         """
         return the parent plugin of the current plugin. This may be used to add functionalities to plugins without
         having to modify the original code
@@ -68,7 +77,7 @@ class Plugin:
             return pydetecdiv.app.PyDetecDiv.plugin_list.plugins_dict[self.parent]
         return None
 
-    def save_run(self, project, method, parameters):
+    def save_run(self, project: Project, method: str, parameters: dict[str, object]) -> Run:
         """
         Save the current Run
 
@@ -97,17 +106,18 @@ class PluginList:
 
     def __init__(self):
         self.categories = []
-        self.plugins_dict = {}
+        self.plugins_dict: dict[str, Plugin] = {}
 
     @property
-    def plugins(self):
+    def plugins(self) -> ValuesView[Plugin]:
         """
-        return the mist of available plugins
-        :return:
+        return the list of available plugins
+
+        :return: the list of available plugins
         """
         return self.plugins_dict.values()
 
-    def load(self):
+    def load(self) -> None:
         """
         Discover plugins and load them in plugin list
         """
@@ -116,7 +126,7 @@ class PluginList:
         for finder, name, _ in pkgutil.iter_modules([get_plugins_dir()]):
             _ = self.load_plugin(finder, f'{name}')
 
-    def load_plugin(self, finder, name):
+    def load_plugin(self, finder, name: str) -> Plugin | None:
         """
         Load a plugin given a finder and its module name
 
@@ -138,7 +148,7 @@ class PluginList:
             return module
         return None
 
-    def register_all(self):
+    def register_all(self) -> None:
         """
         Register plugins
         """
@@ -146,11 +156,10 @@ class PluginList:
             plugin.register()
 
     @property
-    def len(self):
+    def len(self) -> int:
         """
         The number of discovered plugins
 
         :return: how many plugins have been discovered
-        :rtype: int
         """
         return len(self.plugins)

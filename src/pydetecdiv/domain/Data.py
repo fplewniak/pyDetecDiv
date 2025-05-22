@@ -92,11 +92,8 @@ class Data(NamedDSO):
         """
         Returns a record dictionary of the current Data
 
-        :param no_id: if True, the id_ is not passed included in the record to allow transfer from one project to
-        another
-        :type no_id: bool
+        :param no_id: if True, the id\_ is not passed included in the record to allow transfer from one project to another
         :return: record dictionary
-        :rtype: dict
         """
         record = {
             'name'          : self.name,

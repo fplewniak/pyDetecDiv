@@ -43,7 +43,6 @@ class ROIdao(DAO, Base):
         table columns into the ROI record fields expected by the domain layer
 
         :return: a ROI record as a dictionary with keys() appropriate for handling by the domain layer
-        :rtype: dict
         """
         return {'id_': self.id_,
                 'name': self.name,
@@ -57,12 +56,10 @@ class ROIdao(DAO, Base):
 
     def data(self, roi_id: int) -> list[dict[str, Any]]:
         """
-        Returns a list of DataDao objects linked to the ROIdao object with the specified id_
+        Returns a list of DataDao objects linked to the ROIdao object with the specified id\_
 
-        :param roi_id: the id_ of the ROI
-        :type roi_id: int
+        :param roi_id: the id\_ of the ROI
         :return: the list of Data records linked to the ROI
-        :type: list of dict
         """
         return [i.record
                 for i in self.session.query(dao.DataDao)
@@ -72,12 +69,10 @@ class ROIdao(DAO, Base):
 
     def entities(self, roi_id: int) -> list[dict[str, object]]:
         """
-        A method returning the list of Entity records whose parent ROI has id == roi_id
+        A method returning the list of Entity records whose parent ROI has id\_ == roi_id
 
         :param roi_id: the id of the ROI
-        :type roi_id: int
-        :return: a list of Entity records with parent ROI id == roi_id
-        :rtype: list
+        :return: a list of Entity records with parent ROI id\_ == roi_id
         """
         if self.session.query(ROIdao).filter(ROIdao.id_ == roi_id).first() is not None:
             entities = [entity.record

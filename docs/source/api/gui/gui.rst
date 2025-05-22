@@ -23,7 +23,7 @@ pydetecdiv.app.gui.ActionsProject
    :members:
 
 pydetecdiv.app.gui.ActionsData
-'''''''''''''''''''''''''''''
+''''''''''''''''''''''''''''''
 .. automodule:: pydetecdiv.app.gui.ActionsData
    :members:
    :show-inheritance:

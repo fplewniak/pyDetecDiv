@@ -32,6 +32,7 @@ from pydetecdiv.domain.ImageResource import ImageResource
 DSO = TypeVar('DSO', bound=DomainSpecificObject)
 otherDSO = TypeVar('otherDSO', bound=DomainSpecificObject)
 
+
 class Project:
     """
     Project class to keep track of the database connection and providing basic methods to retrieve objects. Actually
@@ -133,12 +134,10 @@ class Project:
         Import images specified in a list of files into a destination
 
         :param image_files: list of image files to import
-        :type image_files:list of str
         :param destination: destination directory to import files into
-        :type destination: str
         :param kwargs: extra keyword arguments
+
         :return: the list of imported files. This list can be used to roll the copy back if needed
-        :rtype: list of str
         """
         data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
         return self.repository.import_images(image_files, data_dir_path, destination, **kwargs)
@@ -165,9 +164,7 @@ class Project:
         Import images specified in a list of files into a destination
 
         :param metadata_files: list of metadata files to load and get information from for image import
-        :type metadata_files: list of str
         :param destination: destination directory to import image files into
-        :type destination: str
         :param kwargs: extra keyword arguments
         """
         # data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
@@ -273,12 +270,10 @@ class Project:
 
     def id_mapping(self, class_name: str) -> dict[str, int]:
         """
-        Return name to id_ mapping for objects of a given class
+        Return name to id\_ mapping for objects of a given class
 
         :param class_name: the class name
-        :type class_name: str
-        :return: the name to id_ mapping
-        :rtype: dict
+        :return: the name to id\_ mapping
         """
         return {obj.name: obj.id_ for obj in self.get_objects(class_name)}
 
@@ -302,9 +297,7 @@ class Project:
         Save an object to the repository if it is new or has been modified
 
         :param dso: the domain-specific object to save
-        :type dso: DomainSpecificObject
         :return: the id of the saved object if it was created
-        :rtype: int
         """
         id_ = self.repository.save_object(dso.__class__.__name__, dso.record())
         if (dso.__class__.__name__, id_) not in self.pool:
@@ -329,11 +322,10 @@ class Project:
         :param class_name: the class of the requested object
         :param id_: the id reference of the object
         :type class_name: class inheriting DomainSpecificObject
-        :type id_: int
+        :type id\_: int
         :param uuid: the uuid of the requested object
         :param use_pool: True if object should be obtained from the pool unless if has not been created yet
         :return: the desired object
-        :rtype: object (DomainSpecificObject)
         """
         return self.build_dso(class_name, self.repository.get_record(class_name, int(id_), uuid), use_pool)
 
@@ -342,11 +334,8 @@ class Project:
         Return a named object by its name
 
         :param class_name: class name of the requested object
-        :type class_name: str
         :param name: the name of the requested object
-        :type name: str
         :return: the object
-        :rtype: DomainSpecificObject
         """
         return self.build_dso(class_name, self.repository.get_record_by_name(class_name, name))
 
@@ -485,19 +474,15 @@ class Project:
 
     def build_dso(self, class_name: str, rec: dict[str, Any], use_pool: bool = True) -> DSO | None:
         """
-        factory method to build a dso of class class_ from record rec or return the pooled object if it was already
+        factory method to build a dso of class class_name from record rec or return the pooled object if it was already
         created. Note that if the object was already in the pool, values in the record are not used to update the
         object. To make any change to the object's attribute, the object's class methods and setter should be used
         instead as they ensure that values are checked for validity and new attributes are saved to the persistence
         back-end
 
         :param class_name: the class name of the dso to build
-        :type class_name: str
-        :param rec: the record representing the object to build (if id_ is not in the record, the object is a new
-        creation
-        :type rec: dict
+        :param rec: the record representing the object to build (if id\_ is not in the record, the object is a new creation
         :return: the requested object
-        :rtype: DomainSpecificObject
         """
         if rec is None:
             return None

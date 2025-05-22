@@ -34,7 +34,6 @@ class RunDao(DAO, Base):
         table columns into the dataset record fields expected by the domain layer
 
         :return: a Run record as a dictionary with keys() appropriate for handling by the domain layer
-        :rtype: dict
         """
         return {'id_': self.id_,
                 'uuid': self.uuid,

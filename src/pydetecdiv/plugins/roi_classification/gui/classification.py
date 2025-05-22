@@ -13,7 +13,7 @@ from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
 from pydetecdiv.app.gui.core.widgets.viewers import Scene
 from pydetecdiv.app.gui.core.widgets.viewers.images.video import VideoPlayer
 from pydetecdiv.app.gui.core.widgets.viewers.plots import ChartView
-from pydetecdiv.domain import ROI
+from pydetecdiv.domain.ROI import ROI
 from pydetecdiv.plugins.gui import ListView, Dialog
 from pydetecdiv.settings import get_config_value
 from pydetecdiv.utils import BidirectionalIterator, previous

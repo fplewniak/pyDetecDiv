@@ -1,17 +1,17 @@
 #  CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21
 #  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
 """
- A class defining the business logic methods that can be applied to Regions Of Interest
+ A module defining the business logic classes and methods that can be applied to Experiment
 """
 import datetime
 
-from pydetecdiv.domain import Dataset
+from pydetecdiv.domain.Dataset import Dataset
 from pydetecdiv.domain.dso import NamedDSO
 
 
 class Experiment(NamedDSO):
     """
-    A business-logic class defining valid operations and attributes of data
+    A business-logic class defining valid operations and attributes of an experiment
     """
 
     def __init__(self, uuid: str, author: str, date: datetime.datetime, raw_dataset: int, **kwargs):
@@ -28,7 +28,6 @@ class Experiment(NamedDSO):
         property returning the raw dataset object for this experiment
 
         :return: raw dataset
-        :rtype: Dataset object
         """
         return self.project.get_object('Dataset', id_=self.raw_dataset_)
 
@@ -36,10 +35,8 @@ class Experiment(NamedDSO):
         """
         Returns a record dictionary of the current Experiment object
 
-        :param no_id: if True, the id_ is not passed included in the record to allow transfer from one project to another
-        :type no_id: bool
+        :param no_id: if True, the id\_ is not passed included in the record to allow transfer from one project to another
         :return: record dictionary
-        :rtype: dict
         """
         record = {
             'name'       : self.name,
