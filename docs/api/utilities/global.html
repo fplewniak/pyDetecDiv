@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Global functions and classes &mdash; pyDetecDiv 0.4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+  <title>Global functions and classes &mdash; pyDetecDiv 0.5.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=6c02275b"></script>
+      <script src="../../_static/documentation_options.js?v=1dd76d02"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -100,7 +100,7 @@
 <p>Utilities that can be useful in all places of the code</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pydetecdiv.generate_uuid">
-<span class="sig-prename descclassname"><span class="pre">pydetecdiv.</span></span><span class="sig-name descname"><span class="pre">generate_uuid</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.generate_uuid" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.</span></span><span class="sig-name descname"><span class="pre">generate_uuid</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#pydetecdiv.generate_uuid" title="Link to this definition"></a></dt>
 <dd><p>Generate a universal id</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -114,7 +114,7 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydetecdiv.copy_files">
-<span class="sig-prename descclassname"><span class="pre">pydetecdiv.</span></span><span class="sig-name descname"><span class="pre">copy_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.copy_files" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.</span></span><span class="sig-name descname"><span class="pre">copy_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Popen</span></span></span><a class="headerlink" href="#pydetecdiv.copy_files" title="Link to this definition"></a></dt>
 <dd><p>Copy files from source to destination with OS-specific command</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -134,7 +134,7 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydetecdiv.delete_files">
-<span class="sig-prename descclassname"><span class="pre">pydetecdiv.</span></span><span class="sig-name descname"><span class="pre">delete_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.delete_files" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.</span></span><span class="sig-name descname"><span class="pre">delete_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Popen</span></span></span><a class="headerlink" href="#pydetecdiv.delete_files" title="Link to this definition"></a></dt>
 <dd><p>Delete files with OS-specific command</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -155,48 +155,70 @@
 <p>Definition of global objects and methods for easy access from all parts of the application</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.app.DrawingTools">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">DrawingTools</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.DrawingTools" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">DrawingTools</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.DrawingTools" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">StrEnum</span></code></p>
 <p>Enumeration of available drawing tools</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.app.PyDetecDiv">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">PyDetecDiv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.PyDetecDiv" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">PyDetecDiv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.PyDetecDiv" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QApplication</span></code></p>
 <p>PyDetecDiv application class extending QApplication to keep track of the current project and main window</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.PyDetecDiv.load_plugins">
-<span class="sig-name descname"><span class="pre">load_plugins</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.PyDetecDiv.load_plugins" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load_plugins</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.PyDetecDiv.load_plugins" title="Link to this definition"></a></dt>
 <dd><p>Load the available plugins</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.PyDetecDiv.set_main_window">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">set_main_window</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_window</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../gui/gui.html#pydetecdiv.app.gui.Windows.MainWindow" title="pydetecdiv.app.gui.Windows.MainWindow"><span class="pre">MainWindow</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.PyDetecDiv.set_main_window" title="Link to this definition"></a></dt>
+<dd><p>Sets the main window global variable to make it accessible across the whole application</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>main_window</strong> – the Main Window object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.PyDetecDiv.set_apply_drift">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">set_apply_drift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">apply_drift</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.PyDetecDiv.set_apply_drift" title="Link to this definition"></a></dt>
+<dd><p>Sets the global switch for drift correction, so it is available over the whole application</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>apply_drift</strong> – the global drift correction switch</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydetecdiv.app.pydetecdiv_project">
-<span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">pydetecdiv_project</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.pydetecdiv_project" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">pydetecdiv_project</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../domain/dso_classes.html#pydetecdiv.domain.Project.Project" title="pydetecdiv.domain.Project.Project"><span class="pre">Project</span></a></span></span><a class="headerlink" href="#pydetecdiv.app.pydetecdiv_project" title="Link to this definition"></a></dt>
 <dd><p>Context manager for projects.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>project_name</strong> (<em>str</em>) – the project name</p>
+<dd class="field-odd"><p><strong>project_name</strong> – the project name</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.app.PyDetecDivThread">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">PyDetecDivThread</span></span><a class="headerlink" href="#pydetecdiv.app.PyDetecDivThread" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">PyDetecDivThread</span></span><a class="headerlink" href="#pydetecdiv.app.PyDetecDivThread" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QThread</span></code></p>
 <p>Thread used to run a process defined by a function and its arguments</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.PyDetecDivThread.set_function">
-<span class="sig-name descname"><span class="pre">set_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.PyDetecDivThread.set_function" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">set_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.PyDetecDivThread.set_function" title="Link to this definition"></a></dt>
 <dd><p>Define the function to run in the thread</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>fn</strong> – the function to run</p></li>
+<li><p><strong>func</strong> – the function to run</p></li>
 <li><p><strong>args</strong> – arguments passed to the function</p></li>
 <li><p><strong>kwargs</strong> – keyword arguments passed to the function</p></li>
 </ul>
@@ -206,7 +228,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.PyDetecDivThread.run">
-<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.PyDetecDivThread.run" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.PyDetecDivThread.run" title="Link to this definition"></a></dt>
 <dd><p>Run the function</p>
 </dd></dl>
 
@@ -214,7 +236,7 @@
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.app.AbstractWaitDialog">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">AbstractWaitDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancel_msg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_close_event</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.AbstractWaitDialog" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">AbstractWaitDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QWidget</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancel_msg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_close_event</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.AbstractWaitDialog" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QDialog</span></code></p>
 <p>Generic dialog box asking the user to wait for a thread to be finished. This box closes automatically when the
 thread is complete and the parent window is hidden as well if it is specified. This should be used for processes
@@ -222,7 +244,7 @@ that do not last too long and that might generate inconsistency if cancelled as 
 it</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.AbstractWaitDialog.wait_for">
-<span class="sig-name descname"><span class="pre">wait_for</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.AbstractWaitDialog.wait_for" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">wait_for</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.AbstractWaitDialog.wait_for" title="Link to this definition"></a></dt>
 <dd><p>Run function in separate thread and launch local event loop to handle progress bar and cancellation</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -237,31 +259,31 @@ it</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.AbstractWaitDialog.close_window">
-<span class="sig-name descname"><span class="pre">close_window</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.AbstractWaitDialog.close_window" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">close_window</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.AbstractWaitDialog.close_window" title="Link to this definition"></a></dt>
 <dd><p>Hide and destroy the Wait dialog window. The cursor is also set back to its normal aspect.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.AbstractWaitDialog.cancel">
-<span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.AbstractWaitDialog.cancel" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.AbstractWaitDialog.cancel" title="Link to this definition"></a></dt>
 <dd><p>Set cancelling message and request for interruption of thread so that the running job can cleanly close
 processes and roll back any modification if needed.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.AbstractWaitDialog.set_ignore_close_event">
-<span class="sig-name descname"><span class="pre">set_ignore_close_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ignore_close_event</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.AbstractWaitDialog.set_ignore_close_event" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">set_ignore_close_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ignore_close_event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.AbstractWaitDialog.set_ignore_close_event" title="Link to this definition"></a></dt>
 <dd><p>Set the _ignore_close_event flag to prevent or allow closing the window</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ignore_close_event</strong> (<em>bool</em>) – value to set the flag to</p>
+<dd class="field-odd"><p><strong>ignore_close_event</strong> – value to set the flag to</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.AbstractWaitDialog.closeEvent">
-<span class="sig-name descname"><span class="pre">closeEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.AbstractWaitDialog.closeEvent" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">closeEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QCloseEvent</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.AbstractWaitDialog.closeEvent" title="Link to this definition"></a></dt>
 <dd><p>Cancel the job if the window is closed unless close event is ignored by request.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -274,7 +296,7 @@ processes and roll back any modification if needed.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.app.WaitDialog">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">WaitDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancel_msg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_close_event</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.WaitDialog" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">WaitDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QWidget</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancel_msg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_close_event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.WaitDialog" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pydetecdiv.app.AbstractWaitDialog" title="pydetecdiv.app.AbstractWaitDialog"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractWaitDialog</span></code></a></p>
 <p>Generic dialog box asking the user to wait for a thread to be finished. This box closes automatically when the
 thread is complete and the parent window is hidden as well if it is specified. This should be used for processes
@@ -282,18 +304,18 @@ that do not last too long and that might generate inconsistency if cancelled as 
 it</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.WaitDialog.show_progress">
-<span class="sig-name descname"><span class="pre">show_progress</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.WaitDialog.show_progress" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">show_progress</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.WaitDialog.show_progress" title="Link to this definition"></a></dt>
 <dd><p>Convenience method to send the progress value to the progress bar widget</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>i</strong> (<em>int</em>) – the value to pass to the progress bar</p>
+<dd class="field-odd"><p><strong>i</strong> – the value to pass to the progress bar</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.WaitDialog.cancel">
-<span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.WaitDialog.cancel" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.WaitDialog.cancel" title="Link to this definition"></a></dt>
 <dd><p>Set cancelling message and request for interruption of thread so that the running job can cleanly close
 processes and roll back any modification if needed.</p>
 </dd></dl>
@@ -302,61 +324,120 @@ processes and roll back any modification if needed.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.app.MessageDialog">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">MessageDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.MessageDialog" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">MessageDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.MessageDialog" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QDialog</span></code></p>
 <p>Generic dialog to communicate a message to the user (error, warning or any other information)</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.app.StdoutWaitDialog">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">StdoutWaitDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancel_msg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_close_event</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.StdoutWaitDialog" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">StdoutWaitDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QWidget</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancel_msg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_close_event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.StdoutWaitDialog" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pydetecdiv.app.AbstractWaitDialog" title="pydetecdiv.app.AbstractWaitDialog"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractWaitDialog</span></code></a></p>
+<p>A Wait dialog that also captures and displays stdout output on the fly.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.StdoutWaitDialog.addText">
+<span class="sig-name descname"><span class="pre">addText</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.StdoutWaitDialog.addText" title="Link to this definition"></a></dt>
+<dd><p>Add text to the log window</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>text</strong> – the text to add</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.StdoutWaitDialog.cancel">
-<span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.StdoutWaitDialog.cancel" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.StdoutWaitDialog.cancel" title="Link to this definition"></a></dt>
 <dd><p>Set cancelling message and request for interruption of thread so that the running job can cleanly close
 processes and roll back any modification if needed.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.StdoutWaitDialog.close_window">
-<span class="sig-name descname"><span class="pre">close_window</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.StdoutWaitDialog.close_window" title="Link to this definition"></a></dt>
-<dd><p>Hide and destroy the Wait dialog window. The cursor is also set back to its normal aspect.</p>
+<span class="sig-name descname"><span class="pre">close_window</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.StdoutWaitDialog.close_window" title="Link to this definition"></a></dt>
+<dd><p>Closes the window and stops stdout capture</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.StdoutWaitDialog.stop_redirection">
+<span class="sig-name descname"><span class="pre">stop_redirection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">signal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Signal</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.StdoutWaitDialog.stop_redirection" title="Link to this definition"></a></dt>
+<dd><p>Stops capturing the stdout output, which is therefore printed to the terminal again</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>signal</strong> – the signal triggered by the event requesting to stop redirection</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.app.StreamRedirector">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">StreamRedirector</span></span><a class="headerlink" href="#pydetecdiv.app.StreamRedirector" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">StreamRedirector</span></span><a class="headerlink" href="#pydetecdiv.app.StreamRedirector" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QObject</span></code></p>
 <p>Custom stream redirector to emit stdout/stderr output.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.StreamRedirector.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.StreamRedirector.write" title="Link to this definition"></a></dt>
+<dd><p>Write text to the stream redirector</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>text</strong> – text to be written</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.StreamRedirector.flush">
+<span class="sig-name descname"><span class="pre">flush</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.StreamRedirector.flush" title="Link to this definition"></a></dt>
+<dd><p>A dummy method required only for compatibility with the Python IO system</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydetecdiv.app.get_settings">
-<span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">get_settings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.get_settings" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">get_settings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">QSettings</span></span></span><a class="headerlink" href="#pydetecdiv.app.get_settings" title="Link to this definition"></a></dt>
 <dd><p>Get settings in pydetecdiv.ini file</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>the settings</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>QSetting instance</p>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pydetecdiv.app.get_project_dir">
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">get_project_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#pydetecdiv.app.get_project_dir" title="Link to this definition"></a></dt>
+<dd><p>Gets the directory of a project</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>project_name</strong> – the name of the project</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the directory path of the project</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydetecdiv.app.project_list">
-<span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">project_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.project_list" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">project_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pydetecdiv.app.project_list" title="Link to this definition"></a></dt>
 <dd><p>Get the list of available projects. This method hides its persistence layer equivalent from other widgets.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>the list of available projects</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>list of str</p>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pydetecdiv.app.create_app">
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">create_app</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pydetecdiv.app.PyDetecDiv" title="pydetecdiv.app.PyDetecDiv"><span class="pre">PyDetecDiv</span></a></span></span><a class="headerlink" href="#pydetecdiv.app.create_app" title="Link to this definition"></a></dt>
+<dd><p>Creates a GUI application (the global controller for the display layer)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the application</p>
 </dd>
 </dl>
 </dd></dl>
@@ -375,7 +456,7 @@ processes and roll back any modification if needed.</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2024, Frédéric PLEWNIAK.</p>
+    <p>&#169; Copyright 2025, Frédéric PLEWNIAK.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

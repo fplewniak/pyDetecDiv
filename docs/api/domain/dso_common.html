@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pydetecdiv.domain.dso &mdash; pyDetecDiv 0.4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+  <title>pydetecdiv.domain.dso &mdash; pyDetecDiv 0.5.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=6c02275b"></script>
+      <script src="../../_static/documentation_options.js?v=1dd76d02"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -99,24 +99,24 @@
 should inherit from these classes according to their type.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.domain.dso.DomainSpecificObject">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.dso.</span></span><span class="sig-name descname"><span class="pre">DomainSpecificObject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.dso.</span></span><span class="sig-name descname"><span class="pre">DomainSpecificObject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="dso_classes.html#pydetecdiv.domain.Project.Project" title="pydetecdiv.domain.Project.Project"><span class="pre">Project</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A business-logic class defining valid operations and attributes common to all domain-specific classes</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.domain.dso.DomainSpecificObject.delete">
-<span class="sig-name descname"><span class="pre">delete</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.dso.DomainSpecificObject.delete" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">delete</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.domain.dso.DomainSpecificObject.delete" title="Link to this definition"></a></dt>
 <dd><p>Delete the current object</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.domain.dso.DomainSpecificObject.check_validity">
-<span class="sig-name descname"><span class="pre">check_validity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.dso.DomainSpecificObject.check_validity" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">check_validity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.domain.dso.DomainSpecificObject.check_validity" title="Link to this definition"></a></dt>
 <dd><p>Checks the validity of the current object</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.domain.dso.DomainSpecificObject.validate">
-<span class="sig-name descname"><span class="pre">validate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">updated</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.dso.DomainSpecificObject.validate" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">validate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">updated</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="pydetecdiv.domain.dso.DomainSpecificObject"><span class="pre">DomainSpecificObject</span></a></span></span><a class="headerlink" href="#pydetecdiv.domain.dso.DomainSpecificObject.validate" title="Link to this definition"></a></dt>
 <dd><p>Validate the current object and pass newly created and updated object to project for saving modifications. Sets
 the id of the object for new objects.
 This method should be called at the creation or at each modification of an object (i.e. in the __init__ and all
@@ -125,7 +125,7 @@ setter methods)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.domain.dso.DomainSpecificObject.record">
-<span class="sig-name descname"><span class="pre">record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">no_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.dso.DomainSpecificObject.record" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">no_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pydetecdiv.domain.dso.DomainSpecificObject.record" title="Link to this definition"></a></dt>
 <dd><p>Returns a record dictionary of the current DSO</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -141,12 +141,12 @@ setter methods)</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.domain.dso.NamedDSO">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.dso.</span></span><span class="sig-name descname"><span class="pre">NamedDSO</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.dso.NamedDSO" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.dso.</span></span><span class="sig-name descname"><span class="pre">NamedDSO</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.dso.NamedDSO" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="pydetecdiv.domain.dso.DomainSpecificObject"><code class="xref py py-class docutils literal notranslate"><span class="pre">DomainSpecificObject</span></code></a></p>
 <p>A domain-specific class for objects with a name.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.domain.dso.NamedDSO.name">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#pydetecdiv.domain.dso.NamedDSO.name" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#pydetecdiv.domain.dso.NamedDSO.name" title="Link to this definition"></a></dt>
 <dd><p>Returns the name of this object</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -162,13 +162,13 @@ setter methods)</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.domain.dso.BoxedDSO">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.dso.</span></span><span class="sig-name descname"><span class="pre">BoxedDSO</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">top_left</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bottom_right</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.dso.BoxedDSO" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.domain.dso.</span></span><span class="sig-name descname"><span class="pre">BoxedDSO</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">top_left</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bottom_right</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.domain.dso.BoxedDSO" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pydetecdiv.domain.dso.DomainSpecificObject" title="pydetecdiv.domain.dso.DomainSpecificObject"><code class="xref py py-class docutils literal notranslate"><span class="pre">DomainSpecificObject</span></code></a></p>
 <p>A domain-specific class for objects that can be represented as a rectangular box (i.e. having top left and bottom
 right corners).</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.domain.dso.BoxedDSO.box">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">box</span></span><a class="headerlink" href="#pydetecdiv.domain.dso.BoxedDSO.box" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">box</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../utilities/utilities.html#pydetecdiv.utils.Shapes.Box" title="pydetecdiv.utils.Shapes.Box"><span class="pre">Box</span></a></em><a class="headerlink" href="#pydetecdiv.domain.dso.BoxedDSO.box" title="Link to this definition"></a></dt>
 <dd><p>Returns a Box object that can represent the current object</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -182,7 +182,7 @@ right corners).</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.domain.dso.BoxedDSO.top_left">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">top_left</span></span><a class="headerlink" href="#pydetecdiv.domain.dso.BoxedDSO.top_left" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">top_left</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pydetecdiv.domain.dso.BoxedDSO.top_left" title="Link to this definition"></a></dt>
 <dd><p>The top-left corner of the Box in the coordinate system</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -196,7 +196,7 @@ right corners).</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.domain.dso.BoxedDSO.bottom_right">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bottom_right</span></span><a class="headerlink" href="#pydetecdiv.domain.dso.BoxedDSO.bottom_right" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bottom_right</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pydetecdiv.domain.dso.BoxedDSO.bottom_right" title="Link to this definition"></a></dt>
 <dd><p>The bottom-right corner of the Box in the coordinate system</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -210,7 +210,7 @@ right corners).</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.domain.dso.BoxedDSO.size">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">size</span></span><a class="headerlink" href="#pydetecdiv.domain.dso.BoxedDSO.size" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pydetecdiv.domain.dso.BoxedDSO.size" title="Link to this definition"></a></dt>
 <dd><p>The size (dimension) of the object obtained from its associated box</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -237,7 +237,7 @@ right corners).</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2024, Frédéric PLEWNIAK.</p>
+    <p>&#169; Copyright 2025, Frédéric PLEWNIAK.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

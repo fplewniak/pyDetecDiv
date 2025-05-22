@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Core widgets &mdash; pyDetecDiv 0.4.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+  <title>Core widgets &mdash; pyDetecDiv 0.5.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=6c02275b"></script>
+      <script src="../../_static/documentation_options.js?v=1dd76d02"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -62,7 +62,7 @@
 <li class="toctree-l3"><a class="reference internal" href="gui.html#module-pydetecdiv.app.gui.Windows">pydetecdiv.app.gui.Windows</a></li>
 <li class="toctree-l3"><a class="reference internal" href="gui.html#module-pydetecdiv.app.gui.ActionsSettings">pydetecdiv.app.gui.ActionsSettings</a></li>
 <li class="toctree-l3"><a class="reference internal" href="gui.html#module-pydetecdiv.app.gui.ActionsProject">pydetecdiv.app.gui.ActionsProject</a></li>
-<li class="toctree-l3"><a class="reference internal" href="gui.html#pydetecdiv-app-gui-actionsdata">pydetecdiv.app.gui.ActionsData</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.html#module-pydetecdiv.app.gui.ActionsData">pydetecdiv.app.gui.ActionsData</a></li>
 <li class="toctree-l3"><a class="reference internal" href="gui.html#module-pydetecdiv.app.gui.RawData2FOV">pydetecdiv.app.gui.RawData2FOV</a></li>
 </ul>
 </li>
@@ -103,48 +103,54 @@
 <p>Definition of widgets to display Tabs in a Tabbed window</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.TabWidgets.TabbedWindow">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.gui.core.widgets.TabWidgets.</span></span><span class="sig-name descname"><span class="pre">TabbedWindow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.TabWidgets.TabbedWindow" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.gui.core.widgets.TabWidgets.</span></span><span class="sig-name descname"><span class="pre">TabbedWindow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.TabWidgets.TabbedWindow" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QTabWidget</span></code></p>
 <p>A class for tabbed windows. These windows are displayed in the MDI area of the main window.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.TabWidgets.TabbedWindow.set_top_tab">
-<span class="sig-name descname"><span class="pre">set_top_tab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">widget</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.TabWidgets.TabbedWindow.set_top_tab" title="Link to this definition"></a></dt>
-<dd><p>Set the main tab for this tabbed window, i.e. the reference tab that cannot be closed
-:param widget: the widget to display in the top tab
-:param title: the title of the top tab</p>
+<span class="sig-name descname"><span class="pre">set_top_tab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">widget</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QWidget</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.TabWidgets.TabbedWindow.set_top_tab" title="Link to this definition"></a></dt>
+<dd><p>Set the main tab for this tabbed window, i.e. the reference tab that cannot be closed</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>widget</strong> – the widget to display in the top tab</p></li>
+<li><p><strong>title</strong> – the title of the top tab</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.TabWidgets.TabbedWindow.closeEvent">
-<span class="sig-name descname"><span class="pre">closeEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.TabWidgets.TabbedWindow.closeEvent" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">closeEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QCloseEvent</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.TabWidgets.TabbedWindow.closeEvent" title="Link to this definition"></a></dt>
 <dd><p>Close the current tabbed widget window</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>event</strong> (<em>QCloseEvent</em>) – the close event</p>
+<dd class="field-odd"><p><strong>event</strong> – the close event</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.TabWidgets.TabbedWindow.close_tab">
-<span class="sig-name descname"><span class="pre">close_tab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.TabWidgets.TabbedWindow.close_tab" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">close_tab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.TabWidgets.TabbedWindow.close_tab" title="Link to this definition"></a></dt>
 <dd><p>Close the tab with the specified index</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>index</strong> (<em>int</em>) – the index of the tab to close</p>
+<dd class="field-odd"><p><strong>index</strong> – the index of the tab to close</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.TabWidgets.TabbedWindow.show_plot">
-<span class="sig-name descname"><span class="pre">show_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Plot'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.TabWidgets.TabbedWindow.show_plot" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">show_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Plot'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.TabWidgets.TabbedWindow.show_plot" title="Link to this definition"></a></dt>
 <dd><p>Open a viewer tab to plot a graphic from a pandas dataframe</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>df</strong> (<em>pandas DataFrame</em>) – the data to plot</p></li>
-<li><p><strong>title</strong> (<em>str</em>) – the title for the plot tab</p></li>
+<li><p><strong>df</strong> – the data to plot</p></li>
+<li><p><strong>title</strong> – the title for the plot tab</p></li>
 </ul>
 </dd>
 </dl>
@@ -158,12 +164,12 @@
 <p>Module defining classes for generic viewer API</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.GraphicsView">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.gui.core.widgets.viewers.</span></span><span class="sig-name descname"><span class="pre">GraphicsView</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.GraphicsView" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.gui.core.widgets.viewers.</span></span><span class="sig-name descname"><span class="pre">GraphicsView</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QWidget</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.GraphicsView" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QGraphicsView</span></code></p>
 <p>A generic widget for graphics visualization (image, drawings, etc.) using layers</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.GraphicsView.setup">
-<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scene</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.GraphicsView.setup" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scene</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QGraphicsScene</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.GraphicsView.setup" title="Link to this definition"></a></dt>
 <dd><p>Sets up the GraphicsView, adding a scene and a background layer</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -174,7 +180,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.GraphicsView.zoom_set_value">
-<span class="sig-name descname"><span class="pre">zoom_set_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.GraphicsView.zoom_set_value" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">zoom_set_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.GraphicsView.zoom_set_value" title="Link to this definition"></a></dt>
 <dd><p>Sets the zoom to the desired value</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -185,13 +191,13 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.GraphicsView.zoom_fit">
-<span class="sig-name descname"><span class="pre">zoom_fit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.GraphicsView.zoom_fit" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">zoom_fit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.GraphicsView.zoom_fit" title="Link to this definition"></a></dt>
 <dd><p>Set the zoom value to fit the image in the viewer</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.GraphicsView.addLayer">
-<span class="sig-name descname"><span class="pre">addLayer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">background</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.GraphicsView.addLayer" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">addLayer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">background</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pydetecdiv.app.gui.core.widgets.viewers.Layer" title="pydetecdiv.app.gui.core.widgets.viewers.Layer"><span class="pre">Layer</span></a></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.GraphicsView.addLayer" title="Link to this definition"></a></dt>
 <dd><p>Adds a layer item to the Scene</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -205,7 +211,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.GraphicsView.move_layer">
-<span class="sig-name descname"><span class="pre">move_layer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.GraphicsView.move_layer" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">move_layer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.GraphicsView.move_layer" title="Link to this definition"></a></dt>
 <dd><p>Move layer from its current z position to another one</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -221,13 +227,13 @@
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.gui.core.widgets.viewers.</span></span><span class="sig-name descname"><span class="pre">Scene</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.gui.core.widgets.viewers.</span></span><span class="sig-name descname"><span class="pre">Scene</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QWidget</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QGraphicsScene</span></code></p>
 <p>A generic scene attached to a GraphicsView, containing graphics items, and reacting to user input
 (key press, mouse,…)</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.viewer">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">viewer</span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.viewer" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">viewer</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#pydetecdiv.app.gui.core.widgets.viewers.GraphicsView" title="pydetecdiv.app.gui.core.widgets.viewers.GraphicsView"><span class="pre">GraphicsView</span></a></em><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.viewer" title="Link to this definition"></a></dt>
 <dd><p>A convenience property returning the scene’s viewer</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -238,7 +244,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.view">
-<span class="sig-name descname"><span class="pre">view</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.view" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">view</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pydetecdiv.app.gui.core.widgets.viewers.GraphicsView" title="pydetecdiv.app.gui.core.widgets.viewers.GraphicsView"><span class="pre">GraphicsView</span></a></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.view" title="Link to this definition"></a></dt>
 <dd><p>A convenience method to return any view associated with the scene</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -252,84 +258,105 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.keyPressEvent">
-<span class="sig-name descname"><span class="pre">keyPressEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.keyPressEvent" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">keyPressEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QKeyEvent</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.keyPressEvent" title="Link to this definition"></a></dt>
 <dd><p>Detect when a key is pressed and perform the corresponding action:
 * QKeySequence.Delete: delete the selected item</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>event</strong> (<em>QKeyEvent</em>) – the key pressed event</p>
+<dd class="field-odd"><p><strong>event</strong> – the key pressed event</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.mousePressEvent">
-<span class="sig-name descname"><span class="pre">mousePressEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.mousePressEvent" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">mousePressEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QGraphicsSceneMouseEvent</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.mousePressEvent" title="Link to this definition"></a></dt>
 <dd><p>Detect when the left mouse button is pressed and perform the action corresponding to the currently checked
 drawing tool</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>event</strong> (<em>QGraphicsSceneMouseEvent</em>) – the mouse press event</p>
+<dd class="field-odd"><p><strong>event</strong> – the mouse press event</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.mouseMoveEvent">
-<span class="sig-name descname"><span class="pre">mouseMoveEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.mouseMoveEvent" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">mouseMoveEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QGraphicsSceneMouseEvent</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.mouseMoveEvent" title="Link to this definition"></a></dt>
 <dd><p>Detect mouse movement and apply the appropriate method according to the currently checked drawing tool and key
 modifier</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>event</strong> (<em>QGraphicsSceneMouseEvent</em>) – the mouse move event</p>
+<dd class="field-odd"><p><strong>event</strong> – the mouse move event</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.wheelEvent">
-<span class="sig-name descname"><span class="pre">wheelEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PySide6.QtWidgets.QGraphicsSceneWheelEvent</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.wheelEvent" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">wheelEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QGraphicsSceneWheelEvent</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.wheelEvent" title="Link to this definition"></a></dt>
+<dd><p>DOES NOT WORK
+Action triggered by using the mouse wheel</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.delete_item">
+<span class="sig-name descname"><span class="pre">delete_item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphics_item</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QGraphicsItem</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.delete_item" title="Link to this definition"></a></dt>
+<dd><p>remove a graphics item from the scene. The QGraphicsItem object is not deleted though and can be added back to the scene</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>graphics_item</strong> – the graphics item to remove</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.unselect_items">
+<span class="sig-name descname"><span class="pre">unselect_items</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QGraphicsSceneMouseEvent</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.unselect_items" title="Link to this definition"></a></dt>
+<dd><p>Unselect all selected items</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> – the mouse press event</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.select_Item">
-<span class="sig-name descname"><span class="pre">select_Item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.select_Item" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">select_Item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QGraphicsSceneMouseEvent</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.select_Item" title="Link to this definition"></a></dt>
 <dd><p>Select the current area/Item</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>event</strong> (<em>QGraphicsSceneMouseEvent</em>) – the mouse press event</p>
+<dd class="field-odd"><p><strong>event</strong> – the mouse press event</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.get_selected_Item">
-<span class="sig-name descname"><span class="pre">get_selected_Item</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.get_selected_Item" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_selected_Item</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">QAbstractGraphicsShapeItem</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.get_selected_Item" title="Link to this definition"></a></dt>
 <dd><p>Return the selected Item</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>the selected Item</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>QGraphicsRectItem</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.duplicate_selected_Item">
-<span class="sig-name descname"><span class="pre">duplicate_selected_Item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.duplicate_selected_Item" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">duplicate_selected_Item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QGraphicsSceneMouseEvent</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">QGraphicsRectItem</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.duplicate_selected_Item" title="Link to this definition"></a></dt>
 <dd><p>Duplicate the currently selected Item at the current mouse position</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>event</strong> (<em>QGraphicsSceneMouseEvent</em>) – the mouse press event</p>
+<dd class="field-odd"><p><strong>event</strong> – the mouse press event</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.get_colliding_ShapeItems">
-<span class="sig-name descname"><span class="pre">get_colliding_ShapeItems</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.get_colliding_ShapeItems" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_colliding_ShapeItems</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QAbstractGraphicsShapeItem</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">QAbstractGraphicsShapeItem</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.get_colliding_ShapeItems" title="Link to this definition"></a></dt>
 <dd><p>Retrieve all ShapeItems colliding with the item in this scene</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -343,29 +370,35 @@ modifier</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.move_Item">
-<span class="sig-name descname"><span class="pre">move_Item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.move_Item" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">move_Item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QGraphicsSceneMouseEvent</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">QGraphicsRectItem</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">QGraphicsEllipseItem</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.move_Item" title="Link to this definition"></a></dt>
 <dd><p>Move the currently selected Item if it is movable</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>event</strong> (<em>QGraphicsSceneMouseEvent</em>) – the mouse move event</p>
+<dd class="field-odd"><p><strong>event</strong> – the mouse move event</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.draw_Item">
-<span class="sig-name descname"><span class="pre">draw_Item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.draw_Item" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">draw_Item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QGraphicsSceneMouseEvent</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">QGraphicsRectItem</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.draw_Item" title="Link to this definition"></a></dt>
 <dd><p>Draw or redraw the currently selected Item if it is movable</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>event</strong> (<em>QGraphicsSceneMouseEvent</em>) – the mouse press event</p>
+<dd class="field-odd"><p><strong>event</strong> – the mouse press event</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.regions">
+<span class="sig-name descname"><span class="pre">regions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">QGraphicsRectItem</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.regions" title="Link to this definition"></a></dt>
+<dd><p>the list of regions in the scene</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.set_Item_width">
-<span class="sig-name descname"><span class="pre">set_Item_width</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.set_Item_width" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">set_Item_width</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.set_Item_width" title="Link to this definition"></a></dt>
 <dd><p>Sets the width of the selected item</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -376,7 +409,7 @@ modifier</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.set_Item_height">
-<span class="sig-name descname"><span class="pre">set_Item_height</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">height</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.set_Item_height" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">set_Item_height</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.set_Item_height" title="Link to this definition"></a></dt>
 <dd><p>Sets the height of the selected item</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -387,7 +420,7 @@ modifier</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.display_Item_size">
-<span class="sig-name descname"><span class="pre">display_Item_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.display_Item_size" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">display_Item_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QGraphicsRectItem</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.display_Item_size" title="Link to this definition"></a></dt>
 <dd><p>Displays the item size in the Drawing tools palette</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -396,16 +429,41 @@ modifier</p>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.add_point">
+<span class="sig-name descname"><span class="pre">add_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QGraphicsSceneMouseEvent</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">QGraphicsEllipseItem</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.add_point" title="Link to this definition"></a></dt>
+<dd><p>Draw a point
+:param event: the mouse press event</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.points">
+<span class="sig-name descname"><span class="pre">points</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">QGraphicsEllipseItem</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.points" title="Link to this definition"></a></dt>
+<dd><p>the list of points in the scene</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.layers">
+<span class="sig-name descname"><span class="pre">layers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.layers" title="Link to this definition"></a></dt>
+<dd><p>the list of layers in the scene</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Scene.item_dict">
+<span class="sig-name descname"><span class="pre">item_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Scene.item_dict" title="Link to this definition"></a></dt>
+<dd><p>Returns a dictionary with all items in a scene</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Layer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.gui.core.widgets.viewers.</span></span><span class="sig-name descname"><span class="pre">Layer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">viewer</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Layer" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.gui.core.widgets.viewers.</span></span><span class="sig-name descname"><span class="pre">Layer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">viewer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydetecdiv.app.gui.core.widgets.viewers.GraphicsView" title="pydetecdiv.app.gui.core.widgets.viewers.GraphicsView"><span class="pre">GraphicsView</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Layer" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QGraphicsItem</span></code></p>
 <p>A graphics item containing sub-items in order to define layer behaviour</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Layer.zIndex">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">zIndex</span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Layer.zIndex" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">zIndex</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Layer.zIndex" title="Link to this definition"></a></dt>
 <dd><p>A convenience method returning the Z index of the Layer</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -416,25 +474,25 @@ modifier</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Layer.move_up">
-<span class="sig-name descname"><span class="pre">move_up</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Layer.move_up" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">move_up</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Layer.move_up" title="Link to this definition"></a></dt>
 <dd><p>Moves the layer up one level</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Layer.move_down">
-<span class="sig-name descname"><span class="pre">move_down</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Layer.move_down" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">move_down</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Layer.move_down" title="Link to this definition"></a></dt>
 <dd><p>Moves the layer down one level</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Layer.toggleVisibility">
-<span class="sig-name descname"><span class="pre">toggleVisibility</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Layer.toggleVisibility" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">toggleVisibility</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Layer.toggleVisibility" title="Link to this definition"></a></dt>
 <dd><p>Toggles visibility of the layer</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Layer.addItem">
-<span class="sig-name descname"><span class="pre">addItem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Layer.addItem" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">addItem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QGraphicsItem</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">QGraphicsItem</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Layer.addItem" title="Link to this definition"></a></dt>
 <dd><p>Adds an item to the layer</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -448,7 +506,7 @@ modifier</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Layer.boundingRect">
-<span class="sig-name descname"><span class="pre">boundingRect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Layer.boundingRect" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">boundingRect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">QRectF</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Layer.boundingRect" title="Link to this definition"></a></dt>
 <dd><p>Returns the bounding rect of the layer, which contains all children</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -459,7 +517,7 @@ modifier</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.Layer.paint">
-<span class="sig-name descname"><span class="pre">paint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">painter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">option</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">widget</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Ellipsis</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Layer.paint" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">paint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">painter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QPainter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QStyleOptionGraphicsItem</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">widget</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QWidget</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Ellipsis</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.Layer.paint" title="Link to this definition"></a></dt>
 <dd><p>Paint method added to comply with the implementation of abstract class</p>
 </dd></dl>
 
@@ -467,12 +525,12 @@ modifier</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.BackgroundLayer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.gui.core.widgets.viewers.</span></span><span class="sig-name descname"><span class="pre">BackgroundLayer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">viewer</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.BackgroundLayer" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.gui.core.widgets.viewers.</span></span><span class="sig-name descname"><span class="pre">BackgroundLayer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">viewer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydetecdiv.app.gui.core.widgets.viewers.GraphicsView" title="pydetecdiv.app.gui.core.widgets.viewers.GraphicsView"><span class="pre">GraphicsView</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.BackgroundLayer" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pydetecdiv.app.gui.core.widgets.viewers.Layer" title="pydetecdiv.app.gui.core.widgets.viewers.Layer"><code class="xref py py-class docutils literal notranslate"><span class="pre">Layer</span></code></a></p>
 <p>A particular layer that is always at the bottom of a scene</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.core.widgets.viewers.BackgroundLayer.zIndex">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">zIndex</span></span><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.BackgroundLayer.zIndex" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">zIndex</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#pydetecdiv.app.gui.core.widgets.viewers.BackgroundLayer.zIndex" title="Link to this definition"></a></dt>
 <dd><p>A convenience method returning the Z index of the Layer. As this is a background layer, the Z index
 should always be 0</p>
 <dl class="field-list simple">
@@ -498,7 +556,7 @@ should always be 0</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2024, Frédéric PLEWNIAK.</p>
+    <p>&#169; Copyright 2025, Frédéric PLEWNIAK.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
