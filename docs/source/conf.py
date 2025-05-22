@@ -19,7 +19,7 @@ import tomllib
 # -- Project information -----------------------------------------------------
 
 project = 'pyDetecDiv'
-copyright = '2024, Frédéric PLEWNIAK'
+copyright = '2025, Frédéric PLEWNIAK'
 author = 'Frédéric PLEWNIAK'
 
 # The full version, including alpha/beta/rc tags
