@@ -176,13 +176,14 @@ class Project:
         with open(metadata_files) as metadata_file:
 
             metadata = json.load(metadata_file)
-            positions = [d["Label"] for d in metadata["Summary"]["StagePositions"]]
+            # positions = [d["Label"] for d in metadata["Summary"]["StagePositions"]]
             sizeT = -1
             fov = None
 
             for d in [v for k, v in metadata.items() if k.startswith('Metadata-')]:
                 if fov is None:
-                    fov = FOV(project=self, name=positions[d["PositionIndex"]])
+                    # fov = FOV(project=self, name=positions[d["PositionIndex"]])
+                    fov = FOV(project=self, name=d["PositionName"])
                     image_res = ImageResource(project=self, dataset=dataset, fov=fov, multi=True,
                                               zdim=metadata["Summary"]["Slices"],
                                               cdim=metadata["Summary"]["Channels"], tdim=-1,

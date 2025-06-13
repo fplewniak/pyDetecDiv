@@ -21,7 +21,7 @@ class DataDao(DAO, Base):
 
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
     uuid = Column(String(36))
-    name = Column(String, unique=True, nullable=False)
+    name = Column(String, unique=False, nullable=False)
     dataset = Column(Integer, ForeignKey('dataset.id_'), nullable=False, index=True)
     author = Column(String)
     date = Column(Date)
