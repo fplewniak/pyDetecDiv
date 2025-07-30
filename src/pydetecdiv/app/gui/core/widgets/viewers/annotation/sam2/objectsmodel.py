@@ -346,32 +346,35 @@ class PromptSourceModel(QStandardItemModel):
             self.project.delete(mask)
             self.project.commit()
 
-    def clean_masks(self, obj: Entity) -> None:
+    def clean_masks(self, entity: Entity, from_frame: int|None = None) -> None:
         """
-        Cleans the masks for object, essentially used to remove masks that were predicted after the exit frame before it was defined
+        Cleans the masks for entity, essentially used to remove masks that were predicted after the exit frame before it was defined
         by the user
 
-        :param obj: the object
+        :param entity: the entity
+        :param from_frame: defines the first frame masks should be removed from
         """
-        # for mask in self.get_masks(obj):
-        for mask in obj.masks():
+        if from_frame is None:
+            from_frame = entity.exit_frame
+        for mask in entity.masks():
             # if not self.is_present_at_frame(obj, mask.frame):
-            if mask.frame < self.key_frames(obj)[0] or mask.frame >= obj.exit_frame:
-                self.remove_mask(obj, mask.frame)
+            if mask.frame < self.key_frames(entity)[0] or mask.frame >= from_frame:
+                self.remove_mask(entity, mask.frame)
 
-    def clean_prompt(self, entity: Entity) -> None:
+    def clean_prompt(self, entity: Entity, from_frame: int|None = None) -> None:
         """
         Removes the bounding boxes and points for entity that may have been defined in frames after the exit frame
 
         :param entity: the Entity
         """
-        # for bounding_box in self.get_bounding_boxes(entity):
+        if from_frame is None:
+            from_frame = entity.exit_frame
         for bounding_box in entity.bounding_boxes():
-            if bounding_box.frame >= entity.exit_frame:
+            if bounding_box.frame >= from_frame:
                 self.remove_bounding_box(entity, bounding_box.frame)
         # for point in self.get_points(entity):
         for point in entity.points():
-            if point.frame >= entity.exit_frame:
+            if point.frame >= from_frame:
                 self.remove_point(entity, point.graphics_item, point.frame)
 
     def add_point(self, entity: Entity, frame: int, point: QGraphicsEllipseItem, label: int = 1) -> None:

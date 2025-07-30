@@ -271,6 +271,8 @@ class SegmentationScene(VideoScene):
             self.select_Item(event)
             exit_next_frame_action = menu.addAction('Set next frame as exit frame')
             exit_next_frame_action.triggered.connect(self.player.entity_exit_next_frame)
+        clear_from_here_action = menu.addAction('Clear masks and prompts from this frame')
+        clear_from_here_action.triggered.connect(self.player.clear_from_current_frame)
         menu.exec(event.screenPos())
 
     def add_point(self, event: QGraphicsSceneMouseEvent) -> QGraphicsEllipseItem | None:
@@ -317,7 +319,8 @@ class SegmentationTool(VideoPlayer):
         self.object_tree_view = None
         self.max_frames_prop = 15
         self.method_group = None
-        self.export_masks_action = None
+        # self.export_masks_action = None
+        self.clear_from_current_action = None
         self.no_approximation = None
         self.simple_approximation = None
         self.TCL1_approximation = None
@@ -421,9 +424,13 @@ class SegmentationTool(VideoPlayer):
         menubar = QMenuBar()
         menubar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         file_menu = menubar.addMenu('File')
-        self.export_masks_action = QAction('Export masks in YOLO format')
-        self.export_masks_action.triggered.connect(self.export_masks)
-        file_menu.addAction(self.export_masks_action)
+        # self.export_masks_action = QAction('Export masks in YOLO format')
+        # self.export_masks_action.triggered.connect(self.export_masks)
+        # file_menu.addAction(self.export_masks_action)
+
+        self.clear_from_current_action = QAction('Clear masks and prompts after current frame')
+        self.clear_from_current_action.triggered.connect(self.clear_from_current_frame)
+        file_menu.addAction(self.clear_from_current_action)
 
         segmentation = menubar.addMenu('Segmentation')
         self.segment_video = QAction('Run segmentation on video')
@@ -846,6 +853,11 @@ class SegmentationTool(VideoPlayer):
                 self.source_model.change_bounding_box(self.current_entity, self.T, item)
             else:
                 self.source_model.add_bounding_box(self.current_entity, self.T, item)
+
+    def clear_from_current_frame(self):
+        for entity in self.source_model.entities:
+            self.source_model.clean_masks(entity, from_frame=self.T)
+            self.source_model.clean_prompt(entity, from_frame=self.T)
 
     def export_masks(self) -> None:
         """
