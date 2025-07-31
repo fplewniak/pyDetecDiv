@@ -855,6 +855,11 @@ class SegmentationTool(VideoPlayer):
                 self.source_model.add_bounding_box(self.current_entity, self.T, item)
 
     def clear_from_current_frame(self):
+        """
+        Clear all masks and prompts (bounding boxes and points) starting from the current frame. This is useful to remove in one go
+        all inaccurate masks predicted by SAM2 when one does not want to add any more annotations after the last accurately
+        segmented frame.
+        """
         for entity in self.source_model.entities:
             self.source_model.clean_masks(entity, from_frame=self.T)
             self.source_model.clean_prompt(entity, from_frame=self.T)
