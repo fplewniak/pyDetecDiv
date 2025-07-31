@@ -15,7 +15,7 @@ from contextlib import contextmanager
 from enum import StrEnum
 import markdown
 
-from PySide6.QtGui import QCursor, QTextCursor, QCloseEvent
+from PySide6.QtGui import QCursor, QTextCursor, QCloseEvent, QAction
 from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox, QTextEdit, QWidget)
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal, QObject
 import pyqtgraph as pg
@@ -213,7 +213,7 @@ class WaitDialog(AbstractWaitDialog):
     it
     """
 
-    def __init__(self, msg, parent: QWidget , progress_bar: bool = False, cancel_msg: str = None, ignore_close_event: bool = True):
+    def __init__(self, msg, parent: QWidget, progress_bar: bool = False, cancel_msg: str = None, ignore_close_event: bool = True):
         super().__init__(parent, cancel_msg=cancel_msg, ignore_close_event=ignore_close_event)
         self.label = QLabel()
         self.label.setStyleSheet("""
@@ -272,10 +272,34 @@ class MessageDialog(QDialog):
         self.exec()
 
 
+class ConfirmDialog(QDialog):
+    """
+    Generic dialog asking for confirmation from the user to launch an action
+    """
+
+    def __init__(self, msg: str, action: Callable):
+        super().__init__()
+        # self.setWindowModality(Qt.WindowModal)
+        label = QLabel()
+        label.setStyleSheet("""
+        font-weight: bold;
+        """)
+        label.setText(msg)
+        layout = QVBoxLayout(self)
+        layout.addWidget(label)
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel, self)
+        button_box.accepted.connect(action)
+        button_box.rejected.connect(self.close)
+        layout.addWidget(button_box)
+        self.setLayout(layout)
+        self.exec()
+
+
 class StdoutWaitDialog(AbstractWaitDialog):
     """
     A Wait dialog that also captures and displays stdout output on the fly.
     """
+
     def __init__(self, msg: str, parent: QWidget, cancel_msg: str = None, ignore_close_event: bool = True):
         super().__init__(parent, cancel_msg=cancel_msg, ignore_close_event=ignore_close_event)
         self.log = QTextEdit(self)

@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (QGraphicsSceneMouseEvent, QMenu, QWidget, QGraphi
 import torch.cuda
 from sam2.build_sam import build_sam2_video_predictor
 
-from pydetecdiv.app import PyDetecDiv, DrawingTools, pydetecdiv_project
+from pydetecdiv.app import PyDetecDiv, DrawingTools, ConfirmDialog, pydetecdiv_project
 from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.objectsmodel import (ObjectsTreeView, PromptProxyModel,
                                                                                   PromptSourceModel, ObjectReferenceRole,
                                                                                   Point, ModelItem, Mask)
@@ -272,7 +272,7 @@ class SegmentationScene(VideoScene):
             exit_next_frame_action = menu.addAction('Set next frame as exit frame')
             exit_next_frame_action.triggered.connect(self.player.entity_exit_next_frame)
         clear_from_here_action = menu.addAction('Clear masks and prompts from this frame')
-        clear_from_here_action.triggered.connect(self.player.clear_from_current_frame)
+        clear_from_here_action.triggered.connect(self.player.confirm_clear_from_current_frame)
         menu.exec(event.screenPos())
 
     def add_point(self, event: QGraphicsSceneMouseEvent) -> QGraphicsEllipseItem | None:
@@ -429,7 +429,7 @@ class SegmentationTool(VideoPlayer):
         # file_menu.addAction(self.export_masks_action)
 
         self.clear_from_current_action = QAction('Clear masks and prompts after current frame')
-        self.clear_from_current_action.triggered.connect(self.clear_from_current_frame)
+        self.clear_from_current_action.triggered.connect(self.confirm_clear_from_current_frame)
         file_menu.addAction(self.clear_from_current_action)
 
         segmentation = menubar.addMenu('Segmentation')
@@ -854,12 +854,24 @@ class SegmentationTool(VideoPlayer):
             else:
                 self.source_model.add_bounding_box(self.current_entity, self.T, item)
 
+    def confirm_clear_from_current_frame(self):
+        """
+        Opens a confirmation dialog window to ask for confirmation that masks and prompt should indeed be deleted starting from the
+        current frame.
+        """
+
+        msg = (f'You are about to delete masks and prompts starting from frame {self.T}.\n'
+               f'This action cannot be undone.\n'
+               f' Do you confirm?\n')
+        ConfirmDialog(msg, self.clear_from_current_frame)
+
     def clear_from_current_frame(self):
         """
         Clear all masks and prompts (bounding boxes and points) starting from the current frame. This is useful to remove in one go
         all inaccurate masks predicted by SAM2 when one does not want to add any more annotations after the last accurately
         segmented frame.
         """
+
         for entity in self.source_model.entities:
             self.source_model.clean_masks(entity, from_frame=self.T)
             self.source_model.clean_prompt(entity, from_frame=self.T)
