@@ -68,8 +68,8 @@ class Categories:
     """
     Entity default categories
     """
-    cell = ['background', 'cell']
-    mother_daughter = ['background', 'mother', 'daughter']
+    cell = ['cell']
+    mother_daughter = ['mother', 'daughter']
 
 
 class SegmentationScene(VideoScene):
@@ -319,7 +319,7 @@ class SegmentationTool(VideoPlayer):
         self.object_tree_view = None
         self.max_frames_prop = 15
         self.method_group = None
-        # self.export_masks_action = None
+        self.export_masks_action = None
         self.clear_from_current_action = None
         self.no_approximation = None
         self.simple_approximation = None
@@ -424,9 +424,9 @@ class SegmentationTool(VideoPlayer):
         menubar = QMenuBar()
         menubar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         file_menu = menubar.addMenu('File')
-        # self.export_masks_action = QAction('Export masks in YOLO format')
-        # self.export_masks_action.triggered.connect(self.export_masks)
-        # file_menu.addAction(self.export_masks_action)
+        self.export_masks_action = QAction('Export masks in YOLO format')
+        self.export_masks_action.triggered.connect(self.export_masks)
+        file_menu.addAction(self.export_masks_action)
 
         self.clear_from_current_action = QAction('Clear masks and prompts after current frame')
         self.clear_from_current_action.triggered.connect(self.confirm_clear_from_current_frame)
