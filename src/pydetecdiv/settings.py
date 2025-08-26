@@ -7,8 +7,11 @@ http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
 import os
 import getpass
 import configparser
+import platform
+import uuid
 from pathlib import Path
 import xdg.BaseDirectory
+from polars import read_csv, col
 
 
 def get_default_settings() -> dict:
@@ -17,15 +20,17 @@ def get_default_settings() -> dict:
 
     :return: a dictionary containing the default values
     """
-    return {'project': {'dbms': 'SQLite3', 'workspace': os.path.join('/home', getpass.getuser(), 'workspace'),
-                        'user': getpass.getuser(),
-                        'batch': 1024},
+    return {'project'       : {'dbms' : 'SQLite3', 'workspace': os.path.join('/home', getpass.getuser(), 'workspace'),
+                               'user' : getpass.getuser(),
+                               'batch': 1024
+                               },
             'project.sqlite': {'database': 'pydetecdiv'},
-            'project.conda': {'dir': '/opt/miniconda3/'},
-            'paths': {'appdata': xdg.BaseDirectory.save_data_path('pyDetecDiv'),
-                      'sam2_checkpoint': '/data/SegmentAnything2/checkpoints/sam2.1_hiera_large.pt',
-                      'sam2_model_cfg': 'configs/sam2.1/sam2.1_hiera_l.yaml',
-                      'toolbox': '/data/BioImageIT/bioimageit-toolboxes'}
+            'project.conda' : {'dir': '/opt/miniconda3/'},
+            'paths'         : {'appdata'        : xdg.BaseDirectory.save_data_path('pyDetecDiv'),
+                               'sam2_checkpoint': '/data/SegmentAnything2/checkpoints/sam2.1_hiera_large.pt',
+                               'sam2_model_cfg' : 'configs/sam2.1/sam2.1_hiera_l.yaml',
+                               'toolbox'        : '/data/BioImageIT/bioimageit-toolboxes'
+                               }
             # 'project.mysql': {'database': 'pydetecdiv', 'host': 'localhost', 'credentials': 'mysql.credentials', },
             # 'omero': {'host': 'localhost', 'credentials': 'omero.credentials', },
             # 'bioimageit': {'config_file': '/data2/BioImageIT/config.json'}
@@ -134,3 +139,42 @@ def get_default_workspace_dir() -> Path:
     # if not os.path.exists(default_workspace_dir):
     #     os.mkdir(default_workspace_dir)
     return default_workspace_dir
+
+
+def datapath_list():
+    datapath_list_file = Path(os.path.join(get_config_value('project', 'workspace'), '.datapath_list.csv'))
+    return read_csv(datapath_list_file)
+
+
+class Device:
+    """
+    A class handling device-specific methods, used to get information about the current device and adapt configuration thereto
+    """
+
+    @classmethod
+    def name(cls) -> str:
+        """
+        returns the name of the current device
+
+        :return: the device name
+        """
+        return platform.node()
+
+    @classmethod
+    def mac(cls) -> str:
+        """
+        returns the MAC address of the current device
+
+        :return: the device MAC address
+        """
+        return ":".join(("%012X" % uuid.getnode())[i: i + 2] for i in range(0, 12, 2))
+
+    @classmethod
+    def data_path(cls, path_variable):
+        df = datapath_list()
+        path = (df.filter((col('var') == path_variable)
+                          & ((col('MAC') == cls.mac()) | (col('name') == cls.name()))
+                          ))
+        if path.shape[0] > 0:
+            return path.select(col('path')).item()
+        return None
