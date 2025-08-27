@@ -123,3 +123,22 @@ def split_list(arr: list[Any] | np.ndarray[Any], sep: list[Any] | Any, max_lengt
     if constant_length:
         return [sublist for sublist in sublists if len(sublist) == max_length]
     return sublists
+
+
+def increment_string(s: str) -> str:
+    """
+    Increments a string by one: a becomes b, which in turn becomes c, etc. After z comes aa, and so on.
+
+    :param s: the string to increment
+    :return: the incremented string
+    """
+    s = list(s)
+    i = len(s) - 1
+    while i >= 0:
+        if s[i] != 'z':
+            s[i] = chr(ord(s[i]) + 1)  # bump this char
+            return ''.join(s)
+        s[i] = 'a'  # reset and carry over
+        i -= 1
+    return 'a' + ''.join(s)  # expand if overflow (zzz → aaaa)
+

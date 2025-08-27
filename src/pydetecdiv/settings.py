@@ -13,6 +13,8 @@ from pathlib import Path
 import xdg.BaseDirectory
 from polars import read_csv, col
 
+from pydetecdiv.utils import increment_string
+
 
 def get_default_settings() -> dict:
     """
@@ -170,11 +172,27 @@ class Device:
         return ":".join(("%012X" % uuid.getnode())[i: i + 2] for i in range(0, 12, 2))
 
     @classmethod
-    def data_path(cls, path_variable):
+    def data_path(cls, path_variable: str) -> str | None:
         df = datapath_list()
         path = (df.filter((col('var') == path_variable)
                           & ((col('MAC') == cls.mac()) | (col('name') == cls.name()))
                           ))
         if path.shape[0] > 0:
             return path.select(col('path')).item()
+        return None
+
+    @classmethod
+    def path_variable(cls, path: str) -> str | None:
+        """
+        Given a path, finds the corresponding root path (mounting point) for the current device and returns the path variable.
+
+        :param path: the path
+        :return: the path variable id to use in the database
+        """
+        df = datapath_list()
+        paths = (df.filter((col('MAC') == Device.mac()) | (col('name') == Device.name()))).select(col('path'), col('var'))
+        for p, v in paths.rows():
+            if p == os.path.commonpath([p, path]):
+                return v
+        # return increment_string(df.select(col('var')).max().item())
         return None
