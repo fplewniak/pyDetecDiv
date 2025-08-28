@@ -33,6 +33,7 @@ dependencies = [
     #"omero-py",
     "opencv-python",
     "pandas",
+    "polars",
     "psutil",
     #"pylibjpeg",
     #"pylibjpeg-libjpeg",
