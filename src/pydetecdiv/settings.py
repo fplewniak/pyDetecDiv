@@ -10,6 +10,8 @@ import configparser
 import platform
 import uuid
 from pathlib import Path
+
+import polars
 import xdg.BaseDirectory
 from polars import read_csv, col
 
@@ -143,9 +145,38 @@ def get_default_workspace_dir() -> Path:
     return default_workspace_dir
 
 
-def datapath_list():
+def datapath_list() -> polars.DataFrame:
+    """
+    Returns a DataFrame containing the data source dir definitions
+
+    :return: data source dir definitions
+    """
     datapath_list_file = Path(os.path.join(get_config_value('project', 'workspace'), '.datapath_list.csv'))
     return read_csv(datapath_list_file)
+
+
+def next_path_id() -> str:
+    """
+    Returns the next path id, i.e. the last defined path id incremented by one. If no path id has been defined so far, this
+    function will return 'a'. Incrementation by one will return the next character until 'z' is reached, after which 'aa' will be
+    returned and so on.
+
+    :return: the next path id to be used for data source path definition
+    """
+    df = datapath_list()
+    if df.shape[0] > 0:
+        return increment_string(df.select(col('var')).unique().max().item())
+    return 'a'
+
+
+def all_path_ids(df: polars.DataFrame) -> polars.DataFrame:
+    """
+    Returns all defined path ids on all devices
+
+    :param df: the DataFrame containing the data source path definitions
+    :return: a DataFrame containing only path ids
+    """
+    return df.select(col('var')).unique()
 
 
 class Device:
@@ -172,9 +203,15 @@ class Device:
         return ":".join(("%012X" % uuid.getnode())[i: i + 2] for i in range(0, 12, 2))
 
     @classmethod
-    def data_path(cls, path_variable: str) -> str | None:
+    def data_path(cls, path_id: str) -> str | None:
+        """
+        Returns the data source path corresponding to the path_id on the current device
+
+        :param path_id: the path id
+        :return: the data source path corresponding to the path_id on the current device
+        """
         df = datapath_list()
-        path = (df.filter((col('var') == path_variable)
+        path = (df.filter((col('var') == path_id)
                           & ((col('MAC') == cls.mac()) | (col('name') == cls.name()))
                           ))
         if path.shape[0] > 0:
@@ -182,7 +219,7 @@ class Device:
         return None
 
     @classmethod
-    def path_variable(cls, path: str) -> str | None:
+    def path_id(cls, path: str) -> str | None:
         """
         Given a path, finds the corresponding root path (mounting point) for the current device and returns the path variable.
 
@@ -190,9 +227,28 @@ class Device:
         :return: the path variable id to use in the database
         """
         df = datapath_list()
-        paths = (df.filter((col('MAC') == Device.mac()) | (col('name') == Device.name()))).select(col('path'), col('var'))
+        paths = (df.filter((col('MAC') == cls.mac()) | (col('name') == cls.name()))).select(col('path'), col('var'))
         for p, v in paths.rows():
             if p == os.path.commonpath([p, path]):
                 return v
-        # return increment_string(df.select(col('var')).max().item())
         return None
+
+    @classmethod
+    def path_ids(cls, df: polars.DataFrame) -> polars.DataFrame:
+        """
+        Returns path ids defined on the current device
+
+        :param df: the dataframe containing the list of data source path definitions
+        :return: a dataframe with the path ids that are defined for the current device
+        """
+        return (df.filter((col('MAC') == cls.mac()) | (col('name') == cls.name()))).select(col('var')).unique()
+
+    @classmethod
+    def undefined_path_ids(cls) -> polars.DataFrame:
+        """
+        Returns path ids undefined on the current device
+
+        :return: a dataframe of path ids that are not defined on the current device
+        """
+        df = datapath_list()
+        return all_path_ids(df).join(cls.path_ids(df), on=['var'], how='anti')
