@@ -22,7 +22,7 @@ import pyqtgraph as pg
 
 from pydetecdiv import plugins
 from pydetecdiv.domain.dso import DomainSpecificObject
-from pydetecdiv.settings import get_config_file, get_appdata_dir, get_config_value
+from pydetecdiv.settings import get_config_file, get_appdata_dir, get_config_value, Device
 from pydetecdiv.persistence.project import list_projects
 from pydetecdiv.domain.Project import Project
 
@@ -64,6 +64,7 @@ class PyDetecDiv(QApplication):
         super().__init__(*args)
         self.setApplicationName('pyDetecDiv')
         self.load_plugins()
+        self.check_data_source_paths()
 
     @staticmethod
     def load_plugins() -> None:
@@ -72,6 +73,18 @@ class PyDetecDiv(QApplication):
         """
         PyDetecDiv.plugin_list = plugins.PluginList()
         PyDetecDiv.plugin_list.load()
+
+    @staticmethod
+    def check_data_source_paths() -> None:
+        print('Checking data source paths')
+        df = Device.undefined_paths()
+        if not df.is_empty():
+            print(df)
+            for row in df.iter_rows(named=True):
+                print(row['name'], row['device'], row['path'])
+        else:
+            print('nothing to resolve')
+        print('Done')
 
     @staticmethod
     def set_main_window(main_window: 'MainWindow') -> None:
