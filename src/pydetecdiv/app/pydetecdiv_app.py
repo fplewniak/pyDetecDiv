@@ -31,10 +31,12 @@ def main_gui():
 
     # Apply the style sheet to the application
     app.setStyleSheet(style_sheet)
+    app.check_data_source_paths()
 
     window_icon = QIcon(':icons/app_icon')
     app.setWindowIcon(window_icon)
     app.set_main_window(MainWindow())
+
 
     app.exec()
 

@@ -316,8 +316,8 @@ class Device:
     @classmethod
     def datapath_list(cls) -> polars.DataFrame:
         """
-        Returns a list of data source paths defined on the current device
+        Returns a list of data source paths defined on the current device, identified by the MAC address or the device name.
 
         :return: a dataframe with the list of data source paths
         """
-        return datapath_list().filter(col('MAC') == cls.mac())
+        return datapath_list().filter((col('MAC') == cls.mac()) | (col('device') == cls.name()))

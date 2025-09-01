@@ -16,10 +16,12 @@ from enum import StrEnum
 import markdown
 
 from PySide6.QtGui import QCursor, QTextCursor, QCloseEvent, QAction
-from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox, QTextEdit, QWidget)
+from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox, QTextEdit, QWidget,
+                               QTableView, QHeaderView, QHBoxLayout, QSizePolicy, QMainWindow)
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal, QObject
 import pyqtgraph as pg
 
+from pydetecdiv.app.models.Tables import TableModel
 from pydetecdiv import plugins
 from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.settings import get_config_file, get_appdata_dir, get_config_value, Device
@@ -64,7 +66,7 @@ class PyDetecDiv(QApplication):
         super().__init__(*args)
         self.setApplicationName('pyDetecDiv')
         self.load_plugins()
-        self.check_data_source_paths()
+        # self.check_data_source_paths()
 
     @staticmethod
     def load_plugins() -> None:
@@ -78,13 +80,26 @@ class PyDetecDiv(QApplication):
     def check_data_source_paths() -> None:
         print('Checking data source paths')
         df = Device.undefined_paths()
+        # if not df.is_empty():
+        #     print('open editor')
+        #     table_editor = TableEditor(df)
+        #     table_editor.exec()
+
         if not df.is_empty():
-            print(df)
-            for row in df.iter_rows(named=True):
-                print(row['name'], row['device'], row['path'])
+            for grp in df.group_by(by='path_id'):
+                table_editor = TableEditor(grp[1])
+                table_editor.exec()
+
+        # if not df.is_empty():
+        #     print(df)
+        #     # for row in df.iter_rows(named=True):
+        #     for grp in df.group_by(by='path_id'):
+        #         path_id = grp[0][0]
+        #         print(path_id)
+        #         for row in grp[1].iter_rows(named=True):
+        #             print(row['name'], row['device'], row['path'])
         else:
-            print('nothing to resolve')
-        print('Done')
+            print('All data source paths are OK.')
 
     @staticmethod
     def set_main_window(main_window: 'MainWindow') -> None:
@@ -371,6 +386,37 @@ class StdoutWaitDialog(AbstractWaitDialog):
         PyDetecDiv.app.restoreOverrideCursor()
         sys.stdout = sys.__stdout__
 
+
+
+class TableEditor(QDialog):
+    def __init__(self, data):
+        QDialog.__init__(self)
+
+        # Getting the Model
+        self.model = TableModel(data)
+
+        # Creating a QTableView
+        self.table_view = QTableView()
+        self.table_view.setModel(self.model)
+
+        # QTableView Headers
+        # self.horizontal_header = self.table_view.horizontalHeader()
+        # self.vertical_header = self.table_view.verticalHeader()
+        # self.horizontal_header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        # self.vertical_header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        # self.horizontal_header.setStretchLastSection(True)
+
+        # QWidget Layout
+        self.main_layout = QHBoxLayout()
+        size = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+
+        # Left layout
+        size.setHorizontalStretch(1)
+        # self.table_view.setSizePolicy(size)
+        self.main_layout.addWidget(self.table_view)
+
+        # Set the layout to the QWidget
+        self.setLayout(self.main_layout)
 
 class StreamRedirector(QObject):
     """Custom stream redirector to emit stdout/stderr output."""
