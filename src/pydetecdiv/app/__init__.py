@@ -17,7 +17,7 @@ import markdown
 
 from PySide6.QtGui import QCursor, QTextCursor, QCloseEvent, QAction
 from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox, QTextEdit, QWidget,
-                               QTableView, QHeaderView, QHBoxLayout, QSizePolicy, QMainWindow)
+                               QTableView, QHeaderView, QHBoxLayout, QSizePolicy, QMainWindow, QInputDialog, QFileDialog, QLineEdit)
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal, QObject
 import pyqtgraph as pg
 
@@ -80,24 +80,11 @@ class PyDetecDiv(QApplication):
     def check_data_source_paths() -> None:
         print('Checking data source paths')
         df = Device.undefined_paths()
-        # if not df.is_empty():
-        #     print('open editor')
-        #     table_editor = TableEditor(df)
-        #     table_editor.exec()
 
         if not df.is_empty():
             for grp in df.group_by(by='path_id'):
-                table_editor = TableEditor(grp[1])
+                table_editor = TableEditor(data=grp[1].select(['name', 'device', 'path']))
                 table_editor.exec()
-
-        # if not df.is_empty():
-        #     print(df)
-        #     # for row in df.iter_rows(named=True):
-        #     for grp in df.group_by(by='path_id'):
-        #         path_id = grp[0][0]
-        #         print(path_id)
-        #         for row in grp[1].iter_rows(named=True):
-        #             print(row['name'], row['device'], row['path'])
         else:
             print('All data source paths are OK.')
 
@@ -389,8 +376,8 @@ class StdoutWaitDialog(AbstractWaitDialog):
 
 
 class TableEditor(QDialog):
-    def __init__(self, data):
-        QDialog.__init__(self)
+    def __init__(self, data, **kwargs):
+        QDialog.__init__(self, **kwargs)
 
         # Getting the Model
         self.model = TableModel(data)
@@ -400,23 +387,35 @@ class TableEditor(QDialog):
         self.table_view.setModel(self.model)
 
         # QTableView Headers
-        # self.horizontal_header = self.table_view.horizontalHeader()
-        # self.vertical_header = self.table_view.verticalHeader()
-        # self.horizontal_header.setSectionResizeMode(QHeaderView.ResizeToContents)
-        # self.vertical_header.setSectionResizeMode(QHeaderView.ResizeToContents)
-        # self.horizontal_header.setStretchLastSection(True)
+        self.horizontal_header = self.table_view.horizontalHeader()
+        self.vertical_header = self.table_view.verticalHeader()
+        self.horizontal_header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.vertical_header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.horizontal_header.setStretchLastSection(True)
 
         # QWidget Layout
-        self.main_layout = QHBoxLayout()
+        self.main_layout = QVBoxLayout()
         size = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
 
         # Left layout
         size.setHorizontalStretch(1)
-        # self.table_view.setSizePolicy(size)
+        self.table_view.setSizePolicy(size)
         self.main_layout.addWidget(self.table_view)
+
+        self.local_path = QLineEdit()
+        self.main_layout.addWidget(self.local_path)
+
+        self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok|QDialogButtonBox.StandardButton.Cancel)
+        self.main_layout.addWidget(self.button_box)
 
         # Set the layout to the QWidget
         self.setLayout(self.main_layout)
+        self.button_box.accepted.connect(self.save_local_datapath)
+        self.button_box.rejected.connect(self.close)
+
+    def save_local_datapath(self, data):
+        print(data)
+        print(self.local_path)
 
 class StreamRedirector(QObject):
     """Custom stream redirector to emit stdout/stderr output."""
