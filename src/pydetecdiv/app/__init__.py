@@ -413,9 +413,10 @@ class TableEditor(QDialog):
         self.button_box.accepted.connect(self.save_local_datapath)
         self.button_box.rejected.connect(self.close)
 
-    def save_local_datapath(self, data):
-        print(data)
+    def save_local_datapath(self):
+        print(self.model.df)
         print(self.local_path)
+        self.close()
 
 class StreamRedirector(QObject):
     """Custom stream redirector to emit stdout/stderr output."""
