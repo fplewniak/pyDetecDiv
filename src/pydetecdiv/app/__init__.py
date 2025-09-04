@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QVBoxLayout, QProg
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal, QObject
 import pyqtgraph as pg
 
-from pydetecdiv.app.models.Tables import TableModel
+from pydetecdiv.app.models import TableModel
 from pydetecdiv import plugins
 from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.settings import get_config_file, get_appdata_dir, get_config_value, Device
@@ -77,13 +77,12 @@ class PyDetecDiv(QApplication):
         PyDetecDiv.plugin_list.load()
 
     @staticmethod
-    def check_data_source_paths() -> None:
-        print('Checking data source paths')
+    def check_data_source_paths(table_editor) -> None:
         df = Device.undefined_paths()
 
         if not df.is_empty():
             for grp in df.group_by(by='path_id'):
-                table_editor = TableEditor(data=grp[1].select(['name', 'device', 'path']))
+                table_editor.set_data(grp[1].select(['name', 'device', 'path']))
                 table_editor.exec()
         else:
             print('All data source paths are OK.')
@@ -372,51 +371,6 @@ class StdoutWaitDialog(AbstractWaitDialog):
         self.button_box.button(QDialogButtonBox.StandardButton.Close).setEnabled(True)
         PyDetecDiv.app.restoreOverrideCursor()
         sys.stdout = sys.__stdout__
-
-
-
-class TableEditor(QDialog):
-    def __init__(self, data, **kwargs):
-        QDialog.__init__(self, **kwargs)
-
-        # Getting the Model
-        self.model = TableModel(data)
-
-        # Creating a QTableView
-        self.table_view = QTableView()
-        self.table_view.setModel(self.model)
-
-        # QTableView Headers
-        self.horizontal_header = self.table_view.horizontalHeader()
-        self.vertical_header = self.table_view.verticalHeader()
-        self.horizontal_header.setSectionResizeMode(QHeaderView.ResizeToContents)
-        self.vertical_header.setSectionResizeMode(QHeaderView.ResizeToContents)
-        self.horizontal_header.setStretchLastSection(True)
-
-        # QWidget Layout
-        self.main_layout = QVBoxLayout()
-        size = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-
-        # Left layout
-        size.setHorizontalStretch(1)
-        self.table_view.setSizePolicy(size)
-        self.main_layout.addWidget(self.table_view)
-
-        self.local_path = QLineEdit()
-        self.main_layout.addWidget(self.local_path)
-
-        self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok|QDialogButtonBox.StandardButton.Cancel)
-        self.main_layout.addWidget(self.button_box)
-
-        # Set the layout to the QWidget
-        self.setLayout(self.main_layout)
-        self.button_box.accepted.connect(self.save_local_datapath)
-        self.button_box.rejected.connect(self.close)
-
-    def save_local_datapath(self):
-        print(self.model.df)
-        print(self.local_path)
-        self.close()
 
 class StreamRedirector(QObject):
     """Custom stream redirector to emit stdout/stderr output."""

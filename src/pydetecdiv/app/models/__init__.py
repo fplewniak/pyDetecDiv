@@ -5,7 +5,7 @@ import json
 from enum import IntEnum
 from typing import Any, Generic, TypeVar
 
-from PySide6.QtCore import QModelIndex, Qt, QStringListModel, Signal
+from PySide6.QtCore import QModelIndex, Qt, QStringListModel, Signal, QAbstractTableModel
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 
 GenericModel = TypeVar('GenericModel')
@@ -57,7 +57,7 @@ class ItemModel(QStandardItemModel, Generic[GenericModel]):
         return 1
 
 
-class StringList(QStringListModel,  Generic[GenericModel]):
+class StringList(QStringListModel, Generic[GenericModel]):
     """
  Class for string list model
     """
@@ -128,7 +128,7 @@ class StringList(QStringListModel,  Generic[GenericModel]):
             self.dataChanged.emit(self.index(row, 0), self.index(row, 0), [Qt.ItemDataRole.DisplayRole])
 
 
-class DictItemModel(QStandardItemModel,  Generic[GenericModel]):
+class DictItemModel(QStandardItemModel, Generic[GenericModel]):
     """
     Class for Dictionary-based item model. This is used by ChoiceParameter class to hold all choices and the current
     selection
@@ -272,3 +272,38 @@ class DictItemModel(QStandardItemModel,  Generic[GenericModel]):
         """
         self.selection = index
         self.selection_changed.emit(index)
+
+
+class TableModel(QAbstractTableModel):
+
+    def __init__(self, data=None):
+        super().__init__()
+        self.df = data
+
+    def set_data(self, data):
+        self.df = data
+
+    def rowCount(self, parent=QModelIndex()):
+        return self.df.shape[0]
+
+    def columnCount(self, parent=QModelIndex()):
+        return self.df.shape[1]
+
+    def headerData(self, section: int, orientation: Qt.Orientation, role: int = ...):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            # return f"Column {section + 1}"
+            return self.df.columns[section]
+        # if orientation == Qt.Vertical and role == Qt.DisplayRole:
+        #     return f"{section + 1}"
+
+    def data(self, index, role=Qt.DisplayRole):
+        column = index.column()
+        row = index.row()
+
+        if role == Qt.DisplayRole:
+            return self.df[row, column]
+        # elif role == Qt.BackgroundRole:
+        #     return QColor(Qt.white)
+        # elif role == Qt.TextAlignmentRole:
+        #     return Qt.AlignRight
+        return None
