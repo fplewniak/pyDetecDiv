@@ -21,7 +21,6 @@ from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QVBoxLayout, QProg
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal, QObject
 import pyqtgraph as pg
 
-from pydetecdiv.app.models import TableModel
 from pydetecdiv import plugins
 from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.settings import get_config_file, get_appdata_dir, get_config_value, Device
@@ -82,10 +81,8 @@ class PyDetecDiv(QApplication):
 
         if not df.is_empty():
             for grp in df.group_by(by='path_id'):
-                table_editor.set_data(grp[1].select(['name', 'device', 'path']))
+                table_editor.set_data(grp[1])
                 table_editor.exec()
-        else:
-            print('All data source paths are OK.')
 
     @staticmethod
     def set_main_window(main_window: 'MainWindow') -> None:

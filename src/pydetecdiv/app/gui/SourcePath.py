@@ -1,9 +1,12 @@
+import os
+
 import polars
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (QHeaderView, QVBoxLayout, QSizePolicy, QDialogButtonBox, QTableView, QDialog, QPushButton, QLineEdit,
                                QGroupBox, QHBoxLayout, QFileDialog, QWidget, QLabel)
 
 from pydetecdiv.app.models import TableModel
+from pydetecdiv.settings import Device, datapath_list, datapath_file
 
 
 class TableEditor(QDialog):
@@ -13,8 +16,12 @@ class TableEditor(QDialog):
             self.setWindowTitle(title)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
 
+        self.path_id = None
+        self.path_name = None
+
         table_label = QLabel(self)
         table_label.setText('Source paths defined on other devices:')
+
         self.model = TableModel(polars.DataFrame([{'name': '', 'device': '', 'path': ''}]))
         self.table_view = QTableView(self)
         self.table_view.setModel(self.model)
@@ -33,8 +40,10 @@ class TableEditor(QDialog):
         icon = QIcon(":icons/file_chooser")
         button_path.setIcon(icon)
         button_path.clicked.connect(self.select_path)
+        self.path_edit.textChanged.connect(self.path_edit_changed)
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Close)
+        self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
         self.button_box.accepted.connect(self.save_local_datapath)
         self.button_box.rejected.connect(self.close)
 
@@ -52,10 +61,10 @@ class TableEditor(QDialog):
         self.main_layout.addWidget(path_group)
         self.main_layout.addWidget(self.button_box)
 
-
-
     def set_data(self, data: polars.DataFrame):
-        self.model = TableModel(data)
+        self.path_id = data.select('path_id').unique().item()
+        self.path_name = data.select('name').unique().item()
+        self.model = TableModel(data.select(['name', 'device', 'path']))
         self.table_view.setModel(self.model)
 
     def select_path(self):
@@ -67,6 +76,20 @@ class TableEditor(QDialog):
         if directory:
             self.path_edit.setText(directory)
 
+    def path_edit_changed(self):
+        if os.path.isdir(self.path_edit.text()):
+            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+        else:
+            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+
     def save_local_datapath(self):
-        print(self.path_edit.text())
+        data = datapath_list()
+        local_path = polars.DataFrame({
+            'name'   : self.path_name,
+            'path_id': self.path_id,
+            'device' : Device.name(),
+            'MAC'    : Device.mac(),
+            'path'   : self.path_edit.text()
+            })
+        data.extend(local_path).sort(by=['name', 'device']).write_csv(datapath_file())
         self.close()
