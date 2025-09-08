@@ -2,11 +2,12 @@
 Handling actions to open, create and interact with projects
 """
 from enum import Enum
+import polars
 
 from PySide6.QtCore import Qt, QRegularExpression, Slot, Signal
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QLabel, QVBoxLayout, QLineEdit, QDialogButtonBox, QComboBox, QMessageBox, QDialog, QWidget, )
-from pydetecdiv.app import PyDetecDiv, project_list, WaitDialog, pydetecdiv_project
+from pydetecdiv.app import PyDetecDiv, project_list, WaitDialog, pydetecdiv_project, ConfirmDialog
 from pydetecdiv.app import MessageDialog
 from pydetecdiv.persistence.project import delete_project
 from pydetecdiv.exceptions import OpenProjectError, UnknownRepositoryTypeError
@@ -205,7 +206,7 @@ class OpenProject(QAction):
 
 class DeleteProject(QAction):
     """
-    Action to open a project chooser window
+    Action to delete a project chooser window
     """
 
     def __init__(self, parent: QWidget):
@@ -218,3 +219,30 @@ class DeleteProject(QAction):
             ProjectDialog(project_list(), project_action=ProjectAction.Delete)
         except UnknownRepositoryTypeError as e:
             MessageDialog(e.message)
+
+
+class ConvertProjectSourceDir(QAction):
+    """
+    Action to convert the local data source directory to shared source
+    """
+
+    def __init__(self, parent: QWidget):
+        super().__init__(QIcon(":icons/delete_project"), "Convert to shared data source", parent)
+        self.triggered.connect(self.confirm_conversion)
+        self.setEnabled(False)
+        parent.addAction(self)
+
+    def confirm_conversion(self) -> None:
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            ConfirmDialog(f'You are about to convert {project.dbname} data source path to shared', self.convert_to_shared)
+
+    def convert_to_shared(self)  -> None:
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            print('Checking the data paths are accessible from this device')
+            data_source_dir_list = polars.DataFrame(project.get_objects('Data'))
+            print(data_source_dir_list)
+            print('Looking for a valid shared data source path that could be applied')
+            print('No valid shared path found for this device, select one in the list if there is at least one undefined on the device or define as many as needed')
+            print('Select those data files that should remain local')
+            print('Repeat as long as all data urls are not set')
+            print(f'Converting {project.dbname} source dir to shared')

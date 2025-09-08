@@ -291,6 +291,7 @@ class ConfirmDialog(QDialog):
     def __init__(self, msg: str, action: Callable):
         super().__init__()
         # self.setWindowModality(Qt.WindowModal)
+        self.action = action
         label = QLabel()
         label.setStyleSheet("""
         font-weight: bold;
@@ -299,11 +300,15 @@ class ConfirmDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addWidget(label)
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel, self)
-        button_box.accepted.connect(action)
+        button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.close)
         layout.addWidget(button_box)
         self.setLayout(layout)
         self.exec()
+
+    def accept(self, /):
+        self.close()
+        self.action()
 
 
 class StdoutWaitDialog(AbstractWaitDialog):

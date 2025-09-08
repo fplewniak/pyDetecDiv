@@ -27,18 +27,35 @@ class FileMenu(QMenu):
     def __init__(self, parent: 'MainWindow', *args, **kwargs):
         super().__init__(*args, **kwargs)
         menu = parent.menuBar().addMenu("&File")
-        ActionsProject.OpenProject(menu).setShortcut("Ctrl+O")
-        ActionsProject.NewProject(menu).setShortcut("Ctrl+N")
-        ActionsProject.DeleteProject(menu).setShortcut("Ctrl+D")
+        # ActionsProject.OpenProject(menu).setShortcut("Ctrl+O")
+        # ActionsProject.NewProject(menu).setShortcut("Ctrl+N")
+        # ActionsProject.DeleteProject(menu).setShortcut("Ctrl+D")
         menu.addSeparator()
         ActionsSettings.Settings(menu)
         menu.addSeparator()
         Quit(menu).setShortcut("Ctrl+Q")
 
 
+class ProjectMenu(QMenu):
+    """
+        The main window Project menu to manage existing projects
+        """
+
+    def __init__(self, parent: 'MainWindow', *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        menu = parent.menuBar().addMenu("&Project")
+        ActionsProject.OpenProject(menu).setShortcut("Ctrl+O")
+        ActionsProject.NewProject(menu).setShortcut("Ctrl+N")
+        ActionsProject.DeleteProject(menu).setShortcut("Ctrl+D")
+        menu.addSeparator()
+        convert_source = ActionsProject.ConvertProjectSourceDir(menu)
+        convert_source.setShortcut("Ctrl+C")
+        PyDetecDiv.app.project_selected.connect(lambda _: convert_source.setEnabled(True))
+
+
 class DataMenu(QMenu):
     """
-    The main window File menu
+    The main window Data menu to manage data
     """
 
     def __init__(self, parent: 'MainWindow', *args, **kwargs):
@@ -59,10 +76,12 @@ class DataMenu(QMenu):
         PyDetecDiv.app.project_selected.connect(apply_drift.enable)
         apply_drift.triggered.connect(lambda b: PyDetecDiv.app.set_apply_drift(b))
 
+
 class PluginMenu(QMenu):
     """
     Plugin menus
     """
+
     def __init__(self, parent: 'MainWindow', *args, **kwargs):
         if PyDetecDiv.app.plugin_list.len:
             super().__init__(*args, **kwargs)
@@ -107,7 +126,7 @@ class MainStatusBar(QStatusBar):
         Show memory usage in status bar
         """
         self.showMessage(
-            f'{np.format_float_positional(psutil.Process().memory_info().rss / (1024 * 1024), precision=1)} MB')
+                f'{np.format_float_positional(psutil.Process().memory_info().rss / (1024 * 1024), precision=1)} MB')
 
 
 class Quit(QAction):
