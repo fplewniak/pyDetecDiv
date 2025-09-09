@@ -104,7 +104,7 @@ class Data(NamedDSO):
             'dataset'       : self.dataset_,
             'author'        : self.author,
             'date'          : self.date,
-            'url'           : self.url,
+            'url'           : self.url_,
             'format'        : self.format_,
             'source_dir'    : self.source_dir,
             'meta_data'     : self.meta_data,

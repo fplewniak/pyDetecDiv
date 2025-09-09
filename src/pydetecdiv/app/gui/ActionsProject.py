@@ -1,6 +1,7 @@
 """
 Handling actions to open, create and interact with projects
 """
+import os
 from enum import Enum
 import polars
 
@@ -11,6 +12,7 @@ from pydetecdiv.app import PyDetecDiv, project_list, WaitDialog, pydetecdiv_proj
 from pydetecdiv.app import MessageDialog
 from pydetecdiv.persistence.project import delete_project
 from pydetecdiv.exceptions import OpenProjectError, UnknownRepositoryTypeError
+from pydetecdiv.settings import Device
 
 
 class ProjectAction(Enum):
@@ -236,13 +238,24 @@ class ConvertProjectSourceDir(QAction):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             ConfirmDialog(f'You are about to convert {project.dbname} data source path to shared', self.convert_to_shared)
 
-    def convert_to_shared(self)  -> None:
+    def convert_to_shared(self) -> None:
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             print('Checking the data paths are accessible from this device')
-            data_source_dir_list = polars.DataFrame(project.get_objects('Data'))
-            print(data_source_dir_list)
-            print('Looking for a valid shared data source path that could be applied')
-            print('No valid shared path found for this device, select one in the list if there is at least one undefined on the device or define as many as needed')
+            print(' ')
+            print('Searching for a valid shared path for this device')
+            data_list = polars.from_dicts(project.get_records('Data'), schema=['id_', 'url', 'source_dir'])
+            source_dir_list = [s for s in polars.Series([d['source_dir'] for d in project.get_records('Data')]).unique() if
+                               os.path.isdir(s) and Device.path_id(s) is not None]
+
+            for id_, url, source_dir in data_list.filter(polars.col('source_dir').is_in(source_dir_list)).rows():
+                data_object = project.get_object('Data', id_=id_)
+                data_object.url_ = os.path.relpath(url, start=Device.data_path(Device.path_id(source_dir)))
+                data_object.source_dir = Device.path_id(source_dir)
+                data_object.validate(updated=True)
+
+            print(' ')
+            print('Checking there are paths that could not be converted')
+            print('Select shared paths that should be defined on this device')
             print('Select those data files that should remain local')
             print('Repeat as long as all data urls are not set')
-            print(f'Converting {project.dbname} source dir to shared')
+            print(f'Converted {project.dbname} source dir to shared')
