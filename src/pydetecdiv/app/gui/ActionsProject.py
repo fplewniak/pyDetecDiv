@@ -10,6 +10,7 @@ from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QLabel, QVBoxLayout, QLineEdit, QDialogButtonBox, QComboBox, QMessageBox, QDialog, QWidget, )
 from pydetecdiv.app import PyDetecDiv, project_list, WaitDialog, pydetecdiv_project, ConfirmDialog
 from pydetecdiv.app import MessageDialog
+from pydetecdiv.app.gui.SourcePath import TableEditor
 from pydetecdiv.persistence.project import delete_project
 from pydetecdiv.exceptions import OpenProjectError, UnknownRepositoryTypeError
 from pydetecdiv.settings import Device
@@ -240,22 +241,32 @@ class ConvertProjectSourceDir(QAction):
 
     def convert_to_shared(self) -> None:
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            print('Checking the data paths are accessible from this device')
-            print(' ')
-            print('Searching for a valid shared path for this device')
-            data_list = polars.from_dicts(project.get_records('Data'), schema=['id_', 'url', 'source_dir'])
-            source_dir_list = [s for s in polars.Series([d['source_dir'] for d in project.get_records('Data')]).unique() if
-                               os.path.isdir(s) and Device.path_id(s) is not None]
+            data_list = polars.from_dicts(project.get_records('Data'))
 
-            for id_, url, source_dir in data_list.filter(polars.col('source_dir').is_in(source_dir_list)).rows():
+            print('Checking shared data source paths are defined on this device')
+            undefined_paths = Device.undefined_paths().join(data_list, left_on='path_id', right_on='source_dir', how='semi')
+            table_editor = TableEditor('Undefined source path',
+                                       description=f'This source is used in {project.dbname} but is not configured on this device. '
+                                                   'Please configure it to avoid inconsistency.'
+                                                   '\nSource path definition on other devices:', force_resolution=True)
+            for grp in undefined_paths.group_by(by='path_id'):
+                table_editor.set_data(grp[1])
+                table_editor.exec()
+
+            print('Checking the data paths are accessible from this device')
+            for data_object in project.get_objects("Data"):
+                if not os.path.isfile(data_object.url):
+                    print(f'{data_object.url} not found')
+
+            print('Searching for a valid shared path for this device')
+            source_dir_list = [s for s in data_list['source_dir'].unique() if os.path.isdir(s) and Device.path_id(s) is not None]
+
+            for id_, url, source_dir in data_list.select(['id_', 'url', 'source_dir']
+                                                         ).filter(polars.col('source_dir').is_in(source_dir_list)).rows():
                 data_object = project.get_object('Data', id_=id_)
                 data_object.url_ = os.path.relpath(url, start=Device.data_path(Device.path_id(source_dir)))
                 data_object.source_dir = Device.path_id(source_dir)
                 data_object.validate(updated=True)
 
-            print(' ')
-            print('Checking there are paths that could not be converted')
-            print('Select shared paths that should be defined on this device')
-            print('Select those data files that should remain local')
-            print('Repeat as long as all data urls are not set')
-            print(f'Converted {project.dbname} source dir to shared')
+            print('Check there are no local paths left')
+

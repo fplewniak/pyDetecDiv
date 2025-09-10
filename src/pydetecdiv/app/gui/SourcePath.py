@@ -10,7 +10,7 @@ from pydetecdiv.settings import Device, datapath_list, datapath_file
 
 
 class TableEditor(QDialog):
-    def __init__(self, title=None, **kwargs):
+    def __init__(self, title=None, description='Source paths defined on other devices:', force_resolution=False, **kwargs):
         super().__init__(**kwargs)
         if title is not None:
             self.setWindowTitle(title)
@@ -20,7 +20,7 @@ class TableEditor(QDialog):
         self.path_name = None
 
         table_label = QLabel(self)
-        table_label.setText('Source paths defined on other devices:')
+        table_label.setText(description)
 
         self.model = TableModel(polars.DataFrame([{'name': '', 'device': '', 'path': ''}]))
         self.table_view = QTableView(self)
@@ -42,10 +42,13 @@ class TableEditor(QDialog):
         button_path.clicked.connect(self.select_path)
         self.path_edit.textChanged.connect(self.path_edit_changed)
 
-        self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Close)
+        if force_resolution:
+            self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok )
+        else:
+            self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Close)
+            self.button_box.rejected.connect(self.close)
         self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
         self.button_box.accepted.connect(self.save_local_datapath)
-        self.button_box.rejected.connect(self.close)
 
         self.main_layout = QVBoxLayout(self)
         # table_layout = QHBoxLayout(table_group)
