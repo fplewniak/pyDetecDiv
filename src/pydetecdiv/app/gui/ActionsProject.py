@@ -253,10 +253,17 @@ class ConvertProjectSourceDir(QAction):
                 table_editor.set_data(grp[1])
                 table_editor.exec()
 
-            print('Checking the data paths are accessible from this device')
+            print('Checking the data urls are all valid on this device')
+            wrong_paths = polars.DataFrame({'path': []}, schema={'path': str})
             for data_object in project.get_objects("Data"):
                 if not os.path.isfile(data_object.url):
-                    print(f'{data_object.url} not found')
+                    head, tail = os.path.split(data_object.url)
+                    while not os.path.isdir(head) and head != '/':
+                        head, tail = os.path.split(head)
+                    wrong_paths = wrong_paths.extend(polars.DataFrame({'path': [os.path.join(head, tail)]})).unique()
+            for path in wrong_paths.rows():
+                MessageDialog(f'The path\n{path[0]}\n does not exist on this device\n'
+                              f'You should fix that before continuing as this may cause severe inconsistencies')
 
             print('Searching for a valid shared path for this device')
             source_dir_list = [s for s in data_list['source_dir'].unique() if os.path.isdir(s) and Device.path_id(s) is not None]
@@ -269,4 +276,3 @@ class ConvertProjectSourceDir(QAction):
                 data_object.validate(updated=True)
 
             print('Check there are no local paths left')
-
