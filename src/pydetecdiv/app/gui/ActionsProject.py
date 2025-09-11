@@ -262,8 +262,10 @@ class ConvertProjectSourceDir(QAction):
                         head, tail = os.path.split(head)
                     wrong_paths = wrong_paths.extend(polars.DataFrame({'path': [os.path.join(head, tail)]})).unique()
             for path in wrong_paths.rows():
-                MessageDialog(f'The path\n{path[0]}\n does not exist on this device\n'
-                              f'You should fix that before continuing as this may cause severe inconsistencies')
+                MessageDialog(f'<center><p><b>{path[0]}</b><br/> '
+                              f'does not exist on this device but is referenced in<br/> '
+                              f'<b>{project.dbname}</b>.</p>'
+                              f'<p>You should fix that before continuing as it may cause severe inconsistencies</p></center>')
 
             print('Searching for a valid shared path for this device')
             source_dir_list = [s for s in data_list['source_dir'].unique() if os.path.isdir(s) and Device.path_id(s) is not None]

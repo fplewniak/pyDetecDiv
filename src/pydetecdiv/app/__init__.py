@@ -266,11 +266,13 @@ class MessageDialog(QDialog):
     Generic dialog to communicate a message to the user (error, warning or any other information)
     """
 
-    def __init__(self, msg: str):
+    def __init__(self, msg: str, html: bool = True):
         super().__init__()
         # self.setWindowModality(Qt.WindowModal)
         label = QLabel()
         label.setText(msg)
+        if html:
+            label.setTextFormat(Qt.RichText)
         layout = QVBoxLayout(self)
         layout.addWidget(label)
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close, self)

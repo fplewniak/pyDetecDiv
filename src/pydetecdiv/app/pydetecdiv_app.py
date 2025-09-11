@@ -30,7 +30,7 @@ def main_gui():
                     color: gray; /* Set the text color to gray for disabled items */
                 }
                 MessageDialog QLabel {
-                    font-weight: bold;
+                    font-size: 10pt;
                  }
             """
 
