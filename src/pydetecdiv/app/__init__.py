@@ -270,9 +270,6 @@ class MessageDialog(QDialog):
         super().__init__()
         # self.setWindowModality(Qt.WindowModal)
         label = QLabel()
-        label.setStyleSheet("""
-        font-weight: bold;
-        """)
         label.setText(msg)
         layout = QVBoxLayout(self)
         layout.addWidget(label)
@@ -373,6 +370,7 @@ class StdoutWaitDialog(AbstractWaitDialog):
         self.button_box.button(QDialogButtonBox.StandardButton.Close).setEnabled(True)
         PyDetecDiv.app.restoreOverrideCursor()
         sys.stdout = sys.__stdout__
+
 
 class StreamRedirector(QObject):
     """Custom stream redirector to emit stdout/stderr output."""

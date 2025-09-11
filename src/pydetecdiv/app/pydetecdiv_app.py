@@ -29,6 +29,9 @@ def main_gui():
                 *:disabled {
                     color: gray; /* Set the text color to gray for disabled items */
                 }
+                MessageDialog QLabel {
+                    font-weight: bold;
+                 }
             """
 
     # Apply the style sheet to the application
