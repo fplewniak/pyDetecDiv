@@ -248,7 +248,7 @@ class ConvertProjectSourceDir(QAction):
             table_editor = TableEditor('Undefined source path',
                                        description=f'<p>The source below is referenced in <b>{project.dbname}</b>'
                                                    f' but is not configured on this device.<br/> '
-                                                   'Please define it to avoid inconsistency.</p>'
+                                                   'You should define it on this device to avoid inconsistencies.</p>'
                                                    '<p><b>Source path definition on other devices:</b></p>', force_resolution=True)
             for grp in undefined_paths.group_by(by='path_id'):
                 table_editor.set_data(grp[1])
@@ -278,4 +278,14 @@ class ConvertProjectSourceDir(QAction):
                 data_object.source_dir = Device.path_id(source_dir)
                 data_object.validate(updated=True)
 
-            print('Check there are no local paths left')
+            print('Checking there are no local paths left')
+            data_list = polars.from_dicts(project.get_records('Data'))
+            local_paths = [d[0] for d in data_list.select(local_path=polars.col('url').str.replace(r'/[^/]*$', '')).filter(
+                polars.col('local_path').str.starts_with('/')).unique().iter_rows() if os.path.isdir(d[0])]
+            if local_paths:
+                MessageDialog(f'<centre><p>Those paths are local:</p>'
+                              f'<code>{local_paths}</code>'
+                              f'<p>This may prevent to share project <b>{project.dbname}</b> across multiple devices')
+            else:
+                MessageDialog(f'<center><p>The project has been successfully converted <br/>'
+                              f'to use shared data source paths</p></center>')
