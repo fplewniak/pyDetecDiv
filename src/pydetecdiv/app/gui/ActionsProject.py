@@ -237,7 +237,7 @@ class ConvertProjectSourceDir(QAction):
 
     def confirm_conversion(self) -> None:
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            ConfirmDialog(f'You are about to convert {project.dbname} data source path to shared', self.convert_to_shared)
+            ConfirmDialog(f'You are about to convert <b>{project.dbname}</b> data source path to shared', self.convert_to_shared)
 
     def convert_to_shared(self) -> None:
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
@@ -246,9 +246,10 @@ class ConvertProjectSourceDir(QAction):
             print('Checking shared data source paths are defined on this device')
             undefined_paths = Device.undefined_paths().join(data_list, left_on='path_id', right_on='source_dir', how='semi')
             table_editor = TableEditor('Undefined source path',
-                                       description=f'This source is used in {project.dbname} but is not configured on this device. '
-                                                   'Please configure it to avoid inconsistency.'
-                                                   '\nSource path definition on other devices:', force_resolution=True)
+                                       description=f'<p>The source below is referenced in <b>{project.dbname}</b>'
+                                                   f' but is not configured on this device.<br/> '
+                                                   'Please define it to avoid inconsistency.</p>'
+                                                   '<p><b>Source path definition on other devices:</b></p>', force_resolution=True)
             for grp in undefined_paths.group_by(by='path_id'):
                 table_editor.set_data(grp[1])
                 table_editor.exec()

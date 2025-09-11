@@ -227,9 +227,9 @@ class WaitDialog(AbstractWaitDialog):
     def __init__(self, msg, parent: QWidget, progress_bar: bool = False, cancel_msg: str = None, ignore_close_event: bool = True):
         super().__init__(parent, cancel_msg=cancel_msg, ignore_close_event=ignore_close_event)
         self.label = QLabel()
-        self.label.setStyleSheet("""
-        font-weight: bold;
-        """)
+        # self.label.setStyleSheet("""
+        # font-weight: bold;
+        # """)
         self.label.setText(msg)
         layout = QVBoxLayout(self)
         layout.addWidget(self.label)
@@ -292,9 +292,9 @@ class ConfirmDialog(QDialog):
         # self.setWindowModality(Qt.WindowModal)
         self.action = action
         label = QLabel()
-        label.setStyleSheet("""
-        font-weight: bold;
-        """)
+        # label.setStyleSheet("""
+        # font-weight: bold;
+        # """)
         label.setText(msg)
         layout = QVBoxLayout(self)
         layout.addWidget(label)

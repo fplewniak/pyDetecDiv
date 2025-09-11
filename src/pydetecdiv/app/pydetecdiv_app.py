@@ -29,7 +29,7 @@ def main_gui():
                 *:disabled {
                     color: gray; /* Set the text color to gray for disabled items */
                 }
-                MessageDialog QLabel {
+                QDialog QLabel {
                     font-size: 10pt;
                  }
             """
