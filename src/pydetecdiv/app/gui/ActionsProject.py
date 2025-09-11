@@ -263,7 +263,7 @@ class ConvertProjectSourceDir(QAction):
                         head, tail = os.path.split(head)
                     wrong_paths = wrong_paths.extend(polars.DataFrame({'path': [os.path.join(head, tail)]})).unique()
             for path in wrong_paths.rows():
-                MessageDialog(f'<center><p><b>{path[0]}</b><br/> '
+                MessageDialog(f'<center><p><b><code>{path[0]}</code></b><br/> '
                               f'does not exist on this device but is referenced in<br/> '
                               f'<b>{project.dbname}</b>.</p>'
                               f'<p>You should fix that before continuing as it may cause severe inconsistencies</p></center>')

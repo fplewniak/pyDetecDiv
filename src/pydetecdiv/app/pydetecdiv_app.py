@@ -26,10 +26,14 @@ def main_gui():
     app = create_app()
 
     style_sheet = """
+                * {
+                    font-family: Arial;
+                }
                 *:disabled {
                     color: gray; /* Set the text color to gray for disabled items */
                 }
                 QDialog QLabel {
+                    font-family: Arial;
                     font-size: 10pt;
                  }
             """
