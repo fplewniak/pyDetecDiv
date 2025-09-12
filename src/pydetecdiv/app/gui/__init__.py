@@ -48,7 +48,7 @@ class ProjectMenu(QMenu):
         ActionsProject.NewProject(menu).setShortcut("Ctrl+N")
         ActionsProject.DeleteProject(menu).setShortcut("Ctrl+D")
         menu.addSeparator()
-        convert_source = ActionsProject.ConvertProjectSourceDir(menu)
+        convert_source = ActionsProject.ConfigureProjectSourceDir(menu)
         convert_source.setShortcut("Ctrl+C")
         PyDetecDiv.app.project_selected.connect(lambda _: convert_source.setEnabled(True))
 

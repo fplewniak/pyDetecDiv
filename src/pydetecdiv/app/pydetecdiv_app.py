@@ -43,7 +43,7 @@ def main_gui():
     window_icon = QIcon(':icons/app_icon')
     app.setWindowIcon(window_icon)
 
-    table_editor = SourcePath.TableEditor(title='Missing data source path definition')
+    table_editor = SourcePath.TableEditor(title='Missing data source path definition', editable_col=None)
     app.check_data_source_paths(table_editor)
 
     app.set_main_window(MainWindow())

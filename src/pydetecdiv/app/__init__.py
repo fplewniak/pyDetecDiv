@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
     from pydetecdiv.app.gui.Windows import MainWindow
+    from pydetecdiv.app.gui.SourcePath import TableEditor
 
 import os.path
 import sys
@@ -76,12 +77,18 @@ class PyDetecDiv(QApplication):
         PyDetecDiv.plugin_list.load()
 
     @staticmethod
-    def check_data_source_paths(table_editor) -> None:
+    def check_data_source_paths(table_editor: 'TableEditor') -> None:
+        """
+        Checks the data source path configuration and proposes a dialog window to edit any definition that may be required for
+        use of shared data sources on the current device
+
+        :param table_editor:
+        """
         df = Device.undefined_paths()
 
         if not df.is_empty():
             for grp in df.group_by(by='path_id'):
-                table_editor.set_data(grp[1])
+                table_editor.set_data(grp[1].select(['name', 'device', 'path', 'path_id'])).hide_columns(['path_id'])
                 table_editor.exec()
 
     @staticmethod
@@ -306,6 +313,9 @@ class ConfirmDialog(QDialog):
         self.exec()
 
     def accept(self, /):
+        """
+        Close the window and launch action
+        """
         self.close()
         self.action()
 

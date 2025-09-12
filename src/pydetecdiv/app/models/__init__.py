@@ -5,7 +5,8 @@ import json
 from enum import IntEnum
 from typing import Any, Generic, TypeVar
 
-from PySide6.QtCore import QModelIndex, Qt, QStringListModel, Signal, QAbstractTableModel
+import polars
+from PySide6.QtCore import QModelIndex, Qt, QStringListModel, Signal, QAbstractTableModel, QPersistentModelIndex
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 
 GenericModel = TypeVar('GenericModel')
@@ -275,35 +276,121 @@ class DictItemModel(QStandardItemModel, Generic[GenericModel]):
 
 
 class TableModel(QAbstractTableModel):
-
+    """
+    A table model based on a polars dataframe. This model can be used to visualize non-editable tabular data
+    """
     def __init__(self, data=None):
         super().__init__()
         self.df = data
 
-    def set_data(self, data):
+    def set_data(self, data: polars.DataFrame) -> None:
+        """
+        Sets the data
+
+        :param data:
+        """
         self.df = data
 
-    def rowCount(self, parent=QModelIndex()):
+    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
+        """
+        Returns the number of rows in the data
+
+        :param parent: the model index parent
+        """
         return self.df.shape[0]
 
-    def columnCount(self, parent=QModelIndex()):
+    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
+        """
+        Returns the number of columns in the data
+
+        :param parent: the model index parent
+        """
         return self.df.shape[1]
 
-    def headerData(self, section: int, orientation: Qt.Orientation, role: int = ...):
+    def headerData(self, section: int, orientation: Qt.Orientation, role: int = ...) -> object:
+        """
+        Returns the data for the given role and section in the header with the specified orientation.
+
+        :param section: the section index (row number)
+        :param orientation: the orientation
+        :param role: the role
+        """
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             # return f"Column {section + 1}"
             return self.df.columns[section]
-        # if orientation == Qt.Vertical and role == Qt.DisplayRole:
-        #     return f"{section + 1}"
+        if orientation == Qt.Vertical and role == Qt.DisplayRole:
+            return f"{section + 1}"
 
-    def data(self, index, role=Qt.DisplayRole):
+    def data(self, index: QModelIndex | QPersistentModelIndex, role: int = Qt.DisplayRole) -> object | None:
+        """
+        Returns the data stored under the given role for the item referred to by the index.
+
+        :param index: the index
+        :param role: the role
+        """
         column = index.column()
         row = index.row()
 
-        if role == Qt.DisplayRole:
+        if role in (Qt.DisplayRole, Qt.EditRole):
             return self.df[row, column]
         # elif role == Qt.BackgroundRole:
         #     return QColor(Qt.white)
         # elif role == Qt.TextAlignmentRole:
         #     return Qt.AlignRight
         return None
+
+
+class EditableTableModel(TableModel):
+    """
+    A table model based on a polars dataframe. This model can be used to visualize editable tabular data
+    """
+    def __init__(self, data=None, editable_col=None):
+        super().__init__()
+        self.df = data
+        if editable_col is None:
+            self.editable_col = set()
+        else:
+            self.editable_col = set(editable_col)
+
+    def setData(self, index: QModelIndex | QPersistentModelIndex, value: Any, /, role: int = ...) -> bool:
+        """
+        Sets the role data for the item at index to value.
+        Returns true if successful; otherwise returns false.
+
+        :param index: the index
+        :param value: the value to set
+        :param role: the role
+        """
+        column = index.column()
+        row = index.row()
+        print(f'{value}')
+        if role == Qt.EditRole:
+            self.df[row, column] = value
+            self.dataChanged.emit(index, index, [Qt.EditRole, Qt.DisplayRole])
+            return True
+        return False
+
+    def set_editable_col(self, col: list[int] | int, editable: list[bool] | bool) -> None:
+        """
+        Sets columns referred to by their index in col list to the editable value
+
+        :param col: the column indices to set enable flag
+        :param editable: the editable flags
+        """
+        for c, e in zip(col, editable):
+            if e:
+                self.editable_col.add(c)
+            else:
+                self.editable_col.discard(c)
+
+    def flags(self, index: QModelIndex | QPersistentModelIndex) -> Qt.ItemFlag:
+        """
+        Returns the item flags for the given index.
+
+        :param index: the index
+        """
+        if not index.isValid():
+            return Qt.NoItemFlags
+        if index.column() in self.editable_col:
+            return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
+        return Qt.ItemIsSelectable | Qt.ItemIsEnabled
