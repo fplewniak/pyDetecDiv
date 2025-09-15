@@ -193,16 +193,11 @@ class Project:
 
                 image_file = os.path.join(dirname, os.path.basename(d["FileName"]))
                 url = image_file if in_place else os.path.join(destination, os.path.basename(image_file))
-                data_source_path_id = Device.path_id(url)
-                if data_source_path_id is not None:
-                    source_dir = data_source_path_id
-                    url = os.path.relpath(url, start=Device.data_path(data_source_path_id))
-                else:
-                    source_dir = os.path.dirname(image_file)
+                source_dir, rel_url = Device.get_path_id_and_url(url)
 
                 _ = Data(project=self, name=os.path.basename(image_file),
                          dataset=dataset, author=author, date=date_time,
-                         url=url,
+                         url=rel_url,
                          format_=img_format, source_dir=source_dir, meta_data={},
                          key_val={}, image_resource=image_res,
                          c=d["ChannelIndex"], t=d["FrameIndex"], z=d["SliceIndex"],

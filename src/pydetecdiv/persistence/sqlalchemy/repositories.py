@@ -162,10 +162,9 @@ class ShallowSQLite3(ShallowDb):
                     }
                 with Image.open(record['url']) as img:
                     record['xdim'], record['ydim'] = img.size
-                data_source_path_id = Device.path_id(record['url'])
-                if data_source_path_id is not None:
-                    record['source_dir'] = data_source_path_id
-                    record['url'] = os.path.relpath(record['url'], start=Device.data_path(data_source_path_id))
+
+                record['source_dir'], record['url'] = Device.get_path_id_and_url(record['url'])
+
                 self.save_object('Data', record)
                 # urls.append(record['url'])
         except Exception as error:

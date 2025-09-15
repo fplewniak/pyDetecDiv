@@ -321,3 +321,18 @@ class Device:
         :return: a dataframe with the list of data source paths
         """
         return datapath_list().filter((col('MAC') == cls.mac()) | (col('device') == cls.name()))
+
+
+    @classmethod
+    def get_path_id_and_url(cls, abs_url) -> polars.DataFrame:
+        """
+        Returns the path id and relative url corresponding to the absolute url on the current device .
+
+        :return: a tuple containing the path_id and the relative url
+        """
+        path_id = cls.path_id(abs_url)
+        if path_id is not None:
+            url = os.path.relpath(abs_url, start=Device.data_path(path_id))
+        else:
+            path_id = os.path.dirname(abs_url)
+        return path_id, url
