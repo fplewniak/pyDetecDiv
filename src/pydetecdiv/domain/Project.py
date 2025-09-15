@@ -17,7 +17,7 @@ from pydetecdiv.domain.BoundingBox import BoundingBox
 from pydetecdiv.domain.Entity import Entity
 from pydetecdiv.domain.Mask import Mask
 from pydetecdiv.domain.Point import Point
-from pydetecdiv.settings import get_config_value
+from pydetecdiv.settings import get_config_value, Device
 from pydetecdiv.persistence.project import open_project
 from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.domain.Dataset import Dataset
@@ -192,10 +192,18 @@ class Project:
                                               key_val={'channel_names': metadata["Summary"]["ChNames"]}, )
 
                 image_file = os.path.join(dirname, os.path.basename(d["FileName"]))
+                url = image_file if in_place else os.path.join(destination, os.path.basename(image_file))
+                data_source_path_id = Device.path_id(url)
+                if data_source_path_id is not None:
+                    source_dir = data_source_path_id
+                    url = os.path.relpath(url, start=Device.data_path(data_source_path_id))
+                else:
+                    source_dir = os.path.dirname(image_file)
+
                 _ = Data(project=self, name=os.path.basename(image_file),
                          dataset=dataset, author=author, date=date_time,
-                         url=image_file if in_place else os.path.join(destination, os.path.basename(image_file)),
-                         format_=img_format, source_dir=os.path.dirname(image_file), meta_data={},
+                         url=url,
+                         format_=img_format, source_dir=source_dir, meta_data={},
                          key_val={}, image_resource=image_res,
                          c=d["ChannelIndex"], t=d["FrameIndex"], z=d["SliceIndex"],
                          xdim=d["Width"], ydim=d['Height'])
