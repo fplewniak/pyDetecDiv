@@ -32,6 +32,7 @@ class FileMenu(QMenu):
         # ActionsProject.DeleteProject(menu).setShortcut("Ctrl+D")
         menu.addSeparator()
         ActionsSettings.Settings(menu)
+        ActionsSettings.ManageDataSourceAction(menu)
         menu.addSeparator()
         Quit(menu).setShortcut("Ctrl+Q")
 
@@ -48,9 +49,9 @@ class ProjectMenu(QMenu):
         ActionsProject.NewProject(menu).setShortcut("Ctrl+N")
         ActionsProject.DeleteProject(menu).setShortcut("Ctrl+D")
         menu.addSeparator()
-        convert_source = ActionsProject.ConfigureProjectSourceDir(menu)
-        convert_source.setShortcut("Ctrl+C")
-        PyDetecDiv.app.project_selected.connect(lambda _: convert_source.setEnabled(True))
+        configure_source = ActionsProject.ConfigureProjectSourceDir(menu)
+        configure_source.setShortcut("Ctrl+C")
+        PyDetecDiv.app.project_selected.connect(lambda _: configure_source.setEnabled(True))
 
 
 class DataMenu(QMenu):

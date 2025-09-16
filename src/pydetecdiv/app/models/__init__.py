@@ -279,6 +279,7 @@ class TableModel(QAbstractTableModel):
     """
     A table model based on a polars dataframe. This model can be used to visualize non-editable tabular data
     """
+
     def __init__(self, data=None):
         super().__init__()
         self.df = data
@@ -344,13 +345,18 @@ class EditableTableModel(TableModel):
     """
     A table model based on a polars dataframe. This model can be used to visualize editable tabular data
     """
-    def __init__(self, data=None, editable_col=None):
+
+    def __init__(self, data=None, editable_col=None, editable_row=None):
         super().__init__()
         self.df = data
         if editable_col is None:
             self.editable_col = set()
         else:
             self.editable_col = set(editable_col)
+        if editable_row is None:
+            self.editable_row = set()
+        else:
+            self.editable_row = set(editable_row)
 
     def setData(self, index: QModelIndex | QPersistentModelIndex, value: Any, /, role: int = ...) -> bool:
         """
@@ -363,7 +369,6 @@ class EditableTableModel(TableModel):
         """
         column = index.column()
         row = index.row()
-        print(f'{value}')
         if role == Qt.EditRole:
             self.df[row, column] = value
             self.dataChanged.emit(index, index, [Qt.EditRole, Qt.DisplayRole])
@@ -383,6 +388,19 @@ class EditableTableModel(TableModel):
             else:
                 self.editable_col.discard(c)
 
+    def set_editable_row(self, row: list[int] | int, editable: list[bool] | bool) -> None:
+        """
+        Sets rows referred to by their index in row list to the editable value
+
+        :param row: the row indices to set enable flag
+        :param editable: the editable flags
+        """
+        for r, e in zip(row, editable):
+            if e:
+                self.editable_row.add(r)
+            else:
+                self.editable_row.discard(r)
+
     def flags(self, index: QModelIndex | QPersistentModelIndex) -> Qt.ItemFlag:
         """
         Returns the item flags for the given index.
@@ -391,6 +409,12 @@ class EditableTableModel(TableModel):
         """
         if not index.isValid():
             return Qt.NoItemFlags
-        if index.column() in self.editable_col:
+        if self.is_editable(index):
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
         return Qt.ItemIsSelectable | Qt.ItemIsEnabled
+
+    def is_editable(self, index: QModelIndex | QPersistentModelIndex):
+        if len(self.editable_row):
+            return (index.column() in self.editable_col) and (index.row() in self.editable_row)
+        else:
+            return index.column() in self.editable_col

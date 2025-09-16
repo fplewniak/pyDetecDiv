@@ -6,6 +6,7 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (QHeaderView, QVBoxLayout, QSizePolicy, QDialogButtonBox, QTableView, QDialog, QPushButton, QLineEdit,
                                QGroupBox, QHBoxLayout, QFileDialog, QWidget, QLabel)
 
+import pydetecdiv.settings
 from pydetecdiv.app.models import TableModel, EditableTableModel
 from pydetecdiv.settings import Device, datapath_list, datapath_file
 
@@ -14,7 +15,9 @@ class TableEditor(QDialog):
     """
     A dialog window displaying a table of source paths and allowing configuration of those that are not yet defined
     """
-    def __init__(self, title=None, description='<b>Source paths defined on other devices:</b>', force_resolution=False, editable_col=None,
+
+    def __init__(self, title=None, description='<b>Source paths defined on other devices:</b>', force_resolution=False,
+                 editable_col=None,
                  **kwargs):
         super().__init__(**kwargs)
         if title is not None:
@@ -158,6 +161,7 @@ class PathCreator(TableEditor):
     """
     A TableEditor for new source path definition. The name is not displayed in the table as it has not been defined yet.
     """
+
     def __init__(self, title=None, description='Define new path on this device:', **kwargs):
         super().__init__(title, description, **kwargs)
         if title is not None:
@@ -179,3 +183,57 @@ class PathCreator(TableEditor):
         self.model = EditableTableModel(data, editable_col=self.editable_col)
         self.table_view.setModel(self.model)
         return self
+
+
+class DataSourceManagement(QDialog):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.main_layout = QVBoxLayout(self)
+
+        for grp in pydetecdiv.settings.datapath_list('Test.datapath_list.csv', grouped=True):
+            self.main_layout.addWidget(DataSourceGroup(grp[1]))
+
+        self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Close)
+        self.button_box.rejected.connect(self.close)
+        self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+        self.button_box.accepted.connect(self.save_local_datapath)
+        self.main_layout.addWidget(self.button_box)
+
+        self.exec()
+
+        self.destroy(True)
+
+    def save_local_datapath(self):
+        for child in self.children():
+            if isinstance(child, DataSourceGroup):
+                print(child, child.model.df.select(['name', 'path_id', 'device', 'MAC', 'path']))
+
+
+class DataSourceGroup(QGroupBox):
+    def __init__(self, data, **kwargs):
+        super().__init__(**kwargs)
+        self.main_layout = QVBoxLayout(self)
+        first_row = data.filter(polars.col('MAC') == Device.mac())
+        if first_row.is_empty():
+            first_row = polars.DataFrame({'name': [''],
+                                          'path_id': [data['path_id'].unique().item()],
+                                          'device': [Device.name()],
+                                          'MAC': [Device.mac()],
+                                          'path': ['']
+                                          })
+        print(f'{data["path_id"].unique().item()=} {first_row=}')
+        next_rows = data.filter(polars.col('MAC') != Device.mac())
+        data = polars.concat([first_row, next_rows])
+        self.model = EditableTableModel(data.select(['device', 'name', 'path', 'MAC', 'path_id']), editable_col=[1, 2],
+                                        editable_row=[0])
+
+        self.table_view = QTableView(self)
+        self.table_view.setModel(self.model)
+        self.table_view.setColumnHidden(3, True)
+        self.table_view.setColumnHidden(4, True)
+        self.horizontal_header = self.table_view.horizontalHeader()
+        self.vertical_header = self.table_view.verticalHeader()
+        self.horizontal_header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.vertical_header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.horizontal_header.setStretchLastSection(True)
+        self.main_layout.addWidget(self.table_view)

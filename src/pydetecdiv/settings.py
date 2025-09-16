@@ -153,22 +153,22 @@ def get_default_workspace_dir() -> Path:
     return default_workspace_dir
 
 
-def datapath_file() -> Path:
+def datapath_file(datapath_filename: str = '.datapath_list.csv') -> Path:
     """
     Return the path to data source list file
 
     :return: the path to the data source list file
     """
-    return Path(os.path.join(get_config_value('project', 'workspace'), '.datapath_list.csv'))
+    return Path(os.path.join(get_config_value('project', 'workspace'), datapath_filename))
 
 
-def datapath_list() -> polars.DataFrame:
+def datapath_list(datapath_filename: str = '.datapath_list.csv', grouped: bool = False) -> polars.DataFrame | polars.dataframe.group_by.GroupBy:
     """
     Returns a DataFrame containing the data source dir definitions
 
     :return: data source dir definitions
     """
-    datapath_list_file = datapath_file()
+    datapath_list_file = datapath_file(datapath_filename)
     if not datapath_list_file.is_file():
         polars.DataFrame({'name'   : [],
                           'path_id': [],
@@ -176,7 +176,10 @@ def datapath_list() -> polars.DataFrame:
                           'MAC'    : [],
                           'path'   : []
                           }).write_csv(datapath_list_file)
-    return read_csv(datapath_list_file)
+    datapath_list = read_csv(datapath_list_file)
+    if grouped:
+        return datapath_list.group_by(by='path_id')
+    return datapath_list
 
 
 def create_path_id() -> UUID:
