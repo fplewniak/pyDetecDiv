@@ -190,7 +190,7 @@ class DataSourceManagement(QDialog):
         super().__init__(**kwargs)
         self.main_layout = QVBoxLayout(self)
 
-        for grp in pydetecdiv.settings.datapath_list('Test.datapath_list.csv', grouped=True):
+        for grp in pydetecdiv.settings.datapath_list(grouped=True):
             self.main_layout.addWidget(DataSourceGroup(grp[1]))
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Close)
@@ -204,36 +204,103 @@ class DataSourceManagement(QDialog):
         self.destroy(True)
 
     def save_local_datapath(self):
+        self.data.write_csv(datapath_file())
+        self.close()
+
+    @property
+    def data(self):
+        data = polars.DataFrame(schema={
+            'name'   : str,
+            'path_id': str,
+            'device' : str,
+            'MAC'    : str,
+            'path'   : str
+            })
         for child in self.children():
             if isinstance(child, DataSourceGroup):
-                print(child, child.model.df.select(['name', 'path_id', 'device', 'MAC', 'path']))
+                data.extend(child.data.select(['name', 'path_id', 'device', 'MAC', 'path']))
+        return data
 
 
 class DataSourceGroup(QGroupBox):
     def __init__(self, data, **kwargs):
         super().__init__(**kwargs)
-        self.main_layout = QVBoxLayout(self)
-        first_row = data.filter(polars.col('MAC') == Device.mac())
-        if first_row.is_empty():
-            first_row = polars.DataFrame({'name': [''],
-                                          'path_id': [data['path_id'].unique().item()],
-                                          'device': [Device.name()],
-                                          'MAC': [Device.mac()],
-                                          'path': ['']
-                                          })
-        print(f'{data["path_id"].unique().item()=} {first_row=}')
-        next_rows = data.filter(polars.col('MAC') != Device.mac())
-        data = polars.concat([first_row, next_rows])
-        self.model = EditableTableModel(data.select(['device', 'name', 'path', 'MAC', 'path_id']), editable_col=[1, 2],
-                                        editable_row=[0])
 
-        self.table_view = QTableView(self)
-        self.table_view.setModel(self.model)
-        self.table_view.setColumnHidden(3, True)
-        self.table_view.setColumnHidden(4, True)
-        self.horizontal_header = self.table_view.horizontalHeader()
-        self.vertical_header = self.table_view.verticalHeader()
-        self.horizontal_header.setSectionResizeMode(QHeaderView.ResizeToContents)
-        self.vertical_header.setSectionResizeMode(QHeaderView.ResizeToContents)
-        self.horizontal_header.setStretchLastSection(True)
-        self.main_layout.addWidget(self.table_view)
+        self.main_layout = QVBoxLayout(self)
+        self.this_device = data.filter(polars.col('MAC') == Device.mac())
+        if self.this_device.is_empty():
+            self.this_device = polars.DataFrame({'name'   : [],
+                                                 'path_id': [data['path_id'].unique().item()],
+                                                 'device' : [Device.name()],
+                                                 'MAC'    : [Device.mac()],
+                                                 'path'   : []
+                                                 }, schema={'name'   : str,
+                                                            'path_id': str,
+                                                            'device' : str,
+                                                            'MAC'    : str,
+                                                            'path'   : str
+                                                            })
+
+        path_group_label = QLabel(self)
+        path_group_label.setText(f"<b>{data['path_id'].unique().item()}</b>")
+        path_group = QGroupBox(self)
+        name_label = QLabel('name')
+        self.name_edit = QLineEdit(path_group)
+        self.name_edit.setText(self.this_device['name'].item())
+        path_label = QLabel('path')
+        self.path_edit = QLineEdit(path_group)
+        self.path_edit.setText(self.this_device['path'].item())
+        button_path = QPushButton(path_group)
+        icon = QIcon(":icons/file_chooser")
+        button_path.setIcon(icon)
+        button_path.clicked.connect(self.select_path)
+        self.path_edit.textChanged.connect(self.path_edit_changed)
+        self.name_edit.textChanged.connect(self.path_edit_changed)
+        path_layout = QHBoxLayout(path_group)
+
+        # table_layout.addWidget(self.table_view)
+        path_layout.addWidget(name_label)
+        path_layout.addWidget(self.name_edit)
+        path_layout.addWidget(path_label)
+        path_layout.addWidget(self.path_edit)
+        path_layout.addWidget(button_path)
+
+        self.main_layout.addWidget(path_group_label)
+        self.main_layout.addWidget(path_group)
+
+        self.other_devices = data.filter(polars.col('MAC') != Device.mac())
+
+        self.other_devices_model = TableModel(self.other_devices.select(['device', 'name', 'path', 'MAC', 'path_id']))
+        self.other_devices_view = QTableView(self)
+        self.other_devices_view.setModel(self.other_devices_model)
+        self.other_devices_view.setColumnHidden(3, True)
+        self.other_devices_view.setColumnHidden(4, True)
+        self.other_devices_horizontal_header = self.other_devices_view.horizontalHeader()
+        self.other_devices_horizontal_header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.other_devices_horizontal_header.setStretchLastSection(True)
+
+        self.main_layout.addWidget(self.other_devices_view)
+
+    def select_path(self) -> None:
+        """
+        Opens a Filedialog window to select a path
+        """
+        dir_name = '/'
+        if dir_name != self.path_edit.text() and self.path_edit.text():
+            dir_name = self.path_edit.text()
+        directory = QFileDialog.getExistingDirectory(self, caption='Choose data source directory', dir=dir_name,
+                                                     options=QFileDialog.Option.ShowDirsOnly)
+        if directory:
+            self.path_edit.setText(directory)
+
+    def path_edit_changed(self) -> None:
+        """
+        Update path and name in the data model when it has been changed in the GUI
+        """
+        if os.path.isdir(self.path_edit.text()) and self.name_edit.text():
+            self.this_device = self.this_device.with_columns(path=polars.lit(self.path_edit.text()),
+                                                             name=polars.lit(self.name_edit.text()))
+
+    @property
+    def data(self):
+        return polars.concat([self.this_device, self.other_devices])
