@@ -2,9 +2,10 @@ import os
 from typing import Self
 
 import polars
+from PySide6.QtCore import QSize
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (QHeaderView, QVBoxLayout, QSizePolicy, QDialogButtonBox, QTableView, QDialog, QPushButton, QLineEdit,
-                               QGroupBox, QHBoxLayout, QFileDialog, QWidget, QLabel)
+                               QGroupBox, QHBoxLayout, QFileDialog, QWidget, QLabel, QScrollArea)
 
 import pydetecdiv.settings
 from pydetecdiv.app.models import TableModel, EditableTableModel
@@ -67,17 +68,14 @@ class TableEditor(QDialog):
         self.button_box.accepted.connect(self.save_local_datapath)
 
         self.main_layout = QVBoxLayout(self)
-        # table_layout = QHBoxLayout(table_group)
         path_layout = QHBoxLayout(path_group)
 
-        # table_layout.addWidget(self.table_view)
         path_layout.addWidget(name_label)
         path_layout.addWidget(self.name_edit)
         path_layout.addWidget(path_label)
         path_layout.addWidget(self.path_edit)
         path_layout.addWidget(button_path)
 
-        # self.main_layout.addWidget(table_group)
         self.main_layout.addWidget(table_label)
         self.main_layout.addWidget(self.table_view)
         self.main_layout.addWidget(path_group_label)
@@ -283,8 +281,14 @@ class DataSourceGroup(QGroupBox):
         self.other_devices_horizontal_header = self.other_devices_view.horizontalHeader()
         self.other_devices_horizontal_header.setSectionResizeMode(QHeaderView.ResizeToContents)
         self.other_devices_horizontal_header.setStretchLastSection(True)
+        self.other_devices_view.verticalHeader().setStretchLastSection(False)
+        self.other_devices_view.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
+        self.other_devices_view.adjustSize()
 
+        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
         self.main_layout.addWidget(self.other_devices_view)
+
+        self.adjustSize()
 
     def select_path(self) -> None:
         """
@@ -315,7 +319,7 @@ class DataSourceGroup(QGroupBox):
         self.this_device = self.this_device.with_columns(path=polars.lit(self.path_edit.text()),
                                                          name=polars.lit(self.name_edit.text()))
 
-
     @property
     def data(self):
-        return polars.concat([self.this_device.filter((polars.col('path_id') != '') & (polars.col('name') != '')), self.other_devices])
+        return polars.concat(
+                [self.this_device.filter((polars.col('path_id') != '') & (polars.col('name') != '')), self.other_devices])
