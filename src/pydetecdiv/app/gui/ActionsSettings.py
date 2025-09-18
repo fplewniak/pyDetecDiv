@@ -236,6 +236,6 @@ class ManageDataSourceAction(QAction):
     """
 
     def __init__(self, parent: QWidget):
-        super().__init__(QIcon(":icons/settings"), "Manage shared data sources", parent)
+        super().__init__(QIcon(":icons/share"), "Manage shared data sources", parent)
         self.triggered.connect(DataSourceManagement)
         parent.addAction(self)

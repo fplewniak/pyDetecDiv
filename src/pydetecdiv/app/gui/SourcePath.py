@@ -229,11 +229,11 @@ class DataSourceGroup(QGroupBox):
         self.main_layout = QVBoxLayout(self)
         self.this_device = data.filter(polars.col('MAC') == Device.mac())
         if self.this_device.is_empty():
-            self.this_device = polars.DataFrame({'name'   : [],
+            self.this_device = polars.DataFrame({'name'   : [''],
                                                  'path_id': [data['path_id'].unique().item()],
                                                  'device' : [Device.name()],
                                                  'MAC'    : [Device.mac()],
-                                                 'path'   : []
+                                                 'path'   : ['']
                                                  }, schema={'name'   : str,
                                                             'path_id': str,
                                                             'device' : str,
@@ -247,13 +247,17 @@ class DataSourceGroup(QGroupBox):
         name_label = QLabel('name')
         self.name_edit = QLineEdit(path_group)
         self.name_edit.setText(self.this_device['name'].item())
+        self.name_edit.setClearButtonEnabled(True)
         path_label = QLabel('path')
         self.path_edit = QLineEdit(path_group)
         self.path_edit.setText(self.this_device['path'].item())
+        self.path_edit.setClearButtonEnabled(True)
         button_path = QPushButton(path_group)
-        icon = QIcon(":icons/file_chooser")
-        button_path.setIcon(icon)
+        button_path.setIcon(QIcon(":icons/file_chooser"))
         button_path.clicked.connect(self.select_path)
+        clear_button = QPushButton(path_group)
+        clear_button.setIcon(QIcon(":icons/cross-button"))
+        clear_button.clicked.connect(self.clear_path)
         self.path_edit.textChanged.connect(self.path_edit_changed)
         self.name_edit.textChanged.connect(self.path_edit_changed)
         path_layout = QHBoxLayout(path_group)
@@ -264,6 +268,7 @@ class DataSourceGroup(QGroupBox):
         path_layout.addWidget(path_label)
         path_layout.addWidget(self.path_edit)
         path_layout.addWidget(button_path)
+        path_layout.addWidget(clear_button)
 
         self.main_layout.addWidget(path_group_label)
         self.main_layout.addWidget(path_group)
@@ -301,6 +306,16 @@ class DataSourceGroup(QGroupBox):
             self.this_device = self.this_device.with_columns(path=polars.lit(self.path_edit.text()),
                                                              name=polars.lit(self.name_edit.text()))
 
+    def clear_path(self) -> None:
+        """
+        Update path and name in the data model when it has been changed in the GUI
+        """
+        self.path_edit.clear()
+        self.name_edit.clear()
+        self.this_device = self.this_device.with_columns(path=polars.lit(self.path_edit.text()),
+                                                         name=polars.lit(self.name_edit.text()))
+
+
     @property
     def data(self):
-        return polars.concat([self.this_device, self.other_devices])
+        return polars.concat([self.this_device.filter((polars.col('path_id') != '') & (polars.col('name') != '')), self.other_devices])
