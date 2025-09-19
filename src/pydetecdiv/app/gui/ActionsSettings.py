@@ -9,7 +9,7 @@ from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import (QLineEdit, QDialogButtonBox, QPushButton, QFileDialog, QDialog, QHBoxLayout, QVBoxLayout,
                                QGroupBox, QComboBox, QSpinBox, QWidget)
 from pydetecdiv.app import PyDetecDiv, get_settings
-from pydetecdiv.app.gui.SourcePath import DataSourceManagement
+from pydetecdiv.app.gui.SourcePath import DataSourceManagement, DataSourceManagementTab
 from pydetecdiv.persistence import implemented_dbms
 
 

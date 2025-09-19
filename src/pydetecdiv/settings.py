@@ -182,13 +182,16 @@ def datapath_list(datapath_filename: str = '.datapath_list.csv', grouped: bool =
     return datapath_list
 
 
-def create_path_id() -> UUID:
+def create_path_id(as_string: bool = False) -> UUID | str:
     """
     Creates a unique identifier for data source path, from the device name and current time
 
     :return: the uuid5
     """
-    return uuid5(UUID(UUID_NameSpace.DataSource, is_safe=SafeUUID.safe), Device.name() + str(datetime.datetime.now()))
+    uuid = uuid5(UUID(UUID_NameSpace.DataSource, is_safe=SafeUUID.safe), Device.name() + str(datetime.datetime.now()))
+    if as_string:
+        return str(uuid)
+    return uuid
 
 
 def all_path_ids(df: polars.DataFrame) -> polars.DataFrame:
@@ -239,7 +242,7 @@ class Device:
         """
         df = datapath_list()
         if path_id is None:
-            path_id = str(create_path_id())
+            path_id = create_path_id(as_string=True)
         new_row = polars.DataFrame({'name'   : [name],
                                     'path_id': [path_id],
                                     'device' : [Device.name()],

@@ -36,6 +36,9 @@ def main_gui():
                     font-family: Arial;
                     font-size: 10pt;
                  }
+                 QTabWidget::red {
+                    font-size: 20pt;
+                 }
             """
 
     # Apply the style sheet to the application

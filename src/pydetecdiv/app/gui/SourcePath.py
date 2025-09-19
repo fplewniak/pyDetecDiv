@@ -2,10 +2,9 @@ import os
 from typing import Self
 
 import polars
-from PySide6.QtCore import QSize
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (QHeaderView, QVBoxLayout, QSizePolicy, QDialogButtonBox, QTableView, QDialog, QPushButton, QLineEdit,
-                               QGroupBox, QHBoxLayout, QFileDialog, QWidget, QLabel, QScrollArea)
+                               QGroupBox, QHBoxLayout, QFileDialog, QLabel, QTabWidget)
 
 import pydetecdiv.settings
 from pydetecdiv.app.models import TableModel, EditableTableModel
@@ -183,15 +182,53 @@ class PathCreator(TableEditor):
         return self
 
 
+class DataSourceManagementTab(QTabWidget):
+    def __init__(self):
+        super().__init__()
+        self.tab_list = set()
+        for grp in pydetecdiv.settings.datapath_list(grouped=True):
+            self.add_tab(grp[1])
+            # name_df = grp[1].filter(polars.col('MAC') == Device.mac()).select('name')
+            # tab_widget = DataSourceGroup(grp[1], self)
+            # if name_df.is_empty():
+            #     self.addTab(tab_widget, QIcon(":icons/question-button"), '')
+            # else:
+            #     self.addTab(tab_widget, name_df.item())
+            # self.tab_list.add(tab_widget)
+
+    def add_tab(self, data):
+        name_df = data.filter(polars.col('MAC') == Device.mac()).select('name')
+        tab_widget = DataSourceGroup(data, parent=self)
+        if name_df.is_empty() or name_df.item(0, 0).replace(' ', '') == '':
+            self.addTab(tab_widget, QIcon(":icons/question-button"), '')
+        else:
+            self.addTab(tab_widget, name_df.item())
+        self.tab_list.add(tab_widget)
+        self.setCurrentWidget(tab_widget)
+
+    def path_edit_changed(self):
+        if self.currentWidget().name_edit.text().replace(' ', '') == '':
+            self.setTabIcon(self.currentIndex(), QIcon(":icons/question-button"))
+            self.setTabText(self.currentIndex(), '')
+        else:
+            self.setTabIcon(self.currentIndex(), QIcon())
+            self.setTabText(self.currentIndex(), self.currentWidget().name_edit.text())
+
+
 class DataSourceManagement(QDialog):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
         self.main_layout = QVBoxLayout(self)
+        self.tabs = DataSourceManagementTab()
+        self.main_layout.addWidget(self.tabs)
 
-        for grp in pydetecdiv.settings.datapath_list(grouped=True):
-            self.main_layout.addWidget(DataSourceGroup(grp[1]))
-
-        self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Close)
+        # self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Close)
+        self.button_box = QDialogButtonBox()
+        self.button_add = self.button_box.addButton('Add source', QDialogButtonBox.ButtonRole.ActionRole)
+        self.button_add.clicked.connect(self.add_source)
+        self.button_box.addButton(QDialogButtonBox.StandardButton.Close)
+        self.button_box.addButton(QDialogButtonBox.StandardButton.Ok)
         self.button_box.rejected.connect(self.close)
         self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
         self.button_box.accepted.connect(self.save_local_datapath)
@@ -200,6 +237,25 @@ class DataSourceManagement(QDialog):
         self.exec()
 
         self.destroy(True)
+
+    def add_source(self):
+        path_id = pydetecdiv.settings.create_path_id(as_string=True)
+        data = polars.DataFrame({'name'   : [''],
+                                 'path_id': [path_id],
+                                 'device' : [Device.name()],
+                                 'MAC'    : [Device.mac()],
+                                 'path'   : ['']
+                                 }, schema={'name'   : str,
+                                            'path_id': str,
+                                            'device' : str,
+                                            'MAC'    : str,
+                                            'path'   : str
+                                            })
+        self.tabs.add_tab(data)
+        # tab_widget = DataSourceGroup(data, self.tabs)
+        # self.tabs.addTab(tab_widget, QIcon(":icons/question-button"), '')
+        # self.tabs.tab_list.add(tab_widget)
+        # self.tabs.setCurrentWidget(tab_widget)
 
     def save_local_datapath(self):
         self.data.write_csv(datapath_file())
@@ -214,15 +270,15 @@ class DataSourceManagement(QDialog):
             'MAC'    : str,
             'path'   : str
             })
-        for child in self.children():
-            if isinstance(child, DataSourceGroup):
-                data.extend(child.data.select(['name', 'path_id', 'device', 'MAC', 'path']))
+        for tab in self.tabs.tab_list:
+            data.extend(tab.data.select(['name', 'path_id', 'device', 'MAC', 'path']))
         return data
 
 
 class DataSourceGroup(QGroupBox):
-    def __init__(self, data, **kwargs):
+    def __init__(self, data, parent=None, **kwargs):
         super().__init__(**kwargs)
+        self._parent = parent
 
         self.main_layout = QVBoxLayout(self)
         self.this_device = data.filter(polars.col('MAC') == Device.mac())
@@ -240,7 +296,7 @@ class DataSourceGroup(QGroupBox):
                                                             })
 
         path_group_label = QLabel(self)
-        path_group_label.setText(f"<b>{data['path_id'].unique().item()}</b>")
+        path_group_label.setText(f"<p><b>Data source uid: {data['path_id'].unique().item()}</b></p>")
         path_group = QGroupBox(self)
         name_label = QLabel('name')
         self.name_edit = QLineEdit(path_group)
@@ -258,8 +314,8 @@ class DataSourceGroup(QGroupBox):
         clear_button.clicked.connect(self.clear_path)
         self.path_edit.textChanged.connect(self.path_edit_changed)
         self.name_edit.textChanged.connect(self.path_edit_changed)
-        path_layout = QHBoxLayout(path_group)
 
+        path_layout = QHBoxLayout(path_group)
         # table_layout.addWidget(self.table_view)
         path_layout.addWidget(name_label)
         path_layout.addWidget(self.name_edit)
@@ -286,9 +342,13 @@ class DataSourceGroup(QGroupBox):
         self.other_devices_view.adjustSize()
 
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
+        self.main_layout.addWidget(QLabel('<br/><b>Data source specifications on other devices:</b>'))
         self.main_layout.addWidget(self.other_devices_view)
 
         self.adjustSize()
+
+    def parent(self):
+        return self._parent
 
     def select_path(self) -> None:
         """
@@ -309,6 +369,7 @@ class DataSourceGroup(QGroupBox):
         if os.path.isdir(self.path_edit.text()) and self.name_edit.text():
             self.this_device = self.this_device.with_columns(path=polars.lit(self.path_edit.text()),
                                                              name=polars.lit(self.name_edit.text()))
+        self.parent().path_edit_changed()
 
     def clear_path(self) -> None:
         """
