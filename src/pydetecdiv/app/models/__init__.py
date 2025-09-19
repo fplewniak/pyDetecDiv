@@ -308,7 +308,7 @@ class TableModel(QAbstractTableModel):
         """
         return self.df.shape[1]
 
-    def headerData(self, section: int, orientation: Qt.Orientation, role: int = ...) -> object:
+    def headerData(self, section: int, orientation: Qt.Orientation, role: int = ...) -> str:
         """
         Returns the data for the given role and section in the header with the specified orientation.
 
@@ -321,6 +321,7 @@ class TableModel(QAbstractTableModel):
             return self.df.columns[section]
         if orientation == Qt.Vertical and role == Qt.DisplayRole:
             return f"{section + 1}"
+        return ''
 
     def data(self, index: QModelIndex | QPersistentModelIndex, role: int = Qt.DisplayRole) -> object | None:
         """
@@ -413,8 +414,13 @@ class EditableTableModel(TableModel):
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
         return Qt.ItemIsSelectable | Qt.ItemIsEnabled
 
-    def is_editable(self, index: QModelIndex | QPersistentModelIndex):
-        if len(self.editable_row):
+    def is_editable(self, index: QModelIndex | QPersistentModelIndex) -> bool:
+        """
+        Returns whether the table cell at the index is editable or not
+
+        :param index: the index to check whether it is editable or not
+        :return: True if the cell is editable, False otherwise
+        """
+        if self.editable_row:
             return (index.column() in self.editable_col) and (index.row() in self.editable_row)
-        else:
-            return index.column() in self.editable_col
+        return index.column() in self.editable_col

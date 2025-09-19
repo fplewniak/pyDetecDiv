@@ -124,9 +124,8 @@ class ProjectDialog(QDialog):
                     error_msg.setText(f'Error: {p_name} project already exists!!!')
                     error_msg.exec()
                     return
-                else:
-                    msg = f'Creating {p_name}, please wait.'
-                    action_method = self.open_create_project
+                msg = f'Creating {p_name}, please wait.'
+                action_method = self.open_create_project
             case ProjectAction.Open:
                 msg = f'Opening {p_name}, please wait.'
                 action_method = self.open_create_project
@@ -218,6 +217,9 @@ class DeleteProject(QAction):
         parent.addAction(self)
 
     def delete_project(self) -> None:
+        """
+        Deletes a project
+        """
         try:
             ProjectDialog(project_list(), project_action=ProjectAction.Delete)
         except UnknownRepositoryTypeError as e:
@@ -321,4 +323,4 @@ class ConfigureProjectSourceDir(QAction):
                               f'<code>{local_paths}</code>'
                               f'<p>This may prevent to share project <b>{project.dbname}</b> across multiple devices')
             else:
-                MessageDialog(f'<center><p>Project data source configuration completed</p></center>')
+                MessageDialog('<center><p>Project data source configuration completed</p></center>')

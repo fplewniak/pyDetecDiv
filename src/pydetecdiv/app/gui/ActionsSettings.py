@@ -1,7 +1,6 @@
 """
 Handling actions to edit and manage settings
 """
-import getpass
 import os.path
 
 from PySide6.QtCore import Slot, Qt, QDir
@@ -9,7 +8,7 @@ from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import (QLineEdit, QDialogButtonBox, QPushButton, QFileDialog, QDialog, QHBoxLayout, QVBoxLayout,
                                QGroupBox, QComboBox, QSpinBox, QWidget)
 from pydetecdiv.app import PyDetecDiv, get_settings
-from pydetecdiv.app.gui.SourcePath import DataSourceManagement, DataSourceManagementTab
+from pydetecdiv.app.gui.SourcePath import DataSourceManagement
 from pydetecdiv.persistence import implemented_dbms
 
 

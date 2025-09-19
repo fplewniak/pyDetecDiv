@@ -4,12 +4,9 @@
 Main widgets to use with persistent windows
 """
 from typing import TYPE_CHECKING, Callable
-
-if TYPE_CHECKING:
-    from pydetecdiv.app.gui.Windows import MainWindow
-
 import psutil
 import numpy as np
+
 from PySide6.QtCore import QTimer, QRect
 from PySide6.QtGui import QAction, QIcon, QFont
 from PySide6.QtWidgets import QToolBar, QStatusBar, QMenu, QApplication, QDialog, QDialogButtonBox, QSizePolicy, QLabel
@@ -18,6 +15,8 @@ from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui import ActionsSettings, ActionsProject, ActionsData
 import pydetecdiv.app.gui.resources_rc
 
+if TYPE_CHECKING:
+    from pydetecdiv.app.gui.Windows import MainWindow
 
 class FileMenu(QMenu):
     """
@@ -75,7 +74,7 @@ class DataMenu(QMenu):
         PyDetecDiv.app.raw_data_counted.connect(create_fovs.enable)
         PyDetecDiv.app.project_selected.connect(compute_drift.enable)
         PyDetecDiv.app.project_selected.connect(apply_drift.enable)
-        apply_drift.triggered.connect(lambda b: PyDetecDiv.app.set_apply_drift(b))
+        apply_drift.triggered.connect(PyDetecDiv.app.set_apply_drift)
 
 
 class PluginMenu(QMenu):
@@ -180,7 +179,7 @@ class Help(QAction):
         font1.setPointSize(16)
         label_2.setFont(font1)
         label_3 = QLabel(about_dialog)
-        label_3.setObjectName(u"label_3")
+        label_3.setObjectName("label_3")
         label_3.setGeometry(QRect(20, 130, 361, 20))
         font2 = QFont()
         font2.setFamilies(["Arial"])

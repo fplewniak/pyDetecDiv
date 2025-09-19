@@ -1,3 +1,7 @@
+"""
+A module to handle shared data source paths, either those shared across multiple devices accessing the same data server, or when
+exporting and importing a project from another site.
+"""
 import os
 from typing import Self
 
@@ -8,7 +12,7 @@ from PySide6.QtWidgets import (QHeaderView, QVBoxLayout, QSizePolicy, QDialogBut
 
 import pydetecdiv.settings
 from pydetecdiv.app.models import TableModel, EditableTableModel
-from pydetecdiv.settings import Device, datapath_list, datapath_file
+from pydetecdiv.settings import Device, datapath_list, datapath_file, create_path_id
 
 
 class TableEditor(QDialog):
@@ -183,20 +187,21 @@ class PathCreator(TableEditor):
 
 
 class DataSourceManagementTab(QTabWidget):
+    """
+    A tab widget to hold tabs with the respective information about all defined data sources
+    """
+
     def __init__(self):
         super().__init__()
         self.tab_list = set()
         for grp in pydetecdiv.settings.datapath_list(grouped=True):
             self.add_tab(grp[1])
-            # name_df = grp[1].filter(polars.col('MAC') == Device.mac()).select('name')
-            # tab_widget = DataSourceGroup(grp[1], self)
-            # if name_df.is_empty():
-            #     self.addTab(tab_widget, QIcon(":icons/question-button"), '')
-            # else:
-            #     self.addTab(tab_widget, name_df.item())
-            # self.tab_list.add(tab_widget)
 
-    def add_tab(self, data):
+    def add_tab(self, data: polars.DataFrame) -> None:
+        """
+        Adds a new tab with data in the data Dataframe
+        :param data: polars dataframe containing the data for sources
+        """
         name_df = data.filter(polars.col('MAC') == Device.mac()).select('name')
         tab_widget = DataSourceGroup(data, parent=self)
         if name_df.is_empty() or name_df.item(0, 0).replace(' ', '') == '':
@@ -206,7 +211,10 @@ class DataSourceManagementTab(QTabWidget):
         self.tab_list.add(tab_widget)
         self.setCurrentWidget(tab_widget)
 
-    def path_edit_changed(self):
+    def path_edit_changed(self) -> None:
+        """
+        Sets the tab icons and title when the current data source name is changed
+        """
         if self.currentWidget().name_edit.text().replace(' ', '') == '':
             self.setTabIcon(self.currentIndex(), QIcon(":icons/question-button"))
             self.setTabText(self.currentIndex(), '')
@@ -216,6 +224,10 @@ class DataSourceManagementTab(QTabWidget):
 
 
 class DataSourceManagement(QDialog):
+    """
+    The Dialog window for managing data sources
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -238,8 +250,11 @@ class DataSourceManagement(QDialog):
 
         self.destroy(True)
 
-    def add_source(self):
-        path_id = pydetecdiv.settings.create_path_id(as_string=True)
+    def add_source(self) -> None:
+        """
+        Adds a new data source: creates a path uuid and partially initializes polars dataframe, passing it to a new tab
+        """
+        path_id = create_path_id(as_string=True)
         data = polars.DataFrame({'name'   : [''],
                                  'path_id': [path_id],
                                  'device' : [Device.name()],
@@ -252,17 +267,21 @@ class DataSourceManagement(QDialog):
                                             'path'   : str
                                             })
         self.tabs.add_tab(data)
-        # tab_widget = DataSourceGroup(data, self.tabs)
-        # self.tabs.addTab(tab_widget, QIcon(":icons/question-button"), '')
-        # self.tabs.tab_list.add(tab_widget)
-        # self.tabs.setCurrentWidget(tab_widget)
 
-    def save_local_datapath(self):
+    def save_local_datapath(self) -> None:
+        """
+        Retrieves the data from the GUI and writes it to datapath file
+        """
         self.data.write_csv(datapath_file())
         self.close()
 
     @property
-    def data(self):
+    def data(self) -> polars.DataFrame:
+        """
+        Returns the data from all tabs
+
+        :return: the data as a polars dataframe
+        """
         data = polars.DataFrame(schema={
             'name'   : str,
             'path_id': str,
@@ -276,6 +295,11 @@ class DataSourceManagement(QDialog):
 
 
 class DataSourceGroup(QGroupBox):
+    """
+    A group box with the interface allowing to define a data source path for the current device and displaying data sources
+    defined on other devices
+    """
+
     def __init__(self, data, parent=None, **kwargs):
         super().__init__(**kwargs)
         self._parent = parent
@@ -347,7 +371,12 @@ class DataSourceGroup(QGroupBox):
 
         self.adjustSize()
 
-    def parent(self):
+    def parent(self) -> DataSourceManagementTab:
+        """
+        The DataSourceManagementTab object containing this group box in a tab
+
+        :return: the parent of this group box
+        """
         return self._parent
 
     def select_path(self) -> None:
@@ -381,6 +410,11 @@ class DataSourceGroup(QGroupBox):
                                                          name=polars.lit(self.name_edit.text()))
 
     @property
-    def data(self):
+    def data(self) -> polars.DataFrame:
+        """
+        The data contained in this group box
+
+        :return: the data as a polars.DataFrame
+        """
         return polars.concat(
                 [self.this_device.filter((polars.col('path_id') != '') & (polars.col('name') != '')), self.other_devices])

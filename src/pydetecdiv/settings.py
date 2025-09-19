@@ -9,17 +9,15 @@ import os
 import getpass
 import configparser
 import platform
-from uuid import UUID, uuid5, SafeUUID, getnode
+from uuid import getnode, UUID, uuid5, SafeUUID
 from pathlib import Path
 
 import polars
 import xdg.BaseDirectory
 from polars import read_csv, col
 
-from pydetecdiv.utils import increment_string
 
-
-class UUID_NameSpace:
+class UuidNamespace:
     """
     Name space definition for the creation of uuid5 unique ids
     """
@@ -119,7 +117,7 @@ def get_config_value(section: str, key: str) -> str:
 
 def get_appdata_dir() -> Path:
     """
-    get the local Application directory (.local/share/pyDetecDiv on Linux, AppData\pyDetecDiv on Windows)
+    get the local Application directory (.local/share/pyDetecDiv on Linux, AppData\\pyDetecDiv on Windows)
 
     :return: the path to the local application directory
     """
@@ -162,7 +160,8 @@ def datapath_file(datapath_filename: str = '.datapath_list.csv') -> Path:
     return Path(os.path.join(get_config_value('project', 'workspace'), datapath_filename))
 
 
-def datapath_list(datapath_filename: str = '.datapath_list.csv', grouped: bool = False) -> polars.DataFrame | polars.dataframe.group_by.GroupBy:
+def datapath_list(datapath_filename: str = '.datapath_list.csv',
+                  grouped: bool = False) -> polars.DataFrame | polars.dataframe.group_by.GroupBy:
     """
     Returns a DataFrame containing the data source dir definitions
 
@@ -176,22 +175,10 @@ def datapath_list(datapath_filename: str = '.datapath_list.csv', grouped: bool =
                           'MAC'    : [],
                           'path'   : []
                           }).write_csv(datapath_list_file)
-    datapath_list = read_csv(datapath_list_file)
+    data_path_list = read_csv(datapath_list_file)
     if grouped:
-        return datapath_list.group_by(by='path_id')
-    return datapath_list
-
-
-def create_path_id(as_string: bool = False) -> UUID | str:
-    """
-    Creates a unique identifier for data source path, from the device name and current time
-
-    :return: the uuid5
-    """
-    uuid = uuid5(UUID(UUID_NameSpace.DataSource, is_safe=SafeUUID.safe), Device.name() + str(datetime.datetime.now()))
-    if as_string:
-        return str(uuid)
-    return uuid
+        return data_path_list.group_by(by='path_id')
+    return data_path_list
 
 
 def all_path_ids(df: polars.DataFrame) -> polars.DataFrame:
@@ -230,11 +217,11 @@ class Device:
     @classmethod
     def add_path(cls, name: str, path: Path | str, path_id: str = None) -> None:
         """
-        Adds a new path specification for the current device. If path_id is None (i.e. this data source has not been set already on any
-        device) then a new id is generated from the MAC address and the current time. Otherwise, the specified path id is used, which is
-        the case to add a path specification for a path that was created on another device.
-        If the pair of values (path, MAC address) is already present in the list, then the name value of the corresponding row is
-        updated.
+        Adds a new path specification for the current device. If path_id is None (i.e. this data source has not been set already on
+         any device) then a new id is generated from the MAC address and the current time. Otherwise, the specified path id is used,
+         which is the case to add a path specification for a path that was created on another device.
+         If the pair of values (path, MAC address) is already present in the list, then the name value of the corresponding row is
+         updated.
 
         :param name: the user-defined name of the data source on the current device
         :param path: the path of the data source on the current device
@@ -328,9 +315,8 @@ class Device:
         """
         return datapath_list().filter((col('MAC') == cls.mac()) | (col('device') == cls.name()))
 
-
     @classmethod
-    def get_path_id_and_url(cls, abs_url) -> polars.DataFrame:
+    def get_path_id_and_url(cls, abs_url) -> tuple:
         """
         Returns the path id and relative url corresponding to the absolute url on the current device .
 
@@ -341,4 +327,17 @@ class Device:
             url = os.path.relpath(abs_url, start=Device.data_path(path_id))
         else:
             path_id = os.path.dirname(abs_url)
+            url = abs_url
         return path_id, url
+
+
+def create_path_id(as_string: bool = False) -> UUID | str:
+    """
+    Creates a unique identifier for data source path, from the device name and current time
+
+    :return: the uuid5
+    """
+    uuid = uuid5(UUID(UuidNamespace.DataSource, is_safe=SafeUUID.safe), Device.name() + str(datetime.datetime.now()))
+    if as_string:
+        return str(uuid)
+    return uuid
