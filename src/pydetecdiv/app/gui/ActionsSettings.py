@@ -1,7 +1,6 @@
 """
 Handling actions to edit and manage settings
 """
-import getpass
 import os.path
 
 from PySide6.QtCore import Slot, Qt, QDir
@@ -9,6 +8,7 @@ from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import (QLineEdit, QDialogButtonBox, QPushButton, QFileDialog, QDialog, QHBoxLayout, QVBoxLayout,
                                QGroupBox, QComboBox, QSpinBox, QWidget)
 from pydetecdiv.app import PyDetecDiv, get_settings
+from pydetecdiv.app.gui.SourcePath import DataSourceManagement
 from pydetecdiv.persistence import implemented_dbms
 
 
@@ -226,4 +226,15 @@ class Settings(QAction):
     def __init__(self, parent: QWidget):
         super().__init__(QIcon(":icons/settings"), "Settings", parent)
         self.triggered.connect(SettingsDialog)
+        parent.addAction(self)
+
+
+class ManageDataSourceAction(QAction):
+    """
+    Action to open a shared data source configuration window
+    """
+
+    def __init__(self, parent: QWidget):
+        super().__init__(QIcon(":icons/share"), "Manage shared data sources", parent)
+        self.triggered.connect(DataSourceManagement)
         parent.addAction(self)

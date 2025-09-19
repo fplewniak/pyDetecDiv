@@ -4,12 +4,9 @@
 Main widgets to use with persistent windows
 """
 from typing import TYPE_CHECKING, Callable
-
-if TYPE_CHECKING:
-    from pydetecdiv.app.gui.Windows import MainWindow
-
 import psutil
 import numpy as np
+
 from PySide6.QtCore import QTimer, QRect
 from PySide6.QtGui import QAction, QIcon, QFont
 from PySide6.QtWidgets import QToolBar, QStatusBar, QMenu, QApplication, QDialog, QDialogButtonBox, QSizePolicy, QLabel
@@ -18,6 +15,8 @@ from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui import ActionsSettings, ActionsProject, ActionsData
 import pydetecdiv.app.gui.resources_rc
 
+if TYPE_CHECKING:
+    from pydetecdiv.app.gui.Windows import MainWindow
 
 class FileMenu(QMenu):
     """
@@ -27,18 +26,36 @@ class FileMenu(QMenu):
     def __init__(self, parent: 'MainWindow', *args, **kwargs):
         super().__init__(*args, **kwargs)
         menu = parent.menuBar().addMenu("&File")
-        ActionsProject.OpenProject(menu).setShortcut("Ctrl+O")
-        ActionsProject.NewProject(menu).setShortcut("Ctrl+N")
-        ActionsProject.DeleteProject(menu).setShortcut("Ctrl+D")
+        # ActionsProject.OpenProject(menu).setShortcut("Ctrl+O")
+        # ActionsProject.NewProject(menu).setShortcut("Ctrl+N")
+        # ActionsProject.DeleteProject(menu).setShortcut("Ctrl+D")
         menu.addSeparator()
         ActionsSettings.Settings(menu)
+        ActionsSettings.ManageDataSourceAction(menu)
         menu.addSeparator()
         Quit(menu).setShortcut("Ctrl+Q")
 
 
+class ProjectMenu(QMenu):
+    """
+        The main window Project menu to manage existing projects
+        """
+
+    def __init__(self, parent: 'MainWindow', *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        menu = parent.menuBar().addMenu("&Project")
+        ActionsProject.OpenProject(menu).setShortcut("Ctrl+O")
+        ActionsProject.NewProject(menu).setShortcut("Ctrl+N")
+        ActionsProject.DeleteProject(menu).setShortcut("Ctrl+D")
+        menu.addSeparator()
+        configure_source = ActionsProject.ConfigureProjectSourceDir(menu)
+        configure_source.setShortcut("Ctrl+C")
+        PyDetecDiv.app.project_selected.connect(lambda _: configure_source.setEnabled(True))
+
+
 class DataMenu(QMenu):
     """
-    The main window File menu
+    The main window Data menu to manage data
     """
 
     def __init__(self, parent: 'MainWindow', *args, **kwargs):
@@ -57,12 +74,14 @@ class DataMenu(QMenu):
         PyDetecDiv.app.raw_data_counted.connect(create_fovs.enable)
         PyDetecDiv.app.project_selected.connect(compute_drift.enable)
         PyDetecDiv.app.project_selected.connect(apply_drift.enable)
-        apply_drift.triggered.connect(lambda b: PyDetecDiv.app.set_apply_drift(b))
+        apply_drift.triggered.connect(PyDetecDiv.app.set_apply_drift)
+
 
 class PluginMenu(QMenu):
     """
     Plugin menus
     """
+
     def __init__(self, parent: 'MainWindow', *args, **kwargs):
         if PyDetecDiv.app.plugin_list.len:
             super().__init__(*args, **kwargs)
@@ -107,7 +126,7 @@ class MainStatusBar(QStatusBar):
         Show memory usage in status bar
         """
         self.showMessage(
-            f'{np.format_float_positional(psutil.Process().memory_info().rss / (1024 * 1024), precision=1)} MB')
+                f'{np.format_float_positional(psutil.Process().memory_info().rss / (1024 * 1024), precision=1)} MB')
 
 
 class Quit(QAction):
@@ -160,7 +179,7 @@ class Help(QAction):
         font1.setPointSize(16)
         label_2.setFont(font1)
         label_3 = QLabel(about_dialog)
-        label_3.setObjectName(u"label_3")
+        label_3.setObjectName("label_3")
         label_3.setGeometry(QRect(20, 130, 361, 20))
         font2 = QFont()
         font2.setFamilies(["Arial"])

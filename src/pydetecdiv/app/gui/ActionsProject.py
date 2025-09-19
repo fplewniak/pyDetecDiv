@@ -1,15 +1,19 @@
 """
 Handling actions to open, create and interact with projects
 """
+import os
 from enum import Enum
+import polars
 
 from PySide6.QtCore import Qt, QRegularExpression, Slot, Signal
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QLabel, QVBoxLayout, QLineEdit, QDialogButtonBox, QComboBox, QMessageBox, QDialog, QWidget, )
-from pydetecdiv.app import PyDetecDiv, project_list, WaitDialog, pydetecdiv_project
+from pydetecdiv.app import PyDetecDiv, project_list, WaitDialog, pydetecdiv_project, ConfirmDialog
 from pydetecdiv.app import MessageDialog
+from pydetecdiv.app.gui.SourcePath import TableEditor, PathCreator
 from pydetecdiv.persistence.project import delete_project
 from pydetecdiv.exceptions import OpenProjectError, UnknownRepositoryTypeError
+from pydetecdiv.settings import Device
 
 
 class ProjectAction(Enum):
@@ -120,9 +124,8 @@ class ProjectDialog(QDialog):
                     error_msg.setText(f'Error: {p_name} project already exists!!!')
                     error_msg.exec()
                     return
-                else:
-                    msg = f'Creating {p_name}, please wait.'
-                    action_method = self.open_create_project
+                msg = f'Creating {p_name}, please wait.'
+                action_method = self.open_create_project
             case ProjectAction.Open:
                 msg = f'Opening {p_name}, please wait.'
                 action_method = self.open_create_project
@@ -205,7 +208,7 @@ class OpenProject(QAction):
 
 class DeleteProject(QAction):
     """
-    Action to open a project chooser window
+    Action to delete a project chooser window
     """
 
     def __init__(self, parent: QWidget):
@@ -214,7 +217,110 @@ class DeleteProject(QAction):
         parent.addAction(self)
 
     def delete_project(self) -> None:
+        """
+        Deletes a project
+        """
         try:
             ProjectDialog(project_list(), project_action=ProjectAction.Delete)
         except UnknownRepositoryTypeError as e:
             MessageDialog(e.message)
+
+
+class ConfigureProjectSourceDir(QAction):
+    """
+    Action to configure the local data source directory to shared source
+    """
+
+    def __init__(self, parent: QWidget):
+        super().__init__(QIcon(":icons/configure_shared"), "Configure shared data sources", parent)
+        self.triggered.connect(self.confirm_conversion)
+        self.setEnabled(False)
+        parent.addAction(self)
+
+    def confirm_conversion(self) -> None:
+        """
+        A quick confirmation dialog window since configuration would change the database with potential harmful consequences if
+        done heedlessly
+        """
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            ConfirmDialog(f'You are about to configure shared data source for <b>{project.dbname}</b> data source path to shared',
+                          self.configure_shared_source)
+
+    def configure_shared_source(self) -> None:
+        """
+        Check all situations that may require intervention and address them in order to make sure the current project is usable
+        across devices sharing the same workspace and data sources (mounted from central data server, NAS, etc.)
+        """
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            data_list = polars.from_dicts(project.get_records('Data'))
+
+            print('Checking shared data source paths are defined on this device')
+            undefined_paths = Device.undefined_paths().join(data_list, left_on='path_id', right_on='source_dir', how='semi')
+            table_editor = TableEditor('Undefined source path',
+                                       description=f'<p>The source below is referenced in <b>{project.dbname}</b>'
+                                                   f' but is not configured on this device.<br/> '
+                                                   'You should define it on this device to avoid inconsistencies.</p>'
+                                                   '<p><b>Source path definition on other devices:</b></p>', force_resolution=True)
+            for grp in undefined_paths.group_by(by='path_id'):
+                table_editor.set_data(grp[1].select(['name', 'device', 'path', 'path_id'])).hide_columns(['path_id'])
+                table_editor.exec()
+
+            unknown_path_ids = [s for s in data_list['source_dir'].unique() if Device.data_path(s) is None and not os.path.isdir(s)]
+            if unknown_path_ids:
+                ukn_urls = data_list.with_columns(directory=polars.col('url').str.replace(r'/[^/]*$', '')).filter(
+                        polars.col('source_dir').is_in(unknown_path_ids)).with_columns(polars.col('source_dir').alias('path_id'))
+                for _, grp in ukn_urls.group_by('path_id'):
+                    # common_path = os.path.commonpath(grp['directory'].to_list())
+                    # grp['directory'] = [common_path] * grp.shape[0]
+
+                    table_editor = PathCreator('Undefined source path',
+                                               description=f'<p>A data source path is referenced in <b>{project.dbname}</b>'
+                                                           f' but is not configured on any device in this workspace.<br/>'
+                                                           f'This may occur with imported projects and, even if you do not plan '
+                                                           f'to share this project, you should define the path below.</p>'
+                                                           f'<p>Typically the source directory is the one you copied/extracted'
+                                                           f' the data for the project.</p>'
+                                                           f'<p><b>This source should contain the directories below:</b></p>'
+                                               , force_resolution=True,
+                                               editable_col=None)
+
+                    table_editor.set_data(grp.select(['directory', 'path_id']).unique()
+                                          # .insert_column(0, polars.Series('name',[]).clear(n=grp.shape[0]))
+                                          # .insert_column(2, polars.Series('path',[]).clear(n=grp.shape[0]))
+                                          ).hide_columns(['path_id'])
+                    table_editor.exec()
+
+            print('Checking the data urls are all valid on this device')
+            wrong_paths = polars.DataFrame({'path': []}, schema={'path': str})
+            for data_object in project.get_objects("Data"):
+                if not os.path.isfile(data_object.url):
+                    head, tail = os.path.split(data_object.url)
+                    while not os.path.isdir(head) and head != '/':
+                        head, tail = os.path.split(head)
+                    wrong_paths = wrong_paths.extend(polars.DataFrame({'path': [os.path.join(head, tail)]})).unique()
+            for path in wrong_paths.rows():
+                MessageDialog(f'<center><p><b><code>{path[0]}</code></b><br/> '
+                              f'does not exist on this device but is referenced in<br/> '
+                              f'<b>{project.dbname}</b>.</p>'
+                              f'<p>You should fix that before continuing as it may cause severe inconsistencies</p></center>')
+
+            print('Searching for a valid shared path for this device')
+            source_dir_list = [s for s in data_list['source_dir'].unique() if os.path.isdir(s) and Device.path_id(s) is not None]
+
+            for id_, url, source_dir in data_list.select(['id_', 'url', 'source_dir']
+                                                         ).filter(polars.col('source_dir').is_in(source_dir_list)).rows():
+                data_object = project.get_object('Data', id_=id_)
+                data_object.url_ = os.path.relpath(url, start=Device.data_path(Device.path_id(source_dir)))
+                data_object.source_dir = Device.path_id(source_dir)
+                data_object.validate(updated=True)
+
+            print('Checking there are no local paths left')
+            data_list = polars.from_dicts(project.get_records('Data'))
+            local_paths = [d[0] for d in data_list.select(local_path=polars.col('url').str.replace(r'/[^/]*$', '')).filter(
+                    polars.col('local_path').str.starts_with('/')).unique().iter_rows() if os.path.isdir(d[0])]
+            if local_paths:
+                MessageDialog(f'<centre><p>Those paths are local:</p>'
+                              f'<code>{local_paths}</code>'
+                              f'<p>This may prevent to share project <b>{project.dbname}</b> across multiple devices')
+            else:
+                MessageDialog('<center><p>Project data source configuration completed</p></center>')

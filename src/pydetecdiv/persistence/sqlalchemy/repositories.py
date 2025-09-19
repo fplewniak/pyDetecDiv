@@ -18,12 +18,13 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.expression import Delete
 from pandas import DataFrame
 
+import pydetecdiv.settings
 from pydetecdiv.domain import Dataset
 from pydetecdiv.persistence.repository import ShallowDb
 from pydetecdiv.persistence.sqlalchemy.orm.main import mapper_registry, DAO
 from pydetecdiv.persistence.sqlalchemy.orm.dao import dso_dao_mapping as dao
 from pydetecdiv.persistence.sqlalchemy.orm.associations import Linker
-from pydetecdiv.settings import get_config_value
+from pydetecdiv.settings import get_config_value, Device
 from pydetecdiv import generate_uuid, copy_files
 from pydetecdiv.exceptions import OpenProjectError, ImportImagesError
 
@@ -161,6 +162,9 @@ class ShallowSQLite3(ShallowDb):
                     }
                 with Image.open(record['url']) as img:
                     record['xdim'], record['ydim'] = img.size
+
+                record['source_dir'], record['url'] = Device.get_path_id_and_url(record['url'])
+
                 self.save_object('Data', record)
                 # urls.append(record['url'])
         except Exception as error:

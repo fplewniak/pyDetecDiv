@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
     from pydetecdiv.app.gui.Windows import MainWindow
+    from pydetecdiv.app.gui.SourcePath import TableEditor
 
 import os.path
 import sys
@@ -16,13 +17,14 @@ from enum import StrEnum
 import markdown
 
 from PySide6.QtGui import QCursor, QTextCursor, QCloseEvent, QAction
-from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox, QTextEdit, QWidget)
+from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox, QTextEdit, QWidget,
+                               QTableView, QHeaderView, QHBoxLayout, QSizePolicy, QMainWindow, QInputDialog, QFileDialog, QLineEdit)
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal, QObject
 import pyqtgraph as pg
 
 from pydetecdiv import plugins
 from pydetecdiv.domain.dso import DomainSpecificObject
-from pydetecdiv.settings import get_config_file, get_appdata_dir, get_config_value
+from pydetecdiv.settings import get_config_file, get_appdata_dir, get_config_value, Device
 from pydetecdiv.persistence.project import list_projects
 from pydetecdiv.domain.Project import Project
 
@@ -64,6 +66,7 @@ class PyDetecDiv(QApplication):
         super().__init__(*args)
         self.setApplicationName('pyDetecDiv')
         self.load_plugins()
+        # self.check_data_source_paths()
 
     @staticmethod
     def load_plugins() -> None:
@@ -72,6 +75,21 @@ class PyDetecDiv(QApplication):
         """
         PyDetecDiv.plugin_list = plugins.PluginList()
         PyDetecDiv.plugin_list.load()
+
+    @staticmethod
+    def check_data_source_paths(table_editor: 'TableEditor') -> None:
+        """
+        Checks the data source path configuration and proposes a dialog window to edit any definition that may be required for
+        use of shared data sources on the current device
+
+        :param table_editor:
+        """
+        df = Device.undefined_paths()
+
+        if not df.is_empty():
+            for grp in df.group_by(by='path_id'):
+                table_editor.set_data(grp[1].select(['name', 'device', 'path', 'path_id'])).hide_columns(['path_id'])
+                table_editor.exec()
 
     @staticmethod
     def set_main_window(main_window: 'MainWindow') -> None:
@@ -216,9 +234,9 @@ class WaitDialog(AbstractWaitDialog):
     def __init__(self, msg, parent: QWidget, progress_bar: bool = False, cancel_msg: str = None, ignore_close_event: bool = True):
         super().__init__(parent, cancel_msg=cancel_msg, ignore_close_event=ignore_close_event)
         self.label = QLabel()
-        self.label.setStyleSheet("""
-        font-weight: bold;
-        """)
+        # self.label.setStyleSheet("""
+        # font-weight: bold;
+        # """)
         self.label.setText(msg)
         layout = QVBoxLayout(self)
         layout.addWidget(self.label)
@@ -255,14 +273,13 @@ class MessageDialog(QDialog):
     Generic dialog to communicate a message to the user (error, warning or any other information)
     """
 
-    def __init__(self, msg: str):
+    def __init__(self, msg: str, html: bool = True):
         super().__init__()
         # self.setWindowModality(Qt.WindowModal)
         label = QLabel()
-        label.setStyleSheet("""
-        font-weight: bold;
-        """)
         label.setText(msg)
+        if html:
+            label.setTextFormat(Qt.RichText)
         layout = QVBoxLayout(self)
         layout.addWidget(label)
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close, self)
@@ -280,19 +297,27 @@ class ConfirmDialog(QDialog):
     def __init__(self, msg: str, action: Callable):
         super().__init__()
         # self.setWindowModality(Qt.WindowModal)
+        self.action = action
         label = QLabel()
-        label.setStyleSheet("""
-        font-weight: bold;
-        """)
+        # label.setStyleSheet("""
+        # font-weight: bold;
+        # """)
         label.setText(msg)
         layout = QVBoxLayout(self)
         layout.addWidget(label)
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel, self)
-        button_box.accepted.connect(action)
+        button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.close)
         layout.addWidget(button_box)
         self.setLayout(layout)
         self.exec()
+
+    def accept(self, /):
+        """
+        Close the window and launch action
+        """
+        self.close()
+        self.action()
 
 
 class StdoutWaitDialog(AbstractWaitDialog):
