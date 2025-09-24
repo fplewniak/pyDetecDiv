@@ -9,7 +9,7 @@ import pandas as pd
 import sqlalchemy
 from PySide6.QtGui import QAction
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
-from PySide6.QtWidgets import QMenu, QFileDialog, QMessageBox
+from PySide6.QtWidgets import QMenu, QFileDialog, QMessageBox, QGraphicsRectItem
 
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
@@ -139,7 +139,32 @@ class Plugin(plugins.Plugin):
         """
         Registers the plugin
         """
-        ...
+        PyDetecDiv.app.project_selected.connect(self.update_parameters)
+        PyDetecDiv.app.project_selected.connect(self.create_table)
+        PyDetecDiv.app.viewer_roi_click.connect(self.add_context_action)
+
+    def create_table(self) -> None:
+        """
+        Create the table to save results if it does not exist yet
+        """
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            Base.metadata.create_all(project.repository.engine)
+
+    def add_context_action(self, data: tuple[QGraphicsRectItem, QMenu]) -> None:
+        """
+        Adds an action to annotate the ROI from the FOV viewer
+
+        :param data: the data sent by the PyDetecDiv().viewer_roi_click signal
+        """
+        r, menu = data
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            selected_roi = project.get_named_object('ROI', r.data(0))
+            if selected_roi:
+                roi_list = [selected_roi]
+                annotate = menu.addAction('Annotate region classes')
+                annotate.triggered.connect(lambda _: self.manual_annotation(roi_selection=roi_list))
+                view_predictions = menu.addAction('View class predictions')
+                view_predictions.triggered.connect(lambda _: self.show_results(roi_selection=roi_list))
 
     def addActions(self, menu: QMenu) -> None:
         """
