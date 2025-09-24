@@ -70,6 +70,69 @@ class Results(Base):
         project.repository.session.add(self)
 
 
+def create_table() -> None:
+    """
+    Create the table to save results if it does not exist yet
+    """
+    with pydetecdiv_project(PyDetecDiv.project_name) as project:
+        Base.metadata.create_all(project.repository.engine)
+
+
+def get_annotation_runs() -> dict:
+    """
+   Gets previously run prediction runs
+
+    :return: a dictionary containing the ids of all prediction runs corresponding to a given list of classes
+    """
+    with pydetecdiv_project(PyDetecDiv.project_name) as project:
+        results = list(project.repository.session.execute(
+                sqlalchemy.text(f"SELECT run.id_,"
+                                f"run.parameters ->> '$.annotator' as annotator, "
+                                f"run.parameters ->> '$.class_names' as class_names "
+                                f"FROM run "
+                                f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
+                                f"ORDER BY run.id_ ASC;")))
+        runs = {}
+        if results:
+            for run in results:
+                class_names = json.dumps(json.loads(run[2]))
+                if class_names in runs:
+                    runs[class_names].append(run[0])
+                else:
+                    runs[class_names] = [run[0]]
+    return runs
+
+
+def get_classifications(roi: ROI, run_list: list[int], as_index: bool = True) -> list[int] | list[str]:
+    """
+    Get the annotations for a ROI as defined in a list of runs
+
+    :param roi: the ROI
+    :param run_list: the list of Runs where the ROI was annotated or classified
+    :param as_index: bool set to True to return annotations as indices of class_names list, set to False to return
+     annotations as class names
+    :return: the list of annotated classes by frame
+    """
+    roi_classes = [-1] * roi.fov.image_resource().image_resource_data().sizeT
+    with pydetecdiv_project(PyDetecDiv.project_name) as project:
+        results = list(project.repository.session.execute(
+                sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,"
+                                f"run.parameters ->> '$.class_names' as class_names, rc.run, run.id_ "
+                                f"FROM run, roi_classification as rc "
+                                f"WHERE rc.run IN ({','.join([str(i) for i in run_list])}) and rc.roi={roi.id_} "
+                                f"AND run.id_=rc.run "
+                                f"ORDER BY rc.run ASC;")))
+        if results:
+            class_names = json.loads(results[0][3])
+            if as_index:
+                for annotation in results:
+                    roi_classes[annotation[1]] = class_names.index(annotation[2])
+            else:
+                for annotation in results:
+                    roi_classes[annotation[1]] = annotation[2]
+    return roi_classes
+
+
 class Plugin(plugins.Plugin):
     """
     A class extending plugins.Plugin to handle the example plugin
@@ -140,15 +203,8 @@ class Plugin(plugins.Plugin):
         Registers the plugin
         """
         PyDetecDiv.app.project_selected.connect(self.update_parameters)
-        PyDetecDiv.app.project_selected.connect(self.create_table)
+        PyDetecDiv.app.project_selected.connect(create_table)
         PyDetecDiv.app.viewer_roi_click.connect(self.add_context_action)
-
-    def create_table(self) -> None:
-        """
-        Create the table to save results if it does not exist yet
-        """
-        with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            Base.metadata.create_all(project.repository.engine)
 
     def add_context_action(self, data: tuple[QGraphicsRectItem, QMenu]) -> None:
         """
@@ -237,7 +293,7 @@ class Plugin(plugins.Plugin):
         :param roi_selection: the list of ROIs
         :param run: the current Run instance
         """
-        annotation_runs = self.get_annotation_runs()
+        annotation_runs = get_annotation_runs()
         annotator = ManualAnnotator()
         if roi_selection:
             annotator.set_roi_list(roi_selection)
@@ -262,30 +318,6 @@ class Plugin(plugins.Plugin):
             suggestion = self.parameters['class_names'].value
             self.parameters['class_names'].clear()
             annotator.define_classes(suggestion=suggestion)
-
-    def get_annotation_runs(self) -> dict:
-        """
-       Gets previously run prediction runs
-
-        :return: a dictionary containing the ids of all prediction runs corresponding to a given list of classes
-        """
-        with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            results = list(project.repository.session.execute(
-                    sqlalchemy.text(f"SELECT run.id_,"
-                                    f"run.parameters ->> '$.annotator' as annotator, "
-                                    f"run.parameters ->> '$.class_names' as class_names "
-                                    f"FROM run "
-                                    f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
-                                    f"ORDER BY run.id_ ASC;")))
-            runs = {}
-            if results:
-                for run in results:
-                    class_names = json.dumps(json.loads(run[2]))
-                    if class_names in runs:
-                        runs[class_names].append(run[0])
-                    else:
-                        runs[class_names] = [run[0]]
-        return runs
 
     def get_prediction_runs(self) -> dict:
         """
@@ -596,14 +628,14 @@ class Plugin(plugins.Plugin):
         :param run_list: the list of Run ids to include
         :return: the pandas DataFrame with the annotations
         """
-        annotation_runs = self.get_annotation_runs()
+        annotation_runs = get_annotation_runs()
         if run_list is None:
             run_list = self.get_prediction_runs()[self.class_names()]
         annotations = {}
         if ground_truth:
             for roi in self.get_annotated_rois(ids_only=False):
                 if roi_selection is None or (roi.id_ in roi_selection and annotation_runs):
-                    annotations[roi.name] = self.get_classifications(roi=roi, run_list=annotation_runs[self.class_names()])
+                    annotations[roi.name] = get_classifications(roi=roi, run_list=annotation_runs[self.class_names()])
             df = pd.DataFrame(
                     [[roi_name, frame, label] for roi_name, v in annotations.items() for frame, label in enumerate(v)],
                     columns=('roi', 'frame', 'ground truth'))
@@ -614,7 +646,7 @@ class Plugin(plugins.Plugin):
             predictions = {}
             for roi in self.get_annotated_rois(run=run, ids_only=False):
                 if roi_selection is None or (roi.id_ in roi_selection):
-                    predictions[roi.name] = self.get_classifications(roi=roi, run_list=[run])
+                    predictions[roi.name] = get_classifications(roi=roi, run_list=[run])
 
             predictions_df = pd.DataFrame(
                     [[roi_name, frame, label] for roi_name in predictions for frame, label in enumerate(predictions[roi_name])],
@@ -624,32 +656,3 @@ class Plugin(plugins.Plugin):
             else:
                 df = predictions_df
         return df
-
-    def get_classifications(self, roi: ROI, run_list: list[int], as_index: bool = True) -> list[int] | list[str]:
-        """
-        Get the annotations for a ROI as defined in a list of runs
-
-        :param roi: the ROI
-        :param run_list: the list of Runs where the ROI was annotated or classified
-        :param as_index: bool set to True to return annotations as indices of class_names list, set to False to return
-         annotations as class names
-        :return: the list of annotated classes by frame
-        """
-        roi_classes = [-1] * roi.fov.image_resource().image_resource_data().sizeT
-        with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            results = list(project.repository.session.execute(
-                    sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,"
-                                    f"run.parameters ->> '$.class_names' as class_names, rc.run, run.id_ "
-                                    f"FROM run, roi_classification as rc "
-                                    f"WHERE rc.run IN ({','.join([str(i) for i in run_list])}) and rc.roi={roi.id_} "
-                                    f"AND run.id_=rc.run "
-                                    f"ORDER BY rc.run ASC;")))
-            if results:
-                class_names = json.loads(results[0][3])
-                if as_index:
-                    for annotation in results:
-                        roi_classes[annotation[1]] = class_names.index(annotation[2])
-                else:
-                    for annotation in results:
-                        roi_classes[annotation[1]] = annotation[2]
-        return roi_classes
