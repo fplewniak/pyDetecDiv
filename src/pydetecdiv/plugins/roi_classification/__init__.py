@@ -585,14 +585,6 @@ class Plugin(plugins.Plugin):
         """
         print('export ROI classification')
         df = self.get_classification_df(roi_selection=roi_selection, ground_truth=ground_truth, run_list=run_list)
-        # ok = {'frame': [frame for frame in df.loc[:,'frame'].unique()]}
-        # if run_list is None:
-        #     run_list = self.get_prediction_runs()[self.class_names()]
-        # for run in run_list:
-        #     ok[f'run_{run}'] = [df[df['frame'] == frame].apply(lambda row: (row[f'run_{run}']==row['ground truth']), axis=1).sum()
-        #                         for frame in ok['frame']
-        #                         ]
-        # df = pd.DataFrame(ok)
         df.to_csv(os.path.join(get_project_dir(), filename))
 
     def get_classification_runs(self) -> dict:
