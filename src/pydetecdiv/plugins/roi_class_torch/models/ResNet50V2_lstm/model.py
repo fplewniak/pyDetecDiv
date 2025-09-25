@@ -1,7 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision.ops
 from torchvision import models
+
 
 class SequenceFoldingLayer(nn.Module):
     """
@@ -33,9 +35,11 @@ class SequenceUnfoldingLayer(nn.Module):
         return x
 
 
-class ResNetLSTMModel(nn.Module):
+class NN_module(nn.Module):
     def __init__(self, n_classes):
-        super(ResNetLSTMModel, self).__init__()
+        super(NN_module, self).__init__()
+
+        self.expected_shape = ('Batch', 'Sequence', 'H', 'W', 3)
 
         # Load ResNet50 (since PyTorch lacks ResNet50V2)
         resnet = models.resnet50(pretrained=True)
@@ -44,14 +48,17 @@ class ResNetLSTMModel(nn.Module):
         self.global_avg_pool = nn.AdaptiveAvgPool2d((1, 1))  # Equivalent to GlobalAveragePooling2D
 
         self.folding = SequenceFoldingLayer((60, 60, 3))
-        self.unfolding = SequenceUnfoldingLayer((1, 1, 2048))  # ResNet50 outputs 2048 features
+        self.unfolding = SequenceUnfoldingLayer((2048, 1, 1))  # ResNet50 outputs 2048 features
+        # self.unfolding = SequenceUnfoldingLayer((1, 1, 2048))  # or should it be that order ? to be tested, which one works best ?
 
         self.bilstm = nn.LSTM(input_size=2048, hidden_size=150, num_layers=1,
-                              batch_first=True, bidirectional=True) # check that all parameters are OK, where are activation, etc.
+                              batch_first=True, bidirectional=True)  # check that all parameters are OK, where are activation, etc.
 
         self.dropout = nn.Dropout(0.5)
         self.fc = nn.Linear(300, n_classes)  # BiLSTM output size = 2 * hidden_size
         self.softmax = nn.Softmax(dim=-1)
+
+        # self.permutation = torchvision.ops.Permute([0, 1, 4, 3, 2])
 
     def forward(self, x):
         x, batch_size = self.folding(x)  # Fold sequence into batch form
@@ -60,9 +67,8 @@ class ResNetLSTMModel(nn.Module):
         x = torch.flatten(x, start_dim=1)  # Flatten to (batch, features)
 
         x = self.unfolding(x, batch_size)  # Unfold sequence
-        x = x.permute(0, 1, 3, 2)  # Equivalent to TimeDistributed(Permute(3,2,1))
+        # x = self.permutation(x)
         x = x.reshape(x.shape[0], x.shape[1], -1)  # Flatten
-
         x, _ = self.bilstm(x)  # Pass through BiLSTM
         x = self.dropout(x)
         x = self.fc(x)

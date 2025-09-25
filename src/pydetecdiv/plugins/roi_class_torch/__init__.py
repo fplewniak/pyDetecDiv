@@ -3,10 +3,15 @@ import json
 import os
 import pkgutil
 import sys
+from datetime import datetime
 
+import cv2
+import fastremap
+import tables as tbl
 import numpy as np
 import pandas as pd
 import sqlalchemy
+import torch
 from PySide6.QtGui import QAction
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
 from PySide6.QtWidgets import QMenu, QFileDialog, QMessageBox, QGraphicsRectItem
@@ -14,6 +19,7 @@ from PySide6.QtWidgets import QMenu, QFileDialog, QMessageBox, QGraphicsRectItem
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
+from torchinfo import summary
 
 from torch import optim
 
@@ -25,6 +31,7 @@ from pydetecdiv.domain.ROI import ROI
 from pydetecdiv.plugins.parameters import ItemParameter, ChoiceParameter, IntParameter, FloatParameter, CheckParameter
 
 from . import models
+from .data import prepare_data_for_training
 from .gui.ImportAnnotatedROIs import FOV2ROIlinks
 from .gui.classification import ManualAnnotator, PredictionViewer, DefineClassesDialog
 from .gui.prediction import PredictionDialog
@@ -70,12 +77,48 @@ class Results(Base):
         project.repository.session.add(self)
 
 
+class TrainingData(Base):
+    """
+    The DAO defining and handling the table to store information about ROIs in training, validation and test datasets
+    """
+    __tablename__ = 'roi_class_datasets'
+    __table_args__ = {'extend_existing': True}
+    id_ = Column(Integer, primary_key=True, autoincrement='auto')
+    dataset = Column(Integer, nullable=False, index=True)
+    roi = Column(Integer, nullable=False, index=True)
+    t = Column(Integer, nullable=False, index=True)
+    target = Column(JSON)
+
+    def save(self, project: Project, roi_id: int, t: int, target: int, dataset: int) -> None:
+        """
+        Save the Training datasets details for reproducibility
+
+        :param project: the current project
+        :param roi_id: the current ROI
+        :param t: the current frame
+        :param target: the target value
+        :param dataset: the dataset
+        """
+        self.roi = int(roi_id)
+        self.t = int(t)
+        self.target = int(target)
+        self.dataset = int(dataset)
+        project.repository.session.add(self)
+
+
 def create_table() -> None:
     """
     Create the table to save results if it does not exist yet
     """
     with pydetecdiv_project(PyDetecDiv.project_name) as project:
         Base.metadata.create_all(project.repository.engine)
+
+
+class TblClassNamesRow(tbl.IsDescription):
+    """
+    A class to describe the class names row saved in a table of an HDF5 file
+    """
+    class_name = tbl.StringCol(16)
 
 
 def get_annotation_runs() -> dict:
@@ -558,6 +601,45 @@ class Plugin(plugins.Plugin):
         """
         PredictionDialog(self)
 
+    def train_model(self):
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print(f'running training on {"GPU" if device.type == "cuda" else "CPU"}')
+        module = self.parameters['model'].value
+        print(module.__name__)
+        model = module.model.NN_module(len(self.parameters['class_names'].value)).to(device)
+
+        print(f'{model.expected_shape}')
+
+        if len(model.expected_shape) == 5:
+            seqlen = self.parameters['seqlen'].value
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Sequence length: {seqlen}\n')
+        else:
+            seqlen = 0
+
+        # os.makedirs(os.path.join(get_project_dir(), 'roi_classification', 'data'), exist_ok=True)
+        # hdf5_file = os.path.join(get_project_dir(), 'roi_classification', 'data', 'annotated_rois.h5')
+        # print(hdf5_file)
+        #
+        # z_channels = [self.parameters['red_channel'].value, self.parameters['green_channel'].value,
+        #               self.parameters['blue_channel'].value]
+        #
+        # if not os.path.exists(hdf5_file):
+        #     self.create_hdf5_annotated_rois(hdf5_file, z_channels=z_channels)
+        #
+        # print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data for training')
+        #
+        # training_idx, validation_idx, test_idx = prepare_data_for_training(hdf5_file, seqlen=seqlen,
+        #                                                                    train=self.parameters[
+        #                                                                        'num_training'].value,
+        #                                                                    validation=self.parameters[
+        #                                                                        'num_validation'].value,
+        #                                                                    seed=self.parameters[
+        #                                                                        'dataset_seed'].value)
+        #
+        # print(f'training: {len(training_idx)} validation: {len(validation_idx)} test: {len(test_idx)}')
+
+        # train_loop(training_loader, validation_loader, model, loss_fn, optimizer, device, lambda1, lambda2)
+
     def show_results(self, trigger=None, roi_selection: list[ROI] = None) -> None:
         """
         Show predictions results in an Annotator widget
@@ -656,3 +738,90 @@ class Plugin(plugins.Plugin):
             else:
                 df = predictions_df
         return df
+
+    def create_hdf5_annotated_rois(self, hdf5_file: str, z_channels: list[int] = None, channel: int = 0) -> None:
+        """
+        Creates a HDF5 file containing the annotated ROI data and their targets
+
+        :param hdf5_file: the HDF5 file name
+        :param z_channels: the z layers to be used as channels
+        :param channel: the original channel to use
+        """
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Retrieving data for annotated ROIs')
+        data = self.get_annotations()
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Data retrieved with {len(data)} rows')
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Creating HDF5 file')
+        h5file = tbl.open_file(hdf5_file, mode='w', title='ROI annotations')
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Getting fov data')
+        fov_data = self.get_fov_data(z_layers=z_channels)
+        mask = fov_data[['fov', 't']].apply(tuple, axis=1).isin(data[['fov', 't']].apply(tuple, axis=1))
+        fov_data = fov_data[mask]
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Getting drift correction')
+        drift_correction = self.get_drift_corrections()
+        mask = drift_correction[['fov', 't']].apply(tuple, axis=1).isin(data[['fov', 't']].apply(tuple, axis=1))
+        drift_correction = drift_correction[mask]
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Getting roi list')
+        roi_list = self.get_roi_list()
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Applying drift correction to ROIs')
+        roi_list = roi_list[roi_list['roi'].isin(set(data['roi']))]
+        roi_list = pd.merge(drift_correction, roi_list, on=['fov'], how='left').dropna()
+        roi_list['x0'] = (roi_list['x0'] + roi_list['dx'].round().astype(int))
+        roi_list['x1'] = (roi_list['x1'] + roi_list['dx'].round().astype(int))
+        roi_list['y0'] = (roi_list['y0'] + roi_list['dy'].round().astype(int))
+        roi_list['y1'] = (roi_list['y1'] + roi_list['dy'].round().astype(int))
+
+        width = (roi_list['x1'] - roi_list['x0'] + 1).max()
+        height = (roi_list['y1'] - roi_list['y0'] + 1).max()
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: FOV = {len(fov_data["fov"].unique())}', file=sys.stderr)
+        print(f'{datetime.now().strftime("%H:%M:%S")}: T = {np.max(fov_data["t"]) + 1}', file=sys.stderr)
+        print(f'{datetime.now().strftime("%H:%M:%S")}: ROIs = {len(roi_list["roi"].unique())} ({len(roi_list)})',
+              file=sys.stderr)
+
+        roi_values = np.array(roi_list["roi"])
+        roi_list["roi"], roi_mapping = fastremap.renumber(roi_values, in_place=False, preserve_zero=False)
+        num_rois = len(roi_mapping)
+        num_frames = np.max(fov_data['t']) + 1
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Creating target datasets')
+
+        targets = data.loc[:, ['t', 'roi', 'class_name']]
+        targets['roi'] = fastremap.remap(np.array(targets['roi']), roi_mapping)
+        targets['label'] = targets['class_name'].apply(lambda x: self.class_names(as_string=False).index(x))
+
+        initial_values = np.zeros((num_frames, num_rois,), dtype=np.int8) - 1
+        target_array = h5file.create_carray(h5file.root, 'targets', atom=tbl.Int8Atom(), shape=(num_frames, num_rois),
+                                            chunkshape=(num_frames, num_rois,), obj=initial_values)
+
+        class_names_table = h5file.create_table(h5file.root, 'class_names', TblClassNamesRow, 'Class names')
+        class_names_table.append([(name,) for name in self.class_names(as_string=False)])
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Creating ROI dataset')
+
+        roi_data = h5file.create_carray(h5file.root, 'roi_data', atom=tbl.Float16Atom(shape=(height, width, 3)),
+                                        chunkshape=(50, num_rois,), shape=(num_frames, num_rois))
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Reading and compositing images')
+        for row in fov_data.itertuples():
+            if row.t % 10 == 0:
+                print(f'{datetime.now().strftime("%H:%M:%S")}: FOV {row.fov}, frame {row.t}')
+
+            rois = roi_list.loc[(roi_list['fov'] == row.fov) & (roi_list['t'] == row.t)]
+
+            # If merging and normalization are too slow, maybe use tensorflow or pytorch to do the operations
+            fov_img = cv2.merge([cv2.imread(z_file, cv2.IMREAD_UNCHANGED) for z_file in reversed(row.channel_files)])
+
+            for roi in rois.itertuples():
+                roi_data[row.t, roi.roi - 1, ...] = cv2.normalize(fov_img[roi.y0:roi.y1 + 1, roi.x0:roi.x1 + 1],
+                                                                  dtype=cv2.CV_16F, dst=None, alpha=1e-10, beta=1.0,
+                                                                  norm_type=cv2.NORM_MINMAX)
+                target_array[row.t, roi.roi - 1] = targets.loc[
+                    (targets['t'] == row.t) & (targets['roi'] == roi.roi), 'label'].values
+
+        h5file.close()
+        print(f'{datetime.now().strftime("%H:%M:%S")}: HDF5 file of annotated ROIs ready')
