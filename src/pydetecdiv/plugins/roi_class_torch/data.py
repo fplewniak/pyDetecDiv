@@ -2,6 +2,10 @@ from datetime import datetime
 import tables as tbl
 
 import numpy as np
+import torch
+import torchvision as tv
+import torchvision.transforms.functional as F
+from torch.utils.data import Dataset
 
 
 def prepare_data_for_training(hdf5_file: str, seqlen: int = 0, train: float = 0.6, validation: float = 0.2,
@@ -39,3 +43,40 @@ def prepare_data_for_training(hdf5_file: str, seqlen: int = 0, train: float = 0.
     print(f'{datetime.now().strftime("%H:%M:%S")}: Close HDF5 file and return datasets indices')
     h5file.close()
     return indices[:num_training], indices[num_training:num_validation + num_training], indices[num_validation + num_training:]
+
+
+class ROIDataset(Dataset):
+    def __init__(self, h5file: str, indices: list, targets = False, image_shape: tuple[int, int] = (60, 60), seqlen: int = 0,
+                 transform: tv.transforms = None):
+        self.h5file = tbl.open_file(h5file, mode='r')
+        self.roi_data = self.h5file.root.roi_data
+        if targets:
+            self.targets = self.h5file.root.targets
+        else:
+            self.targets = None
+        self.seqlen = seqlen
+        self.indices = indices
+        self.image_shape = list(image_shape)
+
+        self.transform = transform
+
+
+    def __len__(self):
+        return len(self.indices)
+
+    def __getitem__(self, idx):
+        frame, roi_id = self.indices[idx]
+        if self.seqlen == 0:
+            roi_data = torch.tensor(self.roi_data[frame, roi_id, ...], dtype=torch.float32).permute(2, 0, 1)
+            roi_data = F.resize(roi_data, size=self.image_shape)
+            targets = torch.tensor(self.targets[frame, roi_id])
+            if self.transform:
+                roi_data = self.transform(roi_data)
+        else:
+            roi_data = torch.tensor(self.roi_data[frame:frame+self.seqlen, roi_id, ...], dtype=torch.float32).permute(0, 3, 1, 2)
+            targets = torch.tensor(self.targets[frame:frame+self.seqlen, roi_id])
+            roi_data = F.resize(roi_data, size=self.image_shape)
+            if self.transform:
+                roi_data = torch.stack([self.transform(frame) for frame in roi_data], dim=0)
+
+        return roi_data, targets
