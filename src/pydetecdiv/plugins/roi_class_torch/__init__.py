@@ -12,6 +12,7 @@ import tables as tbl
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+from sklearn.metrics import precision_recall_fscore_support
 
 import sqlalchemy
 import torch
@@ -44,6 +45,7 @@ from .gui.training import TrainingDialog, FineTuningDialog, ImportClassifierDial
 
 from pydetecdiv.settings import get_plugins_dir, get_config_value
 from .training import train_testing_loop, train_loop
+from ...domain.Dataset import Dataset
 
 Base = registry().generate_base()
 
@@ -215,6 +217,42 @@ def get_drift_corrections() -> pd.DataFrame:
                 df['t'] = df.index
                 drift_corrections = pd.concat([drift_corrections, df], ignore_index=True)
         return drift_corrections
+
+
+def save_training_datasets(run, hdf5_file: str, training_idx: list[int], validation_idx: list[int],
+                           test_idx: list[int]) -> None:
+    """
+    Saves in TrainingData table the (ROI, frame, class) data subsets that were used for training, validation and testing while
+    training a model.
+
+    :param hdf5_file: the HDF5 file containing the annotated ROI data
+    :param training_idx: the list of (ROI, frame) data indices in the training dataset
+    :param validation_idx: the list of (ROI, frame) data indices in the validation dataset
+    :param test_idx: the list of (ROI, frame) data indices in the validation dataset
+    """
+    training_ds = Dataset(project=run.project, name=f'train_{datetime.now().strftime("%Y%m%d-%H%M%S")}',
+                          type_='training', run=run.id_)
+    validation_ds = Dataset(project=run.project, name=f'val_{datetime.now().strftime("%Y%m%d-%H%M%S")}',
+                            type_='validation', run=run.id_)
+    test_ds = Dataset(project=run.project, name=f'test_{datetime.now().strftime("%Y%m%d-%H%M%S")}', type_='test',
+                      run=run.id_)
+
+    # print(len(training_idx), len(validation_idx), len(test_idx))
+
+    h5file = tbl.open_file(hdf5_file, mode='r')
+    targets = h5file.root.targets.read()
+    h5file.close()
+
+    for frame, roi_id in training_idx:
+        TrainingData().save(run.project, roi_id, frame, targets[frame, roi_id], training_ds.id_)
+
+    for frame, roi_id in validation_idx:
+        TrainingData().save(run.project, roi_id, frame, targets[frame, roi_id], validation_ds.id_)
+
+    for frame, roi_id in test_idx:
+        TrainingData().save(run.project, roi_id, frame, targets[frame, roi_id], test_ds.id_)
+
+    run.project.commit()
 
 
 class Plugin(plugins.Plugin):
@@ -749,19 +787,23 @@ class Plugin(plugins.Plugin):
 
         training_dataset = ROIDataset(hdf5_file, training_idx, targets=True, image_shape=img_size, seqlen=seqlen)
         validation_dataset = ROIDataset(hdf5_file, validation_idx, targets=True, image_shape=img_size, seqlen=seqlen)
-        # test_dataset = ROIDataset(hdf5_file, test_idx, targets=True, image_shape=img_size, seqlen=seqlen)
+        test_dataset = ROIDataset(hdf5_file, test_idx, targets=True, image_shape=img_size, seqlen=seqlen)
+
+        run = self.save_training_run(fine_tuning=fine_tuning)
+
+        save_training_datasets(run, hdf5_file, training_idx, validation_idx, test_idx)
 
         batch_size = self.parameters['batch_size'].value
 
         train_dataloader = DataLoader(training_dataset, batch_size=batch_size, shuffle=True)
         validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True)
+        test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 
         # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=10, factor=0.5)
 
         history = polars.DataFrame(schema={'train loss': polars.datatypes.Float64, 'val loss': polars.datatypes.Float64})
         model = model.to(device)
 
-        run = self.save_training_run(fine_tuning=fine_tuning)
         checkpoint_filepath, last_weights_filepath = self.get_weights_filepaths(run)
 
         try:
@@ -796,8 +838,59 @@ class Plugin(plugins.Plugin):
         run.parameters.update({'last_weights': os.path.basename(last_weights_filepath)})
         run.validate().commit()
 
-        # return (module.__name__, self.parameters['class_names'].value, history, evaluation, ground_truth, predictions, best_predictions)
-        return model_name, self.parameters['class_names'].value, history
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Evaluation on test dataset')
+        evaluation = dict(zip(['loss'], [evaluate_loss(model, test_dataloader, loss_fn, device)]))
+
+        ground_truth = [label for batch in [y for x, y in test_dataloader] for label in batch]
+        model.eval()
+        if seqlen == 0:
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for last model')
+            predictions = [model(img.to(device)).argmax(axis=1) for img, target in test_dataloader]
+
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for best model')
+            model = torch.jit.load(checkpoint_filepath)
+            best_predictions = [model(img.to(device)).argmax(axis=1) for img, target in test_dataloader]
+        else:
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for last model')
+            predictions = [model(img.to(device)).argmax(axis=2) for img, target in test_dataloader]
+
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for best model')
+            model = torch.jit.load(checkpoint_filepath)
+            best_predictions = [label for seq in model(img.to(device)).argmax(axis=2) for label in seq for img, target in test_dataloader ]
+            ground_truth = [label for seq in ground_truth for label in seq]
+
+        labels = list(range(len(self.parameters['class_names'].value)))
+        precision, recall, fscore, support = precision_recall_fscore_support(ground_truth, predictions, labels=labels,
+                                                                             zero_division=np.nan)
+        best_precision, best_recall, best_fscore, best_support = precision_recall_fscore_support(ground_truth, best_predictions,
+                                                                                                 labels=labels,
+                                                                                                 zero_division=np.nan)
+
+        stats = {'last_stats': {'precision': list(precision),
+                                'recall'   : list(recall),
+                                'fscore'   : list(fscore),
+                                'support'  : [int(s) for s in support]
+                                },
+                 'best_stats': {'precision': list(best_precision),
+                                'recall'   : list(best_recall),
+                                'fscore'   : list(best_fscore),
+                                'support'  : [int(s) for s in best_support]
+                                }
+                 }
+        if run.key_val is None:
+            run.key_val = stats
+        else:
+            run.key_val.update(stats)
+
+        run.validate().commit()
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Statistics for last model:')
+        print(polars.DataFrame(stats['last_stats']))
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Statistics for best model:')
+        print(polars.DataFrame(stats['best_stats']))
+
+        return model_name, self.parameters['class_names'].value, history, evaluation, ground_truth, predictions, best_predictions
 
     def show_results(self, trigger=None, roi_selection: list[ROI] = None) -> None:
         """

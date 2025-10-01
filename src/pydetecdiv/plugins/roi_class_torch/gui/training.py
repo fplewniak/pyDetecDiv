@@ -193,8 +193,8 @@ class FineTuningDialog(Dialog):
 
 
 def plot_training_results(results):
-    # module_name, class_names, history, evaluation, ground_truth, predictions, best_predictions = results
-    module_name, class_names, history = results
+    module_name, class_names, history, evaluation, ground_truth, predictions, best_predictions = results
+    # module_name, class_names, history = results
     tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {module_name}')
     tab.project_name = PyDetecDiv.project_name
     # history_plot = plot_history(history, evaluation)
@@ -202,11 +202,11 @@ def plot_training_results(results):
     tab.addTab(history_plot, 'Training')
     tab.setCurrentWidget(history_plot)
 
-    # confusion_matrix_plot = plot_confusion_matrix(ground_truth, predictions, class_names)
-    # tab.addTab(confusion_matrix_plot, 'Confusion matrix (last epoch)')
-    #
-    # confusion_matrix_plot = plot_confusion_matrix(ground_truth, best_predictions, class_names)
-    # tab.addTab(confusion_matrix_plot, 'Confusion matrix (best checkpoint)')
+    confusion_matrix_plot = plot_confusion_matrix(ground_truth, predictions, class_names)
+    tab.addTab(confusion_matrix_plot, 'Confusion matrix (last epoch)')
+
+    confusion_matrix_plot = plot_confusion_matrix(ground_truth, best_predictions, class_names)
+    tab.addTab(confusion_matrix_plot, 'Confusion matrix (best checkpoint)')
 
 
 def plot_history(history, evaluation):
