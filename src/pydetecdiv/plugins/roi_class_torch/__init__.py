@@ -36,6 +36,7 @@ from pydetecdiv.plugins.parameters import ItemParameter, ChoiceParameter, IntPar
 
 from . import models
 from .data import prepare_data_for_training, ROIDataset
+from .evaluate import evaluate_loss
 from .gui.ImportAnnotatedROIs import FOV2ROIlinks
 from .gui.classification import ManualAnnotator, PredictionViewer, DefineClassesDialog
 from .gui.prediction import PredictionDialog
@@ -669,9 +670,13 @@ class Plugin(plugins.Plugin):
         PredictionDialog(self)
 
     def load_model(self, pretrained=False):
-        module = self.parameters['model'].value
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Model: {module.__name__}\n')
-        return module.model.NN_module(len(self.parameters['class_names'].value)), module.__name__
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Model: {self.parameters["model"].key}\n')
+        if pretrained:
+            model = torch.jit.load(os.path.join(get_project_dir(), 'roi_classification', 'models', self.parameters['model'].key,
+                                                self.parameters['weights'].value))
+            return model, self.parameters['model'].key
+        return (self.parameters['model'].value.model.NN_module(len(self.parameters['class_names'].value)),
+                self.parameters['model'].key)
 
     def get_input_shape(self, model):
         seqlen = 0
@@ -684,11 +689,39 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Input image size: {img_size}\n')
         return img_size, seqlen
 
-    def train_model(self):
+    def get_weights_filepaths(self, run):
+        os.makedirs(os.path.join(get_project_dir(), 'roi_classification', 'models', self.parameters['model'].key), exist_ok=True)
+        checkpoint_monitor_metric = self.parameters['checkpoint_metric'].value
+        best_checkpoint_filename = f'{run.id_}_best_{checkpoint_monitor_metric}.weights.pt'
+        checkpoint_filepath = os.path.join(get_project_dir(), 'roi_classification', 'models',
+                                           self.parameters['model'].key,
+                                           f'{best_checkpoint_filename}')
+        last_weights_filename = f'{run.id_}_last.weights.pt'
+        last_weights_filepath = os.path.join(get_project_dir(), 'roi_classification', 'models', self.parameters['model'].key,
+                                             last_weights_filename)
+        return checkpoint_filepath, last_weights_filepath
+
+    def save_training_run(self, fine_tuning: bool = False) -> Run:
+        """
+        Saves the current training Run
+
+        :param finetune: False if the run is a training run (from scratch or pretrained Keras model), True if it is a fine-tuning
+         run
+        :return: the current Run instance
+        """
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            if fine_tuning:
+                return self.save_run(project, 'fine_tune', self.parameters.json(groups='finetune'))
+            return self.save_run(project, 'train_model', self.parameters.json(groups='training'))
+
+    def train_model(self, fine_tuning=False):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        torch.random.manual_seed(self.parameters['seed'].value)
+
         print(f'running training on {"GPU" if device.type == "cuda" else "CPU"}')
 
-        model, model_name = self.load_model()
+        model, model_name = self.load_model(pretrained=fine_tuning)
 
         loss_fn = torch.nn.CrossEntropyLoss()
         lr = self.parameters['learning_rate'].value
@@ -723,24 +756,31 @@ class Plugin(plugins.Plugin):
         train_dataloader = DataLoader(training_dataset, batch_size=batch_size, shuffle=True)
         validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True)
 
-        # train_testing_loop(train_dataloader, device)
         # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=10, factor=0.5)
 
         history = polars.DataFrame(schema={'train loss': polars.datatypes.Float64, 'val loss': polars.datatypes.Float64})
-        outprefix = 'classifier'
         model = model.to(device)
 
+        run = self.save_training_run(fine_tuning=fine_tuning)
+        checkpoint_filepath, last_weights_filepath = self.get_weights_filepaths(run)
+
         try:
-            min_val_loss = torch.finfo(torch.float).max
+            if fine_tuning:
+                min_val_loss = evaluate_loss(model, validation_dataloader, loss_fn, device)
+                print(f'Fine tuning starting with validation loss = {min_val_loss}')
+            else:
+                min_val_loss = torch.finfo(torch.float).max
             for epoch in range(n_epochs):
                 history.extend(train_loop(train_dataloader, validation_dataloader, model, loss_fn, optimizer, device))
                 # history.append(train_testing_loop(train_dataloader, model, device))
                 if history['val loss'][-1] < min_val_loss:
                     min_val_loss = history['val loss'][-1]
                     model_scripted = torch.jit.script(model)
-                    model_scripted.save(f'{outprefix}_best_model.pt')
+                    model_scripted.save(checkpoint_filepath)
                     print(f"Saving best model at epoch {epoch + 1} with val loss {min_val_loss}"
                           f" and train loss {history['train loss'][-1]}")
+                    run.parameters.update({'best_weights': os.path.basename(checkpoint_filepath), 'best_epoch': epoch + 1})
+                    run.validate().commit()
 
                 print(f"Epoch {epoch + 1}/{n_epochs}, "
                       f"Training Loss: {history['train loss'][-1]:.4f}, "
@@ -751,7 +791,10 @@ class Plugin(plugins.Plugin):
             ##################################################################
             # torch.save(model.state_dict(), 'ResNet18_reg.pth')
             model_scripted = torch.jit.script(model)  # Export to TorchScript
-            model_scripted.save(f'{outprefix}.pt')  # Save
+            model_scripted.save(last_weights_filepath)  # Save
+
+        run.parameters.update({'last_weights': os.path.basename(last_weights_filepath)})
+        run.validate().commit()
 
         # return (module.__name__, self.parameters['class_names'].value, history, evaluation, ground_truth, predictions, best_predictions)
         return model_name, self.parameters['class_names'].value, history

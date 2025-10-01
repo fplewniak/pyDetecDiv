@@ -1,6 +1,8 @@
 import polars
 import torch
 
+from pydetecdiv.plugins.roi_class_torch.evaluate import evaluate_loss
+
 
 # def train_loop(training_loader, validation_loader, model, loss_fn, optimizer, device, lambda1, lambda2):
 def train_loop(training_loader, validation_loader, model, loss_fn, optimizer, device):
@@ -22,23 +24,9 @@ def train_loop(training_loader, validation_loader, model, loss_fn, optimizer, de
         optimizer.step()
         optimizer.zero_grad()
 
-    # Validation phase
-    model.eval()
-    val_loss = 0.0
-    with torch.no_grad():
-        for images, labels in validation_loader:
-            images, labels = images.to(device), labels.to(device)
-            outputs = model(images)
-            gt = torch.zeros(len(outputs), len(outputs[0])).to(device)
-            for i, label in enumerate(labels):
-                gt[i][label] = 1
-            loss = loss_fn(outputs, gt)
-            # loss += (lambda1 * torch.abs(torch.cat([x.view(-1) for x in model.parameters()])).sum()
-            #          + lambda2 * torch.square(torch.cat([x.view(-1) for x in model.parameters()])).sum())
-            val_loss += loss.item()
-
     avg_train_loss = running_loss / len(training_loader)
-    avg_val_loss = val_loss / len(validation_loader)
+    # Validation phase
+    avg_val_loss = evaluate_loss(model, validation_loader, loss_fn, device)
 
     return polars.DataFrame({'train loss': avg_train_loss, 'val loss': avg_val_loss})
 

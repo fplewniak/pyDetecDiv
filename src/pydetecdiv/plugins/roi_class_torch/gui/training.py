@@ -189,7 +189,7 @@ class FineTuningDialog(Dialog):
         self.close()
 
     def run_finetuning(self):
-        self.job_finished.emit(self.plugin.train_model())
+        self.job_finished.emit(self.plugin.train_model(fine_tuning=True))
 
 
 def plot_training_results(results):
