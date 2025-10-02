@@ -1,3 +1,5 @@
+import sys
+
 import polars
 import torch
 
@@ -11,10 +13,14 @@ def train_loop(training_loader, validation_loader, model, loss_fn, optimizer, de
     for images, labels in training_loader:
         images, labels = images.to(device), labels.to(device)
         outputs = model(images)
-        gt = torch.zeros(len(outputs), len(outputs[0])).to(device)
-        for i, label in enumerate(labels):
-            gt[i][label] = 1
-        loss = loss_fn(outputs, gt)
+        gt = labels
+        # gt = torch.zeros(len(outputs), outputs.shape[-1]).to(device)
+        # for i, label in enumerate(labels):
+        #     gt[i][label] = 1
+        if outputs.dim() == 2:
+            loss = loss_fn(outputs, gt)
+        else:
+            loss = loss_fn(outputs[:,0,...], gt)
         # Apply L1 & L2 regularization
         # loss += (lambda1 * torch.abs(torch.cat([x.view(-1) for x in model.parameters()])).sum()
         #          + lambda2 * torch.square(torch.cat([x.view(-1) for x in model.parameters()])).sum())

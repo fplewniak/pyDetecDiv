@@ -2,6 +2,7 @@ import importlib
 import json
 import os
 import pkgutil
+import random
 import sys
 from datetime import datetime
 
@@ -45,6 +46,7 @@ from .gui.training import TrainingDialog, FineTuningDialog, ImportClassifierDial
 
 from pydetecdiv.settings import get_plugins_dir, get_config_value
 from .training import train_testing_loop, train_loop
+from ...app.gui.core.widgets.viewers.plots import MatplotViewer
 from ...domain.Dataset import Dataset
 
 Base = registry().generate_base()
@@ -278,9 +280,9 @@ class Plugin(plugins.Plugin):
                             updater=self.update_model_weights),
             IntParameter(name='seed', label='Random seed', groups={'training', 'finetune'}, maximum=999999999,
                          default=42),
-            ChoiceParameter(name='optimizer', label='Optimizer', groups={'training', 'finetune'}, default='SGD',
+            ChoiceParameter(name='optimizer', label='Optimizer', groups={'training', 'finetune'}, default='AdamW',
                             items={'SGD'     : optim.SGD,
-                                   'Adam'    : optim.Adam,
+                                   'AdamW'    : optim.AdamW,
                                    'Adadelta': optim.Adadelta,
                                    'Adamax'  : optim.Adamax,
                                    'Nadam'   : optim.NAdam,
@@ -761,12 +763,14 @@ class Plugin(plugins.Plugin):
 
         model, model_name = self.load_model(pretrained=fine_tuning)
 
-        loss_fn = torch.nn.CrossEntropyLoss()
+        # loss_fn = torch.nn.CrossEntropyLoss()
+        loss_fn = torch.nn.BCELoss()
         lr = self.parameters['learning_rate'].value
         weight_decay = self.parameters['decay_rate'].value
         momentum = self.parameters['momentum'].value
 
-        optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, weight_decay=weight_decay, momentum=momentum)
+        # optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, weight_decay=weight_decay, momentum=momentum)
+        optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr)
         n_epochs = self.parameters['epochs'].value
 
         img_size, seqlen = self.get_input_shape(model)
@@ -841,23 +845,23 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Evaluation on test dataset')
         evaluation = dict(zip(['loss'], [evaluate_loss(model, test_dataloader, loss_fn, device)]))
 
-        ground_truth = [label for batch in [y for x, y in test_dataloader] for label in batch]
+        ground_truth = [label.argmax(axis=0) for batch in [y for x, y in test_dataloader] for label in batch]
         model.eval()
         if seqlen == 0:
             print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for last model')
-            predictions = [model(img.to(device)).argmax(axis=1) for img, target in test_dataloader]
+            predictions = [label.cpu() for batch in [model(img.to(device)).argmax(axis=1) for img, target in test_dataloader] for label in batch]
 
             print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for best model')
             model = torch.jit.load(checkpoint_filepath)
-            best_predictions = [model(img.to(device)).argmax(axis=1) for img, target in test_dataloader]
+            best_predictions = [label.cpu() for batch in [model(img.to(device)).argmax(axis=1) for img, target in test_dataloader] for label in batch]
         else:
             print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for last model')
-            predictions = [model(img.to(device)).argmax(axis=2) for img, target in test_dataloader]
+            predictions = [label.cpu()[0] for batch in [model(img.to(device)).argmax(axis=2) for img, target in test_dataloader] for label in batch]
 
             print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for best model')
             model = torch.jit.load(checkpoint_filepath)
-            best_predictions = [label for seq in model(img.to(device)).argmax(axis=2) for label in seq for img, target in test_dataloader ]
-            ground_truth = [label for seq in ground_truth for label in seq]
+            best_predictions = [label.cpu()[0] for batch in [model(img.to(device)).argmax(axis=2) for img, target in test_dataloader] for label in batch]
+            # ground_truth = [label for seq in ground_truth for label in seq]
 
         labels = list(range(len(self.parameters['class_names'].value)))
         precision, recall, fscore, support = precision_recall_fscore_support(ground_truth, predictions, labels=labels,
@@ -866,16 +870,35 @@ class Plugin(plugins.Plugin):
                                                                                                  labels=labels,
                                                                                                  zero_division=np.nan)
 
-        stats = {'last_stats': {'precision': list(precision),
-                                'recall'   : list(recall),
-                                'fscore'   : list(fscore),
-                                'support'  : [int(s) for s in support]
-                                },
-                 'best_stats': {'precision': list(best_precision),
-                                'recall'   : list(best_recall),
-                                'fscore'   : list(best_fscore),
-                                'support'  : [int(s) for s in best_support]
-                                }
+        # stats = {'last_stats': {'precision': list(precision),
+        #                         'recall'   : list(recall),
+        #                         'fscore'   : list(fscore),
+        #                         'support'  : [int(s) for s in support]
+        #                         },
+        #          'best_stats': {'precision': list(best_precision),
+        #                         'recall'   : list(best_recall),
+        #                         'fscore'   : list(best_fscore),
+        #                         'support'  : [int(s) for s in best_support]
+        #                         }
+        #          }
+        col_names = ['stats'] + self.parameters['class_names'].value
+        p = ['precision'] + precision.tolist()
+        r = ['recall'] + recall.tolist()
+        f = ['fscore'] + fscore.tolist()
+        s = ['support'] + [int(s) for s in support]
+        bp = ['precision'] + best_precision.tolist()
+        br = ['recall'] + best_recall.tolist()
+        bf = ['fscore'] + best_fscore.tolist()
+        bs = ['support'] + [int(s) for s in best_support]
+
+        stats = {'last_stats': {col_name: [p[i],
+                                           r[i],
+                                           f[i],
+                                           s[i]] for i, col_name in enumerate(col_names)},
+                 'best_stats': {col_name: [bp[i],
+                                           br[i],
+                                           bf[i],
+                                           bs[i]] for i, col_name in enumerate(col_names)}
                  }
         if run.key_val is None:
             run.key_val = stats

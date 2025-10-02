@@ -54,6 +54,7 @@ class ROIDataset(Dataset):
             self.targets = self.h5file.root.targets
         else:
             self.targets = None
+        self.class_names = self.h5file.root.class_names
         self.seqlen = seqlen
         self.indices = indices
         self.image_shape = list(image_shape)
@@ -69,12 +70,16 @@ class ROIDataset(Dataset):
         if self.seqlen == 0:
             roi_data = torch.tensor(self.roi_data[frame, roi_id, ...], dtype=torch.float32).permute(2, 0, 1)
             roi_data = F.resize(roi_data, size=self.image_shape)
-            targets = torch.tensor(self.targets[frame, roi_id])
+            targets = torch.zeros(len(self.class_names), dtype=torch.float32)
+            targets[self.targets[frame, roi_id]] = 1.0
+            # targets = torch.tensor(self.targets[frame, roi_id])
             if self.transform:
                 roi_data = self.transform(roi_data)
         else:
             roi_data = torch.tensor(self.roi_data[frame:frame+self.seqlen, roi_id, ...], dtype=torch.float32).permute(0, 3, 1, 2)
-            targets = torch.tensor(self.targets[frame:frame+self.seqlen, roi_id])
+            # targets = torch.tensor(self.targets[frame:frame+self.seqlen, roi_id])
+            targets = torch.zeros(len(self.class_names), dtype=torch.float32)
+            targets[self.targets[frame, roi_id]] = 1.0
             roi_data = F.resize(roi_data, size=self.image_shape)
             if self.transform:
                 roi_data = torch.stack([self.transform(frame) for frame in roi_data], dim=0)
