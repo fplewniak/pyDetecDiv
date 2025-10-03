@@ -3,7 +3,7 @@ import tables as tbl
 
 import numpy as np
 import torch
-import torchvision as tv
+from torchvision.transforms import transforms, v2
 import torchvision.transforms.functional as F
 from torch.utils.data import Dataset
 
@@ -46,8 +46,8 @@ def prepare_data_for_training(hdf5_file: str, seqlen: int = 0, train: float = 0.
 
 
 class ROIDataset(Dataset):
-    def __init__(self, h5file: str, indices: list, targets = False, image_shape: tuple[int, int] = (60, 60), seqlen: int = 0,
-                 transform: tv.transforms = None):
+    def __init__(self, h5file: str, indices: list, targets=False, image_shape: tuple[int, int] = (60, 60), seqlen: int = 0,
+                 transform: transforms = None):
         self.h5file = tbl.open_file(h5file, mode='r')
         self.roi_data = self.h5file.root.roi_data
         if targets:
@@ -59,8 +59,11 @@ class ROIDataset(Dataset):
         self.indices = indices
         self.image_shape = list(image_shape)
 
-        self.transform = transform
+        self.transform = transforms.Compose([v2.ToDtype(torch.float, scale=True),
+                                            transforms.Normalize((0.5,), (0.5,)), ])
 
+        if transform:
+            self.transform = transforms.Compose([self.transform, transform])
 
     def __len__(self):
         return len(self.indices)
@@ -68,20 +71,18 @@ class ROIDataset(Dataset):
     def __getitem__(self, idx):
         frame, roi_id = self.indices[idx]
         if self.seqlen == 0:
-            roi_data = torch.tensor(self.roi_data[frame, roi_id, ...], dtype=torch.float32).permute(2, 0, 1)
+            roi_data = torch.tensor(self.roi_data[frame, roi_id, ...]).permute(2, 0, 1)
             roi_data = F.resize(roi_data, size=self.image_shape)
             targets = torch.zeros(len(self.class_names), dtype=torch.float32)
             targets[self.targets[frame, roi_id]] = 1.0
             # targets = torch.tensor(self.targets[frame, roi_id])
-            if self.transform:
-                roi_data = self.transform(roi_data)
+            roi_data = self.transform(roi_data)
         else:
-            roi_data = torch.tensor(self.roi_data[frame:frame+self.seqlen, roi_id, ...], dtype=torch.float32).permute(0, 3, 1, 2)
+            roi_data = torch.tensor(self.roi_data[frame:frame + self.seqlen, roi_id, ...]).permute(0, 3, 1, 2)
             # targets = torch.tensor(self.targets[frame:frame+self.seqlen, roi_id])
             targets = torch.zeros(len(self.class_names), dtype=torch.float32)
             targets[self.targets[frame, roi_id]] = 1.0
-            roi_data = F.resize(roi_data, size=self.image_shape)
-            if self.transform:
-                roi_data = torch.stack([self.transform(frame) for frame in roi_data], dim=0)
+            # roi_data = F.resize(roi_data, size=self.image_shape)
+            roi_data = torch.stack([self.transform(frame) for frame in roi_data], dim=0)
 
         return roi_data, targets

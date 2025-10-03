@@ -38,7 +38,7 @@ from pydetecdiv.plugins.parameters import ItemParameter, ChoiceParameter, IntPar
 
 from . import models
 from .data import prepare_data_for_training, ROIDataset
-from .evaluate import evaluate_loss
+from .evaluate import evaluate_loss, evaluate_model
 from .gui.ImportAnnotatedROIs import FOV2ROIlinks
 from .gui.classification import ManualAnnotator, PredictionViewer, DefineClassesDialog
 from .gui.prediction import PredictionDialog
@@ -282,7 +282,7 @@ class Plugin(plugins.Plugin):
                          default=42),
             ChoiceParameter(name='optimizer', label='Optimizer', groups={'training', 'finetune'}, default='AdamW',
                             items={'SGD'     : optim.SGD,
-                                   'AdamW'    : optim.AdamW,
+                                   'AdamW'   : optim.AdamW,
                                    'Adadelta': optim.Adadelta,
                                    'Adamax'  : optim.Adamax,
                                    'Nadam'   : optim.NAdam,
@@ -810,34 +810,32 @@ class Plugin(plugins.Plugin):
 
         checkpoint_filepath, last_weights_filepath = self.get_weights_filepaths(run)
 
-        try:
-            if fine_tuning:
-                min_val_loss = evaluate_loss(model, validation_dataloader, loss_fn, device)
-                print(f'Fine tuning starting with validation loss = {min_val_loss}')
-            else:
-                min_val_loss = torch.finfo(torch.float).max
-            for epoch in range(n_epochs):
-                history.extend(train_loop(train_dataloader, validation_dataloader, model, loss_fn, optimizer, device))
-                # history.append(train_testing_loop(train_dataloader, model, device))
-                if history['val loss'][-1] < min_val_loss:
-                    min_val_loss = history['val loss'][-1]
-                    model_scripted = torch.jit.script(model)
-                    model_scripted.save(checkpoint_filepath)
-                    print(f"Saving best model at epoch {epoch + 1} with val loss {min_val_loss}"
-                          f" and train loss {history['train loss'][-1]}")
-                    run.parameters.update({'best_weights': os.path.basename(checkpoint_filepath), 'best_epoch': epoch + 1})
-                    run.validate().commit()
+        if fine_tuning:
+            min_val_loss = evaluate_loss(model, validation_dataloader, loss_fn, device)
+            print(f'Fine tuning starting with validation loss = {min_val_loss}')
+        else:
+            min_val_loss = torch.finfo(torch.float).max
 
-                print(f"Epoch {epoch + 1}/{n_epochs}, "
+        for epoch in range(n_epochs):
+            history.extend(train_loop(train_dataloader, validation_dataloader, model, loss_fn, optimizer, device))
+            if history['val loss'][-1] < min_val_loss:
+                min_val_loss = history['val loss'][-1]
+                model_scripted = torch.jit.script(model)
+                model_scripted.save(checkpoint_filepath)
+                print(f"Saving best model at epoch {epoch + 1} with val loss {min_val_loss}"
+                          f" and train loss {history['train loss'][-1]}")
+                run.parameters.update({'best_weights': os.path.basename(checkpoint_filepath), 'best_epoch': epoch + 1})
+                run.validate().commit()
+
+            print(f"Epoch {epoch + 1}/{n_epochs}, "
                       f"Training Loss: {history['train loss'][-1]:.4f}, "
                       f"Validation Loss: {history['val loss'][-1]:.4f}, ")
-                # f"learning rate: {scheduler.get_last_lr()}, ")
-                # scheduler.step(history[-1]['val loss'])
-        finally:
-            ##################################################################
-            # torch.save(model.state_dict(), 'ResNet18_reg.pth')
-            model_scripted = torch.jit.script(model)  # Export to TorchScript
-            model_scripted.save(last_weights_filepath)  # Save
+            # f"learning rate: {scheduler.get_last_lr()}, ")
+            # scheduler.step(history[-1]['val loss'])
+
+        ##################################################################
+        model_scripted = torch.jit.script(model)  # Export to TorchScript
+        model_scripted.save(last_weights_filepath)  # Save
 
         run.parameters.update({'last_weights': os.path.basename(last_weights_filepath)})
         run.validate().commit()
@@ -845,61 +843,10 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Evaluation on test dataset')
         evaluation = dict(zip(['loss'], [evaluate_loss(model, test_dataloader, loss_fn, device)]))
 
-        ground_truth = [label.argmax(axis=0) for batch in [y for x, y in test_dataloader] for label in batch]
-        model.eval()
-        if seqlen == 0:
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for last model')
-            predictions = [label.cpu() for batch in [model(img.to(device)).argmax(axis=1) for img, target in test_dataloader] for label in batch]
+        stats, ground_truth, predictions, best_predictions = evaluate_model(model, checkpoint_filepath,
+                                                                            self.parameters['class_names'].value, test_dataloader,
+                                                                            seqlen, device)
 
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for best model')
-            model = torch.jit.load(checkpoint_filepath)
-            best_predictions = [label.cpu() for batch in [model(img.to(device)).argmax(axis=1) for img, target in test_dataloader] for label in batch]
-        else:
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for last model')
-            predictions = [label.cpu()[0] for batch in [model(img.to(device)).argmax(axis=2) for img, target in test_dataloader] for label in batch]
-
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Prediction on test dataset for best model')
-            model = torch.jit.load(checkpoint_filepath)
-            best_predictions = [label.cpu()[0] for batch in [model(img.to(device)).argmax(axis=2) for img, target in test_dataloader] for label in batch]
-            # ground_truth = [label for seq in ground_truth for label in seq]
-
-        labels = list(range(len(self.parameters['class_names'].value)))
-        precision, recall, fscore, support = precision_recall_fscore_support(ground_truth, predictions, labels=labels,
-                                                                             zero_division=np.nan)
-        best_precision, best_recall, best_fscore, best_support = precision_recall_fscore_support(ground_truth, best_predictions,
-                                                                                                 labels=labels,
-                                                                                                 zero_division=np.nan)
-
-        # stats = {'last_stats': {'precision': list(precision),
-        #                         'recall'   : list(recall),
-        #                         'fscore'   : list(fscore),
-        #                         'support'  : [int(s) for s in support]
-        #                         },
-        #          'best_stats': {'precision': list(best_precision),
-        #                         'recall'   : list(best_recall),
-        #                         'fscore'   : list(best_fscore),
-        #                         'support'  : [int(s) for s in best_support]
-        #                         }
-        #          }
-        col_names = ['stats'] + self.parameters['class_names'].value
-        p = ['precision'] + precision.tolist()
-        r = ['recall'] + recall.tolist()
-        f = ['fscore'] + fscore.tolist()
-        s = ['support'] + [int(s) for s in support]
-        bp = ['precision'] + best_precision.tolist()
-        br = ['recall'] + best_recall.tolist()
-        bf = ['fscore'] + best_fscore.tolist()
-        bs = ['support'] + [int(s) for s in best_support]
-
-        stats = {'last_stats': {col_name: [p[i],
-                                           r[i],
-                                           f[i],
-                                           s[i]] for i, col_name in enumerate(col_names)},
-                 'best_stats': {col_name: [bp[i],
-                                           br[i],
-                                           bf[i],
-                                           bs[i]] for i, col_name in enumerate(col_names)}
-                 }
         if run.key_val is None:
             run.key_val = stats
         else:

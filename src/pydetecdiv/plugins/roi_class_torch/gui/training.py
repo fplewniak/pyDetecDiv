@@ -197,8 +197,7 @@ def plot_training_results(results):
     # module_name, class_names, history = results
     tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {module_name}')
     tab.project_name = PyDetecDiv.project_name
-    # history_plot = plot_history(history, evaluation)
-    history_plot = plot_history(history, history)
+    history_plot = plot_history(history, evaluation)
     tab.addTab(history_plot, 'Training')
     tab.setCurrentWidget(history_plot)
 
@@ -220,7 +219,7 @@ def plot_history(history, evaluation):
     axs = plot_viewer.axes
     axs.plot(history['train loss'])
     axs.plot(history['val loss'])
-    # axs.axhline(evaluation['loss'], color='red', linestyle='--')
+    axs.axhline(evaluation['loss'], color='red', linestyle='--')
     axs.legend(['train', 'val'], loc='upper right')
     axs.set_ylabel('loss')
     # plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=2, rows=1)
