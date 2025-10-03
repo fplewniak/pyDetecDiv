@@ -1,5 +1,7 @@
+import random
 import sys
 
+import torch
 from PySide6.QtCore import Slot, Signal
 from sklearn.metrics import ConfusionMatrixDisplay
 
@@ -193,7 +195,14 @@ class FineTuningDialog(Dialog):
 
 
 def plot_training_results(results):
-    module_name, class_names, history, evaluation, ground_truth, predictions, best_predictions = results
+    module_name, class_names, history, evaluation, ground_truth, predictions, best_predictions, dataset = results
+    print(f'GT: {[t.item() for t in ground_truth[0:5]]} '
+          f'Pred: {[t.item() for t in predictions[0:5]]} '
+          f'Best pred: {[t.item() for t in best_predictions[0:5]]}')
+    print(class_names)
+    print(f'GT: {torch.unique(torch.tensor(ground_truth))}')
+    print(f'Pred: {torch.unique(torch.tensor(predictions))}')
+    print(f'Best pred: {torch.unique(torch.tensor(best_predictions))}')
     # module_name, class_names, history = results
     tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {module_name}')
     tab.project_name = PyDetecDiv.project_name
@@ -206,6 +215,9 @@ def plot_training_results(results):
 
     confusion_matrix_plot = plot_confusion_matrix(ground_truth, best_predictions, class_names)
     tab.addTab(confusion_matrix_plot, 'Confusion matrix (best checkpoint)')
+
+    image_plot = plot_images(dataset, 5, class_names)
+    tab.addTab(image_plot, 'Image selection')
 
 
 def plot_history(history, evaluation):
@@ -256,6 +268,17 @@ def plot_confusion_matrix(ground_truth, predictions, class_names):
     plot_viewer.axes[1].set_title('Normalized by column')
     ConfusionMatrixDisplay.from_predictions(ground_truth, predictions, labels=list(range(len(class_names))),
                                             display_labels=class_names, normalize='pred', ax=plot_viewer.axes[1])
+    return plot_viewer
+
+def plot_images(dataset, n, class_names):
+    plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=n, rows=1)
+    for i in range(n):
+        img, target = dataset[random.randint(0, len(dataset))]
+        if img.dim() == 4:
+            img = img[0]
+        img = img.permute([1, 2, 0])
+        print(f'{torch.min(img)} {torch.max(img)}')
+        plot_viewer.axes[i].imshow(img)
     return plot_viewer
 
 

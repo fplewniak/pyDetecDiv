@@ -11,12 +11,13 @@ def train_loop(training_loader, validation_loader, model, loss_fn, optimizer, de
     model.train()
     running_loss = 0.0
     for images, labels in training_loader:
-        images, labels = images.to(device), labels.to(device)
+        images, labels = images.to(device), labels.type(torch.LongTensor).to(device)
         outputs = model(images)
         gt = labels
         # gt = torch.zeros(len(outputs), outputs.shape[-1]).to(device)
         # for i, label in enumerate(labels):
         #     gt[i][label] = 1
+        # print(f'{outputs.shape=} {gt.shape=}', file=sys.stderr)
         if outputs.dim() == 2:
             loss = loss_fn(outputs, gt)
         else:
@@ -29,6 +30,9 @@ def train_loop(training_loader, validation_loader, model, loss_fn, optimizer, de
         running_loss += loss.item()
         optimizer.step()
         optimizer.zero_grad()
+
+    # print(f'{outputs[0,0,...]=}')
+    # print(f'{gt[0]=}')
 
     avg_train_loss = running_loss / len(training_loader)
     # Validation phase

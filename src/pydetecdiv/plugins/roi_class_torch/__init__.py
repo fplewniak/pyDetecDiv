@@ -763,8 +763,8 @@ class Plugin(plugins.Plugin):
 
         model, model_name = self.load_model(pretrained=fine_tuning)
 
-        # loss_fn = torch.nn.CrossEntropyLoss()
-        loss_fn = torch.nn.BCELoss()
+        loss_fn = torch.nn.CrossEntropyLoss()
+        # loss_fn = torch.nn.BCELoss()
         lr = self.parameters['learning_rate'].value
         weight_decay = self.parameters['decay_rate'].value
         momentum = self.parameters['momentum'].value
@@ -847,6 +847,10 @@ class Plugin(plugins.Plugin):
                                                                             self.parameters['class_names'].value, test_dataloader,
                                                                             seqlen, device)
 
+        # stats, ground_truth, predictions, best_predictions = evaluate_model(model, checkpoint_filepath,
+        #                                                                     self.parameters['class_names'].value, train_dataloader,
+        #                                                                     seqlen, device)
+
         if run.key_val is None:
             run.key_val = stats
         else:
@@ -854,13 +858,13 @@ class Plugin(plugins.Plugin):
 
         run.validate().commit()
 
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Statistics for last model:')
-        print(polars.DataFrame(stats['last_stats']))
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Statistics for last model:', file=sys.stderr)
+        print(polars.DataFrame(stats['last_stats']), file=sys.stderr)
 
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Statistics for best model:')
-        print(polars.DataFrame(stats['best_stats']))
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Statistics for best model:', file=sys.stderr)
+        print(polars.DataFrame(stats['best_stats']), file=sys.stderr)
 
-        return model_name, self.parameters['class_names'].value, history, evaluation, ground_truth, predictions, best_predictions
+        return model_name, self.parameters['class_names'].value, history, evaluation, ground_truth, predictions, best_predictions, training_dataset
 
     def show_results(self, trigger=None, roi_selection: list[ROI] = None) -> None:
         """

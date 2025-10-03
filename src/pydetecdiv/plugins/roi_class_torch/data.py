@@ -59,8 +59,9 @@ class ROIDataset(Dataset):
         self.indices = indices
         self.image_shape = list(image_shape)
 
-        self.transform = transforms.Compose([v2.ToDtype(torch.float, scale=True),
-                                            transforms.Normalize((0.5,), (0.5,)), ])
+        # self.transform = transforms.Compose([v2.ToDtype(torch.float, scale=True),
+        #                                     transforms.Normalize((0.5,), (0.5,)), ])
+        self.transform = v2.ToDtype(torch.float, scale=True)
 
         if transform:
             self.transform = transforms.Compose([self.transform, transform])
@@ -73,15 +74,16 @@ class ROIDataset(Dataset):
         if self.seqlen == 0:
             roi_data = torch.tensor(self.roi_data[frame, roi_id, ...]).permute(2, 0, 1)
             roi_data = F.resize(roi_data, size=self.image_shape)
-            targets = torch.zeros(len(self.class_names), dtype=torch.float32)
-            targets[self.targets[frame, roi_id]] = 1.0
-            # targets = torch.tensor(self.targets[frame, roi_id])
+            # targets = torch.zeros(len(self.class_names), dtype=torch.float32)
+            # targets[self.targets[frame, roi_id]] = 1.0
+            targets = torch.tensor(self.targets[frame, roi_id])
             roi_data = self.transform(roi_data)
         else:
             roi_data = torch.tensor(self.roi_data[frame:frame + self.seqlen, roi_id, ...]).permute(0, 3, 1, 2)
             # targets = torch.tensor(self.targets[frame:frame+self.seqlen, roi_id])
-            targets = torch.zeros(len(self.class_names), dtype=torch.float32)
-            targets[self.targets[frame, roi_id]] = 1.0
+            targets = torch.tensor(self.targets[frame, roi_id])
+            # targets = torch.zeros(len(self.class_names), dtype=torch.float32)
+            # targets[self.targets[frame, roi_id]] = 1.0
             # roi_data = F.resize(roi_data, size=self.image_shape)
             roi_data = torch.stack([self.transform(frame) for frame in roi_data], dim=0)
 
