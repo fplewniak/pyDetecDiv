@@ -5,7 +5,6 @@ import torchvision.ops
 from torchvision import models
 from torchvision.models import ResNet18_Weights
 
-
 class NN_module(nn.Module):
     def __init__(self, n_classes):
         super(NN_module, self).__init__()
@@ -16,8 +15,10 @@ class NN_module(nn.Module):
         resnet = models.resnet18(weights=ResNet18_Weights.DEFAULT)
         self.resnet = nn.Sequential(*list(resnet.children())[:-2])  # Remove FC layer
 
+        self.global_avg_pool = nn.AdaptiveAvgPool2d((1, 1))  # Equivalent to GlobalAveragePooling2D
+
         self.dropout = nn.Dropout(0.5)
-        self.fc = nn.Linear(8192, n_classes)  # BiLSTM output size = 2 * hidden_size
+        self.fc = nn.Linear(2048, n_classes)  # BiLSTM output size = 2 * hidden_size
         self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, x):

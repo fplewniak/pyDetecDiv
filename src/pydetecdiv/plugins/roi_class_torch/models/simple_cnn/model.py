@@ -18,7 +18,7 @@ class NN_module(nn.Module):
                 nn.Flatten(), # [B, 32, 8, 8] → [B, 2048]
                 nn.Linear(2048, 512),
                 nn.Linear(512, n_classes),
-                nn.Softmax(dim=-1)
+                # nn.Softmax(dim=-1)
                 )
 
     def forward(self, x):

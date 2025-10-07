@@ -124,6 +124,9 @@ def split_list(arr: list[Any] | np.ndarray[Any], sep: list[Any] | Any, max_lengt
         return [sublist for sublist in sublists if len(sublist) == max_length]
     return sublists
 
+def flatten_list(list_of_lists):
+    return [x for sublist in list_of_lists for x in sublist]
+
 
 def increment_string(s: str) -> str:
     """

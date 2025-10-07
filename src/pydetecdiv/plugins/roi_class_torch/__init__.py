@@ -1,3 +1,4 @@
+import gc
 import importlib
 import json
 import os
@@ -24,6 +25,7 @@ from PySide6.QtWidgets import QMenu, QFileDialog, QMessageBox, QGraphicsRectItem
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
+from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau
 from torch.utils.data import DataLoader
 from torchinfo import summary
 
@@ -38,7 +40,7 @@ from pydetecdiv.plugins.parameters import ItemParameter, ChoiceParameter, IntPar
 
 from . import models
 from .data import prepare_data_for_training, ROIDataset
-from .evaluate import evaluate_loss, evaluate_model
+from .evaluate import evaluate_metrics, evaluate_model
 from .gui.ImportAnnotatedROIs import FOV2ROIlinks
 from .gui.classification import ManualAnnotator, PredictionViewer, DefineClassesDialog
 from .gui.prediction import PredictionDialog
@@ -766,11 +768,11 @@ class Plugin(plugins.Plugin):
         loss_fn = torch.nn.CrossEntropyLoss()
         # loss_fn = torch.nn.BCELoss()
         lr = self.parameters['learning_rate'].value
-        weight_decay = self.parameters['decay_rate'].value
+        decay_rate = self.parameters['decay_rate'].value
         momentum = self.parameters['momentum'].value
 
         # optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, weight_decay=weight_decay, momentum=momentum)
-        optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr)
+        optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, weight_decay=0.01)
         n_epochs = self.parameters['epochs'].value
 
         img_size, seqlen = self.get_input_shape(model)
@@ -803,16 +805,19 @@ class Plugin(plugins.Plugin):
         validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True)
         test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 
-        # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=10, factor=0.5)
+        scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=10, factor=0.5)
+        # scheduler = CosineAnnealingLR(optimizer, T_max=n_epochs)
 
-        history = polars.DataFrame(schema={'train loss': polars.datatypes.Float64, 'val loss': polars.datatypes.Float64})
+        history = polars.DataFrame(schema={'train loss'    : polars.datatypes.Float64, 'val loss': polars.datatypes.Float64,
+                                           'train accuracy': polars.datatypes.Float64, 'val accuracy': polars.datatypes.Float64,
+                                           })
         model = model.to(device)
 
         checkpoint_filepath, last_weights_filepath = self.get_weights_filepaths(run)
 
         if fine_tuning:
-            min_val_loss = evaluate_loss(model, validation_dataloader, loss_fn, device)
-            print(f'Fine tuning starting with validation loss = {min_val_loss}')
+            min_val_loss, accuracy = evaluate_metrics(model, validation_dataloader, loss_fn, device)
+            print(f'Fine tuning starting with validation loss = {min_val_loss} and initial accuracy = {accuracy}')
         else:
             min_val_loss = torch.finfo(torch.float).max
 
@@ -823,33 +828,42 @@ class Plugin(plugins.Plugin):
                 model_scripted = torch.jit.script(model)
                 model_scripted.save(checkpoint_filepath)
                 print(f"Saving best model at epoch {epoch + 1} with val loss {min_val_loss}"
-                          f" and train loss {history['train loss'][-1]}")
+                      f" and train loss {history['train loss'][-1]}")
                 run.parameters.update({'best_weights': os.path.basename(checkpoint_filepath), 'best_epoch': epoch + 1})
                 run.validate().commit()
 
             print(f"Epoch {epoch + 1}/{n_epochs}, "
-                      f"Training Loss: {history['train loss'][-1]:.4f}, "
-                      f"Validation Loss: {history['val loss'][-1]:.4f}, ")
+                  f"Training Loss: {history['train loss'][-1]:.4f}, "
+                  f"Validation Loss: {history['val loss'][-1]:.4f}, "
+                  f"Accuracy: {100 * history['train accuracy'][-1]:.1f} %, "
+                  f"Val accuracy: {100 * history['val accuracy'][-1]:.1f} %, "
+                  f"learning rate: {scheduler.get_last_lr()[0]}, "
+                  f" -- ({datetime.now().strftime('%H:%M:%S')})")
             # f"learning rate: {scheduler.get_last_lr()}, ")
-            # scheduler.step(history[-1]['val loss'])
+            scheduler.step(history['val loss'][-1])
 
         ##################################################################
         model_scripted = torch.jit.script(model)  # Export to TorchScript
         model_scripted.save(last_weights_filepath)  # Save
+        del(model_scripted)
+        gc.collect()
 
         run.parameters.update({'last_weights': os.path.basename(last_weights_filepath)})
         run.validate().commit()
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Evaluation on test dataset')
-        evaluation = dict(zip(['loss'], [evaluate_loss(model, test_dataloader, loss_fn, device)]))
+        avg_test_loss, test_accuracy = evaluate_metrics(model, test_dataloader, loss_fn, device)
+        evaluation = {'loss': avg_test_loss, 'accuracy': test_accuracy}
+        print(f"Test loss: {avg_test_loss:.4f}, "
+              f"Test accuracy: {100 * test_accuracy:.1f} %, ")
 
-        stats, ground_truth, predictions, best_predictions = evaluate_model(model, checkpoint_filepath,
-                                                                            self.parameters['class_names'].value, test_dataloader,
-                                                                            seqlen, device)
-
-        # stats, ground_truth, predictions, best_predictions = evaluate_model(model, checkpoint_filepath,
-        #                                                                     self.parameters['class_names'].value, train_dataloader,
-        #                                                                     seqlen, device)
+        stats, ground_truth, predictions, best_ground_truth, best_predictions = evaluate_model(model, checkpoint_filepath,
+                                                                                               self.parameters['class_names'].value,
+                                                                                               test_dataloader,
+                                                                                               seqlen, device)
+        del(model)
+        torch.cuda.empty_cache()
+        gc.collect()
 
         if run.key_val is None:
             run.key_val = stats
@@ -864,7 +878,8 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Statistics for best model:', file=sys.stderr)
         print(polars.DataFrame(stats['best_stats']), file=sys.stderr)
 
-        return model_name, self.parameters['class_names'].value, history, evaluation, ground_truth, predictions, best_predictions, training_dataset
+        return (model_name, self.parameters['class_names'].value, history, evaluation,
+                ground_truth, predictions, best_ground_truth, best_predictions)
 
     def show_results(self, trigger=None, roi_selection: list[ROI] = None) -> None:
         """

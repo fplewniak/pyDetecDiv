@@ -1,7 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import torchvision.ops
 from torchvision import models
 from torchvision.models import ResNet18_Weights
 
@@ -18,9 +16,7 @@ class SequenceFoldingLayer(nn.Module):
 
     def forward(self, x):
         batch_size, seq_len, c, h, w = x.shape  # Original shape
-        # x = x.view(-1, h, w, c).permute(0, 3, 1, 2)  # Reshape and reorder to (batch, C, H, W)
         x = x.view(-1, c, h, w)
-        # return x, torch.tensor(batch_size).to(torch.device("cuda"))  # Return reshaped input and batch size
         return x, torch.tensor(batch_size)
 
 
@@ -46,7 +42,7 @@ class NN_module(nn.Module):
 
         self.expected_shape = ('Batch', 'Sequence', 3, 60, 60)
 
-        # Load ResNet50 (since PyTorch lacks ResNet50V2)
+        # Load ResNet18
         resnet = models.resnet18(weights=ResNet18_Weights.DEFAULT)
         self.resnet = nn.Sequential(*list(resnet.children())[:-2])  # Remove FC layer
 
@@ -59,11 +55,9 @@ class NN_module(nn.Module):
         self.bilstm = nn.LSTM(input_size=512, hidden_size=150, num_layers=1,
                               batch_first=True, bidirectional=True)  # check that all parameters are OK, where are activation, etc.
 
-        self.dropout = nn.Dropout(0.5)
+        self.dropout = nn.Dropout(0.25)
         self.fc = nn.Linear(300, n_classes)  # BiLSTM output size = 2 * hidden_size
         self.softmax = nn.Softmax(dim=-1)
-
-        # self.permutation = torchvision.ops.Permute([0, 1, 4, 3, 2])
 
     def forward(self, x):
         x, batch_size = self.folding(x)  # Fold sequence into batch form
@@ -72,11 +66,9 @@ class NN_module(nn.Module):
         x = torch.flatten(x, start_dim=1)  # Flatten to (batch, features)
 
         x = self.unfolding(x, batch_size)  # Unfold sequence
-        # x = self.permutation(x)
         x = x.reshape(x.shape[0], x.shape[1], -1)  # Flatten
         x, _ = self.bilstm(x)  # Pass through BiLSTM
         x = self.dropout(x)
         x = self.fc(x)
-        x = self.softmax(x)
 
         return x

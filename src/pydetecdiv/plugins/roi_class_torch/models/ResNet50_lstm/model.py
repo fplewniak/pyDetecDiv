@@ -1,7 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import torchvision.ops
 from torchvision import models
 from torchvision.models import ResNet50_Weights
 
@@ -18,9 +16,7 @@ class SequenceFoldingLayer(nn.Module):
 
     def forward(self, x):
         batch_size, seq_len, c, h, w = x.shape  # Original shape
-        # x = x.view(-1, h, w, c).permute(0, 3, 1, 2)  # Reshape and reorder to (batch, C, H, W)
         x = x.view(-1, c, h, w)
-        # return x, torch.tensor(batch_size).to(torch.device("cuda"))  # Return reshaped input and batch size
         return x, torch.tensor(batch_size)
 
 
@@ -63,8 +59,6 @@ class NN_module(nn.Module):
         self.fc = nn.Linear(300, n_classes)  # BiLSTM output size = 2 * hidden_size
         self.softmax = nn.Softmax(dim=-1)
 
-        # self.permutation = torchvision.ops.Permute([0, 1, 4, 3, 2])
-
     def forward(self, x):
         x, batch_size = self.folding(x)  # Fold sequence into batch form
         x = self.resnet(x)  # CNN Feature Extraction
@@ -72,7 +66,6 @@ class NN_module(nn.Module):
         x = torch.flatten(x, start_dim=1)  # Flatten to (batch, features)
 
         x = self.unfolding(x, batch_size)  # Unfold sequence
-        # x = self.permutation(x)
         x = x.reshape(x.shape[0], x.shape[1], -1)  # Flatten
         x, _ = self.bilstm(x)  # Pass through BiLSTM
         x = self.dropout(x)

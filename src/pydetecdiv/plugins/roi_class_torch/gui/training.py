@@ -195,14 +195,7 @@ class FineTuningDialog(Dialog):
 
 
 def plot_training_results(results):
-    module_name, class_names, history, evaluation, ground_truth, predictions, best_predictions, dataset = results
-    print(f'GT: {[t.item() for t in ground_truth[0:5]]} '
-          f'Pred: {[t.item() for t in predictions[0:5]]} '
-          f'Best pred: {[t.item() for t in best_predictions[0:5]]}')
-    print(class_names)
-    print(f'GT: {torch.unique(torch.tensor(ground_truth))}')
-    print(f'Pred: {torch.unique(torch.tensor(predictions))}')
-    print(f'Best pred: {torch.unique(torch.tensor(best_predictions))}')
+    module_name, class_names, history, evaluation, ground_truth, predictions, best_gt, best_predictions = results
     # module_name, class_names, history = results
     tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {module_name}')
     tab.project_name = PyDetecDiv.project_name
@@ -210,14 +203,11 @@ def plot_training_results(results):
     tab.addTab(history_plot, 'Training')
     tab.setCurrentWidget(history_plot)
 
-    confusion_matrix_plot = plot_confusion_matrix(ground_truth, predictions, class_names)
+    confusion_matrix_plot = plot_confusion_matrix(ground_truth.cpu(), predictions.cpu(), class_names)
     tab.addTab(confusion_matrix_plot, 'Confusion matrix (last epoch)')
 
-    confusion_matrix_plot = plot_confusion_matrix(ground_truth, best_predictions, class_names)
+    confusion_matrix_plot = plot_confusion_matrix(best_gt.cpu(), best_predictions.cpu(), class_names)
     tab.addTab(confusion_matrix_plot, 'Confusion matrix (best checkpoint)')
-
-    image_plot = plot_images(dataset, 5, class_names)
-    tab.addTab(image_plot, 'Image selection')
 
 
 def plot_history(history, evaluation):
@@ -227,26 +217,19 @@ def plot_history(history, evaluation):
     :param history: metrics history to plot
     :param evaluation: metrics from model evaluation on test dataset, shown as horizontal dashed lines on the plots
     """
-    plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=1, rows=1)
+    plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=2, rows=1)
     axs = plot_viewer.axes
-    axs.plot(history['train loss'])
-    axs.plot(history['val loss'])
-    axs.axhline(evaluation['loss'], color='red', linestyle='--')
-    axs.legend(['train', 'val'], loc='upper right')
-    axs.set_ylabel('loss')
-    # plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=2, rows=1)
-    # axs = plot_viewer.axes
-    # axs[0].plot(history.history['accuracy'])
-    # axs[0].plot(history.history['val_accuracy'])
-    # axs[0].axhline(evaluation['accuracy'], color='red', linestyle='--')
-    # axs[0].set_ylabel('accuracy')
-    # axs[0].set_xlabel('epoch')
-    # axs[0].legend(['train', 'val'], loc='lower right')
-    # axs[1].plot(history.history['loss'])
-    # axs[1].plot(history.history['val_loss'])
-    # axs[1].axhline(evaluation['loss'], color='red', linestyle='--')
-    # axs[1].legend(['train', 'val'], loc='upper right')
-    # axs[1].set_ylabel('loss')
+    axs[0].plot(history['train accuracy'])
+    axs[0].plot(history['val accuracy'])
+    axs[0].axhline(evaluation['accuracy'], color='red', linestyle='--')
+    axs[0].set_ylabel('accuracy')
+    axs[0].set_xlabel('epoch')
+    axs[0].legend(['train', 'val'], loc='lower right')
+    axs[1].plot(history['train loss'])
+    axs[1].plot(history['val loss'])
+    axs[1].axhline(evaluation['loss'], color='red', linestyle='--')
+    axs[1].legend(['train', 'val'], loc='upper right')
+    axs[1].set_ylabel('loss')
 
     plot_viewer.show()
     return plot_viewer
@@ -262,12 +245,12 @@ def plot_confusion_matrix(ground_truth, predictions, class_names):
     :return: the plot viewer where the confusion matrix is plotted
     """
     plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=2, rows=1)
-    plot_viewer.axes[0].set_title('Normalized by row')
+    plot_viewer.axes[0].set_title('Normalized by row (recall)')
     ConfusionMatrixDisplay.from_predictions(ground_truth, predictions, labels=list(range(len(class_names))),
-                                            display_labels=class_names, normalize='true', ax=plot_viewer.axes[0])
-    plot_viewer.axes[1].set_title('Normalized by column')
+                                            display_labels=class_names, normalize='true', ax=plot_viewer.axes[0], colorbar=False)
+    plot_viewer.axes[1].set_title('Normalized by column (precision)')
     ConfusionMatrixDisplay.from_predictions(ground_truth, predictions, labels=list(range(len(class_names))),
-                                            display_labels=class_names, normalize='pred', ax=plot_viewer.axes[1])
+                                            display_labels=class_names, normalize='pred', ax=plot_viewer.axes[1], colorbar=False)
     return plot_viewer
 
 def plot_images(dataset, n, class_names):
@@ -277,8 +260,7 @@ def plot_images(dataset, n, class_names):
         if img.dim() == 4:
             img = img[0]
         img = img.permute([1, 2, 0])
-        print(f'{torch.min(img)} {torch.max(img)}')
-        plot_viewer.axes[i].imshow(img)
+        plot_viewer.axes[i].imshow(img.to(torch.float32))
     return plot_viewer
 
 
