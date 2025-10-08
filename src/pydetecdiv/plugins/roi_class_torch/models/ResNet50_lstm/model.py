@@ -52,24 +52,28 @@ class NN_module(nn.Module):
         self.unfolding = SequenceUnfoldingLayer((2048, 1, 1))  # ResNet50 outputs 2048 features
         # self.unfolding = SequenceUnfoldingLayer((1, 1, 2048))  # or should it be that order ? to be tested, which one works best ?
 
-        self.bilstm = nn.LSTM(input_size=2048, hidden_size=150, num_layers=1,
+        self.bilstm = nn.LSTM(input_size=2048, hidden_size=128, num_layers=2, dropout=0.25,
                               batch_first=True, bidirectional=True)  # check that all parameters are OK, where are activation, etc.
 
-        self.dropout = nn.Dropout(0.5)
-        self.fc = nn.Linear(300, n_classes)  # BiLSTM output size = 2 * hidden_size
+        self.dropout = nn.Dropout(0.25)
+        self.fc1 = nn.Linear(256, 128)  # BiLSTM output size = 2 * hidden_size
+        self.fc2 = nn.Linear(128, n_classes)
         self.softmax = nn.Softmax(dim=-1)
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         x, batch_size = self.folding(x)  # Fold sequence into batch form
         x = self.resnet(x)  # CNN Feature Extraction
         x = self.global_avg_pool(x)
         x = torch.flatten(x, start_dim=1)  # Flatten to (batch, features)
-
         x = self.unfolding(x, batch_size)  # Unfold sequence
         x = x.reshape(x.shape[0], x.shape[1], -1)  # Flatten
-        x, _ = self.bilstm(x)  # Pass through BiLSTM
         x = self.dropout(x)
-        x = self.fc(x)
-        x = self.softmax(x)
+        x, _ = self.bilstm(x)  # Pass through BiLSTM
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.dropout(x)
+        x = self.fc2(x)
+        # x = self.softmax(x)
 
         return x
