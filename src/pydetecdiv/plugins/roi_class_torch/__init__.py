@@ -43,6 +43,7 @@ from .data import prepare_data_for_training, ROIDataset
 from .evaluate import evaluate_metrics, evaluate_model
 from .gui.ImportAnnotatedROIs import FOV2ROIlinks
 from .gui.classification import ManualAnnotator, PredictionViewer, DefineClassesDialog
+from .gui.modelinfo import ModelInfoDialog
 from .gui.prediction import PredictionDialog
 from .gui.training import TrainingDialog, FineTuningDialog, ImportClassifierDialog
 
@@ -273,18 +274,18 @@ class Plugin(plugins.Plugin):
         self.menu = None
 
         self.parameters.parameter_list = [
-            ChoiceParameter(name='model', label='Network', groups={'training', 'finetune', 'prediction'},
-                            default='simple_cnn', updater=self.load_models),
+            ChoiceParameter(name='model', label='Network', groups={'training', 'finetune', 'prediction', 'info'},
+                            default='ResNet18_lstm', updater=self.load_models),
             ChoiceParameter(name='class_names', label='Classes',
-                            groups={'training', 'finetune', 'prediction', 'annotate', 'import_annotations'},
+                            groups={'training', 'finetune', 'prediction', 'annotate', 'import_annotations', 'info'},
                             updater=self.update_class_names),
             ChoiceParameter(name='weights', label='Weights', groups={'finetune', 'prediction'}, default='None',
                             updater=self.update_model_weights),
             IntParameter(name='seed', label='Random seed', groups={'training', 'finetune'}, maximum=999999999,
                          default=42),
             ChoiceParameter(name='optimizer', label='Optimizer', groups={'training', 'finetune'}, default='AdamW',
-                            items={'SGD'     : optim.SGD,
-                                   'AdamW'   : optim.AdamW,
+                            items={'AdamW'   : optim.AdamW,
+                                   'SGD'     : optim.SGD,
                                    'Adadelta': optim.Adadelta,
                                    'Adamax'  : optim.Adamax,
                                    'Nadam'   : optim.NAdam,
@@ -391,6 +392,10 @@ class Plugin(plugins.Plugin):
 
         import_classifier = submenu.addAction('Import classifier')
         import_classifier.triggered.connect(self.run_import_classifier)
+
+        submenu.addSeparator()
+        show_model_info = submenu.addAction('Show model info')
+        show_model_info.triggered.connect(self.run_model_info)
 
         submenu.aboutToShow.connect(
                 lambda: self.set_enabled_actions(manual_annotation, train_model, fine_tuning, predict, show_results,
@@ -711,6 +716,12 @@ class Plugin(plugins.Plugin):
         """
         PredictionDialog(self)
 
+    def run_model_info(self) -> None:
+        """
+        Shows model information. Opens the ModelInfoDialog widget
+        """
+        ModelInfoDialog(self)
+
     def load_model(self, pretrained=False):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Model: {self.parameters["model"].key}\n')
         if pretrained:
@@ -772,7 +783,11 @@ class Plugin(plugins.Plugin):
         momentum = self.parameters['momentum'].value
 
         # optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, weight_decay=weight_decay, momentum=momentum)
-        optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, weight_decay=0.01)
+        match self.parameters['optimizer'].key:
+            case 'AdamW':
+                optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, weight_decay=0.01)
+            case 'SGD':
+                optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, momentum = momentum)
         n_epochs = self.parameters['epochs'].value
 
         img_size, seqlen = self.get_input_shape(model)
@@ -845,7 +860,7 @@ class Plugin(plugins.Plugin):
         ##################################################################
         model_scripted = torch.jit.script(model)  # Export to TorchScript
         model_scripted.save(last_weights_filepath)  # Save
-        del(model_scripted)
+        del (model_scripted)
         gc.collect()
 
         run.parameters.update({'last_weights': os.path.basename(last_weights_filepath)})
@@ -861,7 +876,7 @@ class Plugin(plugins.Plugin):
                                                                                                self.parameters['class_names'].value,
                                                                                                test_dataloader,
                                                                                                seqlen, device)
-        del(model)
+        del (model)
         torch.cuda.empty_cache()
         gc.collect()
 
@@ -1000,7 +1015,6 @@ class Plugin(plugins.Plugin):
 
             print(f'{datetime.now().strftime("%H:%M:%S")}: Getting fov data')
             fov_data = self.get_fov_data(z_layers=z_channels)
-            print(fov_data)
             mask = fov_data[['fov', 't']].apply(tuple, axis=1).isin(data[['fov', 't']].apply(tuple, axis=1))
             fov_data = fov_data[mask]
 
@@ -1054,7 +1068,7 @@ class Plugin(plugins.Plugin):
                                             chunkshape=(50, num_rois,), shape=(num_frames, num_rois))
 
             print(f'{datetime.now().strftime("%H:%M:%S")}: Reading and compositing images')
-            print(f'{fov_data=}', file=sys.stderr)
+
             for row in fov_data.itertuples():
                 if row.t % 10 == 0:
                     print(f'{datetime.now().strftime("%H:%M:%S")}: FOV {row.fov}, frame {row.t}')
