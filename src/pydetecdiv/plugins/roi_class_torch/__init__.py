@@ -25,7 +25,7 @@ from PySide6.QtWidgets import QMenu, QFileDialog, QMessageBox, QGraphicsRectItem
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
-from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau
+from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau, StepLR
 from torch.utils.data import DataLoader
 from torchinfo import summary
 
@@ -293,7 +293,7 @@ class Plugin(plugins.Plugin):
             FloatParameter(name='learning_rate', label='Learning rate', groups={'training', 'finetune'}, default=0.001,
                            minimum=0.00001, maximum=1.0),
             FloatParameter(name='decay_rate', label='Decay rate', groups={'training', 'finetune'}, default=0.95),
-            IntParameter(name='decay_period', label='Decay period', groups={'training', 'finetune'}, default=2),
+            IntParameter(name='decay_period', label='Decay period', groups={'training', 'finetune'}, default=50),
             FloatParameter(name='momentum', label='Momentum', groups={'training', 'finetune'}, default=0.9, ),
             ChoiceParameter(name='checkpoint_metric', label='Checkpoint metric', groups={'training', 'finetune'},
                             default='Loss', items={'Loss': 'val_loss', 'Accuracy': 'val_accuracy', }),
@@ -686,6 +686,21 @@ class Plugin(plugins.Plugin):
                 return roi_ids
             return []
 
+    def get_unannotated_rois(self) -> (list[ROI], list[ROI]):
+        """
+        Gets the unannotated ROIs
+
+        :return: list of unannotated ROIs and list of all ROIs
+        """
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            all_roi_ids = [roi.id_ for roi in project.get_objects('ROI')]
+            print(f'All ROIs: {len(all_roi_ids)}')
+            annotated_rois = self.get_annotated_rois(ids_only=True)
+            print(f'Annotated ROIs: {len(annotated_rois)}')
+            unannotated_roi_ids = set(all_roi_ids).difference(set(annotated_rois))
+            print(f'Unannotated ROIs: {len(unannotated_roi_ids)}')
+            return project.get_objects('ROI', list(unannotated_roi_ids)), project.get_objects('ROI', list(all_roi_ids))
+
     def run_training(self) -> None:
         """
         Runs a model training process. Opens the TrainingDialog widget
@@ -780,14 +795,17 @@ class Plugin(plugins.Plugin):
         # loss_fn = torch.nn.BCELoss()
         lr = self.parameters['learning_rate'].value
         decay_rate = self.parameters['decay_rate'].value
+        decay_period = self.parameters['decay_period'].value
         momentum = self.parameters['momentum'].value
+        lambda1, lambda2 = 0.0, 0.0
+        seq2one = False
 
         # optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, weight_decay=weight_decay, momentum=momentum)
         match self.parameters['optimizer'].key:
             case 'AdamW':
-                optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, weight_decay=0.01)
+                optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, weight_decay=1e-3)
             case 'SGD':
-                optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, momentum = momentum)
+                optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, momentum = momentum, weight_decay=1e-3)
         n_epochs = self.parameters['epochs'].value
 
         img_size, seqlen = self.get_input_shape(model)
@@ -806,9 +824,9 @@ class Plugin(plugins.Plugin):
 
         print(f'training: {len(training_idx)} validation: {len(validation_idx)} test: {len(test_idx)}')
 
-        training_dataset = ROIDataset(hdf5_file, training_idx, targets=True, image_shape=img_size, seqlen=seqlen)
-        validation_dataset = ROIDataset(hdf5_file, validation_idx, targets=True, image_shape=img_size, seqlen=seqlen)
-        test_dataset = ROIDataset(hdf5_file, test_idx, targets=True, image_shape=img_size, seqlen=seqlen)
+        training_dataset = ROIDataset(hdf5_file, training_idx, targets=True, image_shape=img_size, seq2one=seq2one, seqlen=seqlen)
+        validation_dataset = ROIDataset(hdf5_file, validation_idx, targets=True, image_shape=img_size, seq2one=seq2one, seqlen=seqlen)
+        test_dataset = ROIDataset(hdf5_file, test_idx, targets=True, image_shape=img_size, seq2one=seq2one, seqlen=seqlen)
 
         run = self.save_training_run(fine_tuning=fine_tuning)
 
@@ -821,6 +839,7 @@ class Plugin(plugins.Plugin):
         test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 
         scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=10, factor=0.5)
+        step_scheduler = StepLR(optimizer, step_size=decay_period, gamma=decay_rate, last_epoch=-1)
         # scheduler = CosineAnnealingLR(optimizer, T_max=n_epochs)
 
         history = polars.DataFrame(schema={'train loss'    : polars.datatypes.Float64, 'val loss': polars.datatypes.Float64,
@@ -831,13 +850,14 @@ class Plugin(plugins.Plugin):
         checkpoint_filepath, last_weights_filepath = self.get_weights_filepaths(run)
 
         if fine_tuning:
-            min_val_loss, accuracy = evaluate_metrics(model, validation_dataloader, loss_fn, device)
+            min_val_loss, accuracy = evaluate_metrics(model, validation_dataloader, seq2one, loss_fn, lambda1, lambda2, device)
             print(f'Fine tuning starting with validation loss = {min_val_loss} and initial accuracy = {accuracy}')
         else:
             min_val_loss = torch.finfo(torch.float).max
 
         for epoch in range(n_epochs):
-            history.extend(train_loop(train_dataloader, validation_dataloader, model, loss_fn, optimizer, device))
+            history.extend(train_loop(train_dataloader, validation_dataloader, model, seq2one,
+                                      loss_fn, optimizer, lambda1, lambda2, device))
             if history['val loss'][-1] < min_val_loss:
                 min_val_loss = history['val loss'][-1]
                 model_scripted = torch.jit.script(model)
@@ -855,6 +875,7 @@ class Plugin(plugins.Plugin):
                   f"learning rate: {scheduler.get_last_lr()[0]}, "
                   f" -- ({datetime.now().strftime('%H:%M:%S')})")
             # f"learning rate: {scheduler.get_last_lr()}, ")
+            step_scheduler.step()
             scheduler.step(history['val loss'][-1])
 
         ##################################################################
@@ -867,7 +888,7 @@ class Plugin(plugins.Plugin):
         run.validate().commit()
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Evaluation on test dataset')
-        avg_test_loss, test_accuracy = evaluate_metrics(model, test_dataloader, loss_fn, device)
+        avg_test_loss, test_accuracy = evaluate_metrics(model, test_dataloader, seq2one, loss_fn, lambda1, lambda2, device)
         evaluation = {'loss': avg_test_loss, 'accuracy': test_accuracy}
         print(f"Test loss: {avg_test_loss:.4f}, "
               f"Test accuracy: {100 * test_accuracy:.1f} %, ")
@@ -875,10 +896,10 @@ class Plugin(plugins.Plugin):
         stats, ground_truth, predictions, best_ground_truth, best_predictions = evaluate_model(model, checkpoint_filepath,
                                                                                                self.parameters['class_names'].value,
                                                                                                test_dataloader,
-                                                                                               seqlen, device)
-        del (model)
-        torch.cuda.empty_cache()
-        gc.collect()
+                                                                                               seqlen, seq2one, device)
+        # del (model)
+        # torch.cuda.empty_cache()
+        # gc.collect()
 
         if run.key_val is None:
             run.key_val = stats
@@ -893,8 +914,73 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Statistics for best model:', file=sys.stderr)
         print(polars.DataFrame(stats['best_stats']), file=sys.stderr)
 
+        datasets = {'train': training_dataset, 'val': validation_dataset, 'test': test_dataset}
+
         return (model_name, self.parameters['class_names'].value, history, evaluation,
-                ground_truth, predictions, best_ground_truth, best_predictions)
+                ground_truth, predictions, best_ground_truth, best_predictions, datasets, model, device)
+
+    def predict(self) -> None:
+        """
+        Running prediction on all ROIs in selected FOVs.
+        """
+        seqlen = self.parameters['seqlen'].value
+        z_channels = (self.parameters['red_channel'].value, self.parameters['green_channel'].value,
+                      self.parameters['blue_channel'].value,)
+        fov_names = [self.parameters['fov'].key]
+        module = self.parameters['model'].value
+        print(module.__name__)
+
+        seq2one = False
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Loading weights')
+        model = torch.jit.load(self.parameters['weights'].value)
+        img_size = (model.expected_shape[-2], model.expected_shape[-1])
+
+        # print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data')
+        # hdf5_file = self.create_hdf5_unannotated_rois(overwrite=False)
+
+
+        # pred_dataset = ROIDataset(hdf5_file, training_idx, targets=True, image_shape=img_size, seq2one=seq2one, seqlen=seqlen)
+
+
+
+    def prepare_data_for_classification(self, fov_list: list[int],
+                                        z_channels: tuple[int] = None) -> (pd.DataFrame, pd.DataFrame, np.ndarray):
+        """
+        Prepares the data for class prediction. Drift correction is automatically applied
+
+        :param fov_list: the list of FOV indices whose ROIs should be classified
+        :param z_channels: the z layers to be used as channels
+        :return: Pandas DataFrames containing FOV data, list of (ROI, frame) with positions, unique indices of ROIs
+        """
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Getting fov data')
+        fov_data = self.get_fov_data(z_layers=z_channels)
+        mask = fov_data['fov'].isin(fov_list)
+        fov_data = fov_data[mask]
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Getting drift correction')
+        drift_correction = self.get_drift_corrections()
+        mask = drift_correction['fov'].isin(fov_list)
+        drift_correction = drift_correction[mask]
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Getting roi list')
+        roi_list = self.get_roi_list()
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Applying drift correction to ROIs')
+        roi_list = pd.merge(drift_correction, roi_list, on=['fov'], how='left').dropna()
+        roi_list['x0'] = (roi_list['x0'] + roi_list['dx'].round().astype(int))
+        roi_list['x1'] = (roi_list['x1'] + roi_list['dx'].round().astype(int))
+        roi_list['y0'] = (roi_list['y0'] + roi_list['dy'].round().astype(int))
+        roi_list['y1'] = (roi_list['y1'] + roi_list['dy'].round().astype(int))
+
+        rois = roi_list["roi"].unique()
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: FOV = {len(fov_data["fov"].unique())}')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: T = {np.max(fov_data["t"]) + 1}')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: ROIs = {len(rois)} ({len(roi_list)})')
+
+        return fov_data, roi_list, rois
+
 
     def show_results(self, trigger=None, roi_selection: list[ROI] = None) -> None:
         """

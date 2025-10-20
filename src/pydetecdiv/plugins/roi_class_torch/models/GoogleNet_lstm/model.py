@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torchvision import models
-from torchvision.models import ResNet18_Weights
+from torchvision.models import GoogLeNet_Weights
 
 
 class SequenceFoldingLayer(nn.Module):
@@ -40,41 +40,45 @@ class NN_module(nn.Module):
     def __init__(self, n_classes):
         super(NN_module, self).__init__()
 
-        self.expected_shape = ('Batch', 'Sequence', 3, 60, 60)
+        self.expected_shape = ('Batch','Sequence',  3, 60, 60)
 
-        # Load ResNet18
-        resnet = models.resnet18(weights=ResNet18_Weights.DEFAULT)
-        self.resnet = nn.Sequential(*list(resnet.children())[:-2])  # Remove FC layer
+        googlenet = models.googlenet(weights=GoogLeNet_Weights.IMAGENET1K_V1)
+        # googlenet = models.googlenet(weights=GoogLeNet_Weights.DEFAULT)
+        self.googlenet = nn.Sequential(*list(googlenet.children())[:-2])  # Remove FC layer
 
         self.global_avg_pool = nn.AdaptiveAvgPool2d((1, 1))  # Equivalent to GlobalAveragePooling2D
 
         self.folding = SequenceFoldingLayer((3, 60, 60))
-        self.unfolding = SequenceUnfoldingLayer((512, 1, 1))  # ResNet50 outputs 2048 features
+        self.unfolding = SequenceUnfoldingLayer((1024, 1, 1))  # ResNet50 outputs 2048 features
         # self.unfolding = SequenceUnfoldingLayer((1, 1, 2048))  # or should it be that order ? to be tested, which one works best ?
         #
-        # self.bilstm = nn.LSTM(input_size=512, hidden_size=128, num_layers=2, dropout=0.25,
-        #                       batch_first=True, bidirectional=True)  # check that all parameters are OK, where are activation, etc.
-
-        self.bilstm = nn.LSTM(input_size=512, hidden_size=128, num_layers=1,
+        self.bilstm = nn.LSTM(input_size=1024, hidden_size=256, num_layers=5, dropout=0.5,
                               batch_first=True, bidirectional=True)
 
-        self.dropout = nn.Dropout(0.25)
-        self.fc1 = nn.Linear(256, 128)  # BiLSTM output size = 2 * hidden_size
-        self.fc2 = nn.Linear(128, n_classes)
+        # self.bilstm = nn.LSTM(input_size=1024, hidden_size=512, num_layers=1,
+        #                       batch_first=True, bidirectional=True)
+
+        self.dropout_input = nn.Dropout(0.2)
+        self.dropout = nn.Dropout(0.5)
+        self.fc1 = nn.Linear(512, 256)  # BiLSTM output size = 2 * hidden_size
+        self.fc2 = nn.Linear(256, n_classes)
         self.softmax = nn.Softmax(dim=-1)
         self.relu = nn.ReLU()
 
     def forward(self, x):
         x, batch_size = self.folding(x)  # Fold sequence into batch form
-        x = self.resnet(x)  # CNN Feature Extraction
+        x = self.dropout_input(x)
+        x = self.googlenet(x)  # CNN Feature Extraction
         x = self.global_avg_pool(x)
         x = torch.flatten(x, start_dim=1)  # Flatten to (batch, features)
         x = self.unfolding(x, batch_size)  # Unfold sequence
         x = x.reshape(x.shape[0], x.shape[1], -1)  # Flatten
-        x = self.relu(x)
-        x = self.dropout(x)
+        # x = self.relu(x)
+        # x = self.dropout(x)
         x, _ = self.bilstm(x)  # Pass through BiLSTM
-        x = self.relu(x)
+        # x = self.relu(x)
+        # x = self.dropout(x)
+        x = self.dropout_input(x)
         x = self.fc1(x)
         x = self.relu(x)
         x = self.dropout(x)

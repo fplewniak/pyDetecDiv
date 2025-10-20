@@ -1,3 +1,4 @@
+import math
 import random
 import sys
 
@@ -195,7 +196,7 @@ class FineTuningDialog(Dialog):
 
 
 def plot_training_results(results):
-    module_name, class_names, history, evaluation, ground_truth, predictions, best_gt, best_predictions = results
+    module_name, class_names, history, evaluation, ground_truth, predictions, best_gt, best_predictions, dataset, model, device = results
     # module_name, class_names, history = results
     tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {module_name}')
     tab.project_name = PyDetecDiv.project_name
@@ -208,6 +209,10 @@ def plot_training_results(results):
 
     confusion_matrix_plot = plot_confusion_matrix(best_gt.cpu(), best_predictions.cpu(), class_names)
     tab.addTab(confusion_matrix_plot, 'Confusion matrix (best checkpoint)')
+
+    tab.addTab(plot_images(dataset['train'], 6, class_names, model, device), 'training images')
+    tab.addTab(plot_images(dataset['val'], 6, class_names, model, device), 'validation images')
+    tab.addTab(plot_images(dataset['test'], 6, class_names, model, device), 'test images')
 
 
 def plot_history(history, evaluation):
@@ -253,14 +258,19 @@ def plot_confusion_matrix(ground_truth, predictions, class_names):
                                             display_labels=class_names, normalize='pred', ax=plot_viewer.axes[1], colorbar=False)
     return plot_viewer
 
-def plot_images(dataset, n, class_names):
+def plot_images(dataset, n, class_names, model, device):
     plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=n, rows=1)
     for i in range(n):
-        img, target = dataset[random.randint(0, len(dataset))]
+        img, target = dataset[random.randint(0, len(dataset) - 1)]
         if img.dim() == 4:
-            img = img[0]
-        img = img.permute([1, 2, 0])
-        plot_viewer.axes[i].imshow(img.to(torch.float32))
+            # img = img[math.ceil(img.shape[0] / 2.0)]
+            t = random.randint(0, len(target) - 1)
+            prediction = model(torch.unsqueeze(img, dim=0).to(device)).argmax(dim=-1).squeeze()[t]
+            img = img[t]
+            target = target[t]
+        img_channel_last = img.permute([1, 2, 0])
+        plot_viewer.axes[i].imshow(img_channel_last.to(torch.float32))
+        plot_viewer.axes[i].set_title(f'{class_names[target.item()]} ({class_names[prediction.item()]})')
     return plot_viewer
 
 
