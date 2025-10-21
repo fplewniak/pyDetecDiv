@@ -52,22 +52,21 @@ class NN_module(nn.Module):
         self.unfolding = SequenceUnfoldingLayer((1024, 1, 1))  # ResNet50 outputs 2048 features
         # self.unfolding = SequenceUnfoldingLayer((1, 1, 2048))  # or should it be that order ? to be tested, which one works best ?
         #
-        self.bilstm = nn.LSTM(input_size=1024, hidden_size=256, num_layers=5, dropout=0.5,
-                              batch_first=True, bidirectional=True)
-
-        # self.bilstm = nn.LSTM(input_size=1024, hidden_size=512, num_layers=1,
+        # self.bilstm = nn.LSTM(input_size=1024, hidden_size=128, num_layers=3, dropout=0.2,
         #                       batch_first=True, bidirectional=True)
 
-        self.dropout_input = nn.Dropout(0.2)
-        self.dropout = nn.Dropout(0.5)
-        self.fc1 = nn.Linear(512, 256)  # BiLSTM output size = 2 * hidden_size
-        self.fc2 = nn.Linear(256, n_classes)
+        self.bilstm = nn.LSTM(input_size=1024, hidden_size=128, num_layers=1,
+                              batch_first=True, bidirectional=True)
+
+        self.dropout1 = nn.Dropout(0.5)
+        self.dropout2 = nn.Dropout(0.2)
+        self.fc1 = nn.Linear(256, 128)  # BiLSTM output size = 2 * hidden_size
+        self.fc2 = nn.Linear(128, n_classes)
         self.softmax = nn.Softmax(dim=-1)
         self.relu = nn.ReLU()
 
     def forward(self, x):
         x, batch_size = self.folding(x)  # Fold sequence into batch form
-        x = self.dropout_input(x)
         x = self.googlenet(x)  # CNN Feature Extraction
         x = self.global_avg_pool(x)
         x = torch.flatten(x, start_dim=1)  # Flatten to (batch, features)
@@ -77,11 +76,10 @@ class NN_module(nn.Module):
         # x = self.dropout(x)
         x, _ = self.bilstm(x)  # Pass through BiLSTM
         # x = self.relu(x)
-        # x = self.dropout(x)
-        x = self.dropout_input(x)
+        # x = self.dropout1(x)
         x = self.fc1(x)
         x = self.relu(x)
-        x = self.dropout(x)
+        x = self.dropout2(x)
         x = self.fc2(x)
 
         return x

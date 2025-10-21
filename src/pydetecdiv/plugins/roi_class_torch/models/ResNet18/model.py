@@ -26,5 +26,5 @@ class NN_module(nn.Module):
         x = self.dropout(x)
         x = torch.flatten(x, start_dim=1)
         x = self.fc(x)
-        x = self.softmax(x)
+        x = self.dropout(x)
         return x
