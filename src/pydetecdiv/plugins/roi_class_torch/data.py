@@ -1,4 +1,5 @@
 import math
+import sys
 from datetime import datetime
 import tables as tbl
 
@@ -27,6 +28,9 @@ def prepare_data_for_training(hdf5_file: str, seqlen: int = 0, train: float = 0.
     num_frames = targets_arr.shape[0]
     num_rois = targets_arr.shape[1]
     targets = targets_arr.read()
+    classes, class_counts = np.unique(targets, return_counts=True)
+    total_counts = np.sum(class_counts)
+    class_weights = torch.tensor([1.0 - c / total_counts for c in class_counts[1:]], dtype=torch.float32)
     print(f'{datetime.now().strftime("%H:%M:%S")}: Select valid targets from array with shape {targets.shape}')
     if seqlen == 0:
         indices = [[frame, roi] for roi in range(num_rois) for frame in range(num_frames) if targets[frame, roi] != -1]
@@ -43,7 +47,7 @@ def prepare_data_for_training(hdf5_file: str, seqlen: int = 0, train: float = 0.
     num_validation = int(len(indices) * validation)
     print(f'{datetime.now().strftime("%H:%M:%S")}: Close HDF5 file and return datasets indices')
     h5file.close()
-    return indices[:num_training], indices[num_training:num_validation + num_training], indices[num_validation + num_training:]
+    return indices[:num_training], indices[num_training:num_validation + num_training], indices[num_validation + num_training:], class_weights
 
 
 class ROIDataset(Dataset):

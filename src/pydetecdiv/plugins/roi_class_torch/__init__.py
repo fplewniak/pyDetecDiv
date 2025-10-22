@@ -286,14 +286,16 @@ class Plugin(plugins.Plugin):
             ChoiceParameter(name='optimizer', label='Optimizer', groups={'training', 'finetune'}, default='AdamW',
                             items={'AdamW'   : optim.AdamW,
                                    'SGD'     : optim.SGD,
+                                   'Adam'    : optim.Adam,
                                    'Adadelta': optim.Adadelta,
                                    'Adamax'  : optim.Adamax,
                                    'Nadam'   : optim.NAdam,
                                    }),
-            FloatParameter(name='learning_rate', label='Learning rate', groups={'training', 'finetune'}, default=0.001,
-                           minimum=0.00001, maximum=1.0),
+            FloatParameter(name='learning_rate', label='Learning rate', groups={'training', 'finetune'}, default=1e-4,
+                           minimum=1e-6, maximum=1.0),
             FloatParameter(name='decay_rate', label='Decay rate', groups={'training', 'finetune'}, default=0.95),
             IntParameter(name='decay_period', label='Decay period', groups={'training', 'finetune'}, default=50),
+            FloatParameter(name='weight_decay', label='Weight decay', groups={'training', 'finetune'}, default=1e-2, ),
             FloatParameter(name='momentum', label='Momentum', groups={'training', 'finetune'}, default=0.9, ),
             ChoiceParameter(name='checkpoint_metric', label='Checkpoint metric', groups={'training', 'finetune'},
                             default='Loss', items={'Loss': 'val_loss', 'Accuracy': 'val_accuracy', }),
@@ -790,31 +792,13 @@ class Plugin(plugins.Plugin):
         print(f'running training on {"GPU" if device.type == "cuda" else "CPU"}')
 
         model, model_name = self.load_model(pretrained=fine_tuning)
-
-        loss_fn = torch.nn.CrossEntropyLoss()
-        # loss_fn = torch.nn.BCELoss()
-        lr = self.parameters['learning_rate'].value
-        decay_rate = self.parameters['decay_rate'].value
-        decay_period = self.parameters['decay_period'].value
-        momentum = self.parameters['momentum'].value
-        lambda1, lambda2 = 0.0, 0.0
-        seq2one = False
-
-        # optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, weight_decay=weight_decay, momentum=momentum)
-        match self.parameters['optimizer'].key:
-            case 'AdamW':
-                optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, weight_decay=1e-3)
-            case 'SGD':
-                optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, momentum = momentum, weight_decay=1e-3)
-        n_epochs = self.parameters['epochs'].value
-
         img_size, seqlen = self.get_input_shape(model)
 
         hdf5_file = self.create_hdf5_annotated_rois()
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data for training')
 
-        training_idx, validation_idx, test_idx = prepare_data_for_training(hdf5_file, seqlen=seqlen,
+        training_idx, validation_idx, test_idx, class_weights = prepare_data_for_training(hdf5_file, seqlen=seqlen,
                                                                            train=self.parameters[
                                                                                'num_training'].value,
                                                                            validation=self.parameters[
@@ -823,6 +807,26 @@ class Plugin(plugins.Plugin):
                                                                                'dataset_seed'].value)
 
         print(f'training: {len(training_idx)} validation: {len(validation_idx)} test: {len(test_idx)}')
+
+        n_epochs = self.parameters['epochs'].value
+        loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights.to(device), reduction='sum')
+        # loss_fn = torch.nn.BCELoss()
+        lr = self.parameters['learning_rate'].value
+        weight_decay = self.parameters['weight_decay'].value
+        decay_rate = self.parameters['decay_rate'].value
+        decay_period = self.parameters['decay_period'].value
+        momentum = self.parameters['momentum'].value
+        lambda1, lambda2 = 0.0, 0.0
+        seq2one = False
+
+        match self.parameters['optimizer'].key:
+            case 'Adam':
+                optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, weight_decay=weight_decay)
+            case 'AdamW':
+                optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, weight_decay=weight_decay)
+            case 'SGD':
+                optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, momentum=momentum,
+                                                               weight_decay=weight_decay)
 
         training_dataset = ROIDataset(hdf5_file, training_idx, targets=True, image_shape=img_size, seq2one=seq2one, seqlen=seqlen)
         validation_dataset = ROIDataset(hdf5_file, validation_idx, targets=True, image_shape=img_size, seq2one=seq2one, seqlen=seqlen)

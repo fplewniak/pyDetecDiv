@@ -52,11 +52,11 @@ class NN_module(nn.Module):
         self.unfolding = SequenceUnfoldingLayer((1024, 1, 1))  # ResNet50 outputs 2048 features
         # self.unfolding = SequenceUnfoldingLayer((1, 1, 2048))  # or should it be that order ? to be tested, which one works best ?
         #
-        # self.bilstm = nn.LSTM(input_size=1024, hidden_size=128, num_layers=3, dropout=0.2,
-        #                       batch_first=True, bidirectional=True)
-
-        self.bilstm = nn.LSTM(input_size=1024, hidden_size=128, num_layers=1,
+        self.bilstm = nn.LSTM(input_size=1024, hidden_size=128, num_layers=2, dropout=0.2,
                               batch_first=True, bidirectional=True)
+
+        # self.bilstm = nn.LSTM(input_size=1024, hidden_size=128, num_layers=1,
+        #                       batch_first=True, bidirectional=True)
 
         self.dropout1 = nn.Dropout(0.5)
         self.dropout2 = nn.Dropout(0.2)
