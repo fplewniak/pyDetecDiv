@@ -4,6 +4,7 @@ from datetime import datetime
 import tables as tbl
 
 import numpy as np
+from sklearn.utils.class_weight import compute_class_weight
 import torch
 from torchvision.transforms import transforms, v2
 import torchvision.transforms.functional as F
@@ -28,9 +29,14 @@ def prepare_data_for_training(hdf5_file: str, seqlen: int = 0, train: float = 0.
     num_frames = targets_arr.shape[0]
     num_rois = targets_arr.shape[1]
     targets = targets_arr.read()
-    classes, class_counts = np.unique(targets, return_counts=True)
-    total_counts = np.sum(class_counts)
-    class_weights = torch.tensor([1.0 - c / total_counts for c in class_counts[1:]], dtype=torch.float32)
+    labels = targets.flatten()
+    labels = labels[labels > -1]
+    classes, class_counts = np.unique(labels, return_counts=True)
+    # total_counts = np.sum(class_counts)
+    # class_weights = torch.tensor([total_counts / (len(classes) * c) for c in class_counts], dtype=torch.float32)
+    class_weights = torch.tensor(compute_class_weight(class_weight='balanced', classes=classes, y=labels), dtype=torch.float32)
+    print(classes, file=sys.stderr)
+    print(class_weights, file=sys.stderr)
     print(f'{datetime.now().strftime("%H:%M:%S")}: Select valid targets from array with shape {targets.shape}')
     if seqlen == 0:
         indices = [[frame, roi] for roi in range(num_rois) for frame in range(num_frames) if targets[frame, roi] != -1]

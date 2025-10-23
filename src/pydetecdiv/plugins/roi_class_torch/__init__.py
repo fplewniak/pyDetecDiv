@@ -809,7 +809,7 @@ class Plugin(plugins.Plugin):
         print(f'training: {len(training_idx)} validation: {len(validation_idx)} test: {len(test_idx)}')
 
         n_epochs = self.parameters['epochs'].value
-        loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights.to(device), reduction='sum')
+        loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights.to(device), reduction='mean')
         # loss_fn = torch.nn.BCELoss()
         lr = self.parameters['learning_rate'].value
         weight_decay = self.parameters['weight_decay'].value
