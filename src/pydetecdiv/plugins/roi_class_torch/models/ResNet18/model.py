@@ -17,14 +17,19 @@ class NN_module(nn.Module):
 
         self.global_avg_pool = nn.AdaptiveAvgPool2d((1, 1))  # Equivalent to GlobalAveragePooling2D
 
-        self.dropout = nn.Dropout(0.5)
+        self.dropout = nn.Dropout(0.25)
         self.fc = nn.Linear(2048, n_classes)  # BiLSTM output size = 2 * hidden_size
         self.softmax = nn.Softmax(dim=-1)
+        self.fc1 = nn.Linear(2048, 512)  # BiLSTM output size = 2 * hidden_size
+        self.fc2 = nn.Linear(512, n_classes)
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         x = self.resnet(x)  # CNN Feature Extraction
-        x = self.dropout(x)
+        # x = self.dropout(x)
         x = torch.flatten(x, start_dim=1)
-        x = self.fc(x)
+        x = self.fc1(x)
+        x = self.relu(x)
         x = self.dropout(x)
+        x = self.fc2(x)
         return x

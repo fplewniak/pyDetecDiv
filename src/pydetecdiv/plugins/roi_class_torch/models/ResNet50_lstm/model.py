@@ -51,14 +51,15 @@ class NN_module(nn.Module):
 
         self.folding = SequenceFoldingLayer((3, 60, 60))
         self.unfolding = SequenceUnfoldingLayer((2048, 1, 1))  # ResNet50 outputs 2048 features
-        # self.unfolding = SequenceUnfoldingLayer((1, 1, 2048))  # or should it be that order ? to be tested, which one works best ?
 
-        self.bilstm = nn.LSTM(input_size=2048, hidden_size=128, num_layers=2, dropout=0.25,
-                              batch_first=True, bidirectional=True)  # check that all parameters are OK, where are activation, etc.
+        # self.bilstm = nn.LSTM(input_size=2048, hidden_size=256, num_layers=2, dropout=0.25,
+        #                       batch_first=True, bidirectional=True)  # check that all parameters are OK, where are activation, etc.
+
+        self.bilstm = nn.LSTM(input_size=2048, hidden_size=256, num_layers=1, batch_first=True, bidirectional=True)
 
         self.dropout1 = nn.Dropout(0.5)
         self.dropout2 = nn.Dropout(0.25)
-        self.fc1 = nn.Linear(256, 128)  # BiLSTM output size = 2 * hidden_size
+        self.fc1 = nn.Linear(512, 128)  # BiLSTM output size = 2 * hidden_size
         self.fc2 = nn.Linear(128, n_classes)
         self.softmax = nn.Softmax(dim=-1)
         self.relu = nn.ReLU()
@@ -79,8 +80,8 @@ class NN_module(nn.Module):
         x = self.relu(x)
         x = self.dropout1(x)
         x = self.fc2(x)
-        x = self.relu(x)
-        x = self.dropout2(x)
+        # x = self.relu(x)
+        # x = self.dropout2(x)
         # x = self.softmax(x)
 
         return x
