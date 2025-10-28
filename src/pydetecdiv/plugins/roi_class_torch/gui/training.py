@@ -269,16 +269,23 @@ def plot_confusion_matrix(ground_truth, predictions, class_names):
 def plot_images(dataset, n, class_names, model, device):
     plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=n, rows=1)
     for i in range(n):
-        img, target = dataset[random.randint(0, len(dataset) - 1)]
+        idx = random.randint(0, len(dataset) - 1)
+        img, target = dataset[idx]
+        roi_name = dataset.get_roi_name(idx)
+        frame = dataset.get_frame(idx)
         if img.dim() == 4:
             # img = img[math.ceil(img.shape[0] / 2.0)]
             t = random.randint(0, len(target) - 1)
             prediction = model(torch.unsqueeze(img, dim=0).to(device)).argmax(dim=-1).squeeze()[t]
             img = img[t]
             target = target[t]
+        else:
+            prediction = model(torch.unsqueeze(img, dim=0).to(device)).argmax(dim=-1).squeeze()
+            t = 0
         img_channel_last = img.permute([1, 2, 0])
         plot_viewer.axes[i].imshow(img_channel_last.to(torch.float32))
         plot_viewer.axes[i].set_title(f'{class_names[target.item()]} ({class_names[prediction.item()]})')
+        plot_viewer.axes[i].set_xlabel(f'{roi_name} [{frame + t}]')
     return plot_viewer
 
 

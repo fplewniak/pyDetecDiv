@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torchvision import models
-from torchvision.models import GoogLeNet_Weights
+from torchvision.models import ResNet18_Weights, ResNet34_Weights
 
 
 class SequenceFoldingLayer(nn.Module):
@@ -42,21 +42,26 @@ class NN_module(nn.Module):
 
         self.expected_shape = ('Batch', 'Sequence', 3, 60, 60)
 
-        googlenet = models.googlenet(weights=GoogLeNet_Weights.IMAGENET1K_V1)
-        # googlenet = models.googlenet(weights=GoogLeNet_Weights.DEFAULT)
-        self.googlenet = nn.Sequential(*list(googlenet.children())[:-2])  # Remove FC layer
+        # Load ResNet34
+        resnet = models.resnet34(weights=ResNet34_Weights.DEFAULT)
+        self.resnet = nn.Sequential(*list(resnet.children())[:-2])  # Remove FC layer
+
+        self.global_avg_pool = nn.AdaptiveAvgPool2d((1, 1))  # Equivalent to GlobalAveragePooling2D
 
         self.folding = SequenceFoldingLayer((3, 60, 60))
-        self.unfolding = SequenceUnfoldingLayer((1024, 1, 1))  # GoogleNet outputs 1024 features
+        self.unfolding = SequenceUnfoldingLayer((512, 1, 1))  # ResNet34 outputs 512 features
 
-        self.bilstm = nn.LSTM(input_size=1024, hidden_size=150, num_layers=1, batch_first=True, bidirectional=True)
+        self.bilstm = nn.LSTM(input_size=512, hidden_size=150, num_layers=1, batch_first=True, bidirectional=True)
 
         self.dropout = nn.Dropout(0.5)
+
         self.classify = nn.Linear(300, n_classes)
+
 
     def forward(self, x):
         x, batch_size = self.folding(x)  # Fold sequence into batch form
-        x = self.googlenet(x)  # CNN Feature Extraction
+        x = self.resnet(x)  # CNN Feature Extraction
+        x = self.global_avg_pool(x)
         x = torch.flatten(x, start_dim=1)  # Flatten to (batch, features)
         x = self.unfolding(x, batch_size)  # Unfold sequence
         x = x.reshape(x.shape[0], x.shape[1], -1)  # Flatten

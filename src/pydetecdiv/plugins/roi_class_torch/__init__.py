@@ -134,6 +134,13 @@ class TblClassNamesRow(tbl.IsDescription):
     class_name = tbl.StringCol(16)
 
 
+class TblRoiNamesRow(tbl.IsDescription):
+    """
+    A class to describe the ROI names row saved in a table of an HDF5 file
+    """
+    roi_name = tbl.StringCol(32)
+
+
 def get_annotation_runs() -> dict:
     """
    Gets previously run prediction runs
@@ -197,7 +204,7 @@ def get_roi_list() -> pd.DataFrame:
     """
     with pydetecdiv_project(PyDetecDiv.project_name) as project:
         results = pd.DataFrame(project.repository.session.execute(
-                sqlalchemy.text("SELECT id_ as roi, fov, x0_ as x0, y0_ as y0, x1_ as x1, y1_ as y1 "
+                sqlalchemy.text("SELECT id_ as roi, name, fov, x0_ as x0, y0_ as y0, x1_ as x1, y1_ as y1 "
                                 "FROM ROI "
                                 "ORDER BY fov, id_ ASC;")))
     return results
@@ -819,13 +826,33 @@ class Plugin(plugins.Plugin):
         lambda1, lambda2 = 0.0, 0.0
         seq2one = False
 
+        ### Make sure weight decay is only applied to Linear and Conv2d layers, as it should not be applied to Batch normalization
+        ### and possibly other normalization layers
+        ### but does not work... get error: TypeError: optimizer can only optimize Tensors, but one of the params is NoneType
+        # no_decay = list()
+        # decay = list()
+        # for m in model.modules():
+        #   if isinstance(m, (torch.nn.Linear, torch.nn.Conv2d,)):
+        #     decay.append(m.weight)
+        #     no_decay.append(m.bias)
+        #   elif hasattr(m, 'weight'):
+        #     no_decay.append(m.weight)
+        #   elif hasattr(m, 'bias'):
+        #     no_decay.append(m.bias)
+        # for name, param in model.named_modules():
+        #   if not (name.endswith('.weight') or name.endswith('.bias')):
+        #     no_decay.append(param)
+        # model_param = [{'params': no_decay, 'weight_decay': 0.0}, {'params': decay, 'weight_decay': weight_decay}]
+
+        model_param = model.parameters()
+
         match self.parameters['optimizer'].key:
             case 'Adam':
-                optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, weight_decay=weight_decay)
+                optimizer = self.parameters['optimizer'].value(model_param, lr=lr, weight_decay=weight_decay)
             case 'AdamW':
-                optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, weight_decay=weight_decay)
+                optimizer = self.parameters['optimizer'].value(model_param, lr=lr, weight_decay=weight_decay)
             case 'SGD':
-                optimizer = self.parameters['optimizer'].value(model.parameters(), lr=lr, momentum=momentum,
+                optimizer = self.parameters['optimizer'].value(model_param, lr=lr, momentum=momentum,
                                                                weight_decay=weight_decay)
 
         training_dataset = ROIDataset(hdf5_file, training_idx, targets=True, image_shape=img_size, seq2one=seq2one, seqlen=seqlen)
@@ -1157,6 +1184,14 @@ class Plugin(plugins.Plugin):
             roi_data = h5file.create_carray(h5file.root, 'roi_data', atom=tbl.Float16Atom(shape=(height, width, 3)),
                                             chunkshape=(50, num_rois,), shape=(num_frames, num_rois))
 
+            # print([(roi_name,) for roi_name in roi_list['name'].unique()], file=sys.stderr)
+            roi_names = roi_list[['roi', 'name']].drop_duplicates()
+            roi_names_table = h5file.create_table(h5file.root, 'roi_names', TblRoiNamesRow, 'ROI names')
+            roi_names_table.append([(roi_name,) for roi_name in roi_list['name'].unique()])
+
+            # h5file.create_carray(h5file.root, 'roi_names', atom=tbl.StringAtom(64), chunkshape=(50, num_rois,),
+            #                                  shape=(num_frames, num_rois))
+
             print(f'{datetime.now().strftime("%H:%M:%S")}: Reading and compositing images')
 
             for row in fov_data.itertuples():
@@ -1175,6 +1210,7 @@ class Plugin(plugins.Plugin):
                     roi_data[row.t, roi.roi - 1, ...] = cv2.normalize(fov_img[roi.y0:roi.y1 + 1, roi.x0:roi.x1 + 1],
                                                                       dtype=cv2.CV_16F, dst=None, alpha=1e-10, beta=1.0,
                                                                       norm_type=cv2.NORM_MINMAX)
+                    roi_names_table[roi.roi - 1] = roi_names.loc[roi_names['roi'] == roi.roi, 'name'].values
                     target_array[row.t, roi.roi - 1] = targets.loc[
                         (targets['t'] == row.t) & (targets['roi'] == roi.roi), 'label'].values
 

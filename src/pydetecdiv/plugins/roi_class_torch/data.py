@@ -32,10 +32,10 @@ def prepare_data_for_training(hdf5_file: str, seqlen: int = 0, train: float = 0.
     labels = targets.flatten()
     labels = labels[labels > -1]
     classes, class_counts = np.unique(labels, return_counts=True)
+    print(classes, file=sys.stderr)
     # total_counts = np.sum(class_counts)
     # class_weights = torch.tensor([total_counts / (len(classes) * c) for c in class_counts], dtype=torch.float32)
     class_weights = torch.tensor(compute_class_weight(class_weight='balanced', classes=classes, y=labels), dtype=torch.float32)
-    print(classes, file=sys.stderr)
     print(class_weights, file=sys.stderr)
     print(f'{datetime.now().strftime("%H:%M:%S")}: Select valid targets from array with shape {targets.shape}')
     if seqlen == 0:
@@ -61,6 +61,8 @@ class ROIDataset(Dataset):
                  seq2one: bool = True, transform: transforms = None):
         self.h5file = tbl.open_file(h5file, mode='r')
         self.roi_data = self.h5file.root.roi_data
+        self.roi_names = self.h5file.root.roi_names
+
         if targets:
             self.targets = self.h5file.root.targets
         else:
@@ -115,3 +117,11 @@ class ROIDataset(Dataset):
         if self.targets:
             return roi_data, targets
         return roi_data
+
+    def get_roi_name(self, idx):
+        _, roi_id = self.indices[idx]
+        return self.roi_names[roi_id][0].decode()
+
+    def get_frame(self, idx):
+        frame, _ = self.indices[idx]
+        return frame
