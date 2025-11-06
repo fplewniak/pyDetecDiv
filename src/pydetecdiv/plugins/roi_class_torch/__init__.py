@@ -540,8 +540,9 @@ class Plugin(plugins.Plugin):
             project_name = PyDetecDiv.project_name
         with pydetecdiv_project(project_name) as project:
             run_list = project.get_objects('Run')
-            all_parameters = [run.parameters for run in run_list if
-                              run.command in ['train_model', 'fine_tune', 'import_classifier']]
+            all_parameters = [run.parameters for run in run_list
+                              if run.filter(commands=['train_model', 'fine_tune', 'import_classifier'],
+                                            has_parameters=['last_weights', 'best_weights'])]
 
         for parameters in all_parameters:
             module = self.parameters['model'].items[parameters['model']]
@@ -585,8 +586,10 @@ class Plugin(plugins.Plugin):
         """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             run_list = project.get_objects('Run')
-        all_parameters = [run.parameters for run in run_list if
-                          run.command in ['train_model', 'fine_tune', 'import_classifier']]
+            all_parameters = [run.parameters for run in run_list
+                              if run.filter(commands=['train_model', 'fine_tune', 'import_classifier'],
+                                            has_parameters=['last_weights', 'best_weights'])]
+
         for parameters in all_parameters:
             if weights_file in [parameters['best_weights'], parameters['last_weights']]:
                 self.parameters['model'].value = parameters['model']
@@ -804,12 +807,12 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data for training')
 
         training_idx, validation_idx, test_idx, class_weights = prepare_data_for_training(hdf5_file, seqlen=seqlen,
-                                                                           train=self.parameters[
-                                                                               'num_training'].value,
-                                                                           validation=self.parameters[
-                                                                               'num_validation'].value,
-                                                                           seed=self.parameters[
-                                                                               'dataset_seed'].value)
+                                                                                          train=self.parameters[
+                                                                                              'num_training'].value,
+                                                                                          validation=self.parameters[
+                                                                                              'num_validation'].value,
+                                                                                          seed=self.parameters[
+                                                                                              'dataset_seed'].value)
 
         print(f'training: {len(training_idx)} validation: {len(validation_idx)} test: {len(test_idx)}')
 
@@ -855,7 +858,8 @@ class Plugin(plugins.Plugin):
                                                                weight_decay=weight_decay)
 
         training_dataset = ROIDataset(hdf5_file, training_idx, targets=True, image_shape=img_size, seq2one=seq2one, seqlen=seqlen)
-        validation_dataset = ROIDataset(hdf5_file, validation_idx, targets=True, image_shape=img_size, seq2one=seq2one, seqlen=seqlen)
+        validation_dataset = ROIDataset(hdf5_file, validation_idx, targets=True, image_shape=img_size, seq2one=seq2one,
+                                        seqlen=seqlen)
         test_dataset = ROIDataset(hdf5_file, test_idx, targets=True, image_shape=img_size, seq2one=seq2one, seqlen=seqlen)
 
         run = self.save_training_run(fine_tuning=fine_tuning)
@@ -966,13 +970,15 @@ class Plugin(plugins.Plugin):
         model = torch.jit.load(self.parameters['weights'].value)
         img_size = (model.expected_shape[-2], model.expected_shape[-1])
 
-        # print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data')
-        # hdf5_file = self.create_hdf5_unannotated_rois(overwrite=False)
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data')
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            fov_ids = [fov.id_ for fov in [project.get_named_object('FOV', fov_name) for fov_name in fov_names]]
 
+        fov_data, roi_list, rois = self.prepare_data_for_classification(fov_ids, z_channels)
+        num_rois = len(rois)
+        print(f'{num_rois=}')
 
-        # pred_dataset = ROIDataset(hdf5_file, training_idx, targets=True, image_shape=img_size, seq2one=seq2one, seqlen=seqlen)
-
-
+        print(f'{datetime.now().strftime("%H:%M:%S")}: predictions OK')
 
     def prepare_data_for_classification(self, fov_list: list[int],
                                         z_channels: tuple[int] = None) -> (pd.DataFrame, pd.DataFrame, np.ndarray):
@@ -1010,7 +1016,6 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: ROIs = {len(rois)} ({len(roi_list)})')
 
         return fov_data, roi_list, rois
-
 
     def show_results(self, trigger=None, roi_selection: list[ROI] = None) -> None:
         """
