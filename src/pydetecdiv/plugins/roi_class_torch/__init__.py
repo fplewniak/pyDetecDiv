@@ -920,19 +920,21 @@ class Plugin(plugins.Plugin):
         img_size = (model.expected_shape[-2], model.expected_shape[-1])
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data')
+
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             fov_ids = [fov.id_ for fov in [project.get_named_object('FOV', fov_name) for fov_name in fov_names]]
 
-        fov_data, roi_list, rois = self.prepare_data_for_classification(fov_ids, z_channels)
-        num_rois = len(rois)
+            fov_data, roi_list, rois = self.prepare_data_for_classification(fov_ids, z_channels)
+            num_rois = len(rois)
 
-        if len(model.expected_shape) == 4:
-            print('Single image')
-        else:
-            print('LSTM')
-            print(fov_data, file=sys.stderr)
-            print(roi_list, file=sys.stderr)
-            print(rois, file=sys.stderr)
+            if len(model.expected_shape) == 4:
+                print('Single image')
+            else:
+                print('LSTM')
+                print(fov_data, file=sys.stderr)
+                print(roi_list, file=sys.stderr)
+                print(rois, file=sys.stderr)
+                self.create_hdf5_rois(annotated_rois=False)
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: predictions OK')
 
@@ -1072,23 +1074,35 @@ class Plugin(plugins.Plugin):
                 df = predictions_df
         return df
 
-    def create_hdf5_annotated_rois(self) -> str:
+    def create_hdf5_annotated_rois(self):
+        self.create_hdf5_rois(annotated_rois=True)
+
+    def create_hdf5_rois(self, annotated_rois=True) -> str:
         """
         Creates a HDF5 file containing the annotated ROI data and their targets
         """
         os.makedirs(os.path.join(get_project_dir(), 'roi_classification', 'data'), exist_ok=True)
-        hdf5_file = os.path.join(get_project_dir(), 'roi_classification', 'data', 'annotated_rois.h5')
+        if annotated_rois:
+            hdf5_file = os.path.join(get_project_dir(), 'roi_classification', 'data', 'annotated_rois.h5')
+        else:
+            hdf5_file = os.path.join(get_project_dir(), 'roi_classification', 'data', 'unannotated_rois.h5')
 
         z_channels = (self.parameters['red_channel'].value, self.parameters['green_channel'].value,
                       self.parameters['blue_channel'].value)
 
         if not os.path.exists(hdf5_file):
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Retrieving data for annotated ROIs')
-            data = self.get_annotations()
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Data retrieved with {len(data)} rows')
+            if annotated_rois:
+                print(f'{datetime.now().strftime("%H:%M:%S")}: Retrieving data for annotated ROIs')
+                data = self.get_annotations()
+                print(f'{datetime.now().strftime("%H:%M:%S")}: Data retrieved with {len(data)} rows')
+            else:
+                print(f'{datetime.now().strftime("%H:%M:%S")}: Retrieving data for unannotated ROIs')
+                data = self.get_unannotated_rois_data()
+                print(data, file=sys.stderr)
+
 
             print(f'{datetime.now().strftime("%H:%M:%S")}: Creating HDF5 file')
-            h5file = tbl.open_file(hdf5_file, mode='w', title='ROI annotations')
+            h5file = tbl.open_file(hdf5_file, mode='w', title='ROI data')
 
             print(f'{datetime.now().strftime("%H:%M:%S")}: Getting fov data')
             fov_data = self.get_fov_data(z_layers=z_channels)
@@ -1128,16 +1142,17 @@ class Plugin(plugins.Plugin):
 
             print(f'{datetime.now().strftime("%H:%M:%S")}: Creating target datasets')
 
-            targets = data.loc[:, ['t', 'roi', 'class_name']]
-            targets['roi'] = fastremap.remap(np.array(targets['roi']), roi_mapping)
-            targets['label'] = targets['class_name'].apply(lambda x: self.class_names(as_string=False).index(x))
+            if annotated_rois:
+                targets = data.loc[:, ['t', 'roi', 'class_name']]
+                targets['roi'] = fastremap.remap(np.array(targets['roi']), roi_mapping)
+                targets['label'] = targets['class_name'].apply(lambda x: self.class_names(as_string=False).index(x))
 
-            initial_values = np.zeros((num_frames, num_rois,), dtype=np.int8) - 1
-            target_array = h5file.create_carray(h5file.root, 'targets', atom=tbl.Int8Atom(), shape=(num_frames, num_rois),
-                                                chunkshape=(num_frames, num_rois,), obj=initial_values)
+                initial_values = np.zeros((num_frames, num_rois,), dtype=np.int8) - 1
+                target_array = h5file.create_carray(h5file.root, 'targets', atom=tbl.Int8Atom(), shape=(num_frames, num_rois),
+                                                    chunkshape=(num_frames, num_rois,), obj=initial_values)
 
-            class_names_table = h5file.create_table(h5file.root, 'class_names', TblClassNamesRow, 'Class names')
-            class_names_table.append([(name,) for name in self.class_names(as_string=False)])
+                class_names_table = h5file.create_table(h5file.root, 'class_names', TblClassNamesRow, 'Class names')
+                class_names_table.append([(name,) for name in self.class_names(as_string=False)])
 
             print(f'{datetime.now().strftime("%H:%M:%S")}: Creating ROI dataset')
 
@@ -1171,8 +1186,9 @@ class Plugin(plugins.Plugin):
                                                                       dtype=cv2.CV_16F, dst=None, alpha=1e-10, beta=1.0,
                                                                       norm_type=cv2.NORM_MINMAX)
                     roi_names_table[roi.roi - 1] = roi_names.loc[roi_names['roi'] == roi.roi, 'name'].values
-                    target_array[row.t, roi.roi - 1] = targets.loc[
-                        (targets['t'] == row.t) & (targets['roi'] == roi.roi), 'label'].values
+                    if annotated_rois:
+                        target_array[row.t, roi.roi - 1] = targets.loc[(targets['t'] == row.t)
+                                                                       & (targets['roi'] == roi.roi), 'label'].values
 
             h5file.close()
             print(f'{datetime.now().strftime("%H:%M:%S")}: HDF5 file  {hdf5_file} of annotated ROIs ready')
@@ -1197,6 +1213,25 @@ class Plugin(plugins.Plugin):
                                     f"ORDER BY run.id_, rc.t, rc.roi ASC;")))
             results = results.drop_duplicates(subset=['roi', 't'], keep='last')
             return results
+
+    def get_unannotated_rois_data(self) -> pd.DataFrame:
+        """
+        Gets ROI data that are not annotated
+
+        :return: a pandas DataFrame containing run id, ROI and FOV ids, frame
+        """
+        roi_list, _ = self.get_unannotated_rois()
+        # roi_df = pd.DataFrame({'roi': [roi.id_ for roi in roi_list], 'fov': [roi.fov.id_ for roi in roi_list]})
+        roi_df = polars.DataFrame(schema=[('roi', polars.datatypes.Int64),
+                                          ('fov', polars.datatypes.Int64),
+                                          ('t', polars.datatypes.Int64)])
+
+        for roi in roi_list:
+            for t in range(roi.fov.sizeT):
+                roi_df.extend(polars.DataFrame({'roi': roi.id_, 'fov': roi.fov.id_, 't': t}))
+
+        return roi_df.to_pandas()
+
 
     def get_fov_data(self, z_layers: tuple[int, int, int] | tuple[int] = None, channel: int = None) -> pd.DataFrame:
         """
