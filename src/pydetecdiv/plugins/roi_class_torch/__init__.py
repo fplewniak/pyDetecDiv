@@ -13,8 +13,6 @@ import polars
 import tables as tbl
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
-from sklearn.metrics import precision_recall_fscore_support
 
 import sqlalchemy
 import torch
@@ -25,9 +23,8 @@ from PySide6.QtWidgets import QMenu, QFileDialog, QMessageBox, QGraphicsRectItem
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
-from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau, StepLR
+from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 from torch.utils.data import DataLoader
-from torchinfo import summary
 
 from torch import optim
 
@@ -49,7 +46,6 @@ from .gui.training import TrainingDialog, FineTuningDialog, ImportClassifierDial
 
 from pydetecdiv.settings import get_plugins_dir, get_config_value
 from .training import train_testing_loop, train_loop
-from ...app.gui.core.widgets.viewers.plots import MatplotViewer
 from ...domain.Dataset import Dataset
 
 Base = registry().generate_base()
@@ -302,7 +298,9 @@ class Plugin(plugins.Plugin):
                            minimum=1e-6, maximum=1.0),
             FloatParameter(name='decay_rate', label='Decay rate', groups={'training', 'finetune'}, default=0.95),
             IntParameter(name='decay_period', label='Decay period', groups={'training', 'finetune'}, default=50),
-            FloatParameter(name='weight_decay', label='Weight decay', groups={'training', 'finetune'}, default=1e-2, ),
+            FloatParameter(name='weight_decay', label='Weight decay', groups={'training', 'finetune'}, default=0.0, ),
+            FloatParameter(name='L1', label='L1 regularization', groups={'training', 'finetune'}, default=0.0, ),
+            FloatParameter(name='L2', label='L2 regularization', groups={'training', 'finetune'}, default=0.0, ),
             FloatParameter(name='momentum', label='Momentum', groups={'training', 'finetune'}, default=0.9, ),
             ChoiceParameter(name='checkpoint_metric', label='Checkpoint metric', groups={'training', 'finetune'},
                             default='Loss', items={'Loss': 'val_loss', 'Accuracy': 'val_accuracy', }),
@@ -823,7 +821,8 @@ class Plugin(plugins.Plugin):
         decay_rate = self.parameters['decay_rate'].value
         decay_period = self.parameters['decay_period'].value
         momentum = self.parameters['momentum'].value
-        lambda1, lambda2 = 0.0, 0.0
+        lambda1 = self.parameters['L1'].value
+        lambda2 = self.parameters['L2'].value
         seq2one = False
 
         ### Make sure weight decay is only applied to Linear and Conv2d layers, as it should not be applied to Batch normalization

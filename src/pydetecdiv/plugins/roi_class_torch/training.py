@@ -22,7 +22,7 @@ def train_loop_seq2one(training_loader, validation_loader, model, loss_fn, optim
 
     for images, labels in training_loader:
         images, labels = images.to(device), labels.type(torch.LongTensor).to(device)
-        optimizer.zero_grad()
+        # optimizer.zero_grad()
 
         with autocast('cuda'):
             outputs = model(images)
@@ -43,7 +43,7 @@ def train_loop_seq2one(training_loader, validation_loader, model, loss_fn, optim
         # scaler.scale(loss).backward()
         # scaler.step(optimizer)
         # scaler.update()
-        # optimizer.zero_grad()
+        optimizer.zero_grad()
 
         loss.backward()
         optimizer.step()
@@ -71,7 +71,7 @@ def train_loop_seq2seq(training_loader, validation_loader, model, loss_fn, optim
 
     for images, labels in training_loader:
         images, labels = images.to(device), labels.type(torch.LongTensor).to(device)
-        optimizer.zero_grad()
+        # optimizer.zero_grad()
         with autocast('cuda'):
             outputs = model(images)
             gt = labels
@@ -89,7 +89,7 @@ def train_loop_seq2seq(training_loader, validation_loader, model, loss_fn, optim
         # scaler.scale(loss).backward()
         # scaler.step(optimizer)
         # scaler.update()
-        # optimizer.zero_grad()
+        optimizer.zero_grad()
 
         loss.backward()
         optimizer.step()
