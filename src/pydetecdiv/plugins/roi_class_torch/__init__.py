@@ -3,7 +3,6 @@ import importlib
 import json
 import os
 import pkgutil
-import random
 import sys
 from datetime import datetime
 
@@ -46,6 +45,7 @@ from .gui.training import TrainingDialog, FineTuningDialog, ImportClassifierDial
 
 from pydetecdiv.settings import get_plugins_dir, get_config_value
 from .training import train_testing_loop, train_loop
+from .utils import get_classifications, get_annotation_runs
 from ...domain.Dataset import Dataset
 
 Base = registry().generate_base()
@@ -137,61 +137,6 @@ class TblRoiNamesRow(tbl.IsDescription):
     roi_name = tbl.StringCol(32)
 
 
-def get_annotation_runs() -> dict:
-    """
-   Gets previously run prediction runs
-
-    :return: a dictionary containing the ids of all prediction runs corresponding to a given list of classes
-    """
-    with pydetecdiv_project(PyDetecDiv.project_name) as project:
-        results = list(project.repository.session.execute(
-                sqlalchemy.text(f"SELECT run.id_,"
-                                f"run.parameters ->> '$.annotator' as annotator, "
-                                f"run.parameters ->> '$.class_names' as class_names "
-                                f"FROM run "
-                                f"WHERE (run.command='annotate_rois' OR run.command='import_annotated_rois') "
-                                f"ORDER BY run.id_ ASC;")))
-        runs = {}
-        if results:
-            for run in results:
-                class_names = json.dumps(json.loads(run[2]))
-                if class_names in runs:
-                    runs[class_names].append(run[0])
-                else:
-                    runs[class_names] = [run[0]]
-    return runs
-
-
-def get_classifications(roi: ROI, run_list: list[int], as_index: bool = True) -> list[int] | list[str]:
-    """
-    Get the annotations for a ROI as defined in a list of runs
-
-    :param roi: the ROI
-    :param run_list: the list of Runs where the ROI was annotated or classified
-    :param as_index: bool set to True to return annotations as indices of class_names list, set to False to return
-     annotations as class names
-    :return: the list of annotated classes by frame
-    """
-    roi_classes = [-1] * roi.fov.image_resource().image_resource_data().sizeT
-    with pydetecdiv_project(PyDetecDiv.project_name) as project:
-        results = list(project.repository.session.execute(
-                sqlalchemy.text(f"SELECT rc.roi,rc.t,rc.class_name,"
-                                f"run.parameters ->> '$.class_names' as class_names, rc.run, run.id_ "
-                                f"FROM run, roi_classification as rc "
-                                f"WHERE rc.run IN ({','.join([str(i) for i in run_list])}) and rc.roi={roi.id_} "
-                                f"AND run.id_=rc.run "
-                                f"ORDER BY rc.run ASC;")))
-        if results:
-            class_names = json.loads(results[0][3])
-            if as_index:
-                for annotation in results:
-                    roi_classes[annotation[1]] = class_names.index(annotation[2])
-            else:
-                for annotation in results:
-                    roi_classes[annotation[1]] = annotation[2]
-    return roi_classes
-
-
 def get_roi_list() -> pd.DataFrame:
     """
     Gets a list of ROIs in a DataFrame
@@ -218,12 +163,16 @@ def get_drift_corrections() -> pd.DataFrame:
                                 "FROM ImageResource as img "
                                 "ORDER BY fov ASC;")))
         drift_corrections = pd.DataFrame(columns=['fov', 't', 'dx', 'dy'])
+        drift_corrections = None
         for row in results.itertuples(index=False):
             if row.drift is not None:
                 df = pd.read_csv(os.path.join(get_project_dir(), row.drift))
                 df['fov'] = row.fov
                 df['t'] = df.index
-                drift_corrections = pd.concat([drift_corrections, df], ignore_index=True)
+                if drift_corrections is None:
+                    drift_corrections = df
+                else:
+                    drift_corrections = pd.concat([drift_corrections, df], ignore_index=True)
         return drift_corrections
 
 
@@ -976,7 +925,14 @@ class Plugin(plugins.Plugin):
 
         fov_data, roi_list, rois = self.prepare_data_for_classification(fov_ids, z_channels)
         num_rois = len(rois)
-        print(f'{num_rois=}')
+
+        if len(model.expected_shape) == 4:
+            print('Single image')
+        else:
+            print('LSTM')
+            print(fov_data, file=sys.stderr)
+            print(roi_list, file=sys.stderr)
+            print(rois, file=sys.stderr)
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: predictions OK')
 
@@ -995,12 +951,12 @@ class Plugin(plugins.Plugin):
         fov_data = fov_data[mask]
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Getting drift correction')
-        drift_correction = self.get_drift_corrections()
+        drift_correction = get_drift_corrections()
         mask = drift_correction['fov'].isin(fov_list)
         drift_correction = drift_correction[mask]
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Getting roi list')
-        roi_list = self.get_roi_list()
+        roi_list = get_roi_list()
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Applying drift correction to ROIs')
         roi_list = pd.merge(drift_correction, roi_list, on=['fov'], how='left').dropna()
@@ -1266,7 +1222,7 @@ class Plugin(plugins.Plugin):
                                     f"ORDER BY img.fov, data.url ASC;")))
             for row in results.itertuples():
                 results.at[row.Index, 'url'] = project.get_object('Data', row.id_).url
-            print(results, file=sys.stderr)
+            # print(results, file=sys.stderr)
             fov_data = results.groupby(['fov', 't'])['url'].apply(self.layers2channels).reset_index()
         fov_data.columns = ['fov', 't', 'channel_files']
         return fov_data

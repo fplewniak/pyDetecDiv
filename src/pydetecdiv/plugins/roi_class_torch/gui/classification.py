@@ -19,6 +19,8 @@ from pydetecdiv.settings import get_config_value
 from pydetecdiv.utils import BidirectionalIterator, previous
 from pydetecdiv.plugins import Plugin
 from pydetecdiv.plugins.parameters import Parameter
+from pydetecdiv.plugins.roi_class_torch.utils import get_classifications, get_annotation_runs
+
 
 
 class AnnotationScene(Scene):
@@ -236,13 +238,12 @@ class AnnotationTool(VideoPlayer):
             self.control_panel.video_control.t_slider.setSliderPosition(0)
             PyDetecDiv.main_window.active_subwindow.setCurrentWidget(self)
 
-    def get_roi_annotations(self) -> None:
+    def get_roi_annotations(self) -> list[int]:
         """
         Retrieve from the database the manual annotations for a ROI
         """
         roi_classes = [-1] * self.viewer.image_resource_data.sizeT
-        for frame, annotation in enumerate(
-                self.plugin.get_classifications(self.roi, self.annotation_run_list, as_index=True)):
+        for frame, annotation in enumerate(get_classifications(self.roi, self.annotation_run_list, as_index=True)):
             if annotation != -1:
                 roi_classes[frame] = annotation
         return roi_classes
@@ -296,7 +297,7 @@ class AnnotationChartView(ChartView):
         :param plot: the ScatterPlotItem displaying the annotation plot
         :param points: the clicked point
         """
-        print(points)
+        # print(points)
         self.annotator.change_frame(int(points[0].pos().x()))
 
 
@@ -316,7 +317,7 @@ class ManualAnnotator(AnnotationTool):
 
         :return: the list of Run ids
         """
-        annotation_runs = self.plugin.get_annotation_runs()
+        annotation_runs = get_annotation_runs()
         return annotation_runs[self.plugin.parameters['class_names'].key]
 
     def setup(self, menubar: QMenuBar = None, plugin: Plugin = None, scene: AnnotationScene = None) -> None:
@@ -551,7 +552,7 @@ class ManualAnnotationMenuBar(AnnotationMenuBar):
         self.menuClasses.addAction(self.action_edit_classes)
         self.menuClasses.addSeparator()
         super().set_class_names_choice()
-        self.action_edit_classes.triggered.connect(lambda _: self.parent().define_classes())
+        self.action_edit_classes.triggered.connect(self.parent().define_classes)
 
 
 class PredictionMenuBar(AnnotationMenuBar):

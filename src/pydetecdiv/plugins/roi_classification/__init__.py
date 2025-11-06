@@ -427,14 +427,14 @@ class Plugin(plugins.Plugin):
         :param data: the data sent by the PyDetecDiv().viewer_roi_click signal
         """
         r, menu = data
-        with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            selected_roi = project.get_named_object('ROI', r.data(0))
-            if selected_roi:
-                roi_list = [selected_roi]
-                annotate = menu.addAction('Annotate region classes')
-                annotate.triggered.connect(lambda _: self.manual_annotation(roi_selection=roi_list))
-                view_predictions = menu.addAction('View class predictions')
-                view_predictions.triggered.connect(lambda _: self.show_results(roi_selection=roi_list))
+        # with pydetecdiv_project(PyDetecDiv.project_name) as project:
+        #     selected_roi = project.get_named_object('ROI', r.data(0))
+        #     if selected_roi:
+        #         roi_list = [selected_roi]
+        #         annotate = menu.addAction('Annotate region classes')
+        #         annotate.triggered.connect(lambda _: self.manual_annotation(roi_selection=roi_list))
+        #         view_predictions = menu.addAction('View class predictions')
+        #         view_predictions.triggered.connect(lambda _: self.show_results(roi_selection=roi_list))
 
     def import_annotated_rois(self) -> None:
         """
