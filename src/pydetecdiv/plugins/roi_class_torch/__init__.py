@@ -917,10 +917,10 @@ class Plugin(plugins.Plugin):
         """
         Running prediction on all ROIs in selected FOVs.
         """
-        seqlen = self.parameters['seqlen'].value
-        z_channels = (self.parameters['red_channel'].value, self.parameters['green_channel'].value,
-                      self.parameters['blue_channel'].value,)
-        fov_names = [self.parameters['fov'].key]
+        # seqlen = self.parameters['seqlen'].value
+        # z_channels = (self.parameters['red_channel'].value, self.parameters['green_channel'].value,
+        #               self.parameters['blue_channel'].value,)
+        # fov_names = [self.parameters['fov'].key]
         module = self.parameters['model'].value
         # print(module.__name__)
 

@@ -16,8 +16,8 @@ class PredictionDialog(Dialog):
         self.classifier_selection.addOption('Network', ComboBox, parameter=self.plugin.parameters['model'], enabled=False)
         self.classifier_selection.addOption('Classes', ComboBox, parameter=self.plugin.parameters['class_names'], enabled=False)
 
-        self.fov_selection = self.addGroupBox('Select FOVs')
-        self.fov_selection.addOption(None, ListWidget, parameter=self.plugin.parameters['fov'])
+        # self.fov_selection = self.addGroupBox('Select FOVs')
+        # self.fov_selection.addOption(None, ListWidget, parameter=self.plugin.parameters['fov'])
 
         self.hyper = self.addGroupBox('Hyper parameters')
         self.hyper.addOption('Batch size:', SpinBox, adaptive=True, parameter=self.plugin.parameters['batch_size'])
@@ -34,7 +34,7 @@ class PredictionDialog(Dialog):
 
         self.button_box = self.addButtonBox()
 
-        self.arrangeWidgets([self.classifier_selection, self.fov_selection,
+        self.arrangeWidgets([self.classifier_selection, #self.fov_selection,
                              self.hyper, self.preprocessing, self.button_box])
 
         set_connections({self.button_box.accepted: self.wait_for_prediction,
