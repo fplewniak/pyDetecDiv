@@ -3,6 +3,7 @@
 """
  A class defining the business logic methods that can be applied to Fields Of View
 """
+import time
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -10,7 +11,7 @@ if TYPE_CHECKING:
     from pydetecdiv.domain.Data import Data
     from pydetecdiv.domain.ROI import ROI
 
-from pydetecdiv.domain.dso import NamedDSO, BoxedDSO
+from pydetecdiv.domain.dso import NamedDSO, BoxedDSO, DomainSpecificObject
 
 
 class FOV(NamedDSO, BoxedDSO):
@@ -67,6 +68,23 @@ number of datasets:   {len(self.project.get_linked_objects('Dataset', to=self))}
 number of data files: {len(self.project.get_linked_objects('Data', to=self))}
 Comments:             {self.comments}
         """
+
+    @property
+    def timestamp(self) -> float | None:
+        """
+        the last time this FOV was modified (ROI was added, drift correction was computed...)
+        :return: the timestamp
+        """
+        if 'timestamp' in self.key_val:
+            return self.key_val['timestamp']
+        return None
+
+    def set_timestamp(self) -> float | None:
+        if self.key_val is None:
+            self.key_val = {}
+        self.key_val['timestamp'] = time.time()
+        self.validate()
+        return self.timestamp
 
     @property
     def comments(self) -> str:
