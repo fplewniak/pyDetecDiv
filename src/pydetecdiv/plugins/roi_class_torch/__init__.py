@@ -137,6 +137,17 @@ class TblRoiNamesRow(tbl.IsDescription):
     roi_name = tbl.StringCol(32)
 
 
+def get_fov_timestamp(id_list: list[int] = None) -> float:
+    """
+    Get the timestamp of the latest modification of FOVs (ROI creation, deletion or drift correction)
+
+    :return: the most recent timestamp
+    """
+    with pydetecdiv_project(PyDetecDiv.project_name) as project:
+        fov_list = project.get_objects('FOV', id_list=id_list)
+        return max([fov.timestamp if fov.timestamp is not None else 0.0 for fov in fov_list])
+
+
 def get_roi_list() -> pd.DataFrame:
     """
     Gets a list of ROIs in a DataFrame
@@ -911,7 +922,7 @@ class Plugin(plugins.Plugin):
                       self.parameters['blue_channel'].value,)
         fov_names = [self.parameters['fov'].key]
         module = self.parameters['model'].value
-        print(module.__name__)
+        # print(module.__name__)
 
         seq2one = False
 
@@ -921,59 +932,59 @@ class Plugin(plugins.Plugin):
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data')
 
-        with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            fov_ids = [fov.id_ for fov in [project.get_named_object('FOV', fov_name) for fov_name in fov_names]]
+        # with pydetecdiv_project(PyDetecDiv.project_name) as project:
+        #     fov_ids = [fov.id_ for fov in [project.get_named_object('FOV', fov_name) for fov_name in fov_names]]
+        #
+        #     fov_data, roi_list, rois = self.prepare_data_for_classification(fov_ids, z_channels)
+        #     num_rois = len(rois)
 
-            fov_data, roi_list, rois = self.prepare_data_for_classification(fov_ids, z_channels)
-            num_rois = len(rois)
-
-            if len(model.expected_shape) == 4:
-                print('Single image')
-            else:
-                print('LSTM')
-                print(fov_data, file=sys.stderr)
-                print(roi_list, file=sys.stderr)
-                print(rois, file=sys.stderr)
-                self.create_hdf5_rois(annotated_rois=False)
+        if len(model.expected_shape) == 4:
+            print('Single image')
+        else:
+            print('LSTM')
+            # print(fov_data, file=sys.stderr)
+            # print(roi_list, file=sys.stderr)
+            # print(rois, file=sys.stderr)
+        self.create_hdf5_rois(annotated_rois=False)
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: predictions OK')
 
-    def prepare_data_for_classification(self, fov_list: list[int],
-                                        z_channels: tuple[int] = None) -> (pd.DataFrame, pd.DataFrame, np.ndarray):
-        """
-        Prepares the data for class prediction. Drift correction is automatically applied
-
-        :param fov_list: the list of FOV indices whose ROIs should be classified
-        :param z_channels: the z layers to be used as channels
-        :return: Pandas DataFrames containing FOV data, list of (ROI, frame) with positions, unique indices of ROIs
-        """
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Getting fov data')
-        fov_data = self.get_fov_data(z_layers=z_channels)
-        mask = fov_data['fov'].isin(fov_list)
-        fov_data = fov_data[mask]
-
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Getting drift correction')
-        drift_correction = get_drift_corrections()
-        mask = drift_correction['fov'].isin(fov_list)
-        drift_correction = drift_correction[mask]
-
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Getting roi list')
-        roi_list = get_roi_list()
-
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Applying drift correction to ROIs')
-        roi_list = pd.merge(drift_correction, roi_list, on=['fov'], how='left').dropna()
-        roi_list['x0'] = (roi_list['x0'] + roi_list['dx'].round().astype(int))
-        roi_list['x1'] = (roi_list['x1'] + roi_list['dx'].round().astype(int))
-        roi_list['y0'] = (roi_list['y0'] + roi_list['dy'].round().astype(int))
-        roi_list['y1'] = (roi_list['y1'] + roi_list['dy'].round().astype(int))
-
-        rois = roi_list["roi"].unique()
-
-        print(f'{datetime.now().strftime("%H:%M:%S")}: FOV = {len(fov_data["fov"].unique())}')
-        print(f'{datetime.now().strftime("%H:%M:%S")}: T = {np.max(fov_data["t"]) + 1}')
-        print(f'{datetime.now().strftime("%H:%M:%S")}: ROIs = {len(rois)} ({len(roi_list)})')
-
-        return fov_data, roi_list, rois
+    # def prepare_data_for_classification(self, fov_list: list[int],
+    #                                     z_channels: tuple[int] = None) -> (pd.DataFrame, pd.DataFrame, np.ndarray):
+    #     """
+    #     Prepares the data for class prediction. Drift correction is automatically applied
+    #
+    #     :param fov_list: the list of FOV indices whose ROIs should be classified
+    #     :param z_channels: the z layers to be used as channels
+    #     :return: Pandas DataFrames containing FOV data, list of (ROI, frame) with positions, unique indices of ROIs
+    #     """
+    #     print(f'{datetime.now().strftime("%H:%M:%S")}: Getting fov data')
+    #     fov_data = self.get_fov_data(z_layers=z_channels)
+    #     mask = fov_data['fov'].isin(fov_list)
+    #     fov_data = fov_data[mask]
+    #
+    #     print(f'{datetime.now().strftime("%H:%M:%S")}: Getting drift correction')
+    #     drift_correction = get_drift_corrections()
+    #     mask = drift_correction['fov'].isin(fov_list)
+    #     drift_correction = drift_correction[mask]
+    #
+    #     print(f'{datetime.now().strftime("%H:%M:%S")}: Getting roi list')
+    #     roi_list = get_roi_list()
+    #
+    #     print(f'{datetime.now().strftime("%H:%M:%S")}: Applying drift correction to ROIs')
+    #     roi_list = pd.merge(drift_correction, roi_list, on=['fov'], how='left').dropna()
+    #     roi_list['x0'] = (roi_list['x0'] + roi_list['dx'].round().astype(int))
+    #     roi_list['x1'] = (roi_list['x1'] + roi_list['dx'].round().astype(int))
+    #     roi_list['y0'] = (roi_list['y0'] + roi_list['dy'].round().astype(int))
+    #     roi_list['y1'] = (roi_list['y1'] + roi_list['dy'].round().astype(int))
+    #
+    #     rois = roi_list["roi"].unique()
+    #
+    #     print(f'{datetime.now().strftime("%H:%M:%S")}: FOV = {len(fov_data["fov"].unique())}')
+    #     print(f'{datetime.now().strftime("%H:%M:%S")}: T = {np.max(fov_data["t"]) + 1}')
+    #     print(f'{datetime.now().strftime("%H:%M:%S")}: ROIs = {len(rois)} ({len(roi_list)})')
+    #
+    #     return fov_data, roi_list, rois
 
     def show_results(self, trigger=None, roi_selection: list[ROI] = None) -> None:
         """
@@ -1090,7 +1101,7 @@ class Plugin(plugins.Plugin):
         z_channels = (self.parameters['red_channel'].value, self.parameters['green_channel'].value,
                       self.parameters['blue_channel'].value)
 
-        if not os.path.exists(hdf5_file):
+        if not os.path.exists(hdf5_file) or os.path.getmtime(hdf5_file) < get_fov_timestamp():
             if annotated_rois:
                 print(f'{datetime.now().strftime("%H:%M:%S")}: Retrieving data for annotated ROIs')
                 data = self.get_annotations()
@@ -1098,8 +1109,7 @@ class Plugin(plugins.Plugin):
             else:
                 print(f'{datetime.now().strftime("%H:%M:%S")}: Retrieving data for unannotated ROIs')
                 data = self.get_unannotated_rois_data()
-                print(data, file=sys.stderr)
-
+                # print(data, file=sys.stderr)
 
             print(f'{datetime.now().strftime("%H:%M:%S")}: Creating HDF5 file')
             h5file = tbl.open_file(hdf5_file, mode='w', title='ROI data')
@@ -1191,7 +1201,7 @@ class Plugin(plugins.Plugin):
                                                                        & (targets['roi'] == roi.roi), 'label'].values
 
             h5file.close()
-            print(f'{datetime.now().strftime("%H:%M:%S")}: HDF5 file  {hdf5_file} of annotated ROIs ready')
+            print(f'{datetime.now().strftime("%H:%M:%S")}: HDF5 file {hdf5_file} is ready')
         else:
             print(f'{datetime.now().strftime("%H:%M:%S")}: Using existing HDF5 file {hdf5_file}')
         return hdf5_file
@@ -1231,7 +1241,6 @@ class Plugin(plugins.Plugin):
                 roi_df.extend(polars.DataFrame({'roi': roi.id_, 'fov': roi.fov.id_, 't': t}))
 
         return roi_df.to_pandas()
-
 
     def get_fov_data(self, z_layers: tuple[int, int, int] | tuple[int] = None, channel: int = None) -> pd.DataFrame:
         """

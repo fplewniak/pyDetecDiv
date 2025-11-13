@@ -75,7 +75,7 @@ Comments:             {self.comments}
         the last time this FOV was modified (ROI was added, drift correction was computed...)
         :return: the timestamp
         """
-        if 'timestamp' in self.key_val:
+        if self.key_val is not None and 'timestamp' in self.key_val:
             return self.key_val['timestamp']
         return None
 
