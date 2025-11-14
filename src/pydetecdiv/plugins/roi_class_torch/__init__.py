@@ -15,6 +15,7 @@ import pandas as pd
 
 import sqlalchemy
 import torch
+from torch.amp import autocast
 from PySide6.QtGui import QAction
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
 from PySide6.QtWidgets import QMenu, QFileDialog, QMessageBox, QGraphicsRectItem
@@ -891,6 +892,9 @@ class Plugin(plugins.Plugin):
                                                                                                self.parameters['class_names'].value,
                                                                                                test_dataloader,
                                                                                                seqlen, seq2one, device)
+        training_dataset.close()
+        validation_dataset.close()
+        test_dataset.close()
         # del (model)
         # torch.cuda.empty_cache()
         # gc.collect()
@@ -921,14 +925,20 @@ class Plugin(plugins.Plugin):
         # z_channels = (self.parameters['red_channel'].value, self.parameters['green_channel'].value,
         #               self.parameters['blue_channel'].value,)
         # fov_names = [self.parameters['fov'].key]
-        module = self.parameters['model'].value
+        # module = self.parameters['model'].value
         # print(module.__name__)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        print(f'running training on {"GPU" if device.type == "cuda" else "CPU"}')
 
         seq2one = False
 
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Loading weights')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Loading model weights')
         model = torch.jit.load(self.parameters['weights'].value)
-        img_size = (model.expected_shape[-2], model.expected_shape[-1])
+        model.eval()
+        # img_size = (model.expected_shape[-2], model.expected_shape[-1])
+        img_size, seqlen = self.get_input_shape(model)
+        batch_size = self.parameters['batch_size'].value
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data')
 
@@ -945,8 +955,24 @@ class Plugin(plugins.Plugin):
             # print(fov_data, file=sys.stderr)
             # print(roi_list, file=sys.stderr)
             # print(rois, file=sys.stderr)
-        self.create_hdf5_rois(annotated_rois=False)
+        hdf5_file = self.create_hdf5_rois(annotated_rois=False)
 
+        roi_idx = [(50, 0), (51, 0), (52, 0)]
+        roi_dataset = ROIDataset(hdf5_file, roi_idx, targets=False, image_shape=img_size, seq2one=seq2one, seqlen=seqlen)
+
+        roi_dataloader = DataLoader(roi_dataset, batch_size=batch_size, shuffle=False)
+
+        for images, frames, roi_ids in roi_dataloader:
+            images = images.to(device)
+            with autocast('cuda'):
+                outputs = model(images)
+                preds = outputs.argmax(dim=-1)
+                print(frames, file=sys.stderr)
+                print(roi_ids, file=sys.stderr)
+                print(preds, file=sys.stderr)
+
+
+        roi_dataset.close()
         print(f'{datetime.now().strftime("%H:%M:%S")}: predictions OK')
 
     # def prepare_data_for_classification(self, fov_list: list[int],
@@ -1146,15 +1172,15 @@ class Plugin(plugins.Plugin):
                   file=sys.stderr)
 
             roi_values = np.array(roi_list["roi"])
-            roi_list["roi"], roi_mapping = fastremap.renumber(roi_values, in_place=False, preserve_zero=False)
+            roi_list["mapping"], roi_mapping = fastremap.renumber(roi_values, in_place=False, preserve_zero=False)
             num_rois = len(roi_mapping)
             num_frames = np.max(fov_data['t']) + 1
 
             print(f'{datetime.now().strftime("%H:%M:%S")}: Creating target datasets')
 
             if annotated_rois:
-                targets = data.loc[:, ['t', 'roi', 'class_name']]
-                targets['roi'] = fastremap.remap(np.array(targets['roi']), roi_mapping)
+                targets = data.loc[:, ['t', 'roi', 'mapping', 'class_name']]
+                # targets['roi'] = fastremap.remap(np.array(targets['roi']), roi_mapping)
                 targets['label'] = targets['class_name'].apply(lambda x: self.class_names(as_string=False).index(x))
 
                 initial_values = np.zeros((num_frames, num_rois,), dtype=np.int8) - 1
@@ -1169,10 +1195,17 @@ class Plugin(plugins.Plugin):
             roi_data = h5file.create_carray(h5file.root, 'roi_data', atom=tbl.Float16Atom(shape=(height, width, 3)),
                                             chunkshape=(50, num_rois,), shape=(num_frames, num_rois))
 
-            # print([(roi_name,) for roi_name in roi_list['name'].unique()], file=sys.stderr)
-            roi_names = roi_list[['roi', 'name']].drop_duplicates()
-            roi_names_table = h5file.create_table(h5file.root, 'roi_names', TblRoiNamesRow, 'ROI names')
-            roi_names_table.append([(roi_name,) for roi_name in roi_list['name'].unique()])
+            # roi_names = roi_list[['roi', 'name']].drop_duplicates()
+            # roi_names_table = h5file.create_table(h5file.root, 'roi_names', TblRoiNamesRow, 'ROI names')
+            # roi_names_table.append([(roi_name,) for roi_name in roi_list['roi'].unique()])
+
+            roi_ids = roi_list.loc[:, ['roi', 'mapping']].drop_duplicates().sort_values(by='mapping')
+            print(roi_ids, file=sys.stderr)
+            # roi_ids_table = h5file.create_table(h5file.root, 'roi_ids', TblRoiNamesRow, 'ROI ids')
+            roi_ids_array = h5file.create_carray(h5file.root, 'roi_ids', atom=tbl.Int16Atom(), shape=(num_rois,))
+            for mapping in roi_ids['mapping']:
+                roi_ids_array[mapping - 1] = roi_ids.loc[roi_ids['mapping'] == mapping, 'roi'].values
+
 
             # h5file.create_carray(h5file.root, 'roi_names', atom=tbl.StringAtom(64), chunkshape=(50, num_rois,),
             #                                  shape=(num_frames, num_rois))
@@ -1192,12 +1225,12 @@ class Plugin(plugins.Plugin):
                 fov_img = cv2.merge([cv2.imread(z_file, cv2.IMREAD_UNCHANGED) for z_file in reversed(row.channel_files)])
 
                 for roi in rois.itertuples():
-                    roi_data[row.t, roi.roi - 1, ...] = cv2.normalize(fov_img[roi.y0:roi.y1 + 1, roi.x0:roi.x1 + 1],
+                    roi_data[row.t, roi.mapping - 1, ...] = cv2.normalize(fov_img[roi.y0:roi.y1 + 1, roi.x0:roi.x1 + 1],
                                                                       dtype=cv2.CV_16F, dst=None, alpha=1e-10, beta=1.0,
                                                                       norm_type=cv2.NORM_MINMAX)
-                    roi_names_table[roi.roi - 1] = roi_names.loc[roi_names['roi'] == roi.roi, 'name'].values
+                    # roi_ids_table[roi.mapping - 1] = roi_ids.loc[roi_ids['roi'] == roi.roi, 'roi'].values
                     if annotated_rois:
-                        target_array[row.t, roi.roi - 1] = targets.loc[(targets['t'] == row.t)
+                        target_array[row.t, roi.mapping - 1] = targets.loc[(targets['t'] == row.t)
                                                                        & (targets['roi'] == roi.roi), 'label'].values
 
             h5file.close()

@@ -275,7 +275,7 @@ def plot_images(dataset, n, class_names, model, device):
     for i in range(n):
         idx = random.randint(0, len(dataset) - 1)
         img, target = dataset[idx]
-        roi_name = dataset.get_roi_name(idx)
+        roi_id = dataset.get_roi_id(idx)
         frame = dataset.get_frame(idx)
         if img.dim() == 4:
             # img = img[math.ceil(img.shape[0] / 2.0)]
@@ -289,7 +289,7 @@ def plot_images(dataset, n, class_names, model, device):
         img_channel_last = img.permute([1, 2, 0])
         plot_viewer.axes[i].imshow(img_channel_last.to(torch.float32))
         plot_viewer.axes[i].set_title(f'{class_names[target.item()]} ({class_names[prediction.item()]})')
-        plot_viewer.axes[i].set_xlabel(f'{roi_name} [{frame + t}]')
+        plot_viewer.axes[i].set_xlabel(f'{roi_id} [{frame + t}]')
     return plot_viewer
 
 

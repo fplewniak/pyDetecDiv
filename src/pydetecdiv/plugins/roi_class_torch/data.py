@@ -61,13 +61,14 @@ class ROIDataset(Dataset):
                  seq2one: bool = True, transform: transforms = None):
         self.h5file = tbl.open_file(h5file, mode='r')
         self.roi_data = self.h5file.root.roi_data
-        self.roi_names = self.h5file.root.roi_names
+        self.roi_ids = self.h5file.root.roi_ids
 
         if targets:
             self.targets = self.h5file.root.targets
+            self.class_names = self.h5file.root.class_names
         else:
             self.targets = None
-        self.class_names = self.h5file.root.class_names
+            self.class_names = None
 
         self.seqlen = seqlen
         self.seq2one = seq2one
@@ -90,23 +91,24 @@ class ROIDataset(Dataset):
         return len(self.indices)
 
     def __getitem__(self, idx):
-        frame, roi_id = self.indices[idx]
+        frame, mapping = self.indices[idx]
+        roi_id = self.roi_ids[mapping]
         if self.seqlen == 0:
-            roi_data = torch.tensor(self.roi_data[frame, roi_id, ...]).permute(2, 0, 1)
+            roi_data = torch.tensor(self.roi_data[frame, mapping, ...]).permute(2, 0, 1)
             roi_data = F.resize(roi_data, size=self.image_shape)
             # targets = torch.zeros(len(self.class_names), dtype=torch.float32)
             # targets[self.targets[frame, roi_id]] = 1.0
             if self.targets:
-                targets = torch.tensor(self.targets[frame, roi_id])
+                targets = torch.tensor(self.targets[frame, mapping])
             if self.transform:
                 roi_data = self.transform(roi_data)
         else:
-            roi_data = torch.tensor(self.roi_data[frame:frame + self.seqlen, roi_id, ...]).permute(0, 3, 1, 2)
+            roi_data = torch.tensor(self.roi_data[frame:frame + self.seqlen, mapping, ...]).permute(0, 3, 1, 2)
             if self.targets:
                 if self.seq2one:
-                    targets = torch.tensor(self.targets[frame+math.ceil(self.seqlen / 2.0), roi_id, ...])
+                    targets = torch.tensor(self.targets[frame+math.ceil(self.seqlen / 2.0), mapping, ...])
                 else:
-                    targets = torch.tensor(self.targets[frame:frame+self.seqlen, roi_id, ...])
+                    targets = torch.tensor(self.targets[frame:frame+self.seqlen, mapping, ...])
             # targets = torch.tensor(self.targets[frame + int(self.seqlen / 2.0), roi_id])
             # targets = torch.tensor(self.targets[frame, roi_id])
             # targets = torch.zeros(len(self.class_names), dtype=torch.float32)
@@ -116,12 +118,19 @@ class ROIDataset(Dataset):
                 roi_data = torch.stack([self.transform(frame) for frame in roi_data], dim=0)
         if self.targets:
             return roi_data, targets
-        return roi_data
+        return roi_data, frame, roi_id
 
-    def get_roi_name(self, idx):
-        _, roi_id = self.indices[idx]
-        return self.roi_names[roi_id][0].decode()
+    # def get_roi_name(self, idx):
+    #     _, roi_id = self.indices[idx]
+    #     return self.roi_names[roi_id][0].decode()
+
+    def get_roi_id(self, idx):
+        _, mapping = self.indices[idx]
+        return self.roi_ids[mapping][0]
 
     def get_frame(self, idx):
         frame, _ = self.indices[idx]
         return frame
+
+    def close(self):
+        self.h5file.close()
