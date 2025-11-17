@@ -763,7 +763,7 @@ class Plugin(plugins.Plugin):
         model, model_name = self.load_model(pretrained=fine_tuning)
         img_size, seqlen = self.get_input_shape(model)
 
-        hdf5_file = self.create_hdf5_annotated_rois()
+        hdf5_file = self.create_hdf5_rois()
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data for training')
 
@@ -892,9 +892,9 @@ class Plugin(plugins.Plugin):
                                                                                                self.parameters['class_names'].value,
                                                                                                test_dataloader,
                                                                                                seqlen, seq2one, device)
-        training_dataset.close()
-        validation_dataset.close()
-        test_dataset.close()
+        # training_dataset.close()
+        # validation_dataset.close()
+        # test_dataset.close()
         # del (model)
         # torch.cuda.empty_cache()
         # gc.collect()
@@ -936,6 +936,10 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Loading model weights')
         model = torch.jit.load(self.parameters['weights'].value)
         model.eval()
+        # try the following code, just in case it might improve performance
+        # see https://docs.pytorch.org/docs/stable/generated/torch.jit.optimize_for_inference.html
+        # torch.jit.optimize_for_inference(torch.jit.script(model.eval()))
+
         # img_size = (model.expected_shape[-2], model.expected_shape[-1])
         img_size, seqlen = self.get_input_shape(model)
         batch_size = self.parameters['batch_size'].value
@@ -970,7 +974,6 @@ class Plugin(plugins.Plugin):
                 print(frames, file=sys.stderr)
                 print(roi_ids, file=sys.stderr)
                 print(preds, file=sys.stderr)
-
 
         roi_dataset.close()
         print(f'{datetime.now().strftime("%H:%M:%S")}: predictions OK')
@@ -1111,9 +1114,6 @@ class Plugin(plugins.Plugin):
                 df = predictions_df
         return df
 
-    def create_hdf5_annotated_rois(self):
-        self.create_hdf5_rois(annotated_rois=True)
-
     def create_hdf5_rois(self, annotated_rois=True) -> str:
         """
         Creates a HDF5 file containing the annotated ROI data and their targets
@@ -1179,7 +1179,7 @@ class Plugin(plugins.Plugin):
             print(f'{datetime.now().strftime("%H:%M:%S")}: Creating target datasets')
 
             if annotated_rois:
-                targets = data.loc[:, ['t', 'roi', 'mapping', 'class_name']]
+                targets = data.loc[:, ['t', 'roi', 'class_name']]
                 # targets['roi'] = fastremap.remap(np.array(targets['roi']), roi_mapping)
                 targets['label'] = targets['class_name'].apply(lambda x: self.class_names(as_string=False).index(x))
 
@@ -1206,7 +1206,6 @@ class Plugin(plugins.Plugin):
             for mapping in roi_ids['mapping']:
                 roi_ids_array[mapping - 1] = roi_ids.loc[roi_ids['mapping'] == mapping, 'roi'].values
 
-
             # h5file.create_carray(h5file.root, 'roi_names', atom=tbl.StringAtom(64), chunkshape=(50, num_rois,),
             #                                  shape=(num_frames, num_rois))
 
@@ -1226,12 +1225,12 @@ class Plugin(plugins.Plugin):
 
                 for roi in rois.itertuples():
                     roi_data[row.t, roi.mapping - 1, ...] = cv2.normalize(fov_img[roi.y0:roi.y1 + 1, roi.x0:roi.x1 + 1],
-                                                                      dtype=cv2.CV_16F, dst=None, alpha=1e-10, beta=1.0,
-                                                                      norm_type=cv2.NORM_MINMAX)
+                                                                          dtype=cv2.CV_16F, dst=None, alpha=1e-10, beta=1.0,
+                                                                          norm_type=cv2.NORM_MINMAX)
                     # roi_ids_table[roi.mapping - 1] = roi_ids.loc[roi_ids['roi'] == roi.roi, 'roi'].values
                     if annotated_rois:
                         target_array[row.t, roi.mapping - 1] = targets.loc[(targets['t'] == row.t)
-                                                                       & (targets['roi'] == roi.roi), 'label'].values
+                                                                           & (targets['roi'] == roi.roi), 'label'].values
 
             h5file.close()
             print(f'{datetime.now().strftime("%H:%M:%S")}: HDF5 file {hdf5_file} is ready')

@@ -126,7 +126,7 @@ class ROIDataset(Dataset):
 
     def get_roi_id(self, idx):
         _, mapping = self.indices[idx]
-        return self.roi_ids[mapping][0]
+        return self.roi_ids[mapping]
 
     def get_frame(self, idx):
         frame, _ = self.indices[idx]
