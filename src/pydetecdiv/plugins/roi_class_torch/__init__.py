@@ -48,6 +48,7 @@ from pydetecdiv.settings import get_plugins_dir, get_config_value
 from .training import train_testing_loop, train_loop
 from .utils import get_classifications, get_annotation_runs
 from ...domain.Dataset import Dataset
+from ...torch.loss import FocalLoss
 
 Base = registry().generate_base()
 
@@ -778,7 +779,8 @@ class Plugin(plugins.Plugin):
         print(f'training: {len(training_idx)} validation: {len(validation_idx)} test: {len(test_idx)}')
 
         n_epochs = self.parameters['epochs'].value
-        loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights.to(device), reduction='mean')
+        # loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights.to(device), reduction='mean')
+        loss_fn = FocalLoss(class_weights, gamma=2, reduction='mean')
         # loss_fn = torch.nn.BCELoss()
         lr = self.parameters['learning_rate'].value
         weight_decay = self.parameters['weight_decay'].value
