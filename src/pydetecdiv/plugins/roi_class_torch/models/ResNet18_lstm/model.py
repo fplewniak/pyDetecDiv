@@ -56,6 +56,7 @@ class NN_module(nn.Module):
         self.dropout = nn.Dropout(0.5)
 
         self.classify = nn.Linear(300, n_classes)
+        # nn.init.xavier_uniform_(self.classify.weight)
 
 
     def forward(self, x):
