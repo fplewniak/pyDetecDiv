@@ -56,6 +56,22 @@ def prepare_data_for_training(hdf5_file: str, seqlen: int = 0, train: float = 0.
     return indices[:num_training], indices[num_training:num_validation + num_training], indices[num_validation + num_training:], class_weights
 
 
+def prepare_data_for_inference(hdf5_file: str, seqlen: int = 0) -> list[tuple[int, int]]:
+    h5file = tbl.open_file(hdf5_file, mode='r')
+    print(f'{datetime.now().strftime("%H:%M:%S")}: Getting valid indices for unannotated ROIs frames')
+    num_rois = h5file.root.roi_ids.shape[0]
+    num_frames = h5file.root.num_frames
+
+    if seqlen == 0:
+        indices = [(frame, roi) for roi in range(num_rois) for frame in range(num_frames[roi])]
+    else:
+        indices = [(frame, roi) for roi in range(num_rois) for frame in range(0, num_frames[roi] - seqlen + 1, seqlen)]
+
+    print(f'{datetime.now().strftime("%H:%M:%S")}: Kept {len(indices)} valid ROI frames or sequences')
+    h5file.close()
+    return indices
+
+
 class ROIDataset(Dataset):
     def __init__(self, h5file: str, indices: list, targets: bool = False, image_shape: tuple[int, int] = (60, 60), seqlen: int = 0,
                  seq2one: bool = True, transform: transforms = None):

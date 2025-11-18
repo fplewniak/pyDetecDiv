@@ -36,7 +36,7 @@ from pydetecdiv.domain.ROI import ROI
 from pydetecdiv.plugins.parameters import ItemParameter, ChoiceParameter, IntParameter, FloatParameter, CheckParameter
 
 from . import models
-from .data import prepare_data_for_training, ROIDataset
+from .data import prepare_data_for_training, ROIDataset, prepare_data_for_inference
 from .evaluate import evaluate_metrics, evaluate_model
 from .gui.ImportAnnotatedROIs import FOV2ROIlinks
 from .gui.classification import ManualAnnotator, PredictionViewer, DefineClassesDialog
@@ -963,7 +963,7 @@ class Plugin(plugins.Plugin):
             # print(rois, file=sys.stderr)
         hdf5_file = self.create_hdf5_rois(annotated_rois=False)
 
-        roi_idx = [(50, 0), (51, 0), (52, 0)]
+        roi_idx = prepare_data_for_inference(hdf5_file, seqlen=seqlen)
         roi_dataset = ROIDataset(hdf5_file, roi_idx, targets=False, image_shape=img_size, seq2one=seq2one, seqlen=seqlen)
 
         roi_dataloader = DataLoader(roi_dataset, batch_size=batch_size, shuffle=False)
@@ -973,49 +973,12 @@ class Plugin(plugins.Plugin):
             with autocast('cuda'):
                 outputs = model(images)
                 preds = outputs.argmax(dim=-1)
-                print(frames, file=sys.stderr)
-                print(roi_ids, file=sys.stderr)
-                print(preds, file=sys.stderr)
+                # print(frames, file=sys.stderr)
+                # print(roi_ids, file=sys.stderr)
+                # print(preds, file=sys.stderr)
 
         roi_dataset.close()
         print(f'{datetime.now().strftime("%H:%M:%S")}: predictions OK')
-
-    # def prepare_data_for_classification(self, fov_list: list[int],
-    #                                     z_channels: tuple[int] = None) -> (pd.DataFrame, pd.DataFrame, np.ndarray):
-    #     """
-    #     Prepares the data for class prediction. Drift correction is automatically applied
-    #
-    #     :param fov_list: the list of FOV indices whose ROIs should be classified
-    #     :param z_channels: the z layers to be used as channels
-    #     :return: Pandas DataFrames containing FOV data, list of (ROI, frame) with positions, unique indices of ROIs
-    #     """
-    #     print(f'{datetime.now().strftime("%H:%M:%S")}: Getting fov data')
-    #     fov_data = self.get_fov_data(z_layers=z_channels)
-    #     mask = fov_data['fov'].isin(fov_list)
-    #     fov_data = fov_data[mask]
-    #
-    #     print(f'{datetime.now().strftime("%H:%M:%S")}: Getting drift correction')
-    #     drift_correction = get_drift_corrections()
-    #     mask = drift_correction['fov'].isin(fov_list)
-    #     drift_correction = drift_correction[mask]
-    #
-    #     print(f'{datetime.now().strftime("%H:%M:%S")}: Getting roi list')
-    #     roi_list = get_roi_list()
-    #
-    #     print(f'{datetime.now().strftime("%H:%M:%S")}: Applying drift correction to ROIs')
-    #     roi_list = pd.merge(drift_correction, roi_list, on=['fov'], how='left').dropna()
-    #     roi_list['x0'] = (roi_list['x0'] + roi_list['dx'].round().astype(int))
-    #     roi_list['x1'] = (roi_list['x1'] + roi_list['dx'].round().astype(int))
-    #     roi_list['y0'] = (roi_list['y0'] + roi_list['dy'].round().astype(int))
-    #     roi_list['y1'] = (roi_list['y1'] + roi_list['dy'].round().astype(int))
-    #
-    #     rois = roi_list["roi"].unique()
-    #
-    #     print(f'{datetime.now().strftime("%H:%M:%S")}: FOV = {len(fov_data["fov"].unique())}')
-    #     print(f'{datetime.now().strftime("%H:%M:%S")}: T = {np.max(fov_data["t"]) + 1}')
-    #     print(f'{datetime.now().strftime("%H:%M:%S")}: ROIs = {len(rois)} ({len(roi_list)})')
-    #
-    #     return fov_data, roi_list, rois
 
     def show_results(self, trigger=None, roi_selection: list[ROI] = None) -> None:
         """
@@ -1205,8 +1168,12 @@ class Plugin(plugins.Plugin):
             print(roi_ids, file=sys.stderr)
             # roi_ids_table = h5file.create_table(h5file.root, 'roi_ids', TblRoiNamesRow, 'ROI ids')
             roi_ids_array = h5file.create_carray(h5file.root, 'roi_ids', atom=tbl.Int16Atom(), shape=(num_rois,))
-            for mapping in roi_ids['mapping']:
-                roi_ids_array[mapping - 1] = roi_ids.loc[roi_ids['mapping'] == mapping, 'roi'].values
+            num_frames_array = h5file.create_carray(h5file.root, 'num_frames', atom=tbl.Int16Atom(), shape=(num_rois,))
+            with pydetecdiv_project(PyDetecDiv.project_name) as project:
+                for mapping in roi_ids['mapping']:
+                    roi_ids_array[mapping - 1] = roi_ids.loc[roi_ids['mapping'] == mapping, 'roi'].values
+                    num_frames_array[mapping - 1] = project.get_object('ROI', roi_ids.loc[
+                        roi_ids['mapping'] == mapping, 'roi'].values).fov.sizeT
 
             # h5file.create_carray(h5file.root, 'roi_names', atom=tbl.StringAtom(64), chunkshape=(50, num_rois,),
             #                                  shape=(num_frames, num_rois))
