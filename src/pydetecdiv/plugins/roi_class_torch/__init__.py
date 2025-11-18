@@ -971,11 +971,14 @@ class Plugin(plugins.Plugin):
         for images, frames, roi_ids in roi_dataloader:
             images = images.to(device)
             with autocast('cuda'):
-                outputs = model(images)
-                preds = outputs.argmax(dim=-1)
+                outputs = torch.nn.functional.softmax(model(images).detach(), dim=-1).cpu()
+                # classes = [self.parameters['class_names'].value[i] for s in outputs.argmax(dim=-1) for i in s]
+                probs = np.array([p for s in torch.nn.functional.softmax(outputs, dim=-1) for p in s])
+                classes = [self.parameters['class_names'].value[i] for i in np.argmax(probs, axis=-1)]
                 # print(frames, file=sys.stderr)
                 # print(roi_ids, file=sys.stderr)
-                # print(preds, file=sys.stderr)
+                # print(classes, file=sys.stderr)
+                # print(probs.shape, file=sys.stderr)
 
         roi_dataset.close()
         print(f'{datetime.now().strftime("%H:%M:%S")}: predictions OK')
