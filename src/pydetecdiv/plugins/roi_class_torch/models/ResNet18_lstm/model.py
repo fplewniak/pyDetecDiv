@@ -52,6 +52,7 @@ class NN_module(nn.Module):
         self.unfolding = SequenceUnfoldingLayer((512, 1, 1))  # ResNet18 outputs 512 features
 
         self.bilstm = nn.LSTM(input_size=512, hidden_size=150, num_layers=1, batch_first=True, bidirectional=True)
+        # May not work correctly as default should seemingly be 0 or random for LSTM hidden layers
         # nn.init.xavier_uniform_(self.bilstm.weight)
 
         self.dropout = nn.Dropout(0.5)
