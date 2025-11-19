@@ -58,7 +58,9 @@ class NN_module(nn.Module):
         self.dropout = nn.Dropout(0.5)
 
         self.classify = nn.Linear(300, n_classes)
-        # nn.init.xavier_uniform_(self.classify.weight)
+        nn.init.xavier_uniform_(self.classify.weight)
+        if self.classify.bias is not None:
+            nn.init.zeros_(self.classify.bias)
 
 
     def forward(self, x):
