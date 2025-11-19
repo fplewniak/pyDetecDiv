@@ -1,10 +1,11 @@
 """
 Module defining widgets and other utilities for creating windows/forms with a minimum of code
 """
+import sys
 from typing import Any, Self, Type, Union, TypeVar, Callable
 
-from PySide6.QtCore import QStringListModel, QItemSelection, QItemSelectionModel, Signal, Slot, QModelIndex
-from PySide6.QtGui import QIcon, QAction, QContextMenuEvent
+from PySide6.QtCore import QStringListModel, QItemSelection, QItemSelectionModel, Signal, Slot, QModelIndex, Qt
+from PySide6.QtGui import QIcon, QAction, QContextMenuEvent, QValidator
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox,
                                QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView,
                                QAbstractItemView,
@@ -623,11 +624,11 @@ class DoubleSpinBox(QDoubleSpinBox):
     """
 
     def __init__(self, parent: QWidget, model: ItemModel = None, minimum: float = 0.1, maximum: float = 1.0,
-                 decimals: int = 2, single_step: float = 0.1, adaptive: bool = False, enabled: bool = True,
+                 decimals: int | None = None, single_step: float = 0.1, adaptive: bool = False, enabled: bool = True,
                  **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         self.setRange(minimum, maximum)
-        self.setDecimals(decimals)
+        self.setDecimals(15 if decimals is None else decimals)
         self.setSingleStep(single_step)
         if adaptive:
             self.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
@@ -654,6 +655,51 @@ class DoubleSpinBox(QDoubleSpinBox):
         :return: boolean, True if the value was changed, False otherwise
         """
         return self.valueChanged
+
+    def validate(self, input_str, pos):
+        # If the input is empty, allow it as intermediate
+        if not input_str:
+            return (QValidator.State.Intermediate, )
+
+        # Check if the input is a valid float or scientific notation
+        try:
+            float(input_str)
+            return (QValidator.State.Acceptable, )
+        except ValueError:
+            # Check if the input could be a valid scientific notation
+            if 'e' in input_str:
+                parts = input_str.split('e', 1)
+                if len(parts) == 2:
+                    mantissa, exponent = parts
+                    try:
+                        float(mantissa)
+                        int(exponent)
+                        return (QValidator.State.Acceptable, )
+                    except ValueError:
+                        pass
+
+        # If the input is not valid but could become valid (e.g., "1e" or "1.23e")
+        if input_str.endswith('e') or input_str.endswith('-') or input_str.replace('.', '').replace('-', '').isdigit():
+            return (QValidator.State.Intermediate, )
+
+        # If the input is invalid
+        return (QValidator.State.Invalid, )
+
+    def valueFromText(self, text):
+        try:
+            return float(text)
+        except ValueError:
+            return 0.0
+
+    def textFromValue(self, value):
+        # Format the value in scientific notation if needed
+        text = "{:.15}".format(value)
+        if 'e' in text:
+            mantissa, exponent = text.split('e')
+            mantissa = mantissa.rstrip('0').rstrip('.') if '.' in mantissa else mantissa
+            return f"{mantissa}e{exponent}"
+        else:
+            return text.rstrip('0').rstrip('.')
 
 
 class TableView(QTableView):

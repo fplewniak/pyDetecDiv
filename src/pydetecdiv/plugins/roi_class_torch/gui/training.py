@@ -36,12 +36,12 @@ class TrainingDialog(Dialog):
         self.advanced.group_box.addOption('Random seed:', SpinBox, parameter=self.plugin.parameters['seed'])
         self.advanced.group_box.addOption('Optimizer:', ComboBox, parameter=self.plugin.parameters['optimizer'])
 
-        self.advanced.group_box.addOption('Learning rate:', DoubleSpinBox, decimals=6, single_step=0.01, adaptive=True,
+        self.advanced.group_box.addOption('Learning rate:', DoubleSpinBox, single_step=1e-5, adaptive=False,
                                           parameter=self.plugin.parameters['learning_rate'])
         self.advanced.group_box.addOption('Weight decay:', DoubleSpinBox, parameter=self.plugin.parameters['weight_decay'])
-        self.advanced.group_box.addOption('L1 regularization:', DoubleSpinBox,  decimals=4, single_step=0.01, adaptive=True,
+        self.advanced.group_box.addOption('L1 regularization:', DoubleSpinBox, single_step=0.01, adaptive=False,
                                           parameter=self.plugin.parameters['L1'])
-        self.advanced.group_box.addOption('L2 regularization:', DoubleSpinBox,  decimals=4, single_step=0.01, adaptive=True,
+        self.advanced.group_box.addOption('L2 regularization:', DoubleSpinBox, single_step=0.01, adaptive=False,
                                           parameter=self.plugin.parameters['L2'])
         self.advanced.group_box.addOption('Decay rate:', DoubleSpinBox, parameter=self.plugin.parameters['decay_rate'])
         self.advanced.group_box.addOption('Decay period:', SpinBox, parameter=self.plugin.parameters['decay_period'])

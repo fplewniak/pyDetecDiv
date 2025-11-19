@@ -257,7 +257,7 @@ class Plugin(plugins.Plugin):
                                    'Nadam'   : optim.NAdam,
                                    }),
             FloatParameter(name='learning_rate', label='Learning rate', groups={'training', 'finetune'}, default=1e-4,
-                           minimum=1e-6, maximum=1.0),
+                           minimum=1e-20, maximum=1.0),
             FloatParameter(name='decay_rate', label='Decay rate', groups={'training', 'finetune'}, default=0.95),
             IntParameter(name='decay_period', label='Decay period', groups={'training', 'finetune'}, default=50),
             FloatParameter(name='weight_decay', label='Weight decay', groups={'training', 'finetune'}, default=0.0, ),
@@ -780,7 +780,7 @@ class Plugin(plugins.Plugin):
 
         n_epochs = self.parameters['epochs'].value
         # loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights.to(device), reduction='mean')
-        loss_fn = FocalLoss(class_weights, gamma=2, reduction='mean')
+        loss_fn = FocalLoss(alpha=class_weights, gamma=2, reduction='mean')
         # loss_fn = torch.nn.BCELoss()
         lr = self.parameters['learning_rate'].value
         weight_decay = self.parameters['weight_decay'].value
