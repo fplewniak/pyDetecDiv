@@ -51,11 +51,13 @@ class NN_module(nn.Module):
         self.folding = SequenceFoldingLayer((3, 60, 60))
         self.unfolding = SequenceUnfoldingLayer((2048, 1, 1))  # ResNet50 outputs 2048 features
 
-
         self.bilstm = nn.LSTM(input_size=2048, hidden_size=150, num_layers=1, batch_first=True, bidirectional=True)
 
         self.dropout = nn.Dropout(0.5)
         self.classify = nn.Linear(300, n_classes)
+        nn.init.xavier_uniform_(self.classify.weight)
+        if self.classify.bias is not None:
+            nn.init.zeros_(self.classify.bias)
 
     def forward(self, x):
         x, batch_size = self.folding(x)  # Fold sequence into batch form
