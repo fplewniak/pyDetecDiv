@@ -33,9 +33,11 @@ def prepare_data_for_training(hdf5_file: str, seqlen: int = 0, train: float = 0.
     labels = labels[labels > -1]
     classes, class_counts = np.unique(labels, return_counts=True)
     print(classes, file=sys.stderr)
-    # total_counts = np.sum(class_counts)
-    # class_weights = torch.tensor([total_counts / (len(classes) * c) for c in class_counts], dtype=torch.float32)
-    class_weights = torch.tensor(compute_class_weight(class_weight='balanced', classes=classes, y=labels), dtype=torch.float32)
+    total_counts = np.sum(class_counts)
+    num_classes = len(class_counts)
+    alpha = total_counts / class_counts
+    class_weights = torch.tensor((num_classes * alpha) / np.sum(alpha), dtype=torch.float32)
+    # class_weights = torch.tensor(compute_class_weight(class_weight='balanced', classes=classes, y=labels), dtype=torch.float32)
     print(class_weights, file=sys.stderr)
     print(f'{datetime.now().strftime("%H:%M:%S")}: Select valid targets from array with shape {targets.shape}')
     if seqlen == 0:
