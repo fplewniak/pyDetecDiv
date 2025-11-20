@@ -49,6 +49,7 @@ from .training import train_testing_loop, train_loop
 from .utils import get_classifications, get_annotation_runs
 from ...domain.Dataset import Dataset
 from ...torch.loss import FocalLoss
+from ...torch.metrics import Accuracy, AccuracyByClass
 
 Base = registry().generate_base()
 
@@ -780,8 +781,7 @@ class Plugin(plugins.Plugin):
 
         n_epochs = self.parameters['epochs'].value
         # loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights.to(device), reduction='mean')
-        loss_fn = FocalLoss(alpha=class_weights, gamma=2, reduction='mean')
-        # loss_fn = torch.nn.BCELoss()
+        loss_fn = FocalLoss(alpha=class_weights, gamma=1.5, reduction='mean')
         lr = self.parameters['learning_rate'].value
         weight_decay = self.parameters['weight_decay'].value
         decay_rate = self.parameters['decay_rate'].value
@@ -790,24 +790,6 @@ class Plugin(plugins.Plugin):
         lambda1 = self.parameters['L1'].value
         lambda2 = self.parameters['L2'].value
         seq2one = False
-
-        ### Make sure weight decay is only applied to Linear and Conv2d layers, as it should not be applied to Batch normalization
-        ### and possibly other normalization layers
-        ### but does not work... get error: TypeError: optimizer can only optimize Tensors, but one of the params is NoneType
-        # no_decay = list()
-        # decay = list()
-        # for m in model.modules():
-        #   if isinstance(m, (torch.nn.Linear, torch.nn.Conv2d,)):
-        #     decay.append(m.weight)
-        #     no_decay.append(m.bias)
-        #   elif hasattr(m, 'weight'):
-        #     no_decay.append(m.weight)
-        #   elif hasattr(m, 'bias'):
-        #     no_decay.append(m.bias)
-        # for name, param in model.named_modules():
-        #   if not (name.endswith('.weight') or name.endswith('.bias')):
-        #     no_decay.append(param)
-        # model_param = [{'params': no_decay, 'weight_decay': 0.0}, {'params': decay, 'weight_decay': weight_decay}]
 
         model_param = model.parameters()
 
@@ -852,9 +834,12 @@ class Plugin(plugins.Plugin):
         else:
             min_val_loss = torch.finfo(torch.float).max
 
+        metrics = Accuracy()
+        # metrics = AccuracyByClass()
+
         for epoch in range(n_epochs):
             history.extend(train_loop(train_dataloader, validation_dataloader, model, seq2one,
-                                      loss_fn, optimizer, lambda1, lambda2, device))
+                                      loss_fn, optimizer, lambda1, lambda2, device, metrics))
             if history['val loss'][-1] < min_val_loss:
                 min_val_loss = history['val loss'][-1]
                 model_scripted = torch.jit.script(model)
@@ -885,7 +870,7 @@ class Plugin(plugins.Plugin):
         run.validate().commit()
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Evaluation on test dataset')
-        avg_test_loss, test_accuracy = evaluate_metrics(model, test_dataloader, seq2one, loss_fn, lambda1, lambda2, device)
+        avg_test_loss, test_accuracy = evaluate_metrics(model, test_dataloader, seq2one, loss_fn, lambda1, lambda2, device, metrics)
         evaluation = {'loss': avg_test_loss, 'accuracy': test_accuracy}
         print(f"Test loss: {avg_test_loss:.4f}, "
               f"Test accuracy: {100 * test_accuracy:.1f} %, ")

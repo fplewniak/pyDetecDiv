@@ -11,12 +11,12 @@ from torch.amp import GradScaler
 
 from pydetecdiv.utils import flatten_list
 
-def evaluate_metrics(model, data_loader, seq2one, loss_fn, lambda1, lambda2, device):
+def evaluate_metrics(model, data_loader, seq2one, loss_fn, lambda1, lambda2, device, metrics):
     if seq2one:
-        return evaluate_metrics_seq2one(model, data_loader, loss_fn, lambda1, lambda2, device)
-    return evaluate_metrics_seq2seq(model, data_loader, loss_fn, lambda1, lambda2, device)
+        return evaluate_metrics_seq2one(model, data_loader, loss_fn, lambda1, lambda2, device, metrics)
+    return evaluate_metrics_seq2seq(model, data_loader, loss_fn, lambda1, lambda2, device, metrics)
 
-def evaluate_metrics_seq2one(model, data_loader, loss_fn, lambda1, lambda2, device):
+def evaluate_metrics_seq2one(model, data_loader, loss_fn, lambda1, lambda2, device, metrics):
     model.eval()
     running_loss = 0.0
     correct, total = 0.0, 0.0
@@ -40,16 +40,17 @@ def evaluate_metrics_seq2one(model, data_loader, loss_fn, lambda1, lambda2, devi
             loss += (lambda1 * torch.abs(torch.cat([x.view(-1) for x in model.parameters()])).sum()
                      + lambda2 * torch.square(torch.cat([x.view(-1) for x in model.parameters()])).sum())
 
-        # running_loss += loss.item() * B
-        running_loss += loss.item()
+            # running_loss += loss.item() * B
+            running_loss += loss.item()
 
-        correct += (preds == labels).sum().item()
-        total += labels.size(0)
+            metrics.sampling(outputs, labels)
+        accuracy = metrics.value
+        metrics.reset_sampling()
 
         return running_loss / len(data_loader), correct / total
 
 
-def evaluate_metrics_seq2seq(model, data_loader, loss_fn, lambda1, lambda2, device):
+def evaluate_metrics_seq2seq(model, data_loader, loss_fn, lambda1, lambda2, device, metrics):
     model.eval()
     running_loss = 0.0
     correct, total = 0.0, 0.0
@@ -71,11 +72,11 @@ def evaluate_metrics_seq2seq(model, data_loader, loss_fn, lambda1, lambda2, devi
             # running_loss += loss.item() * B
             running_loss += loss.item()
 
-            preds = outputs.argmax(dim=-1)
-            correct += (preds == labels).sum().item()
-            total += labels.numel()
+            metrics.sampling(outputs, labels)
+        accuracy = metrics.value
+        metrics.reset_sampling()
 
-    return running_loss / len(data_loader), correct / total
+    return running_loss / len(data_loader), accuracy
 
 def get_pred_gt(model, data_loader, seq2one, device):
     if seq2one:

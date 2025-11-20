@@ -9,12 +9,12 @@ from torch.amp import GradScaler, autocast
 from pydetecdiv.plugins.roi_class_torch.evaluate import evaluate_metrics_seq2seq, evaluate_metrics_seq2one
 from pydetecdiv.utils import flatten_list
 
-def train_loop(training_loader, validation_loader, model, seq2one, loss_fn, optimizer, lambda1, lambda2, device):
+def train_loop(training_loader, validation_loader, model, seq2one, loss_fn, optimizer, lambda1, lambda2, device, metrics):
     if seq2one:
-        return train_loop_seq2one(training_loader, validation_loader, model, loss_fn, optimizer, lambda1, lambda2, device)
-    return train_loop_seq2seq(training_loader, validation_loader, model, loss_fn, optimizer, lambda1, lambda2, device)
+        return train_loop_seq2one(training_loader, validation_loader, model, loss_fn, optimizer, lambda1, lambda2, device, metrics)
+    return train_loop_seq2seq(training_loader, validation_loader, model, loss_fn, optimizer, lambda1, lambda2, device, metrics)
 
-def train_loop_seq2one(training_loader, validation_loader, model, loss_fn, optimizer, lambda1, lambda2, device):
+def train_loop_seq2one(training_loader, validation_loader, model, loss_fn, optimizer, lambda1, lambda2, device, metrics):
     model.train()
     running_loss = 0.0
     correct, total = 0.0, 0.0
@@ -51,19 +51,19 @@ def train_loop_seq2one(training_loader, validation_loader, model, loss_fn, optim
         # running_loss += loss.item() * B
         running_loss += loss.item()
 
-        correct += (preds == labels).sum().item()
-        total += labels.size(0)
+        metrics.sampling(outputs, labels)
 
-        avg_train_loss = running_loss / total
-        accuracy = correct / total
+    avg_train_loss = running_loss / len(training_loader)
+    accuracy = metrics.value
+    metrics.reset_sampling()
 
-        avg_val_loss, val_accuracy = evaluate_metrics_seq2one(model, validation_loader, loss_fn, lambda1, lambda2, device)
+    avg_val_loss, val_accuracy = evaluate_metrics_seq2one(model, validation_loader, loss_fn, lambda1, lambda2, device, metrics)
 
-        return polars.DataFrame({'train loss': avg_train_loss, 'val loss': avg_val_loss,
+    return polars.DataFrame({'train loss': avg_train_loss, 'val loss': avg_val_loss,
                              'train accuracy': accuracy, 'val accuracy': val_accuracy,})
 
 
-def train_loop_seq2seq(training_loader, validation_loader, model, loss_fn, optimizer, lambda1, lambda2, device):
+def train_loop_seq2seq(training_loader, validation_loader, model, loss_fn, optimizer, lambda1, lambda2, device, metrics):
     model.train()
     running_loss = 0.0
     correct, total = 0.0, 0.0
@@ -97,18 +97,17 @@ def train_loop_seq2seq(training_loader, validation_loader, model, loss_fn, optim
         # running_loss += loss.item() * B
         running_loss += loss.item()
 
-        preds = outputs.argmax(dim=-1)
-        correct += (preds == labels).sum().item()
-        total += labels.numel()
+        metrics.sampling(outputs, labels)
 
     avg_train_loss = running_loss / len(training_loader)
-    accuracy = correct / total
+    accuracy = metrics.value
+    metrics.reset_sampling()
 
     # Validation phase
-    avg_val_loss, val_accuracy = evaluate_metrics_seq2seq(model, validation_loader, loss_fn, lambda1, lambda2, device)
+    avg_val_loss, val_accuracy = evaluate_metrics_seq2seq(model, validation_loader, loss_fn, lambda1, lambda2, device, metrics)
 
     return polars.DataFrame({'train loss': avg_train_loss, 'val loss': avg_val_loss,
-                             'train accuracy': accuracy, 'val accuracy': val_accuracy,})
+                             'train accuracy': accuracy.cpu(), 'val accuracy': val_accuracy.cpu(),})
 
 def train_testing_loop(training_loader, model, device):
     print('running testing train loop')
