@@ -57,6 +57,8 @@ class TrainingDialog(Dialog):
         self.optimizer.group_box.addOption('Decay rate:', DoubleSpinBox, parameter=self.plugin.parameters['decay_rate'])
         self.optimizer.group_box.addOption('Decay period:', SpinBox, parameter=self.plugin.parameters['decay_period'])
 
+        self.advanced.group_box.addOption('Follow metric:', ComboBox,
+                                          parameter=self.plugin.parameters['follow_metric'])
         self.advanced.group_box.addOption('Checkpoint metric:', ComboBox,
                                           parameter=self.plugin.parameters['checkpoint_metric'])
 
@@ -171,6 +173,8 @@ class FineTuningDialog(Dialog):
         self.optimizer.group_box.addOption('Decay rate:', DoubleSpinBox, parameter=self.plugin.parameters['decay_rate'])
         self.optimizer.group_box.addOption('Decay period:', SpinBox, parameter=self.plugin.parameters['decay_period'])
 
+        self.advanced.group_box.addOption('Follow metric:', ComboBox,
+                                          parameter=self.plugin.parameters['follow_metric'])
         self.advanced.group_box.addOption('Checkpoint metric:', ComboBox,
                                           parameter=self.plugin.parameters['checkpoint_metric'])
 
