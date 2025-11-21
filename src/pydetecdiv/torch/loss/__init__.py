@@ -14,8 +14,8 @@ class FocalLoss(nn.Module):
     def forward(self, input, target):
         # input: (batch_size * seq_len, num_classes)
         # target: (batch_size * seq_len)
-        log_probs = F.log_softmax(input, dim=1)
-        probs = torch.exp(log_probs)
+        probs = F.softmax(input, dim=1)
+        log_probs = torch.log(probs)
         probs_t = probs.gather(1, target.unsqueeze(1))  # (batch_size * seq_len, 1)
 
         # Compute focal loss
