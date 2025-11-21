@@ -262,6 +262,9 @@ class Plugin(plugins.Plugin):
             FloatParameter(name='decay_rate', label='Decay rate', groups={'training', 'finetune'}, default=0.95),
             IntParameter(name='decay_period', label='Decay period', groups={'training', 'finetune'}, default=50),
             FloatParameter(name='weight_decay', label='Weight decay', groups={'training', 'finetune'}, default=0.0, ),
+            FloatParameter(name='focal_gamma', label='Focal loss gamma', groups={'training', 'finetune'}, default=2.0,
+                           minimum=0.0, maximum=2.0,),
+            CheckParameter(name='class_weights', label='Class weights', groups={'training', 'finetune'}, default=True),
             FloatParameter(name='L1', label='L1 regularization', groups={'training', 'finetune'}, default=0.0, ),
             FloatParameter(name='L2', label='L2 regularization', groups={'training', 'finetune'}, default=0.0, ),
             FloatParameter(name='momentum', label='Momentum', groups={'training', 'finetune'}, default=0.9, ),
@@ -781,7 +784,11 @@ class Plugin(plugins.Plugin):
 
         n_epochs = self.parameters['epochs'].value
         # loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights.to(device), reduction='mean')
-        loss_fn = FocalLoss(alpha=class_weights, gamma=1.5, reduction='mean')
+        if self.parameters['class_weights'].value:
+            loss_fn = FocalLoss(alpha=class_weights, gamma=self.parameters['focal_gamma'].value, reduction='mean')
+        else:
+            loss_fn = FocalLoss(gamma=self.parameters['focal_gamma'].value, reduction='mean')
+            
         lr = self.parameters['learning_rate'].value
         weight_decay = self.parameters['weight_decay'].value
         decay_rate = self.parameters['decay_rate'].value

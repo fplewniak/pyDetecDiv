@@ -31,21 +31,32 @@ class TrainingDialog(Dialog):
 
         self.hyper.addOption('Sequence length:', SpinBox, adaptive=True, parameter=self.plugin.parameters['seqlen'])
 
+        self.optimizer = self.hyper.addOption(None, AdvancedButton, text='Optimizer')
+        self.optimizer.linkGroupBox(self.hyper.addOption(None, ParametersFormGroupBox, show=False))
+        self.loss_function = self.hyper.addOption(None, AdvancedButton, text='Focal loss')
+        self.loss_function.linkGroupBox(self.hyper.addOption(None, ParametersFormGroupBox, show=False))
         self.advanced = self.hyper.addOption(None, AdvancedButton)
         self.advanced.linkGroupBox(self.hyper.addOption(None, ParametersFormGroupBox, show=False))
-        self.advanced.group_box.addOption('Random seed:', SpinBox, parameter=self.plugin.parameters['seed'])
-        self.advanced.group_box.addOption('Optimizer:', ComboBox, parameter=self.plugin.parameters['optimizer'])
 
-        self.advanced.group_box.addOption('Learning rate:', DoubleSpinBox, single_step=1e-5, adaptive=False,
-                                          parameter=self.plugin.parameters['learning_rate'])
-        self.advanced.group_box.addOption('Weight decay:', DoubleSpinBox, parameter=self.plugin.parameters['weight_decay'])
-        self.advanced.group_box.addOption('L1 regularization:', DoubleSpinBox, single_step=0.01, adaptive=False,
+        self.advanced.group_box.addOption('Random seed:', SpinBox, parameter=self.plugin.parameters['seed'])
+        self.optimizer.group_box.addOption('Optimizer:', ComboBox, parameter=self.plugin.parameters['optimizer'])
+
+        self.optimizer.group_box.addOption('Weight decay:', DoubleSpinBox, parameter=self.plugin.parameters['weight_decay'])
+        self.optimizer.group_box.addOption('Momentum:', DoubleSpinBox, parameter=self.plugin.parameters['momentum'])
+
+        self.loss_function.group_box.addOption('Gamma:', DoubleSpinBox, single_step=0.1, adaptive=False,
+                                          parameter=self.plugin.parameters['focal_gamma'])
+        self.loss_function.group_box.addOption('Weight classes:', RadioButton, parameter=self.plugin.parameters['class_weights'])
+        self.loss_function.group_box.addOption('L1 regularization:', DoubleSpinBox, single_step=0.01, adaptive=False,
                                           parameter=self.plugin.parameters['L1'])
-        self.advanced.group_box.addOption('L2 regularization:', DoubleSpinBox, single_step=0.01, adaptive=False,
+        self.loss_function.group_box.addOption('L2 regularization:', DoubleSpinBox, single_step=0.01, adaptive=False,
                                           parameter=self.plugin.parameters['L2'])
-        self.advanced.group_box.addOption('Decay rate:', DoubleSpinBox, parameter=self.plugin.parameters['decay_rate'])
-        self.advanced.group_box.addOption('Decay period:', SpinBox, parameter=self.plugin.parameters['decay_period'])
-        self.advanced.group_box.addOption('Momentum:', DoubleSpinBox, parameter=self.plugin.parameters['momentum'])
+
+        self.optimizer.group_box.addOption('Learning rate:', DoubleSpinBox, single_step=1e-5, adaptive=False,
+                                          parameter=self.plugin.parameters['learning_rate'])
+        self.optimizer.group_box.addOption('Decay rate:', DoubleSpinBox, parameter=self.plugin.parameters['decay_rate'])
+        self.optimizer.group_box.addOption('Decay period:', SpinBox, parameter=self.plugin.parameters['decay_period'])
+
         self.advanced.group_box.addOption('Checkpoint metric:', ComboBox,
                                           parameter=self.plugin.parameters['checkpoint_metric'])
 
@@ -137,19 +148,29 @@ class FineTuningDialog(Dialog):
 
         self.hyper.addOption('Sequence length:', SpinBox, adaptive=True, parameter=self.plugin.parameters['seqlen'])
 
+        self.optimizer = self.hyper.addOption(None, AdvancedButton, text='Optimizer')
+        self.optimizer.linkGroupBox(self.hyper.addOption(None, ParametersFormGroupBox, show=False))
+        self.loss_function = self.hyper.addOption(None, AdvancedButton, text='Focal loss')
+        self.loss_function.linkGroupBox(self.hyper.addOption(None, ParametersFormGroupBox, show=False))
         self.advanced = self.hyper.addOption(None, AdvancedButton)
         self.advanced.linkGroupBox(self.hyper.addOption(None, ParametersFormGroupBox, show=False))
-        self.advanced.group_box.addOption('Random seed:', SpinBox, parameter=self.plugin.parameters['seed'])
-        self.advanced.group_box.addOption('Optimizer:', ComboBox, parameter=self.plugin.parameters['optimizer'])
 
-        self.advanced.group_box.addOption('Learning rate:', DoubleSpinBox, decimals=4, single_step=0.01, adaptive=True,
+        self.advanced.group_box.addOption('Random seed:', SpinBox, parameter=self.plugin.parameters['seed'])
+        self.optimizer.group_box.addOption('Optimizer:', ComboBox, parameter=self.plugin.parameters['optimizer'])
+        self.optimizer.group_box.addOption('Weight decay:', DoubleSpinBox, parameter=self.plugin.parameters['weight_decay'])
+        self.optimizer.group_box.addOption('Momentum:', DoubleSpinBox, parameter=self.plugin.parameters['momentum'])
+
+        self.loss_function.group_box.addOption('Gamma:', DoubleSpinBox, single_step=0.1, adaptive=False,
+                                          parameter=self.plugin.parameters['focal_gamma'])
+        self.loss_function.group_box.addOption('Weight classes:', RadioButton, parameter=self.plugin.parameters['class_weights'])
+        self.loss_function.group_box.addOption('L1 regularization:', DoubleSpinBox, parameter=self.plugin.parameters['L1'])
+        self.loss_function.group_box.addOption('L2 regularization:', DoubleSpinBox, parameter=self.plugin.parameters['L2'])
+
+        self.optimizer.group_box.addOption('Learning rate:', DoubleSpinBox, decimals=4, single_step=0.01, adaptive=True,
                                           parameter=self.plugin.parameters['learning_rate'])
-        self.advanced.group_box.addOption('Weight decay:', DoubleSpinBox, parameter=self.plugin.parameters['weight_decay'])
-        self.advanced.group_box.addOption('L1 regularization:', DoubleSpinBox, parameter=self.plugin.parameters['L1'])
-        self.advanced.group_box.addOption('L2 regularization:', DoubleSpinBox, parameter=self.plugin.parameters['L2'])
-        self.advanced.group_box.addOption('Decay rate:', DoubleSpinBox, parameter=self.plugin.parameters['decay_rate'])
-        self.advanced.group_box.addOption('Decay period:', SpinBox, parameter=self.plugin.parameters['decay_period'])
-        self.advanced.group_box.addOption('Momentum:', DoubleSpinBox, parameter=self.plugin.parameters['momentum'])
+        self.optimizer.group_box.addOption('Decay rate:', DoubleSpinBox, parameter=self.plugin.parameters['decay_rate'])
+        self.optimizer.group_box.addOption('Decay period:', SpinBox, parameter=self.plugin.parameters['decay_period'])
+
         self.advanced.group_box.addOption('Checkpoint metric:', ComboBox,
                                           parameter=self.plugin.parameters['checkpoint_metric'])
 

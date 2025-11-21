@@ -19,7 +19,6 @@ def evaluate_metrics(model, data_loader, seq2one, loss_fn, lambda1, lambda2, dev
 def evaluate_metrics_seq2one(model, data_loader, loss_fn, lambda1, lambda2, device, metrics):
     model.eval()
     running_loss = 0.0
-    correct, total = 0.0, 0.0
     # scaler = GradScaler('cuda')
     with torch.no_grad():
         for images, labels in data_loader:
@@ -47,13 +46,12 @@ def evaluate_metrics_seq2one(model, data_loader, loss_fn, lambda1, lambda2, devi
         accuracy = metrics.value
         metrics.reset_sampling()
 
-        return running_loss / len(data_loader), correct / total
+        return running_loss / len(data_loader), accuracy
 
 
 def evaluate_metrics_seq2seq(model, data_loader, loss_fn, lambda1, lambda2, device, metrics):
     model.eval()
     running_loss = 0.0
-    correct, total = 0.0, 0.0
     # scaler = GradScaler('cuda')
     with torch.no_grad():
         for images, labels in data_loader:
