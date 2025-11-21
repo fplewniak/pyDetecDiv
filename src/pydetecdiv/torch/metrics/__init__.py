@@ -75,7 +75,7 @@ class AccuracyByClass(Metrics):
             outputs = outputs.view(N * T, C, -1)
             targets = targets.view(N * T, -1)
         pred = torch.argmax(outputs, dim=1)
-        correct = (pred == targets)
+        correct = (pred == targets).unsqueeze(1)
         target_onehot = F.one_hot(targets.to(torch.int64), num_classes=C).transpose(1, 2)
         correct = correct.expand_as(target_onehot) * target_onehot
         total = target_onehot.sum((0, 2))
