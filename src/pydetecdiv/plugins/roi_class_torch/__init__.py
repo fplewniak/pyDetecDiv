@@ -607,7 +607,7 @@ class Plugin(plugins.Plugin):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             for t, class_id in enumerate(roi_classes):
                 if class_id != -1:
-                    Results().save(project, run, roi, t, pd.DataFrame([1]), [self.class_names(as_string=False)[class_id]])
+                    Results().save(project, run, roi, t, np.ndarray([1]), [self.class_names(as_string=False)[class_id]])
 
     def save_annotation(self, project: Project, run: Run, roi: ROI, frame: int, class_name: str) -> None:
         """
