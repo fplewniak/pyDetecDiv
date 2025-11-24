@@ -950,7 +950,8 @@ class Plugin(plugins.Plugin):
         #     fov_data, roi_list, rois = self.prepare_data_for_classification(fov_ids, z_channels)
         #     num_rois = len(rois)
 
-        if len(model.expected_shape) == 4:
+        # if len(model.expected_shape) == 4:
+        if seqlen == 0:
             print('Single image')
         else:
             print('LSTM')
@@ -967,13 +968,17 @@ class Plugin(plugins.Plugin):
         for images, frames, roi_ids in roi_dataloader:
             images = images.to(device)
             with autocast('cuda'):
-                outputs = torch.nn.functional.softmax(model(images), dim=-1)
-                probs = torch.nn.functional.softmax(outputs, dim=-1).view(batch_size * seqlen, -1)
+                outputs = model(images)
+                if seqlen == 0:
+                    probs = torch.nn.functional.softmax(outputs.view(outputs.size(0), -1), dim=-1)
+                else:
+                    probs = torch.nn.functional.softmax(outputs.view(outputs.size(0) * outputs.size(1), -1), dim=-1)
                 classes = [self.parameters['class_names'].value[i] for i in torch.argmax(probs, dim=-1)]
                 # print(frames, file=sys.stderr)
                 # print(roi_ids, file=sys.stderr)
-                # print(classes, file=sys.stderr)
-                # print(probs.shape, file=sys.stderr)
+                # print(outputs.shape, file=sys.stderr)
+                # print(classes[0:2], file=sys.stderr)
+                # print(probs[0:2], file=sys.stderr)
 
         roi_dataset.close()
         print(f'{datetime.now().strftime("%H:%M:%S")}: predictions OK')
