@@ -327,9 +327,9 @@ class Project:
         :param class_name: the class of the requested object
         :param id_: the id reference of the object
         :type class_name: class inheriting DomainSpecificObject
-        :type id\_: int
+        :type id_: int
         :param uuid: the uuid of the requested object
-        :param use_pool: True if object should be obtained from the pool unless if has not been created yet
+        :param use_pool: True if object should be obtained from the pool unless it has not been created yet
         :return: the desired object
         """
         return self.build_dso(class_name, self.repository.get_record(class_name, int(id_), uuid), use_pool)

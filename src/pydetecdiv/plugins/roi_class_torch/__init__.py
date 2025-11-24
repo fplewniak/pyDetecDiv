@@ -263,7 +263,7 @@ class Plugin(plugins.Plugin):
             IntParameter(name='decay_period', label='Decay period', groups={'training', 'finetune'}, default=50),
             FloatParameter(name='weight_decay', label='Weight decay', groups={'training', 'finetune'}, default=0.0, ),
             FloatParameter(name='focal_gamma', label='Focal loss gamma', groups={'training', 'finetune'}, default=2.0,
-                           minimum=0.0, maximum=2.0,),
+                           minimum=0.0, maximum=2.0, ),
             CheckParameter(name='class_weights', label='Class weights', groups={'training', 'finetune'}, default=True),
             FloatParameter(name='L1', label='L1 regularization', groups={'training', 'finetune'}, default=0.0, ),
             FloatParameter(name='L2', label='L2 regularization', groups={'training', 'finetune'}, default=0.0, ),
@@ -292,8 +292,9 @@ class Plugin(plugins.Plugin):
             IntParameter(name='seqlen', label='Sequence length', groups={'training', 'finetune', 'prediction'},
                          default=15, ),
             ChoiceParameter(name='follow_metric', label='Follow metric', groups={'training', 'finetune'},
-                            default='Accuracy', items={'Accuracy': Accuracy,
-                                                       'Accuracy by class': AccuracyByClass, }),
+                            default='Accuracy', items={'Accuracy'         : Accuracy,
+                                                       'Accuracy by class': AccuracyByClass,
+                                                       }),
             ItemParameter(name='annotation_file', label='Annotation file', groups={'import_annotations'}, ),
             ChoiceParameter(name='fov', label='Select FOVs', groups={'prediction'}, updater=self.update_fov_list),
             ]
@@ -791,7 +792,7 @@ class Plugin(plugins.Plugin):
             loss_fn = FocalLoss(alpha=class_weights, gamma=self.parameters['focal_gamma'].value, reduction='mean')
         else:
             loss_fn = FocalLoss(gamma=self.parameters['focal_gamma'].value, reduction='mean')
-            
+
         lr = self.parameters['learning_rate'].value
         weight_decay = self.parameters['weight_decay'].value
         decay_rate = self.parameters['decay_rate'].value
@@ -944,20 +945,6 @@ class Plugin(plugins.Plugin):
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Preparing data')
 
-        # with pydetecdiv_project(PyDetecDiv.project_name) as project:
-        #     fov_ids = [fov.id_ for fov in [project.get_named_object('FOV', fov_name) for fov_name in fov_names]]
-        #
-        #     fov_data, roi_list, rois = self.prepare_data_for_classification(fov_ids, z_channels)
-        #     num_rois = len(rois)
-
-        # if len(model.expected_shape) == 4:
-        if seqlen == 0:
-            print('Single image')
-        else:
-            print('LSTM')
-            # print(fov_data, file=sys.stderr)
-            # print(roi_list, file=sys.stderr)
-            # print(rois, file=sys.stderr)
         hdf5_file = self.create_hdf5_rois(annotated_rois=False)
 
         roi_idx = prepare_data_for_inference(hdf5_file, seqlen=seqlen)
@@ -965,23 +952,35 @@ class Plugin(plugins.Plugin):
 
         roi_dataloader = DataLoader(roi_dataset, batch_size=batch_size, shuffle=False)
 
-        for images, frames, roi_ids in roi_dataloader:
-            images = images.to(device)
-            with autocast('cuda'):
-                outputs = model(images)
-                if seqlen == 0:
-                    probs = torch.nn.functional.softmax(outputs.view(outputs.size(0), -1), dim=-1)
-                else:
-                    probs = torch.nn.functional.softmax(outputs.view(outputs.size(0) * outputs.size(1), -1), dim=-1)
-                classes = [self.parameters['class_names'].value[i] for i in torch.argmax(probs, dim=-1)]
-                # print(frames, file=sys.stderr)
-                # print(roi_ids, file=sys.stderr)
-                # print(outputs.shape, file=sys.stderr)
-                # print(classes[0:2], file=sys.stderr)
-                # print(probs[0:2], file=sys.stderr)
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Creating run record')
+            parameters = self.parameters.json(groups='prediction')
+            run = self.save_run(project, 'predict', parameters)
+
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Classifying ROIs')
+
+            for images, frames, roi_ids in roi_dataloader:
+                images = images.to(device)
+                with autocast('cuda'):
+                    outputs = model(images)
+                    if seqlen == 0:
+                        probs = torch.nn.functional.softmax(outputs, dim=-1).cpu().detach().numpy()
+                    else:
+                        probs = torch.nn.functional.softmax(outputs, dim=-1).cpu().detach().numpy()
+                    # classes = torch.argmax(probs, dim=-1)
+
+                    for (roi_id, start, p) in zip(roi_ids, frames, probs):
+                        if seqlen == 0:
+                            Results().save(project, run, project.get_object('ROI', roi_id), start.item(),
+                                           p, self.class_names(as_string=False))
+                        else:
+                            for i in range(seqlen):
+                                frame = start + i
+                                Results().save(project, run, project.get_object('ROI', roi_id), frame.item(),
+                                               p[i], self.class_names(as_string=False))
 
         roi_dataset.close()
-        print(f'{datetime.now().strftime("%H:%M:%S")}: predictions OK')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: classification OK')
 
     def show_results(self, trigger=None, roi_selection: list[ROI] = None) -> None:
         """
