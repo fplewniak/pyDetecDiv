@@ -292,9 +292,9 @@ class Plugin(plugins.Plugin):
             IntParameter(name='seqlen', label='Sequence length', groups={'training', 'finetune', 'prediction'},
                          default=15, ),
             ChoiceParameter(name='follow_metric', label='Follow metric', groups={'training', 'finetune'},
-                            default='Accuracy', items={'Accuracy'         : Accuracy,
-                                                       'Accuracy by class': AccuracyByClass,
-                                                       }),
+                            default='Accuracy by class', items={'Accuracy'         : Accuracy,
+                                                                'Accuracy by class': AccuracyByClass,
+                                                                }),
             ItemParameter(name='annotation_file', label='Annotation file', groups={'import_annotations'}, ),
             ChoiceParameter(name='fov', label='Select FOVs', groups={'prediction'}, updater=self.update_fov_list),
             ]
