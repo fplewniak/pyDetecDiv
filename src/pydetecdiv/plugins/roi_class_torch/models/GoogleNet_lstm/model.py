@@ -62,6 +62,6 @@ class NN_module(nn.Module):
         x = x.reshape(x.shape[0], x.shape[1], -1)  # Flatten
         x, _ = self.bilstm(x)  # Pass through BiLSTM
         x = nn.functional.leaky_relu(x)
-        x = self.dropout(x)
+        # x = self.dropout(x)
         x = self.classify(x)
         return x

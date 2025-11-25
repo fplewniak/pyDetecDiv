@@ -77,6 +77,6 @@ class NN_module(nn.Module):
         c0 = self.c0.expand(-1, batch_size, -1).contiguous()
         x, _ = self.bilstm(x, (h0, c0))  # Pass through BiLSTM
         x = nn.functional.leaky_relu(x)
-        x = self.dropout(x)
+        # x = self.dropout(x)
         x = self.classify(x)
         return x
