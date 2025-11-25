@@ -4,7 +4,6 @@ from datetime import datetime
 import tables as tbl
 
 import numpy as np
-from sklearn.utils.class_weight import compute_class_weight
 import torch
 from torchvision.transforms import transforms, v2
 import torchvision.transforms.functional as F
@@ -37,7 +36,6 @@ def prepare_data_for_training(hdf5_file: str, seqlen: int = 0, train: float = 0.
     num_classes = len(class_counts)
     alpha = total_counts / class_counts
     class_weights = torch.tensor((num_classes * alpha) / np.sum(alpha), dtype=torch.float32)
-    # class_weights = torch.tensor(compute_class_weight(class_weight='balanced', classes=classes, y=labels), dtype=torch.float32)
     print(class_weights, file=sys.stderr)
     print(f'{datetime.now().strftime("%H:%M:%S")}: Select valid targets from array with shape {targets.shape}')
     if seqlen == 0:
@@ -96,9 +94,9 @@ class ROIDataset(Dataset):
 
         # self.transform = transforms.Compose([v2.ToDtype(torch.float, scale=True),
         #                                     transforms.Normalize((0.5,), (0.5,)), ])
-        self.transform = transforms.Compose([v2.ToDtype(torch.float, scale=True),
-                                            v2.functional.autocontrast])
-        # self.transform = v2.ToDtype(torch.float, scale=True)
+        # self.transform = transforms.Compose([v2.ToDtype(torch.float, scale=True),
+        #                                     v2.functional.autocontrast])
+        self.transform = v2.ToDtype(torch.float, scale=True)
 
 
         # self.transform = transform
