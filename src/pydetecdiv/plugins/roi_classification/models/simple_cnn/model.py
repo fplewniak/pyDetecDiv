@@ -1,24 +1,26 @@
-from tensorflow import keras
+import torch
+from torch import nn
 
-def create_model(n_classes):
-    model = keras.Sequential()
 
-    model.add(keras.layers.Input((60, 60, 3)))
-    model.add(keras.layers.Conv2D(8, (3, 3), activation='relu', padding='same'))
-    model.add(keras.layers.MaxPooling2D(2,2))
-    model.add(keras.layers.Dropout(0.2))
-    model.add(keras.layers.Conv2D(16, (3, 3), activation='relu', padding='same'))
-    model.add(keras.layers.MaxPooling2D(2,2))
-    model.add(keras.layers.Dropout(0.2))
-    model.add(keras.layers.Conv2D(16, (3, 3), activation='relu', padding='same'))
-    model.add(keras.layers.MaxPooling2D(2,2))
-    # Maybe place a keras.layers.Flatten() layer here and find something for plugout in training. Might be possible
-    # to specify that no special layer should be added before the output layer in the final model... for instance
-    # using None instead of the name of the layer function...
-    # Flattening here reduces the number of parameters a lot and allows a much faster training
-    model.add(keras.layers.Flatten())
-    model.add(keras.layers.Dense(512, activation='relu'))
-    model.add(keras.layers.Dropout(0.2))
-    model.add(keras.layers.Dense(n_classes, name="new_fc_"))
-    model.add(keras.layers.Softmax())
-    return model
+class NN_module(nn.Module):
+    def __init__(self, n_classes):
+        super(NN_module, self).__init__()
+
+        self.expected_shape = ('Batch', 3, 64, 64)
+
+        self.nn = nn.Sequential(
+                nn.Conv2d(3, 16, 3, stride=1, padding=1),  # [B, 3, 64, 64] → [B, 16, 64, 64]
+                nn.ReLU(),
+                nn.MaxPool2d(2, 2), # [B, 16, 64, 64] → [B, 16, 32, 32]
+                nn.Conv2d(16, 32, 3, stride=2, padding=1),  # [B, 16, 32, 32] → [B, 32, 16, 16]
+                nn.ReLU(),
+                nn.MaxPool2d(2, 2), # [B, 32, 16, 16] → [B, 32, 8, 8]
+                nn.Flatten(), # [B, 32, 8, 8] → [B, 2048]
+                nn.Linear(2048, 512),
+                nn.Linear(512, n_classes),
+                # nn.Softmax(dim=-1)
+                )
+
+    def forward(self, x):
+        output = self.nn(x)
+        return output

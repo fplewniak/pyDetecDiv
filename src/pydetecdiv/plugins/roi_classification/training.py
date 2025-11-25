@@ -6,7 +6,7 @@ import torch
 from torch import unsqueeze
 from torch.amp import GradScaler, autocast
 
-from pydetecdiv.plugins.roi_class_torch.evaluate import evaluate_metrics_seq2seq, evaluate_metrics_seq2one
+from pydetecdiv.plugins.roi_classification.evaluate import evaluate_metrics_seq2seq, evaluate_metrics_seq2one
 from pydetecdiv.utils import flatten_list
 
 def train_loop(training_loader, validation_loader, model, seq2one, loss_fn, optimizer, lambda1, lambda2, device, metrics):

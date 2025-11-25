@@ -1,3 +1,9 @@
+import gc
+import math
+import random
+import sys
+
+import torch
 from PySide6.QtCore import Slot, Signal
 from sklearn.metrics import ConfusionMatrixDisplay
 
@@ -25,16 +31,34 @@ class TrainingDialog(Dialog):
 
         self.hyper.addOption('Sequence length:', SpinBox, adaptive=True, parameter=self.plugin.parameters['seqlen'])
 
+        self.optimizer = self.hyper.addOption(None, AdvancedButton, text='Optimizer')
+        self.optimizer.linkGroupBox(self.hyper.addOption(None, ParametersFormGroupBox, show=False))
+        self.loss_function = self.hyper.addOption(None, AdvancedButton, text='Focal loss')
+        self.loss_function.linkGroupBox(self.hyper.addOption(None, ParametersFormGroupBox, show=False))
         self.advanced = self.hyper.addOption(None, AdvancedButton)
         self.advanced.linkGroupBox(self.hyper.addOption(None, ParametersFormGroupBox, show=False))
-        self.advanced.group_box.addOption('Random seed:', SpinBox, parameter=self.plugin.parameters['seed'])
-        self.advanced.group_box.addOption('Optimizer:', ComboBox, parameter=self.plugin.parameters['optimizer'])
 
-        self.advanced.group_box.addOption('Learning rate:', DoubleSpinBox, decimals=4, single_step=0.01, adaptive=True,
+        self.advanced.group_box.addOption('Random seed:', SpinBox, parameter=self.plugin.parameters['seed'])
+        self.optimizer.group_box.addOption('Optimizer:', ComboBox, parameter=self.plugin.parameters['optimizer'])
+
+        self.optimizer.group_box.addOption('Weight decay:', DoubleSpinBox, parameter=self.plugin.parameters['weight_decay'])
+        self.optimizer.group_box.addOption('Momentum:', DoubleSpinBox, parameter=self.plugin.parameters['momentum'])
+
+        self.loss_function.group_box.addOption('Gamma:', DoubleSpinBox, single_step=0.1, adaptive=False,
+                                          parameter=self.plugin.parameters['focal_gamma'])
+        self.loss_function.group_box.addOption('Weight classes:', RadioButton, parameter=self.plugin.parameters['class_weights'])
+        self.loss_function.group_box.addOption('L1 regularization:', DoubleSpinBox, single_step=0.01, adaptive=False,
+                                          parameter=self.plugin.parameters['L1'])
+        self.loss_function.group_box.addOption('L2 regularization:', DoubleSpinBox, single_step=0.01, adaptive=False,
+                                          parameter=self.plugin.parameters['L2'])
+
+        self.optimizer.group_box.addOption('Learning rate:', DoubleSpinBox, single_step=1e-5, adaptive=False,
                                           parameter=self.plugin.parameters['learning_rate'])
-        self.advanced.group_box.addOption('Decay rate:', DoubleSpinBox, parameter=self.plugin.parameters['decay_rate'])
-        self.advanced.group_box.addOption('Decay period:', SpinBox, parameter=self.plugin.parameters['decay_period'])
-        self.advanced.group_box.addOption('Momentum:', DoubleSpinBox, parameter=self.plugin.parameters['momentum'])
+        self.optimizer.group_box.addOption('Decay rate:', DoubleSpinBox, parameter=self.plugin.parameters['decay_rate'])
+        self.optimizer.group_box.addOption('Decay period:', SpinBox, parameter=self.plugin.parameters['decay_period'])
+
+        self.advanced.group_box.addOption('Follow metric:', ComboBox,
+                                          parameter=self.plugin.parameters['follow_metric'])
         self.advanced.group_box.addOption('Checkpoint metric:', ComboBox,
                                           parameter=self.plugin.parameters['checkpoint_metric'])
 
@@ -62,9 +86,9 @@ class TrainingDialog(Dialog):
 
         self.arrangeWidgets([self.classifier_selection, self.hyper, self.datasets, self.preprocessing, self.button_box])
 
-        set_connections({self.button_box.accepted: self.wait_for_training,
-                         self.button_box.rejected: self.close,
-                         self.training_data.changed: lambda _: self.update_datasets(self.training_data),
+        set_connections({self.button_box.accepted    : self.wait_for_training,
+                         self.button_box.rejected    : self.close,
+                         self.training_data.changed  : lambda _: self.update_datasets(self.training_data),
                          self.validation_data.changed: lambda _: self.update_datasets(self.validation_data),
                          # self.optimizer.changed: self.update_optimizer_options,
                          # PyDetecDiv.app.project_selected: self.update_all,
@@ -84,14 +108,14 @@ class TrainingDialog(Dialog):
         """
         if changed_dataset:
             self.plugin.parameters['num_test'].set_value(
-                1.0 - (self.plugin.parameters['num_training'].value + self.plugin.parameters['num_validation'].value))
+                    1.0 - (self.plugin.parameters['num_training'].value + self.plugin.parameters['num_validation'].value))
             total = self.plugin.parameters['num_training'].value + self.plugin.parameters['num_validation'].value + \
                     self.plugin.parameters['num_test'].value
             if total > 1.0:
                 changed_dataset.setValue(changed_dataset.value() - total + 1.0)
         else:
             self.plugin.parameters['num_test'].set_value(
-                1.0 - self.plugin.parameters['num_training'].value - self.plugin.parameters['num_validation'].value)
+                    1.0 - self.plugin.parameters['num_training'].value - self.plugin.parameters['num_validation'].value)
 
     def wait_for_training(self):
         wait_dialog = StdoutWaitDialog('**Training model**', self)
@@ -126,16 +150,31 @@ class FineTuningDialog(Dialog):
 
         self.hyper.addOption('Sequence length:', SpinBox, adaptive=True, parameter=self.plugin.parameters['seqlen'])
 
+        self.optimizer = self.hyper.addOption(None, AdvancedButton, text='Optimizer')
+        self.optimizer.linkGroupBox(self.hyper.addOption(None, ParametersFormGroupBox, show=False))
+        self.loss_function = self.hyper.addOption(None, AdvancedButton, text='Focal loss')
+        self.loss_function.linkGroupBox(self.hyper.addOption(None, ParametersFormGroupBox, show=False))
         self.advanced = self.hyper.addOption(None, AdvancedButton)
         self.advanced.linkGroupBox(self.hyper.addOption(None, ParametersFormGroupBox, show=False))
-        self.advanced.group_box.addOption('Random seed:', SpinBox, parameter=self.plugin.parameters['seed'])
-        self.advanced.group_box.addOption('Optimizer:', ComboBox, parameter=self.plugin.parameters['optimizer'])
 
-        self.advanced.group_box.addOption('Learning rate:', DoubleSpinBox, decimals=4, single_step=0.01, adaptive=True,
+        self.advanced.group_box.addOption('Random seed:', SpinBox, parameter=self.plugin.parameters['seed'])
+        self.optimizer.group_box.addOption('Optimizer:', ComboBox, parameter=self.plugin.parameters['optimizer'])
+        self.optimizer.group_box.addOption('Weight decay:', DoubleSpinBox, parameter=self.plugin.parameters['weight_decay'])
+        self.optimizer.group_box.addOption('Momentum:', DoubleSpinBox, parameter=self.plugin.parameters['momentum'])
+
+        self.loss_function.group_box.addOption('Gamma:', DoubleSpinBox, single_step=0.1, adaptive=False,
+                                          parameter=self.plugin.parameters['focal_gamma'])
+        self.loss_function.group_box.addOption('Weight classes:', RadioButton, parameter=self.plugin.parameters['class_weights'])
+        self.loss_function.group_box.addOption('L1 regularization:', DoubleSpinBox, parameter=self.plugin.parameters['L1'])
+        self.loss_function.group_box.addOption('L2 regularization:', DoubleSpinBox, parameter=self.plugin.parameters['L2'])
+
+        self.optimizer.group_box.addOption('Learning rate:', DoubleSpinBox, decimals=4, single_step=0.01, adaptive=True,
                                           parameter=self.plugin.parameters['learning_rate'])
-        self.advanced.group_box.addOption('Decay rate:', DoubleSpinBox, parameter=self.plugin.parameters['decay_rate'])
-        self.advanced.group_box.addOption('Decay period:', SpinBox, parameter=self.plugin.parameters['decay_period'])
-        self.advanced.group_box.addOption('Momentum:', DoubleSpinBox, parameter=self.plugin.parameters['momentum'])
+        self.optimizer.group_box.addOption('Decay rate:', DoubleSpinBox, parameter=self.plugin.parameters['decay_rate'])
+        self.optimizer.group_box.addOption('Decay period:', SpinBox, parameter=self.plugin.parameters['decay_period'])
+
+        self.advanced.group_box.addOption('Follow metric:', ComboBox,
+                                          parameter=self.plugin.parameters['follow_metric'])
         self.advanced.group_box.addOption('Checkpoint metric:', ComboBox,
                                           parameter=self.plugin.parameters['checkpoint_metric'])
 
@@ -167,8 +206,8 @@ class FineTuningDialog(Dialog):
 
         self.arrangeWidgets([self.classifier_selection, self.hyper, self.datasets, self.preprocessing, self.button_box])
 
-        set_connections({self.button_box.accepted: self.wait_for_finetuning,
-                         self.button_box.rejected: self.close,
+        set_connections({self.button_box.accepted   : self.wait_for_finetuning,
+                         self.button_box.rejected   : self.close,
                          self.weights_choice.changed: self.plugin.select_saved_parameters,
                          })
 
@@ -187,22 +226,31 @@ class FineTuningDialog(Dialog):
         self.close()
 
     def run_finetuning(self):
-        self.job_finished.emit(self.plugin.train_model())
+        self.job_finished.emit(self.plugin.train_model(fine_tuning=True))
 
 
 def plot_training_results(results):
-    module_name, class_names, history, evaluation, ground_truth, predictions, best_predictions = results
+    module_name, class_names, history, evaluation, ground_truth, predictions, best_gt, best_predictions, dataset, model, device = results
+    # module_name, class_names, history = results
     tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {module_name}')
     tab.project_name = PyDetecDiv.project_name
     history_plot = plot_history(history, evaluation)
     tab.addTab(history_plot, 'Training')
     tab.setCurrentWidget(history_plot)
 
-    confusion_matrix_plot = plot_confusion_matrix(ground_truth, predictions, class_names)
+    confusion_matrix_plot = plot_confusion_matrix(ground_truth.cpu(), predictions.cpu(), class_names)
     tab.addTab(confusion_matrix_plot, 'Confusion matrix (last epoch)')
 
-    confusion_matrix_plot = plot_confusion_matrix(ground_truth, best_predictions, class_names)
+    confusion_matrix_plot = plot_confusion_matrix(best_gt.cpu(), best_predictions.cpu(), class_names)
     tab.addTab(confusion_matrix_plot, 'Confusion matrix (best checkpoint)')
+
+    tab.addTab(plot_images(dataset['train'], 6, class_names, model, device), 'training images')
+    tab.addTab(plot_images(dataset['val'], 6, class_names, model, device), 'validation images')
+    tab.addTab(plot_images(dataset['test'], 6, class_names, model, device), 'test images')
+
+    del model
+    torch.cuda.empty_cache()
+    gc.collect()
 
 
 def plot_history(history, evaluation):
@@ -214,14 +262,14 @@ def plot_history(history, evaluation):
     """
     plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=2, rows=1)
     axs = plot_viewer.axes
-    axs[0].plot(history.history['accuracy'])
-    axs[0].plot(history.history['val_accuracy'])
+    axs[0].plot(history['train accuracy'])
+    axs[0].plot(history['val accuracy'])
     axs[0].axhline(evaluation['accuracy'], color='red', linestyle='--')
     axs[0].set_ylabel('accuracy')
     axs[0].set_xlabel('epoch')
     axs[0].legend(['train', 'val'], loc='lower right')
-    axs[1].plot(history.history['loss'])
-    axs[1].plot(history.history['val_loss'])
+    axs[1].plot(history['train loss'])
+    axs[1].plot(history['val loss'])
     axs[1].axhline(evaluation['loss'], color='red', linestyle='--')
     axs[1].legend(['train', 'val'], loc='upper right')
     axs[1].set_ylabel('loss')
@@ -240,12 +288,35 @@ def plot_confusion_matrix(ground_truth, predictions, class_names):
     :return: the plot viewer where the confusion matrix is plotted
     """
     plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=2, rows=1)
-    plot_viewer.axes[0].set_title('Normalized by row')
+    plot_viewer.axes[0].set_title('Normalized by row (recall)')
     ConfusionMatrixDisplay.from_predictions(ground_truth, predictions, labels=list(range(len(class_names))),
-                                            display_labels=class_names, normalize='true', ax=plot_viewer.axes[0])
-    plot_viewer.axes[1].set_title('Normalized by column')
+                                            display_labels=class_names, normalize='true', ax=plot_viewer.axes[0], colorbar=False)
+    plot_viewer.axes[1].set_title('Normalized by column (precision)')
     ConfusionMatrixDisplay.from_predictions(ground_truth, predictions, labels=list(range(len(class_names))),
-                                            display_labels=class_names, normalize='pred', ax=plot_viewer.axes[1])
+                                            display_labels=class_names, normalize='pred', ax=plot_viewer.axes[1], colorbar=False)
+    return plot_viewer
+
+
+def plot_images(dataset, n, class_names, model, device):
+    plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=n, rows=1)
+    for i in range(n):
+        idx = random.randint(0, len(dataset) - 1)
+        img, target = dataset[idx]
+        roi_id = dataset.get_roi_id(idx)
+        frame = dataset.get_frame(idx)
+        if img.dim() == 4:
+            # img = img[math.ceil(img.shape[0] / 2.0)]
+            t = random.randint(0, len(target) - 1)
+            prediction = model(torch.unsqueeze(img, dim=0).to(device)).argmax(dim=-1).squeeze()[t]
+            img = img[t]
+            target = target[t]
+        else:
+            prediction = model(torch.unsqueeze(img, dim=0).to(device)).argmax(dim=-1).squeeze()
+            t = 0
+        img_channel_last = img.permute([1, 2, 0])
+        plot_viewer.axes[i].imshow(img_channel_last.to(torch.float32))
+        plot_viewer.axes[i].set_title(f'{class_names[target.item()]} ({class_names[prediction.item()]})')
+        plot_viewer.axes[i].set_xlabel(f'{roi_id} [{frame + t}]')
     return plot_viewer
 
 

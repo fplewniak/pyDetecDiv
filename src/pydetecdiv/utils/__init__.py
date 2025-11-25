@@ -111,7 +111,6 @@ def split_list(arr: list[Any] | np.ndarray[Any], sep: list[Any] | Any, max_lengt
     sublists = []
     start = 0
     for idx in indices:
-        # sublists.extend(keras.ops.extract_sequences(arr[start:idx], max_length, max_length)) # Keras3
         num_sections = int((idx - start) / max_length + 0.5) if max_length else 1
         sublists.extend(np.array_split(arr[start:idx], num_sections))
         start = idx
