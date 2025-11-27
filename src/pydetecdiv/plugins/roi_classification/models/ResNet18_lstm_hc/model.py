@@ -54,8 +54,8 @@ class NN_module(nn.Module):
         num_layers = 1
         hidden_size = 150
         self.bilstm = nn.LSTM(input_size=512, hidden_size=hidden_size, num_layers=num_layers, batch_first=True, bidirectional=True)
-        self.h0 = nn.Parameter(torch.randn(2 * num_layers, 1, hidden_size) * 0.01)
-        self.c0 = nn.Parameter(torch.randn(2 *num_layers, 1, hidden_size) * 0.01)
+        self.h0 = nn.Parameter(torch.zeros(2 * num_layers, 1, hidden_size) * 0.01)
+        self.c0 = nn.Parameter(torch.zeros(2 * num_layers, 1, hidden_size) * 0.01)
 
         self.dropout = nn.Dropout(0.5)
 
