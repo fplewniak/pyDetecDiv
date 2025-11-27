@@ -27,6 +27,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 from torch.utils.data import DataLoader
 
 from torch import optim
+from torchvision.transforms import transforms, v2, InterpolationMode
 
 from pydetecdiv import plugins
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir, project_list
@@ -270,8 +271,9 @@ class Plugin(plugins.Plugin):
             FloatParameter(name='momentum', label='Momentum', groups={'training', 'finetune'}, default=0.9, ),
             ChoiceParameter(name='checkpoint_metric', label='Checkpoint metric', groups={'training', 'finetune'},
                             default='Loss', items={'Loss': 'val_loss', 'Accuracy': 'val_accuracy', }),
-            CheckParameter(name='early_stopping', label='Early stopping', groups={'training', 'finetune'},
-                           default=False),
+            # CheckParameter(name='early_stopping', label='Early stopping', groups={'training', 'finetune'},
+            #                default=False),
+            CheckParameter(name='augmentation', label='Augmentation', groups={'training', 'finetune'}, default=False),
             FloatParameter(name='num_training', label='Training dataset', groups={'training', 'finetune'}, default=0.6,
                            minimum=0.01, maximum=0.99, ),
             FloatParameter(name='num_validation', label='Validation dataset', groups={'training', 'finetune'},
@@ -812,7 +814,18 @@ class Plugin(plugins.Plugin):
                 optimizer = self.parameters['optimizer'].value(model_param, lr=lr, momentum=momentum,
                                                                weight_decay=weight_decay)
 
-        training_dataset = ROIDataset(hdf5_file, training_idx, targets=True, image_shape=img_size, seq2one=seq2one, seqlen=seqlen)
+        if self.parameters['augmentation']:
+            # augmentation = transforms.Compose([v2.RandomHorizontalFlip(p=0.5),
+            #                                    # v2.RandomChoice([v2.RandomResizedCrop(size=[60, 60]), v2.RandomZoomOut()]),
+            #                                    v2.RandomAffine(degrees=10.0, translate=(5, 5), scale=(0.75, 1.3333)),
+            #                                    ])
+            augmentation = v2.RandomAffine(degrees=10.0, translate=(0.1, 0.1), scale=(0.75, 1.3333),
+                                           interpolation=InterpolationMode.BILINEAR)
+        else:
+            augmentation = None
+
+        training_dataset = ROIDataset(hdf5_file, training_idx, targets=True, image_shape=img_size, seq2one=seq2one, seqlen=seqlen,
+                                      transform=augmentation)
         validation_dataset = ROIDataset(hdf5_file, validation_idx, targets=True, image_shape=img_size, seq2one=seq2one,
                                         seqlen=seqlen)
         test_dataset = ROIDataset(hdf5_file, test_idx, targets=True, image_shape=img_size, seq2one=seq2one, seqlen=seqlen)

@@ -62,9 +62,10 @@ class TrainingDialog(Dialog):
         self.advanced.group_box.addOption('Checkpoint metric:', ComboBox,
                                           parameter=self.plugin.parameters['checkpoint_metric'])
 
-        self.advanced.group_box.addOption('Early stopping:', RadioButton,
-                                          parameter=self.plugin.parameters['early_stopping'])
-
+        # self.advanced.group_box.addOption('Early stopping:', RadioButton,
+        #                                   parameter=self.plugin.parameters['early_stopping'])
+        self.advanced.group_box.addOption('Data augmentation:', RadioButton,
+                                          parameter=self.plugin.parameters['augmentation'])
         self.datasets = self.addGroupBox('Datasets')
         self.training_data = self.datasets.addOption('Training dataset:', DoubleSpinBox,
                                                      parameter=self.plugin.parameters['num_training'])
@@ -178,8 +179,10 @@ class FineTuningDialog(Dialog):
         self.advanced.group_box.addOption('Checkpoint metric:', ComboBox,
                                           parameter=self.plugin.parameters['checkpoint_metric'])
 
-        self.advanced.group_box.addOption('Early stopping:', RadioButton,
-                                          parameter=self.plugin.parameters['early_stopping'])
+        # self.advanced.group_box.addOption('Early stopping:', RadioButton,
+        #                                   parameter=self.plugin.parameters['early_stopping'])
+        self.advanced.group_box.addOption('Data augmentation:', RadioButton,
+                                          parameter=self.plugin.parameters['augmentation'])
 
         self.datasets = self.addGroupBox('Datasets')
         self.training_data = self.datasets.addOption('Training dataset:', DoubleSpinBox,
