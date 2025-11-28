@@ -1,3 +1,6 @@
+"""
+ROI classification core code
+"""
 import gc
 import importlib
 import json
@@ -5,6 +8,7 @@ import os
 import pkgutil
 import sys
 from datetime import datetime
+from typing import Any
 
 import cv2
 import fastremap
@@ -14,8 +18,17 @@ import numpy as np
 import pandas as pd
 
 import sqlalchemy
+from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy.orm import registry
+from sqlalchemy.types import JSON
+
 import torch
+from torch import optim
 from torch.amp import autocast
+from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
+from torch.utils.data import DataLoader
+from torchvision.transforms import v2, InterpolationMode
+
 from PySide6.QtGui import QAction
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
 from PySide6.QtWidgets import QMenu, QFileDialog, QMessageBox, QGraphicsRectItem
@@ -37,7 +50,6 @@ from .gui.modelinfo import ModelInfoDialog
 from .gui.prediction import PredictionDialog
 from .gui.training import TrainingDialog, FineTuningDialog, ImportClassifierDialog
 
-from pydetecdiv.settings import get_plugins_dir, get_config_value
 from .training import train_testing_loop, train_loop
 from .utils import get_classifications, get_annotation_runs
 from ...domain.Dataset import Dataset
@@ -183,12 +195,13 @@ def get_drift_corrections() -> pd.DataFrame:
         return drift_corrections
 
 
-def save_training_datasets(run, hdf5_file: str, training_idx: list[int], validation_idx: list[int],
+def save_training_datasets(run: Run, hdf5_file: str, training_idx: list[int], validation_idx: list[int],
                            test_idx: list[int]) -> None:
     """
     Saves in TrainingData table the (ROI, frame, class) data subsets that were used for training, validation and testing while
     training a model.
 
+    :param run: the Run object
     :param hdf5_file: the HDF5 file containing the annotated ROI data
     :param training_idx: the list of (ROI, frame) data indices in the training dataset
     :param validation_idx: the list of (ROI, frame) data indices in the validation dataset
@@ -387,11 +400,11 @@ class Plugin(plugins.Plugin):
             self.parameters['annotation_file'].set_value(annotation_file)
             FOV2ROIlinks(annotation_file, self)
 
-    def manual_annotation(self, trigger=None, roi_selection: list[ROI] = None, run: Run = None) -> None:
+    def manual_annotation(self, _=None, roi_selection: list[ROI] = None, run: Run = None) -> None:
         """
         Opens a ManualAnnotator widget to annotate a list of ROIs
 
-        :param trigger: the data passed by the triggered action
+        :param _: the data passed by the triggered action
         :param roi_selection: the list of ROIs
         :param run: the current Run instance
         """
@@ -711,7 +724,13 @@ class Plugin(plugins.Plugin):
         """
         ModelInfoDialog(self)
 
-    def load_model(self, pretrained=False):
+    def load_model(self, pretrained: bool = False) -> tuple[Any, Any]:
+        """
+        Load an existing model
+
+        :param pretrained:
+        :return:
+        """
         print(f'{datetime.now().strftime("%H:%M:%S")}: Model: {self.parameters["model"].key}\n')
         if pretrained:
             model = torch.jit.load(os.path.join(get_project_dir(), 'roi_classification', 'models', self.parameters['model'].key,
@@ -720,7 +739,13 @@ class Plugin(plugins.Plugin):
         return (self.parameters['model'].value.model.NN_module(len(self.parameters['class_names'].value)),
                 self.parameters['model'].key)
 
-    def get_input_shape(self, model):
+    def get_input_shape(self, model: torch.nn.Module) -> (tuple[int, int], int):
+        """
+        Gets the shape for the model input
+
+        :param model: the model
+        :return: the image size and sequence length (0 if input is a single image)
+        """
         seqlen = 0
         if len(model.expected_shape) == 5:
             seqlen = self.parameters['seqlen'].value
@@ -731,7 +756,13 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Input image size: {img_size}\n')
         return img_size, seqlen
 
-    def get_weights_filepaths(self, run):
+    def get_weights_filepaths(self, run: Run) -> (str, str):
+        """
+        Get the filepath where weight files from a given training run are stored
+
+        :param run: the run object
+        :return:
+        """
         os.makedirs(os.path.join(get_project_dir(), 'roi_classification', 'models', self.parameters['model'].key), exist_ok=True)
         checkpoint_monitor_metric = self.parameters['checkpoint_metric'].value
         best_checkpoint_filename = f'{run.id_}_best_{checkpoint_monitor_metric}.weights.pt'
@@ -747,7 +778,7 @@ class Plugin(plugins.Plugin):
         """
         Saves the current training Run
 
-        :param finetune: False if the run is a training run (from scratch or pretrained model), True if it is a fine-tuning run
+        :param fine_tuning: False if the run is a training run (from scratch or pretrained model), True if it is a fine-tuning run
         :return: the current Run instance
         """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
@@ -755,7 +786,15 @@ class Plugin(plugins.Plugin):
                 return self.save_run(project, 'fine_tune', self.parameters.json(groups='finetune'))
             return self.save_run(project, 'train_model', self.parameters.json(groups='training'))
 
-    def train_model(self, fine_tuning=False):
+    def train_model(self, fine_tuning: bool = False) -> (str, str, dict, dict, np.ndarray, np.ndarray, np.ndarray, np.ndarray,
+                                                         dict, torch.nn.Module, torch.device):
+        """
+        Train model or fine-tune a pretrained model. Fine-tuning uses statistics from previous training run to evaluate the next
+        best epoch, ensuring there is no regression in performance.
+
+        :param fine_tuning: fine tune a pretrained model if True
+        :return: statistics about training process
+        """
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         torch.random.manual_seed(self.parameters['seed'].value)
@@ -843,15 +882,14 @@ class Plugin(plugins.Plugin):
 
         checkpoint_filepath, last_weights_filepath = self.get_weights_filepaths(run)
 
+        metrics = self.parameters['follow_metric'].value()
+
         if fine_tuning:
-            min_val_loss, accuracy = evaluate_metrics(model, validation_dataloader, seq2one, loss_fn, lambda1, lambda2, device)
+            min_val_loss, accuracy = evaluate_metrics(model, validation_dataloader, seq2one, loss_fn,
+                                                      lambda1, lambda2, device, metrics)
             print(f'Fine tuning starting with validation loss = {min_val_loss} and initial accuracy = {accuracy}')
         else:
             min_val_loss = torch.finfo(torch.float).max
-
-        # metrics = Accuracy()
-        # metrics = AccuracyByClass()
-        metrics = self.parameters['follow_metric'].value()
 
         for epoch in range(n_epochs):
             history.extend(train_loop(train_dataloader, validation_dataloader, model, seq2one,
@@ -879,7 +917,7 @@ class Plugin(plugins.Plugin):
         ##################################################################
         model_scripted = torch.jit.script(model)  # Export to TorchScript
         model_scripted.save(last_weights_filepath)  # Save
-        del (model_scripted)
+        del model_scripted
         gc.collect()
 
         run.parameters.update({'last_weights': os.path.basename(last_weights_filepath)})
@@ -924,12 +962,6 @@ class Plugin(plugins.Plugin):
         """
         Running prediction on all ROIs in selected FOVs.
         """
-        # seqlen = self.parameters['seqlen'].value
-        # z_channels = (self.parameters['red_channel'].value, self.parameters['green_channel'].value,
-        #               self.parameters['blue_channel'].value,)
-        # fov_names = [self.parameters['fov'].key]
-        # module = self.parameters['model'].value
-        # print(module.__name__)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         print(f'running training on {"GPU" if device.type == "cuda" else "CPU"}')
@@ -943,7 +975,6 @@ class Plugin(plugins.Plugin):
         # see https://docs.pytorch.org/docs/stable/generated/torch.jit.optimize_for_inference.html
         # torch.jit.optimize_for_inference(torch.jit.script(model.eval()))
 
-        # img_size = (model.expected_shape[-2], model.expected_shape[-1])
         img_size, seqlen = self.get_input_shape(model)
         batch_size = self.parameters['batch_size'].value
 
@@ -971,7 +1002,6 @@ class Plugin(plugins.Plugin):
                         probs = torch.nn.functional.softmax(outputs, dim=-1).cpu().detach().numpy()
                     else:
                         probs = torch.nn.functional.softmax(outputs, dim=-1).cpu().detach().numpy()
-                    # classes = torch.argmax(probs, dim=-1)
 
                     for (roi_id, start, p) in zip(roi_ids, frames, probs):
                         if seqlen == 0:
@@ -986,11 +1016,11 @@ class Plugin(plugins.Plugin):
         roi_dataset.close()
         print(f'{datetime.now().strftime("%H:%M:%S")}: classification OK')
 
-    def show_results(self, trigger=None, roi_selection: list[ROI] = None) -> None:
+    def show_results(self, _=None, roi_selection: list[ROI] = None) -> None:
         """
         Show predictions results in an Annotator widget
 
-        :param trigger: the data passed by the triggered action
+        :param _: the data passed by the triggered action
         :param roi_selection: the list of ROIs to show results for
         """
         prediction_runs = self.get_prediction_runs()
@@ -1031,12 +1061,12 @@ class Plugin(plugins.Plugin):
             pass
         ImportClassifierDialog(self)
 
-    def export_classification_to_csv(self, trigger, filename: str = 'classification.csv', roi_selection: list[int] = None,
+    def export_classification_to_csv(self, _, filename: str = 'classification.csv', roi_selection: list[int] = None,
                                      ground_truth: bool = True, run_list: list[int] = None) -> None:
         """
         Exports classification of ROIs in a CSV file
 
-        :param trigger: the data passed by the triggered action
+        :param _: the data passed by the triggered action
         :param filename: the CSV file name
         :param roi_selection: the list of ROI indices to include in the CSV file
         :param ground_truth: if True, ground truth classification is saved in the file
@@ -1085,7 +1115,7 @@ class Plugin(plugins.Plugin):
                 df = predictions_df
         return df
 
-    def create_hdf5_rois(self, annotated_rois=True) -> str:
+    def create_hdf5_rois(self, annotated_rois: bool = True) -> str:
         """
         Creates a HDF5 file containing the annotated ROI data and their targets
         """
@@ -1278,7 +1308,7 @@ class Plugin(plugins.Plugin):
         fov_data.columns = ['fov', 't', 'channel_files']
         return fov_data
 
-    def layers2channels(self, zfiles) -> list[str]:
+    def layers2channels(self, zfiles: str | list[str]) -> list[str]:
         """
         Gets the image file names for red, green and blue channels
 

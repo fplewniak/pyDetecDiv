@@ -1,10 +1,12 @@
+"""
+GUI for training and fine tuning models
+"""
 import gc
-import math
 import random
-import sys
 
+import numpy as np
 import torch
-from PySide6.QtCore import Slot, Signal
+from PySide6.QtCore import Signal
 from sklearn.metrics import ConfusionMatrixDisplay
 
 from pydetecdiv.app import StdoutWaitDialog, PyDetecDiv
@@ -45,15 +47,15 @@ class TrainingDialog(Dialog):
         self.optimizer.group_box.addOption('Momentum:', DoubleSpinBox, parameter=self.plugin.parameters['momentum'])
 
         self.loss_function.group_box.addOption('Gamma:', DoubleSpinBox, single_step=0.1, adaptive=False,
-                                          parameter=self.plugin.parameters['focal_gamma'])
+                                               parameter=self.plugin.parameters['focal_gamma'])
         self.loss_function.group_box.addOption('Weight classes:', RadioButton, parameter=self.plugin.parameters['class_weights'])
         self.loss_function.group_box.addOption('L1 regularization:', DoubleSpinBox, single_step=0.01, adaptive=False,
-                                          parameter=self.plugin.parameters['L1'])
+                                               parameter=self.plugin.parameters['L1'])
         self.loss_function.group_box.addOption('L2 regularization:', DoubleSpinBox, single_step=0.01, adaptive=False,
-                                          parameter=self.plugin.parameters['L2'])
+                                               parameter=self.plugin.parameters['L2'])
 
         self.optimizer.group_box.addOption('Learning rate:', DoubleSpinBox, single_step=1e-5, adaptive=False,
-                                          parameter=self.plugin.parameters['learning_rate'])
+                                           parameter=self.plugin.parameters['learning_rate'])
         self.optimizer.group_box.addOption('Decay rate:', DoubleSpinBox, parameter=self.plugin.parameters['decay_rate'])
         self.optimizer.group_box.addOption('Decay period:', SpinBox, parameter=self.plugin.parameters['decay_period'])
 
@@ -164,13 +166,13 @@ class FineTuningDialog(Dialog):
         self.optimizer.group_box.addOption('Momentum:', DoubleSpinBox, parameter=self.plugin.parameters['momentum'])
 
         self.loss_function.group_box.addOption('Gamma:', DoubleSpinBox, single_step=0.1, adaptive=False,
-                                          parameter=self.plugin.parameters['focal_gamma'])
+                                               parameter=self.plugin.parameters['focal_gamma'])
         self.loss_function.group_box.addOption('Weight classes:', RadioButton, parameter=self.plugin.parameters['class_weights'])
         self.loss_function.group_box.addOption('L1 regularization:', DoubleSpinBox, parameter=self.plugin.parameters['L1'])
         self.loss_function.group_box.addOption('L2 regularization:', DoubleSpinBox, parameter=self.plugin.parameters['L2'])
 
         self.optimizer.group_box.addOption('Learning rate:', DoubleSpinBox, decimals=4, single_step=0.01, adaptive=True,
-                                          parameter=self.plugin.parameters['learning_rate'])
+                                           parameter=self.plugin.parameters['learning_rate'])
         self.optimizer.group_box.addOption('Decay rate:', DoubleSpinBox, parameter=self.plugin.parameters['decay_rate'])
         self.optimizer.group_box.addOption('Decay period:', SpinBox, parameter=self.plugin.parameters['decay_period'])
 
@@ -232,8 +234,15 @@ class FineTuningDialog(Dialog):
         self.job_finished.emit(self.plugin.train_model(fine_tuning=True))
 
 
-def plot_training_results(results):
-    module_name, class_names, history, evaluation, ground_truth, predictions, best_gt, best_predictions, dataset, model, device = results
+def plot_training_results(results: (str, str, dict, dict, np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict, torch.nn.Module,
+                                    torch.device)) -> None:
+    """
+    Plots training results (history, confusion matrix, ...)
+
+    :param results: the results from training process
+    """
+    (module_name, class_names, history, evaluation, ground_truth, predictions, best_gt, best_predictions, dataset, model,
+     device) = results
     # module_name, class_names, history = results
     tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {module_name}')
     tab.project_name = PyDetecDiv.project_name
@@ -256,7 +265,7 @@ def plot_training_results(results):
     gc.collect()
 
 
-def plot_history(history, evaluation):
+def plot_history(history: dict, evaluation: dict) -> MatplotViewer:
     """
     Plots metrics history.
 
@@ -281,7 +290,7 @@ def plot_history(history, evaluation):
     return plot_viewer
 
 
-def plot_confusion_matrix(ground_truth, predictions, class_names):
+def plot_confusion_matrix(ground_truth: list, predictions: list, class_names: list[str]) -> MatplotViewer:
     """
     Plot the confusion matrix normalized i) by rows (recall in diagonals) and ii) by columns (precision in diagonals)
 
@@ -300,7 +309,18 @@ def plot_confusion_matrix(ground_truth, predictions, class_names):
     return plot_viewer
 
 
-def plot_images(dataset, n, class_names, model, device):
+def plot_images(dataset: torch.utils.data.Dataset, n: int, class_names: list[str],
+                model: torch.nn.Module, device: torch.device) -> MatplotViewer:
+    """
+    Displays a random selection of images from a dataset along with their ground truth and predictions
+
+    :param dataset: the dataset
+    :param n: the number of images to display
+    :param class_names: the class names
+    :param model: the model
+    :param device: the device
+    :return: the plot viewer
+    """
     plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=n, rows=1)
     for i in range(n):
         idx = random.randint(0, len(dataset) - 1)
@@ -324,6 +344,9 @@ def plot_images(dataset, n, class_names, model, device):
 
 
 class ImportClassifierDialog(Dialog):
+    """
+    Import classifier Dialog window
+    """
     job_finished: Signal = Signal(object)
 
     def __init__(self, plugin, title=None):
@@ -344,6 +367,9 @@ class ImportClassifierDialog(Dialog):
         self.exec()
 
     def wait_for_import_classifier(self):
+        """
+        Wait until classifier has been imported
+        """
         wait_dialog = StdoutWaitDialog('**Importing classifier**', self)
         wait_dialog.resize(500, 100)
         self.job_finished.connect(wait_dialog.stop_redirection)
@@ -351,5 +377,8 @@ class ImportClassifierDialog(Dialog):
         self.close()
 
     def run_import_classifier(self):
+        """
+        Launch classifier import procedure
+        """
         self.plugin.import_classifier()
         self.job_finished.emit(True)

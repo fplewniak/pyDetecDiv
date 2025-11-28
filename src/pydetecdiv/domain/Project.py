@@ -274,10 +274,10 @@ class Project:
 
     def id_mapping(self, class_name: str) -> dict[str, int]:
         """
-        Return name to id\_ mapping for objects of a given class
+        Return name to id_ mapping for objects of a given class
 
         :param class_name: the class name
-        :return: the name to id\_ mapping
+        :return: the name to id_ mapping
         """
         return {obj.name: obj.id_ for obj in self.get_objects(class_name)}
 

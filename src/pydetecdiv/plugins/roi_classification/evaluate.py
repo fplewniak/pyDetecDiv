@@ -1,22 +1,53 @@
+"""
+Module for model evaluation
+"""
 import gc
 import math
-from datetime import datetime
 
 import numpy as np
-import polars
 import torch
 from sklearn.metrics import precision_recall_fscore_support
 from torch.amp import autocast
-from torch.amp import GradScaler
 
-from pydetecdiv.utils import flatten_list
+import pydetecdiv.torch.metrics
 
-def evaluate_metrics(model, data_loader, seq2one, loss_fn, lambda1, lambda2, device, metrics):
+
+def evaluate_metrics(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader, seq2one: bool, loss_fn: torch.nn.Module,
+                     lambda1: float, lambda2: float, device: torch.device,
+                     metrics: pydetecdiv.torch.metrics.Metrics) -> (float, float):
+    """
+    Wrapper function for evaluating metrics
+
+    :param model: the model to evaluate metrics for
+    :param data_loader: the data loader to evaluate metrics with
+    :param seq2one: if the model is a seq 2 one
+    :param loss_fn: the loss function (nn.Module)
+    :param lambda1: the L1 regularization factor
+    :param lambda2: the L2 regularization factor
+    :param device: the device
+    :param metrics: the metrics to evaluate
+    :return: the average loss and requested metrics
+    """
     if seq2one:
         return evaluate_metrics_seq2one(model, data_loader, loss_fn, lambda1, lambda2, device, metrics)
     return evaluate_metrics_seq2seq(model, data_loader, loss_fn, lambda1, lambda2, device, metrics)
 
-def evaluate_metrics_seq2one(model, data_loader, loss_fn, lambda1, lambda2, device, metrics):
+
+def evaluate_metrics_seq2one(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader, loss_fn: torch.nn.Module,
+                             lambda1: float, lambda2: float, device: torch.device,
+                             metrics: pydetecdiv.torch.metrics.Metrics) -> (float, float):
+    """
+    Evaluating metrics for a seq to one classifier
+
+    :param model: the model to evaluate metrics for
+    :param data_loader: the data loader to evaluate metrics with
+    :param loss_fn: the loss function (nn.Module)
+    :param lambda1: the L1 regularization factor
+    :param lambda2: the L2 regularization factor
+    :param device: the device
+    :param metrics: the metrics to evaluate
+    :return: the average loss and requested metrics
+    """
     model.eval()
     running_loss = 0.0
     # scaler = GradScaler('cuda')
@@ -29,11 +60,11 @@ def evaluate_metrics_seq2one(model, data_loader, loss_fn, lambda1, lambda2, devi
 
                 if outputs.dim() == 2:
                     loss = loss_fn(outputs, gt)
-                    preds = outputs.argmax(dim=-1)
-                    B, C = outputs.shape
+                    # preds = outputs.argmax(dim=-1)
+                    # B, C = outputs.shape
                 else:
-                    B, T, C = outputs.shape
-                    preds = outputs[:, math.ceil(T / 2.0), :].argmax(dim=-1)
+                    _, T, _ = outputs.shape
+                    # preds = outputs[:, math.ceil(T / 2.0), :].argmax(dim=-1)
                     loss = loss_fn(outputs[:, math.ceil(T / 2.0), :], gt)
 
             loss += (lambda1 * torch.abs(torch.cat([x.view(-1) for x in model.parameters()])).sum()
@@ -49,7 +80,21 @@ def evaluate_metrics_seq2one(model, data_loader, loss_fn, lambda1, lambda2, devi
         return running_loss / len(data_loader), accuracy
 
 
-def evaluate_metrics_seq2seq(model, data_loader, loss_fn, lambda1, lambda2, device, metrics):
+def evaluate_metrics_seq2seq(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader, loss_fn: torch.nn.Module,
+                             lambda1: float, lambda2: float, device: torch.device,
+                             metrics: pydetecdiv.torch.metrics.Metrics) -> (float, float):
+    """
+    Evaluating metrics for a seq to seq classifier
+
+    :param model: the model to evaluate metrics for
+    :param data_loader: the data loader to evaluate metrics with
+    :param loss_fn: the loss function (nn.Module)
+    :param lambda1: the L1 regularization factor
+    :param lambda2: the L2 regularization factor
+    :param device: the device
+    :param metrics: the metrics to evaluate
+    :return: the average loss and requested metrics
+    """
     model.eval()
     running_loss = 0.0
     # scaler = GradScaler('cuda')
@@ -76,13 +121,33 @@ def evaluate_metrics_seq2seq(model, data_loader, loss_fn, lambda1, lambda2, devi
 
     return running_loss / len(data_loader), accuracy
 
-def get_pred_gt(model, data_loader, seq2one, device):
+
+def get_pred_gt(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader, seq2one: bool,
+                device: torch.device) -> (list, list):
+    """
+    Wrapper function returning prediction and corresponding ground truth
+
+    :param model: the model to evaluate metrics for
+    :param data_loader: the data loader to evaluate metrics with
+    :param seq2one: if the model is a seq 2 one
+    :param device: the device
+    :return: the predictions and ground truth
+    """
     if seq2one:
         return get_pred_gt_seq2one(model, data_loader, device)
     return get_pred_gt_seq2seq(model, data_loader, device)
 
 
-def get_pred_gt_seq2one(model, data_loader, device):
+def get_pred_gt_seq2one(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader,
+                        device: torch.device) -> (list, list):
+    """
+    Function returning the predictions and ground truth for a seq to one model
+
+    :param model: the model to evaluate metrics for
+    :param data_loader: the data loader to evaluate metrics with
+    :param device: the device
+    :return: the predictions and ground truth
+    """
     model.eval()
     predictions, ground_truth = None, None
     for img, targets in data_loader:
@@ -92,13 +157,22 @@ def get_pred_gt_seq2one(model, data_loader, device):
         if outputs.dim() == 2:
             predictions = outputs.argmax(dim=-1)
         else:
-            B, T, C = outputs.shape
+            _, T, _ = outputs.shape
             predictions = outputs[:, math.ceil(T / 2), :].argmax(dim=-1)
 
     return predictions, ground_truth
 
 
-def get_pred_gt_seq2seq(model, data_loader, device):
+def get_pred_gt_seq2seq(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader,
+                        device: torch.device) -> (list, list):
+    """
+    Function returning the predictions and ground truth for a seq to seq model
+
+    :param model: the model to evaluate metrics for
+    :param data_loader: the data loader to evaluate metrics with
+    :param device: the device
+    :return: the predictions and ground truth
+    """
     model.eval()
 
     predictions, ground_truth = None, None
@@ -121,13 +195,28 @@ def get_pred_gt_seq2seq(model, data_loader, device):
 
     return predictions, ground_truth
 
-def evaluate_model(model, checkpoint_filepath, class_names, data_loader, seqlen, seq2one, device):
+
+def evaluate_model(model: torch.nn.Module, checkpoint_filepath: str, class_names: list[str],
+                   data_loader: torch.utils.data.DataLoader, seqlen: int, seq2one: bool,
+                   device: torch.device) -> (dict, list, list, list):
+    """
+    Function to evaluate model
+
+    :param model: the model to evaluate in its last state
+    :param checkpoint_filepath: the file path with the best checkpoint
+    :param class_names: the list of class names
+    :param data_loader: the data loader providing the data to evaluate the model on
+    :param seqlen: the sequence length
+    :param seq2one: if True, the model is seq to one, it is seq to seq otherwise
+    :param device: the device
+    :return: the statistics, predictions and ground truth for the last model and the best checkpoint
+    """
     predictions, ground_truth = get_pred_gt(model, data_loader, seq2one, device)
 
     model = torch.jit.load(checkpoint_filepath)
-    best_predictions, best_gt = get_pred_gt(model, data_loader,  seq2one, device)
+    best_predictions, best_gt = get_pred_gt(model, data_loader, seq2one, device)
 
-    del(model)
+    del model
     gc.collect()
 
     labels = list(range(len(class_names)))
