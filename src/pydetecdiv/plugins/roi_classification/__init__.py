@@ -20,22 +20,14 @@ from PySide6.QtGui import QAction
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
 from PySide6.QtWidgets import QMenu, QFileDialog, QMessageBox, QGraphicsRectItem
 
-from sqlalchemy import Column, Integer, String, Float
-from sqlalchemy.orm import registry
-from sqlalchemy.types import JSON
-from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
-from torch.utils.data import DataLoader
-
-from torch import optim
-from torchvision.transforms import transforms, v2, InterpolationMode
-
-from pydetecdiv import plugins
+from pydetecdiv import plugins, copy_files
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir, project_list
 from pydetecdiv.domain.Run import Run
 from pydetecdiv.domain.Project import Project
 from pydetecdiv.domain.ROI import ROI
 from pydetecdiv.plugins.parameters import ItemParameter, ChoiceParameter, IntParameter, FloatParameter, CheckParameter
 
+from pydetecdiv.settings import get_plugins_dir, get_config_value
 from . import models
 from .data import prepare_data_for_training, ROIDataset, prepare_data_for_inference
 from .evaluate import evaluate_metrics, evaluate_model
@@ -1296,3 +1288,21 @@ class Plugin(plugins.Plugin):
         zfiles = list(zfiles)
         return [zfiles[i] for i in [self.parameters['red_channel'].value, self.parameters['green_channel'].value,
                                     self.parameters['blue_channel'].value]]
+
+    def import_classifier(self) -> None:
+        """
+        Imports a classifier, i.e. a combination of a deep-learning network/model, weights trained on annotated data and
+        class names
+        """
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            run: Run = self.classifiers.value
+            # print(f"{run.parameters['model']=}", file=sys.stderr)
+            user_path = str(os.path.join(get_project_dir(), 'roi_classification', 'models', str(run.parameters['model'])))
+            os.makedirs(user_path, exist_ok=True)
+            origin_path = str(os.path.join(get_project_dir(str(run.parameters['project'])), 'roi_classification', 'models',
+                                           str(run.parameters['model'])))
+            copy_files([os.path.join(origin_path, str(run.parameters['best_weights'])),
+                        os.path.join(origin_path, str(run.parameters['last_weights']))], user_path)
+            _ = Run(project=project, **(run.record(no_id=True)))
+
+        print(f'Classifier imported from project {run.parameters["project"]}')
