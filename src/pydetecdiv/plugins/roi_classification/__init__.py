@@ -814,7 +814,7 @@ class Plugin(plugins.Plugin):
                 optimizer = self.parameters['optimizer'].value(model_param, lr=lr, momentum=momentum,
                                                                weight_decay=weight_decay)
 
-        if self.parameters['augmentation']:
+        if self.parameters['augmentation'].value:
             # augmentation = transforms.Compose([v2.RandomHorizontalFlip(p=0.5),
             #                                    # v2.RandomChoice([v2.RandomResizedCrop(size=[60, 60]), v2.RandomZoomOut()]),
             #                                    v2.RandomAffine(degrees=10.0, translate=(5, 5), scale=(0.75, 1.3333)),
