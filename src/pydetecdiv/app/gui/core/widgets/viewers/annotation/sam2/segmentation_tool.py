@@ -6,6 +6,7 @@ import gc
 import os
 
 import cv2
+import numpy as np
 import pandas as pd
 import sqlalchemy
 from PySide6.QtCore import Qt, QModelIndex, QPointF, QRect
@@ -16,7 +17,7 @@ from PySide6.QtWidgets import (QGraphicsSceneMouseEvent, QMenu, QWidget, QGraphi
 import torch.cuda
 from sam2.build_sam import build_sam2_video_predictor
 
-from pydetecdiv.app import PyDetecDiv, DrawingTools, pydetecdiv_project
+from pydetecdiv.app import PyDetecDiv, DrawingTools, ConfirmDialog, pydetecdiv_project
 from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.objectsmodel import (ObjectsTreeView, PromptProxyModel,
                                                                                   PromptSourceModel, ObjectReferenceRole,
                                                                                   Point, ModelItem, Mask)
@@ -68,8 +69,8 @@ class Categories:
     """
     Entity default categories
     """
-    cell = ['background', 'cell']
-    mother_daughter = ['background', 'mother', 'daughter']
+    cell = ['cell']
+    mother_daughter = ['mother', 'daughter']
 
 
 class SegmentationScene(VideoScene):
@@ -271,6 +272,8 @@ class SegmentationScene(VideoScene):
             self.select_Item(event)
             exit_next_frame_action = menu.addAction('Set next frame as exit frame')
             exit_next_frame_action.triggered.connect(self.player.entity_exit_next_frame)
+        clear_from_here_action = menu.addAction('Clear masks and prompts from this frame')
+        clear_from_here_action.triggered.connect(self.player.confirm_clear_from_current_frame)
         menu.exec(event.screenPos())
 
     def add_point(self, event: QGraphicsSceneMouseEvent) -> QGraphicsEllipseItem | None:
@@ -318,6 +321,7 @@ class SegmentationTool(VideoPlayer):
         self.max_frames_prop = 15
         self.method_group = None
         self.export_masks_action = None
+        self.clear_from_current_action = None
         self.no_approximation = None
         self.simple_approximation = None
         self.TCL1_approximation = None
@@ -424,6 +428,14 @@ class SegmentationTool(VideoPlayer):
         self.export_masks_action = QAction('Export masks in YOLO format')
         self.export_masks_action.triggered.connect(self.export_masks)
         file_menu.addAction(self.export_masks_action)
+
+        self.export_png_masks_action = QAction('Export masks as PNG')
+        self.export_png_masks_action.triggered.connect(self.export_masks_as_png)
+        file_menu.addAction(self.export_png_masks_action)
+
+        self.clear_from_current_action = QAction('Clear masks and prompts after current frame')
+        self.clear_from_current_action.triggered.connect(self.confirm_clear_from_current_frame)
+        file_menu.addAction(self.clear_from_current_action)
 
         segmentation = menubar.addMenu('Segmentation')
         self.segment_video = QAction('Run segmentation on video')
@@ -847,6 +859,28 @@ class SegmentationTool(VideoPlayer):
             else:
                 self.source_model.add_bounding_box(self.current_entity, self.T, item)
 
+    def confirm_clear_from_current_frame(self):
+        """
+        Opens a confirmation dialog window to ask for confirmation that masks and prompt should indeed be deleted starting from the
+        current frame.
+        """
+
+        msg = (f'You are about to delete masks and prompts starting from frame {self.T}.\n'
+               f'This action cannot be undone.\n'
+               f' Do you confirm?\n')
+        ConfirmDialog(msg, self.clear_from_current_frame)
+
+    def clear_from_current_frame(self):
+        """
+        Clear all masks and prompts (bounding boxes and points) starting from the current frame. This is useful to remove in one go
+        all inaccurate masks predicted by SAM2 when one does not want to add any more annotations after the last accurately
+        segmented frame.
+        """
+
+        for entity in self.source_model.entities:
+            self.source_model.clean_masks(entity, from_frame=self.T)
+            self.source_model.clean_prompt(entity, from_frame=self.T)
+
     def export_masks(self) -> None:
         """
         Export masks to the text files with name corresponding to images in the video directory. These files can serve for training
@@ -877,3 +911,31 @@ class SegmentationTool(VideoPlayer):
                     else:
                         annotation_file.write(' '.join(format(k, '7.6f') for k in mask.normalised_contour.flatten()))
                     annotation_file.write('\n')
+
+    def export_masks_as_png(self) -> None:
+        """
+        Export masks to the PNG files with name corresponding to images in the video directory. These files can serve for training
+        Cellpose-SAM model for segmentation
+        """
+        video_dir = os.path.join(get_config_value('project', 'workspace'),
+                                 PyDetecDiv.project_name,
+                                 'data/SegmentAnything2/videos',
+                                 self.roi_name)
+        annotation_dir = os.path.join(get_config_value('project', 'workspace'),
+                                      PyDetecDiv.project_name,
+                                      'data/SegmentAnything2/masks',
+                                      self.roi_name)
+        os.makedirs(annotation_dir, exist_ok=True)
+
+        frame_names = [p for p in os.listdir(video_dir) if os.path.splitext(p)[-1] in ['.jpg', 'jpeg', '.JPG', '.JPEG']]
+        frame_names.sort(key=lambda p: int(os.path.splitext(p)[0]))
+
+        frames = self.source_model.get_all_masks()
+
+        for frame, masks in frames.items():
+            current_mask = np.zeros(masks[0].bin_mask.shape)
+            for i, mask in enumerate(masks):
+                current_mask += mask.bin_mask * (i + 1)
+
+            annotation_path = os.path.join(annotation_dir, os.path.splitext(frame_names[int(frame)])[0] + '.png')
+            cv2.imwrite(annotation_path, current_mask)

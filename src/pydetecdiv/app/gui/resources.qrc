@@ -11,6 +11,8 @@
         <file alias="open_project">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/folder-horizontal-open.png</file>
         <file alias="delete_project">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/folder--minus.png</file>
 
+        <file alias="configure_shared">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/servers-network.png</file>
+
         <file alias="import_images">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/image-import.png</file>
         <file alias="import_folder">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/folder-import.png</file>
 
@@ -32,6 +34,16 @@
 
         <file alias="show">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/plus-small.png</file>
         <file alias="hide">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/minus-small.png</file>
+
+        <file alias="cross-button">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/cross-button.png</file>
+        <file alias="tick-button">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/tick-button.png</file>
+        <file alias="minus-button">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/minus-button.png</file>
+        <file alias="plus-button">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/plus-button.png</file>
+        <file alias="question-button">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/question-button.png</file>
+
+        <file alias="share">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/share.png</file>
+
+        <file alias="eraser">/home/fred/PycharmProjects/fugue-icons-3.5.6-src/icons/eraser.png</file>
 
         <file alias="app_icon">/home/fred/PycharmProjects/pyDetecDiv/detecDiv_icon.png</file>
     </qresource>

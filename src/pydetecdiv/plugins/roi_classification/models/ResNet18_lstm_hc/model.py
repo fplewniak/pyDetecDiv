@@ -51,13 +51,15 @@ class NN_module(nn.Module):
         self.folding = SequenceFoldingLayer((3, 60, 60))
         self.unfolding = SequenceUnfoldingLayer((512, 1, 1))  # ResNet18 outputs 512 features
 
-        self.hidden_size = 150
-        self.num_layers = 1
-        self.bilstm = nn.LSTM(input_size=512, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True, bidirectional=True)
+        num_layers = 1
+        hidden_size = 150
+        self.bilstm = nn.LSTM(input_size=512, hidden_size=hidden_size, num_layers=num_layers, batch_first=True, bidirectional=True)
+        self.h0 = nn.Parameter(torch.zeros(2 * num_layers, 1, hidden_size) * 0.01)
+        self.c0 = nn.Parameter(torch.zeros(2 * num_layers, 1, hidden_size) * 0.01)
 
         self.dropout = nn.Dropout(0.5)
 
-        self.classify = nn.Linear(2 * self.hidden_size, n_classes)
+        self.classify = nn.Linear(2 * hidden_size, n_classes)
         nn.init.xavier_uniform_(self.classify.weight)
         if self.classify.bias is not None:
             nn.init.zeros_(self.classify.bias)
@@ -70,7 +72,10 @@ class NN_module(nn.Module):
         x = torch.flatten(x, start_dim=1)  # Flatten to (batch, features)
         x = self.unfolding(x, batch_size)  # Unfold sequence
         x = x.reshape(x.shape[0], x.shape[1], -1)  # Flatten
-        x, _ = self.bilstm(x)  # Pass through BiLSTM
+        # Expand learnable initial states to match the batch size
+        h0 = self.h0.expand(-1, batch_size, -1).contiguous()
+        c0 = self.c0.expand(-1, batch_size, -1).contiguous()
+        x, _ = self.bilstm(x, (h0, c0))  # Pass through BiLSTM
         x = nn.functional.leaky_relu(x)
         # x = self.dropout(x)
         x = self.classify(x)

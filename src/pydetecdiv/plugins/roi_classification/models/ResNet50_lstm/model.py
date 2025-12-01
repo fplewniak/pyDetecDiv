@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torchvision import models
-from torchvision.models import ResNet18_Weights
+from torchvision.models import ResNet50_Weights
 
 
 class SequenceFoldingLayer(nn.Module):
@@ -42,26 +42,22 @@ class NN_module(nn.Module):
 
         self.expected_shape = ('Batch', 'Sequence', 3, 60, 60)
 
-        # Load ResNet18
-        resnet = models.resnet18(weights=ResNet18_Weights.DEFAULT)
+        # Load ResNet50 (since PyTorch lacks ResNet50V2)
+        resnet = models.resnet50(weights=ResNet50_Weights.DEFAULT)
         self.resnet = nn.Sequential(*list(resnet.children())[:-2])  # Remove FC layer
 
         self.global_avg_pool = nn.AdaptiveAvgPool2d((1, 1))  # Equivalent to GlobalAveragePooling2D
 
         self.folding = SequenceFoldingLayer((3, 60, 60))
-        self.unfolding = SequenceUnfoldingLayer((512, 1, 1))  # ResNet18 outputs 512 features
+        self.unfolding = SequenceUnfoldingLayer((2048, 1, 1))  # ResNet50 outputs 2048 features
 
-        self.hidden_size = 150
-        self.num_layers = 1
-        self.bilstm = nn.LSTM(input_size=512, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True, bidirectional=True)
+        self.bilstm = nn.LSTM(input_size=2048, hidden_size=150, num_layers=1, batch_first=True, bidirectional=True)
 
         self.dropout = nn.Dropout(0.5)
-
-        self.classify = nn.Linear(2 * self.hidden_size, n_classes)
+        self.classify = nn.Linear(300, n_classes)
         nn.init.xavier_uniform_(self.classify.weight)
         if self.classify.bias is not None:
             nn.init.zeros_(self.classify.bias)
-
 
     def forward(self, x):
         x, batch_size = self.folding(x)  # Fold sequence into batch form
@@ -71,7 +67,6 @@ class NN_module(nn.Module):
         x = self.unfolding(x, batch_size)  # Unfold sequence
         x = x.reshape(x.shape[0], x.shape[1], -1)  # Flatten
         x, _ = self.bilstm(x)  # Pass through BiLSTM
-        x = nn.functional.leaky_relu(x)
-        # x = self.dropout(x)
+        x = self.dropout(x)
         x = self.classify(x)
         return x

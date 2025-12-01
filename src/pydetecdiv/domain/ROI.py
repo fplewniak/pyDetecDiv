@@ -24,6 +24,8 @@ class ROI(NamedDSO, BoxedDSO):
         super().__init__(**kwargs)
         self._fov = fov.id_ if isinstance(fov, FOV) else fov
         self.key_val = key_val
+        if self.id_ is None:
+            self.fov.set_timestamp()
         self.validate(updated=False)
 
     def delete(self) -> None:
@@ -31,6 +33,7 @@ class ROI(NamedDSO, BoxedDSO):
         Deletes this ROI if and only if it is not the full-FOV one which should serve to keep track of original data.
         """
         if self is not self.fov.initial_roi:
+            self.fov.set_timestamp()
             self.project.delete(self)
 
     # def check_validity(self) -> None:

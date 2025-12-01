@@ -17,7 +17,7 @@ from pydetecdiv.domain.BoundingBox import BoundingBox
 from pydetecdiv.domain.Entity import Entity
 from pydetecdiv.domain.Mask import Mask
 from pydetecdiv.domain.Point import Point
-from pydetecdiv.settings import get_config_value
+from pydetecdiv.settings import get_config_value, Device
 from pydetecdiv.persistence.project import open_project
 from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.domain.Dataset import Dataset
@@ -176,13 +176,14 @@ class Project:
         with open(metadata_files) as metadata_file:
 
             metadata = json.load(metadata_file)
-            positions = [d["Label"] for d in metadata["Summary"]["StagePositions"]]
+            # positions = [d["Label"] for d in metadata["Summary"]["StagePositions"]]
             sizeT = -1
             fov = None
 
             for d in [v for k, v in metadata.items() if k.startswith('Metadata-')]:
                 if fov is None:
-                    fov = FOV(project=self, name=positions[d["PositionIndex"]])
+                    # fov = FOV(project=self, name=positions[d["PositionIndex"]])
+                    fov = FOV(project=self, name=d["PositionName"])
                     image_res = ImageResource(project=self, dataset=dataset, fov=fov, multi=True,
                                               zdim=metadata["Summary"]["Slices"],
                                               cdim=metadata["Summary"]["Channels"], tdim=-1,
@@ -191,10 +192,13 @@ class Project:
                                               key_val={'channel_names': metadata["Summary"]["ChNames"]}, )
 
                 image_file = os.path.join(dirname, os.path.basename(d["FileName"]))
+                url = image_file if in_place else os.path.join(destination, os.path.basename(image_file))
+                source_dir, rel_url = Device.get_path_id_and_url(url)
+
                 _ = Data(project=self, name=os.path.basename(image_file),
                          dataset=dataset, author=author, date=date_time,
-                         url=image_file if in_place else os.path.join(destination, os.path.basename(image_file)),
-                         format_=img_format, source_dir=os.path.dirname(image_file), meta_data={},
+                         url=rel_url,
+                         format_=img_format, source_dir=source_dir, meta_data={},
                          key_val={}, image_resource=image_res,
                          c=d["ChannelIndex"], t=d["FrameIndex"], z=d["SliceIndex"],
                          xdim=d["Width"], ydim=d['Height'])
@@ -270,10 +274,10 @@ class Project:
 
     def id_mapping(self, class_name: str) -> dict[str, int]:
         """
-        Return name to id\_ mapping for objects of a given class
+        Return name to id mapping for objects of a given class
 
         :param class_name: the class name
-        :return: the name to id\_ mapping
+        :return: the name to id mapping
         """
         return {obj.name: obj.id_ for obj in self.get_objects(class_name)}
 
@@ -311,9 +315,10 @@ class Project:
         :param dso: the object to delete
         :type dso: object (DomainSpecificObject)
         """
-        if (dso.__class__.__name__, dso.id_) in self.pool:
-            del self.pool[dso.__class__.__name__, dso.id_]
-        self.repository.delete_object(dso.__class__.__name__, dso.id_)
+        if dso is not None:
+            if (dso.__class__.__name__, dso.id_) in self.pool:
+                del self.pool[dso.__class__.__name__, dso.id_]
+            self.repository.delete_object(dso.__class__.__name__, dso.id_)
 
     def get_object(self, class_name: str, id_: int = None, uuid: str = None, use_pool: bool = True) -> DSO:
         """
@@ -322,9 +327,9 @@ class Project:
         :param class_name: the class of the requested object
         :param id_: the id reference of the object
         :type class_name: class inheriting DomainSpecificObject
-        :type id\_: int
+        :type id_: int
         :param uuid: the uuid of the requested object
-        :param use_pool: True if object should be obtained from the pool unless if has not been created yet
+        :param use_pool: True if object should be obtained from the pool unless it has not been created yet
         :return: the desired object
         """
         return self.build_dso(class_name, self.repository.get_record(class_name, int(id_), uuid), use_pool)

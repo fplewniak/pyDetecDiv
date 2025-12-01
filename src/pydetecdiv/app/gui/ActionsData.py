@@ -273,19 +273,19 @@ class ImportDataDialog(QDialog):
         self.list_model = QStringListModel()
         list_view.setModel(self.list_model)
 
-        destination_widget = QGroupBox(self)
-        destination_widget.setTitle('Destination:')
-        copy_files_widget = QWidget(destination_widget)
-        copy_files_button = QRadioButton(f'{self.project_path}/data/', copy_files_widget)
-        self.destination_directory = QComboBox(copy_files_widget)
-        self.destination_directory.addItems(self.get_destinations())
-        self.destination_directory.setEditable(True)
-        self.destination_directory.setValidator(self.sub_directory_name_validator())
-        keep_in_place_widget = QWidget(destination_widget)
-        keep_in_place_button = QRadioButton('keep files in place', keep_in_place_widget)
-        self.keep_copy_buttons = QButtonGroup(destination_widget)
-        self.keep_copy_buttons.addButton(copy_files_button, id=1)
-        self.keep_copy_buttons.addButton(keep_in_place_button, id=2)
+        # destination_widget = QGroupBox(self)
+        # destination_widget.setTitle('Destination:')
+        # copy_files_widget = QWidget(destination_widget)
+        # copy_files_button = QRadioButton(f'{self.project_path}/data/', copy_files_widget)
+        # self.destination_directory = QComboBox(copy_files_widget)
+        # self.destination_directory.addItems(self.get_destinations())
+        # self.destination_directory.setEditable(True)
+        # self.destination_directory.setValidator(self.sub_directory_name_validator())
+        # keep_in_place_widget = QWidget(destination_widget)
+        # keep_in_place_button = QRadioButton('keep files in place', keep_in_place_widget)
+        # self.keep_copy_buttons = QButtonGroup(destination_widget)
+        # self.keep_copy_buttons.addButton(copy_files_button, id=1)
+        # self.keep_copy_buttons.addButton(keep_in_place_button, id=2)
 
         self.button_box = QDialogButtonBox(
                 QDialogButtonBox.StandardButton.Close | QDialogButtonBox.StandardButton.Cancel | QDialogButtonBox.StandardButton.Ok,
@@ -298,9 +298,9 @@ class ImportDataDialog(QDialog):
         source_layout = QVBoxLayout(source_group_box)
         buttons_layout = QHBoxLayout(buttons_widget)
         extension_layout = QHBoxLayout(extension_widget)
-        copy_files_layout = QHBoxLayout(copy_files_widget)
-        keep_in_place_layout = QHBoxLayout(keep_in_place_widget)
-        destination_layout = QVBoxLayout(destination_widget)
+        # copy_files_layout = QHBoxLayout(copy_files_widget)
+        # keep_in_place_layout = QHBoxLayout(keep_in_place_widget)
+        # destination_layout = QVBoxLayout(destination_widget)
 
         source_layout.addWidget(list_view)
         source_layout.addWidget(buttons_widget)
@@ -313,14 +313,14 @@ class ImportDataDialog(QDialog):
         extension_layout.addWidget(extension_label)
         extension_layout.addWidget(self.default_extension)
 
-        copy_files_layout.addWidget(copy_files_button)
-        copy_files_layout.addWidget(self.destination_directory)
-        keep_in_place_layout.addWidget(keep_in_place_button)
-        destination_layout.addWidget(keep_in_place_widget)
-        destination_layout.addWidget(copy_files_widget)
+        # copy_files_layout.addWidget(copy_files_button)
+        # copy_files_layout.addWidget(self.destination_directory)
+        # keep_in_place_layout.addWidget(keep_in_place_button)
+        # destination_layout.addWidget(keep_in_place_widget)
+        # destination_layout.addWidget(copy_files_widget)
 
         vertical_layout.addWidget(source_group_box)
-        vertical_layout.addWidget(destination_widget)
+        # vertical_layout.addWidget(destination_widget)
         vertical_layout.addWidget(self.button_box)
 
         # Widgets behaviour
@@ -335,8 +335,8 @@ class ImportDataDialog(QDialog):
         self.list_model.dataChanged.connect(self.source_list_is_not_empty)
         self.chosen_directory.connect(add_path_dialog.path_text_input.setText)
 
-        keep_in_place_button.setChecked(True)
-        self.keep_copy_buttons.setExclusive(True)
+        # keep_in_place_button.setChecked(True)
+        # self.keep_copy_buttons.setExclusive(True)
 
         self.exec()
         # for child in self.children():

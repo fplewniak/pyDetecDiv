@@ -30,7 +30,7 @@ The minimum compatible Python version is 3.10.
 #### Installing in a miniconda environment
 _Create a conda environment with python:_
 
-`conda create -n pyDetecDiv python=3.11`
+`conda create -n pyDetecDiv python=3.13 -c conda-forge`
 
 Then, you may activate the newly created environment before proceeding with the installation:
 

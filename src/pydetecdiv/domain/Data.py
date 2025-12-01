@@ -9,7 +9,7 @@ import os
 from typing import Any
 
 from pydetecdiv.domain.dso import NamedDSO
-from pydetecdiv.settings import get_config_value
+from pydetecdiv.settings import get_config_value, Device
 from pydetecdiv.domain.ImageResource import ImageResource
 from pydetecdiv.domain.Dataset import Dataset
 from pydetecdiv.domain.FOV import FOV
@@ -76,7 +76,11 @@ class Data(NamedDSO):
         """
         if os.path.isabs(self.url_):
             return self.url_
-        return os.path.join(get_config_value('project', 'workspace'), self.project.dbname, self.dataset.name, self.url_)
+        data_path = Device.data_path(self.source_dir)
+        if data_path is not None:
+            return os.path.join(data_path, self.url_)
+        return os.path.join(get_config_value('project', 'workspace'),
+                            self.project.dbname, self.dataset.name, self.url_)
 
     @property
     def fov(self) -> list[FOV]:
@@ -100,7 +104,7 @@ class Data(NamedDSO):
             'dataset'       : self.dataset_,
             'author'        : self.author,
             'date'          : self.date,
-            'url'           : self.url,
+            'url'           : self.url_,
             'format'        : self.format_,
             'source_dir'    : self.source_dir,
             'meta_data'     : self.meta_data,
