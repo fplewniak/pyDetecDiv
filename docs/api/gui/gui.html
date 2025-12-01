@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pydetecdiv.app.gui &mdash; pyDetecDiv 0.5.0 documentation</title>
+  <title>pydetecdiv.app.gui &mdash; pyDetecDiv 0.6.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=1dd76d02"></script>
+      <script src="../../_static/documentation_options.js?v=8fa8b3e9"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -56,6 +56,7 @@
 <li class="toctree-l3"><a class="reference internal" href="core.html">Core widgets</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">pydetecdiv.app.gui</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.gui.FileMenu"><code class="docutils literal notranslate"><span class="pre">FileMenu</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.gui.ProjectMenu"><code class="docutils literal notranslate"><span class="pre">ProjectMenu</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.gui.DataMenu"><code class="docutils literal notranslate"><span class="pre">DataMenu</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.gui.PluginMenu"><code class="docutils literal notranslate"><span class="pre">PluginMenu</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.gui.MainToolBar"><code class="docutils literal notranslate"><span class="pre">MainToolBar</span></code></a></li>
@@ -78,6 +79,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#module-pydetecdiv.app.gui.ActionsSettings">pydetecdiv.app.gui.ActionsSettings</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.gui.ActionsSettings.SettingsDialog"><code class="docutils literal notranslate"><span class="pre">SettingsDialog</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.gui.ActionsSettings.Settings"><code class="docutils literal notranslate"><span class="pre">Settings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.gui.ActionsSettings.ManageDataSourceAction"><code class="docutils literal notranslate"><span class="pre">ManageDataSourceAction</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#module-pydetecdiv.app.gui.ActionsProject">pydetecdiv.app.gui.ActionsProject</a><ul>
@@ -86,6 +88,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.gui.ActionsProject.NewProject"><code class="docutils literal notranslate"><span class="pre">NewProject</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.gui.ActionsProject.OpenProject"><code class="docutils literal notranslate"><span class="pre">OpenProject</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.gui.ActionsProject.DeleteProject"><code class="docutils literal notranslate"><span class="pre">DeleteProject</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pydetecdiv.app.gui.ActionsProject.ConfigureProjectSourceDir"><code class="docutils literal notranslate"><span class="pre">ConfigureProjectSourceDir</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#module-pydetecdiv.app.gui.ActionsData">pydetecdiv.app.gui.ActionsData</a><ul>
@@ -148,10 +151,17 @@
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.app.gui.ProjectMenu">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.gui.</span></span><span class="sig-name descname"><span class="pre">ProjectMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydetecdiv.app.gui.Windows.MainWindow" title="pydetecdiv.app.gui.Windows.MainWindow"><span class="pre">MainWindow</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.ProjectMenu" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QMenu</span></code></p>
+<p>The main window Project menu to manage existing projects</p>
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.DataMenu">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.gui.</span></span><span class="sig-name descname"><span class="pre">DataMenu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydetecdiv.app.gui.Windows.MainWindow" title="pydetecdiv.app.gui.Windows.MainWindow"><span class="pre">MainWindow</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.DataMenu" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QMenu</span></code></p>
-<p>The main window File menu</p>
+<p>The main window Data menu to manage data</p>
 </dd></dl>
 
 <dl class="py class">
@@ -450,6 +460,13 @@ is determined by the FOV name, the dataset (stage) and a channel</p>
 <p>Action to open a session editor window</p>
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.app.gui.ActionsSettings.ManageDataSourceAction">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.gui.ActionsSettings.</span></span><span class="sig-name descname"><span class="pre">ManageDataSourceAction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QWidget</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.ActionsSettings.ManageDataSourceAction" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QAction</span></code></p>
+<p>Action to open a shared data source configuration window</p>
+</dd></dl>
+
 </section>
 <section id="module-pydetecdiv.app.gui.ActionsProject">
 <span id="pydetecdiv-app-gui-actionsproject"></span><h1>pydetecdiv.app.gui.ActionsProject<a class="headerlink" href="#module-pydetecdiv.app.gui.ActionsProject" title="Link to this heading"></a></h1>
@@ -552,7 +569,33 @@ accordingly before closing the project connexion.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.app.gui.ActionsProject.DeleteProject">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.gui.ActionsProject.</span></span><span class="sig-name descname"><span class="pre">DeleteProject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QWidget</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.ActionsProject.DeleteProject" title="Link to this definition"></a></dt>
-<dd><p>Action to open a project chooser window</p>
+<dd><p>Action to delete a project chooser window</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.gui.ActionsProject.DeleteProject.delete_project">
+<span class="sig-name descname"><span class="pre">delete_project</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.ActionsProject.DeleteProject.delete_project" title="Link to this definition"></a></dt>
+<dd><p>Deletes a project</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.app.gui.ActionsProject.ConfigureProjectSourceDir">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.gui.ActionsProject.</span></span><span class="sig-name descname"><span class="pre">ConfigureProjectSourceDir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QWidget</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.gui.ActionsProject.ConfigureProjectSourceDir" title="Link to this definition"></a></dt>
+<dd><p>Action to configure the local data source directory to shared source</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.gui.ActionsProject.ConfigureProjectSourceDir.confirm_conversion">
+<span class="sig-name descname"><span class="pre">confirm_conversion</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.ActionsProject.ConfigureProjectSourceDir.confirm_conversion" title="Link to this definition"></a></dt>
+<dd><p>A quick confirmation dialog window since configuration would change the database with potential harmful consequences if
+done heedlessly</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.gui.ActionsProject.ConfigureProjectSourceDir.configure_shared_source">
+<span class="sig-name descname"><span class="pre">configure_shared_source</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.gui.ActionsProject.ConfigureProjectSourceDir.configure_shared_source" title="Link to this definition"></a></dt>
+<dd><p>Check all situations that may require intervention and address them in order to make sure the current project is usable
+across devices sharing the same workspace and data sources (mounted from central data server, NAS, etc.)</p>
+</dd></dl>
+
 </dd></dl>
 
 </section>

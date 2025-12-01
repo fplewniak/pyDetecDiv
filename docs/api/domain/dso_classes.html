@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Domain-specific objects &mdash; pyDetecDiv 0.5.0 documentation</title>
+  <title>Domain-specific objects &mdash; pyDetecDiv 0.6.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=1dd76d02"></script>
+      <script src="../../_static/documentation_options.js?v=8fa8b3e9"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -245,13 +245,13 @@ or a combination thereof specified by source. DSOs to create are specified by th
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.domain.Project.Project.id_mapping">
 <span class="sig-name descname"><span class="pre">id_mapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pydetecdiv.domain.Project.Project.id_mapping" title="Link to this definition"></a></dt>
-<dd><p>Return name to id_ mapping for objects of a given class</p>
+<dd><p>Return name to id mapping for objects of a given class</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>class_name</strong> – the class name</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>the name to id_ mapping</p>
+<dd class="field-even"><p>the name to id mapping</p>
 </dd>
 </dl>
 </dd></dl>
@@ -310,9 +310,9 @@ This method can be useful for creating associated objects with mutual dependency
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>class_name</strong> (<em>class inheriting DomainSpecificObject</em>) – the class of the requested object</p></li>
-<li><p><strong>id</strong> – the id reference of the object</p></li>
+<li><p><strong>id</strong> (<em>int</em>) – the id reference of the object</p></li>
 <li><p><strong>uuid</strong> – the uuid of the requested object</p></li>
-<li><p><strong>use_pool</strong> – True if object should be obtained from the pool unless if has not been created yet</p></li>
+<li><p><strong>use_pool</strong> – True if object should be obtained from the pool unless it has not been created yet</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -760,6 +760,13 @@ back-end</p>
 <dd class="field-even"><p>str</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pydetecdiv.domain.FOV.FOV.timestamp">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">timestamp</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#pydetecdiv.domain.FOV.FOV.timestamp" title="Link to this definition"></a></dt>
+<dd><p>the last time this FOV was modified (ROI was added, drift correction was computed…)
+:return: the timestamp</p>
 </dd></dl>
 
 <dl class="py property">

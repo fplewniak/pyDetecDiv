@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ROI classification &mdash; pyDetecDiv 0.5.0 documentation</title>
+  <title>ROI classification &mdash; pyDetecDiv 0.6.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=1dd76d02"></script>
+      <script src="../../../_static/documentation_options.js?v=8fa8b3e9"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -97,7 +97,7 @@
 <h1>ROI classification<a class="headerlink" href="#roi-classification" title="Link to this heading"></a></h1>
 <section id="module-pydetecdiv.plugins.roi_classification">
 <span id="pydetecdiv-plugins-roi-classification"></span><h2>pydetecdiv.plugins.roi_classification<a class="headerlink" href="#module-pydetecdiv.plugins.roi_classification" title="Link to this heading"></a></h2>
-<p>An plugin for deep-learning ROI classification</p>
+<p>ROI classification core code</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Results">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.</span></span><span class="sig-name descname"><span class="pre">Results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Results" title="Link to this definition"></a></dt>
@@ -131,16 +131,15 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.TrainingData.save">
 <span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../domain/dso_classes.html#pydetecdiv.domain.Project.Project" title="pydetecdiv.domain.Project.Project"><span class="pre">Project</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.TrainingData.save" title="Link to this definition"></a></dt>
-<dd><p>Save the results from a plugin run on a ROI at time t into the database</p>
+<dd><p>Save the Training datasets details for reproducibility</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>project</strong> – the current project</p></li>
-<li><p><strong>run</strong> – the current run</p></li>
-<li><p><strong>roi</strong> – the current ROI</p></li>
+<li><p><strong>roi_id</strong> – the current ROI</p></li>
 <li><p><strong>t</strong> – the current frame</p></li>
-<li><p><strong>predictions</strong> – the list of prediction values</p></li>
-<li><p><strong>class_names</strong> – the class names</p></li>
+<li><p><strong>target</strong> – the target value</p></li>
+<li><p><strong>dataset</strong> – the dataset</p></li>
 </ul>
 </dd>
 </dl>
@@ -148,31 +147,59 @@
 
 </dd></dl>
 
-<dl class="py class">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.DataProvider">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.</span></span><span class="sig-name descname"><span class="pre">DataProvider</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h5file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(60,</span> <span class="pre">60)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seqlen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.DataProvider" title="Link to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code></p>
-<p>An extension of keras Sequence for prediction. For performance reasons, data are stored in an HDF5 file</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.DataProvider.on_epoch_end">
-<span class="sig-name descname"><span class="pre">on_epoch_end</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.DataProvider.on_epoch_end" title="Link to this definition"></a></dt>
-<dd><p>Operations to run at the end of each epoch (shuffle dataset, etc.)</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.create_table">
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.</span></span><span class="sig-name descname"><span class="pre">create_table</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.create_table" title="Link to this definition"></a></dt>
+<dd><p>Create the table to save results if it does not exist yet</p>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.DataProvider.close">
-<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.DataProvider.close" title="Link to this definition"></a></dt>
-<dd><p>Closes the HDF5 file</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.get_fov_timestamp">
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.</span></span><span class="sig-name descname"><span class="pre">get_fov_timestamp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.get_fov_timestamp" title="Link to this definition"></a></dt>
+<dd><p>Get the timestamp of the latest modification of FOVs (ROI creation, deletion or drift correction)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the most recent timestamp</p>
+</dd>
+</dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.get_roi_list">
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.</span></span><span class="sig-name descname"><span class="pre">get_roi_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.get_roi_list" title="Link to this definition"></a></dt>
+<dd><p>Gets a list of ROIs in a DataFrame</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas DataFrame containing ROIO id, FOV id, ROI x, y positions of top left and bottom right corners</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="py class">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.PredictionBatch">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.</span></span><span class="sig-name descname"><span class="pre">PredictionBatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fov_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(60,</span> <span class="pre">60)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seqlen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_channels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.PredictionBatch" title="Link to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code></p>
-<dl class="simple">
-<dt>An extension of keras Sequence for prediction. For performance reasons, FOVs are read sequentially and all ROIs from a FOV are</dt><dd><p>placed in the same batch.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.get_drift_corrections">
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.</span></span><span class="sig-name descname"><span class="pre">get_drift_corrections</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.get_drift_corrections" title="Link to this definition"></a></dt>
+<dd><p>Gets the drift correction values for FOVs in a pandas DataFrame</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>a pandas DataFrame with the (dx, dy) drift values for each FOV and frame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.save_training_datasets">
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.</span></span><span class="sig-name descname"><span class="pre">save_training_datasets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../domain/dso_classes.html#pydetecdiv.domain.Run.Run" title="pydetecdiv.domain.Run.Run"><span class="pre">Run</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdf5_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validation_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.save_training_datasets" title="Link to this definition"></a></dt>
+<dd><p>Saves in TrainingData table the (ROI, frame, class) data subsets that were used for training, validation and testing while
+training a model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>run</strong> – the Run object</p></li>
+<li><p><strong>hdf5_file</strong> – the HDF5 file containing the annotated ROI data</p></li>
+<li><p><strong>training_idx</strong> – the list of (ROI, frame) data indices in the training dataset</p></li>
+<li><p><strong>validation_idx</strong> – the list of (ROI, frame) data indices in the validation dataset</p></li>
+<li><p><strong>test_idx</strong> – the list of (ROI, frame) data indices in the validation dataset</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -189,12 +216,56 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.update_parameters">
-<span class="sig-name descname"><span class="pre">update_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">groups</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.update_parameters" title="Link to this definition"></a></dt>
-<dd><p>Updates parameters</p>
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.add_context_action">
+<span class="sig-name descname"><span class="pre">add_context_action</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">QGraphicsRectItem</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">QMenu</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.add_context_action" title="Link to this definition"></a></dt>
+<dd><p>Adds an action to annotate the ROI from the FOV viewer</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>groups</strong> – the parameter groups to update</p>
+<dd class="field-odd"><p><strong>data</strong> – the data sent by the PyDetecDiv().viewer_roi_click signal</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.addActions">
+<span class="sig-name descname"><span class="pre">addActions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">menu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QMenu</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.addActions" title="Link to this definition"></a></dt>
+<dd><p>Overrides the addActions method in order to create a submenu with several actions for the same menu</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>menu</strong> (<em>QMenu</em>) – the parent menu</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.import_annotated_rois">
+<span class="sig-name descname"><span class="pre">import_annotated_rois</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.import_annotated_rois" title="Link to this definition"></a></dt>
+<dd><p>Selects a csv file containing ROI frames annotations and open a FOV2ROIlinks window to load the data it contains
+into the database as FOVs and ROIs with annotations.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.manual_annotation">
+<span class="sig-name descname"><span class="pre">manual_annotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_selection</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../domain/dso_classes.html#pydetecdiv.domain.ROI.ROI" title="pydetecdiv.domain.ROI.ROI"><span class="pre">ROI</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../domain/dso_classes.html#pydetecdiv.domain.Run.Run" title="pydetecdiv.domain.Run.Run"><span class="pre">Run</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.manual_annotation" title="Link to this definition"></a></dt>
+<dd><p>Opens a ManualAnnotator widget to annotate a list of ROIs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>_</strong> – the data passed by the triggered action</p></li>
+<li><p><strong>roi_selection</strong> – the list of ROIs</p></li>
+<li><p><strong>run</strong> – the current Run instance</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.get_prediction_runs">
+<span class="sig-name descname"><span class="pre">get_prediction_runs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.get_prediction_runs" title="Link to this definition"></a></dt>
+<dd><p>Gets previously run prediction runs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>a dictionary containing the ids of all prediction runs corresponding to a given list of classes</p>
 </dd>
 </dl>
 </dd></dl>
@@ -211,188 +282,27 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.create_table">
-<span class="sig-name descname"><span class="pre">create_table</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.create_table" title="Link to this definition"></a></dt>
-<dd><p>Create the table to save results if it does not exist yet</p>
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.update_class_names">
+<span class="sig-name descname"><span class="pre">update_class_names</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prediction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.update_class_names" title="Link to this definition"></a></dt>
+<dd><p>Update the classes associated with the currently selected model</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.addActions">
-<span class="sig-name descname"><span class="pre">addActions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">menu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QMenu</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.addActions" title="Link to this definition"></a></dt>
-<dd><p>Overrides the addActions method in order to create a submenu with several actions for the same menu</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>menu</strong> (<em>QMenu</em>) – the parent menu</p>
-</dd>
-</dl>
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.update_channels">
+<span class="sig-name descname"><span class="pre">update_channels</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.update_channels" title="Link to this definition"></a></dt>
+<dd><p>Updates the list of available channels to display in the GUI form</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.set_enabled_actions">
-<span class="sig-name descname"><span class="pre">set_enabled_actions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manual_annotation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QAction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QAction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fine_tuning</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QAction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QAction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QAction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export_classification</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QAction</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.set_enabled_actions" title="Link to this definition"></a></dt>
-<dd><p>Enables or disables actions in menus according to the level of completion of the ROI classification workflow.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>manual_annotation</strong> – Manual annotation, enabled only if there are ROIs to annotate</p></li>
-<li><p><strong>train_model</strong> – Train model, enabled only if there are annotated ROIs</p></li>
-<li><p><strong>fine_tuning</strong> – Fine-tuning, enabled only if a previously trained model is available (previous training or import)</p></li>
-<li><p><strong>predict</strong> – Prediction, enabled only if a previously trained model is available (previous training or import)</p></li>
-<li><p><strong>show_results</strong> – Showing results, enabled only if a prediction has been run</p></li>
-<li><p><strong>export_classification</strong> – Export classification, enabled only if a prediction has been run</p></li>
-</ul>
-</dd>
-</dl>
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.update_fov_list">
+<span class="sig-name descname"><span class="pre">update_fov_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.update_fov_list" title="Link to this definition"></a></dt>
+<dd><p>Updates the list of available FOV to display in the GUI form</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.add_context_action">
-<span class="sig-name descname"><span class="pre">add_context_action</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">QGraphicsRectItem</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">QMenu</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.add_context_action" title="Link to this definition"></a></dt>
-<dd><p>Adds an action to annotate the ROI from the FOV viewer</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>data</strong> – the data sent by the PyDetecDiv().viewer_roi_click signal</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.import_annotated_rois">
-<span class="sig-name descname"><span class="pre">import_annotated_rois</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.import_annotated_rois" title="Link to this definition"></a></dt>
-<dd><p>Selects a csv file containing ROI frames annotations and open a FOV2ROIlinks window to load the data it contains
-into the database as FOVs and ROIs with annotations.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.manual_annotation">
-<span class="sig-name descname"><span class="pre">manual_annotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_selection</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../domain/dso_classes.html#pydetecdiv.domain.ROI.ROI" title="pydetecdiv.domain.ROI.ROI"><span class="pre">ROI</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../domain/dso_classes.html#pydetecdiv.domain.Run.Run" title="pydetecdiv.domain.Run.Run"><span class="pre">Run</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.manual_annotation" title="Link to this definition"></a></dt>
-<dd><p>Opens a ManualAnnotator widget to annotate a list of ROIs</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>trigger</strong> – the data passed by the triggered action</p></li>
-<li><p><strong>roi_selection</strong> – the list of ROIs</p></li>
-<li><p><strong>run</strong> – the current Run instance</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.resume_manual_annotation">
-<span class="sig-name descname"><span class="pre">resume_manual_annotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">annotator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pydetecdiv.plugins.roi_classification.gui.classification.ManualAnnotator" title="pydetecdiv.plugins.roi_classification.gui.classification.ManualAnnotator"><span class="pre">ManualAnnotator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_selection</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../domain/dso_classes.html#pydetecdiv.domain.ROI.ROI" title="pydetecdiv.domain.ROI.ROI"><span class="pre">ROI</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../domain/dso_classes.html#pydetecdiv.domain.Run.Run" title="pydetecdiv.domain.Run.Run"><span class="pre">Run</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.resume_manual_annotation" title="Link to this definition"></a></dt>
-<dd><p>Resumes manual annotation after the creation of a new set of classes</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>annotator</strong> – the Annotator widget</p></li>
-<li><p><strong>roi_selection</strong> – the selection of ROIs</p></li>
-<li><p><strong>run</strong> – the current Run</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.show_results">
-<span class="sig-name descname"><span class="pre">show_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_selection</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../domain/dso_classes.html#pydetecdiv.domain.ROI.ROI" title="pydetecdiv.domain.ROI.ROI"><span class="pre">ROI</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.show_results" title="Link to this definition"></a></dt>
-<dd><p>Show predictions results in an Annotator widget</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>trigger</strong> – the data passed by the triggered action</p></li>
-<li><p><strong>roi_selection</strong> – the list of ROIs to show results for</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.get_classification_df">
-<span class="sig-name descname"><span class="pre">get_classification_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">roi_selection</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ground_truth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.get_classification_df" title="Link to this definition"></a></dt>
-<dd><p>Gets classification in a pandas DataFrame</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>roi_selection</strong> – the list of ROI indices to save</p></li>
-<li><p><strong>ground_truth</strong> – if True, includes ground truth</p></li>
-<li><p><strong>run_list</strong> – the list of Run ids to include</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>the pandas DataFrame with the annotations</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.export_classification_to_csv">
-<span class="sig-name descname"><span class="pre">export_classification_to_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'classification.csv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_selection</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ground_truth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.export_classification_to_csv" title="Link to this definition"></a></dt>
-<dd><p>Exports classification of ROIs in a CSV file</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>trigger</strong> – the data passed by the triggered action</p></li>
-<li><p><strong>filename</strong> – the CSV file name</p></li>
-<li><p><strong>roi_selection</strong> – the list of ROI indices to include in the CSV file</p></li>
-<li><p><strong>ground_truth</strong> – if True, ground truth classification is saved in the file</p></li>
-<li><p><strong>run_list</strong> – the list of Run indices to export classification for</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.get_classification_runs">
-<span class="sig-name descname"><span class="pre">get_classification_runs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.get_classification_runs" title="Link to this definition"></a></dt>
-<dd><p>Gets previous annotation and prediction runs</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>a dictionary containing the ids of all classification runs corresponding to a given list of classes</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.get_annotation_runs">
-<span class="sig-name descname"><span class="pre">get_annotation_runs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.get_annotation_runs" title="Link to this definition"></a></dt>
-<dd><p>Gets previously run prediction runs</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">return<span class="colon">:</span></dt>
-<dd class="field-odd"><p>a dictionary containing the ids of all prediction runs corresponding to a given list of classes</p>
-</dd>
-</dl>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.get_prediction_runs">
-<span class="sig-name descname"><span class="pre">get_prediction_runs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.get_prediction_runs" title="Link to this definition"></a></dt>
-<dd><p>Gets previously run prediction runs</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>a dictionary containing the ids of all prediction runs corresponding to a given list of classes</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.run_prediction">
-<span class="sig-name descname"><span class="pre">run_prediction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.run_prediction" title="Link to this definition"></a></dt>
-<dd><p>Runs a prediction process. Opens the PredictionDialog widget</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.run_training">
-<span class="sig-name descname"><span class="pre">run_training</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.run_training" title="Link to this definition"></a></dt>
-<dd><p>Runs a model training process. Opens the TrainingDialog widget</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.run_fine_tuning">
-<span class="sig-name descname"><span class="pre">run_fine_tuning</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.run_fine_tuning" title="Link to this definition"></a></dt>
-<dd><p>Runs fine-tuning process. Opens the FineTuningDialog widget</p>
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.update_model_weights">
+<span class="sig-name descname"><span class="pre">update_model_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.update_model_weights" title="Link to this definition"></a></dt>
+<dd><p>Update the list of model weights associated with training and fine-tuning runs</p>
 </dd></dl>
 
 <dl class="py method">
@@ -416,27 +326,21 @@ into the database as FOVs and ROIs with annotations.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.update_model_weights">
-<span class="sig-name descname"><span class="pre">update_model_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.update_model_weights" title="Link to this definition"></a></dt>
-<dd><p>Update the list of model weights associated with training and fine-tuning runs</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.update_class_names">
-<span class="sig-name descname"><span class="pre">update_class_names</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prediction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.update_class_names" title="Link to this definition"></a></dt>
-<dd><p>Update the classes associated with the currently selected model</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.update_channels">
-<span class="sig-name descname"><span class="pre">update_channels</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.update_channels" title="Link to this definition"></a></dt>
-<dd><p>Updates the list of available channels to display in the GUI form</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.update_fov_list">
-<span class="sig-name descname"><span class="pre">update_fov_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.update_fov_list" title="Link to this definition"></a></dt>
-<dd><p>Updates the list of available FOV to display in the GUI form</p>
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.set_enabled_actions">
+<span class="sig-name descname"><span class="pre">set_enabled_actions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manual_annotation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QAction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QAction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fine_tuning</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QAction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QAction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QAction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export_classification</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QAction</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.set_enabled_actions" title="Link to this definition"></a></dt>
+<dd><p>Enables or disables actions in menus according to the level of completion of the ROI classification workflow.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>manual_annotation</strong> – Manual annotation, enabled only if there are ROIs to annotate</p></li>
+<li><p><strong>train_model</strong> – Train model, enabled only if there are annotated ROIs</p></li>
+<li><p><strong>fine_tuning</strong> – Fine-tuning, enabled only if a previously trained model is available (previous training or import)</p></li>
+<li><p><strong>predict</strong> – Prediction, enabled only if a previously trained model is available (previous training or import)</p></li>
+<li><p><strong>show_results</strong> – Showing results, enabled only if a prediction has been run</p></li>
+<li><p><strong>export_classification</strong> – Export classification, enabled only if a prediction has been run</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -449,6 +353,23 @@ into the database as FOVs and ROIs with annotations.</p>
 <li><p><strong>roi</strong> – the annotated ROI</p></li>
 <li><p><strong>roi_classes</strong> – the classes along time</p></li>
 <li><p><strong>run</strong> – the annotation run</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.save_annotation">
+<span class="sig-name descname"><span class="pre">save_annotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../domain/dso_classes.html#pydetecdiv.domain.Project.Project" title="pydetecdiv.domain.Project.Project"><span class="pre">Project</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">run</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../domain/dso_classes.html#pydetecdiv.domain.Run.Run" title="pydetecdiv.domain.Run.Run"><span class="pre">Run</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../domain/dso_classes.html#pydetecdiv.domain.ROI.ROI" title="pydetecdiv.domain.ROI.ROI"><span class="pre">ROI</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.save_annotation" title="Link to this definition"></a></dt>
+<dd><p>Saves the results in database</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>project</strong> – the current project</p></li>
+<li><p><strong>run</strong> – the current run</p></li>
+<li><p><strong>roi</strong> – the current ROI</p></li>
+<li><p><strong>frame</strong> – the current frame</p></li>
+<li><p><strong>class_name</strong> – the class name</p></li>
 </ul>
 </dd>
 </dl>
@@ -477,218 +398,78 @@ into the database as FOVs and ROIs with annotations.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.get_annotation">
-<span class="sig-name descname"><span class="pre">get_annotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">roi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../domain/dso_classes.html#pydetecdiv.domain.ROI.ROI" title="pydetecdiv.domain.ROI.ROI"><span class="pre">ROI</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.get_annotation" title="Link to this definition"></a></dt>
-<dd><p>Get the annotations for a ROI</p>
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.run_training">
+<span class="sig-name descname"><span class="pre">run_training</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.run_training" title="Link to this definition"></a></dt>
+<dd><p>Runs a model training process. Opens the TrainingDialog widget</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.run_fine_tuning">
+<span class="sig-name descname"><span class="pre">run_fine_tuning</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.run_fine_tuning" title="Link to this definition"></a></dt>
+<dd><p>Runs fine-tuning process. Opens the FineTuningDialog widget</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.run_prediction">
+<span class="sig-name descname"><span class="pre">run_prediction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.run_prediction" title="Link to this definition"></a></dt>
+<dd><p>Runs a prediction process. Opens the PredictionDialog widget</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.run_model_info">
+<span class="sig-name descname"><span class="pre">run_model_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.run_model_info" title="Link to this definition"></a></dt>
+<dd><p>Shows model information. Opens the ModelInfoDialog widget</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.load_model">
+<span class="sig-name descname"><span class="pre">load_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.load_model" title="Link to this definition"></a></dt>
+<dd><p>Load an existing model</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>roi</strong> – the ROI</p></li>
-<li><p><strong>as_index</strong> – bool set to True to return annotations as indices of class_names list, set to False to return
-annotations as class names</p></li>
-</ul>
+<dd class="field-odd"><p><strong>pretrained</strong></p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>the list of annotated classes by frame</p>
+<dd class="field-even"><p></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.get_classifications">
-<span class="sig-name descname"><span class="pre">get_classifications</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">roi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../domain/dso_classes.html#pydetecdiv.domain.ROI.ROI" title="pydetecdiv.domain.ROI.ROI"><span class="pre">ROI</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.get_classifications" title="Link to this definition"></a></dt>
-<dd><p>Get the annotations for a ROI as defined in a list of runs</p>
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.get_input_shape">
+<span class="sig-name descname"><span class="pre">get_input_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">model:</span> <span class="pre">~torch.nn.modules.module.Module)</span> <span class="pre">-&gt;</span> <span class="pre">(tuple[int,</span> <span class="pre">int],</span> <span class="pre">&lt;class</span> <span class="pre">'int'&gt;</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.get_input_shape" title="Link to this definition"></a></dt>
+<dd><p>Gets the shape for the model input</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>roi</strong> – the ROI</p></li>
-<li><p><strong>run_list</strong> – the list of Runs where the ROI was annotated or classified</p></li>
-<li><p><strong>as_index</strong> – bool set to True to return annotations as indices of class_names list, set to False to return
-annotations as class names</p></li>
-</ul>
+<dd class="field-odd"><p><strong>model</strong> – the model</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>the list of annotated classes by frame</p>
+<dd class="field-even"><p>the image size and sequence length (0 if input is a single image)</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.get_all_annotations">
-<span class="sig-name descname"><span class="pre">get_all_annotations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_layers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.get_all_annotations" title="Link to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>Gets all annotations, i.e. Run id, ROI and FOV ids, ROI positions, time frame, channel, z layer index, class name,</dt><dd><p>file name, drift values</p>
-</dd>
-</dl>
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.get_weights_filepaths">
+<span class="sig-name descname"><span class="pre">get_weights_filepaths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run:</span> <span class="pre">~pydetecdiv.domain.Run.Run)</span> <span class="pre">-&gt;</span> <span class="pre">(&lt;class</span> <span class="pre">'str'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'str'&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.get_weights_filepaths" title="Link to this definition"></a></dt>
+<dd><p>Get the filepath where weight files from a given training run are stored</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>z_layers</strong> – the z layers to be used as RGB channels</p>
+<dd class="field-odd"><p><strong>run</strong> – the run object</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>the annotations in a pandas DataFrame</p>
+<dd class="field-even"><p></p>
 </dd>
 </dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.get_fov_data">
-<span class="sig-name descname"><span class="pre">get_fov_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_layers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.get_fov_data" title="Link to this definition"></a></dt>
-<dd><p>Gets FOV data, i.e. FOV id, time frame and the list of files with the z layers to be used as RGB channels</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>z_layers</strong> – the z layer files to use as RGB channels</p></li>
-<li><p><strong>channel</strong> – the channel of the original image to be loaded</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>a pandas DataFrame with the FOV data</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.get_roi_list">
-<span class="sig-name descname"><span class="pre">get_roi_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.get_roi_list" title="Link to this definition"></a></dt>
-<dd><p>Gets a list of ROIs in a DataFrame</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pandas DataFrame containing ROIO id, FOV id, ROI x, y positions of top left and bottom right corners</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.get_annotations">
-<span class="sig-name descname"><span class="pre">get_annotations</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.get_annotations" title="Link to this definition"></a></dt>
-<dd><p>Gets ROI annotations from manual annotation or imported annotation runs in a DataFrame</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>a pandas DataFrame containing run id, ROI and FOV ids, frame, class name</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.get_drift_corrections">
-<span class="sig-name descname"><span class="pre">get_drift_corrections</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.get_drift_corrections" title="Link to this definition"></a></dt>
-<dd><p>Gets the drift correction values for FOVs in a pandas DataFrame</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>a pandas DataFrame with the (dx, dy) drift values for each FOV and frame</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.layers2channels">
-<span class="sig-name descname"><span class="pre">layers2channels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">zfiles</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.layers2channels" title="Link to this definition"></a></dt>
-<dd><p>Gets the image file names for red, green and blue channels</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>zfiles</strong> – the list of files corresponding to one z layer each</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>the list of zfiles</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.create_hdf5_annotated_rois">
-<span class="sig-name descname"><span class="pre">create_hdf5_annotated_rois</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdf5_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_channels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.create_hdf5_annotated_rois" title="Link to this definition"></a></dt>
-<dd><p>Creates a HDF5 file containing the annotated ROI data and their targets</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>hdf5_file</strong> – the HDF5 file name</p></li>
-<li><p><strong>z_channels</strong> – the z layers to be used as channels</p></li>
-<li><p><strong>channel</strong> – the original channel to use</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.prepare_data_for_training">
-<span class="sig-name descname"><span class="pre">prepare_data_for_training</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdf5_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seqlen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">42</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.prepare_data_for_training" title="Link to this definition"></a></dt>
-<dd><p>Prepares data for training.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>hdf5_file</strong> – the HDF5 file containing the annotated ROI data</p></li>
-<li><p><strong>seqlen</strong> – the length of ROI time sequence or 0 if the model takes a single image as input</p></li>
-<li><p><strong>train</strong> – the proportion of images or sequences used for training</p></li>
-<li><p><strong>validation</strong> – the proportion of images or sequences used for validation</p></li>
-<li><p><strong>seed</strong> – the seed used to shuffle the data before dispatching data into the datasets</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>indices for training, validation, testing datasets</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.prepare_data_for_classification">
-<span class="sig-name descname"><span class="pre">prepare_data_for_classification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">fov_list:</span> <span class="pre">list[int],</span> <span class="pre">z_channels:</span> <span class="pre">tuple[int]</span> <span class="pre">=</span> <span class="pre">None)</span> <span class="pre">-&gt;</span> <span class="pre">(&lt;class</span> <span class="pre">'pandas.core.frame.DataFrame'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'pandas.core.frame.DataFrame'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'numpy.ndarray'&gt;</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.prepare_data_for_classification" title="Link to this definition"></a></dt>
-<dd><p>Prepares the data for class prediction. Drift correction is automatically applied</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>fov_list</strong> – the list of FOV indices whose ROIs should be classified</p></li>
-<li><p><strong>z_channels</strong> – the z layers to be used as channels</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Pandas DataFrames containing FOV data, list of (ROI, frame) with positions, unique indices of ROIs</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.compute_class_weights">
-<span class="sig-name descname"><span class="pre">compute_class_weights</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.compute_class_weights" title="Link to this definition"></a></dt>
-<dd><p>Computes class weights from their cardinality</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>a dictionary with class weights</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.lr_decay">
-<span class="sig-name descname"><span class="pre">lr_decay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.lr_decay" title="Link to this definition"></a></dt>
-<dd><p>Learning rate scheduler</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>epoch</strong> – the current epoch</p></li>
-<li><p><strong>lr</strong> – the current learning rate</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>the new learning rate</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.train_model">
-<span class="sig-name descname"><span class="pre">train_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">)</span> <span class="pre">-&gt;</span> <span class="pre">(&lt;class</span> <span class="pre">'str'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'str'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'keras.src.callbacks.History'&gt;,</span> <span class="pre">list[int],</span> <span class="pre">list[int],</span> <span class="pre">list[int],</span> <span class="pre">list[int]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.train_model" title="Link to this definition"></a></dt>
-<dd><p>Launches model training: select the network, load weights (optional), define the training, validation
-and test sets, then run the training using training and validation sets and the evaluation on the test set.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.save_training_run">
-<span class="sig-name descname"><span class="pre">save_training_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">finetune</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../domain/dso_classes.html#pydetecdiv.domain.Run.Run" title="pydetecdiv.domain.Run.Run"><span class="pre">Run</span></a></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.save_training_run" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">save_training_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fine_tuning</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../domain/dso_classes.html#pydetecdiv.domain.Run.Run" title="pydetecdiv.domain.Run.Run"><span class="pre">Run</span></a></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.save_training_run" title="Link to this definition"></a></dt>
 <dd><p>Saves the current training Run</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>finetune</strong> – False if the run is a training run (from scratch or pretrained Keras model), True if it is a fine-tuning
-run</p>
+<dd class="field-odd"><p><strong>fine_tuning</strong> – False if the run is a training run (from scratch or pretrained model), True if it is a fine-tuning run</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>the current Run instance</p>
@@ -697,18 +478,16 @@ run</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.save_training_datasets">
-<span class="sig-name descname"><span class="pre">save_training_datasets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdf5_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validation_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.save_training_datasets" title="Link to this definition"></a></dt>
-<dd><p>Saves in TrainingData table the (ROI, frame, class) data subsets that were used for training, validation and testing while
-training a model.</p>
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.train_model">
+<span class="sig-name descname"><span class="pre">train_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fine_tuning:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">False)</span> <span class="pre">-&gt;</span> <span class="pre">(&lt;class</span> <span class="pre">'str'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'str'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'dict'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'dict'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'numpy.ndarray'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'numpy.ndarray'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'numpy.ndarray'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'numpy.ndarray'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'dict'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'torch.nn.modules.module.Module'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'torch.device'&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.train_model" title="Link to this definition"></a></dt>
+<dd><p>Train model or fine-tune a pretrained model. Fine-tuning uses statistics from previous training run to evaluate the next
+best epoch, ensuring there is no regression in performance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>hdf5_file</strong> – the HDF5 file containing the annotated ROI data</p></li>
-<li><p><strong>training_idx</strong> – the list of (ROI, frame) data indices in the training dataset</p></li>
-<li><p><strong>validation_idx</strong> – the list of (ROI, frame) data indices in the validation dataset</p></li>
-<li><p><strong>test_idx</strong> – the list of (ROI, frame) data indices in the validation dataset</p></li>
-</ul>
+<dd class="field-odd"><p><strong>fine_tuning</strong> – fine tune a pretrained model if True</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>statistics about training process</p>
 </dd>
 </dl>
 </dd></dl>
@@ -720,17 +499,14 @@ training a model.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.save_annotation">
-<span class="sig-name descname"><span class="pre">save_annotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../domain/dso_classes.html#pydetecdiv.domain.Project.Project" title="pydetecdiv.domain.Project.Project"><span class="pre">Project</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">run</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../domain/dso_classes.html#pydetecdiv.domain.Run.Run" title="pydetecdiv.domain.Run.Run"><span class="pre">Run</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../domain/dso_classes.html#pydetecdiv.domain.ROI.ROI" title="pydetecdiv.domain.ROI.ROI"><span class="pre">ROI</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.save_annotation" title="Link to this definition"></a></dt>
-<dd><p>Saves the results in database</p>
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.show_results">
+<span class="sig-name descname"><span class="pre">show_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_selection</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../domain/dso_classes.html#pydetecdiv.domain.ROI.ROI" title="pydetecdiv.domain.ROI.ROI"><span class="pre">ROI</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.show_results" title="Link to this definition"></a></dt>
+<dd><p>Show predictions results in an Annotator widget</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>project</strong> – the current project</p></li>
-<li><p><strong>run</strong> – the current run</p></li>
-<li><p><strong>roi</strong> – the current ROI</p></li>
-<li><p><strong>frame</strong> – the current frame</p></li>
-<li><p><strong>class_name</strong> – the class name</p></li>
+<li><p><strong>_</strong> – the data passed by the triggered action</p></li>
+<li><p><strong>roi_selection</strong> – the list of ROIs to show results for</p></li>
 </ul>
 </dd>
 </dl>
@@ -746,49 +522,106 @@ training a model.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.export_classification_to_csv">
+<span class="sig-name descname"><span class="pre">export_classification_to_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'classification.csv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_selection</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ground_truth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.export_classification_to_csv" title="Link to this definition"></a></dt>
+<dd><p>Exports classification of ROIs in a CSV file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>_</strong> – the data passed by the triggered action</p></li>
+<li><p><strong>filename</strong> – the CSV file name</p></li>
+<li><p><strong>roi_selection</strong> – the list of ROI indices to include in the CSV file</p></li>
+<li><p><strong>ground_truth</strong> – if True, ground truth classification is saved in the file</p></li>
+<li><p><strong>run_list</strong> – the list of Run indices to export classification for</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.get_classification_df">
+<span class="sig-name descname"><span class="pre">get_classification_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">roi_selection</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ground_truth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.get_classification_df" title="Link to this definition"></a></dt>
+<dd><p>Gets classification in a pandas DataFrame</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>roi_selection</strong> – the list of ROI indices to save</p></li>
+<li><p><strong>ground_truth</strong> – if True, includes ground truth</p></li>
+<li><p><strong>run_list</strong> – the list of Run ids to include</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the pandas DataFrame with the annotations</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.create_hdf5_rois">
+<span class="sig-name descname"><span class="pre">create_hdf5_rois</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">annotated_rois</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.create_hdf5_rois" title="Link to this definition"></a></dt>
+<dd><p>Creates a HDF5 file containing the annotated ROI data and their targets</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.get_annotations">
+<span class="sig-name descname"><span class="pre">get_annotations</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.get_annotations" title="Link to this definition"></a></dt>
+<dd><p>Gets ROI annotations from manual annotation or imported annotation runs in a DataFrame</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>a pandas DataFrame containing run id, ROI and FOV ids, frame, class name</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.get_unannotated_rois_data">
+<span class="sig-name descname"><span class="pre">get_unannotated_rois_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.get_unannotated_rois_data" title="Link to this definition"></a></dt>
+<dd><p>Gets ROI data that are not annotated</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>a pandas DataFrame containing run id, ROI and FOV ids, frame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.get_fov_data">
+<span class="sig-name descname"><span class="pre">get_fov_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_layers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.get_fov_data" title="Link to this definition"></a></dt>
+<dd><p>Gets FOV data, i.e. FOV id, time frame and the list of files with the z layers to be used as RGB channels</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>z_layers</strong> – the z layer files to use as RGB channels</p></li>
+<li><p><strong>channel</strong> – the channel of the original image to be loaded</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a pandas DataFrame with the FOV data</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.layers2channels">
+<span class="sig-name descname"><span class="pre">layers2channels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">zfiles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.layers2channels" title="Link to this definition"></a></dt>
+<dd><p>Gets the image file names for red, green and blue channels</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>zfiles</strong> – the list of files corresponding to one z layer each</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the list of zfiles</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.import_classifier">
 <span class="sig-name descname"><span class="pre">import_classifier</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.import_classifier" title="Link to this definition"></a></dt>
 <dd><p>Imports a classifier, i.e. a combination of a deep-learning network/model, weights trained on annotated data and
 class names</p>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.Plugin.draw_annotated_rois">
-<span class="sig-name descname"><span class="pre">draw_annotated_rois</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.Plugin.draw_annotated_rois" title="Link to this definition"></a></dt>
-<dd><p>Draw annotated ROIs as rectangles coloured according to the class</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.get_lr_metric">
-<span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.</span></span><span class="sig-name descname"><span class="pre">get_lr_metric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optimizer</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Callable</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.get_lr_metric" title="Link to this definition"></a></dt>
-<dd><p>Get the learning rate metric for optimizer for use during training to monitor the learning rate</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>optimizer</strong> – the optimizer</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>the learning rate function</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.lr_exp_decay">
-<span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.</span></span><span class="sig-name descname"><span class="pre">lr_exp_decay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.lr_exp_decay" title="Link to this definition"></a></dt>
-<dd><p>Learning rate scheduler for exponential decay</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>epoch</strong> – the current epoch</p></li>
-<li><p><strong>lr</strong> – the current learning rate</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>the new learning rate</p>
-</dd>
-</dl>
 </dd></dl>
 
 </section>
@@ -983,7 +816,7 @@ that have been annotated or classified using those classes</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.gui.classification.AnnotationTool.get_roi_annotations">
-<span class="sig-name descname"><span class="pre">get_roi_annotations</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.classification.AnnotationTool.get_roi_annotations" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_roi_annotations</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.classification.AnnotationTool.get_roi_annotations" title="Link to this definition"></a></dt>
 <dd><p>Retrieve from the database the manual annotations for a ROI</p>
 </dd></dl>
 
@@ -1487,13 +1320,15 @@ is set to orange. Conflicting patterns (having overlapping matches) are shown in
 </section>
 <section id="module-pydetecdiv.plugins.roi_classification.gui.training">
 <span id="pydetecdiv-plugins-roi-classification-gui-training"></span><h2>pydetecdiv.plugins.roi_classification.gui.training<a class="headerlink" href="#module-pydetecdiv.plugins.roi_classification.gui.training" title="Link to this heading"></a></h2>
+<p>GUI for training and fine tuning models</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.gui.training.TrainingDialog">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.gui.training.</span></span><span class="sig-name descname"><span class="pre">TrainingDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plugin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.training.TrainingDialog" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.gui.training.</span></span><span class="sig-name descname"><span class="pre">TrainingDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plugin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../plugins.html#pydetecdiv.plugins.Plugin" title="pydetecdiv.plugins.Plugin"><span class="pre">Plugin</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.training.TrainingDialog" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../plugins.html#pydetecdiv.plugins.gui.Dialog" title="pydetecdiv.plugins.gui.Dialog"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dialog</span></code></a></p>
+<p>A Dialog window to specify hyperparameters for training a model</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.gui.training.TrainingDialog.update_datasets">
-<span class="sig-name descname"><span class="pre">update_datasets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">changed_dataset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.training.TrainingDialog.update_datasets" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">update_datasets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">changed_dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../plugins.html#pydetecdiv.plugins.gui.DoubleSpinBox" title="pydetecdiv.plugins.gui.DoubleSpinBox"><span class="pre">DoubleSpinBox</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.training.TrainingDialog.update_datasets" title="Link to this definition"></a></dt>
 <dd><p>Update the proportion of data to dispatch in training, validation and test datasets. The total must sum to 1 and
 the modifications are constrained to ensure it is the case.</p>
 <dl class="field-list simple">
@@ -1503,17 +1338,53 @@ the modifications are constrained to ensure it is the case.</p>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.gui.training.TrainingDialog.wait_for_training">
+<span class="sig-name descname"><span class="pre">wait_for_training</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.training.TrainingDialog.wait_for_training" title="Link to this definition"></a></dt>
+<dd><p>Open a wainting dialog window to wait for completion of training job</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.gui.training.TrainingDialog.run_training">
+<span class="sig-name descname"><span class="pre">run_training</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.training.TrainingDialog.run_training" title="Link to this definition"></a></dt>
+<dd><p>Run a model training job</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.gui.training.FineTuningDialog">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.gui.training.</span></span><span class="sig-name descname"><span class="pre">FineTuningDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plugin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.training.FineTuningDialog" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.gui.training.</span></span><span class="sig-name descname"><span class="pre">FineTuningDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plugin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../plugins.html#pydetecdiv.plugins.Plugin" title="pydetecdiv.plugins.Plugin"><span class="pre">Plugin</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.training.FineTuningDialog" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../plugins.html#pydetecdiv.plugins.gui.Dialog" title="pydetecdiv.plugins.gui.Dialog"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dialog</span></code></a></p>
+<p>Dialog window to specify parameters for fine tuning a pretrained model</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.gui.training.FineTuningDialog.wait_for_finetuning">
+<span class="sig-name descname"><span class="pre">wait_for_finetuning</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.training.FineTuningDialog.wait_for_finetuning" title="Link to this definition"></a></dt>
+<dd><p>Open a waiting dialog window to wait for the completion of the fine tuning job</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.gui.training.FineTuningDialog.run_finetuning">
+<span class="sig-name descname"><span class="pre">run_finetuning</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.training.FineTuningDialog.run_finetuning" title="Link to this definition"></a></dt>
+<dd><p>Run fine tuning job</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.gui.training.plot_training_results">
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.gui.training.</span></span><span class="sig-name descname"><span class="pre">plot_training_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results:</span> <span class="pre">(&lt;class</span> <span class="pre">'str'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'str'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'dict'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'dict'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'numpy.ndarray'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'numpy.ndarray'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'numpy.ndarray'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'numpy.ndarray'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'dict'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'torch.nn.modules.module.Module'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'torch.device'&gt;)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.training.plot_training_results" title="Link to this definition"></a></dt>
+<dd><p>Plots training results (history, confusion matrix, …)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>results</strong> – the results from training process</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.gui.training.plot_history">
-<span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.gui.training.</span></span><span class="sig-name descname"><span class="pre">plot_history</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">history</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evaluation</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.training.plot_history" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.gui.training.</span></span><span class="sig-name descname"><span class="pre">plot_history</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">history</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evaluation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">MatplotViewer</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.training.plot_history" title="Link to this definition"></a></dt>
 <dd><p>Plots metrics history.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1527,7 +1398,7 @@ the modifications are constrained to ensure it is the case.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.gui.training.plot_confusion_matrix">
-<span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.gui.training.</span></span><span class="sig-name descname"><span class="pre">plot_confusion_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ground_truth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predictions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_names</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.training.plot_confusion_matrix" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.gui.training.</span></span><span class="sig-name descname"><span class="pre">plot_confusion_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ground_truth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predictions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">MatplotViewer</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.training.plot_confusion_matrix" title="Link to this definition"></a></dt>
 <dd><p>Plot the confusion matrix normalized i) by rows (recall in diagonals) and ii) by columns (precision in diagonals)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1543,19 +1414,66 @@ the modifications are constrained to ensure it is the case.</p>
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.gui.training.plot_images">
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.gui.training.</span></span><span class="sig-name descname"><span class="pre">plot_images</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">MatplotViewer</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.training.plot_images" title="Link to this definition"></a></dt>
+<dd><p>Displays a random selection of images from a dataset along with their ground truth and predictions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> – the dataset</p></li>
+<li><p><strong>n</strong> – the number of images to display</p></li>
+<li><p><strong>class_names</strong> – the class names</p></li>
+<li><p><strong>model</strong> – the model</p></li>
+<li><p><strong>device</strong> – the device</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the plot viewer</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.gui.training.ImportClassifierDialog">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.gui.training.</span></span><span class="sig-name descname"><span class="pre">ImportClassifierDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plugin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.training.ImportClassifierDialog" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.gui.training.</span></span><span class="sig-name descname"><span class="pre">ImportClassifierDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plugin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../plugins.html#pydetecdiv.plugins.Plugin" title="pydetecdiv.plugins.Plugin"><span class="pre">Plugin</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.training.ImportClassifierDialog" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../plugins.html#pydetecdiv.plugins.gui.Dialog" title="pydetecdiv.plugins.gui.Dialog"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dialog</span></code></a></p>
+<p>Import classifier Dialog window</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.gui.training.ImportClassifierDialog.wait_for_import_classifier">
+<span class="sig-name descname"><span class="pre">wait_for_import_classifier</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.training.ImportClassifierDialog.wait_for_import_classifier" title="Link to this definition"></a></dt>
+<dd><p>Wait until classifier has been imported</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.gui.training.ImportClassifierDialog.run_import_classifier">
+<span class="sig-name descname"><span class="pre">run_import_classifier</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.training.ImportClassifierDialog.run_import_classifier" title="Link to this definition"></a></dt>
+<dd><p>Launch classifier import procedure</p>
+</dd></dl>
+
 </dd></dl>
 
 </section>
 <section id="module-pydetecdiv.plugins.roi_classification.gui.prediction">
 <span id="pydetecdiv-plugins-roi-classification-gui-prediction"></span><h2>pydetecdiv.plugins.roi_classification.gui.prediction<a class="headerlink" href="#module-pydetecdiv.plugins.roi_classification.gui.prediction" title="Link to this heading"></a></h2>
+<p>ROI classification GUI</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.gui.prediction.PredictionDialog">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.gui.prediction.</span></span><span class="sig-name descname"><span class="pre">PredictionDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plugin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.prediction.PredictionDialog" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.plugins.roi_classification.gui.prediction.</span></span><span class="sig-name descname"><span class="pre">PredictionDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plugin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../plugins.html#pydetecdiv.plugins.Plugin" title="pydetecdiv.plugins.Plugin"><span class="pre">Plugin</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.prediction.PredictionDialog" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../plugins.html#pydetecdiv.plugins.gui.Dialog" title="pydetecdiv.plugins.gui.Dialog"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dialog</span></code></a></p>
+<p>A dialog window to define parameters for ROI classification</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.gui.prediction.PredictionDialog.wait_for_prediction">
+<span class="sig-name descname"><span class="pre">wait_for_prediction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.prediction.PredictionDialog.wait_for_prediction" title="Link to this definition"></a></dt>
+<dd><p>Wait for prediction to complete</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.plugins.roi_classification.gui.prediction.PredictionDialog.run_prediction">
+<span class="sig-name descname"><span class="pre">run_prediction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.plugins.roi_classification.gui.prediction.PredictionDialog.run_prediction" title="Link to this definition"></a></dt>
+<dd><p>Run prediction job</p>
+</dd></dl>
+
 </dd></dl>
 
 </section>

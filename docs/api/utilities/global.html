@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Global functions and classes &mdash; pyDetecDiv 0.5.0 documentation</title>
+  <title>Global functions and classes &mdash; pyDetecDiv 0.6.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=1dd76d02"></script>
+      <script src="../../_static/documentation_options.js?v=8fa8b3e9"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -172,6 +172,18 @@
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.PyDetecDiv.check_data_source_paths">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">check_data_source_paths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table_editor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TableEditor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.PyDetecDiv.check_data_source_paths" title="Link to this definition"></a></dt>
+<dd><p>Checks the data source path configuration and proposes a dialog window to edit any definition that may be required for
+use of shared data sources on the current device</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>table_editor</strong></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pydetecdiv.app.PyDetecDiv.set_main_window">
 <em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">set_main_window</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_window</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../gui/gui.html#pydetecdiv.app.gui.Windows.MainWindow" title="pydetecdiv.app.gui.Windows.MainWindow"><span class="pre">MainWindow</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.app.PyDetecDiv.set_main_window" title="Link to this definition"></a></dt>
 <dd><p>Sets the main window global variable to make it accessible across the whole application</p>
@@ -324,9 +336,22 @@ processes and roll back any modification if needed.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pydetecdiv.app.MessageDialog">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">MessageDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.MessageDialog" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">MessageDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">html</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.MessageDialog" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QDialog</span></code></p>
 <p>Generic dialog to communicate a message to the user (error, warning or any other information)</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.app.ConfirmDialog">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.app.</span></span><span class="sig-name descname"><span class="pre">ConfirmDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.ConfirmDialog" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QDialog</span></code></p>
+<p>Generic dialog asking for confirmation from the user to launch an action</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.app.ConfirmDialog.accept">
+<span class="sig-name descname"><span class="pre">accept</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pydetecdiv.app.ConfirmDialog.accept" title="Link to this definition"></a></dt>
+<dd><p>Close the window and launch action</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
