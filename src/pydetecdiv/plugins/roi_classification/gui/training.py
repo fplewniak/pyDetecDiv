@@ -9,6 +9,7 @@ import torch
 from PySide6.QtCore import Signal
 from sklearn.metrics import ConfusionMatrixDisplay
 
+import pydetecdiv.plugins
 from pydetecdiv.app import StdoutWaitDialog, PyDetecDiv
 from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer
 
@@ -17,9 +18,12 @@ from pydetecdiv.plugins.gui import (ComboBox, AdvancedButton, SpinBox, Parameter
 
 
 class TrainingDialog(Dialog):
+    """
+    A Dialog window to specify hyperparameters for training a model
+    """
     job_finished: Signal = Signal(object)
 
-    def __init__(self, plugin, title=None):
+    def __init__(self, plugin: pydetecdiv.plugins.Plugin, title: str = None):
         super().__init__(plugin, title='Training classification model')
 
         self.classifier_selection = self.addGroupBox('Classifier')
@@ -102,7 +106,7 @@ class TrainingDialog(Dialog):
         self.fit_to_contents()
         self.exec()
 
-    def update_datasets(self, changed_dataset=None):
+    def update_datasets(self, changed_dataset: DoubleSpinBox = None) -> None:
         """
         Update the proportion of data to dispatch in training, validation and test datasets. The total must sum to 1 and
         the modifications are constrained to ensure it is the case.
@@ -120,7 +124,10 @@ class TrainingDialog(Dialog):
             self.plugin.parameters['num_test'].set_value(
                     1.0 - self.plugin.parameters['num_training'].value - self.plugin.parameters['num_validation'].value)
 
-    def wait_for_training(self):
+    def wait_for_training(self) -> None:
+        """
+        Open a wainting dialog window to wait for completion of training job
+        """
         wait_dialog = StdoutWaitDialog('**Training model**', self)
         wait_dialog.resize(500, 300)
         self.job_finished.connect(wait_dialog.stop_redirection)
@@ -128,14 +135,20 @@ class TrainingDialog(Dialog):
         wait_dialog.wait_for(self.run_training)
         self.close()
 
-    def run_training(self):
+    def run_training(self) -> None:
+        """
+        Run a model training job
+        """
         self.job_finished.emit(self.plugin.train_model())
 
 
 class FineTuningDialog(Dialog):
+    """
+    Dialog window to specify parameters for fine tuning a pretrained model
+    """
     job_finished: Signal = Signal(object)
 
-    def __init__(self, plugin, title=None):
+    def __init__(self, plugin: pydetecdiv.plugins.Plugin, title: str = None):
         super().__init__(plugin, title='Fine tuning classification model')
 
         self.classifier_selection = self.addGroupBox('Classifier')
@@ -222,7 +235,10 @@ class FineTuningDialog(Dialog):
         self.fit_to_contents()
         self.exec()
 
-    def wait_for_finetuning(self):
+    def wait_for_finetuning(self) -> None:
+        """
+        Open a waiting dialog window to wait for the completion of the fine tuning job
+        """
         wait_dialog = StdoutWaitDialog('**Fine-tuning model**', self)
         wait_dialog.resize(500, 300)
         self.job_finished.connect(wait_dialog.stop_redirection)
@@ -230,7 +246,10 @@ class FineTuningDialog(Dialog):
         wait_dialog.wait_for(self.run_finetuning)
         self.close()
 
-    def run_finetuning(self):
+    def run_finetuning(self) -> None:
+        """
+        Run fine tuning job
+        """
         self.job_finished.emit(self.plugin.train_model(fine_tuning=True))
 
 
@@ -349,7 +368,7 @@ class ImportClassifierDialog(Dialog):
     """
     job_finished: Signal = Signal(object)
 
-    def __init__(self, plugin, title=None):
+    def __init__(self, plugin: pydetecdiv.plugins.Plugin, title: str = None):
         super().__init__(plugin, title='Import classifier from another project')
 
         classifier_selection = self.addGroupBox('Classifier')
@@ -366,7 +385,7 @@ class ImportClassifierDialog(Dialog):
         self.fit_to_contents()
         self.exec()
 
-    def wait_for_import_classifier(self):
+    def wait_for_import_classifier(self) -> None:
         """
         Wait until classifier has been imported
         """
@@ -376,7 +395,7 @@ class ImportClassifierDialog(Dialog):
         wait_dialog.wait_for(self.run_import_classifier)
         self.close()
 
-    def run_import_classifier(self):
+    def run_import_classifier(self) -> None:
         """
         Launch classifier import procedure
         """

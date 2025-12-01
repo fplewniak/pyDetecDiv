@@ -1,14 +1,20 @@
+"""
+ROI classification GUI
+"""
 from PySide6.QtCore import Signal
 
+import pydetecdiv.plugins
 from pydetecdiv.app import StdoutWaitDialog
-from pydetecdiv.plugins.gui import (ComboBox, set_connections, SpinBox, AdvancedButton, ParametersFormGroupBox,
-                                    ListWidget, Dialog)
+from pydetecdiv.plugins.gui import (ComboBox, set_connections, SpinBox, AdvancedButton, ParametersFormGroupBox, Dialog)
 
 
 class PredictionDialog(Dialog):
+    """
+    A dialog window to define parameters for ROI classification
+    """
     finished = Signal(bool)
 
-    def __init__(self, plugin, title=None):
+    def __init__(self, plugin: pydetecdiv.plugins.Plugin, title: str = None):
         super().__init__(plugin, title='Predict classes')
 
         self.classifier_selection = self.addGroupBox('Classifier')
@@ -48,13 +54,19 @@ class PredictionDialog(Dialog):
         self.fit_to_contents()
         self.exec()
 
-    def wait_for_prediction(self):
+    def wait_for_prediction(self) -> None:
+        """
+        Wait for prediction to complete
+        """
         wait_dialog = StdoutWaitDialog('**Starting prediction run**', self)
         wait_dialog.resize(500, 300)
         self.finished.connect(wait_dialog.stop_redirection)
         wait_dialog.wait_for(self.run_prediction)
         self.close()
 
-    def run_prediction(self):
+    def run_prediction(self) -> None:
+        """
+        Run prediction job
+        """
         self.plugin.predict()
         self.finished.emit(True)

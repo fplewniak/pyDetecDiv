@@ -50,7 +50,7 @@ from .gui.modelinfo import ModelInfoDialog
 from .gui.prediction import PredictionDialog
 from .gui.training import TrainingDialog, FineTuningDialog, ImportClassifierDialog
 
-from .training import train_testing_loop, train_loop
+from .training import train_loop
 from .utils import get_classifications, get_annotation_runs
 from ...domain.Dataset import Dataset
 from ...torch.loss import FocalLoss

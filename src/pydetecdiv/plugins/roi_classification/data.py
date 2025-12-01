@@ -1,3 +1,6 @@
+"""
+Some utility functions to handle data for ROI classification
+"""
 import math
 import sys
 from datetime import datetime
@@ -53,10 +56,18 @@ def prepare_data_for_training(hdf5_file: str, seqlen: int = 0, train: float = 0.
     num_validation = int(len(indices) * validation)
     print(f'{datetime.now().strftime("%H:%M:%S")}: Close HDF5 file and return datasets indices')
     h5file.close()
-    return indices[:num_training], indices[num_training:num_validation + num_training], indices[num_validation + num_training:], class_weights
+    return (indices[:num_training], indices[num_training:num_validation + num_training],
+            indices[num_validation + num_training:], class_weights)
 
 
 def prepare_data_for_inference(hdf5_file: str, seqlen: int = 0) -> list[tuple[int, int]]:
+    """
+    Prepare data for class prediction
+
+    :param hdf5_file: the HDF5 file containing the unannotated ROI data
+    :param seqlen: the sequence length
+    :return: a list of indices in the HDF5 arrays for the dataset
+    """
     h5file = tbl.open_file(hdf5_file, mode='r')
     print(f'{datetime.now().strftime("%H:%M:%S")}: Getting valid indices for unannotated ROIs frames')
     num_rois = h5file.root.roi_ids.shape[0]
@@ -73,6 +84,9 @@ def prepare_data_for_inference(hdf5_file: str, seqlen: int = 0) -> list[tuple[in
 
 
 class ROIDataset(Dataset):
+    """
+    Dataset returning (ROI data, frame) pairs
+    """
     def __init__(self, h5file: str, indices: list, targets: bool = False, image_shape: tuple[int, int] = (60, 60), seqlen: int = 0,
                  seq2one: bool = True, transform: transforms = None):
         self.h5file = tbl.open_file(h5file, mode='r')
@@ -106,7 +120,7 @@ class ROIDataset(Dataset):
     def __len__(self):
         return len(self.indices)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> (torch.Tensor, ...):
         frame, mapping = self.indices[idx]
         roi_id = self.roi_ids[mapping]
         if self.seqlen == 0:
@@ -140,13 +154,28 @@ class ROIDataset(Dataset):
     #     _, roi_id = self.indices[idx]
     #     return self.roi_names[roi_id][0].decode()
 
-    def get_roi_id(self, idx):
+    def get_roi_id(self, idx: int) -> int:
+        """
+        Get the ROI id from the data index
+
+        :param idx: the data index
+        :return: the ROI id
+        """
         _, mapping = self.indices[idx]
         return self.roi_ids[mapping]
 
-    def get_frame(self, idx):
+    def get_frame(self, idx: int) -> int:
+        """
+        Get the frame for the data index
+
+        :param idx: the data index
+        :return: the corresponding frame
+        """
         frame, _ = self.indices[idx]
         return frame
 
-    def close(self):
+    def close(self) -> None:
+        """
+        Close the dataset
+        """
         self.h5file.close()
