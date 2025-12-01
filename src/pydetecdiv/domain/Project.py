@@ -274,10 +274,10 @@ class Project:
 
     def id_mapping(self, class_name: str) -> dict[str, int]:
         """
-        Return name to id\_ mapping for objects of a given class
+        Return name to id mapping for objects of a given class
 
         :param class_name: the class name
-        :return: the name to id\_ mapping
+        :return: the name to id mapping
         """
         return {obj.name: obj.id_ for obj in self.get_objects(class_name)}
 
@@ -315,9 +315,10 @@ class Project:
         :param dso: the object to delete
         :type dso: object (DomainSpecificObject)
         """
-        if (dso.__class__.__name__, dso.id_) in self.pool:
-            del self.pool[dso.__class__.__name__, dso.id_]
-        self.repository.delete_object(dso.__class__.__name__, dso.id_)
+        if dso is not None:
+            if (dso.__class__.__name__, dso.id_) in self.pool:
+                del self.pool[dso.__class__.__name__, dso.id_]
+            self.repository.delete_object(dso.__class__.__name__, dso.id_)
 
     def get_object(self, class_name: str, id_: int = None, uuid: str = None, use_pool: bool = True) -> DSO:
         """
@@ -326,9 +327,9 @@ class Project:
         :param class_name: the class of the requested object
         :param id_: the id reference of the object
         :type class_name: class inheriting DomainSpecificObject
-        :type id\_: int
+        :type id_: int
         :param uuid: the uuid of the requested object
-        :param use_pool: True if object should be obtained from the pool unless if has not been created yet
+        :param use_pool: True if object should be obtained from the pool unless it has not been created yet
         :return: the desired object
         """
         return self.build_dso(class_name, self.repository.get_record(class_name, int(id_), uuid), use_pool)

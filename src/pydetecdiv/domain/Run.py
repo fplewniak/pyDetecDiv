@@ -31,6 +31,11 @@ class Run(DomainSpecificObject):
         self.key_val = key_val
         self.validate()
 
+    def filter(self, commands=None, has_parameters=None):
+        command_filter = commands is None or self.command in commands
+        param_filter = has_parameters is None or all([key in self.parameters.keys() for key in has_parameters])
+        return command_filter and param_filter
+
     def record(self, no_id: bool = False) -> dict[str, Any]:
         """
         Returns a record dictionary of the current Data

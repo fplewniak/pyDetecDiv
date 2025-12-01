@@ -260,6 +260,10 @@ class FOVScene(Scene):
 
         :param item: the item to remove
         """
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            roi = project.get_named_object("ROI", item.data(0))
+            if roi is not None:
+                roi.delete()
         super().removeItem(item)
         self.not_saved_rois.emit(self.check_not_saved_rois())
 

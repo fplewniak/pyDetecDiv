@@ -190,6 +190,7 @@ class ImageResourceData(abc.ABC):
         drift_path = os.path.join(get_config_value('project', 'workspace'),
                                   self.fov.project.dbname, drift_file)
         drift.to_csv(drift_path, float_format='%.3f', columns=['dx', 'dy'], index=False)
+        self.fov.set_timestamp()
         image_resource.key_val.update({'drift': drift_file, 'drift method': method})
         image_resource.validate()
         image_resource.project.commit()
