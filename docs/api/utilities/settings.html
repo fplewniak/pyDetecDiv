@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Settings &mdash; pyDetecDiv 0.5.0 documentation</title>
+  <title>Settings &mdash; pyDetecDiv 0.6.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=1dd76d02"></script>
+      <script src="../../_static/documentation_options.js?v=8fa8b3e9"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -98,6 +98,13 @@
 <span id="pydetecdiv-settings"></span><h2>pydetecdiv.settings<a class="headerlink" href="#module-pydetecdiv.settings" title="Link to this heading"></a></h2>
 <p>Settings management according to XDG base directory specification
 <a class="reference external" href="http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html">http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html</a></p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.settings.UuidNamespace">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">UuidNamespace</span></span><a class="headerlink" href="#pydetecdiv.settings.UuidNamespace" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Name space definition for the creation of uuid5 unique ids</p>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="pydetecdiv.settings.get_default_settings">
 <span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">get_default_settings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#pydetecdiv.settings.get_default_settings" title="Link to this definition"></a></dt>
@@ -204,6 +211,189 @@ user to make sure the directory exists or select an existing directory.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>the user workspace path</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pydetecdiv.settings.datapath_file">
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">datapath_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datapath_filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'.datapath_list.csv'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Path</span></span></span><a class="headerlink" href="#pydetecdiv.settings.datapath_file" title="Link to this definition"></a></dt>
+<dd><p>Return the path to data source list file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the path to the data source list file</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pydetecdiv.settings.datapath_list">
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">datapath_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datapath_filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'.datapath_list.csv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grouped</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">GroupBy</span></span></span><a class="headerlink" href="#pydetecdiv.settings.datapath_list" title="Link to this definition"></a></dt>
+<dd><p>Returns a DataFrame containing the data source dir definitions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>data source dir definitions</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pydetecdiv.settings.all_path_ids">
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">all_path_ids</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#pydetecdiv.settings.all_path_ids" title="Link to this definition"></a></dt>
+<dd><p>Returns all defined path ids on all devices</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>df</strong> – the DataFrame containing the data source path definitions</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a DataFrame containing only path ids</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pydetecdiv.settings.Device">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">Device</span></span><a class="headerlink" href="#pydetecdiv.settings.Device" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A class handling device-specific methods, used to get information about the current device and adapt configuration thereto</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.settings.Device.name">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#pydetecdiv.settings.Device.name" title="Link to this definition"></a></dt>
+<dd><p>returns the name of the current device</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the device name</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.settings.Device.mac">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mac</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#pydetecdiv.settings.Device.mac" title="Link to this definition"></a></dt>
+<dd><p>returns the MAC address of the current device</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the device MAC address</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.settings.Device.add_path">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">add_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.settings.Device.add_path" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Adds a new path specification for the current device. If path_id is None (i.e. this data source has not been set already on</dt><dd><p>any device) then a new id is generated from the MAC address and the current time. Otherwise, the specified path id is used,
+which is the case to add a path specification for a path that was created on another device.
+If the pair of values (path, MAC address) is already present in the list, then the name value of the corresponding row is
+updated.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – the user-defined name of the data source on the current device</p></li>
+<li><p><strong>path</strong> – the path of the data source on the current device</p></li>
+<li><p><strong>path_id</strong> – the cross-device path id of the data source</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.settings.Device.data_path">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.settings.Device.data_path" title="Link to this definition"></a></dt>
+<dd><p>Returns the data source path corresponding to the path_id on the current device</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path_id</strong> – the path id</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the data source path corresponding to the path_id on the current device</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.settings.Device.path_id">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">path_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#pydetecdiv.settings.Device.path_id" title="Link to this definition"></a></dt>
+<dd><p>Given a path, finds the corresponding root path (mounting point) for the current device and returns the path variable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path</strong> – the path</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the path variable id to use in the database</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.settings.Device.path_ids">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">path_ids</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#pydetecdiv.settings.Device.path_ids" title="Link to this definition"></a></dt>
+<dd><p>Returns path ids defined on the current device</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>df</strong> – the dataframe containing the list of data source path definitions</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a dataframe with the path ids that are defined for the current device</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.settings.Device.undefined_path_ids">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">undefined_path_ids</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#pydetecdiv.settings.Device.undefined_path_ids" title="Link to this definition"></a></dt>
+<dd><p>Returns path ids undefined on the current device</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>a dataframe of path ids that are not defined on the current device</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.settings.Device.undefined_paths">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">undefined_paths</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#pydetecdiv.settings.Device.undefined_paths" title="Link to this definition"></a></dt>
+<dd><p>Returns all data source paths defined on other devices that are not defined on the current one.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>a dataframe with the data source paths</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.settings.Device.datapath_list">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">datapath_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#pydetecdiv.settings.Device.datapath_list" title="Link to this definition"></a></dt>
+<dd><p>Returns a list of data source paths defined on the current device, identified by the MAC address or the device name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>a dataframe with the list of data source paths</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pydetecdiv.settings.Device.get_path_id_and_url">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_path_id_and_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">abs_url</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="headerlink" href="#pydetecdiv.settings.Device.get_path_id_and_url" title="Link to this definition"></a></dt>
+<dd><p>Returns the path id and relative url corresponding to the absolute url on the current device .</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>a tuple containing the path_id and the relative url</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pydetecdiv.settings.create_path_id">
+<span class="sig-prename descclassname"><span class="pre">pydetecdiv.settings.</span></span><span class="sig-name descname"><span class="pre">create_path_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">as_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">UUID</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></span><a class="headerlink" href="#pydetecdiv.settings.create_path_id" title="Link to this definition"></a></dt>
+<dd><p>Creates a unique identifier for data source path, from the device name and current time</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the uuid5</p>
 </dd>
 </dl>
 </dd></dl>
