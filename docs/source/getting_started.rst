@@ -35,8 +35,6 @@ It is recommended to install pyDetecDiv in a conda environment (miniconda) to av
 You will need miniconda anyway to manage and run external tools from within the pyDetecDiv interface.
 The minimum compatible Python version is 3.10.
 
-At the moment, pyDetecDiv still requires BioImageIT to be installed but this requirement should not make it into next versions.
-
 Installing in a miniconda environment
 """""""""""""""""""""""""""""""""""""
 
@@ -44,7 +42,7 @@ Installing in a miniconda environment
 
 .. code-block::
 
-	conda create -n pyDetecDiv python=3.11
+	conda create -n pyDetecDiv python=3.13
 
 Then, you may activate the newly created environment before proceeding with the installation:
 
