@@ -30,10 +30,10 @@ class DatasetDao(DAO, Base):
 
     def data_list(self, dataset_id: int) -> list[dict[str, object]]:
         """
-        A method returning the list of Data records whose parent Dataset has id\_ == dataset_id
+        A method returning the list of Data records whose parent Dataset has id_ == dataset_id
 
         :param dataset_id: the id of the Dataset
-        :return: a list of Data records whose parent Dataset has id\_ == dataset_id
+        :return: a list of Data records whose parent Dataset has id_ == dataset_id
         """
         if self.session.query(DatasetDao).filter(DatasetDao.id_ == dataset_id).first() is not None:
             data_list = [data.record

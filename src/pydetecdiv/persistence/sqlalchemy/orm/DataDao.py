@@ -76,10 +76,10 @@ class DataDao(DAO, Base):
 
     def fov_list(self, data_id: int) -> list[dict[str, object]]:
         """
-        A method returning the list of FOV records whose parent Data has id\_ == data_id
+        A method returning the list of FOV records whose parent Data has id_ == data_id
 
         :param data_id: the id of the Data
-        :return: a list of FOV records with parent Data has id\_ == data_id
+        :return: a list of FOV records with parent Data has id_ == data_id
         """
         if self.session.query(DataDao).filter(DataDao.id_ == data_id).first() is not None:
             fov_list = [i.record
@@ -106,10 +106,10 @@ class DataDao(DAO, Base):
 
     def roi_list(self, data_id: int) -> list[dict[str, object]]:
         """
-        A method returning the list of ROI records whose parent Data has id\_ == data_id
+        A method returning the list of ROI records whose parent Data has id_ == data_id
 
         :param data_id: the id of the Data
-        :return: a list of FOV records with parent Data has id\_ == data_id
+        :return: a list of FOV records with parent Data has id_ == data_id
         """
         if self.session.query(DataDao).filter(DataDao.id_ == data_id).first() is not None:
             roi_list = [i.record

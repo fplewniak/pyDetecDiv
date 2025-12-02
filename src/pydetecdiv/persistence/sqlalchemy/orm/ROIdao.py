@@ -56,9 +56,9 @@ class ROIdao(DAO, Base):
 
     def data(self, roi_id: int) -> list[dict[str, Any]]:
         """
-        Returns a list of DataDao objects linked to the ROIdao object with the specified id\_
+        Returns a list of DataDao objects linked to the ROIdao object with the specified id_
 
-        :param roi_id: the id\_ of the ROI
+        :param roi_id: the id_ of the ROI
         :return: the list of Data records linked to the ROI
         """
         return [i.record
@@ -69,10 +69,10 @@ class ROIdao(DAO, Base):
 
     def entities(self, roi_id: int) -> list[dict[str, object]]:
         """
-        A method returning the list of Entity records whose parent ROI has id\_ == roi_id
+        A method returning the list of Entity records whose parent ROI has id_ == roi_id
 
         :param roi_id: the id of the ROI
-        :return: a list of Entity records with parent ROI id\_ == roi_id
+        :return: a list of Entity records with parent ROI id_ == roi_id
         """
         if self.session.query(ROIdao).filter(ROIdao.id_ == roi_id).first() is not None:
             entities = [entity.record

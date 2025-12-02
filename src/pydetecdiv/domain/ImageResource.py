@@ -278,7 +278,7 @@ class ImageResource(DomainSpecificObject):
         """
         Returns a record dictionary of the current Image resource
 
-        :param no_id: if True, does not return id\_ (useful for transferring from one project to another)
+        :param no_id: if True, does not return id_ (useful for transferring from one project to another)
         :type no_id: bool
         :return: record dictionary
         :rtype: dict

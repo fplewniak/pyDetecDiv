@@ -486,7 +486,7 @@ class Project:
         back-end
 
         :param class_name: the class name of the dso to build
-        :param rec: the record representing the object to build (if id\_ is not in the record, the object is a new creation
+        :param rec: the record representing the object to build (if id_ is not in the record, the object is a new creation
         :return: the requested object
         """
         if rec is None:

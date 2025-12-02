@@ -74,7 +74,7 @@ class ShallowDb(abc.ABC):
         Abstract method enforcing the implementation of a delete_object() method in all shallow persistence connectors
 
         :param class_name: the class name of the object to delete
-        :param id\_: the id of the object to delete
+        :param id_: the id of the object to delete
         """
 
     @abc.abstractmethod
@@ -101,10 +101,10 @@ class ShallowDb(abc.ABC):
     def get_record(self, class_name: str, id_: int = None, uuid: str = None) -> dict[str, Any] | None:
         """
         Abstract method enforcing the implementation of a method returning an object record of a given
-        class whose id is id\_
+        class whose id is id_
 
         :param class_name: the class of the requested object
-        :param id\_: the id of the requested object
+        :param id_: the id of the requested object
         :return: a record (i.e. dictionary) containing the data for the requested object
         """
 
@@ -112,7 +112,7 @@ class ShallowDb(abc.ABC):
     def get_records(self, class_name: str, id_list: list[int] = None) -> list[dict[str, Any]]:
         """
         Abstract method enforcing the implementation of a method returning the list of all object records of a given
-        class specified by its name or a list of objects whose id is in id\_list
+        class specified by its name or a list of objects whose id is in id_list
 
         :param class_name: the class name of the requested objects
         :param id_list: the list of ids for objects
@@ -123,7 +123,7 @@ class ShallowDb(abc.ABC):
     def get_linked_records(self, cls_name: str, parent_cls_name: str, parent_id: int) -> list[dict[str, Any]]:
         """
         Abstract method enforcing the implementation of a method returning the list of records for all objects of class
-         defined by class_name that are linked to object of class parent_class_name with id\_ = parent_id
+         defined by class_name that are linked to object of class parent_class_name with id_ = parent_id
 
         :param cls_name: the class name of the objects to retrieve records for
         :param parent_cls_name: the class nae of the parent object
