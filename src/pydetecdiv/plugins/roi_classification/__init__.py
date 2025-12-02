@@ -182,13 +182,12 @@ def get_drift_corrections() -> pd.DataFrame:
                                 "FROM ImageResource as img "
                                 "ORDER BY fov ASC;")))
         drift_corrections = pd.DataFrame(columns=['fov', 't', 'dx', 'dy'])
-        drift_corrections = None
         for row in results.itertuples(index=False):
             if row.drift is not None:
                 df = pd.read_csv(os.path.join(get_project_dir(), row.drift))
                 df['fov'] = row.fov
                 df['t'] = df.index
-                if drift_corrections is None:
+                if drift_corrections.empty:
                     drift_corrections = df
                 else:
                     drift_corrections = pd.concat([drift_corrections, df], ignore_index=True)
