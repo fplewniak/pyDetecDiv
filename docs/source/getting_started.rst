@@ -42,7 +42,7 @@ Installing in a miniconda environment
 
 .. code-block::
 
-	conda create -n pyDetecDiv python=3.13
+	conda create -n pyDetecDiv python=3.13 -c conda-forge
 
 Then, you may activate the newly created environment before proceeding with the installation:
 
