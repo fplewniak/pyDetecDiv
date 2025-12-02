@@ -52,7 +52,7 @@ class PyDetecDiv(QApplication):
     graphic_item_added = Signal(object)
     graphic_item_deleted = Signal(object)
 
-    version = '0.6.0'
+    version = '0.6.1'
     project_name = None
     main_window = None
     current_drawing_tool = None
