@@ -1200,7 +1200,7 @@ class Plugin(plugins.Plugin):
             # roi_names_table.append([(roi_name,) for roi_name in roi_list['roi'].unique()])
 
             roi_ids = roi_list.loc[:, ['roi', 'mapping']].drop_duplicates().sort_values(by='mapping')
-            print(roi_ids, file=sys.stderr)
+            # print(roi_ids, file=sys.stderr)
             # roi_ids_table = h5file.create_table(h5file.root, 'roi_ids', TblRoiNamesRow, 'ROI ids')
             roi_ids_array = h5file.create_carray(h5file.root, 'roi_ids', atom=tbl.Int16Atom(), shape=(num_rois,))
             num_frames_array = h5file.create_carray(h5file.root, 'num_frames', atom=tbl.Int16Atom(), shape=(num_rois,))
