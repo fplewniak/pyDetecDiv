@@ -4,13 +4,14 @@
 """
 Creation of global mapper_registry and Base class for database access.
 Main DAO class for accessing data in SQL Tables. Subclasses are responsible for providing the domain layer with lists
-of compatible records for the creation of domain-specific objects.
+# of compatible records for the creation of domain-specific objects.
 """
 from typing import Any
 
 from sqlalchemy.orm import registry
-import sqlalchemy.orm.session as Session
-from sqlalchemy.sql.expression import Insert, Update
+from sqlalchemy.orm.session import Session
+# from sqlalchemy.sql.expression import Insert
+from sqlalchemy import update, insert
 
 mapper_registry = registry()
 Base = mapper_registry.generate_base()
@@ -36,7 +37,12 @@ class DAO:
         :return: the primary key of the newly created object
         """
         record = self.translate_record(rec, self.exclude, self.translate)
-        primary_key = self.session.execute(Insert(self.__class__).values(record)).inserted_primary_key[0]
+        stmt = (
+            insert(self.__class__)
+            .values(**record)
+        )
+        primary_key = self.session.execute(stmt).inserted_primary_key[0]
+        # primary_key = self.session.execute(Insert(self.__class__).values(record)).inserted_primary_key[0]
         # with self.session() as session:
         #     primary_key = session.execute(Insert(self.__class__).values(record)).inserted_primary_key[0]
         #     session.commit()
@@ -52,11 +58,17 @@ class DAO:
         """
         id_ = rec['id_']
         record = self.translate_record(rec, self.exclude, self.translate)
-        self.session.execute(Update(self.__class__, whereclause=self.__class__.id_ == id_).values(record))
-        #self.session.commit()
+        # self.session.execute(Update(self.__class__, whereclause=self.__class__.id_ == id_).values(record))
+        stmt = (
+            update(self.__class__)
+            .where(self.__class__.id_ == id_)
+            .values(**record)
+        )
+        self.session.execute(stmt)
+        # self.session.commit()
         return id_
 
-    def get_records(self, where_clause) -> list[dict]:
+    def get_records(self, where_clause) -> list[property]:
         """
         A method to get from the SQL database, all records verifying the specified where clause
 

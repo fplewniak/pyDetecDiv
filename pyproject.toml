@@ -40,7 +40,7 @@ dependencies = [
     "sam2",
     "scikit-image",
     "scikit-learn",
-    "sqlalchemy<2.0",
+    "sqlalchemy>=2.0",
     "tables",
     "tifffile",
     "torch",

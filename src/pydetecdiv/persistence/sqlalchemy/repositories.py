@@ -14,8 +14,8 @@ from PIL import Image
 
 import pandas
 import sqlalchemy
+from sqlalchemy import delete
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.sql.expression import Delete
 from pandas import DataFrame
 
 import pydetecdiv.settings
@@ -227,7 +227,12 @@ class ShallowSQLite3(ShallowDb):
         :param class_name: the class name of the object to delete
         :param id_: the id of the object to delete
         """
-        self.session.execute(Delete(dao[class_name], whereclause=dao[class_name].id_ == id_))
+        # self.session.execute(Delete(dao[class_name], whereclause=dao[class_name].id_ == id_))
+        stmt = (
+            delete(dao[class_name])
+            .where(dao[class_name].id_ == id_)
+        )
+        self.session.execute(stmt)
         self.session.commit()
 
     def _get_records(self, class_name: str = None, query: list[str] = None) -> list[dict[str, object]]:
