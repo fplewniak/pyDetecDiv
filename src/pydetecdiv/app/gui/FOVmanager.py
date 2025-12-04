@@ -215,7 +215,7 @@ class FOVmanager(VideoPlayer):
         """
         Save the areas as ROIs
         """
-        rois = [item for item in self.scene.items() if isinstance(item, QGraphicsRectItem)]
+        rois = [item for item in self.scene.items() if isinstance(item, QGraphicsRectItem) and item.pen() != self.scene.saved_pen]
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             roi_list = [r.name for r in self.fov.roi_list]
             for rect_item in sorted(rois, key=lambda x: x.scenePos().toPoint().toTuple()):
