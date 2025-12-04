@@ -95,8 +95,8 @@ class TrainingDialog(Dialog):
 
         set_connections({self.button_box.accepted    : self.wait_for_training,
                          self.button_box.rejected    : self.close,
-                         self.training_data.changed  : lambda _: self.update_datasets(self.training_data),
-                         self.validation_data.changed: lambda _: self.update_datasets(self.validation_data),
+                         self.training_data.changed  : lambda _: self.update_datasets(self.training_data, 'num_training'),
+                         self.validation_data.changed: lambda _: self.update_datasets(self.validation_data, 'num_validation'),
                          # self.optimizer.changed: self.update_optimizer_options,
                          # PyDetecDiv.app.project_selected: self.update_all,
                          })
@@ -106,14 +106,16 @@ class TrainingDialog(Dialog):
         self.fit_to_contents()
         self.exec()
 
-    def update_datasets(self, changed_dataset: DoubleSpinBox = None) -> None:
+    def update_datasets(self, changed_dataset: DoubleSpinBox = None, name: str = None) -> None:
         """
         Update the proportion of data to dispatch in training, validation and test datasets. The total must sum to 1 and
         the modifications are constrained to ensure it is the case.
 
         :param changed_dataset: the dataset that has just been changed
+        :param name: the name of the parameter that was changed
         """
         if changed_dataset:
+            self.plugin.parameters[name].set_value(changed_dataset.value())
             self.plugin.parameters['num_test'].set_value(
                     1.0 - (self.plugin.parameters['num_training'].value + self.plugin.parameters['num_validation'].value))
             total = self.plugin.parameters['num_training'].value + self.plugin.parameters['num_validation'].value + \

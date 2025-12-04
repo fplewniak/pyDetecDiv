@@ -572,7 +572,7 @@ class Plugin(plugins.Plugin):
                 self.parameters['class_names'].value = parameters['class_names']
                 self.parameters['num_training'].value = parameters['num_training']
                 self.parameters['num_validation'].value = parameters['num_validation']
-                self.parameters['num_test'].value = 1.0 - parameters['num_training'] - parameters['num_validation']
+                self.parameters['num_test'].value = 1.0 - (parameters['num_training'] + parameters['num_validation'])
                 self.parameters['red_channel'].value = parameters['red_channel']
                 self.parameters['green_channel'].value = parameters['green_channel']
                 self.parameters['blue_channel'].value = parameters['blue_channel']

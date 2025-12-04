@@ -7,7 +7,7 @@ from typing import Callable, Any
 
 from PySide6.QtCore import QAbstractItemModel
 
-from pydetecdiv.app.models import ItemModel, DictItemModel
+from pydetecdiv.app.models import ItemModel, DictItemModel, StandardItemModel
 
 
 class Parameter:
@@ -25,7 +25,7 @@ class Parameter:
         self.updater: Callable = updater
         self.updater_kwargs: dict[str, Any] = kwargs
         self.groups: set[str] = set() if groups is None else groups
-        self.model: QAbstractItemModel = None
+        self.model: StandardItemModel | None = None
 
     def kwargs(self) -> dict[str, Any]:
         """
@@ -73,7 +73,7 @@ class Parameter:
         if value != self.model.value() and self.validate(value):
             if isinstance(value, (list, dict)):
                 value = json.dumps(value)
-            self.model.set_value(value)
+            self.value = value
 
     @value.setter
     def value(self, value: Any) -> None:
@@ -82,7 +82,7 @@ class Parameter:
 
         :param value: the new parameter value
         """
-        self.set_value(value)
+        self.model.set_value(value)
 
     @property
     def json(self) -> Any:

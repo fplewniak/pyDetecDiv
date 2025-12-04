@@ -11,8 +11,14 @@ from PySide6.QtGui import QStandardItemModel, QStandardItem
 
 GenericModel = TypeVar('GenericModel')
 
+class StandardItemModel(QStandardItemModel):
+    def set_value(self, value: Any) -> None:
+        pass
 
-class ItemModel(QStandardItemModel, Generic[GenericModel]):
+    def value(self) -> Any:
+        pass
+
+class ItemModel(StandardItemModel, Generic[GenericModel]):
     """
     Class for all Item models, containing one and only one value of data
     """
@@ -129,7 +135,7 @@ class StringList(QStringListModel, Generic[GenericModel]):
             self.dataChanged.emit(self.index(row, 0), self.index(row, 0), [Qt.ItemDataRole.DisplayRole])
 
 
-class DictItemModel(QStandardItemModel, Generic[GenericModel]):
+class DictItemModel(StandardItemModel, Generic[GenericModel]):
     """
     Class for Dictionary-based item model. This is used by ChoiceParameter class to hold all choices and the current
     selection
