@@ -10,7 +10,6 @@ from typing import Any
 
 from sqlalchemy.orm import registry
 from sqlalchemy.orm.session import Session
-# from sqlalchemy.sql.expression import Insert
 from sqlalchemy import update, insert
 
 mapper_registry = registry()

@@ -18,8 +18,7 @@ from sqlalchemy import delete
 from sqlalchemy.orm import sessionmaker
 from pandas import DataFrame
 
-import pydetecdiv.settings
-from pydetecdiv.domain import Dataset
+from pydetecdiv.domain.Dataset import Dataset
 from pydetecdiv.persistence.repository import ShallowDb
 from pydetecdiv.persistence.sqlalchemy.orm.main import mapper_registry, DAO
 from pydetecdiv.persistence.sqlalchemy.orm.dao import dso_dao_mapping as dao
@@ -119,7 +118,7 @@ class ShallowSQLite3(ShallowDb):
         """
         self.engine.dispose()
 
-    def import_images(self, image_files: list[str], data_dir_path: str, destination: str, author: str = '', date: datetime = 'now',
+    def import_images(self, image_files: list[str], data_dir_path: str, destination: str, author: str = '', date: str = 'now',
                       in_place: bool = False, img_format: str = 'imagetiff') -> subprocess.Popen:
         """
         Import images specified in a list of files into a destination
@@ -340,6 +339,7 @@ class ShallowSQLite3(ShallowDb):
         :param parent_id: the id of the parent object
         :return: a list of records
         """
+        linked_rec = []
         match (cls_name, parent_cls_name):
             # case ['ImageData', 'Image']:
             #     linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['image_data'])]

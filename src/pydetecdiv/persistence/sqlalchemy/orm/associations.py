@@ -10,42 +10,11 @@ if TYPE_CHECKING:
     from pydetecdiv.persistence.sqlalchemy.orm.ROIdao import ROIdao
 
 from sqlalchemy import Column, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Relationship
 
 from pydetecdiv.persistence.sqlalchemy.orm.main import Base, DAO
 
 DAOvar = TypeVar('DAOvar', bound=DAO)
-
-
-class Linker:
-    """
-    A class providing methods for linking two Data access objects.
-    """
-
-    @staticmethod
-    def association(class1_name: str, class2_name: str) -> relationship:
-        """
-        Defines the possible associations between DAO classes and returns the one corresponding to the classes passed
-        as arguments.
-        """
-        association_list = {
-            # ('FOVdao', 'DataDao'): FovData,
-            # ('DataDao', 'FOVdao'): FovData,
-            ('ROIdao', 'DataDao'): ROIdata,
-            ('DataDao', 'ROIdao'): ROIdata,
-            }
-        return association_list[(class1_name, class2_name)]
-
-    @staticmethod
-    def link(obj1: DAOvar, obj2: DAOvar):
-        """
-        Creates a link between the specified objects, calling the appropriate association object link method, as
-        provided by the associations() method above.
-
-        :param obj1: the first object to link
-        :param obj2: the second object to link
-        """
-        Linker.association(obj1.__class__.__name__, obj2.__class__.__name__).link(obj1, obj2)
 
 
 class ROIdata(Base):
@@ -59,7 +28,7 @@ class ROIdata(Base):
     data_ = relationship("DataDao", back_populates='roi_list_', lazy='joined')
 
     @staticmethod
-    def roi_to_data() -> relationship:
+    def roi_to_data() -> Relationship:
         """
         Defines and returns the relationship from ROI to ImageData tables
 
@@ -68,7 +37,7 @@ class ROIdata(Base):
         return relationship("ROIdata", back_populates='roi_', lazy='joined')
 
     @staticmethod
-    def data_to_roi() -> relationship:
+    def data_to_roi() -> Relationship:
         """
         Defines and returns the relationship from ImageData to ROI tables
 
@@ -119,3 +88,34 @@ class ROIdata(Base):
             'roi' : self.roi,
             'data': self.data,
             }
+
+
+class Linker:
+    """
+    A class providing methods for linking two Data access objects.
+    """
+
+    @staticmethod
+    def association(class1_name: str, class2_name: str) -> type[ROIdata]:
+        """
+        Defines the possible associations between DAO classes and returns the one corresponding to the classes passed
+        as arguments.
+        """
+        association_list = {
+            # ('FOVdao', 'DataDao'): FovData,
+            # ('DataDao', 'FOVdao'): FovData,
+            ('ROIdao', 'DataDao'): ROIdata,
+            ('DataDao', 'ROIdao'): ROIdata,
+            }
+        return association_list[(class1_name, class2_name)]
+
+    @staticmethod
+    def link(obj1: DAOvar, obj2: DAOvar):
+        """
+        Creates a link between the specified objects, calling the appropriate association object link method, as
+        provided by the associations() method above.
+
+        :param obj1: the first object to link
+        :param obj2: the second object to link
+        """
+        Linker.association(obj1.__class__.__name__, obj2.__class__.__name__).link(obj1, obj2)

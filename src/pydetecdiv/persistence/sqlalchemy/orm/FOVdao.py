@@ -3,7 +3,7 @@
 """
 Access to FOV data
 """
-from sqlalchemy import Column, Integer, String, text, select
+from sqlalchemy import Column, Integer, String
 from sqlalchemy.types import JSON
 from sqlalchemy.orm import relationship, joinedload
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
