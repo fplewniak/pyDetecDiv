@@ -18,7 +18,7 @@ from pydetecdiv.plugins.gui import ListView, Dialog
 from pydetecdiv.settings import get_config_value
 from pydetecdiv.utils import BidirectionalIterator, previous
 from pydetecdiv.plugins import Plugin
-from pydetecdiv.plugins.parameters import Parameter
+from pydetecdiv.app.parameters import Parameter
 from pydetecdiv.plugins.roi_classification.utils import get_classifications, get_annotation_runs
 
 

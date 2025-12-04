@@ -4,7 +4,6 @@ Generic classes to discover and handle plugins
 import importlib
 import pkgutil
 import sys
-from modulefinder import ModuleFinder
 from typing import ValuesView, Self
 
 from PySide6.QtGui import QAction
@@ -12,7 +11,7 @@ from PySide6.QtWidgets import QMenu
 
 import pydetecdiv
 from pydetecdiv.domain.Project import Project
-from pydetecdiv.plugins.parameters import Parameters
+from pydetecdiv.app.parameters import Parameters
 from pydetecdiv.settings import get_plugins_dir
 from pydetecdiv.domain.Run import Run
 

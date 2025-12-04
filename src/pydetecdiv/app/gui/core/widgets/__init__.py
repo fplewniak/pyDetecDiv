@@ -1,14 +1,13 @@
 from typing import Any, Type, Callable, TypeVar, Union, Self
 
-import polars
 from PySide6.QtCore import Signal, Slot, QModelIndex, QItemSelectionModel, QItemSelection, QStringListModel
 from PySide6.QtGui import QIcon, QAction, QContextMenuEvent
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QSizePolicy, QApplication, QDialogButtonBox, QPushButton, QWidget, QGroupBox,
                                QLayout, QLabel, QFormLayout, QTableView, QDataWidgetMapper, QAbstractSpinBox, QDoubleSpinBox,
                                QSpinBox, QRadioButton, QLineEdit, QAbstractItemView, QListView, QMenu, QComboBox)
 
-from pydetecdiv.app.gui.core.parameters import Parameter, Parameters
-from pydetecdiv.app.models import ItemModel, DictItemModel, StringList, GenericModel, TableModel
+from pydetecdiv.app.parameters import Parameter
+from pydetecdiv.app.models import ItemModel, DictItemModel, StringList, GenericModel
 
 
 class StyleSheets:

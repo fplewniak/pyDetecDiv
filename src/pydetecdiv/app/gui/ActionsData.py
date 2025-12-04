@@ -8,15 +8,14 @@ from subprocess import Popen
 
 import numpy as np
 from PySide6.QtCore import (Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QItemSelection, Signal, QDir,
-                            QThread, Slot)
+                            QThread)
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator, QContextMenuEvent
 from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-                               QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView,
-                               QRadioButton, QButtonGroup)
+                               QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView)
 from pydetecdiv.app import PyDetecDiv, WaitDialog, pydetecdiv_project, MessageDialog
 from pydetecdiv.domain.FOV import FOV
 from pydetecdiv.domain.Project import Project
-from pydetecdiv.plugins.parameters import ChoiceParameter
+from pydetecdiv.app.parameters import ChoiceParameter
 
 from pydetecdiv.settings import get_config_value
 from pydetecdiv import delete_files

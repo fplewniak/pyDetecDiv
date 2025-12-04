@@ -11,7 +11,6 @@ from PySide6.QtGui import QIcon
 from pydetecdiv.app import create_app
 from pydetecdiv.app.gui.Windows import MainWindow
 import pydetecdiv.app.gui.SourcePath as SourcePath
-from pydetecdiv.app.gui.core.parameters import StringParameter
 
 if '_PYIBoot_SPLASH' in os.environ and importlib.util.find_spec("pyi_splash"):
     import pyi_splash

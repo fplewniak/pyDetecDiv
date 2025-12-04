@@ -1,7 +1,6 @@
 """
 Module defining widgets and other utilities for creating windows/forms with a minimum of code
 """
-import sys
 from typing import Any, Self, Type, Union, TypeVar, Callable
 
 from PySide6.QtCore import QStringListModel, QItemSelection, QItemSelectionModel, Signal, Slot, QModelIndex, SignalInstance
@@ -13,7 +12,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QGroupBox, QFormLayout, QLa
 
 from pydetecdiv.app.models import GenericModel, ItemModel, DictItemModel, StringList
 from pydetecdiv import plugins
-from pydetecdiv.plugins.parameters import Parameter
+from pydetecdiv.app.parameters import Parameter
 
 
 class StyleSheets:

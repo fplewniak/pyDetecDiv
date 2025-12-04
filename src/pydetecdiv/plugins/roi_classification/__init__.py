@@ -38,7 +38,7 @@ from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir, proj
 from pydetecdiv.domain.Run import Run
 from pydetecdiv.domain.Project import Project
 from pydetecdiv.domain.ROI import ROI
-from pydetecdiv.plugins.parameters import ItemParameter, ChoiceParameter, IntParameter, FloatParameter, CheckParameter
+from pydetecdiv.app.parameters import ItemParameter, ChoiceParameter, IntParameter, FloatParameter, CheckParameter
 
 from pydetecdiv.settings import get_plugins_dir, get_config_value
 from . import models
