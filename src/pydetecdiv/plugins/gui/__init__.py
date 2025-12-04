@@ -50,7 +50,7 @@ class GroupBox(QGroupBox):
         super().__init__(parent)
         if title is not None:
             self.setTitle(title)
-        self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
+        self.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Maximum)
         self.layout: QLayout = self.layout()
 
     @property
@@ -260,7 +260,7 @@ class ListView(QListView):
                  enabled: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         if multiselection:
-            self.setSelectionMode(QAbstractItemView.MultiSelection)
+            self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
         if height is not None:
             self.setFixedHeight(height)
         self.setModel(QStringListModel())
@@ -342,7 +342,7 @@ class ListView(QListView):
         top_left = self.model().index(0, 0)
         bottom_right = self.model().index(self.model().rowCount() - 1, 0)
         toggle_selection.select(top_left, bottom_right)
-        self.selectionModel().select(toggle_selection, QItemSelectionModel.Toggle)
+        self.selectionModel().select(toggle_selection, QItemSelectionModel.SelectionFlag.Toggle)
 
     def remove_items(self) -> None:
         """
@@ -369,7 +369,7 @@ class ListWidget(QListView):
         super().__init__(parent)
         # self.setSelectionModel(QItemSelectionModel())
         if multiselection:
-            self.setSelectionMode(QAbstractItemView.MultiSelection)
+            self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
         if model is not None and model.rows() is not None:
             self.setModel(model)
             self.setModelColumn(0)
@@ -501,7 +501,7 @@ class AdvancedButton(PushButton):
 
     def __init__(self, parent: QWidget, text: str = 'Advanced options') -> None:
         super().__init__(parent, text=text, icon=QIcon(':icons/show'), flat=True)
-        self.group_box: GroupBox = None
+        self.group_box: GroupBox | None = None
         self.clicked.connect(self.toggle)
 
     def hide(self):
@@ -556,7 +556,7 @@ class RadioButton(QRadioButton):
         if model is not None:
             self.mapper.setModel(model)
             self.mapper.addMapping(self, 0)
-            self.mapper.setSubmitPolicy(QDataWidgetMapper.AutoSubmit)
+            self.mapper.setSubmitPolicy(QDataWidgetMapper.SubmitPolicy.AutoSubmit)
             self.mapper.toFirst()
 
     @property
@@ -590,7 +590,7 @@ class SpinBox(QSpinBox):
         self.setRange(minimum, maximum)
         self.setSingleStep(single_step)
         if adaptive:
-            self.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
+            self.setStepType(QAbstractSpinBox.StepType.AdaptiveDecimalStepType)
         self.mapper = QDataWidgetMapper(self)
         self.setModel(model)
         self.setEnabled(enabled)
@@ -630,7 +630,7 @@ class DoubleSpinBox(QDoubleSpinBox):
         self.setDecimals(15 if decimals is None else decimals)
         self.setSingleStep(single_step)
         if adaptive:
-            self.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
+            self.setStepType(QAbstractSpinBox.StepType.AdaptiveDecimalStepType)
         self.mapper: QDataWidgetMapper = QDataWidgetMapper(self)
         self.setModel(model)
         self.setEnabled(enabled)
@@ -658,12 +658,12 @@ class DoubleSpinBox(QDoubleSpinBox):
     def validate(self, input_str, pos):
         # If the input is empty, allow it as intermediate
         if not input_str:
-            return (QValidator.State.Intermediate, )
+            return (QValidator.State.Intermediate,)
 
         # Check if the input is a valid float or scientific notation
         try:
             float(input_str)
-            return (QValidator.State.Acceptable, )
+            return (QValidator.State.Acceptable,)
         except ValueError:
             # Check if the input could be a valid scientific notation
             if 'e' in input_str:
@@ -673,16 +673,16 @@ class DoubleSpinBox(QDoubleSpinBox):
                     try:
                         float(mantissa)
                         int(exponent)
-                        return (QValidator.State.Acceptable, )
+                        return (QValidator.State.Acceptable,)
                     except ValueError:
                         pass
 
         # If the input is not valid but could become valid (e.g., "1e" or "1.23e")
         if input_str.endswith('e') or input_str.endswith('-') or input_str.replace('.', '').replace('-', '').isdigit():
-            return (QValidator.State.Intermediate, )
+            return (QValidator.State.Intermediate,)
 
         # If the input is invalid
-        return (QValidator.State.Invalid, )
+        return (QValidator.State.Invalid,)
 
     def valueFromText(self, text):
         try:
@@ -746,7 +746,8 @@ class DialogButtonBox(QDialogButtonBox):
     """
 
     def __init__(self, parent: QWidget,
-                 buttons: StandardButtonCombination = (QDialogButtonBox.Ok, QDialogButtonBox.Close)) -> None:
+                 buttons: StandardButtonCombination = (QDialogButtonBox.StandardButton.Ok,
+                                                       QDialogButtonBox.StandardButton.Close)) -> None:
         super().__init__(parent)
         for button in buttons:
             self.addButton(button)
@@ -782,7 +783,7 @@ class Dialog(QDialog):
         self.plugin = plugin
         if title is not None:
             self.setWindowTitle(title)
-        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
+        self.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Maximum)
 
     def fit_to_contents(self) -> None:
         """
@@ -804,7 +805,9 @@ class Dialog(QDialog):
         group_box.setStyleSheet(StyleSheets.groupBox)
         return group_box
 
-    def addButtonBox(self, buttons: StandardButtonCombination = QDialogButtonBox.Ok | QDialogButtonBox.Close,
+    def addButtonBox(self,
+                     buttons: StandardButtonCombination = (QDialogButtonBox.StandardButton.Ok,
+                                                           QDialogButtonBox.StandardButton.Close),
                      centered: bool = True) -> DialogButtonBox:
         """
         Add a button box to the Dialog window

@@ -4,6 +4,7 @@ GUI for ROI manual annotation and class visualization
 import json
 from typing import Any
 
+import numpy as np
 from PySide6.QtCore import Qt, QRectF, QItemSelectionModel
 from PySide6.QtGui import QAction, QActionGroup, QContextMenuEvent, QKeyEvent, QMouseEvent
 from PySide6.QtWidgets import QMenuBar, QGraphicsTextItem, QPushButton, QDialogButtonBox, QMenu, QFileDialog
@@ -103,7 +104,7 @@ class AnnotationTool(VideoPlayer):
             self.plugin = plugin
         self.menubar.setup()
         self.viewer_panel.setup(scene=scene)
-        self.viewer_panel.setOrientation(Qt.Vertical)
+        self.viewer_panel.setOrientation(Qt.Orientation.Vertical)
         self.annotation_chart_view = AnnotationChartView(annotator=self)
         self.viewer_panel.addWidget(self.annotation_chart_view)
         self.zoom_set_value(100)
@@ -274,7 +275,7 @@ class AnnotationChartView(ChartView):
         :param roi_classes_idx: the list of ROI ids to display classes
         """
         self.chart().clear()
-        self.chart().showAxes([True, True, True, True], [True, False, False, True])
+        self.chart().showAxes((True, True, True, True), [True, False, False, True])
         # ticks = [(-1, 'n.a.')] + [(i, name) for i, name in enumerate(self.class_names)]
         ticks = [(-1, 'n.a.')] + list(enumerate(self.class_names))
         left, right, bottom = self.chart().getAxis('left'), self.chart().getAxis('right'), self.chart().getAxis(
@@ -286,8 +287,8 @@ class AnnotationChartView(ChartView):
         right.setTicks([ticks])
         left.setGrid(100)
         self.addXline(self.annotator.T, angle=90, movable=False, pen=pg.mkPen('g', width=2))
-        self.addLinePlot(roi_classes_idx, pen=pg.mkPen('k', width=1))
-        self.addScatterPlot(roi_classes_idx, size=6, pen=pg.mkPen(None), brush=pg.mkBrush(255, 0, 0, 255))
+        self.addLinePlot(np.ndarray(roi_classes_idx), pen=pg.mkPen('k', width=1))
+        self.addScatterPlot(np.ndarray(roi_classes_idx), size=6, pen=pg.mkPen(None), brush=pg.mkBrush(255, 0, 0, 255))
 
     def clicked(self, plot: pg.ScatterPlotItem, points: list[pg.SpotItem]) -> None:
         """
@@ -351,11 +352,11 @@ class ManualAnnotator(AnnotationTool):
         elif event.text() == ' ':
             self.annotate_current(class_name=f'{self.class_item.toPlainText()}')
             self.change_frame(min(self.T + 1, self.viewer.image_resource_data.sizeT - 1))
-        elif event.key() == Qt.Key_Right:
+        elif event.key() == Qt.Key.Key_Right:
             self.change_frame(min(self.T + 1, self.viewer.image_resource_data.sizeT - 1))
-        elif event.key() == Qt.Key_Left:
+        elif event.key() == Qt.Key.Key_Left:
             self.change_frame(max(self.T - 1, 0))
-        elif event.key() == Qt.Key_PageDown:
+        elif event.key() == Qt.Key.Key_PageDown:
             self.annotate_current(class_name=f'{self.class_item.toPlainText()}')
             # self.class_item.setDefaultTextColor('black')
             if self.run is None:
@@ -363,9 +364,9 @@ class ManualAnnotator(AnnotationTool):
             # self.plugin.save_annotations(self.roi, [self.class_names[c] for c in self.roi_classes_idx], self.run)
             self.plugin.save_annotations(self.roi, self.roi_classes_idx, self.run)
             self.next_roi()
-        elif event.key() == Qt.Key_PageUp:
+        elif event.key() == Qt.Key.Key_PageUp:
             self.previous_roi()
-        elif event.key() == Qt.Key_Escape:
+        elif event.key() == Qt.Key.Key_Escape:
             self.next_roi()
 
     def define_classes(self, suggestion: list[str] = None) -> None:
@@ -476,15 +477,15 @@ class PredictionViewer(AnnotationTool):
         """
         if event.text() == ' ':
             self.change_frame(min(self.T + 1, self.viewer.image_resource_data.sizeT - 1))
-        elif event.key() == Qt.Key_Right:
+        elif event.key() == Qt.Key.Key_Right:
             self.change_frame(min(self.T + 1, self.viewer.image_resource_data.sizeT - 1))
-        elif event.key() == Qt.Key_Left:
+        elif event.key() == Qt.Key.Key_Left:
             self.change_frame(max(self.T - 1, 0))
-        elif event.key() == Qt.Key_PageDown:
+        elif event.key() == Qt.Key.Key_PageDown:
             self.next_roi()
-        elif event.key() == Qt.Key_PageUp:
+        elif event.key() == Qt.Key.Key_PageUp:
             self.previous_roi()
-        elif event.key() == Qt.Key_Escape:
+        elif event.key() == Qt.Key.Key_Escape:
             self.next_roi()
 
 
@@ -620,11 +621,11 @@ class DefineClassesDialog(Dialog):
 
         self.import_class_btn = QPushButton('Import classes', parent=self.button_box)
         self.import_class_btn.clicked.connect(self.import_classes)
-        self.button_box.addButton(self.import_class_btn, QDialogButtonBox.ActionRole)
+        self.button_box.addButton(self.import_class_btn, QDialogButtonBox.ButtonRole.ActionRole)
 
         self.add_class_btn = QPushButton('Add new class', parent=self.button_box)
         self.add_class_btn.clicked.connect(self.list_view.add_class)
-        self.button_box.addButton(self.add_class_btn, QDialogButtonBox.ActionRole)
+        self.button_box.addButton(self.add_class_btn, QDialogButtonBox.ButtonRole.ActionRole)
 
         self.button_box.accepted.connect(self.save_new_classes)
         self.button_box.rejected.connect(self.close)
@@ -726,5 +727,5 @@ class ClassListView(ListView):
         self.model().setStringList(new_list)
         self.unselect()
         selection = self.model().index(self.model().rowCount() - 1, 0)
-        self.selectionModel().select(selection, QItemSelectionModel.Select)
+        self.selectionModel().select(selection, QItemSelectionModel.SelectionFlag.Select)
         self.edit(selection)
