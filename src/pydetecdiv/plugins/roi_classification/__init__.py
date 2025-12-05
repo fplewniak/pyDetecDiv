@@ -925,7 +925,7 @@ class Plugin(plugins.Plugin):
         run.parameters.update({'last_weights': os.path.basename(last_weights_filepath)})
         run.validate().commit()
 
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Evaluation on test dataset')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Evaluation of last epoch on test dataset')
         avg_test_loss, test_accuracy = evaluate_metrics(model, test_dataloader, seq2one, loss_fn, lambda1, lambda2, device, metrics)
         evaluation = {'loss': avg_test_loss, 'accuracy': test_accuracy}
         print(f"Test loss: {avg_test_loss:.4f}, "
@@ -955,6 +955,14 @@ class Plugin(plugins.Plugin):
         print(polars.DataFrame(stats), file=sys.stderr)
 
         best_model = torch.jit.load(checkpoint_filepath)
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Evaluation of best epoch on test dataset')
+        avg_test_loss, test_accuracy = evaluate_metrics(best_model, test_dataloader, seq2one, loss_fn, lambda1, lambda2, device,
+                                                        metrics)
+        evaluation = {'loss': avg_test_loss, 'accuracy': test_accuracy}
+        print(f"Test loss: {avg_test_loss:.4f}, "
+              f"Test accuracy: {100 * test_accuracy:.1f} %, ")
+
         stats, best_ground_truth, best_predictions = evaluate_model(best_model, self.parameters['class_names'].value,
                                                                     test_dataloader, seqlen, seq2one, device)
         del best_model
