@@ -3,10 +3,12 @@ Module for model evaluation
 """
 import gc
 import math
+from typing import Any
 
 import numpy as np
 import torch
 from sklearn.metrics import precision_recall_fscore_support
+from torch import Tensor
 from torch.amp import autocast
 
 import pydetecdiv.torch.metrics
@@ -82,7 +84,7 @@ def evaluate_metrics_seq2one(model: torch.nn.Module, data_loader: torch.utils.da
 
 def evaluate_metrics_seq2seq(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader, loss_fn: torch.nn.Module,
                              lambda1: float, lambda2: float, device: torch.device,
-                             metrics: pydetecdiv.torch.metrics.Metrics) -> (float, float):
+                             metrics: pydetecdiv.torch.metrics.Metrics) -> tuple[float, Tensor]:
     """
     Evaluating metrics for a seq to seq classifier
 
@@ -123,7 +125,7 @@ def evaluate_metrics_seq2seq(model: torch.nn.Module, data_loader: torch.utils.da
 
 
 def get_pred_gt(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader, seq2one: bool,
-                device: torch.device) -> (list, list):
+                device: torch.device) -> tuple[Tensor, Tensor]:
     """
     Wrapper function returning prediction and corresponding ground truth
 
@@ -139,7 +141,7 @@ def get_pred_gt(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader
 
 
 def get_pred_gt_seq2one(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader,
-                        device: torch.device) -> (list, list):
+                        device: torch.device) -> tuple[Tensor, Tensor]:
     """
     Function returning the predictions and ground truth for a seq to one model
 
@@ -149,10 +151,13 @@ def get_pred_gt_seq2one(model: torch.nn.Module, data_loader: torch.utils.data.Da
     :return: the predictions and ground truth
     """
     model.eval()
-    predictions, ground_truth = None, None
+    predictions: Tensor | None = None
+    ground_truth: Tensor | None = None
+
     for img, targets in data_loader:
         with autocast('cuda'):
-            img, ground_truth = img.to(device), targets.type(torch.LongTensor).to(device)
+            img: Tensor = img.to(device)
+            ground_truth: Tensor = targets.type(torch.LongTensor).to(device)
             outputs = model(img)
         if outputs.dim() == 2:
             predictions = outputs.argmax(dim=-1)
@@ -164,7 +169,7 @@ def get_pred_gt_seq2one(model: torch.nn.Module, data_loader: torch.utils.data.Da
 
 
 def get_pred_gt_seq2seq(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader,
-                        device: torch.device) -> (list, list):
+                        device: torch.device) -> tuple[Tensor, Tensor]:
     """
     Function returning the predictions and ground truth for a seq to seq model
 
@@ -175,10 +180,13 @@ def get_pred_gt_seq2seq(model: torch.nn.Module, data_loader: torch.utils.data.Da
     """
     model.eval()
 
-    predictions, ground_truth = None, None
+    predictions:Tensor | None  = None
+    ground_truth: Tensor | None = None
+
     for img, targets in data_loader:
         with autocast('cuda'):
-            img, targets = img.to(device), targets.type(torch.LongTensor).to(device)
+            img: Tensor = img.to(device)
+            targets: Tensor = targets.type(torch.LongTensor).to(device)
             outputs = model(img)
         if outputs.dim() == 2:
             B, C = outputs.shape
@@ -196,14 +204,12 @@ def get_pred_gt_seq2seq(model: torch.nn.Module, data_loader: torch.utils.data.Da
     return predictions, ground_truth
 
 
-def evaluate_model(model: torch.nn.Module, checkpoint_filepath: str, class_names: list[str],
-                   data_loader: torch.utils.data.DataLoader, seqlen: int, seq2one: bool,
-                   device: torch.device) -> (dict, list, list, list):
+def evaluate_model(model: torch.nn.Module, class_names: list[str], data_loader: torch.utils.data.DataLoader, seqlen: int,
+                   seq2one: bool, device: torch.device) -> tuple[dict[str, list[str | int]], Any, Any]:
     """
     Function to evaluate model
 
     :param model: the model to evaluate in its last state
-    :param checkpoint_filepath: the file path with the best checkpoint
     :param class_names: the list of class names
     :param data_loader: the data loader providing the data to evaluate the model on
     :param seqlen: the sequence length
@@ -212,35 +218,17 @@ def evaluate_model(model: torch.nn.Module, checkpoint_filepath: str, class_names
     :return: the statistics, predictions and ground truth for the last model and the best checkpoint
     """
     predictions, ground_truth = get_pred_gt(model, data_loader, seq2one, device)
-
-    model = torch.jit.load(checkpoint_filepath)
-    best_predictions, best_gt = get_pred_gt(model, data_loader, seq2one, device)
-
-    del model
-    gc.collect()
-
     labels = list(range(len(class_names)))
 
     precision, recall, fscore, support = precision_recall_fscore_support(ground_truth.cpu(), predictions.cpu(), labels=labels,
                                                                          zero_division=np.nan)
-
-    best_precision, best_recall, best_fscore, best_support = precision_recall_fscore_support(best_gt.cpu(),
-                                                                                             best_predictions.cpu(),
-                                                                                             labels=labels,
-                                                                                             zero_division=np.nan)
 
     col_names = ['stats'] + class_names
     p = ['precision'] + precision.tolist()
     r = ['recall'] + recall.tolist()
     f = ['fscore'] + fscore.tolist()
     s = ['support'] + [int(s) for s in support]
-    bp = ['precision'] + best_precision.tolist()
-    br = ['recall'] + best_recall.tolist()
-    bf = ['fscore'] + best_fscore.tolist()
-    bs = ['support'] + [int(s) for s in best_support]
 
-    stats = {'last_stats': {col_name: [p[i], r[i], f[i], s[i]] for i, col_name in enumerate(col_names)},
-             'best_stats': {col_name: [bp[i], br[i], bf[i], bs[i]] for i, col_name in enumerate(col_names)}
-             }
+    stats = {col_name: [p[i], r[i], f[i], s[i]] for i, col_name in enumerate(col_names)}
 
-    return stats, ground_truth, predictions, best_gt, best_predictions
+    return stats, ground_truth, predictions

@@ -18,12 +18,13 @@ import numpy as np
 import pandas as pd
 
 import sqlalchemy
+from polars import DataFrame
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
 from sqlalchemy.types import JSON
 
 import torch
-from torch import optim
+from torch import optim, Tensor
 from torch.amp import autocast
 from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 from torch.utils.data import DataLoader
@@ -39,6 +40,7 @@ from pydetecdiv.domain.Run import Run
 from pydetecdiv.domain.Project import Project
 from pydetecdiv.domain.ROI import ROI
 from pydetecdiv.app.parameters import ItemParameter, ChoiceParameter, IntParameter, FloatParameter, CheckParameter
+from pydetecdiv.plugins.roi_classification.data import ROIDataset
 
 from pydetecdiv.settings import get_plugins_dir, get_config_value
 from . import models
@@ -723,7 +725,7 @@ class Plugin(plugins.Plugin):
         """
         ModelInfoDialog(self)
 
-    def load_model(self, pretrained: bool = False) -> tuple[Any, Any]:
+    def load_model(self, pretrained: bool = False) -> tuple[torch.nn.Module, str]:
         """
         Load an existing model
 
@@ -732,20 +734,20 @@ class Plugin(plugins.Plugin):
         """
         print(f'{datetime.now().strftime("%H:%M:%S")}: Model: {self.parameters["model"].key}\n')
         if pretrained:
-            model = torch.jit.load(os.path.join(get_project_dir(), 'roi_classification', 'models', self.parameters['model'].key,
-                                                self.parameters['weights'].value))
+            model: torch.nn.Module = torch.jit.load(os.path.join(get_project_dir(), 'roi_classification', 'models',
+                                                                 self.parameters['model'].key, self.parameters['weights'].value))
             return model, self.parameters['model'].key
         return (self.parameters['model'].value.model.NN_module(len(self.parameters['class_names'].value)),
                 self.parameters['model'].key)
 
-    def get_input_shape(self, model: torch.nn.Module) -> (tuple[int, int], int):
+    def get_input_shape(self, model: torch.nn.Module) -> tuple[Tensor, int]:
         """
         Gets the shape for the model input
 
         :param model: the model
         :return: the image size and sequence length (0 if input is a single image)
         """
-        seqlen = 0
+        seqlen: int = 0
         if len(model.expected_shape) == 5:
             seqlen = self.parameters['seqlen'].value
             print(f'{datetime.now().strftime("%H:%M:%S")}: Sequence length: {seqlen}\n')
@@ -755,7 +757,7 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Input image size: {img_size}\n')
         return img_size, seqlen
 
-    def get_weights_filepaths(self, run: Run) -> (str, str):
+    def get_weights_filepaths(self, run: Run) -> tuple[str, str]:
         """
         Get the filepath where weight files from a given training run are stored
 
@@ -785,8 +787,9 @@ class Plugin(plugins.Plugin):
                 return self.save_run(project, 'fine_tune', self.parameters.json(groups='finetune'))
             return self.save_run(project, 'train_model', self.parameters.json(groups='training'))
 
-    def train_model(self, fine_tuning: bool = False) -> (str, str, dict, dict, np.ndarray, np.ndarray, np.ndarray, np.ndarray,
-                                                         dict, torch.nn.Module, torch.device):
+    def train_model(self, fine_tuning: bool = False) -> tuple[
+        str, str, DataFrame, dict[str, float | torch.Tensor], torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, dict[
+            str, ROIDataset], torch.nn.Module, torch.device]:
         """
         Train model or fine-tune a pretrained model. Fine-tuning uses statistics from previous training run to evaluate the next
         best epoch, ensuring there is no regression in performance.
@@ -928,10 +931,14 @@ class Plugin(plugins.Plugin):
         print(f"Test loss: {avg_test_loss:.4f}, "
               f"Test accuracy: {100 * test_accuracy:.1f} %, ")
 
-        stats, ground_truth, predictions, best_ground_truth, best_predictions = evaluate_model(model, checkpoint_filepath,
-                                                                                               self.parameters['class_names'].value,
-                                                                                               test_dataloader,
-                                                                                               seqlen, seq2one, device)
+        # stats, ground_truth, predictions, best_ground_truth, best_predictions = evaluate_model(model, checkpoint_filepath,
+        #                                                                                        self.parameters['class_names'].value,
+        #                                                                                        test_dataloader,
+        #                                                                                        seqlen, seq2one, device)
+
+        stats, ground_truth, predictions = evaluate_model(model, self.parameters['class_names'].value, test_dataloader, seqlen,
+                                                          seq2one, device)
+
         # training_dataset.close()
         # validation_dataset.close()
         # test_dataset.close()
@@ -940,22 +947,33 @@ class Plugin(plugins.Plugin):
         # gc.collect()
 
         if run.key_val is None:
-            run.key_val = stats
+            run.key_val = {'last_stats': stats}
         else:
-            run.key_val.update(stats)
+            run.key_val.update({'last_stats': stats})
+
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Statistics for last model:', file=sys.stderr)
+        print(polars.DataFrame(stats), file=sys.stderr)
+
+        best_model = torch.jit.load(checkpoint_filepath)
+        stats, best_ground_truth, best_predictions = evaluate_model(best_model, self.parameters['class_names'].value,
+                                                                    test_dataloader, seqlen, seq2one, device)
+        del best_model
+        gc.collect()
+
+        if run.key_val is None:
+            run.key_val = {'best_stats': stats}
+        else:
+            run.key_val.update({'best_stats': stats})
 
         run.validate().commit()
 
-        print(f'{datetime.now().strftime("%H:%M:%S")}: Statistics for last model:', file=sys.stderr)
-        print(polars.DataFrame(stats['last_stats']), file=sys.stderr)
-
         print(f'{datetime.now().strftime("%H:%M:%S")}: Statistics for best model:', file=sys.stderr)
-        print(polars.DataFrame(stats['best_stats']), file=sys.stderr)
+        print(polars.DataFrame(stats), file=sys.stderr)
 
         datasets = {'train': training_dataset, 'val': validation_dataset, 'test': test_dataset}
 
-        return (model_name, self.parameters['class_names'].value, history, evaluation,
-                ground_truth, predictions, best_ground_truth, best_predictions, datasets, model, device)
+        return (model_name, self.parameters['class_names'].value, history, evaluation, ground_truth, predictions,
+                best_ground_truth, best_predictions, datasets, model, device)
 
     def predict(self) -> None:
         """
