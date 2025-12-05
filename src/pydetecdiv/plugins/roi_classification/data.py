@@ -8,13 +8,14 @@ import tables as tbl
 
 import numpy as np
 import torch
+from torch import Tensor
 from torchvision.transforms import transforms, v2
 import torchvision.transforms.functional as F
 from torch.utils.data import Dataset
 
 
 def prepare_data_for_training(hdf5_file: str, seqlen: int = 0, train: float = 0.6, validation: float = 0.2,
-                              seed: int = 42) -> (list[int], list[int], list[int]):
+                              seed: int = 42) -> tuple[list[list[int]], list[list[int]], list[list[int]], Tensor]:
     """
     Prepares data for training.
 
@@ -88,7 +89,7 @@ class ROIDataset(Dataset):
     Dataset returning (ROI data, frame) pairs
     """
     def __init__(self, h5file: str, indices: list, targets: bool = False, image_shape: tuple[int, int] = (60, 60), seqlen: int = 0,
-                 seq2one: bool = True, transform: transforms = None):
+                 seq2one: bool = True, transform: torch.nn.Module = None):
         self.h5file = tbl.open_file(h5file, mode='r')
         self.roi_data = self.h5file.root.roi_data
         self.roi_ids = self.h5file.root.roi_ids
@@ -120,7 +121,7 @@ class ROIDataset(Dataset):
     def __len__(self):
         return len(self.indices)
 
-    def __getitem__(self, idx: int) -> (torch.Tensor, ...):
+    def __getitem__(self, idx: int) -> tuple[Tensor, Tensor] | tuple[Tensor, Tensor, Tensor]:
         frame, mapping = self.indices[idx]
         roi_id = self.roi_ids[mapping]
         if self.seqlen == 0:

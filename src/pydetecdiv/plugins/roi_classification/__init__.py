@@ -740,7 +740,7 @@ class Plugin(plugins.Plugin):
         return (self.parameters['model'].value.model.NN_module(len(self.parameters['class_names'].value)),
                 self.parameters['model'].key)
 
-    def get_input_shape(self, model: torch.nn.Module) -> tuple[Tensor, int]:
+    def get_input_shape(self, model: torch.nn.Module) -> tuple[tuple[int, int], int]:
         """
         Gets the shape for the model input
 
@@ -751,9 +751,9 @@ class Plugin(plugins.Plugin):
         if len(model.expected_shape) == 5:
             seqlen = self.parameters['seqlen'].value
             print(f'{datetime.now().strftime("%H:%M:%S")}: Sequence length: {seqlen}\n')
-            img_size = model.expected_shape[3:5]
+            img_size: tuple[int, int] = (model.expected_shape[3], model.expected_shape[4])
         else:
-            img_size = model.expected_shape[2:4]
+            img_size: tuple[int, int] = (model.expected_shape[2], model.expected_shape[3])
         print(f'{datetime.now().strftime("%H:%M:%S")}: Input image size: {img_size}\n')
         return img_size, seqlen
 

@@ -11,7 +11,7 @@ class FocalLoss(torch.nn.Module):
     correct label is predicted with a small probability. The gamma parameter defines the strength of this emphasis. If gamma = 0,
     this function is equivalent to cross entropy. The alpha parameter defines class weights to address unbalanced classes issues.
     """
-    def __init__(self, alpha: list[float] = None, gamma: float = 2, reduction: str = 'mean'):
+    def __init__(self, alpha: torch.Tensor | None = None, gamma: float = 2, reduction: str = 'mean'):
         super().__init__()
         self.gamma = gamma
         self.alpha = alpha
