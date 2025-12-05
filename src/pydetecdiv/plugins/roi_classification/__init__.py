@@ -8,16 +8,17 @@ import os
 import pkgutil
 import sys
 from datetime import datetime
-from typing import Any
 
 import cv2
 import fastremap
+import optuna
 import polars
 import tables as tbl
 import numpy as np
 import pandas as pd
 
 import sqlalchemy
+from optuna.trial import TrialState
 from polars import DataFrame
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import registry
@@ -50,7 +51,7 @@ from .gui.ImportAnnotatedROIs import FOV2ROIlinks
 from .gui.classification import ManualAnnotator, PredictionViewer, DefineClassesDialog
 from .gui.modelinfo import ModelInfoDialog
 from .gui.prediction import PredictionDialog
-from .gui.training import TrainingDialog, FineTuningDialog, ImportClassifierDialog
+from .gui.training import TrainingDialog, FineTuningDialog, ImportClassifierDialog, TuneHyperparamDialog
 
 from .training import train_loop
 from .utils import get_classifications, get_annotation_runs
@@ -353,11 +354,14 @@ class Plugin(plugins.Plugin):
         manual_annotation.triggered.connect(self.manual_annotation)
 
         training_menu = submenu.addMenu('Train model')
+        hyperparam_tuning = QAction("Hyperparameter tuning", training_menu)
         train_model = QAction("Train a model", training_menu)
         fine_tuning = QAction("Fine-tune training", training_menu)
+        training_menu.addAction(hyperparam_tuning)
         training_menu.addAction(train_model)
         training_menu.addAction(fine_tuning)
 
+        hyperparam_tuning.triggered.connect(self.run_hyperparam_tuning)
         train_model.triggered.connect(self.run_training)
         fine_tuning.triggered.connect(self.run_fine_tuning)
 
@@ -689,6 +693,17 @@ class Plugin(plugins.Plugin):
             print(f'Unannotated ROIs: {len(unannotated_roi_ids)}')
             return project.get_objects('ROI', list(unannotated_roi_ids)), project.get_objects('ROI', list(all_roi_ids))
 
+    def run_hyperparam_tuning(self) -> None:
+        """
+        Runs an optimization of hyperparameters. Opens the TuneHyperparamDialog widget
+        """
+        if len(self.get_annotated_rois()) == 0:
+            QMessageBox.critical(PyDetecDiv.main_window, 'No annotated ROI',
+                                 'You should provide ground truth annotations for ROIs before training a model. '
+                                 + 'Please, annotate ROIs or import annotations from a csv file.')
+        else:
+            TuneHyperparamDialog(self)
+
     def run_training(self) -> None:
         """
         Runs a model training process. Opens the TrainingDialog widget
@@ -787,7 +802,44 @@ class Plugin(plugins.Plugin):
                 return self.save_run(project, 'fine_tune', self.parameters.json(groups='finetune'))
             return self.save_run(project, 'train_model', self.parameters.json(groups='training'))
 
-    def train_model(self, fine_tuning: bool = False) -> tuple[
+    def objective(self, trial):
+        print('Running objective function', file=sys.stderr)
+        self.parameters['epochs'].value = 4
+        self.parameters['batch_size'].value = 8
+        self.parameters['seqlen'].value = 5
+        self.parameters['focal_gamma'].value = trial.suggest_float("gamma", 1, 2, log=False)
+        self.parameters['L1'].value = trial.suggest_float("L1", 1e-5, 1e-1, log=True)
+        self.parameters['L2'].value = trial.suggest_float("L2", 1e-5, 1e-1, log=True)
+        self.parameters['augmentation'].value = True
+        self.parameters['num_training'].value = 0.4
+        self.parameters['num_validation'].value = 0.3
+        self.parameters['num_test'].value = 0.3
+        self.parameters['learning_rate'].value = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
+        _, _, history, _, _, _, _, _, _, _, _ = self.train_model(trial = trial)
+        accuracy = history['val accuracy'][-1]
+        return accuracy
+
+    def tune_hyperparameters(self):
+        print('Starting Optuna study', file=sys.stderr)
+        study = optuna.create_study(storage="sqlite:///db.sqlite3", direction="maximize")
+        print('Optimization of objective function', file=sys.stderr)
+        study.optimize(self.objective, n_trials=15)
+        pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
+        complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
+        print("Study statistics: ")
+        print("  Number of finished trials: ", len(study.trials))
+        print("  Number of pruned trials: ", len(pruned_trials))
+        print("  Number of complete trials: ", len(complete_trials))
+
+        print("Best trial:")
+        trial = study.best_trial
+
+        print("  Value: ", trial.value)
+
+        return trial
+
+
+    def train_model(self, fine_tuning: bool = False, trial = None) -> tuple[
         str, str, DataFrame, dict[str, float | torch.Tensor], torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, dict[
             str, ROIDataset], torch.nn.Module, torch.device]:
         """
@@ -913,6 +965,11 @@ class Plugin(plugins.Plugin):
                   f"learning rate: {scheduler.get_last_lr()[0]}, "
                   f" -- ({datetime.now().strftime('%H:%M:%S')})")
             # f"learning rate: {scheduler.get_last_lr()}, ")
+            trial.report(history['val accuracy'][-1], epoch)
+            # Handle pruning based on the intermediate value.
+            if trial.should_prune():
+                raise optuna.exceptions.TrialPruned()
+
             step_scheduler.step()
             scheduler.step(history['val loss'][-1])
 

@@ -3,6 +3,7 @@ GUI for training and fine tuning models
 """
 import gc
 import random
+import sys
 
 import numpy as np
 import torch
@@ -16,6 +17,46 @@ from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer
 from pydetecdiv.plugins.gui import (ComboBox, AdvancedButton, SpinBox, ParametersFormGroupBox, DoubleSpinBox,
                                     RadioButton, set_connections, Label, Dialog)
 
+class TuneHyperparamDialog(Dialog):
+    """
+    A Dialog window to specify hyperparameters for training a model
+    """
+    job_finished: Signal = Signal(object)
+
+    def __init__(self, plugin: pydetecdiv.plugins.Plugin, title: str = None):
+        super().__init__(plugin, title='Tune hyperparameters for classification model')
+        self.button_box = self.addButtonBox()
+        self.arrangeWidgets([self.button_box])
+
+        set_connections({self.button_box.accepted    : self.wait_for_tunning,
+                         self.button_box.rejected    : self.close
+                         })
+
+        self.fit_to_contents()
+        self.exec()
+
+    def wait_for_tunning(self) -> None:
+        """
+        Open a waiting dialog window to wait for completion of hyperparameters tuning job
+        """
+        wait_dialog = StdoutWaitDialog('**Tuning hyperparameters**', self)
+        wait_dialog.resize(500, 300)
+        self.job_finished.connect(wait_dialog.stop_redirection)
+        self.job_finished.connect(self.show_best_hyperparameters)
+        wait_dialog.wait_for(self.run_tuning)
+        self.close()
+
+    def run_tuning(self) -> None:
+        """
+        Run a model training job
+        """
+        print('Run_tuning method', file=sys.stderr)
+        self.job_finished.emit(self.plugin.tune_hyperparameters())
+
+    def show_best_hyperparameters(self, trial):
+        print("  Params: ")
+        for key, value in trial.params.items():
+            print("    {}: {}".format(key, value))
 
 class TrainingDialog(Dialog):
     """
