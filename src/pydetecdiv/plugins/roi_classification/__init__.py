@@ -196,8 +196,8 @@ def get_drift_corrections() -> pd.DataFrame:
         return drift_corrections
 
 
-def save_training_datasets(run: Run, hdf5_file: str, training_idx: list[int], validation_idx: list[int],
-                           test_idx: list[int]) -> None:
+def save_training_datasets(run: Run, hdf5_file: str, training_idx: list[list[int]], validation_idx: list[list[int]],
+                           test_idx: list[list[int]]) -> None:
     """
     Saves in TrainingData table the (ROI, frame, class) data subsets that were used for training, validation and testing while
     training a model.
