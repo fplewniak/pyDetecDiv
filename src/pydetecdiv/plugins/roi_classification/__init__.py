@@ -804,18 +804,22 @@ class Plugin(plugins.Plugin):
 
     def objective(self, trial):
         print('Running objective function', file=sys.stderr)
-        self.parameters['epochs'].value = 4
-        self.parameters['batch_size'].value = 8
-        self.parameters['seqlen'].value = 5
-        self.parameters['focal_gamma'].value = trial.suggest_float("gamma", 1, 2, log=False)
-        self.parameters['L1'].value = trial.suggest_float("L1", 1e-5, 1e-1, log=True)
-        self.parameters['L2'].value = trial.suggest_float("L2", 1e-5, 1e-1, log=True)
+        self.parameters['epochs'].value = 16
+        # self.parameters['batch_size'].value = 8
+        self.parameters['batch_size'].value = trial.suggest_int("batch_size", 4, 32, step=4)
+        # self.parameters['seqlen'].value = 5
+        self.parameters['seqlen'].value = trial.suggest_int("seqlen", 5, 15, log=True)
+        self.parameters['focal_gamma'].value = trial.suggest_float("gamma", 0.01, 1.51, step=0.05, log=False)
+        self.parameters['L1'].value = trial.suggest_float("L1", 1e-6, 1e-1, log=True)
+        self.parameters['L2'].value = trial.suggest_float("L2", 1e-6, 1e-1, log=True)
         self.parameters['augmentation'].value = True
         self.parameters['num_training'].value = 0.4
         self.parameters['num_validation'].value = 0.3
         self.parameters['num_test'].value = 0.3
-        self.parameters['learning_rate'].value = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
-        _, _, history, _, _, _, _, _, _, _, _ = self.train_model(trial = trial)
+        self.parameters['learning_rate'].value = trial.suggest_float("lr", 1e-6, 1e-1, log=True)
+        _, _, history, _, _, _, _, _, _, model, _ = self.train_model(trial = trial)
+        del model
+        gc.collect()
         accuracy = history['val accuracy'][-1]
         return accuracy
 
@@ -823,7 +827,8 @@ class Plugin(plugins.Plugin):
         print('Starting Optuna study', file=sys.stderr)
         study = optuna.create_study(storage="sqlite:///db.sqlite3", direction="maximize")
         print('Optimization of objective function', file=sys.stderr)
-        study.optimize(self.objective, n_trials=15)
+        study.optimize(self.objective, n_trials=100)
+        # optimize(func, n_trials=None, timeout=None, n_jobs=1, catch=(), callbacks=None, gc_after_trial=False, show_progress_bar=False)
         pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
         complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
         print("Study statistics: ")
@@ -965,10 +970,11 @@ class Plugin(plugins.Plugin):
                   f"learning rate: {scheduler.get_last_lr()[0]}, "
                   f" -- ({datetime.now().strftime('%H:%M:%S')})")
             # f"learning rate: {scheduler.get_last_lr()}, ")
-            trial.report(history['val accuracy'][-1], epoch)
-            # Handle pruning based on the intermediate value.
-            if trial.should_prune():
-                raise optuna.exceptions.TrialPruned()
+            if trial is not None:
+                trial.report(history['val accuracy'][-1], epoch)
+                # Handle pruning based on the intermediate value.
+                if trial.should_prune():
+                    raise optuna.exceptions.TrialPruned()
 
             step_scheduler.step()
             scheduler.step(history['val loss'][-1])

@@ -8,7 +8,8 @@ from PySide6.QtGui import QIcon, QAction, QContextMenuEvent, QValidator
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QGroupBox, QFormLayout, QLabel, QDialogButtonBox,
                                QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView,
                                QAbstractItemView,
-                               QPushButton, QApplication, QRadioButton, QListView, QMenu, QDataWidgetMapper, QWidget, QLayout)
+                               QPushButton, QApplication, QRadioButton, QListView, QMenu, QDataWidgetMapper, QWidget, QLayout,
+                               QHBoxLayout, QFrame)
 
 from pydetecdiv.app.models import GenericModel, ItemModel, DictItemModel, StringList
 from pydetecdiv import plugins
@@ -92,6 +93,24 @@ class GroupBox(QGroupBox):
         """
         ...
 
+class ClickableLabel(QLabel):
+    def __init__(self, label: str = None, action: Callable = None):
+        QLabel.__init__(self,label)
+        self._action = action
+        self.setFrameShape(QFrame.Shape.NoFrame)
+        self.setLineWidth(0)
+        self.original_style = "padding: 2px; background-color: transparent;"
+        self.setStyleSheet(self.original_style)
+
+    def mouseReleaseEvent(self, event):
+        self._action(self, event)
+
+
+def clicked(label: ClickableLabel, event):
+    if label.styleSheet() == label.original_style:
+        label.setStyleSheet("padding: 2px; background-color: #d0d0d0;")
+    else:
+        label.setStyleSheet(label.original_style)
 
 class ParametersFormGroupBox(GroupBox):
     """
@@ -139,6 +158,7 @@ class ParametersFormGroupBox(GroupBox):
             self.layout.addRow(option)
         else:
             self.layout.addRow(QLabel(label), option)
+            # self.layout.addRow(ClickableLabel(label, action=clicked), option)
         return option
 
     def setRowVisible(self, index: int, on: bool = True) -> None:
@@ -846,7 +866,7 @@ class Dialog(QDialog):
             self.vert_layout.addWidget(widget)
 
 
-def set_connections(connections: dict[Signal, Callable]) -> None:
+def set_connections(connections: dict[SignalInstance, Callable]) -> None:
     """
     connect a signal to a slot or a list of slots, as defined in a dictionary
 
