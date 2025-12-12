@@ -5,10 +5,11 @@ import torch
 from torch import Tensor
 
 
-class Metrics:
+class Metric:
     """
-    Abstract class defining metrics
+    Abstract class defining a metric
     """
+    name = 'metric'
     def __init__(self):
         self.sample_outputs = None
         self.sample_targets = None
@@ -47,10 +48,11 @@ class Metrics:
         """
         pass
 
-class Accuracy(Metrics):
+class Accuracy(Metric):
     """
-    Accuracy metrics
+    Accuracy metric
     """
+    name = 'accuracy'
     def __init__(self, weighted_mean: bool = True):
         super().__init__()
         self.weighted_mean = weighted_mean
@@ -77,11 +79,12 @@ class Accuracy(Metrics):
         return correct.sum() / len(correct)
 
 
-class AccuracyByClass(Metrics):
+class AccuracyByClass(Metric):
     """
-    Accuracy metrics computing accuracy for each class and then reducing it if requested, in order to mitigate the effect of
+    Accuracy metric computing accuracy for each class and then reducing it if requested, in order to mitigate the effect of
     unbalanced classes
     """
+    name = 'class accuracy'
     def __init__(self, reduction: str = 'mean'):
         super().__init__()
         self.reduction = reduction

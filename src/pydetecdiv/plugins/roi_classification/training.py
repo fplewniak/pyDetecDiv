@@ -1,7 +1,9 @@
 import math
+from typing import Callable
 
 import polars
 import torch
+import torchmetrics
 from torch.amp import GradScaler, autocast
 
 import pydetecdiv.torch.metrics
@@ -10,7 +12,7 @@ from pydetecdiv.plugins.roi_classification.evaluate import evaluate_metrics_seq2
 
 def train_loop(training_loader: torch.utils.data.DataLoader, validation_loader: torch.utils.data.DataLoader, model: torch.nn.Module,
                seq2one: bool, loss_fn: torch.nn.Module, optimizer: torch.optim, lambda1: float, lambda2: float,
-               device: torch.device, metrics: pydetecdiv.torch.metrics.Metrics) -> polars.DataFrame:
+               device: torch.device, metrics: Callable) -> polars.DataFrame:
     """
     Training loop wrapper function
     :param training_loader: the training data loader
@@ -32,7 +34,7 @@ def train_loop(training_loader: torch.utils.data.DataLoader, validation_loader: 
 
 def train_loop_seq2one(training_loader: torch.utils.data.DataLoader, validation_loader: torch.utils.data.DataLoader,
                        model: torch.nn.Module, loss_fn: torch.nn.Module, optimizer: torch.optim, lambda1: float, lambda2: float,
-                       device: torch.device, metrics: pydetecdiv.torch.metrics.Metrics) -> polars.DataFrame:
+                       device: torch.device, metrics: Callable) -> polars.DataFrame:
     """
     Training loop for seq to one models
     :param training_loader: the training data loader
@@ -48,6 +50,7 @@ def train_loop_seq2one(training_loader: torch.utils.data.DataLoader, validation_
     """
     model.train()
     running_loss = 0.0
+    running_metric = 0.0
     correct, total = 0.0, 0.0
     # scaler = GradScaler('cuda')
 
@@ -81,23 +84,25 @@ def train_loop_seq2one(training_loader: torch.utils.data.DataLoader, validation_
 
         # running_loss += loss.item() * B
         running_loss += loss.item()
+        train_metric = metrics(outputs, labels)
 
-        metrics.sampling(outputs, labels)
+    # metrics.sampling(outputs, labels)
 
     avg_train_loss = running_loss / len(training_loader)
-    accuracy = metrics.value
-    metrics.reset_sampling()
+    train_metric = metrics.compute()
+    # accuracy = metrics.value
+    # metrics.reset_sampling()
 
     avg_val_loss, val_accuracy = evaluate_metrics_seq2one(model, validation_loader, loss_fn, lambda1, lambda2, device, metrics)
 
     return polars.DataFrame({'train loss'    : avg_train_loss, 'val loss': avg_val_loss,
-                             'train accuracy': accuracy, 'val accuracy': val_accuracy,
+                             'train accuracy': train_metric, 'val accuracy': val_accuracy,
                              })
 
 
 def train_loop_seq2seq(training_loader: torch.utils.data.DataLoader, validation_loader: torch.utils.data.DataLoader,
                        model: torch.nn.Module, loss_fn: torch.nn.Module, optimizer: torch.optim, lambda1: float, lambda2: float,
-                       device: torch.device, metrics: pydetecdiv.torch.metrics.Metrics) -> polars.DataFrame:
+                       device: torch.device, metrics: Callable) -> polars.DataFrame:
     """
     Training loop for seq to seq models
     :param training_loader: the training data loader
@@ -113,6 +118,7 @@ def train_loop_seq2seq(training_loader: torch.utils.data.DataLoader, validation_
     """
     model.train()
     running_loss = 0.0
+    running_metric = 0.0
     correct, total = 0.0, 0.0
     # scaler = GradScaler('cuda')
 
@@ -143,16 +149,18 @@ def train_loop_seq2seq(training_loader: torch.utils.data.DataLoader, validation_
 
         # running_loss += loss.item() * B
         running_loss += loss.item()
+        train_metric = metrics(outputs, labels)
 
-        metrics.sampling(outputs, labels)
+        # metrics.sampling(outputs, labels)
 
     avg_train_loss = running_loss / len(training_loader)
-    accuracy = metrics.value
-    metrics.reset_sampling()
+    train_metric = metrics.compute()
+    # accuracy = metrics.value
+    # metrics.reset_sampling()
 
     # Validation phase
     avg_val_loss, val_accuracy = evaluate_metrics_seq2seq(model, validation_loader, loss_fn, lambda1, lambda2, device, metrics)
 
     return polars.DataFrame({'train loss'    : avg_train_loss, 'val loss': avg_val_loss,
-                             'train accuracy': accuracy.cpu(), 'val accuracy': val_accuracy.cpu(),
+                             'train accuracy': train_metric.cpu(), 'val accuracy': val_accuracy.cpu(),
                              })

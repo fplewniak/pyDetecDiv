@@ -296,15 +296,14 @@ class FineTuningDialog(Dialog):
         self.job_finished.emit(self.plugin.train_model(fine_tuning=True))
 
 
-def plot_training_results(results: (str, str, dict, dict, np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict, torch.nn.Module,
-                                    torch.device)) -> None:
+def plot_training_results(results: tuple[str, str, dict, dict, np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict, torch.nn.Module, torch.device, float]) -> None:
     """
     Plots training results (history, confusion matrix, ...)
 
     :param results: the results from training process
     """
     (module_name, class_names, history, evaluation, ground_truth, predictions, best_gt, best_predictions, dataset, model,
-     device) = results
+     device, fscore) = results
     # module_name, class_names, history = results
     tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {module_name}')
     tab.project_name = PyDetecDiv.project_name

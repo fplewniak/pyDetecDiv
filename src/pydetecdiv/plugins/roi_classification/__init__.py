@@ -30,6 +30,9 @@ from torch.amp import autocast
 from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 from torch.utils.data import DataLoader
 from torchvision.transforms import v2, InterpolationMode
+from torchmetrics.classification import (Accuracy, F1Score, MatthewsCorrCoef, CohenKappa, PrecisionRecallCurve,
+                                         MulticlassMatthewsCorrCoef, MulticlassCohenKappa, MulticlassPrecisionRecallCurve,
+                                         MulticlassF1Score, MulticlassAccuracy)
 
 from PySide6.QtGui import QAction
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
@@ -57,7 +60,7 @@ from .training import train_loop
 from .utils import get_classifications, get_annotation_runs
 from ...domain.Dataset import Dataset
 from ...torch.loss import FocalLoss
-from ...torch.metrics import Accuracy, AccuracyByClass
+from ...torch.metrics import AccuracyByClass
 
 Base = registry().generate_base()
 
@@ -301,9 +304,14 @@ class Plugin(plugins.Plugin):
             IntParameter(name='seqlen', label='Sequence length', groups={'training', 'finetune', 'prediction'},
                          default=15, ),
             ChoiceParameter(name='follow_metric', label='Follow metric', groups={'training', 'finetune'},
-                            default='Accuracy by class', items={'Accuracy'         : Accuracy,
-                                                                'Accuracy by class': AccuracyByClass,
-                                                                }),
+                            default='Matthews Correlation Coefficient',
+                            items={'Matthews Correlation Coefficient': MatthewsCorrCoef,
+                                   'Cohen kappa': CohenKappa,
+                                   'F-1 score': F1Score,
+                                   'AUC-PR': PrecisionRecallCurve,
+                                   'Accuracy'         : Accuracy,
+                                   'Accuracy by class': AccuracyByClass,
+                                   }),
             ItemParameter(name='annotation_file', label='Annotation file', groups={'import_annotations'}, ),
             ChoiceParameter(name='fov', label='Select FOVs', groups={'prediction'}, updater=self.update_fov_list),
             ]
@@ -804,31 +812,40 @@ class Plugin(plugins.Plugin):
 
     def objective(self, trial):
         print('Running objective function', file=sys.stderr)
-        self.parameters['epochs'].value = 16
-        # self.parameters['batch_size'].value = 8
+        self.parameters['epochs'].value = 4
+        # self.parameters['batch_size'].value = 32
         self.parameters['batch_size'].value = trial.suggest_int("batch_size", 4, 32, step=4)
-        # self.parameters['seqlen'].value = 5
+        # self.parameters['seqlen'].value = 10
         self.parameters['seqlen'].value = trial.suggest_int("seqlen", 5, 15, log=True)
-        self.parameters['focal_gamma'].value = trial.suggest_float("gamma", 0.01, 1.51, step=0.05, log=False)
-        self.parameters['L1'].value = trial.suggest_float("L1", 1e-6, 1e-1, log=True)
-        self.parameters['L2'].value = trial.suggest_float("L2", 1e-6, 1e-1, log=True)
+        self.parameters['focal_gamma'].value = 1.0
+        # self.parameters['focal_gamma'].value = trial.suggest_float("gamma", 0.001, 1.5, log=True)
+        self.parameters['L1'].value = trial.suggest_float("L1", 1e-6, 1e-2, log=True)
+        self.parameters['L2'].value = trial.suggest_float("L2", 1e-6, 1e-2, log=True)
         self.parameters['augmentation'].value = True
         self.parameters['num_training'].value = 0.4
         self.parameters['num_validation'].value = 0.3
         self.parameters['num_test'].value = 0.3
-        self.parameters['learning_rate'].value = trial.suggest_float("lr", 1e-6, 1e-1, log=True)
-        _, _, history, _, _, _, _, _, _, model, _ = self.train_model(trial = trial)
+        self.parameters['learning_rate'].value = trial.suggest_float("lr", 1e-6, 1e-3, log=True)
+        _, labels, history, _, ground_truth, predictions, _, _, _, model, _, fscore = self.train_model(trial = trial)
         del model
         gc.collect()
-        accuracy = history['val accuracy'][-1]
-        return accuracy
+        # best_idx = int(np.argmax(history['val accuracy']))
+        # accuracy = history['val accuracy'][best_idx]
+        metric = history['val accuracy'][-1]
+        return metric
 
     def tune_hyperparameters(self):
         print('Starting Optuna study', file=sys.stderr)
-        study = optuna.create_study(storage="sqlite:///db.sqlite3", direction="maximize")
+        path = os.path.join(get_project_dir(), 'roi_classification')
+        os.makedirs(path, exist_ok=True)
+        study_name = f"{self.parameters['model'].key}_{datetime.now().strftime("%y%m%d%H%M")}"
+        study = optuna.create_study(study_name=study_name, storage=f"sqlite:///{path}/optuna.sqlite3",
+                                    direction="maximize")
+        # create_study(*, storage=None, sampler=None, pruner=None, study_name=None, direction=None, load_if_exists=False, directions=None)
         print('Optimization of objective function', file=sys.stderr)
-        study.optimize(self.objective, n_trials=100)
+        study.optimize(self.objective, n_trials=10)
         # optimize(func, n_trials=None, timeout=None, n_jobs=1, catch=(), callbacks=None, gc_after_trial=False, show_progress_bar=False)
+        # study.set_metric_names(metric_names)
         pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
         complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
         print("Study statistics: ")
@@ -846,7 +863,7 @@ class Plugin(plugins.Plugin):
 
     def train_model(self, fine_tuning: bool = False, trial = None) -> tuple[
         str, str, DataFrame, dict[str, float | torch.Tensor], torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, dict[
-            str, ROIDataset], torch.nn.Module, torch.device]:
+            str, ROIDataset], torch.nn.Module, torch.device, float]:
         """
         Train model or fine-tune a pretrained model. Fine-tuning uses statistics from previous training run to evaluate the next
         best epoch, ensuring there is no regression in performance.
@@ -941,7 +958,24 @@ class Plugin(plugins.Plugin):
 
         checkpoint_filepath, last_weights_filepath = self.get_weights_filepaths(run)
 
-        metrics = self.parameters['follow_metric'].value()
+        num_classes = len(self.parameters['class_names'].value)
+        metrics = MulticlassMatthewsCorrCoef(num_classes=num_classes)
+
+        match self.parameters['follow_metric'].key:
+            case 'Matthews Correlation Coefficient':
+                metrics = MulticlassMatthewsCorrCoef(num_classes=num_classes),
+            case 'Cohen kappa':
+                metrics = MulticlassCohenKappa(num_classes=num_classes),
+            case 'F-1 score':
+                metrics = MulticlassF1Score(num_classes=num_classes, average='weighted'),
+            case 'AUC-PR':
+                metrics = MulticlassPrecisionRecallCurve(num_classes=num_classes)
+            case 'Accuracy':
+                metrics = MulticlassAccuracy(task='multiclass', num_classes=num_classes),
+
+        print(f'Following {self.parameters["follow_metric"].key} metric -- ({datetime.now().strftime("%H:%M:%S")})')
+        print(f'{metrics}', file=sys.stderr)
+        metrics.to(device)
 
         if fine_tuning:
             min_val_loss, accuracy = evaluate_metrics(model, validation_dataloader, seq2one, loss_fn,
@@ -962,15 +996,26 @@ class Plugin(plugins.Plugin):
                 run.parameters.update({'best_weights': os.path.basename(checkpoint_filepath), 'best_epoch': epoch + 1})
                 run.validate().commit()
 
+            stats, ground_truth, predictions = evaluate_model(model, self.parameters['class_names'].value, train_dataloader,
+                                                              seqlen, seq2one, device)
+            train_fscore = np.mean([v[2] for k, v in stats.items() if k != 'stats'])
+
+            stats, ground_truth, predictions = evaluate_model(model, self.parameters['class_names'].value, validation_dataloader,
+                                                              seqlen, seq2one, device)
+            val_fscore = np.mean([v[2] for k, v in stats.items() if k != 'stats'])
+
             print(f"Epoch {epoch + 1}/{n_epochs}, "
                   f"Training Loss: {history['train loss'][-1]:.4f}, "
                   f"Validation Loss: {history['val loss'][-1]:.4f}, "
-                  f"Accuracy: {100 * history['train accuracy'][-1]:.1f} %, "
-                  f"Val accuracy: {100 * history['val accuracy'][-1]:.1f} %, "
-                  f"learning rate: {scheduler.get_last_lr()[0]}, "
+                  f"Metric: {100 * history['train accuracy'][-1]:.1f} %, "
+                  f"Val metric: {100 * history['val accuracy'][-1]:.1f} %, "
+                  f"F-score: {100 * train_fscore:.1f}, "
+                  f"Val F-score: {100 * val_fscore:.1f}, "
+                  f"learning rate: {scheduler.get_last_lr()[0]:0.2e}, "
                   f" -- ({datetime.now().strftime('%H:%M:%S')})")
-            # f"learning rate: {scheduler.get_last_lr()}, ")
+
             if trial is not None:
+                # trial.report(val_fscore, epoch)
                 trial.report(history['val accuracy'][-1], epoch)
                 # Handle pruning based on the intermediate value.
                 if trial.should_prune():
@@ -994,20 +1039,8 @@ class Plugin(plugins.Plugin):
         print(f"Test loss: {avg_test_loss:.4f}, "
               f"Test accuracy: {100 * test_accuracy:.1f} %, ")
 
-        # stats, ground_truth, predictions, best_ground_truth, best_predictions = evaluate_model(model, checkpoint_filepath,
-        #                                                                                        self.parameters['class_names'].value,
-        #                                                                                        test_dataloader,
-        #                                                                                        seqlen, seq2one, device)
-
         stats, ground_truth, predictions = evaluate_model(model, self.parameters['class_names'].value, test_dataloader, seqlen,
                                                           seq2one, device)
-
-        # training_dataset.close()
-        # validation_dataset.close()
-        # test_dataset.close()
-        # del (model)
-        # torch.cuda.empty_cache()
-        # gc.collect()
 
         if run.key_val is None:
             run.key_val = {'last_stats': stats}
@@ -1044,7 +1077,7 @@ class Plugin(plugins.Plugin):
         datasets = {'train': training_dataset, 'val': validation_dataset, 'test': test_dataset}
 
         return (model_name, self.parameters['class_names'].value, history, evaluation, ground_truth, predictions,
-                best_ground_truth, best_predictions, datasets, model, device)
+                best_ground_truth, best_predictions, datasets, model, device, val_fscore)
 
     def predict(self) -> None:
         """
