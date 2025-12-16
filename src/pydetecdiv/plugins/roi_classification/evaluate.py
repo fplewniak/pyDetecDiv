@@ -7,16 +7,15 @@ from typing import Any, Callable
 
 import numpy as np
 import torch
+import torchmetrics
 from sklearn.metrics import precision_recall_fscore_support
 from torch import Tensor
 from torch.amp import autocast
 
-import pydetecdiv.torch.metrics
-
 
 def evaluate_metrics(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader, seq2one: bool, loss_fn: torch.nn.Module,
                      lambda1: float, lambda2: float, device: torch.device,
-                     metrics: pydetecdiv.torch.metrics.Metric) -> (float, float):
+                     metrics: torchmetrics.Metric) -> tuple[float, float]:
     """
     Wrapper function for evaluating metrics
 
@@ -37,7 +36,7 @@ def evaluate_metrics(model: torch.nn.Module, data_loader: torch.utils.data.DataL
 
 def evaluate_metrics_seq2one(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader, loss_fn: torch.nn.Module,
                              lambda1: float, lambda2: float, device: torch.device,
-                             metrics: Callable) -> (float, float):
+                             metrics: torchmetrics.Metric) -> tuple[float, float]:
     """
     Evaluating metrics for a seq to one classifier
 
@@ -51,8 +50,8 @@ def evaluate_metrics_seq2one(model: torch.nn.Module, data_loader: torch.utils.da
     :return: the average loss and requested metrics
     """
     model.eval()
+    metrics.reset()
     running_loss = 0.0
-    running_metric = 0.0
     # scaler = GradScaler('cuda')
     with torch.no_grad():
         for images, labels in data_loader:
@@ -63,33 +62,30 @@ def evaluate_metrics_seq2one(model: torch.nn.Module, data_loader: torch.utils.da
 
                 if outputs.dim() == 2:
                     loss = loss_fn(outputs, gt)
+                    metrics.update(outputs, gt)
                     # preds = outputs.argmax(dim=-1)
                     # B, C = outputs.shape
                 else:
                     _, T, _ = outputs.shape
                     # preds = outputs[:, math.ceil(T / 2.0), :].argmax(dim=-1)
                     loss = loss_fn(outputs[:, math.ceil(T / 2.0), :], gt)
+                    metrics.update(outputs[:, math.ceil(T / 2.0), :], gt)
 
             loss += (lambda1 * torch.abs(torch.cat([x.view(-1) for x in model.parameters()])).sum()
                      + lambda2 * torch.square(torch.cat([x.view(-1) for x in model.parameters()])).sum())
 
             # running_loss += loss.item() * B
             running_loss += loss.item()
-            avg_metric = metrics(outputs, labels)
-
-            # metrics.sampling(outputs, labels)
 
         avg_loss = running_loss / len(data_loader)
         avg_metric = metrics.compute()
-        # accuracy = metrics.value
-        # metrics.reset_sampling()
 
         return avg_loss, avg_metric
 
 
 def evaluate_metrics_seq2seq(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader, loss_fn: torch.nn.Module,
                              lambda1: float, lambda2: float, device: torch.device,
-                             metrics: Callable) -> tuple[float, float]:
+                             metrics: torchmetrics.Metric) -> tuple[float, float]:
     """
     Evaluating metrics for a seq to seq classifier
 
@@ -103,8 +99,8 @@ def evaluate_metrics_seq2seq(model: torch.nn.Module, data_loader: torch.utils.da
     :return: the average loss and requested metrics
     """
     model.eval()
+    metrics.reset()
     running_loss = 0.0
-    running_metric = 0.0
     # scaler = GradScaler('cuda')
     with torch.no_grad():
         for images, labels in data_loader:
@@ -113,23 +109,20 @@ def evaluate_metrics_seq2seq(model: torch.nn.Module, data_loader: torch.utils.da
                 outputs = model(images)
                 if outputs.dim() == 2:
                     loss = loss_fn(outputs, labels)
+                    metrics.update(outputs, labels)
                     B, C = outputs.shape
                 else:
                     B, T, C = outputs.shape
                     loss = loss_fn(outputs.view(B * T, C), labels.view(B * T))
+                    metrics.update(outputs.view(B * T, C), labels.view(B * T))
             loss += (lambda1 * torch.abs(torch.cat([x.view(-1) for x in model.parameters()])).sum()
                      + lambda2 * torch.square(torch.cat([x.view(-1) for x in model.parameters()])).sum())
 
             # running_loss += loss.item() * B
             running_loss += loss.item()
-            avg_metric = metrics(outputs, labels)
-
-        # metrics.sampling(outputs, labels)
 
         avg_loss = running_loss / len(data_loader)
         avg_metric = metrics.compute()
-        # accuracy = metrics.value
-        # metrics.reset_sampling()
 
         return avg_loss, avg_metric
 

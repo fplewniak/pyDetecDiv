@@ -16,6 +16,9 @@ from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer
 
 from pydetecdiv.plugins.gui import (ComboBox, AdvancedButton, SpinBox, ParametersFormGroupBox, DoubleSpinBox,
                                     RadioButton, set_connections, Label, Dialog)
+from pydetecdiv.plugins.roi_classification.data import ROIDataset
+from pydetecdiv.torch import ClassifierTrainingStats
+
 
 class TuneHyperparamDialog(Dialog):
     """
@@ -296,15 +299,14 @@ class FineTuningDialog(Dialog):
         self.job_finished.emit(self.plugin.train_model(fine_tuning=True))
 
 
-def plot_training_results(results: tuple[str, str, dict, dict, np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict, torch.nn.Module, torch.device, float]) -> None:
+def plot_training_results(results: tuple[ClassifierTrainingStats, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, dict[str, ROIDataset], torch.nn.Module, torch.device]) -> None:
     """
     Plots training results (history, confusion matrix, ...)
 
     :param results: the results from training process
     """
-    (module_name, class_names, history, evaluation, ground_truth, predictions, best_gt, best_predictions, dataset, model,
-     device, fscore) = results
-    # module_name, class_names, history = results
+    (train_stats, ground_truth, predictions, best_gt, best_predictions, dataset, model, device) = results
+    module_name, class_names, history, evaluation = train_stats.model_name, train_stats.class_names, train_stats.history, train_stats.evaluation
     tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {module_name}')
     tab.project_name = PyDetecDiv.project_name
     history_plot = plot_history(history, evaluation)
@@ -335,17 +337,21 @@ def plot_history(history: dict, evaluation: dict) -> MatplotViewer:
     """
     plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=2, rows=1)
     axs = plot_viewer.axes
-    axs[0].plot(history['train accuracy'])
-    axs[0].plot(history['val accuracy'])
-    axs[0].axhline(evaluation['accuracy'], color='red', linestyle='--')
-    axs[0].set_ylabel('accuracy')
-    axs[0].set_xlabel('epoch')
-    axs[0].legend(['train', 'val'], loc='lower right')
-    axs[1].plot(history['train loss'])
-    axs[1].plot(history['val loss'])
+    history.plot(axs[0], 'metric')
+    axs[0].axhline(evaluation['metric'].cpu(), color='red', linestyle='--')
+    history.plot(axs[1], 'loss')
     axs[1].axhline(evaluation['loss'], color='red', linestyle='--')
-    axs[1].legend(['train', 'val'], loc='upper right')
-    axs[1].set_ylabel('loss')
+    # axs[0].plot(history['train metric'])
+    # axs[0].plot(history['val metric'])
+    # axs[0].axhline(evaluation['metric'].cpu(), color='red', linestyle='--')
+    # axs[0].set_ylabel('metric')
+    # axs[0].set_xlabel('epoch')
+    # axs[0].legend(['train', 'val'], loc='lower right')
+    # axs[1].plot(history['train loss'])
+    # axs[1].plot(history['val loss'])
+    # axs[1].axhline(evaluation['loss'], color='red', linestyle='--')
+    # axs[1].legend(['train', 'val'], loc='upper right')
+    # axs[1].set_ylabel('loss')
 
     plot_viewer.show()
     return plot_viewer
