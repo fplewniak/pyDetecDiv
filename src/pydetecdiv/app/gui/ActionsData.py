@@ -424,6 +424,30 @@ class ImportDataDialog(QDialog):
         with the number of files that have been copied so far
         """
         self.progress.emit(0)
+        file_list = self.file_list()
+        if len(file_list) == 0:
+            self.finished.emit(True)
+            MessageDialog('No data file to import in specified directories')
+        else:
+            with pydetecdiv_project(PyDetecDiv.project_name) as project:
+                n_dso0 = project.count_objects('Data')
+                self.progress.emit(0)
+                _ = project.import_images(file_list, in_place=True, destination=None)
+                n_files = 0
+                n_dso = project.count_objects('Data') - n_dso0
+                self.progress.emit(int(100 * (n_files + n_dso) / len(file_list)))
+                if QThread.currentThread().isInterruptionRequested():
+                    project.cancel()
+                n_raw_data_files = project.count_objects('Data')
+            self.finished.emit(True)
+            PyDetecDiv.app.raw_data_counted.emit(n_raw_data_files)
+
+    def import_data_with_copy(self) -> None:
+        """
+        Import image data from source specified in list_model into project raw dataset and triggers a progress signal
+        with the number of files that have been copied so far
+        """
+        self.progress.emit(0)
         in_place = self.keep_copy_buttons.button(2).isChecked()
         destination = os.path.join(self.project_path, 'data', self.destination_directory.currentText())
         QDir().mkpath(str(destination))
