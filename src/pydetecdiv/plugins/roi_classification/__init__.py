@@ -952,7 +952,9 @@ class Plugin(plugins.Plugin):
         seq2one = False
 
         if self.parameters['augmentation'].value:
-            augmentation = v2.RandomAffine(degrees=10.0, translate=(0.1, 0.1), scale=(0.75, 1.3333),
+            # augmentation = v2.RandomAffine(degrees=10.0, translate=(0.1, 0.1), scale=(0.75, 1.3333),
+            #                                interpolation=InterpolationMode.BILINEAR)
+            augmentation = v2.RandomAffine(degrees=5.0, translate=(4.0/60.0, 4.0/60.0), scale=(0.9, 1.111),
                                            interpolation=InterpolationMode.BILINEAR)
         else:
             augmentation = None
