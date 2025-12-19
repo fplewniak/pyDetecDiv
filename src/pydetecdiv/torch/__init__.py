@@ -5,6 +5,7 @@ class TrainingHistory:
     def __init__(self):
         self.train = {}
         self.val = {}
+        self.best_epoch = 0
 
     def extend(self, metrics):
         for metric_name, metric_value in metrics['train'].items():

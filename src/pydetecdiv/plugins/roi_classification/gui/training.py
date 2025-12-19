@@ -314,10 +314,10 @@ def plot_training_results(results: tuple[ClassifierTrainingStats, torch.Tensor, 
     tab.setCurrentWidget(history_plot)
 
     confusion_matrix_plot = plot_confusion_matrix(ground_truth.cpu(), predictions.cpu(), class_names)
-    tab.addTab(confusion_matrix_plot, 'Confusion matrix (last epoch)')
+    tab.addTab(confusion_matrix_plot, 'Confusion matrix (last epoch / val)')
 
     confusion_matrix_plot = plot_confusion_matrix(best_gt.cpu(), best_predictions.cpu(), class_names)
-    tab.addTab(confusion_matrix_plot, 'Confusion matrix (best checkpoint)')
+    tab.addTab(confusion_matrix_plot, 'Confusion matrix (best checkpoint / val)')
 
     tab.addTab(plot_images(dataset['train'], 6, class_names, model, device), 'training images')
     tab.addTab(plot_images(dataset['val'], 6, class_names, model, device), 'validation images')
@@ -339,19 +339,10 @@ def plot_history(history: dict, evaluation: dict) -> MatplotViewer:
     axs = plot_viewer.axes
     history.plot(axs[0], 'metric')
     axs[0].axhline(evaluation['metric'].cpu(), color='red', linestyle='--')
+    axs[0].axvline(history.best_epoch, color='red', linestyle='--')
     history.plot(axs[1], 'loss')
     axs[1].axhline(evaluation['loss'], color='red', linestyle='--')
-    # axs[0].plot(history['train metric'])
-    # axs[0].plot(history['val metric'])
-    # axs[0].axhline(evaluation['metric'].cpu(), color='red', linestyle='--')
-    # axs[0].set_ylabel('metric')
-    # axs[0].set_xlabel('epoch')
-    # axs[0].legend(['train', 'val'], loc='lower right')
-    # axs[1].plot(history['train loss'])
-    # axs[1].plot(history['val loss'])
-    # axs[1].axhline(evaluation['loss'], color='red', linestyle='--')
-    # axs[1].legend(['train', 'val'], loc='upper right')
-    # axs[1].set_ylabel('loss')
+    axs[1].axvline(history.best_epoch, color='red', linestyle='--')
 
     plot_viewer.show()
     return plot_viewer

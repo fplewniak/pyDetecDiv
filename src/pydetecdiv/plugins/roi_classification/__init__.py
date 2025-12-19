@@ -829,22 +829,21 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Input image size: {img_size}\n')
         return img_size, seqlen
 
-    def get_weights_filepaths(self, run: Run) -> tuple[str, str]:
+    def get_weights_filepaths(self, run: Run, metric_name: str) -> tuple[str, str]:
         """
         Get the filepath where weight files from a given training run are stored
 
+        :param metric_name: the name of the metric used to select checkpoints
         :param run: the run object
-        :return:
+        :return: the checkpoint and last weights filepaths
         """
         os.makedirs(os.path.join(get_project_dir(), 'roi_classification', 'models', self.parameters['model'].key), exist_ok=True)
-        checkpoint_monitor_metric = self.parameters['checkpoint_metric'].value
-        best_checkpoint_filename = f'{run.id_}_best_{checkpoint_monitor_metric}.weights.pt'
+        checkpoint_metric = 'loss' if self.parameters['checkpoint_metric'].key == 'Loss' else metric_name
         checkpoint_filepath = os.path.join(get_project_dir(), 'roi_classification', 'models',
-                                           self.parameters['model'].key,
-                                           f'{best_checkpoint_filename}')
-        last_weights_filename = f'{run.id_}_last.weights.pt'
+                                               self.parameters['model'].key,
+                                               f'{run.id_}_best_{checkpoint_metric}.weights.pt')
         last_weights_filepath = os.path.join(get_project_dir(), 'roi_classification', 'models', self.parameters['model'].key,
-                                             last_weights_filename)
+                                             f'{run.id_}_last.weights.pt')
         return checkpoint_filepath, last_weights_filepath
 
     def save_training_run(self, fine_tuning: bool = False) -> Run:
@@ -978,18 +977,10 @@ class Plugin(plugins.Plugin):
         validation_dataloader = DataLoader(validation_dataset, batch_size=self.parameters['batch_size'].value, shuffle=True)
         test_dataloader = DataLoader(test_dataset, batch_size=self.parameters['batch_size'].value, shuffle=True)
 
-        checkpoint_filepath, last_weights_filepath = self.get_weights_filepaths(run)
-
         metric_fn, metric_name = set_metric(self.parameters, train_stats.num_classes)
         metric_fn.to(device)
 
-        ########################## This is a temporary work around to save metric-based checkpoints instead of loss-based
-        if self.parameters['checkpoint_metric'].key == 'Metric':
-            best_checkpoint_filename = f'{run.id_}_best_{metric_name}.weights.pt'
-            checkpoint_filepath = os.path.join(get_project_dir(), 'roi_classification', 'models',
-                                               self.parameters['model'].key,
-                                               best_checkpoint_filename)
-        ######################################################################################################
+        checkpoint_filepath, last_weights_filepath = self.get_weights_filepaths(run, metric_name)
 
         if fine_tuning:
             min_val_loss, best_val_metric = evaluate_metrics(model, validation_dataloader, seq2one, loss_fn,
@@ -1006,6 +997,7 @@ class Plugin(plugins.Plugin):
                                       loss_fn, optimizer, lambda1, lambda2, device, metric_fn))
             if (self.parameters['checkpoint_metric'].key == 'Loss') and (history.val['val loss'][-1] < min_val_loss):
                 min_val_loss = history.val['loss'][-1]
+                history.best_epoch = epoch
                 model_scripted = torch.jit.script(model)
                 model_scripted.save(checkpoint_filepath)
                 print(f"Saving best model at epoch {epoch + 1} with val loss {min_val_loss:.4f}"
@@ -1014,10 +1006,11 @@ class Plugin(plugins.Plugin):
                 run.validate().commit()
             elif (self.parameters['checkpoint_metric'].key == 'Metric') and (history.val['metric'][-1] > best_val_metric):
                 best_val_metric = history.val['metric'][-1]
+                history.best_epoch = epoch
                 model_scripted = torch.jit.script(model)
                 model_scripted.save(checkpoint_filepath)
-                print(f"Saving best model at epoch {epoch + 1} with val {metric_name} {best_val_metric:.3f}"
-                      f" and train {metric_name} {history.train['metric'][-1]:.3f}")
+                print(f"Saving best model at epoch {epoch + 1} with train {metric_name} {history.train['metric'][-1]:.3f}"
+                      f" and val {metric_name} {best_val_metric:.3f}")
                 run.parameters.update({'best_weights': os.path.basename(checkpoint_filepath), 'best_epoch': epoch + 1})
                 run.validate().commit()
 
@@ -1056,8 +1049,8 @@ class Plugin(plugins.Plugin):
             print(f"Test loss: {avg_test_loss:.4f}, "
                   f"Test {metric_name}: {test_metric:.3f} , ")
 
-            stats, ground_truth, predictions = evaluate_model(model, self.parameters['class_names'].value, test_dataloader, seqlen,
-                                                              seq2one, device)
+            stats, ground_truth, predictions = evaluate_model(model, self.parameters['class_names'].value, validation_dataloader,
+                                                              seqlen, seq2one, device)
 
             if run.key_val is None:
                 run.key_val = {'last_stats': stats}
@@ -1077,7 +1070,7 @@ class Plugin(plugins.Plugin):
                   f"Test {metric_name}: {test_metric:.3f}, ")
 
             stats, best_ground_truth, best_predictions = evaluate_model(best_model, self.parameters['class_names'].value,
-                                                                        test_dataloader, seqlen, seq2one, device)
+                                                                        validation_dataloader, seqlen, seq2one, device)
             del best_model
             gc.collect()
 
