@@ -138,3 +138,4 @@ dmypy.json
 tmp/
 appmap.yml
 appmap.log
+*/notebook_testing.ipynb
