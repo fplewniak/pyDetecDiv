@@ -322,7 +322,7 @@ class Plugin(plugins.Plugin):
             FloatParameter(name='decay_rate', label='Decay rate', groups={'training', 'finetune'}, default=0.95),
             IntParameter(name='decay_period', label='Decay period', groups={'training', 'finetune'}, default=50),
             FloatParameter(name='weight_decay', label='Weight decay', groups={'training', 'finetune'}, default=0.0, ),
-            FloatParameter(name='focal_gamma', label='Focal loss gamma', groups={'training', 'finetune'}, default=2.0,
+            FloatParameter(name='focal_gamma', label='Focal loss gamma', groups={'training', 'finetune'}, default=0.0,
                            minimum=0.0, maximum=2.0, ),
             CheckParameter(name='class_weights', label='Class weights', groups={'training', 'finetune'}, default=True),
             FloatParameter(name='L1', label='L1 regularization', groups={'training', 'finetune'}, default=0.0, ),
@@ -333,11 +333,11 @@ class Plugin(plugins.Plugin):
             # CheckParameter(name='early_stopping', label='Early stopping', groups={'training', 'finetune'},
             #                default=False),
             CheckParameter(name='augmentation', label='Augmentation', groups={'training', 'finetune'}, default=False),
-            FloatParameter(name='num_training', label='Training dataset', groups={'training', 'finetune'}, default=0.6,
+            FloatParameter(name='num_training', label='Training dataset', groups={'training', 'finetune'}, default=0.4,
                            minimum=0.01, maximum=0.99, ),
             FloatParameter(name='num_validation', label='Validation dataset', groups={'training', 'finetune'},
-                           default=0.2, minimum=0.01, maximum=0.99, ),
-            FloatParameter(name='num_test', label='Test dataset', groups={'training', 'finetune'}, default=0.2,
+                           default=0.3, minimum=0.01, maximum=0.99, ),
+            FloatParameter(name='num_test', label='Test dataset', groups={'training', 'finetune'}, default=0.3,
                            minimum=0.01, maximum=0.99, decimals=2, ),
             IntParameter(name='dataset_seed', label='Random seed', groups={'training', 'finetune'}, default=42,
                          validator=lambda x: isinstance(x, int), maximum=999999999),
@@ -860,12 +860,13 @@ class Plugin(plugins.Plugin):
 
     def objective(self, trial):
         print('Running objective function', file=sys.stderr)
-        self.parameters['epochs'].value = 12
+        self.parameters['epochs'].value = 6
         # self.parameters['batch_size'].value = 32
         self.parameters['batch_size'].value = trial.suggest_int("batch_size", 4, 32, step=4)
         # self.parameters['seqlen'].value = 10
         self.parameters['seqlen'].value = trial.suggest_int("seqlen", 5, 15, log=True)
-        self.parameters['focal_gamma'].value = 1.0
+        # self.parameters['focal_gamma'].value = 1.0
+        self.parameters['focal_gamma'].value = 0.0
         # self.parameters['focal_gamma'].value = trial.suggest_float("gamma", 0.001, 1.5, log=True)
         self.parameters['L1'].value = trial.suggest_float("L1", 1e-6, 1e-2, log=True)
         self.parameters['L2'].value = trial.suggest_float("L2", 1e-6, 1e-2, log=True)
@@ -890,7 +891,7 @@ class Plugin(plugins.Plugin):
                                     direction="maximize")
         # create_study(*, storage=None, sampler=None, pruner=None, study_name=None, direction=None, load_if_exists=False, directions=None)
         print('Optimization of objective function', file=sys.stderr)
-        study.optimize(self.objective, n_trials=100)
+        study.optimize(self.objective, n_trials=10)
         # optimize(func, n_trials=None, timeout=None, n_jobs=1, catch=(), callbacks=None, gc_after_trial=False, show_progress_bar=False)
         # study.set_metric_names(metric_names)
         pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
@@ -907,7 +908,7 @@ class Plugin(plugins.Plugin):
 
         return trial
 
-    def train_model(self, fine_tuning: bool = False, trial=None) -> tuple[
+    def train_model(self, fine_tuning: bool = False, trial = None) -> tuple[
         ClassifierTrainingStats, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, dict[
             str, ROIDataset], torch.nn.Module, torch.device]:
         """
@@ -981,6 +982,9 @@ class Plugin(plugins.Plugin):
 
         metric_fn, metric_name = set_metric(self.parameters, train_stats.num_classes)
         metric_fn.to(device)
+        metric_fn2, _ = set_metric(self.parameters, train_stats.num_classes)
+        train_stats.add_metrics(metric_fn2)
+        train_stats.metrics.to(device)
 
         checkpoint_filepath, last_weights_filepath = self.get_weights_filepaths(run, metric_name)
 
@@ -996,7 +1000,7 @@ class Plugin(plugins.Plugin):
 
         for epoch in range(self.parameters['epochs'].value):
             history.extend(train_loop(train_dataloader, validation_dataloader, model, seq2one,
-                                      loss_fn, optimizer, lambda1, lambda2, device, metric_fn))
+                                      loss_fn, optimizer, lambda1, lambda2, device, metric_fn, train_stats))
             if (self.parameters['checkpoint_metric'].key == 'Loss') and (history.val['val loss'][-1] < min_val_loss):
                 min_val_loss = history.val['loss'][-1]
                 history.best_epoch = epoch

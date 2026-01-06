@@ -313,6 +313,8 @@ def plot_training_results(results: tuple[ClassifierTrainingStats, torch.Tensor, 
     tab.addTab(history_plot, 'Training')
     tab.setCurrentWidget(history_plot)
 
+    tab.addTab(plot_confusion_matrix_torchmetrics(train_stats), 'Confusion matrix (last epoch / train)')
+
     confusion_matrix_plot = plot_confusion_matrix(ground_truth.cpu(), predictions.cpu(), class_names)
     tab.addTab(confusion_matrix_plot, 'Confusion matrix (last epoch / val)')
 
@@ -322,6 +324,8 @@ def plot_training_results(results: tuple[ClassifierTrainingStats, torch.Tensor, 
     tab.addTab(plot_images(dataset['train'], 6, class_names, model, device), 'training images')
     tab.addTab(plot_images(dataset['val'], 6, class_names, model, device), 'validation images')
     tab.addTab(plot_images(dataset['test'], 6, class_names, model, device), 'test images')
+
+    # print(train_stats.metrics_values)
 
     del model
     torch.cuda.empty_cache()
@@ -364,6 +368,14 @@ def plot_confusion_matrix(ground_truth: list, predictions: list, class_names: li
     plot_viewer.axes[1].set_title('Normalized by column (precision)')
     ConfusionMatrixDisplay.from_predictions(ground_truth, predictions, labels=list(range(len(class_names))),
                                             display_labels=class_names, normalize='pred', ax=plot_viewer.axes[1], colorbar=False)
+    return plot_viewer
+
+def plot_confusion_matrix_torchmetrics(train_stats) -> MatplotViewer:
+    plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=2, rows=1)
+    plot_viewer.axes[0].set_title('Normalized by row (recall)')
+    train_stats.metrics['recall'].plot(labels=train_stats.class_names, ax=plot_viewer.axes[0])
+    plot_viewer.axes[1].set_title('Normalized by column (precision)')
+    train_stats.metrics['precision'].plot(labels=train_stats.class_names, ax=plot_viewer.axes[1])
     return plot_viewer
 
 

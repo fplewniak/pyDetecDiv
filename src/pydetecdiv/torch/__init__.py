@@ -1,4 +1,6 @@
 import torch
+from torchmetrics import MetricCollection
+from torchmetrics.classification import MulticlassConfusionMatrix
 
 
 class TrainingHistory:
@@ -31,6 +33,8 @@ class TrainingHistory:
 class TrainingStats:
     def __init__(self, model_name = None):
         self.history = TrainingHistory()
+        self.metrics = None
+        self.metrics_values = []
         self.evaluation = {}
         self.model_name = model_name
         self.checkpoint_files = {'best': None, 'last': None}
@@ -40,11 +44,20 @@ class TrainingStats:
             return torch.jit.load(self.checkpoint_files[checkpoint]).to(device)
         return None
 
+    def add_metrics(self, metrics):
+        self.metrics.add_metrics(metrics)
+
+    def log_metrics(self):
+        self.metrics_values.append(self.metrics.compute())
+
 
 class ClassifierTrainingStats(TrainingStats):
     def __init__(self, model_name = None, class_names = None):
         super().__init__(model_name = model_name)
         self.class_names = class_names if class_names is not None else []
+        self.metrics = MetricCollection({'recall': MulticlassConfusionMatrix(num_classes=len(self.class_names), normalize='true'),
+                                         'precision': MulticlassConfusionMatrix(num_classes=len(self.class_names), normalize='pred'),
+                                         })
 
     @property
     def num_classes(self):
