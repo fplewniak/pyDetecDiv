@@ -57,7 +57,7 @@ from .gui.training import TrainingDialog, FineTuningDialog, ImportClassifierDial
 from .training import train_loop
 from .utils import get_classifications, get_annotation_runs
 from ...domain.Dataset import Dataset
-from ...torch import ClassifierTrainingStats
+from ...torch import ClassifierModelStats, ClassifierTrainingStats
 from ...torch.loss import FocalLoss
 
 Base = registry().generate_base()
@@ -908,9 +908,7 @@ class Plugin(plugins.Plugin):
 
         return trial
 
-    def train_model(self, fine_tuning: bool = False, trial = None) -> tuple[
-        ClassifierTrainingStats, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, dict[
-            str, ROIDataset], torch.nn.Module, torch.device]:
+    def train_model(self, fine_tuning: bool = False, trial = None) -> tuple[ClassifierTrainingStats, dict[str, ROIDataset], torch.nn.Module, torch.device]:
         """
         Train model or fine-tune a pretrained model. Fine-tuning uses statistics from previous training run to evaluate the next
         best epoch, ensuring there is no regression in performance.
@@ -978,19 +976,20 @@ class Plugin(plugins.Plugin):
 
         train_dataloader = DataLoader(training_dataset, batch_size=self.parameters['batch_size'].value, shuffle=True)
         validation_dataloader = DataLoader(validation_dataset, batch_size=self.parameters['batch_size'].value, shuffle=True)
-        test_dataloader = DataLoader(test_dataset, batch_size=self.parameters['batch_size'].value, shuffle=True)
+        # test_dataloader = DataLoader(test_dataset, batch_size=self.parameters['batch_size'].value, shuffle=True)
 
         metric_fn, metric_name = set_metric(self.parameters, train_stats.num_classes)
         metric_fn.to(device)
         metric_fn2, _ = set_metric(self.parameters, train_stats.num_classes)
         train_stats.add_metrics(metric_fn2)
         train_stats.metrics.to(device)
+        train_stats.val_metrics.to(device)
 
         checkpoint_filepath, last_weights_filepath = self.get_weights_filepaths(run, metric_name)
 
         if fine_tuning:
             min_val_loss, best_val_metric = evaluate_metrics(model, validation_dataloader, seq2one, loss_fn,
-                                                             lambda1, lambda2, device, metric_fn)
+                                                             lambda1, lambda2, device, metric_fn, train_stats.val_metrics)
             print(f'Fine tuning starting with validation loss = {min_val_loss} and initial {metric_name} = {best_val_metric}')
         else:
             min_val_loss = torch.finfo(torch.float).max
@@ -1001,7 +1000,7 @@ class Plugin(plugins.Plugin):
         for epoch in range(self.parameters['epochs'].value):
             history.extend(train_loop(train_dataloader, validation_dataloader, model, seq2one,
                                       loss_fn, optimizer, lambda1, lambda2, device, metric_fn, train_stats))
-            if (self.parameters['checkpoint_metric'].key == 'Loss') and (history.val['val loss'][-1] < min_val_loss):
+            if (self.parameters['checkpoint_metric'].key == 'Loss') and (history.val['loss'][-1] < min_val_loss):
                 min_val_loss = history.val['loss'][-1]
                 history.best_epoch = epoch
                 model_scripted = torch.jit.script(model)
@@ -1049,50 +1048,58 @@ class Plugin(plugins.Plugin):
         ground_truth, predictions, best_ground_truth, best_predictions = None, None, None, None
 
         if trial is None:
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Evaluation of last epoch on test dataset')
-            avg_test_loss, test_metric = evaluate_metrics(model, test_dataloader, seq2one, loss_fn, lambda1, lambda2, device, metric_fn)
-            evaluation = {'loss': avg_test_loss, 'metric': test_metric}
-            print(f"Test loss: {avg_test_loss:.4f}, "
-                  f"Test {metric_name}: {test_metric:.3f} , ")
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Computing confusion matrix for last epoch on validation dataset')
+            # avg_test_loss, test_metric = evaluate_metrics(model, validation_dataloader, seq2one, loss_fn, lambda1, lambda2, device, metric_fn)
+            # evaluation = {'loss': avg_test_loss, 'metric': test_metric}
+            # print(f"Test loss: {avg_test_loss:.4f}, "
+            #       f"Test {metric_name}: {test_metric:.3f} , ")
 
-            stats, ground_truth, predictions = evaluate_model(model, self.parameters['class_names'].value, validation_dataloader,
-                                                              seqlen, seq2one, device)
-
-            if run.key_val is None:
-                run.key_val = {'last_stats': stats}
-            else:
-                run.key_val.update({'last_stats': stats})
-
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Statistics for last model:', file=sys.stderr)
-            print(polars.DataFrame(stats), file=sys.stderr)
-
-            best_model = torch.jit.load(checkpoint_filepath)
-
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Evaluation of best epoch on test dataset')
-            avg_test_loss, test_metric = evaluate_metrics(best_model, test_dataloader, seq2one, loss_fn, lambda1, lambda2, device,
-                                                          metric_fn)
-            train_stats.evaluation = {'loss': avg_test_loss, 'metric': test_metric}
-            print(f"Test loss: {avg_test_loss:.4f}, "
-                  f"Test {metric_name}: {test_metric:.3f}, ")
-
-            stats, best_ground_truth, best_predictions = evaluate_model(best_model, self.parameters['class_names'].value,
-                                                                        validation_dataloader, seqlen, seq2one, device)
-            del best_model
-            gc.collect()
+            # stats, ground_truth, predictions = evaluate_model(model, self.parameters['class_names'].value, validation_dataloader,
+            #                                                   seqlen, seq2one, device)
 
             if run.key_val is None:
-                run.key_val = {'best_stats': stats}
+                pass
+                # run.key_val = {'last_stats': train_stats.val_metrics_values[-1]}
             else:
-                run.key_val.update({'best_stats': stats})
+                pass
+                # run.key_val.update({'last_stats': train_stats.val_metrics_values[-1]})
+
+            # print(f'{datetime.now().strftime("%H:%M:%S")}: Statistics for last model:', file=sys.stderr)
+            # print(polars.DataFrame(train_stats.val_metrics_values[-1]), file=sys.stderr)
+
+            # best_model = torch.jit.load(checkpoint_filepath)
+
+            print(f'{datetime.now().strftime("%H:%M:%S")}: Evaluation of best epoch on validation dataset')
+            # avg_val_loss, val_metric = evaluate_metrics(best_model, validation_dataloader, seq2one, loss_fn, lambda1, lambda2, device,
+            #                                               metric_fn, train_stats.val_metrics)
+            avg_val_loss = history.val['loss'][train_stats.history.best_epoch]
+            val_metric = history.val['metric'][train_stats.history.best_epoch]
+
+            train_stats.evaluation = {'loss': avg_val_loss, 'metric': val_metric}
+            print(f"Best validation loss: {avg_val_loss:.4f}, "
+                  f"Best validation {metric_name}: {val_metric:.3f}, ")
+
+            # stats, best_ground_truth, best_predictions = evaluate_model(best_model, self.parameters['class_names'].value,
+            #                                                             validation_dataloader, seqlen, seq2one, device)
+            # del best_model
+            # gc.collect()
+
+            if run.key_val is None:
+                pass
+                # run.key_val = {'best_stats': train_stats.val_metrics_values[train_stats.history.best_epoch]}
+            else:
+                pass
+                # run.key_val.update({'best_stats': train_stats.val_metrics_values[train_stats.history.best_epoch]})
 
             run.validate().commit()
 
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Statistics for best model:', file=sys.stderr)
-            print(polars.DataFrame(stats), file=sys.stderr)
+            # print(f'{datetime.now().strftime("%H:%M:%S")}: Statistics for best model:', file=sys.stderr)
+            # print(polars.DataFrame(train_stats.val_metrics_values[train_stats.history.best_epoch]), file=sys.stderr)
 
         datasets = {'train': training_dataset, 'val': validation_dataset, 'test': test_dataset}
 
-        return train_stats, ground_truth, predictions, best_ground_truth, best_predictions, datasets, model, device
+        # return train_stats, ground_truth, predictions, best_ground_truth, best_predictions, datasets, model, device
+        return train_stats, datasets, model, device
 
     def predict(self) -> None:
         """

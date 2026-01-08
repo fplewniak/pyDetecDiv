@@ -299,13 +299,15 @@ class FineTuningDialog(Dialog):
         self.job_finished.emit(self.plugin.train_model(fine_tuning=True))
 
 
-def plot_training_results(results: tuple[ClassifierTrainingStats, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, dict[str, ROIDataset], torch.nn.Module, torch.device]) -> None:
+# def plot_training_results(results: tuple[ClassifierTrainingStats, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, dict[str, ROIDataset], torch.nn.Module, torch.device]) -> None:
+def plot_training_results(results: tuple[ClassifierTrainingStats, dict[str, ROIDataset], torch.nn.Module, torch.device]) -> None:
     """
     Plots training results (history, confusion matrix, ...)
 
     :param results: the results from training process
     """
-    (train_stats, ground_truth, predictions, best_gt, best_predictions, dataset, model, device) = results
+    # (train_stats, ground_truth, predictions, best_gt, best_predictions, dataset, model, device) = results
+    (train_stats, dataset, model, device) = results
     module_name, class_names, history, evaluation = train_stats.model_name, train_stats.class_names, train_stats.history, train_stats.evaluation
     tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {module_name}')
     tab.project_name = PyDetecDiv.project_name
@@ -313,19 +315,21 @@ def plot_training_results(results: tuple[ClassifierTrainingStats, torch.Tensor, 
     tab.addTab(history_plot, 'Training')
     tab.setCurrentWidget(history_plot)
 
-    tab.addTab(plot_confusion_matrix_torchmetrics(train_stats), 'Confusion matrix (last epoch / train)')
+    tab.addTab(plot_confusion_matrix_torchmetrics(train_stats),
+               'Confusion matrix (last epoch / train)')
 
-    confusion_matrix_plot = plot_confusion_matrix(ground_truth.cpu(), predictions.cpu(), class_names)
-    tab.addTab(confusion_matrix_plot, 'Confusion matrix (last epoch / val)')
+    tab.addTab(plot_confusion_matrix_torchmetrics(train_stats, val=True),
+               'Confusion matrix (last epoch / val)')
 
-    confusion_matrix_plot = plot_confusion_matrix(best_gt.cpu(), best_predictions.cpu(), class_names)
-    tab.addTab(confusion_matrix_plot, 'Confusion matrix (best checkpoint / val)')
+    tab.addTab(plot_confusion_matrix_torchmetrics(train_stats, epoch=train_stats.history.best_epoch),
+               'Confusion matrix (best epoch / train)')
+
+    tab.addTab(plot_confusion_matrix_torchmetrics(train_stats, epoch=train_stats.history.best_epoch, val=True),
+               'Confusion matrix (best epoch / val)')
 
     tab.addTab(plot_images(dataset['train'], 6, class_names, model, device), 'training images')
     tab.addTab(plot_images(dataset['val'], 6, class_names, model, device), 'validation images')
     tab.addTab(plot_images(dataset['test'], 6, class_names, model, device), 'test images')
-
-    # print(train_stats.metrics_values)
 
     del model
     torch.cuda.empty_cache()
@@ -370,12 +374,18 @@ def plot_confusion_matrix(ground_truth: list, predictions: list, class_names: li
                                             display_labels=class_names, normalize='pred', ax=plot_viewer.axes[1], colorbar=False)
     return plot_viewer
 
-def plot_confusion_matrix_torchmetrics(train_stats) -> MatplotViewer:
+def plot_confusion_matrix_torchmetrics(train_stats, epoch=-1, val = False) -> MatplotViewer:
     plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=2, rows=1)
     plot_viewer.axes[0].set_title('Normalized by row (recall)')
-    train_stats.metrics['recall'].plot(labels=train_stats.class_names, ax=plot_viewer.axes[0])
+    if val:
+        train_stats.val_metrics['recall'].plot(val=train_stats.val_metrics_values[epoch]['recall'], labels=train_stats.class_names, ax=plot_viewer.axes[0])
+    else:
+        train_stats.metrics['recall'].plot(val=train_stats.metrics_values[epoch]['recall'], labels=train_stats.class_names, ax=plot_viewer.axes[0])
     plot_viewer.axes[1].set_title('Normalized by column (precision)')
-    train_stats.metrics['precision'].plot(labels=train_stats.class_names, ax=plot_viewer.axes[1])
+    if val:
+        train_stats.val_metrics['precision'].plot(val=train_stats.val_metrics_values[epoch]['precision'], labels=train_stats.class_names, ax=plot_viewer.axes[1])
+    else:
+        train_stats.metrics['precision'].plot(val=train_stats.metrics_values[epoch]['precision'], labels=train_stats.class_names, ax=plot_viewer.axes[1])
     return plot_viewer
 
 

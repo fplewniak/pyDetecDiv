@@ -96,7 +96,8 @@ def train_loop_seq2one(training_loader: torch.utils.data.DataLoader, validation_
     train_metric = metric_fn.compute()
     train_stats.log_metrics()
 
-    avg_val_loss, val_metric = evaluate_metrics_seq2one(model, validation_loader, loss_fn, lambda1, lambda2, device, metric_fn)
+    avg_val_loss, val_metric = evaluate_metrics_seq2one(model, validation_loader, loss_fn, lambda1, lambda2, device, metric_fn, train_stats.val_metrics)
+    train_stats.log_val_metrics()
 
     return {'train': {'loss': avg_train_loss, 'metric': train_metric.cpu()},
             'val'  : {'loss': avg_val_loss, 'metric': val_metric.cpu()}
@@ -166,7 +167,8 @@ def train_loop_seq2seq(training_loader: torch.utils.data.DataLoader, validation_
     train_stats.log_metrics()
 
     # Validation phase
-    avg_val_loss, val_metric = evaluate_metrics_seq2seq(model, validation_loader, loss_fn, lambda1, lambda2, device, metric_fn)
+    avg_val_loss, val_metric = evaluate_metrics_seq2seq(model, validation_loader, loss_fn, lambda1, lambda2, device, metric_fn, train_stats.val_metrics)
+    train_stats.log_val_metrics()
 
     return {'train': {'loss': avg_train_loss, 'metric': train_metric.cpu()},
             'val'  : {'loss': avg_val_loss, 'metric': val_metric.cpu()}
