@@ -824,9 +824,9 @@ class Plugin(plugins.Plugin):
         if len(model.expected_shape) == 5:
             seqlen = self.parameters['seqlen'].value
             print(f'{datetime.now().strftime("%H:%M:%S")}: Sequence length: {seqlen}\n')
-            img_size: tuple[int, int] = (model.expected_shape[3].item(), model.expected_shape[4].item())
+            img_size: tuple[int, int] = (model.expected_shape[3], model.expected_shape[4])
         else:
-            img_size: tuple[int, int] = (model.expected_shape[2].item(), model.expected_shape[3].item())
+            img_size: tuple[int, int] = (model.expected_shape[2], model.expected_shape[3])
         print(f'{datetime.now().strftime("%H:%M:%S")}: Input image size: {img_size}\n')
         return img_size, seqlen
 
