@@ -1007,7 +1007,10 @@ class Plugin(plugins.Plugin):
                 model_scripted.save(checkpoint_filepath)
                 print(f"Saving best model at epoch {epoch + 1} with val loss {min_val_loss:.4f}"
                       f" and train loss {history.loss[-1]:.4f}")
-                run.parameters.update({'best_weights': os.path.basename(checkpoint_filepath), 'best_epoch': epoch + 1})
+                if run.key_val is None:
+                    run.key_val = {'best_weights': os.path.basename(checkpoint_filepath), 'best_epoch': epoch + 1}
+                else:
+                    run.key_val.update({'best_weights': os.path.basename(checkpoint_filepath), 'best_epoch': epoch + 1})
                 run.validate().commit()
             elif (self.parameters['checkpoint_metric'].key == 'Metric') and (history.val_metric_history(metric_name)[-1] > best_val_metric):
                 best_val_metric = history.val_metric_history(metric_name)[-1]
@@ -1016,7 +1019,10 @@ class Plugin(plugins.Plugin):
                 model_scripted.save(checkpoint_filepath)
                 print(f"Saving best model at epoch {epoch + 1} with train {metric_name} {history.metric_history(metric_name)[-1]:.3f}"
                       f" and val {metric_name} {best_val_metric:.3f}")
-                run.parameters.update({'best_weights': os.path.basename(checkpoint_filepath), 'best_epoch': epoch + 1})
+                if run.key_val is None:
+                    run.key_val = {'best_weights': os.path.basename(checkpoint_filepath), 'best_epoch': epoch + 1}
+                else:
+                    run.key_val.update({'best_weights': os.path.basename(checkpoint_filepath), 'best_epoch': epoch + 1})
                 run.validate().commit()
 
             print(f"Epoch {epoch + 1}/{self.parameters['epochs'].value}, "
