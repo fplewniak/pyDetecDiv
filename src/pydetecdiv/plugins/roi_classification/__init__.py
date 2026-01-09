@@ -1058,11 +1058,11 @@ class Plugin(plugins.Plugin):
             #                                                   seqlen, seq2one, device)
 
             if run.key_val is None:
-                pass
-                # run.key_val = {'last_stats': train_stats.val_metrics_values[-1]}
+                # pass
+                run.key_val = {'last_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[-1].items()}}
             else:
-                pass
-                # run.key_val.update({'last_stats': train_stats.val_metrics_values[-1]})
+                # pass
+                run.key_val.update({'last_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[-1].items()}})
 
             # print(f'{datetime.now().strftime("%H:%M:%S")}: Statistics for last model:', file=sys.stderr)
             # print(polars.DataFrame(train_stats.val_metrics_values[-1]), file=sys.stderr)
@@ -1085,11 +1085,11 @@ class Plugin(plugins.Plugin):
             # gc.collect()
 
             if run.key_val is None:
-                pass
-                # run.key_val = {'best_stats': train_stats.val_metrics_values[train_stats.history.best_epoch]}
+                # pass
+                run.key_val = {'best_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[train_stats.history.best_epoch].items()}}
             else:
-                pass
-                # run.key_val.update({'best_stats': train_stats.val_metrics_values[train_stats.history.best_epoch]})
+                # pass
+                run.key_val.update({'best_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[train_stats.history.best_epoch].items()}})
 
             run.validate().commit()
 
