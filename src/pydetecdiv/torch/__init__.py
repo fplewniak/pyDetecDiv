@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 from torchmetrics import MetricCollection
 from torchmetrics.classification import MulticlassConfusionMatrix
@@ -25,8 +24,8 @@ class ClassifierModelStats(ModelStats):
     def __init__(self, model_name = None, class_names = None, **kwargs):
         super().__init__(model_name = model_name, **kwargs)
         self.class_names = class_names if class_names is not None else []
-        self.metrics = MetricCollection({'recall': MulticlassConfusionMatrix(num_classes=len(self.class_names), normalize='true'),
-                                         'precision': MulticlassConfusionMatrix(num_classes=len(self.class_names), normalize='pred'),
+        self.metrics = MetricCollection({'ConfusionMatrix_recall': MulticlassConfusionMatrix(num_classes=len(self.class_names), normalize='true'),
+                                         'ConfusionMatrix_precision': MulticlassConfusionMatrix(num_classes=len(self.class_names), normalize='pred'),
                                          })
 
     @property
@@ -38,7 +37,18 @@ class TrainingHistory:
     def __init__(self):
         self.train = {'loss': []}
         self.val = {'loss': []}
+        self.loss = []
+        self.val_loss = []
+        self.metrics_values = []
+        self.val_metrics_values = []
+        self.main_metric = None
         self.best_epoch = 0
+
+    def metric_history(self, metric_name):
+        return [d[metric_name].cpu() for d in self.metrics_values]
+
+    def val_metric_history(self, metric_name):
+        return [d[metric_name].cpu() for d in self.val_metrics_values]
 
     def extend(self, metrics):
         for metric_name, metric_value in metrics['train'].items():
@@ -52,10 +62,16 @@ class TrainingHistory:
             else:
                 self.val[metric_name].append(metric_value)
 
+    def plot(self, axs):
+        axs.plot(self.loss)
+        axs.plot(self.val_loss)
+        axs.set_ylabel('Loss')
+        axs.set_xlabel('epoch')
+        axs.legend(['train', 'val'], loc='lower right')
 
-    def plot(self, axs, metric_name):
-        axs.plot(self.train[metric_name])
-        axs.plot(self.val[metric_name])
+    def plot_metric(self, axs, metric_name):
+        axs.plot(self.metric_history(metric_name))
+        axs.plot(self.val_metric_history(metric_name))
         axs.set_ylabel(metric_name)
         axs.set_xlabel('epoch')
         axs.legend(['train', 'val'], loc='lower right')
@@ -66,10 +82,33 @@ class TrainingStats(ModelStats):
         super().__init__(model_name = model_name, **kwargs)
         self.history = TrainingHistory()
         self.val_metrics = None
-        self.metrics_values = []
-        self.val_metrics_values = []
-        self.evaluation = {}
         self.checkpoint_files = {'best': None, 'last': None}
+
+    @property
+    def main_metric(self):
+        return self.history.main_metric
+
+    @property
+    def metrics_values(self):
+        return self.history.metrics_values
+
+    @property
+    def val_metrics_values(self):
+        return self.history.val_metrics_values
+
+    @property
+    def loss(self):
+        return self.history.loss
+
+    @property
+    def val_loss(self):
+        return self.history.val_loss
+
+    def metric_history(self, metric_name):
+        return self.history.metric_history(metric_name)
+
+    def val_metric_history(self, metric_name):
+        return self.history.val_metric_history(metric_name)
 
     def load_model(self, checkpoint = 'best', device = 'cpu'):
         return super().load_model(checkpoint = self.checkpoint_files[checkpoint], device = device)
@@ -87,13 +126,19 @@ class TrainingStats(ModelStats):
     def log_val_metrics(self):
         self.val_metrics_values.append(self.val_metrics.compute())
 
+    def log_loss(self, loss):
+        self.loss.append(loss)
+
+    def log_val_loss(self, loss):
+        self.val_loss.append(loss)
+
 
 class ClassifierTrainingStats(TrainingStats, ClassifierModelStats):
     def __init__(self, model_name = None, class_names = None):
         super().__init__(model_name = model_name, class_names = class_names)
         print(self.class_names)
-        self.val_metrics = MetricCollection({'recall': MulticlassConfusionMatrix(num_classes=len(self.class_names), normalize='true'),
-                                         'precision': MulticlassConfusionMatrix(num_classes=len(self.class_names), normalize='pred'),
+        self.val_metrics = MetricCollection({'ConfusionMatrix_recall': MulticlassConfusionMatrix(num_classes=len(self.class_names), normalize='true'),
+                                         'ConfusionMatrix_precision': MulticlassConfusionMatrix(num_classes=len(self.class_names), normalize='pred'),
                                          })
 
     @property

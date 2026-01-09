@@ -28,6 +28,7 @@ from torch import optim, Tensor
 from torch.amp import autocast
 from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 from torch.utils.data import DataLoader
+from torchmetrics import MetricCollection
 from torchvision.transforms import v2, InterpolationMode
 from torchmetrics.classification import (MulticlassMatthewsCorrCoef, MulticlassCohenKappa, MulticlassPrecisionRecallCurve,
                                          MulticlassF1Score, MulticlassAccuracy)
@@ -47,7 +48,7 @@ from pydetecdiv.plugins.roi_classification.data import ROIDataset
 from pydetecdiv.settings import get_plugins_dir, get_config_value
 from . import models
 from .data import prepare_data_for_training, ROIDataset, prepare_data_for_inference
-from .evaluate import evaluate_metrics, evaluate_model
+from .evaluate import evaluate_metrics
 from .gui.ImportAnnotatedROIs import FOV2ROIlinks
 from .gui.classification import ManualAnnotator, PredictionViewer, DefineClassesDialog
 from .gui.modelinfo import ModelInfoDialog
@@ -256,23 +257,23 @@ def set_metric(parameters, num_classes):
 
     match parameters['follow_metric'].key:
         case 'Matthews Correlation Coefficient':
-            metric_fn = MulticlassMatthewsCorrCoef(num_classes=num_classes)
             metric_name = 'MCC'
+            metric_fn = MetricCollection({metric_name: MulticlassMatthewsCorrCoef(num_classes=num_classes)})
         case 'Cohen kappa':
-            metric_fn = MulticlassCohenKappa(num_classes=num_classes)
             metric_name = 'Cohen kappa'
+            metric_fn = MetricCollection({metric_name: MulticlassCohenKappa(num_classes=num_classes)})
         case 'F-1 score':
-            metric_fn = MulticlassF1Score(num_classes=num_classes, average='weighted')
             metric_name = 'F1score'
+            metric_fn = MetricCollection({metric_name: MulticlassF1Score(num_classes=num_classes, average='weighted')})
         case 'AUC-PR':
-            metric_fn = MulticlassPrecisionRecallCurve(num_classes=num_classes)
             metric_name = 'AUC-PR'
+            metric_fn = MetricCollection({metric_name: MulticlassPrecisionRecallCurve(num_classes=num_classes)})
         case 'Accuracy':
-            metric_fn = MulticlassAccuracy(num_classes=num_classes)
             metric_name = 'Accuracy'
-
-    if isinstance(metric_fn, tuple):
-        metric_fn = metric_fn[0]
+            metric_fn = MetricCollection({metric_name: MulticlassAccuracy(num_classes=num_classes)})
+    #
+    # if isinstance(metric_fn, tuple):
+    #     metric_fn = metric_fn[0]
 
     return metric_fn, metric_name
 
@@ -823,9 +824,9 @@ class Plugin(plugins.Plugin):
         if len(model.expected_shape) == 5:
             seqlen = self.parameters['seqlen'].value
             print(f'{datetime.now().strftime("%H:%M:%S")}: Sequence length: {seqlen}\n')
-            img_size: tuple[int, int] = (model.expected_shape[3], model.expected_shape[4])
+            img_size: tuple[int, int] = (model.expected_shape[3].item(), model.expected_shape[4].item())
         else:
-            img_size: tuple[int, int] = (model.expected_shape[2], model.expected_shape[3])
+            img_size: tuple[int, int] = (model.expected_shape[2].item(), model.expected_shape[3].item())
         print(f'{datetime.now().strftime("%H:%M:%S")}: Input image size: {img_size}\n')
         return img_size, seqlen
 
@@ -838,7 +839,7 @@ class Plugin(plugins.Plugin):
         :return: the checkpoint and last weights filepaths
         """
         os.makedirs(os.path.join(get_project_dir(), 'roi_classification', 'models', self.parameters['model'].key), exist_ok=True)
-        checkpoint_metric = 'loss' if self.parameters['checkpoint_metric'].key == 'Loss' else metric_name
+        checkpoint_metric = 'loss' if self.parameters['checkpoint_metric'].key == 'Loss' else metric_name.replace(' ', '_')
         checkpoint_filepath = os.path.join(get_project_dir(), 'roi_classification', 'models',
                                                self.parameters['model'].key,
                                                f'{run.id_}_best_{checkpoint_metric}.weights.pt')
@@ -876,11 +877,10 @@ class Plugin(plugins.Plugin):
         self.parameters['num_test'].value = 0.3
         self.parameters['learning_rate'].value = trial.suggest_float("lr", 1e-6, 1e-3, log=True)
         self.parameters['checkpoint_metric'].set_value('Metric')
-        training_stats, ground_truth, predictions, _, _, _, model, _ = self.train_model(trial=trial)
+        training_stats, _, model, _ = self.train_model(trial=trial)
         del model
         gc.collect()
-        metric = training_stats.history.val['metric'][-1]
-        return metric
+        return training_stats.val_metric_history(training_stats.main_metric)[-1]
 
     def tune_hyperparameters(self):
         print('Starting Optuna study', file=sys.stderr)
@@ -984,6 +984,7 @@ class Plugin(plugins.Plugin):
         train_stats.add_metrics(metric_fn2)
         train_stats.metrics.to(device)
         train_stats.val_metrics.to(device)
+        train_stats.history.main_metric = metric_name
 
         checkpoint_filepath, last_weights_filepath = self.get_weights_filepaths(run, metric_name)
 
@@ -998,43 +999,42 @@ class Plugin(plugins.Plugin):
         history = train_stats.history
 
         for epoch in range(self.parameters['epochs'].value):
-            history.extend(train_loop(train_dataloader, validation_dataloader, model, seq2one,
-                                      loss_fn, optimizer, lambda1, lambda2, device, metric_fn, train_stats))
-            if (self.parameters['checkpoint_metric'].key == 'Loss') and (history.val['loss'][-1] < min_val_loss):
-                min_val_loss = history.val['loss'][-1]
+            train_loop(train_dataloader, validation_dataloader, model, seq2one, loss_fn, optimizer, lambda1, lambda2, device, train_stats)
+            if (self.parameters['checkpoint_metric'].key == 'Loss') and (history.val_loss[-1] < min_val_loss):
+                min_val_loss = history.val_loss[-1]
                 history.best_epoch = epoch
                 model_scripted = torch.jit.script(model)
                 model_scripted.save(checkpoint_filepath)
                 print(f"Saving best model at epoch {epoch + 1} with val loss {min_val_loss:.4f}"
-                      f" and train loss {history.train['loss'][-1]:.4f}")
+                      f" and train loss {history.loss[-1]:.4f}")
                 run.parameters.update({'best_weights': os.path.basename(checkpoint_filepath), 'best_epoch': epoch + 1})
                 run.validate().commit()
-            elif (self.parameters['checkpoint_metric'].key == 'Metric') and (history.val['metric'][-1] > best_val_metric):
-                best_val_metric = history.val['metric'][-1]
+            elif (self.parameters['checkpoint_metric'].key == 'Metric') and (history.val_metric_history(metric_name)[-1] > best_val_metric):
+                best_val_metric = history.val_metric_history(metric_name)[-1]
                 history.best_epoch = epoch
                 model_scripted = torch.jit.script(model)
                 model_scripted.save(checkpoint_filepath)
-                print(f"Saving best model at epoch {epoch + 1} with train {metric_name} {history.train['metric'][-1]:.3f}"
+                print(f"Saving best model at epoch {epoch + 1} with train {metric_name} {history.metric_history(metric_name)[-1]:.3f}"
                       f" and val {metric_name} {best_val_metric:.3f}")
                 run.parameters.update({'best_weights': os.path.basename(checkpoint_filepath), 'best_epoch': epoch + 1})
                 run.validate().commit()
 
             print(f"Epoch {epoch + 1}/{self.parameters['epochs'].value}, "
-                  f"Training Loss: {history.train['loss'][-1]:.4f}, "
-                  f"Validation Loss: {history.val['loss'][-1]:.4f}, "
-                  f"{metric_name}: {history.train['metric'][-1]:.3f}, "
-                  f"Val {metric_name}: {history.val['metric'][-1]:.3f}, "
+                  f"Training Loss: {history.loss[-1]:.4f}, "
+                  f"Validation Loss: {history.val_loss[-1]:.4f}, "
+                  f"{metric_name}: {history.metric_history(metric_name)[-1]:.3f}, "
+                  f"Val {metric_name}: {history.val_metric_history(metric_name)[-1]:.3f}, "
                   f"learning rate: {scheduler.get_last_lr()[0]:0.2e}, "
                   f" -- ({datetime.now().strftime('%H:%M:%S')})")
 
             if trial is not None:
-                trial.report(history.val['metric'][-1], epoch)
+                trial.report(history.val_metric_history(metric_name)[-1], epoch)
                 # Handle pruning based on the intermediate value.
                 if trial.should_prune():
                     raise optuna.exceptions.TrialPruned()
 
             step_scheduler.step()
-            scheduler.step(history.val['loss'][-1])
+            scheduler.step(history.val_loss[-1])
 
         ##################################################################
         model_scripted = torch.jit.script(model)  # Export to TorchScript
@@ -1045,60 +1045,31 @@ class Plugin(plugins.Plugin):
         run.parameters.update({'last_weights': os.path.basename(last_weights_filepath)})
         run.validate().commit()
 
-        ground_truth, predictions, best_ground_truth, best_predictions = None, None, None, None
-
         if trial is None:
             print(f'{datetime.now().strftime("%H:%M:%S")}: Computing confusion matrix for last epoch on validation dataset')
-            # avg_test_loss, test_metric = evaluate_metrics(model, validation_dataloader, seq2one, loss_fn, lambda1, lambda2, device, metric_fn)
-            # evaluation = {'loss': avg_test_loss, 'metric': test_metric}
-            # print(f"Test loss: {avg_test_loss:.4f}, "
-            #       f"Test {metric_name}: {test_metric:.3f} , ")
-
-            # stats, ground_truth, predictions = evaluate_model(model, self.parameters['class_names'].value, validation_dataloader,
-            #                                                   seqlen, seq2one, device)
 
             if run.key_val is None:
-                # pass
                 run.key_val = {'last_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[-1].items()}}
             else:
-                # pass
                 run.key_val.update({'last_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[-1].items()}})
 
-            # print(f'{datetime.now().strftime("%H:%M:%S")}: Statistics for last model:', file=sys.stderr)
-            # print(polars.DataFrame(train_stats.val_metrics_values[-1]), file=sys.stderr)
-
-            # best_model = torch.jit.load(checkpoint_filepath)
-
             print(f'{datetime.now().strftime("%H:%M:%S")}: Evaluation of best epoch on validation dataset')
-            # avg_val_loss, val_metric = evaluate_metrics(best_model, validation_dataloader, seq2one, loss_fn, lambda1, lambda2, device,
-            #                                               metric_fn, train_stats.val_metrics)
-            avg_val_loss = history.val['loss'][train_stats.history.best_epoch]
-            val_metric = history.val['metric'][train_stats.history.best_epoch]
 
-            train_stats.evaluation = {'loss': avg_val_loss, 'metric': val_metric}
+            avg_val_loss = history.val_loss[train_stats.history.best_epoch]
+            val_metric = history.val_metric_history(metric_name)[train_stats.history.best_epoch]
+
             print(f"Best validation loss: {avg_val_loss:.4f}, "
                   f"Best validation {metric_name}: {val_metric:.3f}, ")
 
-            # stats, best_ground_truth, best_predictions = evaluate_model(best_model, self.parameters['class_names'].value,
-            #                                                             validation_dataloader, seqlen, seq2one, device)
-            # del best_model
-            # gc.collect()
-
             if run.key_val is None:
-                # pass
                 run.key_val = {'best_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[train_stats.history.best_epoch].items()}}
             else:
-                # pass
                 run.key_val.update({'best_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[train_stats.history.best_epoch].items()}})
 
             run.validate().commit()
 
-            # print(f'{datetime.now().strftime("%H:%M:%S")}: Statistics for best model:', file=sys.stderr)
-            # print(polars.DataFrame(train_stats.val_metrics_values[train_stats.history.best_epoch]), file=sys.stderr)
-
         datasets = {'train': training_dataset, 'val': validation_dataset, 'test': test_dataset}
 
-        # return train_stats, ground_truth, predictions, best_ground_truth, best_predictions, datasets, model, device
         return train_stats, datasets, model, device
 
     def predict(self) -> None:

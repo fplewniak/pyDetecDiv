@@ -17,7 +17,7 @@ from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer
 from pydetecdiv.plugins.gui import (ComboBox, AdvancedButton, SpinBox, ParametersFormGroupBox, DoubleSpinBox,
                                     RadioButton, set_connections, Label, Dialog)
 from pydetecdiv.plugins.roi_classification.data import ROIDataset
-from pydetecdiv.torch import ClassifierTrainingStats
+from pydetecdiv.torch import ClassifierTrainingStats, TrainingHistory
 
 
 class TuneHyperparamDialog(Dialog):
@@ -308,10 +308,10 @@ def plot_training_results(results: tuple[ClassifierTrainingStats, dict[str, ROID
     """
     # (train_stats, ground_truth, predictions, best_gt, best_predictions, dataset, model, device) = results
     (train_stats, dataset, model, device) = results
-    module_name, class_names, history, evaluation = train_stats.model_name, train_stats.class_names, train_stats.history, train_stats.evaluation
+    module_name, class_names, history = train_stats.model_name, train_stats.class_names, train_stats.history
     tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {module_name}')
     tab.project_name = PyDetecDiv.project_name
-    history_plot = plot_history(history, evaluation)
+    history_plot = plot_history(history)
     tab.addTab(history_plot, 'Training')
     tab.setCurrentWidget(history_plot)
 
@@ -336,7 +336,7 @@ def plot_training_results(results: tuple[ClassifierTrainingStats, dict[str, ROID
     gc.collect()
 
 
-def plot_history(history: dict, evaluation: dict) -> MatplotViewer:
+def plot_history(history: TrainingHistory) -> MatplotViewer:
     """
     Plots metrics history.
 
@@ -345,11 +345,11 @@ def plot_history(history: dict, evaluation: dict) -> MatplotViewer:
     """
     plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=2, rows=1)
     axs = plot_viewer.axes
-    history.plot(axs[0], 'metric')
-    axs[0].axhline(evaluation['metric'].cpu(), color='red', linestyle='--')
+    history.plot_metric(axs[0], history.main_metric)
+    axs[0].axhline(history.val_metric_history(history.main_metric)[history.best_epoch], color='red', linestyle='--')
     axs[0].axvline(history.best_epoch, color='red', linestyle='--')
-    history.plot(axs[1], 'loss')
-    axs[1].axhline(evaluation['loss'], color='red', linestyle='--')
+    history.plot(axs[1])
+    axs[1].axhline(min(history.val_loss), color='red', linestyle='--')
     axs[1].axvline(history.best_epoch, color='red', linestyle='--')
 
     plot_viewer.show()
@@ -378,14 +378,14 @@ def plot_confusion_matrix_torchmetrics(train_stats, epoch=-1, val = False) -> Ma
     plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=2, rows=1)
     plot_viewer.axes[0].set_title('Normalized by row (recall)')
     if val:
-        train_stats.val_metrics['recall'].plot(val=train_stats.val_metrics_values[epoch]['recall'], labels=train_stats.class_names, ax=plot_viewer.axes[0])
+        train_stats.val_metrics['ConfusionMatrix_recall'].plot(val=train_stats.val_metrics_values[epoch]['ConfusionMatrix_recall'], labels=train_stats.class_names, ax=plot_viewer.axes[0])
     else:
-        train_stats.metrics['recall'].plot(val=train_stats.metrics_values[epoch]['recall'], labels=train_stats.class_names, ax=plot_viewer.axes[0])
+        train_stats.metrics['ConfusionMatrix_recall'].plot(val=train_stats.metrics_values[epoch]['ConfusionMatrix_recall'], labels=train_stats.class_names, ax=plot_viewer.axes[0])
     plot_viewer.axes[1].set_title('Normalized by column (precision)')
     if val:
-        train_stats.val_metrics['precision'].plot(val=train_stats.val_metrics_values[epoch]['precision'], labels=train_stats.class_names, ax=plot_viewer.axes[1])
+        train_stats.val_metrics['ConfusionMatrix_precision'].plot(val=train_stats.val_metrics_values[epoch]['ConfusionMatrix_precision'], labels=train_stats.class_names, ax=plot_viewer.axes[1])
     else:
-        train_stats.metrics['precision'].plot(val=train_stats.metrics_values[epoch]['precision'], labels=train_stats.class_names, ax=plot_viewer.axes[1])
+        train_stats.metrics['ConfusionMatrix_precision'].plot(val=train_stats.metrics_values[epoch]['ConfusionMatrix_precision'], labels=train_stats.class_names, ax=plot_viewer.axes[1])
     return plot_viewer
 
 
