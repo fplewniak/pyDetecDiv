@@ -35,8 +35,6 @@ class ClassifierModelStats(ModelStats):
 
 class TrainingHistory:
     def __init__(self):
-        self.train = {'loss': []}
-        self.val = {'loss': []}
         self.loss = []
         self.val_loss = []
         self.metrics_values = []
@@ -49,18 +47,6 @@ class TrainingHistory:
 
     def val_metric_history(self, metric_name):
         return [d[metric_name].cpu() for d in self.val_metrics_values]
-
-    def extend(self, metrics):
-        for metric_name, metric_value in metrics['train'].items():
-            if metric_name not in self.train:
-                self.train[metric_name] = [metric_value]
-            else:
-                self.train[metric_name].append(metric_value)
-        for metric_name, metric_value in metrics['val'].items():
-            if metric_name not in self.val:
-                self.val[metric_name] = [metric_value]
-            else:
-                self.val[metric_name].append(metric_value)
 
     def plot(self, axs):
         axs.plot(self.loss)
