@@ -9,6 +9,7 @@ import numpy as np
 import torch
 from PySide6.QtCore import Signal
 from sklearn.metrics import ConfusionMatrixDisplay
+from torchmetrics.classification import MulticlassConfusionMatrix
 
 import pydetecdiv.plugins
 from pydetecdiv.app import StdoutWaitDialog, PyDetecDiv
@@ -312,7 +313,7 @@ def plot_training_results(results: tuple[ClassifierTrainingStats, dict[str, ROID
     tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {module_name}')
     tab.project_name = PyDetecDiv.project_name
     history_plot = plot_history(history)
-    tab.addTab(history_plot, 'Training')
+    tab.addTab(history_plot, 'Training history')
     tab.setCurrentWidget(history_plot)
 
     tab.addTab(plot_confusion_matrix_torchmetrics(train_stats),
@@ -327,14 +328,36 @@ def plot_training_results(results: tuple[ClassifierTrainingStats, dict[str, ROID
     tab.addTab(plot_confusion_matrix_torchmetrics(train_stats, epoch=train_stats.history.best_epoch, val=True),
                'Confusion matrix (best epoch / val)')
 
-    tab.addTab(plot_images(dataset['train'], 6, class_names, model, device), 'training images')
-    tab.addTab(plot_images(dataset['val'], 6, class_names, model, device), 'validation images')
-    tab.addTab(plot_images(dataset['test'], 6, class_names, model, device), 'test images')
+    tab.addTab(plot_metrics(train_stats), 'Metrics history')
 
     del model
     torch.cuda.empty_cache()
     gc.collect()
 
+def plot_metrics(train_stats):
+    plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, layout='constrained', columns=1, rows=1)
+    axs = plot_viewer.axes
+    history = train_stats.history
+    for metric_name, metric in train_stats.metrics.items():
+        if len(history.metric_history(metric_name)[0].shape) <= 1:
+            train_line = axs.plot(history.metric_history(metric_name), label=f'train {metric_name}')
+            axs.plot(history.val_metric_history(metric_name), label=f'val {metric_name}', color=train_line[0].get_color(), linestyle='dashed')
+    plot_viewer.figure.legend(loc='outside right lower')
+
+    plot_viewer.show()
+    return plot_viewer
+
+def plot_metric(metric_name, values):
+    plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, layout='constrained', columns=1, rows=1)
+    axs = plot_viewer.axes
+    axs.plot(values['train'])
+    axs.plot(values['val'])
+    axs.set_ylabel(metric_name)
+    axs.set_xlabel('epoch')
+    plot_viewer.figure.legend(['train', 'val'], loc='outside right lower')
+
+    plot_viewer.show()
+    return plot_viewer
 
 def plot_history(history: TrainingHistory) -> MatplotViewer:
     """

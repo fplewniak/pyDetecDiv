@@ -31,7 +31,7 @@ from torch.utils.data import DataLoader
 from torchmetrics import MetricCollection
 from torchvision.transforms import v2, InterpolationMode
 from torchmetrics.classification import (MulticlassMatthewsCorrCoef, MulticlassCohenKappa, MulticlassPrecisionRecallCurve,
-                                         MulticlassF1Score, MulticlassAccuracy)
+                                         MulticlassF1Score, MulticlassAccuracy, MulticlassAUROC)
 
 from PySide6.QtGui import QAction
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
@@ -266,8 +266,8 @@ def set_metric(parameters, num_classes):
             metric_name = 'F1score'
             metric_fn = MetricCollection({metric_name: MulticlassF1Score(num_classes=num_classes, average='weighted')})
         case 'AUC-PR':
-            metric_name = 'AUC-PR'
-            metric_fn = MetricCollection({metric_name: MulticlassPrecisionRecallCurve(num_classes=num_classes)})
+            metric_name = 'AUROC'
+            metric_fn = MetricCollection({metric_name: MulticlassAUROC(num_classes=num_classes)})
         case 'Accuracy':
             metric_name = 'Accuracy'
             metric_fn = MetricCollection({metric_name: MulticlassAccuracy(num_classes=num_classes)})
@@ -978,19 +978,28 @@ class Plugin(plugins.Plugin):
         validation_dataloader = DataLoader(validation_dataset, batch_size=self.parameters['batch_size'].value, shuffle=True)
         # test_dataloader = DataLoader(test_dataset, batch_size=self.parameters['batch_size'].value, shuffle=True)
 
-        metric_fn, metric_name = set_metric(self.parameters, train_stats.num_classes)
-        metric_fn.to(device)
-        metric_fn2, _ = set_metric(self.parameters, train_stats.num_classes)
-        train_stats.add_metrics(metric_fn2)
+        # metric_fn, metric_name = set_metric(self.parameters, train_stats.num_classes)
+        # metric_fn.to(device)
+        # metric_fn2, metric_name = set_metric(self.parameters, train_stats.num_classes)
+        # train_stats.add_metrics(metric_fn2)
         train_stats.metrics.to(device)
         train_stats.val_metrics.to(device)
+        # train_stats.history.main_metric = metric_name
+
+        train_stats.add_metrics(MetricCollection({'MCC': MulticlassMatthewsCorrCoef(num_classes=train_stats.num_classes).to(device)}))
+        train_stats.add_metrics(MetricCollection({'Cohen kappa': MulticlassCohenKappa(num_classes=train_stats.num_classes).to(device)}))
+        train_stats.add_metrics(MetricCollection({'F1score': MulticlassF1Score(num_classes=train_stats.num_classes).to(device)}))
+        train_stats.add_metrics(MetricCollection({'AUROC': MulticlassAUROC(num_classes=train_stats.num_classes).to(device)}))
+        train_stats.add_metrics(MetricCollection({'Accuracy': MulticlassAccuracy(num_classes=train_stats.num_classes).to(device)}))
+
+        metric_fn2, metric_name = set_metric(self.parameters, train_stats.num_classes)
         train_stats.history.main_metric = metric_name
 
         checkpoint_filepath, last_weights_filepath = self.get_weights_filepaths(run, metric_name)
 
         if fine_tuning:
             min_val_loss, best_val_metric = evaluate_metrics(model, validation_dataloader, seq2one, loss_fn,
-                                                             lambda1, lambda2, device, metric_fn, train_stats.val_metrics)
+                                                             lambda1, lambda2, device, train_stats.val_metrics)
             print(f'Fine tuning starting with validation loss = {min_val_loss} and initial {metric_name} = {best_val_metric}')
         else:
             min_val_loss = torch.finfo(torch.float).max
@@ -1048,7 +1057,10 @@ class Plugin(plugins.Plugin):
         del model_scripted
         gc.collect()
 
-        run.parameters.update({'last_weights': os.path.basename(last_weights_filepath)})
+        if run.key_val is None:
+            run.key_val = {'last_weights': os.path.basename(last_weights_filepath)}
+        else:
+            run.key_val.update({'last_weights': os.path.basename(last_weights_filepath)})
         run.validate().commit()
 
         if trial is None:

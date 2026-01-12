@@ -17,7 +17,10 @@ class ModelStats:
         return None
 
     def add_metrics(self, metrics):
-        self.metrics.add_metrics(metrics)
+        if self.metrics is None:
+            self.metrics = MetricCollection(metrics)
+        else:
+            self.metrics.add_metrics(metrics)
 
 
 class ClassifierModelStats(ModelStats):
@@ -53,14 +56,14 @@ class TrainingHistory:
         axs.plot(self.val_loss)
         axs.set_ylabel('Loss')
         axs.set_xlabel('epoch')
-        axs.legend(['train', 'val'], loc='lower right')
+        axs.legend(['train', 'val'], loc='lower left')
 
     def plot_metric(self, axs, metric_name):
         axs.plot(self.metric_history(metric_name))
         axs.plot(self.val_metric_history(metric_name))
         axs.set_ylabel(metric_name)
         axs.set_xlabel('epoch')
-        axs.legend(['train', 'val'], loc='lower right')
+        axs.legend(['train', 'val'], loc='upper left')
 
 
 class TrainingStats(ModelStats):

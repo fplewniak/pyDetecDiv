@@ -13,11 +13,12 @@ class MatplotViewer(QWidget):
     A widget to display matplotlib plots in a tab
     """
 
-    def __init__(self, parent: QWidget = None, rows: int = 1, columns: int = 1, toolbar: bool = True):
+    def __init__(self, parent: QWidget = None, rows: int = 1, columns: int = 1, toolbar: bool = True, layout='constrained',):
         super().__init__(parent)
-        self.canvas = FigureCanvas(Figure())
+        self.figure = Figure(layout='constrained')
+        self.canvas = FigureCanvas(self.figure)
         self.axes = self.canvas.figure.subplots(rows, columns)
-        self.canvas.figure.tight_layout()
+        # self.canvas.figure.tight_layout()
 
         vlayout = QVBoxLayout()
         vlayout.addWidget(self.canvas)
