@@ -7,13 +7,16 @@ import sys
 
 import numpy as np
 import torch
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Qt
+from PySide6.QtGui import QTransform
 from sklearn.metrics import ConfusionMatrixDisplay
 from torchmetrics.classification import MulticlassConfusionMatrix
+import pyqtgraph as pg
 
 import pydetecdiv.plugins
 from pydetecdiv.app import StdoutWaitDialog, PyDetecDiv
-from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer
+from pydetecdiv.app.gui.core import Colours
+from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer, ChartView
 
 from pydetecdiv.plugins.gui import (ComboBox, AdvancedButton, SpinBox, ParametersFormGroupBox, DoubleSpinBox,
                                     RadioButton, set_connections, Label, Dialog)
@@ -332,9 +335,64 @@ def plot_training_results(results: tuple[ClassifierTrainingStats, dict[str, ROID
 
     tab.addTab(plot_metrics(train_stats), 'Metrics history')
 
+    chart_view = ChartView()
+
+    heatmaps = {
+            'train_precision': chart_view.chart(0, 0),
+            'train_recall': chart_view.addPlot(row=0, col=1, title="Training recall"),
+            'val_precision': chart_view.addPlot(row=1, col=0, title="Val precision"),
+            'val_recall': chart_view.addPlot(row=1, col=1, title="Val recall"),
+        }
+    heatmaps['train_precision'].setTitle("Training precision")
+    plot_heatmap(heatmaps['train_precision'], history.metric_history('ConfusionMatrix_precision')[history.best_epoch].numpy(), columns=class_names)
+    plot_heatmap(heatmaps['train_recall'], history.metric_history('ConfusionMatrix_recall')[history.best_epoch].numpy(), columns=class_names)
+    plot_heatmap(heatmaps['val_precision'], history.val_metric_history('ConfusionMatrix_precision')[history.best_epoch].numpy(), columns=class_names)
+    plot_heatmap(heatmaps['val_recall'], history.val_metric_history('ConfusionMatrix_recall')[history.best_epoch].numpy(), columns=class_names)
+
+    # plot_heatmap(chart_view.chart(0, 0), history.metric_history('ConfusionMatrix_precision')[history.best_epoch].numpy(),
+    #              columns=class_names)
+
+
+    chart_view.addPlot(0, 2, rowspan=2, title='Metrics history')
+    chart_view.chart(0, 2).getAxis('left').setWidth(50)
+    chart_view.chart(0, 2).addLegend(offset=(-1, -1), anchor=(0, 0), pen=pg.mkPen('k', width=1),
+                                     brush=pg.mkBrush('w'))
+    i=0
+    for metric_name in train_stats.metrics.keys():
+        if len(history.metric_history(metric_name)[0].shape) <= 1:
+            chart_view.addLinePlot(history.metric_history(metric_name), row=0, col=2, pen=pg.mkPen(Colours.palette[i], width=2), name=f"{metric_name}")
+            chart_view.addLinePlot(history.val_metric_history(metric_name), row=0, col=2, pen=pg.mkPen(Colours.palette[i], width=2, style=Qt.DashLine))
+            i+=1
+
+    tab.addTab(chart_view, 'test ChartView')
+
     del model
     torch.cuda.empty_cache()
     gc.collect()
+
+def plot_heatmap(chart, data, columns = None):
+    correlogram = pg.ImageItem()
+    # create transform to center the corner element on the origin, for any assigned image:
+    tr = QTransform().translate(-0.5, -0.5)
+    correlogram.setTransform(tr)
+    colorMap = pg.colormap.get("gnuplot", source='matplotlib',)  # choose perceptually uniform, diverging color map
+    correlogram.setImage(data, colorMap=colorMap)
+    chart.invertY(True)
+    chart.setDefaultPadding(0.0)  # plot without padding data range
+    chart.addItem(correlogram)    # display correlogram
+    # show full frame, label tick marks at top and left sides, with some extra space for labels:
+    chart.showAxes( True, showValues=(True, True, False, False), size=20 )
+    # define major tick marks and labels:
+    ticks = [(idx, label) for idx, label in enumerate(columns)]
+    for side in ('left', 'top', 'right', 'bottom'):
+        chart.getAxis(side).setTicks((ticks, []))  # add list of major ticks; no minor ticks
+    chart.getAxis('bottom').setHeight(10)  # include some additional space at bottom of figure
+    chart.getAxis('left').setWidth(50)
+
+    # colorMap = pg.colormap.get("CET-D1")  # choose perceptually uniform, diverging color map
+    # bar = pg.ColorBarItem( values=(0,1), colorMap=colorMap)
+    # link color bar and color map to correlogram, and show it in plotItem:
+    # bar.setImageItem(correlogram, insert_in=chart)
 
 def plot_metrics(train_stats):
     plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, layout='constrained', columns=1, rows=1)
