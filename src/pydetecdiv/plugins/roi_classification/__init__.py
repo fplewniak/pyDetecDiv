@@ -5,6 +5,7 @@ import gc
 import importlib
 import json
 import os
+import pickle
 import pkgutil
 import sys
 from datetime import datetime
@@ -333,7 +334,8 @@ class Plugin(plugins.Plugin):
                             default='Loss', items={'Loss': 'val_loss', 'Metric': 'val_metric'}),
             # CheckParameter(name='early_stopping', label='Early stopping', groups={'training', 'finetune'},
             #                default=False),
-            CheckParameter(name='augmentation', label='Augmentation', groups={'training', 'finetune'}, default=False),
+            CheckParameter(name='log_metrics', label='Log metrics', groups={'training', 'finetune'}, default=False, exclusive=False),
+            CheckParameter(name='augmentation', label='Augmentation', groups={'training', 'finetune'}, default=False, exclusive=False),
             FloatParameter(name='num_training', label='Training dataset', groups={'training', 'finetune'}, default=0.4,
                            minimum=0.01, maximum=0.99, ),
             FloatParameter(name='num_validation', label='Validation dataset', groups={'training', 'finetune'},
@@ -358,7 +360,7 @@ class Plugin(plugins.Plugin):
                             items={'Matthews Correlation Coefficient': MulticlassMatthewsCorrCoef,
                                    'Cohen kappa'                     : MulticlassCohenKappa,
                                    'F-1 score'                       : MulticlassF1Score,
-                                   'AUC-PR'                          : MulticlassPrecisionRecallCurve,
+                                   'AUROC'                           : MulticlassAUROC,
                                    'Accuracy'                        : MulticlassAccuracy,
                                    # 'Accuracy by class': AccuracyByClass,
                                    }),
@@ -1087,6 +1089,13 @@ class Plugin(plugins.Plugin):
             run.validate().commit()
 
         datasets = {'train': training_dataset, 'val': validation_dataset, 'test': test_dataset}
+
+        if self.parameters['log_metrics']:
+            os.makedirs(os.path.join(get_project_dir(), 'roi_classification', 'logs', self.parameters['model'].key), exist_ok=True)
+            metrics_log_filepath = os.path.join(get_project_dir(), 'roi_classification', 'logs', self.parameters['model'].key,
+                                                f'{run.id_}_metrics_log.pckl')
+            with open(metrics_log_filepath, 'wb') as fp:
+                pickle.dump({'train': train_stats.metric_history(), 'val': train_stats.val_metric_history()}, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
         return train_stats, datasets, model, device
 

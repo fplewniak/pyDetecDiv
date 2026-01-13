@@ -93,10 +93,14 @@ class TrainingStats(ModelStats):
     def val_loss(self):
         return self.history.val_loss
 
-    def metric_history(self, metric_name):
+    def metric_history(self, metric_name=None):
+        if metric_name is None:
+            return {metric_name: self.history.metric_history(metric_name) for metric_name in self.metrics.keys()}
         return self.history.metric_history(metric_name)
 
-    def val_metric_history(self, metric_name):
+    def val_metric_history(self, metric_name=None):
+        if metric_name is None:
+            return {metric_name: self.history.val_metric_history(metric_name) for metric_name in self.metrics.keys()}
         return self.history.val_metric_history(metric_name)
 
     def load_model(self, checkpoint = 'best', device = 'cpu'):

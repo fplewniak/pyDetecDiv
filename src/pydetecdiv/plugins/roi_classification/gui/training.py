@@ -112,6 +112,8 @@ class TrainingDialog(Dialog):
                                           parameter=self.plugin.parameters['follow_metric'])
         self.advanced.group_box.addOption('Checkpoint metric:', ComboBox,
                                           parameter=self.plugin.parameters['checkpoint_metric'])
+        self.advanced.group_box.addOption('Log metrics:', RadioButton,
+                                          parameter=self.plugin.parameters['log_metrics'])
 
         # self.advanced.group_box.addOption('Early stopping:', RadioButton,
         #                                   parameter=self.plugin.parameters['early_stopping'])
