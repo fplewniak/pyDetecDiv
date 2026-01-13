@@ -873,7 +873,8 @@ class Plugin(plugins.Plugin):
         # self.parameters['focal_gamma'].value = trial.suggest_float("gamma", 0.001, 1.5, log=True)
         self.parameters['L1'].value = trial.suggest_float("L1", 1e-6, 1e-2, log=True)
         self.parameters['L2'].value = trial.suggest_float("L2", 1e-6, 1e-2, log=True)
-        self.parameters['augmentation'].value = True
+        # self.parameters['augmentation'].value = True
+        self.parameters['augmentation'].value = trial.suggest_categorical("augmentation", [True, False])
         self.parameters['num_training'].value = 0.4
         self.parameters['num_validation'].value = 0.3
         self.parameters['num_test'].value = 0.3
