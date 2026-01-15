@@ -333,42 +333,64 @@ def plot_training_results(results: tuple[ClassifierTrainingStats, dict[str, ROID
     tab.addTab(plot_confusion_matrix_torchmetrics(train_stats, epoch=train_stats.history.best_epoch, val=True),
                'Confusion matrix (best epoch / val)')
 
-    tab.addTab(plot_metrics(train_stats), 'Metrics history')
+    # tab.addTab(plot_metrics(train_stats), 'Metrics history')
 
+    interactive = plot_interactive_history(train_stats)
+    tab.addTab(interactive, 'Interactive history')
+    # tab.setCurrentWidget(interactive)
+    #
+    # for epoch in range(history.num_epochs):
+    #     update_heat_maps(interactive.chart, train_stats, epoch)
+
+    del model
+    torch.cuda.empty_cache()
+    gc.collect()
+
+def plot_interactive_history(train_stats):
     chart_view = ChartView()
+    chart_view.chart(0, 0).setTitle("Training precision")
+    chart_view.addPlot(row=0, col=1, title="Training recall")
+    chart_view.addPlot(row=1, col=0, title="Val precision")
+    chart_view.addPlot(row=1, col=1, title="Val recall")
+    update_heat_maps(chart_view.chart, train_stats)
 
-    heatmaps = {
-            'train_precision': chart_view.chart(0, 0),
-            'train_recall': chart_view.addPlot(row=0, col=1, title="Training recall"),
-            'val_precision': chart_view.addPlot(row=1, col=0, title="Val precision"),
-            'val_recall': chart_view.addPlot(row=1, col=1, title="Val recall"),
-        }
-    heatmaps['train_precision'].setTitle("Training precision")
-    plot_heatmap(heatmaps['train_precision'], history.metric_history('ConfusionMatrix_precision')[history.best_epoch].numpy(), columns=class_names)
-    plot_heatmap(heatmaps['train_recall'], history.metric_history('ConfusionMatrix_recall')[history.best_epoch].numpy(), columns=class_names)
-    plot_heatmap(heatmaps['val_precision'], history.val_metric_history('ConfusionMatrix_precision')[history.best_epoch].numpy(), columns=class_names)
-    plot_heatmap(heatmaps['val_recall'], history.val_metric_history('ConfusionMatrix_recall')[history.best_epoch].numpy(), columns=class_names)
-
-    # plot_heatmap(chart_view.chart(0, 0), history.metric_history('ConfusionMatrix_precision')[history.best_epoch].numpy(),
-    #              columns=class_names)
-
+    history = train_stats.history
 
     chart_view.addPlot(0, 2, rowspan=2, title='Metrics history')
     chart_view.chart(0, 2).getAxis('left').setWidth(50)
     chart_view.chart(0, 2).addLegend(offset=(-1, -1), anchor=(0, 0), pen=pg.mkPen('k', width=1),
                                      brush=pg.mkBrush('w'))
-    i=0
+    i = 0
     for metric_name in train_stats.metrics.keys():
         if len(history.metric_history(metric_name)[0].shape) <= 1:
-            chart_view.addLinePlot(history.metric_history(metric_name), row=0, col=2, pen=pg.mkPen(Colours.palette[i], width=2), name=f"{metric_name}")
-            chart_view.addLinePlot(history.val_metric_history(metric_name), row=0, col=2, pen=pg.mkPen(Colours.palette[i], width=2, style=Qt.DashLine))
-            i+=1
+            chart_view.addLinePlot(history.metric_history(metric_name), row=0, col=2, pen=pg.mkPen(Colours.palette[i], width=2),
+                                   name=metric_name)
+            chart_view.addLinePlot(history.val_metric_history(metric_name), row=0, col=2,
+                                   pen=pg.mkPen(Colours.palette[i], width=2, style=Qt.DashLine))
+            i += 1
+    ticks = [(float(idx), str(idx)) for idx in range(history.num_epochs)]
+    chart_view.chart(0, 2).getAxis('bottom').setTicks([ticks, []])
+    epoch_line = chart_view.chart(0, 2).addLine(x=history.best_epoch, movable=True, pen=pg.mkPen('g', width=3))
+    epoch_line.setBounds((0, history.num_epochs))
+    epoch_line.sigPositionChanged.connect(lambda x: update_heat_maps(chart_view.chart,
+                                                                     train_stats, epoch=int(x.getXPos() + 0.5)))
+    epoch_line.sigPositionChangeFinished.connect(lambda x: x.setPos(float(int(x.getXPos() + 0.5))))
+    chart_view.ci.layout.setRowStretchFactor(0, 1)
+    chart_view.ci.layout.setRowStretchFactor(1, 1)
+    chart_view.ci.layout.setColumnStretchFactor(2, 6)
+    chart_view.ci.layout.setColumnStretchFactor(0, 2)
+    chart_view.ci.layout.setColumnStretchFactor(1, 3)
+    return chart_view
 
-    tab.addTab(chart_view, 'test ChartView')
-
-    del model
-    torch.cuda.empty_cache()
-    gc.collect()
+def update_heat_maps(chart, train_stats, epoch=None):
+    if epoch is None:
+        epoch = train_stats.history.best_epoch
+    history = train_stats.history
+    class_names = train_stats.class_names
+    plot_heatmap(chart(0, 0), history.metric_history('ConfusionMatrix_precision')[epoch].numpy(), columns=class_names)
+    plot_heatmap(chart(0, 1), history.metric_history('ConfusionMatrix_recall')[epoch].numpy(), columns=class_names)
+    plot_heatmap(chart(1, 0), history.val_metric_history('ConfusionMatrix_precision')[epoch].numpy(), columns=class_names)
+    plot_heatmap(chart(1, 1), history.val_metric_history('ConfusionMatrix_recall')[epoch].numpy(), columns=class_names)
 
 def plot_heatmap(chart, data, columns = None):
     correlogram = pg.ImageItem()
@@ -386,8 +408,12 @@ def plot_heatmap(chart, data, columns = None):
     ticks = [(idx, label) for idx, label in enumerate(columns)]
     for side in ('left', 'top', 'right', 'bottom'):
         chart.getAxis(side).setTicks((ticks, []))  # add list of major ticks; no minor ticks
+    chart.getAxis('top').setHeight(30)
+    chart.getAxis('top').setLabel('True classes')
     chart.getAxis('bottom').setHeight(10)  # include some additional space at bottom of figure
-    chart.getAxis('left').setWidth(50)
+    chart.getAxis('left').setWidth(65)
+    chart.getAxis('left').setLabel('Predicted classes')
+    chart.getAxis('right').setWidth(80)
 
     # colorMap = pg.colormap.get("CET-D1")  # choose perceptually uniform, diverging color map
     # bar = pg.ColorBarItem( values=(0,1), colorMap=colorMap)

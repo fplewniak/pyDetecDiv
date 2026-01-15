@@ -45,6 +45,10 @@ class TrainingHistory:
         self.main_metric = None
         self.best_epoch = 0
 
+    @property
+    def num_epochs(self):
+        return len(self.loss)
+
     def metric_history(self, metric_name):
         return [d[metric_name].cpu() for d in self.metrics_values]
 
