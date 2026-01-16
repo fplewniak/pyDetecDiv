@@ -41,7 +41,6 @@ class ChartView(pg.GraphicsLayoutWidget):
     """
     def __init__(self, parent: QWidget = None):
         super().__init__(show=False, parent=parent)
-        self.addPlot(row=0, col=0)
 
     def addPlot(self, row: int = 0, col: int = 0) -> None:
         """

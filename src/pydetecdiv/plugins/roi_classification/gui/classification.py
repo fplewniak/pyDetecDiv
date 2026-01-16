@@ -257,6 +257,7 @@ class AnnotationChartView(ChartView):
 
     def __init__(self, parent=None, annotator=None):
         super().__init__(parent=parent)
+        self.addPlot(row=0, col=0)
         self.annotator = annotator
 
     @property
