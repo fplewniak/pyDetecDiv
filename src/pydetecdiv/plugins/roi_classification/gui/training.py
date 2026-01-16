@@ -4,6 +4,7 @@ GUI for training and fine tuning models
 import gc
 import random
 import sys
+from typing import Any
 
 import numpy as np
 import torch
@@ -348,10 +349,19 @@ def plot_training_results(results: tuple[ClassifierTrainingStats, dict[str, ROID
 
 def plot_interactive_history(train_stats):
     chart_view = ChartView()
-    chart_view.chart(0, 0).setTitle("Training precision")
-    chart_view.addPlot(row=0, col=1, title="Training recall")
-    chart_view.addPlot(row=1, col=0, title="Val precision")
-    chart_view.addPlot(row=1, col=1, title="Val recall")
+    chart_view.ci.layout.setSpacing(0)
+    chart_view.ci.setContentsMargins(0, 0, 0, 0)
+
+    chart_view.ci.layout.setColumnStretchFactor(0, 1)
+    chart_view.ci.layout.setColumnStretchFactor(1, 1)
+    chart_view.ci.layout.setColumnStretchFactor(2, 2)
+    # chart_view.ci.layout.setRowStretchFactor(0, 1)
+    # chart_view.ci.layout.setRowStretchFactor(1, 1)
+
+    chart_view.ci.addPlot(row=0, col=0, title="Training precision")
+    chart_view.ci.addPlot(row=0, col=1, title="Training recall")
+    chart_view.ci.addPlot(row=1, col=0, title="Val precision")
+    chart_view.ci.addPlot(row=1, col=1, title="Val recall")
     update_heat_maps(chart_view.chart, train_stats)
 
     history = train_stats.history
@@ -371,15 +381,11 @@ def plot_interactive_history(train_stats):
     ticks = [(float(idx), str(idx)) for idx in range(history.num_epochs)]
     chart_view.chart(0, 2).getAxis('bottom').setTicks([ticks, []])
     epoch_line = chart_view.chart(0, 2).addLine(x=history.best_epoch, movable=True, pen=pg.mkPen('g', width=3))
-    epoch_line.setBounds((0, history.num_epochs))
+    epoch_line.setBounds((0, history.num_epochs - 1))
     epoch_line.sigPositionChanged.connect(lambda x: update_heat_maps(chart_view.chart,
                                                                      train_stats, epoch=int(x.getXPos() + 0.5)))
     epoch_line.sigPositionChangeFinished.connect(lambda x: x.setPos(float(int(x.getXPos() + 0.5))))
-    chart_view.ci.layout.setRowStretchFactor(0, 1)
-    chart_view.ci.layout.setRowStretchFactor(1, 1)
-    chart_view.ci.layout.setColumnStretchFactor(2, 6)
-    chart_view.ci.layout.setColumnStretchFactor(0, 2)
-    chart_view.ci.layout.setColumnStretchFactor(1, 3)
+
     return chart_view
 
 def update_heat_maps(chart, train_stats, epoch=None):
@@ -387,12 +393,12 @@ def update_heat_maps(chart, train_stats, epoch=None):
         epoch = train_stats.history.best_epoch
     history = train_stats.history
     class_names = train_stats.class_names
-    plot_heatmap(chart(0, 0), history.metric_history('ConfusionMatrix_precision')[epoch].numpy(), columns=class_names)
-    plot_heatmap(chart(0, 1), history.metric_history('ConfusionMatrix_recall')[epoch].numpy(), columns=class_names)
-    plot_heatmap(chart(1, 0), history.val_metric_history('ConfusionMatrix_precision')[epoch].numpy(), columns=class_names)
-    plot_heatmap(chart(1, 1), history.val_metric_history('ConfusionMatrix_recall')[epoch].numpy(), columns=class_names)
+    plot_heatmap(chart(0, 0), history.metric_history('ConfusionMatrix_precision')[epoch].numpy(), classes=class_names)
+    plot_heatmap(chart(0, 1), history.metric_history('ConfusionMatrix_recall')[epoch].numpy(), classes=class_names)
+    plot_heatmap(chart(1, 0), history.val_metric_history('ConfusionMatrix_precision')[epoch].numpy(), classes=class_names)
+    plot_heatmap(chart(1, 1), history.val_metric_history('ConfusionMatrix_recall')[epoch].numpy(), classes=class_names)
 
-def plot_heatmap(chart, data, columns = None):
+def plot_heatmap(chart, data, classes = None):
     correlogram = pg.ImageItem()
     # create transform to center the corner element on the origin, for any assigned image:
     tr = QTransform().translate(-0.5, -0.5)
@@ -405,7 +411,7 @@ def plot_heatmap(chart, data, columns = None):
     # show full frame, label tick marks at top and left sides, with some extra space for labels:
     chart.showAxes( True, showValues=(True, True, False, False), size=20 )
     # define major tick marks and labels:
-    ticks = [(idx, label) for idx, label in enumerate(columns)]
+    ticks: list[tuple[int, Any]] = [(idx, label) for idx, label in enumerate(classes)]
     for side in ('left', 'top', 'right', 'bottom'):
         chart.getAxis(side).setTicks((ticks, []))  # add list of major ticks; no minor ticks
     chart.getAxis('top').setHeight(30)
