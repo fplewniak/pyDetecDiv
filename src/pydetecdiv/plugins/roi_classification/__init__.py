@@ -863,9 +863,9 @@ class Plugin(plugins.Plugin):
 
     def objective(self, trial):
         print('Running objective function', file=sys.stderr)
-        self.parameters['epochs'].value = 6
-        # self.parameters['batch_size'].value = 32
-        self.parameters['batch_size'].value = trial.suggest_int("batch_size", 4, 32, step=4)
+        self.parameters['epochs'].value = 8
+        self.parameters['batch_size'].value = 32
+        # self.parameters['batch_size'].value = trial.suggest_int("batch_size", 4, 32, step=4)
         # self.parameters['seqlen'].value = 10
         self.parameters['seqlen'].value = trial.suggest_int("seqlen", 5, 15, log=True)
         # self.parameters['focal_gamma'].value = 1.0
@@ -1066,32 +1066,30 @@ class Plugin(plugins.Plugin):
             run.key_val.update({'last_weights': os.path.basename(last_weights_filepath)})
         run.validate().commit()
 
-        if trial is None:
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Computing confusion matrix for last epoch on validation dataset')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Computing metrics for last epoch on validation dataset')
 
-            if run.key_val is None:
-                run.key_val = {'last_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[-1].items()}}
-            else:
-                run.key_val.update({'last_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[-1].items()}})
+        if run.key_val is None:
+            run.key_val = {'last_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[-1].items()}}
+        else:
+            run.key_val.update({'last_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[-1].items()}})
 
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Evaluation of best epoch on validation dataset')
+        print(f'{datetime.now().strftime("%H:%M:%S")}: Computing metrics for best epoch on validation dataset')
 
-            avg_val_loss = history.val_loss[train_stats.history.best_epoch]
-            val_metric = history.val_metric_history(metric_name)[train_stats.history.best_epoch]
+        avg_val_loss = history.val_loss[train_stats.history.best_epoch]
+        val_metric = history.val_metric_history(metric_name)[train_stats.history.best_epoch]
 
-            print(f"Best validation loss: {avg_val_loss:.4f}, "
-                  f"Best validation {metric_name}: {val_metric:.3f}, ")
+        print(f"Best validation loss: {avg_val_loss:.4f}, Best validation {metric_name}: {val_metric:.3f}, ")
 
-            if run.key_val is None:
-                run.key_val = {'best_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[train_stats.history.best_epoch].items()}}
-            else:
-                run.key_val.update({'best_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[train_stats.history.best_epoch].items()}})
+        if run.key_val is None:
+            run.key_val = {'best_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[train_stats.history.best_epoch].items()}}
+        else:
+            run.key_val.update({'best_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[train_stats.history.best_epoch].items()}})
 
-            run.validate().commit()
+        run.validate().commit()
 
         datasets = {'train': training_dataset, 'val': validation_dataset, 'test': test_dataset}
 
-        if self.parameters['log_metrics']:
+        if self.parameters['log_metrics'].value:
             os.makedirs(os.path.join(get_project_dir(), 'roi_classification', 'logs', self.parameters['model'].key), exist_ok=True)
             metrics_log_filepath = os.path.join(get_project_dir(), 'roi_classification', 'logs', self.parameters['model'].key,
                                                 f'{run.id_}_metrics_log.pckl')
