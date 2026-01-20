@@ -994,8 +994,9 @@ class Plugin(plugins.Plugin):
         checkpoint_filepath, last_weights_filepath = self.get_weights_filepaths(run, metric_name)
 
         if fine_tuning:
-            min_val_loss, best_val_metric = evaluate_metrics(model, validation_dataloader, seq2one, loss_fn,
+            min_val_loss = evaluate_metrics(model, validation_dataloader, seq2one, loss_fn,
                                                              lambda1, lambda2, device, train_stats.val_metrics)
+            best_val_metric = train_stats.val_metrics[metric_name].compute().item()
             print(f'Fine tuning starting with validation loss = {min_val_loss} and initial {metric_name} = {best_val_metric}')
         else:
             min_val_loss = torch.finfo(torch.float).max

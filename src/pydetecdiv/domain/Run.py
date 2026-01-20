@@ -31,10 +31,11 @@ class Run(DomainSpecificObject):
         self.key_val = key_val
         self.validate()
 
-    def filter(self, commands=None, has_parameters=None):
+    def filter(self, commands=None, has_parameters=None, has_key_val=None):
         command_filter = commands is None or self.command in commands
         param_filter = has_parameters is None or all([key in self.parameters.keys() for key in has_parameters])
-        return command_filter and param_filter
+        key_val_filter = has_key_val is None or (self.key_val is not None and all([key in self.key_val.keys() for key in has_key_val]))
+        return command_filter and param_filter and key_val_filter
 
     def record(self, no_id: bool = False) -> dict[str, Any]:
         """
