@@ -4,14 +4,11 @@ GUI for training and fine tuning models
 import gc
 import random
 import sys
-from typing import Any
 
-import numpy as np
 import torch
 from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QTransform
+from PySide6.QtWidgets import QFrame, QGridLayout
 from sklearn.metrics import ConfusionMatrixDisplay
-from torchmetrics.classification import MulticlassConfusionMatrix
 import pyqtgraph as pg
 
 import pydetecdiv.plugins
@@ -313,7 +310,6 @@ def plot_training_results(results: tuple[ClassifierTrainingStats, dict[str, ROID
 
     :param results: the results from training process
     """
-    # (train_stats, ground_truth, predictions, best_gt, best_predictions, dataset, model, device) = results
     (train_stats, dataset, model, device) = results
     module_name, class_names, history = train_stats.model_name, train_stats.class_names, train_stats.history
     tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {module_name}')
@@ -334,97 +330,91 @@ def plot_training_results(results: tuple[ClassifierTrainingStats, dict[str, ROID
     tab.addTab(plot_confusion_matrix_torchmetrics(train_stats, epoch=train_stats.history.best_epoch, val=True),
                'Confusion matrix (best epoch / val)')
 
-    # tab.addTab(plot_metrics(train_stats), 'Metrics history')
-
     interactive = plot_interactive_history(train_stats)
     tab.addTab(interactive, 'Interactive history')
-    # tab.setCurrentWidget(interactive)
-    #
-    # for epoch in range(history.num_epochs):
-    #     update_heat_maps(interactive.chart, train_stats, epoch)
 
     del model
     torch.cuda.empty_cache()
     gc.collect()
 
 def plot_interactive_history(train_stats):
-    chart_view = ChartView()
-    chart_view.ci.layout.setSpacing(0)
-    chart_view.ci.setContentsMargins(0, 0, 0, 0)
-
-    chart_view.ci.layout.setColumnStretchFactor(0, 1)
-    chart_view.ci.layout.setColumnStretchFactor(1, 1)
-    chart_view.ci.layout.setColumnStretchFactor(2, 2)
-    # chart_view.ci.layout.setRowStretchFactor(0, 1)
-    # chart_view.ci.layout.setRowStretchFactor(1, 1)
-
-    chart_view.ci.addPlot(row=0, col=0, title="Training precision")
-    chart_view.ci.addPlot(row=0, col=1, title="Training recall")
-    chart_view.ci.addPlot(row=1, col=0, title="Val precision")
-    chart_view.ci.addPlot(row=1, col=1, title="Val recall")
-    update_heat_maps(chart_view.chart, train_stats)
-
     history = train_stats.history
 
-    chart_view.addPlot(0, 2, rowspan=2, title='Metrics history')
-    chart_view.chart(0, 2).getAxis('left').setWidth(50)
-    chart_view.chart(0, 2).addLegend(offset=(-1, -1), anchor=(0, 0), pen=pg.mkPen('k', width=1),
-                                     brush=pg.mkBrush('w'))
-    i = 0
-    for metric_name in train_stats.metrics.keys():
-        if len(history.metric_history(metric_name)[0].shape) <= 1:
-            chart_view.addLinePlot(history.metric_history(metric_name), row=0, col=2, pen=pg.mkPen(Colours.palette[i], width=2),
-                                   name=metric_name)
-            chart_view.addLinePlot(history.val_metric_history(metric_name), row=0, col=2,
-                                   pen=pg.mkPen(Colours.palette[i], width=2, style=Qt.DashLine))
-            i += 1
-    ticks = [(float(idx), str(idx)) for idx in range(history.num_epochs)]
-    chart_view.chart(0, 2).getAxis('bottom').setTicks([ticks, []])
-    epoch_line = chart_view.chart(0, 2).addLine(x=history.best_epoch, movable=True, pen=pg.mkPen('g', width=3))
-    epoch_line.setBounds((0, history.num_epochs - 1))
-    epoch_line.sigPositionChanged.connect(lambda x: update_heat_maps(chart_view.chart,
-                                                                     train_stats, epoch=int(x.getXPos() + 0.5)))
+    frame = QFrame()
+    layout = QGridLayout()
+    frame.setLayout(layout)
+
+    chart_view, epoch_line = plot_metrics_history(train_stats)
+
+    matplot_view = MatplotViewer(columns=2, rows=2, toolbar=False)
+    update_heat_maps(matplot_view, train_stats, epoch=history.best_epoch)
+
+    layout.addWidget(matplot_view, 0 , 0)
+    layout.addWidget(chart_view, 0, 1)
+
+    epoch_line.sigPositionChangeFinished.connect(lambda x: update_heat_maps(matplot_view, train_stats, epoch=int(x.getXPos() + 0.5)))
     epoch_line.sigPositionChangeFinished.connect(lambda x: x.setPos(float(int(x.getXPos() + 0.5))))
 
-    return chart_view
+    return frame
 
-def update_heat_maps(chart, train_stats, epoch=None):
+def update_heat_maps(matplot_view, train_stats, epoch=None):
     if epoch is None:
         epoch = train_stats.history.best_epoch
     history = train_stats.history
     class_names = train_stats.class_names
-    plot_heatmap(chart(0, 0), history.metric_history('ConfusionMatrix_precision')[epoch].numpy(), classes=class_names)
-    plot_heatmap(chart(0, 1), history.metric_history('ConfusionMatrix_recall')[epoch].numpy(), classes=class_names)
-    plot_heatmap(chart(1, 0), history.val_metric_history('ConfusionMatrix_precision')[epoch].numpy(), classes=class_names)
-    plot_heatmap(chart(1, 1), history.val_metric_history('ConfusionMatrix_recall')[epoch].numpy(), classes=class_names)
 
-def plot_heatmap(chart, data, classes = None):
-    correlogram = pg.ImageItem()
-    # create transform to center the corner element on the origin, for any assigned image:
-    tr = QTransform().translate(-0.5, -0.5)
-    correlogram.setTransform(tr)
-    colorMap = pg.colormap.get("gnuplot", source='matplotlib',)  # choose perceptually uniform, diverging color map
-    correlogram.setImage(data, colorMap=colorMap)
-    chart.invertY(True)
-    chart.setDefaultPadding(0.0)  # plot without padding data range
-    chart.addItem(correlogram)    # display correlogram
-    # show full frame, label tick marks at top and left sides, with some extra space for labels:
-    chart.showAxes( True, showValues=(True, True, False, False), size=20 )
-    # define major tick marks and labels:
-    ticks: list[tuple[int, Any]] = [(idx, label) for idx, label in enumerate(classes)]
-    for side in ('left', 'top', 'right', 'bottom'):
-        chart.getAxis(side).setTicks((ticks, []))  # add list of major ticks; no minor ticks
-    chart.getAxis('top').setHeight(30)
-    chart.getAxis('top').setLabel('True classes')
-    chart.getAxis('bottom').setHeight(10)  # include some additional space at bottom of figure
-    chart.getAxis('left').setWidth(65)
-    chart.getAxis('left').setLabel('Predicted classes')
-    chart.getAxis('right').setWidth(80)
+    ax = matplot_view.axes
 
-    # colorMap = pg.colormap.get("CET-D1")  # choose perceptually uniform, diverging color map
-    # bar = pg.ColorBarItem( values=(0,1), colorMap=colorMap)
-    # link color bar and color map to correlogram, and show it in plotItem:
-    # bar.setImageItem(correlogram, insert_in=chart)
+    plot_heatmap(ax[0][0], history.metric_history('ConfusionMatrix_precision')[epoch].numpy(),
+                 class_names=class_names, title='precision (train)')
+    plot_heatmap(ax[0][1], history.metric_history('ConfusionMatrix_recall')[epoch].numpy(),
+                 class_names=class_names, title='recall (train)')
+    plot_heatmap(ax[1][0], history.val_metric_history('ConfusionMatrix_precision')[epoch].numpy(),
+                 class_names=class_names, title='precision (val)')
+    plot_heatmap(ax[1][1], history.val_metric_history('ConfusionMatrix_recall')[epoch].numpy(),
+                 class_names=class_names, title='recall (val)')
+
+    matplot_view.show()
+
+def plot_heatmap(axis, data, class_names = None, title=None):
+    axis.clear()
+    axis.set_title(title, size=10)
+    axis.set_xticks(range(len(class_names)), labels=class_names, rotation=45, ha="right", rotation_mode="anchor", size=8)
+    axis.set_yticks(range(len(class_names)), labels=class_names, size=8)
+    axis.set_xlabel("Predicted classes", size=8)
+    axis.set_ylabel("True classes", size=8)
+
+    im = axis.imshow(data)
+    for i, row in enumerate(data):
+        for j, val in enumerate(row):
+            text = axis.text(j, i, f'{data[i, j].item():0.2f}', ha="center", va="center", color="w", size=8)
+
+def plot_metrics_history(train_stats, epoch=None):
+    history = train_stats.history
+    epoch = train_stats.history.best_epoch if epoch is None else epoch
+
+    chart_view = ChartView()
+    chart_view.ci.layout.setSpacing(0)
+    chart_view.ci.setContentsMargins(0, 0, 0, 0)
+
+    chart_view.addPlot(0, 0, title='Metrics history')
+    chart_view.chart(0, 0).addLegend(offset=(-1, -1), anchor=(0, 0), pen=pg.mkPen('k', width=1),
+                                     brush=pg.mkBrush('w'))
+
+    i = 0
+    for metric_name in train_stats.metrics.keys():
+        if len(history.metric_history(metric_name)[0].shape) <= 1:
+            chart_view.addLinePlot(history.metric_history(metric_name), row=0, col=0, pen=pg.mkPen(Colours.palette[i], width=2),
+                                   name=metric_name)
+            chart_view.addLinePlot(history.val_metric_history(metric_name), row=0, col=0,
+                                   pen=pg.mkPen(Colours.palette[i], width=2, style=Qt.DashLine))
+            i += 1
+    ticks = [(float(idx), str(idx + 1)) for idx in range(history.num_epochs)]
+    chart_view.chart(0, 0).getAxis('bottom').setTicks([ticks, []])
+
+    epoch_line = chart_view.chart(0, 0).addLine(x=epoch, movable=True, pen=pg.mkPen('g', width=3))
+    epoch_line.setBounds((0, history.num_epochs - 1))
+    return chart_view, epoch_line
 
 def plot_metrics(train_stats):
     plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, layout='constrained', columns=1, rows=1)
