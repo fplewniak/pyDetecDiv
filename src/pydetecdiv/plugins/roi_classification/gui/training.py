@@ -318,17 +318,17 @@ def plot_training_results(results: tuple[ClassifierTrainingStats, dict[str, ROID
     tab.addTab(history_plot, 'Training history')
     tab.setCurrentWidget(history_plot)
 
-    tab.addTab(plot_confusion_matrix_torchmetrics(train_stats),
-               'Confusion matrix (last epoch / train)')
-
-    tab.addTab(plot_confusion_matrix_torchmetrics(train_stats, val=True),
-               'Confusion matrix (last epoch / val)')
-
-    tab.addTab(plot_confusion_matrix_torchmetrics(train_stats, epoch=train_stats.history.best_epoch),
-               'Confusion matrix (best epoch / train)')
-
-    tab.addTab(plot_confusion_matrix_torchmetrics(train_stats, epoch=train_stats.history.best_epoch, val=True),
-               'Confusion matrix (best epoch / val)')
+    # tab.addTab(plot_confusion_matrix_torchmetrics(train_stats),
+    #            'Confusion matrix (last epoch / train)')
+    #
+    # tab.addTab(plot_confusion_matrix_torchmetrics(train_stats, val=True),
+    #            'Confusion matrix (last epoch / val)')
+    #
+    # tab.addTab(plot_confusion_matrix_torchmetrics(train_stats, epoch=train_stats.history.best_epoch),
+    #            'Confusion matrix (best epoch / train)')
+    #
+    # tab.addTab(plot_confusion_matrix_torchmetrics(train_stats, epoch=train_stats.history.best_epoch, val=True),
+    #            'Confusion matrix (best epoch / val)')
 
     interactive = plot_interactive_history(train_stats)
     tab.addTab(interactive, 'Interactive history')
