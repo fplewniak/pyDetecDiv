@@ -8,7 +8,7 @@ class Colours:
     palette = [
         QColor('black'),
         QColor('red'),
-        QColor('green'),
+        QColor(0, 255, 0, 255),
         QColor('blue'),
         QColor('yellow'),
         QColor('magenta'),
