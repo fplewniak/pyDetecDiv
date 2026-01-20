@@ -32,7 +32,9 @@ from torch.utils.data import DataLoader
 from torchmetrics import MetricCollection
 from torchvision.transforms import v2, InterpolationMode
 from torchmetrics.classification import (MulticlassMatthewsCorrCoef, MulticlassCohenKappa, MulticlassPrecisionRecallCurve,
-                                         MulticlassF1Score, MulticlassAccuracy, MulticlassAUROC)
+                                         MulticlassF1Score, MulticlassAccuracy, MulticlassAUROC, MulticlassAveragePrecision,
+                                         MulticlassCalibrationError, MulticlassNegativePredictiveValue, MulticlassPrecision,
+                                         MulticlassRecall, MulticlassSpecificity)
 
 from PySide6.QtGui import QAction
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
@@ -251,32 +253,25 @@ def set_optimizer(parameters, model_param):
             optimizer = parameters['optimizer'].value(model_param, lr=lr, momentum=momentum, weight_decay=weight_decay)
     return optimizer
 
+def set_metrics(num_classes):
+    metrics = MetricCollection([
+        MetricCollection({'MCC': MulticlassMatthewsCorrCoef(num_classes=num_classes)}),
+        MetricCollection({'F1score': MulticlassF1Score(num_classes=num_classes, average='weighted')}),
+        MetricCollection({'AUROC': MulticlassAUROC(num_classes=num_classes)}),
+        MetricCollection({'Accuracy': MulticlassAccuracy(num_classes=num_classes)}),
+        MetricCollection({'Average Precision': MulticlassAveragePrecision(num_classes=num_classes)}),
+        MetricCollection({'Calibration Error': MulticlassCalibrationError(num_classes=num_classes)}),
+        MetricCollection({'Negative Predictive Value': MulticlassNegativePredictiveValue(num_classes=num_classes)}),
+        MetricCollection({'Precision': MulticlassPrecision(num_classes=num_classes)}),
+        MetricCollection({'Recall': MulticlassRecall(num_classes=num_classes)}),
+        MetricCollection({'Specificity': MulticlassSpecificity(num_classes=num_classes)}),
+        ])
+    return metrics
 
-def set_metric(parameters, num_classes):
-    metric_fn = MulticlassMatthewsCorrCoef(num_classes=num_classes)
-    metric_name = 'MCC'
-
-    match parameters['follow_metric'].key:
-        case 'Matthews Correlation Coefficient':
-            metric_name = 'MCC'
-            metric_fn = MetricCollection({metric_name: MulticlassMatthewsCorrCoef(num_classes=num_classes)})
-        case 'Cohen kappa':
-            metric_name = 'Cohen kappa'
-            metric_fn = MetricCollection({metric_name: MulticlassCohenKappa(num_classes=num_classes)})
-        case 'F-1 score':
-            metric_name = 'F1score'
-            metric_fn = MetricCollection({metric_name: MulticlassF1Score(num_classes=num_classes, average='weighted')})
-        case 'AUC-PR':
-            metric_name = 'AUROC'
-            metric_fn = MetricCollection({metric_name: MulticlassAUROC(num_classes=num_classes)})
-        case 'Accuracy':
-            metric_name = 'Accuracy'
-            metric_fn = MetricCollection({metric_name: MulticlassAccuracy(num_classes=num_classes)})
-    #
-    # if isinstance(metric_fn, tuple):
-    #     metric_fn = metric_fn[0]
-
-    return metric_fn, metric_name
+def check_best_val_metric(train_stats, metric_name, best_val_metric):
+    if train_stats.metrics[metric_name].higher_is_better:
+        return train_stats.history.val_metric_history(metric_name)[-1] > best_val_metric
+    return train_stats.history.val_metric_history(metric_name)[-1] < best_val_metric
 
 
 def set_loss(parameters, class_weights):
@@ -357,11 +352,16 @@ class Plugin(plugins.Plugin):
                          default=15, ),
             ChoiceParameter(name='follow_metric', label='Follow metric', groups={'training', 'finetune'},
                             default='Matthews Correlation Coefficient',
-                            items={'Matthews Correlation Coefficient': MulticlassMatthewsCorrCoef,
-                                   'Cohen kappa'                     : MulticlassCohenKappa,
-                                   'F-1 score'                       : MulticlassF1Score,
-                                   'AUROC'                           : MulticlassAUROC,
-                                   'Accuracy'                        : MulticlassAccuracy,
+                            items={'Matthews Correlation Coefficient': 'MCC',
+                                   'F-1 score'                       : 'F1score',
+                                   'AUROC'                           : 'AUROC',
+                                   'Accuracy'                        : 'Accuracy',
+                                   'Average Precision'               : 'Average Precision',
+                                   'Calibration Error'               : 'Calibration Error',
+                                   'Negative Predictive Value'       : 'Negative Predictive Value',
+                                   'Precision'                       : 'Precision',
+                                   'Recall'                          : 'Recall',
+                                   'Specificity'                     : 'Specificity',
                                    # 'Accuracy by class': AccuracyByClass,
                                    }),
             ItemParameter(name='annotation_file', label='Annotation file', groups={'import_annotations'}, ),
@@ -582,9 +582,9 @@ class Plugin(plugins.Plugin):
             project_name = PyDetecDiv.project_name
         with pydetecdiv_project(project_name) as project:
             run_list = project.get_objects('Run')
-            all_parameters = [run.parameters for run in run_list
+            all_parameters = [run.parameters | run.key_val for run in run_list
                               if run.filter(commands=['train_model', 'fine_tune', 'import_classifier'],
-                                            has_parameters=['last_weights', 'best_weights'])]
+                                            has_key_val=['last_weights', 'best_weights'])]
 
         for parameters in all_parameters:
             module = self.parameters['model'].items[parameters['model']]
@@ -863,26 +863,30 @@ class Plugin(plugins.Plugin):
 
     def objective(self, trial):
         print('Running objective function', file=sys.stderr)
-        self.parameters['epochs'].value = 8
+        self.parameters['epochs'].value = 10
         self.parameters['batch_size'].value = 32
         # self.parameters['batch_size'].value = trial.suggest_int("batch_size", 4, 32, step=4)
-        # self.parameters['seqlen'].value = 10
-        self.parameters['seqlen'].value = trial.suggest_int("seqlen", 5, 15, log=True)
+        self.parameters['seqlen'].value = 5
+        # self.parameters['seqlen'].value = trial.suggest_int("seqlen", 5, 15, log=True)
         # self.parameters['focal_gamma'].value = 1.0
         self.parameters['focal_gamma'].value = 0.0
         # self.parameters['focal_gamma'].value = trial.suggest_float("gamma", 0.001, 1.5, log=True)
-        self.parameters['L1'].value = trial.suggest_float("L1", 1e-6, 1e-2, log=True)
-        self.parameters['L2'].value = trial.suggest_float("L2", 1e-6, 1e-2, log=True)
+        self.parameters['L1'].value = 1e-5
+        # self.parameters['L1'].value = trial.suggest_float("L1", 1e-6, 1e-2, log=True)
+        self.parameters['L2'].value = 0.0
+        # self.parameters['L2'].value = trial.suggest_float("L2", 1e-6, 1e-2, log=True)
         # self.parameters['augmentation'].value = True
         self.parameters['augmentation'].value = trial.suggest_categorical("augmentation", [True, False])
         self.parameters['num_training'].value = 0.4
         self.parameters['num_validation'].value = 0.3
         self.parameters['num_test'].value = 0.3
-        self.parameters['learning_rate'].value = trial.suggest_float("lr", 1e-6, 1e-3, log=True)
+        self.parameters['learning_rate'].value = 4.0e-5
+        # self.parameters['learning_rate'].value = trial.suggest_float("lr", 1e-6, 1e-3, log=True)
         self.parameters['checkpoint_metric'].set_value('Metric')
         training_stats, _, model, _ = self.train_model(trial=trial)
         del model
         gc.collect()
+        # return training_stats.val_metric_history(training_stats.main_metric)[training_stats.history.best_epoch]
         return training_stats.val_metric_history(training_stats.main_metric)[-1]
 
     def tune_hyperparameters(self):
@@ -894,7 +898,7 @@ class Plugin(plugins.Plugin):
                                     direction="maximize")
         # create_study(*, storage=None, sampler=None, pruner=None, study_name=None, direction=None, load_if_exists=False, directions=None)
         print('Optimization of objective function', file=sys.stderr)
-        study.optimize(self.objective, n_trials=10)
+        study.optimize(self.objective, n_trials=20)
         # optimize(func, n_trials=None, timeout=None, n_jobs=1, catch=(), callbacks=None, gc_after_trial=False, show_progress_bar=False)
         # study.set_metric_names(metric_names)
         pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
@@ -981,21 +985,10 @@ class Plugin(plugins.Plugin):
         validation_dataloader = DataLoader(validation_dataset, batch_size=self.parameters['batch_size'].value, shuffle=True)
         # test_dataloader = DataLoader(test_dataset, batch_size=self.parameters['batch_size'].value, shuffle=True)
 
-        # metric_fn, metric_name = set_metric(self.parameters, train_stats.num_classes)
-        # metric_fn.to(device)
-        # metric_fn2, metric_name = set_metric(self.parameters, train_stats.num_classes)
-        # train_stats.add_metrics(metric_fn2)
+        train_stats.add_metrics(set_metrics(train_stats.num_classes))
         train_stats.metrics.to(device)
         train_stats.val_metrics.to(device)
-        # train_stats.history.main_metric = metric_name
-
-        train_stats.add_metrics(MetricCollection({'MCC': MulticlassMatthewsCorrCoef(num_classes=train_stats.num_classes).to(device)}))
-        train_stats.add_metrics(MetricCollection({'Cohen kappa': MulticlassCohenKappa(num_classes=train_stats.num_classes).to(device)}))
-        train_stats.add_metrics(MetricCollection({'F1score': MulticlassF1Score(num_classes=train_stats.num_classes).to(device)}))
-        train_stats.add_metrics(MetricCollection({'AUROC': MulticlassAUROC(num_classes=train_stats.num_classes).to(device)}))
-        train_stats.add_metrics(MetricCollection({'Accuracy': MulticlassAccuracy(num_classes=train_stats.num_classes).to(device)}))
-
-        metric_fn2, metric_name = set_metric(self.parameters, train_stats.num_classes)
+        metric_name = self.parameters['follow_metric'].value
         train_stats.history.main_metric = metric_name
 
         checkpoint_filepath, last_weights_filepath = self.get_weights_filepaths(run, metric_name)
@@ -1006,7 +999,7 @@ class Plugin(plugins.Plugin):
             print(f'Fine tuning starting with validation loss = {min_val_loss} and initial {metric_name} = {best_val_metric}')
         else:
             min_val_loss = torch.finfo(torch.float).max
-            best_val_metric = torch.finfo(torch.float).min
+            best_val_metric = torch.finfo(torch.float).min if train_stats.metrics[metric_name].higher_is_better else torch.finfo(torch.float).max
 
         history = train_stats.history
 
@@ -1024,7 +1017,8 @@ class Plugin(plugins.Plugin):
                 else:
                     run.key_val.update({'best_weights': os.path.basename(checkpoint_filepath), 'best_epoch': epoch + 1})
                 run.validate().commit()
-            elif (self.parameters['checkpoint_metric'].key == 'Metric') and (history.val_metric_history(metric_name)[-1] > best_val_metric):
+            # elif (self.parameters['checkpoint_metric'].key == 'Metric') and (history.val_metric_history(metric_name)[-1] > best_val_metric):
+            elif (self.parameters['checkpoint_metric'].key == 'Metric') and check_best_val_metric(train_stats, metric_name, best_val_metric):
                 best_val_metric = history.val_metric_history(metric_name)[-1]
                 history.best_epoch = epoch
                 model_scripted = torch.jit.script(model)
