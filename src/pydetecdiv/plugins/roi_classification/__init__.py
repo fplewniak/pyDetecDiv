@@ -1089,7 +1089,8 @@ class Plugin(plugins.Plugin):
             metrics_log_filepath = os.path.join(get_project_dir(), 'roi_classification', 'logs', self.parameters['model'].key,
                                                 f'{run.id_}_metrics_log.pckl')
             with open(metrics_log_filepath, 'wb') as fp:
-                pickle.dump({'train': train_stats.metric_history(), 'val': train_stats.val_metric_history()}, fp, protocol=pickle.HIGHEST_PROTOCOL)
+                pickle.dump(train_stats, fp, protocol=pickle.HIGHEST_PROTOCOL)
+                # pickle.dump({'train': train_stats.metric_history(), 'val': train_stats.val_metric_history()}, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
         return train_stats, datasets, model, device
 
