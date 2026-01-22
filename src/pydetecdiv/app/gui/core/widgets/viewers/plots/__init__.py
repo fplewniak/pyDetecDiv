@@ -1,7 +1,10 @@
+"""
+Classes to display plots in any QWidget, using either Matplotlib backend or pyQtGraph
+"""
+from typing import Literal
+
 import numpy as np
-from PySide6.QtCharts import QChartView, QLineSeries, QChart
-from PySide6.QtCore import QPointF
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QGraphicsWidget
+from PySide6.QtWidgets import QWidget, QVBoxLayout
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
@@ -13,9 +16,10 @@ class MatplotViewer(QWidget):
     A widget to display matplotlib plots in a tab
     """
 
-    def __init__(self, parent: QWidget = None, rows: int = 1, columns: int = 1, toolbar: bool = True, layout='constrained',):
+    def __init__(self, parent: QWidget = None, rows: int = 1, columns: int = 1, toolbar: bool = True,
+                 layout: Literal["constrained", "compressed", "tight"] = 'constrained',):
         super().__init__(parent)
-        self.figure = Figure(layout='constrained')
+        self.figure = Figure(layout=layout)
         self.canvas = FigureCanvas(self.figure)
         self.axes = self.canvas.figure.subplots(rows, columns)
         # self.canvas.figure.tight_layout()
@@ -42,13 +46,16 @@ class ChartView(pg.GraphicsLayoutWidget):
     def __init__(self, parent: QWidget = None):
         super().__init__(show=False, parent=parent)
 
-    def addPlot(self, row: int = 0, col: int = 0) -> None:
+    def addPlot(self, row: int = 0, col: int = 0, rowspan: int = 1, colspan: int = 1, **kwargs) -> None:
         """
         Adds a plot at the desired position designed by row and column
+
         :param row: the row index
         :param col: the column index
+        :param colspan: the column span for the plot
+        :param rowspan: the row span for the plot
         """
-        self.centralWidget.addPlot(row=row, col=col)
+        self.centralWidget.addPlot(row=row, col=col, rowspan=rowspan, colspan=colspan, **kwargs)
 
     def chart(self, row: int = 0, col: int = 0) -> pg.PlotItem:
         """
@@ -78,7 +85,8 @@ class ChartView(pg.GraphicsLayoutWidget):
         :param kwargs: extra kwargs to pass to pg.PlotCurveItem constructor
         """
         scatter = pg.ScatterPlotItem(**kwargs)
-        spots = [(i, c) for i, c in enumerate(data)]
+        # spots = [(i, c) for i, c in enumerate(data)]
+        spots = list(enumerate(data))
         scatter.addPoints(pos=spots)
         self.chart(row, col).addItem(scatter)
         scatter.sigClicked.connect(self.clicked)

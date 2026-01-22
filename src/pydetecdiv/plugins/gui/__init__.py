@@ -812,7 +812,7 @@ class Dialog(QDialog):
         QApplication.processEvents()
         self.adjustSize()
 
-    def addGroupBox(self, title: str = None, widget: Type[GroupBox] = ParametersFormGroupBox) -> GenericGroupBox:
+    def addGroupBox(self, title: str = None, widget: Type[GroupBox] = ParametersFormGroupBox) -> GroupBox:
         """
         Add a group box to the Dialog window
 

@@ -31,10 +31,9 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 from torch.utils.data import DataLoader
 from torchmetrics import MetricCollection
 from torchvision.transforms import v2, InterpolationMode
-from torchmetrics.classification import (MulticlassMatthewsCorrCoef, MulticlassCohenKappa, MulticlassPrecisionRecallCurve,
-                                         MulticlassF1Score, MulticlassAccuracy, MulticlassAUROC, MulticlassAveragePrecision,
-                                         MulticlassCalibrationError, MulticlassNegativePredictiveValue, MulticlassPrecision,
-                                         MulticlassRecall, MulticlassSpecificity)
+from torchmetrics.classification import (MulticlassMatthewsCorrCoef, MulticlassF1Score, MulticlassAccuracy, MulticlassAUROC,
+                                         MulticlassAveragePrecision, MulticlassCalibrationError, MulticlassNegativePredictiveValue,
+                                         MulticlassPrecision, MulticlassRecall, MulticlassSpecificity)
 
 from PySide6.QtGui import QAction
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
@@ -45,7 +44,7 @@ from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir, proj
 from pydetecdiv.domain.Run import Run
 from pydetecdiv.domain.Project import Project
 from pydetecdiv.domain.ROI import ROI
-from pydetecdiv.app.parameters import ItemParameter, ChoiceParameter, IntParameter, FloatParameter, CheckParameter
+from pydetecdiv.app.parameters import ItemParameter, ChoiceParameter, IntParameter, FloatParameter, CheckParameter, Parameters
 from pydetecdiv.plugins.roi_classification.data import ROIDataset
 
 from pydetecdiv.settings import get_plugins_dir, get_config_value
@@ -61,7 +60,7 @@ from .gui.training import TrainingDialog, FineTuningDialog, ImportClassifierDial
 from .training import train_loop
 from .utils import get_classifications, get_annotation_runs
 from ...domain.Dataset import Dataset
-from ...torch import ClassifierModelStats, ClassifierTrainingStats
+from ...torch import ClassifierTrainingStats, TrainingStats
 from ...torch.loss import FocalLoss
 
 Base = registry().generate_base()
@@ -161,7 +160,7 @@ def get_fov_timestamp(id_list: list[int] = None) -> float:
     """
     with pydetecdiv_project(PyDetecDiv.project_name) as project:
         fov_list = project.get_objects('FOV', id_list=id_list)
-        return max([fov.timestamp if fov.timestamp is not None else 0.0 for fov in fov_list])
+        return max(fov.timestamp if fov.timestamp is not None else 0.0 for fov in fov_list)
 
 
 def get_roi_list() -> pd.DataFrame:
@@ -239,7 +238,14 @@ def save_training_datasets(run: Run, hdf5_file: str, training_idx: list[list[int
     run.project.commit()
 
 
-def set_optimizer(parameters, model_param):
+def set_optimizer(parameters: Parameters, model_param: dict) -> torch.optim.Optimizer:
+    """
+    Set the optimizer.
+
+    :param parameters: the parameters
+    :param model_param: model parameters that will be passed to the optimizer constructor
+    :return: the optimizer
+    """
     lr = parameters['learning_rate'].value
     weight_decay = parameters['weight_decay'].value
     momentum = parameters['momentum'].value
@@ -253,7 +259,14 @@ def set_optimizer(parameters, model_param):
             optimizer = parameters['optimizer'].value(model_param, lr=lr, momentum=momentum, weight_decay=weight_decay)
     return optimizer
 
-def set_metrics(num_classes):
+
+def set_metrics(num_classes: int) -> MetricCollection:
+    """
+    Set the metrics collection for the run
+
+    :param num_classes: the number of classes
+    :return: the metrics collection
+    """
     metrics = MetricCollection([
         MetricCollection({'MCC': MulticlassMatthewsCorrCoef(num_classes=num_classes)}),
         MetricCollection({'F1score': MulticlassF1Score(num_classes=num_classes, average='weighted')}),
@@ -268,13 +281,30 @@ def set_metrics(num_classes):
         ])
     return metrics
 
-def check_best_val_metric(train_stats, metric_name, best_val_metric):
+
+def check_best_val_metric(train_stats: TrainingStats, metric_name: str, best_val_metric: float) -> bool:
+    """
+    Checks whether the last value of the followed metric is better than the previously saved. This method takes into account the
+    higher_is_better property of the metric as provided by torchmetrics
+
+    :param train_stats: the training statistics
+    :param metric_name: the metric name
+    :param best_val_metric: the best value so far
+    :return: True if the new value is better, False otherwise
+    """
     if train_stats.metrics[metric_name].higher_is_better:
         return train_stats.history.val_metric_history(metric_name)[-1] > best_val_metric
     return train_stats.history.val_metric_history(metric_name)[-1] < best_val_metric
 
 
-def set_loss(parameters, class_weights):
+def set_loss(parameters: Parameters, class_weights: Tensor) -> torch.nn.Module:
+    """
+    Sets the loss function according to the parameters
+
+    :param parameters: the parameters
+    :param class_weights: the weight values for the different classes
+    :return: the loss function
+    """
     # loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights.to(device), reduction='mean')
     if parameters['class_weights'].value:
         loss_fn = FocalLoss(alpha=class_weights, gamma=parameters['focal_gamma'].value, reduction='mean')
@@ -329,8 +359,10 @@ class Plugin(plugins.Plugin):
                             default='Loss', items={'Loss': 'val_loss', 'Metric': 'val_metric'}),
             # CheckParameter(name='early_stopping', label='Early stopping', groups={'training', 'finetune'},
             #                default=False),
-            CheckParameter(name='log_metrics', label='Log metrics', groups={'training', 'finetune'}, default=False, exclusive=False),
-            CheckParameter(name='augmentation', label='Augmentation', groups={'training', 'finetune'}, default=False, exclusive=False),
+            CheckParameter(name='log_metrics', label='Log metrics', groups={'training', 'finetune'}, default=False,
+                           exclusive=False),
+            CheckParameter(name='augmentation', label='Augmentation', groups={'training', 'finetune'}, default=False,
+                           exclusive=False),
             FloatParameter(name='num_training', label='Training dataset', groups={'training', 'finetune'}, default=0.4,
                            minimum=0.01, maximum=0.99, ),
             FloatParameter(name='num_validation', label='Validation dataset', groups={'training', 'finetune'},
@@ -843,8 +875,8 @@ class Plugin(plugins.Plugin):
         os.makedirs(os.path.join(get_project_dir(), 'roi_classification', 'models', self.parameters['model'].key), exist_ok=True)
         checkpoint_metric = 'loss' if self.parameters['checkpoint_metric'].key == 'Loss' else metric_name.replace(' ', '_')
         checkpoint_filepath = os.path.join(get_project_dir(), 'roi_classification', 'models',
-                                               self.parameters['model'].key,
-                                               f'{run.id_}_best_{checkpoint_metric}.weights.pt')
+                                           self.parameters['model'].key,
+                                           f'{run.id_}_best_{checkpoint_metric}.weights.pt')
         last_weights_filepath = os.path.join(get_project_dir(), 'roi_classification', 'models', self.parameters['model'].key,
                                              f'{run.id_}_last.weights.pt')
         return checkpoint_filepath, last_weights_filepath
@@ -861,18 +893,24 @@ class Plugin(plugins.Plugin):
                 return self.save_run(project, 'fine_tune', self.parameters.json(groups='finetune'))
             return self.save_run(project, 'train_model', self.parameters.json(groups='training'))
 
-    def objective(self, trial):
+    def objective(self, trial: optuna.Trial) -> float:
+        """
+        The objective function. This method suggests values for the hyperparameters and then runs the train_model method, passing
+        the trial variable thereto. It returns the metric that should be optimized by optuna.
+        :param trial: the trial object
+        :return: the value of the metric to optimize
+        """
         print('Running objective function', file=sys.stderr)
-        self.parameters['epochs'].value = 10
-        self.parameters['batch_size'].value = 32
+        self.parameters['epochs'].value = 16
+        self.parameters['batch_size'].value = 16
         # self.parameters['batch_size'].value = trial.suggest_int("batch_size", 4, 32, step=4)
         self.parameters['seqlen'].value = 5
         # self.parameters['seqlen'].value = trial.suggest_int("seqlen", 5, 15, log=True)
         # self.parameters['focal_gamma'].value = 1.0
         self.parameters['focal_gamma'].value = 0.0
         # self.parameters['focal_gamma'].value = trial.suggest_float("gamma", 0.001, 1.5, log=True)
-        self.parameters['L1'].value = 1e-5
-        # self.parameters['L1'].value = trial.suggest_float("L1", 1e-6, 1e-2, log=True)
+        # self.parameters['L1'].value = 1e-5
+        self.parameters['L1'].value = trial.suggest_float("L1", 1e-6, 1e-2, log=True)
         self.parameters['L2'].value = 0.0
         # self.parameters['L2'].value = trial.suggest_float("L2", 1e-6, 1e-2, log=True)
         # self.parameters['augmentation'].value = True
@@ -880,8 +918,8 @@ class Plugin(plugins.Plugin):
         self.parameters['num_training'].value = 0.4
         self.parameters['num_validation'].value = 0.3
         self.parameters['num_test'].value = 0.3
-        self.parameters['learning_rate'].value = 4.0e-5
-        # self.parameters['learning_rate'].value = trial.suggest_float("lr", 1e-6, 1e-3, log=True)
+        # self.parameters['learning_rate'].value = 4.0e-5
+        self.parameters['learning_rate'].value = trial.suggest_float("lr", 1e-6, 1e-3, log=True)
         self.parameters['checkpoint_metric'].set_value('Metric')
         training_stats, _, model, _ = self.train_model(trial=trial)
         del model
@@ -889,17 +927,20 @@ class Plugin(plugins.Plugin):
         # return training_stats.val_metric_history(training_stats.main_metric)[training_stats.history.best_epoch]
         return training_stats.val_metric_history(training_stats.main_metric)[-1]
 
-    def tune_hyperparameters(self):
+    def tune_hyperparameters(self) -> optuna.Trial:
+        """
+        Runs an optuna study for hyperparameter tuning.
+        """
         print('Starting Optuna study', file=sys.stderr)
         path = os.path.join(get_project_dir(), 'roi_classification')
         os.makedirs(path, exist_ok=True)
         study_name = f"{self.parameters['model'].key}_{datetime.now().strftime("%y%m%d%H%M")}"
         study = optuna.create_study(study_name=study_name, storage=f"sqlite:///{path}/optuna.sqlite3",
                                     direction="maximize")
-        # create_study(*, storage=None, sampler=None, pruner=None, study_name=None, direction=None, load_if_exists=False, directions=None)
+# create_study(*, storage=None, sampler=None, pruner=None, study_name=None, direction=None, load_if_exists=False, directions=None)
         print('Optimization of objective function', file=sys.stderr)
-        study.optimize(self.objective, n_trials=20)
-        # optimize(func, n_trials=None, timeout=None, n_jobs=1, catch=(), callbacks=None, gc_after_trial=False, show_progress_bar=False)
+        study.optimize(self.objective, n_trials=150)
+# optimize(func, n_trials=None, timeout=None, n_jobs=1, catch=(), callbacks=None, gc_after_trial=False, show_progress_bar=False)
         # study.set_metric_names(metric_names)
         pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
         complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
@@ -915,7 +956,8 @@ class Plugin(plugins.Plugin):
 
         return trial
 
-    def train_model(self, fine_tuning: bool = False, trial = None) -> tuple[ClassifierTrainingStats, dict[str, ROIDataset], torch.nn.Module, torch.device]:
+    def train_model(self, fine_tuning: bool = False, trial=None) -> tuple[
+        ClassifierTrainingStats, dict[str, ROIDataset], torch.nn.Module, torch.device]:
         """
         Train model or fine-tune a pretrained model. Fine-tuning uses statistics from previous training run to evaluate the next
         best epoch, ensuring there is no regression in performance.
@@ -960,7 +1002,7 @@ class Plugin(plugins.Plugin):
         if self.parameters['augmentation'].value:
             # augmentation = v2.RandomAffine(degrees=10.0, translate=(0.1, 0.1), scale=(0.75, 1.3333),
             #                                interpolation=InterpolationMode.BILINEAR)
-            augmentation = v2.RandomAffine(degrees=5.0, translate=(4.0/60.0, 4.0/60.0), scale=(0.9, 1.111),
+            augmentation = v2.RandomAffine(degrees=5.0, translate=(4.0 / 60.0, 4.0 / 60.0), scale=(0.9, 1.111),
                                            interpolation=InterpolationMode.BILINEAR)
         else:
             augmentation = None
@@ -995,17 +1037,19 @@ class Plugin(plugins.Plugin):
 
         if fine_tuning:
             min_val_loss = evaluate_metrics(model, validation_dataloader, seq2one, loss_fn,
-                                                             lambda1, lambda2, device, train_stats.val_metrics)
+                                            lambda1, lambda2, device, train_stats.val_metrics)
             best_val_metric = train_stats.val_metrics[metric_name].compute().item()
             print(f'Fine tuning starting with validation loss = {min_val_loss} and initial {metric_name} = {best_val_metric}')
         else:
             min_val_loss = torch.finfo(torch.float).max
-            best_val_metric = torch.finfo(torch.float).min if train_stats.metrics[metric_name].higher_is_better else torch.finfo(torch.float).max
+            best_val_metric = torch.finfo(torch.float).min if train_stats.metrics[metric_name].higher_is_better else torch.finfo(
+                torch.float).max
 
         history = train_stats.history
 
         for epoch in range(self.parameters['epochs'].value):
-            train_loop(train_dataloader, validation_dataloader, model, seq2one, loss_fn, optimizer, lambda1, lambda2, device, train_stats)
+            train_loop(train_dataloader, validation_dataloader, model, seq2one, loss_fn, optimizer, lambda1, lambda2, device,
+                       train_stats)
             if (self.parameters['checkpoint_metric'].key == 'Loss') and (history.val_loss[-1] < min_val_loss):
                 min_val_loss = history.val_loss[-1]
                 history.best_epoch = epoch
@@ -1018,14 +1062,15 @@ class Plugin(plugins.Plugin):
                 else:
                     run.key_val.update({'best_weights': os.path.basename(checkpoint_filepath), 'best_epoch': epoch + 1})
                 run.validate().commit()
-            # elif (self.parameters['checkpoint_metric'].key == 'Metric') and (history.val_metric_history(metric_name)[-1] > best_val_metric):
-            elif (self.parameters['checkpoint_metric'].key == 'Metric') and check_best_val_metric(train_stats, metric_name, best_val_metric):
+            elif (self.parameters['checkpoint_metric'].key == 'Metric') and check_best_val_metric(train_stats, metric_name,
+                                                                                                  best_val_metric):
                 best_val_metric = history.val_metric_history(metric_name)[-1]
                 history.best_epoch = epoch
                 model_scripted = torch.jit.script(model)
                 model_scripted.save(checkpoint_filepath)
-                print(f"Saving best model at epoch {epoch + 1} with train {metric_name} {history.metric_history(metric_name)[-1]:.3f}"
-                      f" and val {metric_name} {best_val_metric:.3f}")
+                print(
+                    f"Saving best model at epoch {epoch + 1} with train {metric_name} {history.metric_history(metric_name)[-1]:.3f}"
+                    f" and val {metric_name} {best_val_metric:.3f}")
                 if run.key_val is None:
                     run.key_val = {'best_weights': os.path.basename(checkpoint_filepath), 'best_epoch': epoch + 1}
                 else:
@@ -1076,9 +1121,13 @@ class Plugin(plugins.Plugin):
         print(f"Best validation loss: {avg_val_loss:.4f}, Best validation {metric_name}: {val_metric:.3f}, ")
 
         if run.key_val is None:
-            run.key_val = {'best_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[train_stats.history.best_epoch].items()}}
+            run.key_val = {'best_stats': {k: v.cpu().tolist() for k, v in
+                                          train_stats.val_metrics_values[train_stats.history.best_epoch].items()}
+                           }
         else:
-            run.key_val.update({'best_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[train_stats.history.best_epoch].items()}})
+            run.key_val.update({'best_stats': {k: v.cpu().tolist() for k, v in
+                                               train_stats.val_metrics_values[train_stats.history.best_epoch].items()}
+                                })
 
         run.validate().commit()
 
@@ -1090,7 +1139,8 @@ class Plugin(plugins.Plugin):
                                                 f'{run.id_}_metrics_log.pckl')
             with open(metrics_log_filepath, 'wb') as fp:
                 pickle.dump(train_stats, fp, protocol=pickle.HIGHEST_PROTOCOL)
-                # pickle.dump({'train': train_stats.metric_history(), 'val': train_stats.val_metric_history()}, fp, protocol=pickle.HIGHEST_PROTOCOL)
+                # pickle.dump({'train': train_stats.metric_history(), 'val': train_stats.val_metric_history()}, fp,
+                #             protocol=pickle.HIGHEST_PROTOCOL)
 
         return train_stats, datasets, model, device
 
@@ -1243,7 +1293,7 @@ class Plugin(plugins.Plugin):
                     predictions[roi.name] = get_classifications(roi=roi, run_list=[run])
 
             predictions_df = pd.DataFrame(
-                    [[roi_name, frame, label] for roi_name in predictions for frame, label in enumerate(predictions[roi_name])],
+                    [[roi_name, frame, label] for roi_name, labels in predictions.items() for frame, label in enumerate(labels)],
                     columns=('roi', 'frame', f'run_{run}'))
             if len(df) > 0:
                 df = df.merge(predictions_df, on=['roi', 'frame'], how='outer')
