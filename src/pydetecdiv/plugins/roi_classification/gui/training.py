@@ -432,10 +432,14 @@ def plot_metrics_history(train_stats: ClassifierTrainingStats, epoch: int | None
     i = 0
     for metric_name in train_stats.metrics.keys():
         if len(history.metric_history(metric_name)[0].shape) <= 1:
-            chart_view.addLinePlot(history.metric_history(metric_name), row=0, col=0, pen=pg.mkPen(Colours.palette[i], width=2),
-                                   name=metric_name)
+            chart_view.addLinePlot(history.metric_history(metric_name), row=0, col=0,
+                                   pen=pg.mkPen(Colours.palette[i], width=2), name=metric_name)
             chart_view.addLinePlot(history.val_metric_history(metric_name), row=0, col=0,
                                    pen=pg.mkPen(Colours.palette[i], width=2, style=Qt.DashLine))
+            scatter = pg.ScatterPlotItem(size=10, brush=pg.mkBrush(Colours.palette[i]))
+            best_epoch, best_val = train_stats.best_value(metric_name)
+            scatter.addPoints([best_epoch], [best_val])
+            chart_view.chart(0, 0).addItem(scatter)
             i += 1
     ticks = [(float(idx), str(idx + 1)) for idx in range(history.num_epochs)]
     chart_view.chart(0, 0).getAxis('bottom').setTicks([ticks, []])

@@ -1,6 +1,7 @@
 """
 A module with torch specific helper classes
 """
+import sys
 from typing import Literal
 
 import matplotlib.axes
@@ -215,6 +216,23 @@ class TrainingStats(ModelStats):
         if metric_name is None:
             return {metric_name: self.history.val_metric_history(metric_name) for metric_name in self.metrics.keys()}
         return self.history.val_metric_history(metric_name)
+
+    def best_value(self, metric_name: str, validation: bool = True):
+        """
+        Get the best value for a metric and the corresponding epoch
+
+        :param metric_name: the name of the metric
+        :param validation: whether to return the validation metric or the training metric
+        :return:
+        """
+        values = self.history.val_metric_history(metric_name) if validation else self.history.metric_history(metric_name)
+
+        if self.metrics[metric_name].higher_is_better:
+            best_val = max(values)
+        else:
+            best_val = min(values)
+        epoch = values.index(best_val)
+        return epoch, best_val.item()
 
     def load_model(self, checkpoint: Literal['best', 'last'] = 'best', device: Literal['cpu', 'gpu'] = 'cpu'):
         """
