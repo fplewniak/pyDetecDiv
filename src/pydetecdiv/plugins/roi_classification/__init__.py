@@ -32,8 +32,8 @@ from torch.utils.data import DataLoader
 from torchmetrics import MetricCollection
 from torchvision.transforms import v2, InterpolationMode
 from torchmetrics.classification import (MulticlassMatthewsCorrCoef, MulticlassF1Score, MulticlassAccuracy, MulticlassAUROC,
-                                         MulticlassAveragePrecision, MulticlassCalibrationError, MulticlassNegativePredictiveValue,
-                                         MulticlassPrecision, MulticlassRecall, MulticlassSpecificity)
+                                         MulticlassAveragePrecision, MulticlassCalibrationError, MulticlassPrecision,
+                                         MulticlassRecall)
 
 from PySide6.QtGui import QAction
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
@@ -55,7 +55,7 @@ from .gui.ImportAnnotatedROIs import FOV2ROIlinks
 from .gui.classification import ManualAnnotator, PredictionViewer, DefineClassesDialog
 from .gui.modelinfo import ModelInfoDialog
 from .gui.prediction import PredictionDialog
-from .gui.training import TrainingDialog, FineTuningDialog, ImportClassifierDialog, TuneHyperparamDialog
+from .gui.training import TrainingDialog, FineTuningDialog, ImportClassifierDialog, TuneHyperparamDialog, plot_interactive_history
 
 from .training import train_loop
 from .utils import get_classifications, get_annotation_runs
@@ -274,10 +274,10 @@ def set_metrics(num_classes: int) -> MetricCollection:
         MetricCollection({'Accuracy': MulticlassAccuracy(num_classes=num_classes)}),
         MetricCollection({'Average Precision': MulticlassAveragePrecision(num_classes=num_classes)}),
         MetricCollection({'Calibration Error': MulticlassCalibrationError(num_classes=num_classes)}),
-        MetricCollection({'Negative Predictive Value': MulticlassNegativePredictiveValue(num_classes=num_classes)}),
+        # MetricCollection({'Negative Predictive Value': MulticlassNegativePredictiveValue(num_classes=num_classes)}),
         MetricCollection({'Precision': MulticlassPrecision(num_classes=num_classes)}),
         MetricCollection({'Recall': MulticlassRecall(num_classes=num_classes)}),
-        MetricCollection({'Specificity': MulticlassSpecificity(num_classes=num_classes)}),
+        # MetricCollection({'Specificity': MulticlassSpecificity(num_classes=num_classes)}),
         ])
     return metrics
 
@@ -390,10 +390,10 @@ class Plugin(plugins.Plugin):
                                    'Accuracy'                        : 'Accuracy',
                                    'Average Precision'               : 'Average Precision',
                                    'Calibration Error'               : 'Calibration Error',
-                                   'Negative Predictive Value'       : 'Negative Predictive Value',
+                                   # 'Negative Predictive Value'       : 'Negative Predictive Value',
                                    'Precision'                       : 'Precision',
                                    'Recall'                          : 'Recall',
-                                   'Specificity'                     : 'Specificity',
+                                   # 'Specificity'                     : 'Specificity',
                                    # 'Accuracy by class': AccuracyByClass,
                                    }),
             ItemParameter(name='annotation_file', label='Annotation file', groups={'import_annotations'}, ),
@@ -449,13 +449,17 @@ class Plugin(plugins.Plugin):
         hyperparam_tuning = QAction("Hyperparameter tuning", training_menu)
         train_model = QAction("Train a model", training_menu)
         fine_tuning = QAction("Fine-tune training", training_menu)
+        load_history = QAction("Load training history", training_menu)
         training_menu.addAction(hyperparam_tuning)
         training_menu.addAction(train_model)
         training_menu.addAction(fine_tuning)
+        training_menu.addSeparator()
+        training_menu.addAction(load_history)
 
         hyperparam_tuning.triggered.connect(self.run_hyperparam_tuning)
         train_model.triggered.connect(self.run_training)
         fine_tuning.triggered.connect(self.run_fine_tuning)
+        load_history.triggered.connect(self.load_training_history)
 
         predict_menu = submenu.addMenu('Classification')
         predict = QAction("Predict ROI classes", predict_menu)
@@ -832,6 +836,20 @@ class Plugin(plugins.Plugin):
         """
         ModelInfoDialog(self)
 
+    def load_training_history(self) -> None:
+        """
+        Load pickled a ClassifierTrainingStats object and display it in a window
+        """
+        fileName, _ = QFileDialog.getOpenFileName(caption="Open File",
+                                               dir=os.path.join(get_project_dir(), 'roi_classification', 'logs'),
+                                               filter='*.pckl')
+        if fileName is not None:
+            with open(fileName, 'rb') as fp:
+                train_stats = pickle.load(fp)
+            tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {os.path.basename(fileName)}')
+            tab.project_name = PyDetecDiv.project_name
+            tab.addTab(plot_interactive_history(train_stats), 'Interactive history')
+
     def load_model(self, pretrained: bool = False) -> tuple[torch.nn.Module, str]:
         """
         Load an existing model
@@ -1118,7 +1136,10 @@ class Plugin(plugins.Plugin):
         avg_val_loss = history.val_loss[train_stats.history.best_epoch]
         val_metric = history.val_metric_history(metric_name)[train_stats.history.best_epoch]
 
-        print(f"Best validation loss: {avg_val_loss:.4f}, Best validation {metric_name}: {val_metric:.3f}, ")
+        print(f"Best epoch: {train_stats.history.best_epoch + 1}")
+        print(f"Validation loss: {avg_val_loss:.4f}, Validation {metric_name}: {val_metric:.3f}, ")
+        print(f"Training loss: {history.loss[train_stats.history.best_epoch]:.4f},"
+              f" Training {metric_name}: {history.metric_history(metric_name)[train_stats.history.best_epoch]:.3f}, ")
 
         if run.key_val is None:
             run.key_val = {'best_stats': {k: v.cpu().tolist() for k, v in
