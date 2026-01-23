@@ -29,8 +29,8 @@ from torch import optim, Tensor
 from torch.amp import autocast
 from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 from torch.utils.data import DataLoader
-from torchmetrics import MetricCollection
 from torchvision.transforms import v2, InterpolationMode
+from torchmetrics import MetricCollection
 from torchmetrics.classification import (MulticlassMatthewsCorrCoef, MulticlassF1Score, MulticlassAccuracy, MulticlassAUROC,
                                          MulticlassAveragePrecision, MulticlassCalibrationError, MulticlassPrecision,
                                          MulticlassRecall)
@@ -60,7 +60,7 @@ from .gui.training import TrainingDialog, FineTuningDialog, ImportClassifierDial
 from .training import train_loop
 from .utils import get_classifications, get_annotation_runs
 from ...domain.Dataset import Dataset
-from ...torch import ClassifierTrainingStats, TrainingStats
+from ...torch import ClassifierTrainingStats, TrainingStats, is_single_value_metric
 from ...torch.loss import FocalLoss
 
 Base = registry().generate_base()
@@ -272,7 +272,7 @@ def set_metrics(num_classes: int) -> MetricCollection:
         MetricCollection({'F1score': MulticlassF1Score(num_classes=num_classes, average='weighted')}),
         MetricCollection({'AUROC': MulticlassAUROC(num_classes=num_classes)}),
         MetricCollection({'Accuracy': MulticlassAccuracy(num_classes=num_classes)}),
-        MetricCollection({'Average Precision': MulticlassAveragePrecision(num_classes=num_classes)}),
+        MetricCollection({'AUPRC': MulticlassAveragePrecision(num_classes=num_classes)}),
         MetricCollection({'Calibration Error': MulticlassCalibrationError(num_classes=num_classes)}),
         # MetricCollection({'Negative Predictive Value': MulticlassNegativePredictiveValue(num_classes=num_classes)}),
         MetricCollection({'Precision': MulticlassPrecision(num_classes=num_classes)}),
@@ -383,12 +383,12 @@ class Plugin(plugins.Plugin):
             IntParameter(name='seqlen', label='Sequence length', groups={'training', 'finetune', 'prediction'},
                          default=15, ),
             ChoiceParameter(name='follow_metric', label='Follow metric', groups={'training', 'finetune'},
-                            default='Matthews Correlation Coefficient',
+                            default='Area under Precision-Recall curve',
                             items={'Matthews Correlation Coefficient': 'MCC',
                                    'F-1 score'                       : 'F1score',
-                                   'AUROC'                           : 'AUROC',
+                                   'Area under ROC curve'            : 'AUROC',
                                    'Accuracy'                        : 'Accuracy',
-                                   'Average Precision'               : 'Average Precision',
+                                   'Area under Precision-Recall curve' : 'AUPRC',
                                    'Calibration Error'               : 'Calibration Error',
                                    # 'Negative Predictive Value'       : 'Negative Predictive Value',
                                    'Precision'                       : 'Precision',
@@ -1127,9 +1127,9 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Computing metrics for last epoch on validation dataset')
 
         if run.key_val is None:
-            run.key_val = {'last_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[-1].items()}}
+            run.key_val = {'last_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[-1].items() if is_single_value_metric(k)}}
         else:
-            run.key_val.update({'last_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[-1].items()}})
+            run.key_val.update({'last_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[-1].items() if is_single_value_metric(k)}})
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Computing metrics for best epoch on validation dataset')
 
@@ -1143,11 +1143,11 @@ class Plugin(plugins.Plugin):
 
         if run.key_val is None:
             run.key_val = {'best_stats': {k: v.cpu().tolist() for k, v in
-                                          train_stats.val_metrics_values[train_stats.history.best_epoch].items()}
+                                          train_stats.val_metrics_values[train_stats.history.best_epoch].items() if is_single_value_metric(k)}
                            }
         else:
             run.key_val.update({'best_stats': {k: v.cpu().tolist() for k, v in
-                                               train_stats.val_metrics_values[train_stats.history.best_epoch].items()}
+                                               train_stats.val_metrics_values[train_stats.history.best_epoch].items() if is_single_value_metric(k)}
                                 })
 
         run.validate().commit()

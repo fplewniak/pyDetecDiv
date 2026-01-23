@@ -7,7 +7,11 @@ from typing import Literal
 import matplotlib.axes
 from torch import jit, nn
 from torchmetrics import MetricCollection
-from torchmetrics.classification import MulticlassConfusionMatrix
+from torchmetrics.classification import MulticlassConfusionMatrix, MulticlassROC, MulticlassPrecisionRecallCurve
+
+
+def is_single_value_metric(metric_name: str) -> bool:
+    return metric_name not in ['ROC', 'PRC', 'ConfusionMatrix_recall', 'ConfusionMatrix_precision']
 
 
 class ModelStats:
@@ -60,6 +64,9 @@ class ClassifierModelStats(ModelStats):
                                                                                                 normalize='true'),
                                          'ConfusionMatrix_precision': MulticlassConfusionMatrix(num_classes=len(self.class_names),
                                                                                                 normalize='pred'),
+                                         'ROC'                      : MulticlassROC(num_classes=len(self.class_names), ),
+                                         'PRC'                      : MulticlassPrecisionRecallCurve(
+                                             num_classes=len(self.class_names), )
                                          })
 
     @property
@@ -291,13 +298,13 @@ class ClassifierTrainingStats(TrainingStats, ClassifierModelStats):
 
     def __init__(self, model_name=None, class_names=None):
         super().__init__(model_name=model_name, class_names=class_names)
-        print(self.class_names)
-        self.val_metrics = MetricCollection({'ConfusionMatrix_recall'   : MulticlassConfusionMatrix(
-            num_classes=len(self.class_names),
-            normalize='true'),
-                                             'ConfusionMatrix_precision': MulticlassConfusionMatrix(
-                                                 num_classes=len(self.class_names),
-                                                 normalize='pred'),
+        self.val_metrics = MetricCollection({'ConfusionMatrix_recall'   :
+                                                 MulticlassConfusionMatrix(num_classes=len(self.class_names), normalize='true'),
+                                             'ConfusionMatrix_precision':
+                                                 MulticlassConfusionMatrix(num_classes=len(self.class_names), normalize='pred'),
+                                             'ROC'                      : MulticlassROC(num_classes=len(self.class_names), ),
+                                             'PRC'                      : MulticlassPrecisionRecallCurve(
+                                                 num_classes=len(self.class_names), )
                                              })
 
     @property

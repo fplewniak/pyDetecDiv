@@ -20,7 +20,7 @@ from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer, ChartVi
 from pydetecdiv.plugins.gui import (ComboBox, AdvancedButton, SpinBox, ParametersFormGroupBox, DoubleSpinBox,
                                     RadioButton, set_connections, Label, Dialog)
 from pydetecdiv.plugins.roi_classification.data import ROIDataset
-from pydetecdiv.torch import ClassifierTrainingStats, TrainingHistory
+from pydetecdiv.torch import ClassifierTrainingStats, TrainingHistory, is_single_value_metric
 
 
 class TuneHyperparamDialog(Dialog):
@@ -348,14 +348,14 @@ def plot_interactive_history(train_stats: ClassifierTrainingStats) -> QFrame:
 
     chart_view, epoch_line = plot_metrics_history(train_stats)
 
-    matplot_view = MatplotViewer(columns=2, rows=2, toolbar=False)
-    update_heat_maps(matplot_view, train_stats, epoch=history.best_epoch)
+    confusion_matrices_view = MatplotViewer(columns=2, rows=2, toolbar=False)
+    update_heat_maps(confusion_matrices_view, train_stats, epoch=history.best_epoch)
 
-    layout.addWidget(matplot_view, 0, 0)
+    layout.addWidget(confusion_matrices_view, 0, 0)
     layout.addWidget(chart_view, 0, 1)
 
     epoch_line.sigPositionChangeFinished.connect(
-        lambda x: update_heat_maps(matplot_view, train_stats, epoch=int(x.getXPos() + 0.5)))
+        lambda x: update_heat_maps(confusion_matrices_view, train_stats, epoch=int(x.getXPos() + 0.5)))
     epoch_line.sigPositionChangeFinished.connect(lambda x: x.setPos(float(int(x.getXPos() + 0.5))))
 
     return frame
@@ -431,7 +431,8 @@ def plot_metrics_history(train_stats: ClassifierTrainingStats, epoch: int | None
 
     i = 0
     for metric_name in train_stats.metrics.keys():
-        if len(history.metric_history(metric_name)[0].shape) <= 1:
+        # if len(history.metric_history(metric_name)[0].shape) <= 1:
+        if is_single_value_metric(metric_name):
             chart_view.addLinePlot(history.metric_history(metric_name), row=0, col=0,
                                    pen=pg.mkPen(Colours.palette[i], width=2), name=metric_name)
             chart_view.addLinePlot(history.val_metric_history(metric_name), row=0, col=0,
