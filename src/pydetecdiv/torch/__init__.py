@@ -302,9 +302,6 @@ class ClassifierTrainingStats(TrainingStats, ClassifierModelStats):
                                                  MulticlassConfusionMatrix(num_classes=len(self.class_names), normalize='true'),
                                              'ConfusionMatrix_precision':
                                                  MulticlassConfusionMatrix(num_classes=len(self.class_names), normalize='pred'),
-                                             'ROC'                      : MulticlassROC(num_classes=len(self.class_names), ),
-                                             'PRC'                      : MulticlassPrecisionRecallCurve(
-                                                 num_classes=len(self.class_names), )
                                              })
 
     @property
