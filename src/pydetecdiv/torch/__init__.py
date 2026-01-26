@@ -89,7 +89,7 @@ class TrainingHistory:
         self.val_loss = []
         self.metrics_values = []
         self.val_metrics_values = []
-        self.main_metric = None
+        self.main_metric: str|None = None
         self.best_epoch = 0
 
     @property
@@ -157,7 +157,7 @@ class TrainingStats(ModelStats):
         self.checkpoint_files = {'best': None, 'last': None}
 
     @property
-    def main_metric(self) -> MetricCollection:
+    def main_metric(self) -> str:
         """
         The followed metric
 
