@@ -286,6 +286,14 @@ class ChoiceParameter(Parameter):
                          **kwargs)
         self.model: DictItemModel = DictItemModel(items)
 
+    def kwargs(self) -> dict[str, Any]:
+        """
+        Returns keywords arguments that should be passed to any widget used to manage the parameter
+
+        :return: a dictionary containing the keyword arguments
+        """
+        return {'default': self.default}
+
     @property
     def json(self) -> str | list | dict:
         """

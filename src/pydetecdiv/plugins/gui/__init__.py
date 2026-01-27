@@ -177,12 +177,15 @@ class ComboBox(QComboBox):
     """
 
     def __init__(self, parent: QWidget, model: GenericModel = None, editable: bool = False,
-                 enabled: bool = True, **kwargs: dict[str, Any]) -> None:
+                 enabled: bool = True, default: str = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         if model is not None and model.rows() is not None:
             self.addItemDict(model.rows())
             self.setModel(model)
-            self.setModelColumn(0)
+            if default is None:
+                self.setModelColumn(0)
+            else:
+                self.setCurrentText(default)
             self.currentIndexChanged.connect(self.model().set_selection)
             self.model().selection_changed.connect(self.setCurrentIndex)
         self.setEditable(editable)
