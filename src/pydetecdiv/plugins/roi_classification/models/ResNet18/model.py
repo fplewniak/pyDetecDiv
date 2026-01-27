@@ -6,7 +6,7 @@ from torchvision import models
 from torchvision.models import ResNet18_Weights
 
 class NN_module(nn.Module):
-    def __init__(self, n_classes):
+    def __init__(self, n_classes, **kwargs):
         super(NN_module, self).__init__()
 
         self.expected_shape = ('Batch', 3, 60, 60)

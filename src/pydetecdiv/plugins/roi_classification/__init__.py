@@ -349,7 +349,7 @@ class Plugin(plugins.Plugin):
             FloatParameter(name='decay_rate', label='Decay rate', groups={'training', 'finetune'}, default=0.95),
             IntParameter(name='decay_period', label='Decay period', groups={'training', 'finetune'}, default=50),
             FloatParameter(name='weight_decay', label='Weight decay', groups={'training', 'finetune'}, default=0.0, ),
-            FloatParameter(name='focal_gamma', label='Focal loss gamma', groups={'training', 'finetune'}, default=0.0,
+            FloatParameter(name='focal_gamma', label='Focal loss gamma', groups={'training', 'finetune'}, default=1.0,
                            minimum=0.0, maximum=2.0, ),
             CheckParameter(name='class_weights', label='Class weights', groups={'training', 'finetune'}, default=True),
             FloatParameter(name='L1', label='L1 regularization', groups={'training', 'finetune'}, default=0.0, ),
@@ -363,6 +363,10 @@ class Plugin(plugins.Plugin):
                            exclusive=False),
             CheckParameter(name='augmentation', label='Augmentation', groups={'training', 'finetune'}, default=False,
                            exclusive=False),
+            IntParameter(name='hidden_size', label='LSTM hidden size', groups={'training'}, default=150,
+                         minimum=50, maximum=300),
+            IntParameter(name='num_layers', label='LSTM layer number', groups={'training'}, default=1,
+                         minimum=1, maximum=4),
             FloatParameter(name='num_training', label='Training dataset', groups={'training', 'finetune'}, default=0.4,
                            minimum=0.01, maximum=0.99, ),
             FloatParameter(name='num_validation', label='Validation dataset', groups={'training', 'finetune'},
@@ -850,7 +854,7 @@ class Plugin(plugins.Plugin):
             tab.project_name = PyDetecDiv.project_name
             tab.addTab(plot_interactive_history(train_stats), 'Interactive history')
 
-    def load_model(self, pretrained: bool = False) -> tuple[torch.nn.Module, str]:
+    def load_model(self, pretrained: bool = False, **kwargs) -> tuple[torch.nn.Module, str]:
         """
         Load an existing model
 
@@ -862,7 +866,7 @@ class Plugin(plugins.Plugin):
             model: torch.nn.Module = torch.jit.load(os.path.join(get_project_dir(), 'roi_classification', 'models',
                                                                  self.parameters['model'].key, self.parameters['weights'].value))
             return model, self.parameters['model'].key
-        return (self.parameters['model'].value.model.NN_module(len(self.parameters['class_names'].value)),
+        return (self.parameters['model'].value.model.NN_module(len(self.parameters['class_names'].value), **kwargs),
                 self.parameters['model'].key)
 
     def get_input_shape(self, model: torch.nn.Module) -> tuple[tuple[int, int], int]:
@@ -989,7 +993,11 @@ class Plugin(plugins.Plugin):
 
         print(f'running training on {"GPU" if device.type == "cuda" else "CPU"}')
 
-        model, model_name = self.load_model(pretrained=fine_tuning)
+        if trial is not None and not fine_tuning:
+            model, model_name = self.load_model(**trial.params)
+        else:
+            model, model_name = self.load_model(pretrained=fine_tuning, hidden_size=self.parameters['hidden_size'].value,
+                                                num_layers=self.parameters['num_layers'].value)
         img_size, seqlen = self.get_input_shape(model)
         model_param = model.parameters()
         model = model.to(device)

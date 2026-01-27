@@ -1,3 +1,5 @@
+import sys
+
 import torch
 import torch.nn as nn
 from torchvision import models
@@ -37,7 +39,7 @@ class SequenceUnfoldingLayer(nn.Module):
 
 
 class NN_module(nn.Module):
-    def __init__(self, n_classes):
+    def __init__(self, n_classes, **kwargs):
         super(NN_module, self).__init__()
 
         self.expected_shape = ('Batch', 'Sequence', 3, 60, 60)
@@ -51,8 +53,11 @@ class NN_module(nn.Module):
         self.folding = SequenceFoldingLayer((3, 60, 60))
         self.unfolding = SequenceUnfoldingLayer((512, 1, 1))  # ResNet18 outputs 512 features
 
-        self.hidden_size = 150
-        self.num_layers = 1
+        self.hidden_size = kwargs['hidden_size'] if 'hidden_size' in kwargs else 150
+        self.num_layers = kwargs['num_layers'] if 'num_layers' in kwargs else 1
+        print(f'Hidden size: {self.hidden_size}', file=sys.stderr)
+        print(f'Number of layers: {self.num_layers}', file=sys.stderr)
+
         self.bilstm = nn.LSTM(input_size=512, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True, bidirectional=True)
 
         self.dropout = nn.Dropout(0.5)
