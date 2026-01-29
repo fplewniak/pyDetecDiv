@@ -60,7 +60,7 @@ class NN_module(nn.Module):
 
         self.bilstm = nn.LSTM(input_size=512, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True, bidirectional=True)
 
-        self.dropout = nn.Dropout(0.5)
+        self.dropout = nn.Dropout2d(kwargs['dropout']) if 'dropout' in kwargs else nn.Dropout2d(0.05)
 
         self.classify = nn.Linear(2 * self.hidden_size, n_classes)
         nn.init.xavier_uniform_(self.classify.weight)
@@ -71,6 +71,7 @@ class NN_module(nn.Module):
     def forward(self, x):
         x, batch_size = self.folding(x)  # Fold sequence into batch form
         x = self.resnet(x)  # CNN Feature Extraction
+        x = self.dropout(x)
         x = self.global_avg_pool(x)
         x = torch.flatten(x, start_dim=1)  # Flatten to (batch, features)
         x = self.unfolding(x, batch_size)  # Unfold sequence

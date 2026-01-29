@@ -83,6 +83,7 @@ class TrainingDialog(Dialog):
         self.classifier_selection.addOption('Classes', ComboBox, parameter=self.plugin.parameters['class_names'])
         self.classifier_selection.addOption('LSTM hidden size', SpinBox, parameter=self.plugin.parameters['hidden_size'])
         self.classifier_selection.addOption('LSTM layer number', SpinBox, parameter=self.plugin.parameters['num_layers'])
+        self.classifier_selection.addOption('Dropout', DoubleSpinBox, parameter=self.plugin.parameters['dropout'])
 
         self.hyper = self.addGroupBox('Hyper parameters')
         self.hyper.addOption('Epochs:', SpinBox, adaptive=True, parameter=self.plugin.parameters['epochs'])

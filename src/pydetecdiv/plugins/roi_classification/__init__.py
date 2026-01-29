@@ -344,7 +344,7 @@ class Plugin(plugins.Plugin):
                                    'Adamax'  : optim.Adamax,
                                    'Nadam'   : optim.NAdam,
                                    }),
-            FloatParameter(name='learning_rate', label='Learning rate', groups={'training', 'finetune'}, default=1e-4,
+            FloatParameter(name='learning_rate', label='Learning rate', groups={'training', 'finetune'}, default=5e-5,
                            minimum=1e-20, maximum=1.0),
             FloatParameter(name='decay_rate', label='Decay rate', groups={'training', 'finetune'}, default=0.95),
             IntParameter(name='decay_period', label='Decay period', groups={'training', 'finetune'}, default=50),
@@ -363,10 +363,12 @@ class Plugin(plugins.Plugin):
                            exclusive=False),
             CheckParameter(name='augmentation', label='Augmentation', groups={'training', 'finetune'}, default=False,
                            exclusive=False),
-            IntParameter(name='hidden_size', label='LSTM hidden size', groups={'training'}, default=150,
+            IntParameter(name='hidden_size', label='LSTM hidden size', groups={'training'}, default=220,
                          minimum=50, maximum=300),
             IntParameter(name='num_layers', label='LSTM layer number', groups={'training'}, default=1,
                          minimum=1, maximum=4),
+            FloatParameter(name='dropout', label='Dropout', groups={'training'}, default=0.05,
+                           minimum=0.05, maximum=0.90),
             FloatParameter(name='num_training', label='Training dataset', groups={'training', 'finetune'}, default=0.4,
                            minimum=0.01, maximum=0.99, ),
             FloatParameter(name='num_validation', label='Validation dataset', groups={'training', 'finetune'},
@@ -383,7 +385,7 @@ class Plugin(plugins.Plugin):
                             updater=self.update_channels),
             IntParameter(name='epochs', label='Epochs', groups={'training', 'finetune'}, default=16, ),
             IntParameter(name='batch_size', label='Batch size', groups={'training', 'finetune', 'prediction'},
-                         default=128, ),
+                         default=16, ),
             IntParameter(name='seqlen', label='Sequence length', groups={'training', 'finetune', 'prediction'},
                          default=15, ),
             ChoiceParameter(name='follow_metric', label='Follow metric', groups={'training', 'finetune'},
@@ -997,7 +999,8 @@ class Plugin(plugins.Plugin):
             model, model_name = self.load_model(**trial.params)
         else:
             model, model_name = self.load_model(pretrained=fine_tuning, hidden_size=self.parameters['hidden_size'].value,
-                                                num_layers=self.parameters['num_layers'].value)
+                                                num_layers=self.parameters['num_layers'].value,
+                                                dropout=self.parameters['dropout'].value)
         img_size, seqlen = self.get_input_shape(model)
         model_param = model.parameters()
         model = model.to(device)
