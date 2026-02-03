@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QGroupBox, QFormLayout, QLa
                                QSizePolicy, QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox, QAbstractSpinBox, QTableView,
                                QAbstractItemView,
                                QPushButton, QApplication, QRadioButton, QListView, QMenu, QDataWidgetMapper, QWidget, QLayout,
-                               QHBoxLayout, QFrame)
+                               QFrame)
 
 from pydetecdiv.app.models import GenericModel, ItemModel, DictItemModel, StringList
 from pydetecdiv import plugins
@@ -67,7 +67,7 @@ class GroupBox(QGroupBox):
                 return parent.plugin
         return None
 
-    def addSubBox(self, widget: Type[Self], **kwargs: dict[str, Any]) -> Self:
+    def addSubBox(self, widget: Type[Self], **kwargs) -> Self:
         """
         Adds a sub-box to the current GroupBox
 
@@ -80,7 +80,7 @@ class GroupBox(QGroupBox):
         return sub_box
 
     def addOption(self, label: str = None, widget: Type[QWidget] = None, parameter: Parameter = None,
-                  enabled: bool = True, **kwargs: dict[str, Any]) -> QWidget:
+                  enabled: bool = True, **kwargs) -> QWidget:
         """
         add an option to the current Form
 
@@ -119,11 +119,11 @@ class ParametersFormGroupBox(GroupBox):
 
     def __init__(self, parent: QWidget, title: str = None, show: bool = True) -> None:
         super().__init__(parent, title)
-        self.layout: QLayout = QFormLayout(self)
+        self.layout: QFormLayout = QFormLayout(self)
         self.setLayout(self.layout)
         self.setVisible(show)
 
-    def addSubBox(self, widget: Type[GroupBox], **kwargs: dict[str, Any]) -> GroupBox:
+    def addSubBox(self, widget: Type[GroupBox], **kwargs) -> GroupBox:
         """
         Adds a sub-box to the current ParametersFormGroupBox
 
@@ -136,7 +136,7 @@ class ParametersFormGroupBox(GroupBox):
         return sub_box
 
     def addOption(self, label: str = None, widget: Type[QWidget] = None, parameter: Parameter = None,
-                  enabled: bool = True, **kwargs: dict[str, Any]) -> QWidget:
+                  enabled: bool = True, **kwargs) -> QWidget:
         """
         add an option to the current Form
 
@@ -176,8 +176,8 @@ class ComboBox(QComboBox):
     an extension of the QComboBox class with a custom model/view architecture
     """
 
-    def __init__(self, parent: QWidget, model: GenericModel = None, editable: bool = False,
-                 enabled: bool = True, default: str = None, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, parent: QWidget, model: DictItemModel = None, editable: bool = False,
+                 enabled: bool = True, default: str = None, **kwargs) -> None:
         super().__init__(parent)
         if model is not None and model.rows() is not None:
             self.addItemDict(model.rows())
@@ -280,7 +280,7 @@ class ListView(QListView):
     """
 
     def __init__(self, parent: QWidget, model: StringList = None, height: int = None, multiselection: bool = False,
-                 enabled: bool = True, **kwargs: dict[str, Any]) -> None:
+                 enabled: bool = True, **kwargs) -> None:
         super().__init__(parent)
         if multiselection:
             self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
@@ -388,7 +388,7 @@ class ListWidget(QListView):
 
     def __init__(self, parent: QWidget, model: DictItemModel = None, height: int = None, editable: bool = False,
                  multiselection: bool = False, enabled: bool = True,
-                 **kwargs: dict[str, Any]) -> None:
+                 **kwargs) -> None:
         super().__init__(parent)
         # self.setSelectionModel(QItemSelectionModel())
         if multiselection:
@@ -434,7 +434,7 @@ class LineEdit(QLineEdit):
     """
 
     def __init__(self, parent: QWidget, model: ItemModel = None, editable: bool = True, enabled: bool = True,
-                 **kwargs: dict[str, Any]) -> None:
+                 **kwargs) -> None:
         super().__init__(parent)
         self.setEditable(editable)
         self.mapper = QDataWidgetMapper(self)
@@ -482,7 +482,7 @@ class Label(QLabel):
     an extension of QLabel class
     """
 
-    def __init__(self, parent: QWidget, model: ItemModel = None, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, parent: QWidget, model: ItemModel = None, **kwargs) -> None:
         super().__init__(parent)
         self.mapper = QDataWidgetMapper(self)
         self.setModel(model)
@@ -507,8 +507,7 @@ class PushButton(QPushButton):
     an extension of QPushButton class
     """
 
-    def __init__(self, parent: QWidget, text: str, icon: QIcon = None, flat: bool = False,
-                 enabled: bool = True) -> None:
+    def __init__(self, parent: QWidget, text: str, icon: QIcon = None, flat: bool = False, enabled: bool = True) -> None:
         if icon is None:
             super().__init__(text, parent)
         else:
@@ -561,8 +560,7 @@ class RadioButton(QRadioButton):
     an extension of the QRadioButton class
     """
 
-    def __init__(self, parent: QWidget, model: ItemModel = None, exclusive: bool = True, enabled: bool = True,
-                 **kwargs: dict[str, Any]) -> None:
+    def __init__(self, parent: QWidget, model: ItemModel = None, exclusive: bool = True, enabled: bool = True, **kwargs) -> None:
         super().__init__(parent)
         self.setAutoExclusive(exclusive)
         self.mapper = QDataWidgetMapper(self)
@@ -608,7 +606,7 @@ class SpinBox(QSpinBox):
     """
 
     def __init__(self, parent: QWidget, model: ItemModel = None, minimum: int = 1, maximum: int = 4096,
-                 single_step: int = 1, adaptive: bool = False, enabled: bool = True, **kwargs: dict[str, Any]) -> None:
+                 single_step: int = 1, adaptive: bool = False, enabled: bool = True, **kwargs) -> None:
         super().__init__(parent)
         self.setRange(minimum, maximum)
         self.setSingleStep(single_step)
@@ -647,7 +645,7 @@ class DoubleSpinBox(QDoubleSpinBox):
 
     def __init__(self, parent: QWidget, model: ItemModel = None, minimum: float = 0.1, maximum: float = 1.0,
                  decimals: int | None = None, single_step: float = 0.1, adaptive: bool = False, enabled: bool = True,
-                 **kwargs: dict[str, Any]) -> None:
+                 **kwargs) -> None:
         super().__init__(parent)
         self.setRange(minimum, maximum)
         self.setDecimals(15 if decimals is None else decimals)
@@ -799,7 +797,7 @@ class Dialog(QDialog):
     An extension of QDialog to define forms that may be used to specify plugin options
     """
 
-    def __init__(self, plugin: plugins.Plugin = None, title: str = None, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, plugin: plugins.Plugin = None, title: str = None, **kwargs) -> None:
         super().__init__(**kwargs)
         self.vert_layout = QVBoxLayout(self)
         self.setLayout(self.vert_layout)
