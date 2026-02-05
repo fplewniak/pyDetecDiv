@@ -27,7 +27,7 @@ from sqlalchemy.types import JSON
 import torch
 from torch import optim, Tensor
 from torch.amp import autocast
-from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
+from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR, LinearLR, ExponentialLR, SequentialLR
 from torch.utils.data import DataLoader
 from torchvision.transforms import v2, InterpolationMode
 from torchmetrics import MetricCollection
@@ -357,6 +357,10 @@ class Plugin(plugins.Plugin):
             FloatParameter(name='momentum', label='Momentum', groups={'training', 'finetune'}, default=0.9, ),
             ChoiceParameter(name='checkpoint_metric', label='Checkpoint metric', groups={'training', 'finetune'},
                             default='Metric', items={'Loss': 'val_loss', 'Metric': 'val_metric'}),
+            CheckParameter(name='loss_scheduler', label='Loss scheduler', groups={'training', 'finetune'},
+                           default=True),
+            CheckParameter(name='warmup_scheduler', label='Warm-up scheduler', groups={'training', 'finetune'},
+                           default=True),
             # CheckParameter(name='early_stopping', label='Early stopping', groups={'training', 'finetune'},
             #                default=False),
             CheckParameter(name='log_metrics', label='Log metrics', groups={'training', 'finetune'}, default=False,
@@ -1006,6 +1010,11 @@ class Plugin(plugins.Plugin):
         model = model.to(device)
 
         train_stats = ClassifierTrainingStats(model_name=model_name, class_names=self.parameters['class_names'].value)
+        train_stats.add_metrics(set_metrics(train_stats.num_classes))
+        train_stats.metrics.to(device)
+        train_stats.val_metrics.to(device)
+        metric_name = self.parameters['follow_metric'].value
+        train_stats.history.main_metric = metric_name
 
         hdf5_file = self.create_hdf5_rois()
 
@@ -1038,9 +1047,22 @@ class Plugin(plugins.Plugin):
 
         optimizer = set_optimizer(self.parameters, model_param)
 
-        scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=10, factor=0.5)
-        step_scheduler = StepLR(optimizer, step_size=self.parameters['decay_period'].value,
-                                gamma=self.parameters['decay_rate'].value, last_epoch=-1)
+        if self.parameters['warmup_scheduler'].value:
+            print('Warm-up scheduler', file=sys.stderr)
+            linear_scheduler = LinearLR(optimizer, start_factor=0.1, end_factor=1.0,
+                                        total_iters=self.parameters['decay_period'].value)
+            exponential_scheduler = ExponentialLR(optimizer, gamma=self.parameters['decay_rate'].value)
+            scheduler = SequentialLR(optimizer, schedulers=[linear_scheduler, exponential_scheduler],
+                                     milestones=[self.parameters['decay_period'].value])
+        else:
+            print('Step scheduler', file=sys.stderr)
+            if (not self.parameters['loss_scheduler']) & train_stats.metrics[metric_name].higher_is_better:
+                scheduler = ReduceLROnPlateau(optimizer, mode='max', patience=10, factor=0.5)
+            else:
+                scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=10, factor=0.5)
+
+            step_scheduler = StepLR(optimizer, step_size=self.parameters['decay_period'].value,
+                                    gamma=self.parameters['decay_rate'].value, last_epoch=-1)
 
         training_dataset = ROIDataset(hdf5_file, training_idx, targets=True, image_shape=img_size, seq2one=seq2one, seqlen=seqlen,
                                       transform=augmentation)
@@ -1055,12 +1077,6 @@ class Plugin(plugins.Plugin):
         train_dataloader = DataLoader(training_dataset, batch_size=self.parameters['batch_size'].value, shuffle=True)
         validation_dataloader = DataLoader(validation_dataset, batch_size=self.parameters['batch_size'].value, shuffle=True)
         # test_dataloader = DataLoader(test_dataset, batch_size=self.parameters['batch_size'].value, shuffle=True)
-
-        train_stats.add_metrics(set_metrics(train_stats.num_classes))
-        train_stats.metrics.to(device)
-        train_stats.val_metrics.to(device)
-        metric_name = self.parameters['follow_metric'].value
-        train_stats.history.main_metric = metric_name
 
         checkpoint_filepath, last_weights_filepath = self.get_weights_filepaths(run, metric_name)
 
@@ -1120,8 +1136,15 @@ class Plugin(plugins.Plugin):
                 if trial.should_prune():
                     raise optuna.exceptions.TrialPruned()
 
-            step_scheduler.step()
-            scheduler.step(history.val_loss[-1])
+            if self.parameters['warmup_scheduler'].value:
+                scheduler.step()
+            else:
+                step_scheduler.step()
+
+                if self.parameters['loss_scheduler']:
+                    scheduler.step(history.val_loss[-1])
+                else:
+                    scheduler.step(history.val_metric_history(metric_name)[-1])
 
         ##################################################################
         model_scripted = torch.jit.script(model)  # Export to TorchScript

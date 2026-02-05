@@ -117,9 +117,12 @@ class TrainingDialog(Dialog):
                                            parameter=self.plugin.parameters['learning_rate'])
         self.optimizer.group_box.addOption('Decay rate:', DoubleSpinBox, parameter=self.plugin.parameters['decay_rate'])
         self.optimizer.group_box.addOption('Decay period:', SpinBox, parameter=self.plugin.parameters['decay_period'])
-
+        self.optimizer.group_box.addOption('Warm-up LR schedule', RadioButton,
+                                          parameter=self.plugin.parameters['warmup_scheduler'])
         self.advanced.group_box.addOption('Follow metric:', ComboBox,
                                           parameter=self.plugin.parameters['follow_metric'])
+        self.advanced.group_box.addOption('Loss-based LR schedule', RadioButton,
+                                          parameter=self.plugin.parameters['loss_scheduler'])
         self.advanced.group_box.addOption('Checkpoint metric:', ComboBox,
                                           parameter=self.plugin.parameters['checkpoint_metric'])
         self.advanced.group_box.addOption('Log metrics:', RadioButton,
@@ -247,9 +250,12 @@ class FineTuningDialog(Dialog):
                                            parameter=self.plugin.parameters['learning_rate'])
         self.optimizer.group_box.addOption('Decay rate:', DoubleSpinBox, parameter=self.plugin.parameters['decay_rate'])
         self.optimizer.group_box.addOption('Decay period:', SpinBox, parameter=self.plugin.parameters['decay_period'])
-
+        self.optimizer.group_box.addOption('Warm-up LR schedule', RadioButton,
+                                          parameter=self.plugin.parameters['warmup_scheduler'])
         self.advanced.group_box.addOption('Follow metric:', ComboBox,
                                           parameter=self.plugin.parameters['follow_metric'])
+        self.advanced.group_box.addOption('Loss-based LR schedule', RadioButton,
+                                          parameter=self.plugin.parameters['loss_scheduler'])
         self.advanced.group_box.addOption('Checkpoint metric:', ComboBox,
                                           parameter=self.plugin.parameters['checkpoint_metric'])
 
