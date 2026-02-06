@@ -951,8 +951,8 @@ class Plugin(plugins.Plugin):
         training_stats, _, model, _ = self.train_model(trial=trial)
         del model
         gc.collect()
-        # return training_stats.val_metric_history(training_stats.main_metric)[training_stats.history.best_epoch]
-        return training_stats.val_metric_history(training_stats.main_metric)[-1]
+        return training_stats.val_metric_history(training_stats.main_metric)[training_stats.history.best_epoch]
+        # return training_stats.val_metric_history(training_stats.main_metric)[-1]
 
     def tune_hyperparameters(self) -> optuna.Trial:
         """
@@ -966,7 +966,7 @@ class Plugin(plugins.Plugin):
                                     direction="maximize")
 # create_study(*, storage=None, sampler=None, pruner=None, study_name=None, direction=None, load_if_exists=False, directions=None)
         print('Optimization of objective function', file=sys.stderr)
-        study.optimize(self.objective, n_trials=150)
+        study.optimize(self.objective, n_trials=200)
 # optimize(func, n_trials=None, timeout=None, n_jobs=1, catch=(), callbacks=None, gc_after_trial=False, show_progress_bar=False)
         # study.set_metric_names(metric_names)
         pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
@@ -1028,6 +1028,10 @@ class Plugin(plugins.Plugin):
                                                                                               'dataset_seed'].value)
 
         print(f'training: {len(training_idx)} validation: {len(validation_idx)} test: {len(test_idx)}')
+
+        print(f'Sequence length: {seqlen}', file=sys.stderr)
+        print(f'Hidden size: {self.parameters['hidden_size'].value}', file=sys.stderr)
+        print(f'Number of layers: {self.parameters['num_layers'].value}', file=sys.stderr)
 
         loss_fn = set_loss(self.parameters, class_weights)
 
