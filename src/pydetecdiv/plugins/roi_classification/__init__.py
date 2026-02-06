@@ -360,7 +360,7 @@ class Plugin(plugins.Plugin):
             CheckParameter(name='loss_scheduler', label='Loss scheduler', groups={'training', 'finetune'},
                            default=True),
             CheckParameter(name='warmup_scheduler', label='Warm-up scheduler', groups={'training', 'finetune'},
-                           default=True),
+                           default=False),
             # CheckParameter(name='early_stopping', label='Early stopping', groups={'training', 'finetune'},
             #                default=False),
             CheckParameter(name='log_metrics', label='Log metrics', groups={'training', 'finetune'}, default=False,
