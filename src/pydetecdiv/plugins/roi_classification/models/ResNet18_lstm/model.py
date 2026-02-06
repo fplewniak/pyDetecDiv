@@ -55,8 +55,6 @@ class NN_module(nn.Module):
 
         self.hidden_size = kwargs['hidden_size'] if 'hidden_size' in kwargs else 210
         self.num_layers = kwargs['num_layers'] if 'num_layers' in kwargs else 1
-        print(f'Hidden size: {self.hidden_size}', file=sys.stderr)
-        print(f'Number of layers: {self.num_layers}', file=sys.stderr)
 
         self.bilstm = nn.LSTM(input_size=512, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True, bidirectional=True)
 

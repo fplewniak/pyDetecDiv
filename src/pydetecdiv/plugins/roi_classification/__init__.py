@@ -344,7 +344,7 @@ class Plugin(plugins.Plugin):
                                    'Adamax'  : optim.Adamax,
                                    'Nadam'   : optim.NAdam,
                                    }),
-            FloatParameter(name='learning_rate', label='Learning rate', groups={'training', 'finetune'}, default=5e-5,
+            FloatParameter(name='learning_rate', label='Learning rate', groups={'training', 'finetune'}, default=1.5e-4,
                            minimum=1e-20, maximum=1.0),
             FloatParameter(name='decay_rate', label='Decay rate', groups={'training', 'finetune'}, default=0.95),
             IntParameter(name='decay_period', label='Decay period', groups={'training', 'finetune'}, default=50),
@@ -353,7 +353,7 @@ class Plugin(plugins.Plugin):
                            minimum=0.0, maximum=2.0, ),
             CheckParameter(name='class_weights', label='Class weights', groups={'training', 'finetune'}, default=True),
             FloatParameter(name='L1', label='L1 regularization', groups={'training', 'finetune'}, default=0.0, ),
-            FloatParameter(name='L2', label='L2 regularization', groups={'training', 'finetune'}, default=0.0, ),
+            FloatParameter(name='L2', label='L2 regularization', groups={'training', 'finetune'}, default=2e-5, ),
             FloatParameter(name='momentum', label='Momentum', groups={'training', 'finetune'}, default=0.9, ),
             ChoiceParameter(name='checkpoint_metric', label='Checkpoint metric', groups={'training', 'finetune'},
                             default='Metric', items={'Loss': 'val_loss', 'Metric': 'val_metric'}),
@@ -885,7 +885,6 @@ class Plugin(plugins.Plugin):
         seqlen: int = 0
         if len(model.expected_shape) == 5:
             seqlen = self.parameters['seqlen'].value
-            print(f'{datetime.now().strftime("%H:%M:%S")}: Sequence length: {seqlen}\n')
             img_size: tuple[int, int] = (model.expected_shape[3], model.expected_shape[4])
         else:
             img_size: tuple[int, int] = (model.expected_shape[2], model.expected_shape[3])
