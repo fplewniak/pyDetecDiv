@@ -103,7 +103,8 @@ def evaluate_metrics_seq2seq(model: torch.nn.Module, data_loader: torch.utils.da
                 else:
                     B, T, C = outputs.shape
                     loss = loss_fn(outputs.view(B * T, C), labels.view(B * T))
-                    metrics.update(outputs.view(B * T, C), labels.view(B * T))
+                    # metrics.update(outputs.view(B * T, C), labels.view(B * T))
+                    metrics.update(torch.movedim(outputs, 2,  1), labels)
             loss += (lambda1 * torch.abs(torch.cat([x.view(-1) for x in model.parameters()])).sum()
                      + lambda2 * torch.square(torch.cat([x.view(-1) for x in model.parameters()])).sum())
 

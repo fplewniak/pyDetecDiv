@@ -120,7 +120,6 @@ def train_loop_seq2seq(training_loader: torch.utils.data.DataLoader, validation_
         # optimizer.zero_grad()
         with autocast('cuda'):
             outputs = model(images)
-
             if outputs.dim() == 2:
                 loss = loss_fn(outputs, gt)
                 train_stats.metrics.update(outputs, gt)
@@ -128,7 +127,9 @@ def train_loop_seq2seq(training_loader: torch.utils.data.DataLoader, validation_
             else:
                 B, T, C = outputs.shape
                 loss = loss_fn(outputs.view(B * T, C), gt.view(B * T))
-                train_stats.metrics.update(outputs.view(B * T, C), gt.view(B * T))
+                # train_stats.metrics.update(outputs.view(B * T, C), gt.view(B * T))
+                train_stats.metrics.update(torch.movedim(outputs, 2,  1), gt)
+
         # Apply L1 & L2 regularization
         loss += (lambda1 * torch.abs(torch.cat([x.view(-1) for x in model.parameters()])).sum()
                  + lambda2 * torch.square(torch.cat([x.view(-1) for x in model.parameters()])).sum())
