@@ -91,7 +91,8 @@ class NWScore(Metric):
             self.score = []
             for preds, target in zip(self.preds, self.target):
                 seq_p, seq_t = preds.detach().cpu(), target.detach().cpu()
-                self.score.append(2 * self.nw_align(seq_p, seq_t) / (self.nw_align(seq_p, seq_p) + self.nw_align(seq_t, seq_t)))
+                # self.score.append(2 * self.nw_align(seq_p, seq_t) / (self.nw_align(seq_p, seq_p) + self.nw_align(seq_t, seq_t)))
+                self.score.append(2 * self.nw_align(seq_p, seq_t) / (self.MATCH * (len(seq_p) + len(seq_t))))
             self.score = np.mean(self.score)
         return torch.tensor(self.score)
 
