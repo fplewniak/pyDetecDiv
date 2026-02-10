@@ -367,7 +367,7 @@ class Plugin(plugins.Plugin):
                            exclusive=False),
             CheckParameter(name='augmentation', label='Augmentation', groups={'training', 'finetune'}, default=False,
                            exclusive=False),
-            IntParameter(name='hidden_size', label='LSTM hidden size', groups={'training'}, default=210,
+            IntParameter(name='hidden_size', label='LSTM hidden size', groups={'training'}, default=200,
                          minimum=50, maximum=300),
             IntParameter(name='num_layers', label='LSTM layer number', groups={'training'}, default=1,
                          minimum=1, maximum=4),
@@ -391,7 +391,7 @@ class Plugin(plugins.Plugin):
             IntParameter(name='batch_size', label='Batch size', groups={'training', 'finetune', 'prediction'},
                          default=16, ),
             IntParameter(name='seqlen', label='Sequence length', groups={'training', 'finetune', 'prediction'},
-                         default=15, ),
+                         default=50, ),
             ChoiceParameter(name='follow_metric', label='Follow metric', groups={'training', 'finetune'},
                             default='Area under Precision-Recall curve',
                             items={'Matthews Correlation Coefficient': 'MCC',
@@ -1030,8 +1030,8 @@ class Plugin(plugins.Plugin):
         print(f'training: {len(training_idx)} validation: {len(validation_idx)} test: {len(test_idx)}')
 
         print(f'Sequence length: {seqlen}', file=sys.stderr)
-        print(f'Hidden size: {self.parameters['hidden_size'].value}', file=sys.stderr)
-        print(f'Number of layers: {self.parameters['num_layers'].value}', file=sys.stderr)
+        print(f'Hidden size: {self.parameters["hidden_size"].value}', file=sys.stderr)
+        print(f'Number of layers: {self.parameters["num_layers"].value}', file=sys.stderr)
 
         loss_fn = set_loss(self.parameters, class_weights)
 
