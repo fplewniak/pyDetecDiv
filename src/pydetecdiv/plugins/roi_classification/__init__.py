@@ -62,6 +62,7 @@ from .utils import get_classifications, get_annotation_runs
 from ...domain.Dataset import Dataset
 from ...torch import ClassifierTrainingStats, TrainingStats, is_single_value_metric
 from ...torch.loss import FocalLoss
+from ...torch.metrics import NWScore
 
 Base = registry().generate_base()
 
@@ -277,6 +278,7 @@ def set_metrics(num_classes: int) -> MetricCollection:
         # MetricCollection({'Negative Predictive Value': MulticlassNegativePredictiveValue(num_classes=num_classes)}),
         MetricCollection({'Precision': MulticlassPrecision(num_classes=num_classes)}),
         MetricCollection({'Recall': MulticlassRecall(num_classes=num_classes)}),
+        MetricCollection({'NWScore': NWScore(num_classes=num_classes)}),
         # MetricCollection({'Specificity': MulticlassSpecificity(num_classes=num_classes)}),
         ])
     return metrics
@@ -403,6 +405,7 @@ class Plugin(plugins.Plugin):
                                    # 'Negative Predictive Value'       : 'Negative Predictive Value',
                                    'Precision'                       : 'Precision',
                                    'Recall'                          : 'Recall',
+                                   'NWScore'                         : 'NWScore',
                                    # 'Specificity'                     : 'Specificity',
                                    # 'Accuracy by class': AccuracyByClass,
                                    }),
@@ -928,26 +931,44 @@ class Plugin(plugins.Plugin):
         :return: the value of the metric to optimize
         """
         print('Running objective function', file=sys.stderr)
-        self.parameters['epochs'].value = 16
+        self.parameters['epochs'].value = 32
         self.parameters['batch_size'].value = 16
         # self.parameters['batch_size'].value = trial.suggest_int("batch_size", 4, 32, step=4)
-        self.parameters['seqlen'].value = 5
-        # self.parameters['seqlen'].value = trial.suggest_int("seqlen", 5, 15, log=True)
-        # self.parameters['focal_gamma'].value = 1.0
-        self.parameters['focal_gamma'].value = 0.0
+        # self.parameters['seqlen'].value = 15
+        self.parameters['seqlen'].value = trial.suggest_int("seqlen", 10, 100, step=10)
+        self.parameters['focal_gamma'].value = 1.0
+        # self.parameters['focal_gamma'].value = 0.0
         # self.parameters['focal_gamma'].value = trial.suggest_float("gamma", 0.001, 1.5, log=True)
-        # self.parameters['L1'].value = 1e-5
-        self.parameters['L1'].value = trial.suggest_float("L1", 1e-6, 1e-2, log=True)
-        self.parameters['L2'].value = 0.0
-        # self.parameters['L2'].value = trial.suggest_float("L2", 1e-6, 1e-2, log=True)
-        # self.parameters['augmentation'].value = True
-        self.parameters['augmentation'].value = trial.suggest_categorical("augmentation", [True, False])
+        # regularization = trial.suggest_categorical("regularization", [1, 2])
+        # if regularization == 1:
+        #     self.parameters['L1'].value = trial.suggest_float("L1", 1e-6, 1e-2, log=True)
+        #     trial.set_user_attr("L2", 0.0)
+        #     self.parameters['L2'].value = trial.user_attrs['L2']
+        # else:
+        #     trial.set_user_attr("L1", 0.0)
+        #     self.parameters['L2'].value = trial.user_attrs['L1']
+        #     self.parameters['L2'].value = trial.suggest_float("L2", 1e-6, 1e-2, log=True)
+        self.parameters['L1'].value = 0.0
+        # self.parameters['L2'].value = 2e-5
+        self.parameters['L2'].value = trial.suggest_float("L2", 1e-7, 1e-2, log=True)
+        self.parameters['learning_rate'].value = trial.suggest_float("lr", 1e-6, 1e-3, log=True)
+        # self.parameters['learning_rate'].value = 1.5e-4
+        self.parameters['augmentation'].value = True
+        self.parameters['log_metrics'].value = True
+        # self.parameters['augmentation'].value = trial.suggest_categorical("augmentation", [True, False])
         self.parameters['num_training'].value = 0.4
         self.parameters['num_validation'].value = 0.3
         self.parameters['num_test'].value = 0.3
-        # self.parameters['learning_rate'].value = 4.0e-5
-        self.parameters['learning_rate'].value = trial.suggest_float("lr", 1e-6, 1e-3, log=True)
+        self.parameters['follow_metric'].set_value('Area under Precision-Recall curve')
         self.parameters['checkpoint_metric'].set_value('Metric')
+        self.parameters['warmup_scheduler'].value = False
+        # self.parameters['decay_period'].set_value(8)
+        # self.parameters['decay_rate'].set_value(0.9)
+        # self.parameters["hidden_size"].value = trial.suggest_int('hidden_size', low=50, high=300, step=10)
+        # self.parameters["num_layers"].value = trial.suggest_int('num_layers', low=1, high=4, step=1)
+        self.parameters["hidden_size"].value = trial.user_attrs['hidden_size'] = 200
+        self.parameters["num_layers"].value = trial.user_attrs['num_layers'] = 1
+        # dropout = trial.suggest_float('dropout', 0.05, 0.6, step=0.05)
         training_stats, _, model, _ = self.train_model(trial=trial)
         del model
         gc.collect()
@@ -966,7 +987,7 @@ class Plugin(plugins.Plugin):
                                     direction="maximize")
 # create_study(*, storage=None, sampler=None, pruner=None, study_name=None, direction=None, load_if_exists=False, directions=None)
         print('Optimization of objective function', file=sys.stderr)
-        study.optimize(self.objective, n_trials=200)
+        study.optimize(self.objective, n_trials=100)
 # optimize(func, n_trials=None, timeout=None, n_jobs=1, catch=(), callbacks=None, gc_after_trial=False, show_progress_bar=False)
         # study.set_metric_names(metric_names)
         pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
