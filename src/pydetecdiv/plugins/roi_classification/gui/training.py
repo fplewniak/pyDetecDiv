@@ -144,6 +144,7 @@ class TrainingDialog(Dialog):
         self.preprocessing = self.addGroupBox('Other options')
         self.channels = self.preprocessing.addOption(None, AdvancedButton, text='Preprocessing')
         self.channels.linkGroupBox(self.preprocessing.addOption(None, ParametersFormGroupBox, show=False))
+        self.channels.group_box.addOption('Time channels', RadioButton, parameter=self.plugin.parameters['time_channels'])
 
         self.channels.group_box.addOption('Red', ComboBox, parameter=self.plugin.parameters['red_channel'])
         self.channels.group_box.addOption('Green', ComboBox, parameter=self.plugin.parameters['green_channel'])
@@ -278,6 +279,7 @@ class FineTuningDialog(Dialog):
         self.channels = self.preprocessing.addOption(None, AdvancedButton, text='Preprocessing')
         self.channels.linkGroupBox(self.preprocessing.addOption(None, ParametersFormGroupBox, show=False))
 
+        self.channels.group_box.addOption('Time channels', RadioButton, parameter=self.plugin.parameters['time_channels'])
         self.channels.group_box.addOption('Red', ComboBox, parameter=self.plugin.parameters['red_channel'],
                                           enabled=False)
         self.channels.group_box.addOption('Green', ComboBox, parameter=self.plugin.parameters['green_channel'],

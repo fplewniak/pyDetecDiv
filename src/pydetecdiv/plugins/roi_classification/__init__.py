@@ -383,6 +383,8 @@ class Plugin(plugins.Plugin):
                            minimum=0.01, maximum=0.99, decimals=2, ),
             IntParameter(name='dataset_seed', label='Random seed', groups={'training', 'finetune'}, default=42,
                          validator=lambda x: isinstance(x, int), maximum=999999999),
+            CheckParameter(name='time_channels', label='Time channels', groups={'training', 'finetune', 'prediction'}, default=False,
+                           exclusive=False),
             ChoiceParameter(name='red_channel', label='Red', groups={'training', 'finetune', 'prediction'}, default='0',
                             updater=self.update_channels),
             ChoiceParameter(name='green_channel', label='Green', groups={'training', 'finetune', 'prediction'}, default='1',
@@ -396,16 +398,16 @@ class Plugin(plugins.Plugin):
                          default=50, ),
             ChoiceParameter(name='follow_metric', label='Follow metric', groups={'training', 'finetune'},
                             default='Area under Precision-Recall curve',
-                            items={'Matthews Correlation Coefficient': 'MCC',
-                                   'F-1 score'                       : 'F1score',
-                                   'Area under ROC curve'            : 'AUROC',
-                                   'Accuracy'                        : 'Accuracy',
-                                   'Area under Precision-Recall curve' : 'AUPRC',
-                                   'Calibration Error'               : 'Calibration Error',
+                            items={'Matthews Correlation Coefficient' : 'MCC',
+                                   'F-1 score'                        : 'F1score',
+                                   'Area under ROC curve'             : 'AUROC',
+                                   'Accuracy'                         : 'Accuracy',
+                                   'Area under Precision-Recall curve': 'AUPRC',
+                                   'Calibration Error'                : 'Calibration Error',
                                    # 'Negative Predictive Value'       : 'Negative Predictive Value',
-                                   'Precision'                       : 'Precision',
-                                   'Recall'                          : 'Recall',
-                                   'NWScore'                         : 'NWScore',
+                                   'Precision'                        : 'Precision',
+                                   'Recall'                           : 'Recall',
+                                   'NWScore'                          : 'NWScore',
                                    # 'Specificity'                     : 'Specificity',
                                    # 'Accuracy by class': AccuracyByClass,
                                    }),
@@ -854,8 +856,8 @@ class Plugin(plugins.Plugin):
         Load pickled a ClassifierTrainingStats object and display it in a window
         """
         fileName, _ = QFileDialog.getOpenFileName(caption="Open File",
-                                               dir=os.path.join(get_project_dir(), 'roi_classification', 'logs'),
-                                               filter='*.pckl')
+                                                  dir=os.path.join(get_project_dir(), 'roi_classification', 'logs'),
+                                                  filter='*.pckl')
         if fileName is not None:
             with open(fileName, 'rb') as fp:
                 train_stats = pickle.load(fp)
@@ -985,10 +987,10 @@ class Plugin(plugins.Plugin):
         study_name = f"{self.parameters['model'].key}_{datetime.now().strftime("%y%m%d%H%M")}"
         study = optuna.create_study(study_name=study_name, storage=f"sqlite:///{path}/optuna.sqlite3",
                                     direction="maximize")
-# create_study(*, storage=None, sampler=None, pruner=None, study_name=None, direction=None, load_if_exists=False, directions=None)
+        # create_study(*, storage=None, sampler=None, pruner=None, study_name=None, direction=None, load_if_exists=False, directions=None)
         print('Optimization of objective function', file=sys.stderr)
         study.optimize(self.objective, n_trials=100)
-# optimize(func, n_trials=None, timeout=None, n_jobs=1, catch=(), callbacks=None, gc_after_trial=False, show_progress_bar=False)
+        # optimize(func, n_trials=None, timeout=None, n_jobs=1, catch=(), callbacks=None, gc_after_trial=False, show_progress_bar=False)
         # study.set_metric_names(metric_names)
         pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
         complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
@@ -1112,7 +1114,7 @@ class Plugin(plugins.Plugin):
         else:
             min_val_loss = torch.finfo(torch.float).max
             best_val_metric = torch.finfo(torch.float).min if train_stats.metrics[metric_name].higher_is_better else torch.finfo(
-                torch.float).max
+                    torch.float).max
 
         history = train_stats.history
 
@@ -1138,8 +1140,8 @@ class Plugin(plugins.Plugin):
                 model_scripted = torch.jit.script(model)
                 model_scripted.save(checkpoint_filepath)
                 print(
-                    f"Saving best model at epoch {epoch + 1} with train {metric_name} {history.metric_history(metric_name)[-1]:.3f}"
-                    f" and val {metric_name} {best_val_metric:.3f}")
+                        f"Saving best model at epoch {epoch + 1} with train {metric_name} {history.metric_history(metric_name)[-1]:.3f}"
+                        f" and val {metric_name} {best_val_metric:.3f}")
                 if run.key_val is None:
                     run.key_val = {'best_weights': os.path.basename(checkpoint_filepath), 'best_epoch': epoch + 1}
                 else:
@@ -1185,9 +1187,13 @@ class Plugin(plugins.Plugin):
         print(f'{datetime.now().strftime("%H:%M:%S")}: Computing metrics for last epoch on validation dataset')
 
         if run.key_val is None:
-            run.key_val = {'last_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[-1].items() if is_single_value_metric(k)}}
+            run.key_val = {'last_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[-1].items() if
+                                          is_single_value_metric(k)}
+                           }
         else:
-            run.key_val.update({'last_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[-1].items() if is_single_value_metric(k)}})
+            run.key_val.update({'last_stats': {k: v.cpu().tolist() for k, v in train_stats.val_metrics_values[-1].items() if
+                                               is_single_value_metric(k)}
+                                })
 
         print(f'{datetime.now().strftime("%H:%M:%S")}: Computing metrics for best epoch on validation dataset')
 
@@ -1201,11 +1207,13 @@ class Plugin(plugins.Plugin):
 
         if run.key_val is None:
             run.key_val = {'best_stats': {k: v.cpu().tolist() for k, v in
-                                          train_stats.val_metrics_values[train_stats.history.best_epoch].items() if is_single_value_metric(k)}
+                                          train_stats.val_metrics_values[train_stats.history.best_epoch].items() if
+                                          is_single_value_metric(k)}
                            }
         else:
             run.key_val.update({'best_stats': {k: v.cpu().tolist() for k, v in
-                                               train_stats.val_metrics_values[train_stats.history.best_epoch].items() if is_single_value_metric(k)}
+                                               train_stats.val_metrics_values[train_stats.history.best_epoch].items() if
+                                               is_single_value_metric(k)}
                                 })
 
         run.validate().commit()
@@ -1408,6 +1416,8 @@ class Plugin(plugins.Plugin):
 
             print(f'{datetime.now().strftime("%H:%M:%S")}: Getting fov data')
             fov_data = self.get_fov_data(z_layers=z_channels)
+            # for row in fov_data.itertuples():
+            #     print(row.channel_files, file=sys.stderr)
             mask = fov_data[['fov', 't']].apply(tuple, axis=1).isin(data[['fov', 't']].apply(tuple, axis=1))
             fov_data = fov_data[mask]
 
@@ -1491,7 +1501,10 @@ class Plugin(plugins.Plugin):
                     rois = roi_list.loc[(roi_list['fov'] == row.fov)]
 
                 # If merging and normalization are too slow, maybe use pytorch to do the operations on GPUs
+                # print(row.channel_files, file=sys.stderr)
                 fov_img = cv2.merge([cv2.imread(z_file, cv2.IMREAD_UNCHANGED) for z_file in reversed(row.channel_files)])
+                if row.t == 0:
+                    cv2.imwrite('/data3/pyDetecDiv/workspace/fov.tif', fov_img)
 
                 for roi in rois.itertuples():
                     roi_data[row.t, roi.mapping - 1, ...] = cv2.normalize(fov_img[roi.y0:roi.y1 + 1, roi.x0:roi.x1 + 1],
@@ -1552,23 +1565,34 @@ class Plugin(plugins.Plugin):
         :param channel: the channel of the original image to be loaded
         :return: a pandas DataFrame with the FOV data
         """
-        if z_layers is None:
-            z_layers = (0,)
         if channel is None:
             channel = 0
             # channel = self.parameters['channel']
 
+        if z_layers is None or self.parameters['time_channels'].value:
+            z_layers = (0,)
+            sql_query = sqlalchemy.text(f"SELECT img.fov, data.t, data2.url, data2.id_ "
+                                        f"FROM data, data as data2, ImageResource as img "
+                                        f"WHERE data2.image_resource=img.id_ "
+                                        f"AND data.z=0 "
+                                        f"AND data.c={channel} "
+                                        f"AND data2.z=0 "
+                                        f"AND data2.c={channel} "
+                                        f"AND (data2.t - data.t) >= 0 "
+                                        f"AND (data2.t - data.t) < 3 "
+                                        f"ORDER BY img.fov, data.url ASC;")
+        else:
+            sql_query = sqlalchemy.text(f"SELECT img.fov, data.t, data.url, data.id_ "
+                                        f"FROM data, ImageResource as img "
+                                        f"WHERE data.image_resource=img.id_ "
+                                        f"AND data.z in {tuple(z_layers)} "
+                                        f"AND data.c={channel} "
+                                        f"ORDER BY img.fov, data.url ASC;")
+
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            results = pd.DataFrame(project.repository.session.execute(
-                    sqlalchemy.text(f"SELECT img.fov, data.t, data.url, data.id_ "
-                                    f"FROM data, ImageResource as img "
-                                    f"WHERE data.image_resource=img.id_ "
-                                    f"AND data.z in {tuple(z_layers)} "
-                                    f"AND data.c={channel} "
-                                    f"ORDER BY img.fov, data.url ASC;")))
+            results = pd.DataFrame(project.repository.session.execute(sql_query))
             for row in results.itertuples():
                 results.at[row.Index, 'url'] = project.get_object('Data', row.id_).url
-            # print(results, file=sys.stderr)
             fov_data = results.groupby(['fov', 't'])['url'].apply(self.layers2channels).reset_index()
         fov_data.columns = ['fov', 't', 'channel_files']
         return fov_data
@@ -1581,7 +1605,8 @@ class Plugin(plugins.Plugin):
         :return: the list of zfiles
         """
         zfiles = list(zfiles)
-        return [zfiles[i] for i in [self.parameters['red_channel'].value, self.parameters['green_channel'].value,
+        maxi = len(zfiles) - 1
+        return [zfiles[min(maxi, i)] for i in [self.parameters['red_channel'].value, self.parameters['green_channel'].value,
                                     self.parameters['blue_channel'].value]]
 
     def import_classifier(self) -> None:
