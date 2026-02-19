@@ -20,7 +20,8 @@ from pydetecdiv.app.parameters import ChoiceParameter
 from pydetecdiv.settings import get_config_value
 from pydetecdiv import delete_files
 from pydetecdiv.app.gui.RawData2FOV import RawData2FOV
-import pydetecdiv.plugins.gui as gui
+# import pydetecdiv.plugins.gui as gui
+import pydetecdiv.app.gui.core.widgets as gui
 
 
 class FileListView(QListView):
