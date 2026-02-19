@@ -6,6 +6,7 @@ Project persistence management for persistence layer
 import glob
 import os
 import shutil
+from pathlib import Path
 
 from pydetecdiv.exceptions import UnknownRepositoryTypeError
 from pydetecdiv.utils.path import stem
@@ -33,6 +34,26 @@ def open_project(dbname: str = None, dbms: str = None) -> ShallowDb | None:
         case _:
             raise NotImplementedError(f'{dbms} is not implemented')
     return db
+
+def project_exists(dbname: str = None, dbms: str = None) -> bool:
+    """
+    A function to open a shallow persistence from its name. The default type of persistence is defined in the [project]
+    sections of the configuration file settings.ini
+
+    :param dbname: the persistence name
+    :param dbms: A str specifying the database management system to use with the project
+    :return: a shallowDb abstract connector encapsulating the concrete connectors
+    """
+    db_exists = False
+    dbms = get_config_value('project', 'dbms') if dbms is None else dbms
+    match dbms:
+        case 'SQLite3':
+            dbname = dbname if dbname is not None else get_config_value('project.sqlite', 'database')
+            workspace = get_config_value('project', 'workspace')
+            db_exists = Path(f'{workspace}/{dbname}.db').is_file()
+        case _:
+            raise NotImplementedError(f'{dbms} is not implemented')
+    return db_exists
 
 
 def list_projects(dbms: str = None) -> list[str]:

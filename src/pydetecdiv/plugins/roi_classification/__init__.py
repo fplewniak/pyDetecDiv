@@ -44,6 +44,7 @@ from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, get_project_dir, proj
 from pydetecdiv.domain.Run import Run
 from pydetecdiv.domain.Project import Project
 from pydetecdiv.domain.ROI import ROI
+from pydetecdiv.persistence.project import project_exists
 from pydetecdiv.app.parameters import ItemParameter, ChoiceParameter, IntParameter, FloatParameter, CheckParameter, Parameters
 from pydetecdiv.plugins.roi_classification.data import ROIDataset
 
@@ -709,16 +710,24 @@ class Plugin(plugins.Plugin):
         :param show_results: Showing results, enabled only if a prediction has been run
         :param export_classification: Export classification, enabled only if a prediction has been run
         """
-        with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            manual_annotation.setEnabled(project.count_objects('ROI') > 0)
-            train_model.setEnabled(len(self.get_annotated_rois(ids_only=True)) > 0)
-            self.update_model_weights()
-            fine_tuning.setEnabled(
-                    (len(self.parameters['weights'].values) > 0) & (len(self.get_annotated_rois(ids_only=True)) > 0))
-            predict.setEnabled(len(self.parameters['weights'].values) > 0)
-            show_results.setEnabled(len(self.get_prediction_runs()) > 0)
-            export_classification.setEnabled(
-                    (len(self.get_annotated_rois(ids_only=True)) > 0) | (len(self.get_prediction_runs()) > 0))
+        if project_exists(PyDetecDiv.project_name):
+            with pydetecdiv_project(PyDetecDiv.project_name) as project:
+                manual_annotation.setEnabled(project.count_objects('ROI') > 0)
+                train_model.setEnabled(len(self.get_annotated_rois(ids_only=True)) > 0)
+                self.update_model_weights()
+                fine_tuning.setEnabled(
+                        (len(self.parameters['weights'].values) > 0) & (len(self.get_annotated_rois(ids_only=True)) > 0))
+                predict.setEnabled(len(self.parameters['weights'].values) > 0)
+                show_results.setEnabled(len(self.get_prediction_runs()) > 0)
+                export_classification.setEnabled(
+                        (len(self.get_annotated_rois(ids_only=True)) > 0) | (len(self.get_prediction_runs()) > 0))
+        else:
+            manual_annotation.setEnabled(False)
+            train_model.setEnabled(False)
+            fine_tuning.setEnabled(False)
+            predict.setEnabled(False)
+            show_results.setEnabled(False)
+            export_classification.setEnabled(False)
 
     def save_annotations(self, roi: ROI, roi_classes: list[int], run) -> None:
         """
