@@ -3,26 +3,30 @@
 """
  The Graphical User Interface to pyDetecDiv application
 """
-import importlib
-import os
+# import importlib
+# import os
 
 from PySide6.QtGui import QIcon
+import pyqtgraph as pg
 
-from pydetecdiv.app import create_app
+from pydetecdiv.app import PyDetecDiv
+from pydetecdiv.app.gui import FileMenu, ProjectMenu, DataMenu, PluginMenu, VideoMenu
 from pydetecdiv.app.gui.Windows import MainWindow
-import pydetecdiv.app.gui.SourcePath as SourcePath
+from pydetecdiv.app.gui import SourcePath
 
-if '_PYIBoot_SPLASH' in os.environ and importlib.util.find_spec("pyi_splash"):
-    import pyi_splash
-
-    pyi_splash.close()
+# if '_PYIBoot_SPLASH' in os.environ and importlib.util.find_spec("pyi_splash"):
+#     import pyi_splash
+#
+#     pyi_splash.close()
 
 
 def main_gui():
     """
     Main function for GUI application
     """
-    app = create_app()
+    PyDetecDiv.app = PyDetecDiv([])
+    PyDetecDiv.plugin_list.register_all()
+    pg.setConfigOptions(antialias=True, background='w')
 
     style_sheet = """
                 * {
@@ -41,16 +45,22 @@ def main_gui():
             """
 
     # Apply the style sheet to the application
-    app.setStyleSheet(style_sheet)
+    PyDetecDiv.app.setStyleSheet(style_sheet)
     window_icon = QIcon(':icons/app_icon')
-    app.setWindowIcon(window_icon)
+    PyDetecDiv.app.setWindowIcon(window_icon)
 
     table_editor = SourcePath.TableEditor(title='Missing data source path definition', editable_col=None)
-    app.check_data_source_paths(table_editor)
+    PyDetecDiv.app.check_data_source_paths(table_editor)
 
-    app.set_main_window(MainWindow())
+    PyDetecDiv.app.set_main_window(MainWindow())
 
-    app.exec()
+    FileMenu(PyDetecDiv.main_window)
+    ProjectMenu(PyDetecDiv.main_window)
+    DataMenu(PyDetecDiv.main_window)
+    VideoMenu(PyDetecDiv.main_window)
+    PluginMenu(PyDetecDiv.main_window)
+
+    PyDetecDiv.app.exec()
 
 
 if __name__ == '__main__':

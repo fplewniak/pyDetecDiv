@@ -1,3 +1,8 @@
+"""
+Core and absrtact widgets for application GUI. These widgets provide the basic functionalities for the GUI and are expected
+to be extended for concrete or more specific purposes
+"""
+
 from typing import Any, Type, Callable, TypeVar, Union, Self
 
 from PySide6.QtCore import Signal, Slot, QModelIndex, QItemSelectionModel, QItemSelection, QStringListModel

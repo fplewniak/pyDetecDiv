@@ -20,7 +20,6 @@ from PySide6.QtGui import QCursor, QTextCursor, QCloseEvent, QAction
 from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox, QTextEdit, QWidget,
                                QTableView, QHeaderView, QHBoxLayout, QSizePolicy, QMainWindow, QInputDialog, QFileDialog, QLineEdit)
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal, QObject
-import pyqtgraph as pg
 
 from pydetecdiv import plugins
 from pydetecdiv.domain.dso import DomainSpecificObject
@@ -451,13 +450,13 @@ def project_list() -> list[str]:
     return list_projects()
 
 
-def create_app() -> PyDetecDiv:
-    """
-    Creates a GUI application (the global controller for the display layer)
-
-    :return: the application
-    """
-    PyDetecDiv.app = PyDetecDiv([])
-    PyDetecDiv.plugin_list.register_all()
-    pg.setConfigOptions(antialias=True, background='w')
-    return PyDetecDiv.app
+# def create_app() -> PyDetecDiv:
+#     """
+#     Creates a GUI application (the global controller for the display layer)
+#
+#     :return: the application
+#     """
+#     PyDetecDiv.app = PyDetecDiv([])
+#     PyDetecDiv.plugin_list.register_all()
+#     pg.setConfigOptions(antialias=True, background='w')
+#     return PyDetecDiv.app

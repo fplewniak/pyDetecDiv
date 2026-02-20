@@ -13,6 +13,7 @@ from PySide6.QtWidgets import QToolBar, QStatusBar, QMenu, QApplication, QDialog
 
 from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui import ActionsSettings, ActionsProject, ActionsData
+from pydetecdiv.app.gui.tools import ActionsVideo
 import pydetecdiv.app.gui.resources_rc
 
 if TYPE_CHECKING:
@@ -75,6 +76,18 @@ class DataMenu(QMenu):
         PyDetecDiv.app.project_selected.connect(compute_drift.enable)
         PyDetecDiv.app.project_selected.connect(apply_drift.enable)
         apply_drift.triggered.connect(PyDetecDiv.app.set_apply_drift)
+
+class VideoMenu(QMenu):
+    """
+    The main window Video menu to manage video analysis and manipulation
+    """
+
+    def __init__(self, parent: 'MainWindow', *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        menu = parent.menuBar().addMenu("Video")
+        classify_video = menu.addMenu("Video Classifier")
+        train_model = ActionsVideo.TrainModelAction(classify_video)
+        # fine_tuning = QAction("Fine-tune training", classify_video)
 
 
 class PluginMenu(QMenu):

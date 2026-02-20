@@ -7,7 +7,7 @@ from PySide6.QtGui import QCursor, QIcon, QCloseEvent
 from PySide6.QtWidgets import QMainWindow, QMdiArea, QDockWidget, QLabel, QComboBox, \
     QDialogButtonBox, QFrame, QVBoxLayout, QGridLayout, QToolButton, QSpinBox, QGroupBox, QHBoxLayout, QCheckBox
 
-from pydetecdiv.app.gui import MainToolBar, MainStatusBar, FileMenu, DataMenu, PluginMenu, ProjectMenu
+from pydetecdiv.app.gui import MainToolBar, MainStatusBar
 from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project, DrawingTools
 from pydetecdiv.app.gui.FOVmanager import FOVmanager
 
@@ -28,11 +28,6 @@ class MainWindow(QMainWindow):
         self.addToolBar(MainToolBar(self, 'Main Toolbar'))
 
         self.tabs = {}
-
-        FileMenu(self)
-        ProjectMenu(self)
-        DataMenu(self)
-        PluginMenu(self)
 
         self.setStatusBar(MainStatusBar())
 

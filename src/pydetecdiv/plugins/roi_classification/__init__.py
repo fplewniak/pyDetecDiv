@@ -320,9 +320,9 @@ class Plugin(plugins.Plugin):
     """
     A class extending plugins.Plugin to handle the example plugin
     """
-    id_ = 'gmgm.plewniak.roiclasstorch'
+    id_ = 'gmgm.plewniak.roiclassification'
     version = '1.0.0'
-    name = 'ROI classification (PyTorch)'
+    name = 'ROI classification'
     category = 'Deep learning'
 
     def __init__(self):
