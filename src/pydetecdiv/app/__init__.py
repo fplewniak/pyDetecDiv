@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Callable
 if TYPE_CHECKING:
     from pydetecdiv.app.gui.Windows import MainWindow
     from pydetecdiv.app.gui.SourcePath import TableEditor
+    from pydetecdiv.app.tools import Tool
 
 import os.path
 import sys
@@ -57,6 +58,7 @@ class PyDetecDiv(QApplication):
     current_drawing_tool = None
     plugin_list = None
     app = None
+    tools = {}
 
     roi_template = None
     apply_drift = False
@@ -66,6 +68,10 @@ class PyDetecDiv(QApplication):
         self.setApplicationName('pyDetecDiv')
         self.load_plugins()
         # self.check_data_source_paths()
+
+    @staticmethod
+    def update_tools(tools: dict[str, 'Tool']) -> None:
+        PyDetecDiv.tools.update(tools)
 
     @staticmethod
     def load_plugins() -> None:

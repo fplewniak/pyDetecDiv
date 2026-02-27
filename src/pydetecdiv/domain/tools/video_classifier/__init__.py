@@ -12,6 +12,10 @@ class VideoClassifier(DeepTool):
     """
     Video classifier tool, providing all functionalities for deep learning video classification (training, evaluation, prediction)
     """
+    id_ = 'cnrs.plewniak.videoclassifier'
+    version = '1.0.0'
+    name = 'Video Classifier'
+
     def __init__(self, parameters: Parameters | None = None, working_dir: str | None = None):
         super().__init__(parameters, working_dir)
 
@@ -25,19 +29,19 @@ class VideoClassifier(DeepTool):
         Prepare the data for prediction
         """
 
-    def create_trainer(self) -> ModelTrainer:
+    def create_trainer(self) -> VideoClassifierTrainer:
         """
         Concrete factory to create video classifier trainer
         """
         return VideoClassifierTrainer(self)
 
-    def create_evaluator(self) -> ModelEvaluator:
+    def create_evaluator(self) -> VideoClassifierEvaluator:
         """
         Concrete factory to create video classifier evaluator
         """
         return VideoClassifierEvaluator(self)
 
-    def create_predictor(self) -> Predictor:
+    def create_predictor(self) -> VideoClassifierPredictor:
         """
         Concrete factory to create video classifier predictor
         """

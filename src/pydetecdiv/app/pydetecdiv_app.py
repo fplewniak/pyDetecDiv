@@ -13,6 +13,9 @@ from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui import FileMenu, ProjectMenu, DataMenu, PluginMenu, VideoMenu
 from pydetecdiv.app.gui.Windows import MainWindow
 from pydetecdiv.app.gui import SourcePath
+from pydetecdiv.app.gui.tools.video_classifier import VideoClassifierMenu
+from pydetecdiv.domain.tools.video_classifier import VideoClassifier
+
 
 # if '_PYIBoot_SPLASH' in os.environ and importlib.util.find_spec("pyi_splash"):
 #     import pyi_splash
@@ -49,17 +52,27 @@ def main_gui():
     window_icon = QIcon(':icons/app_icon')
     PyDetecDiv.app.setWindowIcon(window_icon)
 
+    # Check table sources for the current machine
     table_editor = SourcePath.TableEditor(title='Missing data source path definition', editable_col=None)
     PyDetecDiv.app.check_data_source_paths(table_editor)
 
+    # Create tools
+    PyDetecDiv.app.update_tools({'Video classifier': VideoClassifier(working_dir='video_classifier')})
+    video_tool_menus = [
+        VideoClassifierMenu(PyDetecDiv.app.tools['Video classifier']),
+        ]
+
+    # Set main application window
     PyDetecDiv.app.set_main_window(MainWindow())
 
+    # Create menus
     FileMenu(PyDetecDiv.main_window)
     ProjectMenu(PyDetecDiv.main_window)
     DataMenu(PyDetecDiv.main_window)
-    VideoMenu(PyDetecDiv.main_window)
+    VideoMenu(PyDetecDiv.main_window, video_tool_menus)
     PluginMenu(PyDetecDiv.main_window)
 
+    # Launch application GUI
     PyDetecDiv.app.exec()
 
 

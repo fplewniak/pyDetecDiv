@@ -2,15 +2,17 @@
 Abstract ModelTrainer class
 """
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
-from pydetecdiv.app.tools.deep_learning import DeepTool
+if TYPE_CHECKING:
+    from pydetecdiv.app.tools.deep_learning import DeepTool
 
 
 class ModelTrainer(ABC):
     """
     Abstract ModelTrainer class providing the basic functionalities for model training of deep learning tools
     """
-    def __init__(self, tool: DeepTool):
+    def __init__(self, tool: 'DeepTool'):
         self.tool = tool
         self.tool.command = 'train_model'
 

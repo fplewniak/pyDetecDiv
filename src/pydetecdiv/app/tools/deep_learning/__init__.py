@@ -2,17 +2,15 @@
 Abstract DeepTool class
 """
 from abc import abstractmethod
-from typing import TYPE_CHECKING
 
 import torch
 
 from pydetecdiv.app.parameters import Parameters
 from pydetecdiv.app.tools import Tool
 
-if TYPE_CHECKING:
-    from pydetecdiv.app.tools.deep_learning.train import ModelTrainer
-    from pydetecdiv.app.tools.deep_learning.evaluate import ModelEvaluator
-    from pydetecdiv.app.tools.deep_learning.predict import Predictor
+from pydetecdiv.app.tools.deep_learning.train import ModelTrainer
+from pydetecdiv.app.tools.deep_learning.evaluate import ModelEvaluator
+from pydetecdiv.app.tools.deep_learning.predict import Predictor
 
 
 class DeepTool(Tool):
@@ -28,6 +26,9 @@ class DeepTool(Tool):
             self.model.to(self.device)
         self.train_dataloader, self.val_dataloader, self.test_dataloader = None, None, None
         self.dataloader = None
+        self._model_trainer = None
+        self._model_evaluator = None
+        self._model_predictor = None
 
     def set_model(self, model: torch.nn.Module):
         """
@@ -37,6 +38,24 @@ class DeepTool(Tool):
         """
         self.model = model
         self.model.to(self.device)
+
+    @property
+    def model_trainer(self) -> 'ModelTrainer':
+        if self._model_trainer is None:
+            self._model_trainer = self.create_trainer()
+        return self._model_trainer
+
+    @property
+    def model_evaluator(self) -> 'ModelEvaluator':
+        if self._model_evaluator is None:
+            self._model_evaluator = self.create_evaluator()
+        return self._model_evaluator
+
+    @property
+    def model_predictor(self) -> 'Predictor':
+        if self._model_predictor is None:
+            self._model_predictor = self.create_predictor()
+        return self._model_predictor
 
     @abstractmethod
     def create_trainer(self) -> 'ModelTrainer':
@@ -75,7 +94,7 @@ class DeepTool(Tool):
         model_trainer = self.create_trainer()
         model_trainer.train_model()
 
-    def run_test(self):
+    def run_evaluation(self):
         """
         Generic method calling the evaluator factory and evaluating the model on the test dataset
         """
