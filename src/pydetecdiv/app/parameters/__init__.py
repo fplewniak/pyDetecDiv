@@ -61,6 +61,10 @@ class Parameter:
         """
         return self.model.value()
 
+    @property
+    def type(self) -> str:
+        return self.__class__.__name__
+
     def set_value(self, value: Any) -> None:
         """
         Sets the current value for the parameter. The model's value setter is called only if the new value is different
