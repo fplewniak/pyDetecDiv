@@ -1,7 +1,7 @@
 """
 Video classifier tool
 """
-from pydetecdiv.app.parameters import Parameters
+from pydetecdiv.app.parameters import Parameters, IntParameter
 from pydetecdiv.app.tools.deep_learning import DeepTool, ModelTrainer, ModelEvaluator, Predictor
 from pydetecdiv.domain.tools.video_classifier.train import VideoClassifierTrainer
 from pydetecdiv.domain.tools.video_classifier.evaluate import VideoClassifierEvaluator
@@ -18,6 +18,10 @@ class VideoClassifier(DeepTool):
 
     def __init__(self, parameters: Parameters | None = None, working_dir: str | None = None):
         super().__init__(parameters, working_dir)
+        self.parameters = Parameters(
+                [IntParameter(name='seed', label='Random seed', groups={'training', 'finetune'}, maximum=999999999, default=42),
+                 ]
+                )
 
     def prepare_data_for_training(self, *args, **kwargs) -> None:
         """

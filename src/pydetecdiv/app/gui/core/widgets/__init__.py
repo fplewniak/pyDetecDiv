@@ -46,8 +46,8 @@ class GroupBox(QGroupBox):
     an extension of QGroupBox class
     """
 
-    def __init__(self, parent: QWidget, title: str = None) -> None:
-        super().__init__(parent)
+    def __init__(self, parent: QWidget, title: str = None, **kwargs: dict[str, Any]) -> None:
+        super().__init__(parent, **kwargs)
         if title is not None:
             self.setTitle(title)
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
@@ -65,19 +65,19 @@ class GroupBox(QGroupBox):
         self.layout.addWidget(sub_box)
         return sub_box
 
-    def addOption(self, label: str = None, widget: Type[QWidget] = None, parameter: Parameter = None,
-                  enabled: bool = True, **kwargs: dict[str, Any]) -> QWidget:
-        """
-        add an option to the current Form
-
-        :param enabled: whether this option is enabled
-        :param parameter: the Parameter attached to the widget
-        :param label: the label for the option
-        :param widget: the widget to specify the option value, etc
-        :param kwargs: extra args passed to the widget
-        :return: the option widget
-        """
-        ...
+    # def addOption(self, label: str = None, widget: Type[QWidget] = None, parameter: Parameter = None,
+    #               enabled: bool = True, **kwargs: dict[str, Any]) -> QWidget:
+    #     """
+    #     add an option to the current Form
+    #
+    #     :param enabled: whether this option is enabled
+    #     :param parameter: the Parameter attached to the widget
+    #     :param label: the label for the option
+    #     :param widget: the widget to specify the option value, etc
+    #     :param kwargs: extra args passed to the widget
+    #     :return: the option widget
+    #     """
+    #     ...
 
 
 class InfoGroupBox(GroupBox):
@@ -101,8 +101,8 @@ class ParametersFormGroupBox(GroupBox):
     an extension of GroupBox class to handle Forms
     """
 
-    def __init__(self, parent: QWidget, title: str = None, show: bool = True) -> None:
-        super().__init__(parent, title)
+    def __init__(self, parent: QWidget, title: str = None, show: bool = True, **kwargs: dict[str, Any]) -> None:
+        super().__init__(parent, title, **kwargs)
         self.layout: QLayout = QFormLayout(self)
         self.setLayout(self.layout)
         self.setVisible(show)
@@ -119,8 +119,8 @@ class ParametersFormGroupBox(GroupBox):
         self.layout.addRow(sub_box)
         return sub_box
 
-    def addOption(self, label: str = None, widget: Type[QWidget] = None, parameter: Parameter = None,
-                  enabled: bool = True, **kwargs: dict[str, Any]) -> QWidget:
+    def addOption(self, parameter: Parameter = None, label: bool = True, enabled: bool = True, widget: Type[QWidget] = None,
+                   **kwargs: dict[str, Any]) -> QWidget:
         """
         add an option to the current Form
 
@@ -131,17 +131,18 @@ class ParametersFormGroupBox(GroupBox):
         :param kwargs: extra args passed to the widget
         :return: the option widget
         """
-        if issubclass(widget, (QPushButton, QDialogButtonBox, QGroupBox)):
+        if widget is not None and issubclass(widget, (QPushButton, QDialogButtonBox, QGroupBox)):
             option: QWidget = widget(parent=self, **kwargs)
         else:
-            option: QWidget = widget(parent=self, model=parameter.model, **parameter.kwargs(), **kwargs)
+            # option: QWidget = widget(parent=self, model=parameter.model, **parameter.kwargs(), **kwargs)
+            option: QWidget = parameter_widget_factory(self, parameter, **kwargs)
 
         option.setEnabled(enabled)
 
-        if label is None:
+        if label is False:
             self.layout.addRow(option)
         else:
-            self.layout.addRow(QLabel(label), option)
+            self.layout.addRow(QLabel(parameter.label), option)
         return option
 
     def setRowVisible(self, index: int, on: bool = True) -> None:
@@ -813,3 +814,15 @@ def set_connections(connections: dict[Signal, Callable]) -> None:
                 signal.connect(s)
         else:
             signal.connect(slot)
+
+
+def parameter_widget_factory(parent, parameter, **kwargs):
+    parameter_widgets = {
+        'IntParameter': SpinBox,
+        'FloatParameter': DoubleSpinBox,
+        'StringParameter': LineEdit,
+        'CheckParameter': RadioButton,
+        'ChoiceParameter': ComboBox,
+        }
+    print(f'Creating {parameter_widgets[parameter.type]} for {parameter.name} of type {parameter.type}')
+    return parameter_widgets[parameter.type](parent=parent, model=parameter.model, **parameter.kwargs(), **kwargs)
