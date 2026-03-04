@@ -470,6 +470,7 @@ class LineEdit(QLineEdit):
         self.mapper.setModel(model)
         self.mapper.addMapping(self, 0, b"text")
         self.mapper.toFirst()
+        self.changed.connect(lambda: self.mapper.submit())
 
 
 class Label(QLabel):
@@ -641,6 +642,7 @@ class SpinBox(QSpinBox):
             self.mapper.setModel(model)
             self.mapper.addMapping(self, 0)
             self.mapper.toFirst()
+            self.changed.connect(lambda _: self.mapper.submit())
 
     @property
     def changed(self) -> Signal:
@@ -681,6 +683,7 @@ class DoubleSpinBox(QDoubleSpinBox):
             self.mapper.setModel(model)
             self.mapper.addMapping(self, 0)
             self.mapper.toFirst()
+            self.changed.connect(lambda _: self.mapper.submit())
 
     @property
     def changed(self):
@@ -856,6 +859,6 @@ def parameter_widget_factory(parent, parameter, **kwargs):
         'CheckParameter': RadioButton,
         'ChoiceParameter': ComboBox,
         }
-    print(f'Creating {parameter_widgets[parameter.type]} for {parameter.name} of type {parameter.type}')
+    # print(f'Creating {parameter_widgets[parameter.type]} for {parameter.name} of type {parameter.type}')
     return parameter_widgets[parameter.type](parent=parent,**parameter.kwargs(), **kwargs)
     # return parameter_widgets[parameter.type](parent=parent, model=parameter.model, **parameter.kwargs(), **kwargs)

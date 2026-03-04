@@ -13,8 +13,14 @@ class TrainModelDialog(ToolDialog):
 
         self.classifier = self.addGroupBox('Classifier')
         self.classifier.addOption(tool.parameters['seed'])
-        self.expandable = self.classifier.addSubBox(ParametersFormGroupBox, expandable=True, show=False, title='Seed')
+        self.classifier.addOption(tool.parameters['check'])
+        self.classifier.addOption(tool.parameters['text'])
+        self.classifier.addOption(tool.parameters['choice'])
+        self.expandable = self.classifier.addSubBox(ParametersFormGroupBox, expandable=True, show=False, title='More options')
         self.expandable.addOption(tool.parameters['seed'])
+        self.expandable.addOption(tool.parameters['check'])
+        self.expandable.addOption(tool.parameters['text'])
+        self.expandable.addOption(tool.parameters['choice'])
 
         self.arrangeWidgets([self.classifier])
         self.fit_to_contents()
@@ -34,6 +40,6 @@ class TrainModelAction(ToolAction):
         """
         Run training procedure
         """
-        print(self.parent().title())
-        print(self.parent().tool.name, self.parent().tool.version, self.parent().tool.id_, )
+        # print(self.parent().title())
+        # print(self.parent().tool.name, self.parent().tool.version, self.parent().tool.id_, )
         TrainModelDialog(self.parent().tool)
