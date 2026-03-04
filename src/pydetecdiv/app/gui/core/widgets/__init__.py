@@ -517,7 +517,7 @@ class ExpandCollapseButton(PushButton):
     an extension of PushButton class to control collapsible group boxes for advanced options
     """
 
-    def __init__(self, parent: QWidget, text: str = 'More options', show: bool = True) -> None:
+    def __init__(self, parent: QWidget, text: str = None, show: bool = True) -> None:
         super().__init__(parent, text=text, icon=QIcon(':icons/show'), flat=True)
         self.group_box: GroupBox = None
         self.clicked.connect(self.toggle)
@@ -857,4 +857,5 @@ def parameter_widget_factory(parent, parameter, **kwargs):
         'ChoiceParameter': ComboBox,
         }
     print(f'Creating {parameter_widgets[parameter.type]} for {parameter.name} of type {parameter.type}')
-    return parameter_widgets[parameter.type](parent=parent, model=parameter.model, **parameter.kwargs(), **kwargs)
+    return parameter_widgets[parameter.type](parent=parent,**parameter.kwargs(), **kwargs)
+    # return parameter_widgets[parameter.type](parent=parent, model=parameter.model, **parameter.kwargs(), **kwargs)

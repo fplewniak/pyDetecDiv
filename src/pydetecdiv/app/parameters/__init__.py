@@ -32,7 +32,8 @@ class Parameter:
 
         :return: a dictionary containing the keywords arguments
         """
-        return {'default': self.default}
+        return self.__dict__
+        # return {'default': self.default}
 
     @property
     def default(self) -> Any:
@@ -143,13 +144,13 @@ class NumParameter(ItemParameter):
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          **kwargs)
 
-    def kwargs(self) -> dict[str, Any]:
-        """
-        Returns keywords arguments that should be passed to any widget used to manage the parameter
-
-        :return: a dictionary containing the keywords arguments
-        """
-        return {'default': self.default, 'minimum': self.minimum, 'maximum': self.maximum}
+    # def kwargs(self) -> dict[str, Any]:
+    #     """
+    #     Returns keywords arguments that should be passed to any widget used to manage the parameter
+    #
+    #     :return: a dictionary containing the keywords arguments
+    #     """
+    #     return {'default': self.default, 'minimum': self.minimum, 'maximum': self.maximum}
 
     def reset(self) -> None:
         """
@@ -205,10 +206,20 @@ class IntParameter(NumParameter):
     """
 
     def __init__(self, name: str, label: str = None, default: int = 1, validator: Callable[[int], bool] = None,
-                 minimum: int = 1, maximum: int = 4096, groups: set[str] = None, updater: Callable = None,
+                 minimum: int = 1, maximum: int = 4096, groups: set[str] = None, updater: Callable = None, single_step: int = 1,
                  **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          minimum=minimum, maximum=maximum, **kwargs)
+        self.single_step = single_step
+
+    # def kwargs(self) -> dict[str, Any]:
+    #     """
+    #     Returns keywords arguments that should be passed to any widget used to manage the parameter. This method should
+    #     be overridden for specific Parameter implementations that may need more control over widgets
+    #
+    #     :return: a dictionary containing the keywords arguments
+    #     """
+    #     return {'default': self.default, 'minimum': self.minimum, 'maximum': self.maximum, 'single_step': self.single_step}
 
     def validate(self, value: int) -> bool:
         """
@@ -269,13 +280,13 @@ class CheckParameter(ItemParameter):
                          **kwargs)
         self.exclusive: bool = exclusive
 
-    def kwargs(self) -> dict[str, Any]:
-        """
-        Returns keywords arguments that should be passed to any widget used to manage the parameter
-
-        :return: a dictionary containing the keyword arguments
-        """
-        return {'default': self.default, 'exclusive': self.exclusive}
+    # def kwargs(self) -> dict[str, Any]:
+    #     """
+    #     Returns keywords arguments that should be passed to any widget used to manage the parameter
+    #
+    #     :return: a dictionary containing the keyword arguments
+    #     """
+    #     return {'default': self.default, 'exclusive': self.exclusive}
 
 
 class ChoiceParameter(Parameter):
@@ -290,13 +301,13 @@ class ChoiceParameter(Parameter):
                          **kwargs)
         self.model: DictItemModel = DictItemModel(items)
 
-    def kwargs(self) -> dict[str, Any]:
-        """
-        Returns keywords arguments that should be passed to any widget used to manage the parameter
-
-        :return: a dictionary containing the keyword arguments
-        """
-        return {'default': self.default}
+    # def kwargs(self) -> dict[str, Any]:
+    #     """
+    #     Returns keywords arguments that should be passed to any widget used to manage the parameter
+    #
+    #     :return: a dictionary containing the keyword arguments
+    #     """
+    #     return {'default': self.default}
 
     @property
     def json(self) -> str | list | dict:
