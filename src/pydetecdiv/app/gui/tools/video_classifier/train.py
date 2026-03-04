@@ -11,16 +11,21 @@ class TrainModelDialog(ToolDialog):
     def __init__(self, tool, **kwargs):
         super().__init__(tool, title='Training Video classifier', **kwargs)
 
-        self.classifier = self.addGroupBox('Classifier')
-        self.classifier.addOption(tool.parameters['seed'])
-        self.classifier.addOption(tool.parameters['check'])
-        self.classifier.addOption(tool.parameters['text'])
-        self.classifier.addOption(tool.parameters['choice'])
-        self.expandable = self.classifier.addSubBox(ParametersFormGroupBox, expandable=True, show=False, title='More options')
-        self.expandable.addOption(tool.parameters['seed'])
-        self.expandable.addOption(tool.parameters['check'])
-        self.expandable.addOption(tool.parameters['text'])
-        self.expandable.addOption(tool.parameters['choice'])
+        self.classifier = self.addGroupBox(title='Classifier',
+                                           parameters=[
+                                               tool.parameters['seed'],
+                                               tool.parameters['check'],
+                                               tool.parameters['text'],
+                                               tool.parameters['choice']
+                                               ])
+
+        self.expandable = self.classifier.addSubBox(ParametersFormGroupBox, expandable=True, show=False, title='More options',
+                                                    parameters=[
+                                                        tool.parameters['choice'],
+                                                        tool.parameters['text'],
+                                                        tool.parameters['seed'],
+                                                        tool.parameters['check'],
+                                                        ])
 
         self.arrangeWidgets([self.classifier])
         self.fit_to_contents()

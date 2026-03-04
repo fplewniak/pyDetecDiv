@@ -54,7 +54,7 @@ class GroupBox(QGroupBox):
         self.layout: QLayout = self.layout()
         self.setVisible(show)
 
-    def addSubBox(self, widget: Type[Self], expandable: bool = False, show: bool = True, title: str = None,
+    def addSubBox(self, widget: Type[Self], expandable: bool = False, show: bool = True, title: str = None, parameters: list = None,
                   **kwargs: dict[str, Any]) -> Self:
         """
         Adds a sub-box to the current GroupBox
@@ -69,6 +69,8 @@ class GroupBox(QGroupBox):
         else:
             sub_box: GroupBox = widget(self, title=title, **kwargs)
             self.layout.addWidget(sub_box)
+        if parameters is not None:
+            [sub_box.addOption(parameter) for parameter in parameters]
         return sub_box
 
     def addOption(self, parameter: Parameter = None, label: bool = True, enabled: bool = True, widget: Type[QWidget] = None,
@@ -117,7 +119,7 @@ class ParametersFormGroupBox(GroupBox):
         self.setVisible(show)
 
     def addSubBox(self, widget: Type[GroupBox], expandable: bool = False, show: bool = True, title: str = None,
-                  **kwargs: dict[str, Any]) -> 'GroupBox | ExpandCollapseButton':
+                  parameters: list = None, **kwargs: dict[str, Any]) -> 'GroupBox | ExpandCollapseButton':
         """
         Adds a sub-box to the current ParametersFormGroupBox
 
@@ -131,6 +133,8 @@ class ParametersFormGroupBox(GroupBox):
         else:
             sub_box: GroupBox = widget(self, title=title, **kwargs)
             self.layout.addRow(sub_box)
+        if parameters is not None:
+            [sub_box.addOption(parameter) for parameter in parameters]
         return sub_box
 
     def addOption(self, parameter: Parameter = None, label: bool = True, enabled: bool = True, widget: Type[QWidget] = None,
@@ -784,7 +788,7 @@ class Dialog(QDialog):
         QApplication.processEvents()
         self.adjustSize()
 
-    def addGroupBox(self, title: str = None, widget: Type[GroupBox] = ParametersFormGroupBox) -> GroupBox:
+    def addGroupBox(self, title: str = None, widget: Type[GroupBox] = ParametersFormGroupBox, parameters: list = None) -> GroupBox:
         """
         Add a group box to the Dialog window
 
@@ -795,6 +799,8 @@ class Dialog(QDialog):
         group_box = widget(self)
         group_box.setTitle(title)
         group_box.setStyleSheet(StyleSheets.groupBox)
+        if parameters is not None:
+            [group_box.addOption(parameter) for parameter in parameters]
         return group_box
 
     def addButtonBox(self, buttons: StandardButtonCombination = QDialogButtonBox.Ok | QDialogButtonBox.Close,
