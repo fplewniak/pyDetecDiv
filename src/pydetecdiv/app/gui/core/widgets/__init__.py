@@ -46,14 +46,16 @@ class GroupBox(QGroupBox):
     an extension of QGroupBox class
     """
 
-    def __init__(self, parent: QWidget, title: str = None, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, parent: QWidget, title: str = None, show: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent, **kwargs)
         if title is not None:
             self.setTitle(title)
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
         self.layout: QLayout = self.layout()
+        self.setVisible(show)
 
-    def addSubBox(self, widget: Type[Self], **kwargs: dict[str, Any]) -> Self:
+    def addSubBox(self, widget: Type[Self], expandable: bool = False, show: bool = True, title: str = None,
+                  **kwargs: dict[str, Any]) -> Self:
         """
         Adds a sub-box to the current GroupBox
 
@@ -61,23 +63,30 @@ class GroupBox(QGroupBox):
         :param kwargs: keywords arguments to pass to the sub box
         :return: the sub box object
         """
-        sub_box = widget(self, **kwargs)
-        self.layout.addWidget(sub_box)
+        if expandable:
+            sub_box: ExpandCollapseButton = ExpandCollapseButton(self, text=title, show=show)
+            sub_box.linkGroupBox(widget(self, **kwargs))
+        else:
+            sub_box: GroupBox = widget(self, title=title, **kwargs)
+            self.layout.addWidget(sub_box)
         return sub_box
 
-    # def addOption(self, label: str = None, widget: Type[QWidget] = None, parameter: Parameter = None,
-    #               enabled: bool = True, **kwargs: dict[str, Any]) -> QWidget:
-    #     """
-    #     add an option to the current Form
-    #
-    #     :param enabled: whether this option is enabled
-    #     :param parameter: the Parameter attached to the widget
-    #     :param label: the label for the option
-    #     :param widget: the widget to specify the option value, etc
-    #     :param kwargs: extra args passed to the widget
-    #     :return: the option widget
-    #     """
-    #     ...
+    def addOption(self, parameter: Parameter = None, label: bool = True, enabled: bool = True, widget: Type[QWidget] = None,
+                   **kwargs: dict[str, Any]) -> QWidget:
+        """
+        add an option to the current Form
+
+        :param enabled: whether this option is enabled
+        :param parameter: the Parameter attached to the widget
+        :param label: the label for the option
+        :param widget: the widget to specify the option value, etc
+        :param kwargs: extra args passed to the widget
+        :return: the option widget
+        """
+        ...
+
+    def addWidget(self, widget: Type[QWidget] = None) -> Type[QWidget]:
+        ...
 
 
 class InfoGroupBox(GroupBox):
@@ -103,11 +112,12 @@ class ParametersFormGroupBox(GroupBox):
 
     def __init__(self, parent: QWidget, title: str = None, show: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent, title, **kwargs)
-        self.layout: QLayout = QFormLayout(self)
+        self.layout: QFormLayout = QFormLayout(self)
         self.setLayout(self.layout)
         self.setVisible(show)
 
-    def addSubBox(self, widget: Type[GroupBox], **kwargs: dict[str, Any]) -> GroupBox:
+    def addSubBox(self, widget: Type[GroupBox], expandable: bool = False, show: bool = True, title: str = None,
+                  **kwargs: dict[str, Any]) -> 'GroupBox | ExpandCollapseButton':
         """
         Adds a sub-box to the current ParametersFormGroupBox
 
@@ -115,8 +125,12 @@ class ParametersFormGroupBox(GroupBox):
         :param kwargs: keywords arguments to pass to the sub box
         :return: the sub box object
         """
-        sub_box: GroupBox = widget(self, **kwargs)
-        self.layout.addRow(sub_box)
+        if expandable:
+            sub_box: ExpandCollapseButton = ExpandCollapseButton(self, text=title, show=show)
+            sub_box.linkGroupBox(widget(self, **kwargs))
+        else:
+            sub_box: GroupBox = widget(self, title=title, **kwargs)
+            self.layout.addRow(sub_box)
         return sub_box
 
     def addOption(self, parameter: Parameter = None, label: bool = True, enabled: bool = True, widget: Type[QWidget] = None,
@@ -139,7 +153,7 @@ class ParametersFormGroupBox(GroupBox):
 
         option.setEnabled(enabled)
 
-        if label is False:
+        if not label:
             self.layout.addRow(option)
         else:
             self.layout.addRow(QLabel(parameter.label), option)
@@ -498,21 +512,21 @@ class PushButton(QPushButton):
         self.setEnabled(enabled)
 
 
-class AdvancedButton(PushButton):
+class ExpandCollapseButton(PushButton):
     """
     an extension of PushButton class to control collapsible group boxes for advanced options
     """
 
-    def __init__(self, parent: QWidget, text: str = 'Advanced options') -> None:
+    def __init__(self, parent: QWidget, text: str = 'More options', show: bool = True) -> None:
         super().__init__(parent, text=text, icon=QIcon(':icons/show'), flat=True)
         self.group_box: GroupBox = None
         self.clicked.connect(self.toggle)
+        self.show = show
 
     def hide(self):
         """
         hide the linked group box
         """
-        super().hide()
         self.setIcon(QIcon(':icons/show'))
         self.group_box.setVisible(False)
 
@@ -523,6 +537,16 @@ class AdvancedButton(PushButton):
         :param group_box: the group box to link to this button
         """
         self.group_box = group_box
+        if isinstance(self.parent().layout, QFormLayout):
+            self.parent().layout.addRow(self)
+            self.parent().layout.addRow(self.group_box)
+        else:
+            self.parent().layout.addWidget(self)
+            self.parent().layout.addWidget(self.group_box)
+        if self.show:
+            self.setIcon(QIcon(':icons/hide'))
+        self.group_box.setVisible(self.show)
+
 
     def toggle(self):
         """
@@ -535,6 +559,14 @@ class AdvancedButton(PushButton):
             self.setIcon(QIcon(':icons/hide'))
             self.group_box.setVisible(True)
         self.parent().parent().fit_to_contents()
+
+    def addSubBox(self, widget: Type[Self], expandable: bool = False, show: bool = True, title: str = None,
+                  **kwargs: dict[str, Any]) -> Self:
+        self.group_box.addSubBox(widget, expandable, show, title, **kwargs)
+
+    def addOption(self, parameter: Parameter = None, label: bool = True, enabled: bool = True, widget: Type[QWidget] = None,
+                   **kwargs: dict[str, Any]) -> QWidget:
+        self.group_box.addOption(parameter, label, enabled, widget, **kwargs)
 
 
 class RadioButton(QRadioButton):
@@ -749,7 +781,7 @@ class Dialog(QDialog):
         QApplication.processEvents()
         self.adjustSize()
 
-    def addGroupBox(self, title: str = None, widget: Type[GroupBox] = ParametersFormGroupBox) -> GenericGroupBox:
+    def addGroupBox(self, title: str = None, widget: Type[GroupBox] = ParametersFormGroupBox) -> GroupBox:
         """
         Add a group box to the Dialog window
 

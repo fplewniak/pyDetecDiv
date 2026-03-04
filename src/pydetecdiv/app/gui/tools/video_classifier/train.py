@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from pydetecdiv.app.gui.core.widgets import ParametersFormGroupBox
 from pydetecdiv.app.gui.tools import ToolAction, ToolDialog
 
 if TYPE_CHECKING:
@@ -12,6 +13,8 @@ class TrainModelDialog(ToolDialog):
 
         self.classifier = self.addGroupBox('Classifier')
         self.classifier.addOption(tool.parameters['seed'])
+        self.expandable = self.classifier.addSubBox(ParametersFormGroupBox, expandable=True, show=False, title='Seed')
+        self.expandable.addOption(tool.parameters['seed'])
 
         self.arrangeWidgets([self.classifier])
         self.fit_to_contents()
