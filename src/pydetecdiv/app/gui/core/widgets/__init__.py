@@ -5,7 +5,7 @@ to be extended for concrete or more specific purposes
 
 from typing import Any, Type, Callable, TypeVar, Union, Self
 
-from PySide6.QtCore import Signal, Slot, QModelIndex, QItemSelectionModel, QItemSelection, QStringListModel
+from PySide6.QtCore import Signal, Slot, QModelIndex, QItemSelectionModel, QItemSelection, QStringListModel, SignalInstance
 from PySide6.QtGui import QIcon, QAction, QContextMenuEvent
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QSizePolicy, QApplication, QDialogButtonBox, QPushButton, QWidget, QGroupBox,
                                QLayout, QLabel, QFormLayout, QTableView, QDataWidgetMapper, QAbstractSpinBox, QDoubleSpinBox,
@@ -149,8 +149,9 @@ class ParametersFormGroupBox(GroupBox):
         :param kwargs: extra args passed to the widget
         :return: the option widget
         """
-        if widget is not None and issubclass(widget, (QPushButton, QDialogButtonBox, QGroupBox)):
-            option: QWidget = widget(parent=self, **kwargs)
+        # if widget is not None and issubclass(widget, (QPushButton, QDialogButtonBox, QGroupBox)):
+        if widget is not None:
+            option: QWidget = widget(parent=self, **parameter.kwargs(), **kwargs)
         else:
             # option: QWidget = widget(parent=self, model=parameter.model, **parameter.kwargs(), **kwargs)
             option: QWidget = parameter_widget_factory(self, parameter, **kwargs)
@@ -814,6 +815,7 @@ class Dialog(QDialog):
         """
         button_box = DialogButtonBox(self, buttons=buttons)
         button_box.setCenterButtons(centered)
+        button_box.rejected.connect(self.close)
         return button_box
 
     def addButton(self, widget: Type[QPushButton], text: str = None, icon: QIcon = None,
@@ -842,7 +844,7 @@ class Dialog(QDialog):
             self.vert_layout.addWidget(widget)
 
 
-def set_connections(connections: dict[Signal, Callable]) -> None:
+def set_connections(connections: dict[Signal | SignalInstance, Callable]) -> None:
     """
     connect a signal to a slot or a list of slots, as defined in a dictionary
 
@@ -866,5 +868,5 @@ def parameter_widget_factory(parent, parameter, **kwargs):
         'ChoiceParameter': ComboBox,
         }
     # print(f'Creating {parameter_widgets[parameter.type]} for {parameter.name} of type {parameter.type}')
-    return parameter_widgets[parameter.type](parent=parent,**parameter.kwargs(), **kwargs)
+    return parameter_widgets[parameter.type](parent=parent, **parameter.kwargs(), **kwargs)
     # return parameter_widgets[parameter.type](parent=parent, model=parameter.model, **parameter.kwargs(), **kwargs)

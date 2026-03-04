@@ -20,6 +20,7 @@ class VideoClassifierTrainer(ModelTrainer):
         """
         Train the video classifier model, running the training loop once per epoch for as many epochs as requested by the user
         """
+        print("Training video classifier model...")
 
     def training_loop(self):
         """
