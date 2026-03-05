@@ -1,7 +1,9 @@
 """
 Video classifier tool
 """
-from pydetecdiv.app.parameters import Parameters, IntParameter, CheckParameter, StringParameter, ChoiceParameter
+from torch import optim
+
+from pydetecdiv.app.parameters import Parameters, IntParameter, FloatParameter, ChoiceParameter
 from pydetecdiv.app.tools.deep_learning import DeepTool, ModelTrainer, ModelEvaluator, Predictor
 from pydetecdiv.domain.tools.video_classifier.train import VideoClassifierTrainer
 from pydetecdiv.domain.tools.video_classifier.evaluate import VideoClassifierEvaluator
@@ -19,13 +21,28 @@ class VideoClassifier(DeepTool):
     def __init__(self, parameters: Parameters | None = None, working_dir: str | None = None):
         super().__init__(parameters, working_dir)
         self.parameters = Parameters(
-                [IntParameter(name='seed', label='Random seed', groups={'training', 'finetune'}, maximum=999999999, default=42,
-                              single_step=5),
-                 CheckParameter(name='check', label='Switch', groups={'training', 'finetune'}, default=False),
-                 StringParameter(name='text', label='Free text', groups={'training', 'finetune'}, default=''),
-                 ChoiceParameter(name='choice', label='Choose', groups={'training', 'finetune'},
-                                 items={'A': 'Attention', 'B': 'Bien', 'C': 'Catastrophe'}, default='A')
-                 ]
+                [
+                    IntParameter(name='epochs', label='Epochs', groups={'training', 'finetune'}, default=32),
+                    IntParameter(name='batch_size', label='Batch size', groups={'training', 'finetune'}, default=32, ),
+                    ChoiceParameter(name='optimizer', label='Optimizer', groups={'training', 'finetune'}, default='AdamW',
+                                    items={'AdamW'   : optim.AdamW,
+                                           'SGD'     : optim.SGD,
+                                           'Adadelta': optim.Adadelta,
+                                           'Adamax'  : optim.Adamax,
+                                           'Nadam'   : optim.NAdam,
+                                           },),
+                    IntParameter(name='seed', label='Random seed', groups={'training', 'finetune'}, maximum=999999999,
+                                 default=42, ),
+
+                    FloatParameter(name='num_training', label='Training dataset', groups={'training', 'finetune'}, default=0.4,
+                                   minimum=0.01, maximum=0.99, ),
+                    FloatParameter(name='num_validation', label='Validation dataset', groups={'training', 'finetune'},
+                                   default=0.3, minimum=0.01, maximum=0.99, ),
+                    FloatParameter(name='num_test', label='Test dataset', groups={'training', 'finetune'}, default=0.3,
+                                   minimum=0.01, maximum=0.99, decimals=2, enabled=False),
+                    IntParameter(name='data_seed', label='Random seed', groups={'training', 'finetune'}, maximum=999999999,
+                                 default=42),
+                    ]
                 )
 
     def prepare_data_for_training(self, *args, **kwargs) -> None:

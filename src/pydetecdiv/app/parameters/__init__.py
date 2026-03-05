@@ -5,6 +5,8 @@ be specified using GUI widgets which are synchronized thanks to a shared model
 import json
 from typing import Callable, Any
 
+from PySide6.QtCore import Signal
+
 from pydetecdiv.app.models import ItemModel, DictItemModel, StandardItemModel
 
 
@@ -14,7 +16,7 @@ class Parameter:
     """
 
     def __init__(self, name: str, label: str = None, default: Any = None, validator: Callable[[Any], bool] = None,
-                 groups: set[str] = None, updater: Callable = None, **kwargs: dict[str, Any]) -> None:
+                 groups: set[str] = None, updater: Callable = None, enabled: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__()
         self.name: str = name
         self.label: str = label
@@ -24,6 +26,7 @@ class Parameter:
         self.updater_kwargs: dict[str, Any] = kwargs
         self.groups: set[str] = set() if groups is None else groups
         self.model: StandardItemModel | None = None
+        self.enabled = enabled
 
     def kwargs(self) -> dict[str, Any]:
         """
@@ -116,6 +119,16 @@ class Parameter:
         This method should be overridden for more specific needs of particular Parameter types
         """
         return (self.validator is None) or self.validator(value)
+
+    @property
+    def changed(self) -> Signal:
+        """
+        return property telling whether the spinbox value has changed. This overwrites the Pyside equivalent method in
+         order to have the same method name for all widgets
+
+        :return: boolean indication whether the value has changed
+        """
+        return self.model.itemChanged
 
 
 class ItemParameter(Parameter):
@@ -241,10 +254,11 @@ class FloatParameter(NumParameter):
 
     def __init__(self, name: str, label: str = None, default: float = 0.0, validator: Callable[[float], bool] = None,
                  minimum: float = 0.0, maximum: float = 1.0, groups: set[str] = None, updater: Callable = None,
-                 single_step: float = 0.01, **kwargs: dict[str, Any]) -> None:
+                 single_step: float = 0.01, decimals: int = 2, **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          minimum=minimum, maximum=maximum, **kwargs)
         self.single_step = single_step
+        self.decimals = decimals
 
     def validate(self, value: float) -> bool:
         """
@@ -430,6 +444,10 @@ class ChoiceParameter(Parameter):
         """
         for k, v in items.items():
             self.add_item({k: v})
+
+    @property
+    def changed(self) -> Signal:
+        return self.model.selection_changed
 
 
 class Parameters:

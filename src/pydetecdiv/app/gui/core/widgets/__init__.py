@@ -53,6 +53,18 @@ class GroupBox(QGroupBox):
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
         self.layout: QLayout = self.layout()
         self.setVisible(show)
+        self.parameter_widgets = {}
+
+    def parameter_widget_factory(self, parameter, **kwargs):
+        parameter_widgets = {
+            'IntParameter': SpinBox,
+            'FloatParameter': DoubleSpinBox,
+            'StringParameter': LineEdit,
+            'CheckParameter': RadioButton,
+            'ChoiceParameter': ComboBox,
+            }
+        self.parameter_widgets[parameter.name] = parameter_widgets[parameter.type](parent=self, **parameter.kwargs(), **kwargs)
+        return self.parameter_widgets[parameter.name]
 
     def addSubBox(self, widget: Type[Self], expandable: bool = False, show: bool = True, title: str = None, parameters: list = None,
                   **kwargs: dict[str, Any]) -> Self:
@@ -154,9 +166,8 @@ class ParametersFormGroupBox(GroupBox):
             option: QWidget = widget(parent=self, **parameter.kwargs(), **kwargs)
         else:
             # option: QWidget = widget(parent=self, model=parameter.model, **parameter.kwargs(), **kwargs)
-            option: QWidget = parameter_widget_factory(self, parameter, **kwargs)
-
-        option.setEnabled(enabled)
+            # option: QWidget = parameter_widget_factory(self, parameter, **kwargs)
+            option: QWidget = self.parameter_widget_factory(parameter, **kwargs)
 
         if not label:
             self.layout.addRow(option)
