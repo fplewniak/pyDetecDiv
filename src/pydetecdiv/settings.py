@@ -258,7 +258,9 @@ class Device:
         path = (df.filter((col('path_id') == path_id)
                           & ((col('MAC') == cls.mac()) | (col('device') == cls.name()))
                           ))
-        if path.shape[0] > 0:
+        if path.shape[0] > 1:
+            path = (df.filter((col('path_id') == path_id) & (col('MAC') == cls.mac())))
+        if path.shape[0] == 1:
             return path.select(col('path')).item()
         return None
 

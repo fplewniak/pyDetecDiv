@@ -231,6 +231,8 @@ class DataSourceManagement(QDialog):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+        self.setWindowTitle(f'{Device.name()} - {Device.mac()}')
+
         self.main_layout = QVBoxLayout(self)
         self.tabs = DataSourceManagementTab()
         self.main_layout.addWidget(self.tabs)
@@ -356,7 +358,7 @@ class DataSourceGroup(QGroupBox):
         self.other_devices_model = TableModel(self.other_devices.select(['device', 'name', 'path', 'MAC', 'path_id']))
         self.other_devices_view = QTableView(self)
         self.other_devices_view.setModel(self.other_devices_model)
-        self.other_devices_view.setColumnHidden(3, True)
+        self.other_devices_view.setColumnHidden(3, False)
         self.other_devices_view.setColumnHidden(4, True)
         self.other_devices_horizontal_header = self.other_devices_view.horizontalHeader()
         self.other_devices_horizontal_header.setSectionResizeMode(QHeaderView.ResizeToContents)
