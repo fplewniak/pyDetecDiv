@@ -17,9 +17,8 @@ from contextlib import contextmanager
 from enum import StrEnum
 import markdown
 
-from PySide6.QtGui import QCursor, QTextCursor, QCloseEvent, QAction
-from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox, QTextEdit, QWidget,
-                               QTableView, QHeaderView, QHBoxLayout, QSizePolicy, QMainWindow, QInputDialog, QFileDialog, QLineEdit)
+from PySide6.QtGui import QCursor, QTextCursor, QCloseEvent
+from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox, QTextEdit, QWidget)
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal, QObject
 
 from pydetecdiv import plugins

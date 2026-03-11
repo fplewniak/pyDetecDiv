@@ -4,14 +4,16 @@ Handling actions to open, create and interact with projects
 import glob
 import json
 import os
+import time
 from subprocess import Popen
 
 import numpy as np
-from PySide6.QtCore import (Qt, QRegularExpression, QStringListModel, QItemSelectionModel, QItemSelection, Signal, QDir,
-                            QThread)
-from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator, QContextMenuEvent
-from PySide6.QtWidgets import (QFileDialog, QDialog, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-                               QPushButton, QDialogButtonBox, QListView, QComboBox, QMenu, QAbstractItemView)
+import tifffile
+from PySide6.QtCore import (QRegularExpression, Signal, QDir, QThread)
+from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
+from PySide6.QtWidgets import (QWidget, QDialogButtonBox, QLabel)
+from ndtiff import NDTiffDataset
+
 from pydetecdiv.app import PyDetecDiv, WaitDialog, pydetecdiv_project, MessageDialog
 from pydetecdiv.domain.FOV import FOV
 from pydetecdiv.domain.Project import Project
@@ -20,75 +22,75 @@ from pydetecdiv.app.parameters import ChoiceParameter
 from pydetecdiv.settings import get_config_value
 from pydetecdiv import delete_files
 from pydetecdiv.app.gui.RawData2FOV import RawData2FOV
-# import pydetecdiv.plugins.gui as gui
 import pydetecdiv.app.gui.core.widgets as gui
+from pydetecdiv.app.gui.core.widgets.files import FileListChooserDialog
 
 
-class FileListView(QListView):
-    """
-    A class extending QListView to display source for image data. Defines a context menu to clear or toggle selection,
-    remove selected sources, clear list
-    """
+# class FileListView(QListView):
+#     """
+#     A class extending QListView to display source for image data. Defines a context menu to clear or toggle selection,
+#     remove selected sources, clear list
+#     """
+#
+#     def __init__(self, parent: QWidget):
+#         super().__init__(parent)
+#         self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+#
+#     def contextMenuEvent(self, e: QContextMenuEvent) -> None:
+#         """
+#         Definition of a context menu to clear or toggle selection of sources in list model, remove selected sources from
+#         the list model, clear the source list model
+#
+#         :param e: mouse event providing the position of the context menu
+#         """
+#         if self.model().rowCount():
+#             context = QMenu(self)
+#             unselect = QAction("Unselect all", self)
+#             unselect.triggered.connect(self.unselect)
+#             context.addAction(unselect)
+#             toggle = QAction("Toggle selection", self)
+#             toggle.triggered.connect(self.toggle)
+#             context.addAction(toggle)
+#             context.addSeparator()
+#             remove = QAction("Remove selected items", self)
+#             remove.triggered.connect(self.remove_items)
+#             context.addAction(remove)
+#             clear_list = QAction("Clear list", self)
+#             context.addAction(clear_list)
+#             clear_list.triggered.connect(self.clear_list)
+#             context.exec(e.globalPos())
+#
+#     def unselect(self) -> None:
+#         """
+#         Clear selection model
+#         """
+#         self.selectionModel().clear()
+#
+#     def toggle(self) -> None:
+#         """
+#         Toggle selection model, selected sources are deselected and unselected ones are selected
+#         """
+#         toggle_selection = QItemSelection()
+#         top_left = self.model().index(0, 0)
+#         bottom_right = self.model().index(self.model().rowCount() - 1, 0)
+#         toggle_selection.select(top_left, bottom_right)
+#         self.selectionModel().select(toggle_selection, QItemSelectionModel.SelectionFlag.Toggle)
+#
+#     def remove_items(self) -> None:
+#         """
+#         Delete selected sources
+#         """
+#         for idx in sorted(self.selectedIndexes(), key=lambda x: x.row(), reverse=True):
+#             self.model().removeRow(idx.row())
+#
+#     def clear_list(self) -> None:
+#         """
+#         Clear the source list
+#         """
+#         self.model().removeRows(0, self.model().rowCount())
 
-    def __init__(self, parent: QWidget):
-        super().__init__(parent)
-        self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
 
-    def contextMenuEvent(self, e: QContextMenuEvent) -> None:
-        """
-        Definition of a context menu to clear or toggle selection of sources in list model, remove selected sources from
-        the list model, clear the source list model
-
-        :param e: mouse event providing the position of the context menu
-        """
-        if self.model().rowCount():
-            context = QMenu(self)
-            unselect = QAction("Unselect all", self)
-            unselect.triggered.connect(self.unselect)
-            context.addAction(unselect)
-            toggle = QAction("Toggle selection", self)
-            toggle.triggered.connect(self.toggle)
-            context.addAction(toggle)
-            context.addSeparator()
-            remove = QAction("Remove selected items", self)
-            remove.triggered.connect(self.remove_items)
-            context.addAction(remove)
-            clear_list = QAction("Clear list", self)
-            context.addAction(clear_list)
-            clear_list.triggered.connect(self.clear_list)
-            context.exec(e.globalPos())
-
-    def unselect(self) -> None:
-        """
-        Clear selection model
-        """
-        self.selectionModel().clear()
-
-    def toggle(self) -> None:
-        """
-        Toggle selection model, selected sources are deselected and unselected ones are selected
-        """
-        toggle_selection = QItemSelection()
-        top_left = self.model().index(0, 0)
-        bottom_right = self.model().index(self.model().rowCount() - 1, 0)
-        toggle_selection.select(top_left, bottom_right)
-        self.selectionModel().select(toggle_selection, QItemSelectionModel.SelectionFlag.Toggle)
-
-    def remove_items(self) -> None:
-        """
-        Delete selected sources
-        """
-        for idx in sorted(self.selectedIndexes(), key=lambda x: x.row(), reverse=True):
-            self.model().removeRow(idx.row())
-
-    def clear_list(self) -> None:
-        """
-        Clear the source list
-        """
-        self.model().removeRows(0, self.model().rowCount())
-
-
-class ImportMetaDataDialog(QDialog):
+class ImportMetaDataDialog(FileListChooserDialog):
     """
     A dialog window to choose sources for metadata files to import images and create Image resources
     """
@@ -97,115 +99,10 @@ class ImportMetaDataDialog(QDialog):
     finished = Signal(bool)
 
     def __init__(self):
-        super().__init__(PyDetecDiv.main_window)
-        self.project_path = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv.project_name)
-        self.setWindowModality(Qt.WindowModality.WindowModal)
-        self.setMinimumWidth(450)
-        self.current_dir = '.'
-
+        super().__init__(title='Import image data from metadata', filters=["TXT (*.txt)",
+                                                                           "JSON (*.json)"],
+                         extensions=['*.txt', '*.json'])
         self.setObjectName('ImportMetaData')
-        self.setWindowTitle('Import image data from metadata')
-
-        self.button_box = QDialogButtonBox(
-                QDialogButtonBox.StandardButton.Close | QDialogButtonBox.StandardButton.Cancel | QDialogButtonBox.StandardButton.Ok,
-                self)
-        self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
-
-        source_group_box = QGroupBox(self)
-        source_group_box.setTitle('Metadata files:')
-
-        buttons_widget = QWidget(source_group_box)
-        directory_button = QPushButton('Add directory', buttons_widget)
-        path_button = QPushButton('Add path', buttons_widget)
-        files_button = QPushButton('Add files', buttons_widget)
-        extension_widget = QWidget(source_group_box)
-        extension_label = QLabel('Default metadata file extension:', extension_widget)
-        self.default_extension = QComboBox(extension_widget)
-        self.default_extension.addItems(['*.txt', '*.json', '*', ])
-
-        list_view = FileListView(source_group_box)
-        self.list_model = QStringListModel()
-        list_view.setModel(self.list_model)
-
-        add_path_dialog = AddPathDialog(self)
-
-        vertical_layout = QVBoxLayout(self)
-        source_layout = QVBoxLayout(source_group_box)
-        buttons_layout = QHBoxLayout(buttons_widget)
-        extension_layout = QHBoxLayout(extension_widget)
-
-        source_layout.addWidget(list_view)
-        source_layout.addWidget(buttons_widget)
-        source_layout.addWidget(extension_widget)
-
-        buttons_layout.addWidget(path_button)
-        buttons_layout.addWidget(directory_button)
-        buttons_layout.addWidget(files_button)
-
-        source_layout.addWidget(list_view)
-        source_layout.addWidget(buttons_widget)
-        source_layout.addWidget(extension_widget)
-
-        buttons_layout.addWidget(path_button)
-        buttons_layout.addWidget(directory_button)
-        buttons_layout.addWidget(files_button)
-
-        extension_layout.addWidget(extension_label)
-        extension_layout.addWidget(self.default_extension)
-
-        vertical_layout.addWidget(source_group_box)
-
-        vertical_layout.addWidget(self.button_box)
-
-        files_button.clicked.connect(self.add_files)
-        directory_button.clicked.connect(self.add_dir)
-        path_button.clicked.connect(add_path_dialog.show)
-        add_path_dialog.path_validated.connect(self.add_path)
-
-        self.button_box.accepted.connect(self.accept)
-        self.button_box.rejected.connect(self.close)
-
-        self.exec()
-        for child in self.children():
-            child.deleteLater()
-        self.destroy(True)
-
-    def add_files(self) -> None:
-        """
-        Open a file chooser dialog box and add selected files to the source model
-        """
-        filters = ["TXT (*.txt)",
-                   "JSON (*.json)"]
-        files, _ = QFileDialog.getOpenFileNames(self, caption='Choose metadata files',
-                                                dir=self.current_dir,
-                                                filter=";;".join(filters),
-                                                selectedFilter=filters[0])
-        if files:
-            self.current_dir = os.path.dirname(files[0])
-            self.list_model.setStringList(self.list_model.stringList() + files)
-            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
-
-    def add_dir(self) -> None:
-        """
-        Open a directory chooser dialog box and add selected directory to the source model
-        """
-        directory = QFileDialog.getExistingDirectory(self, caption='Choose metadata directory', dir=self.current_dir,
-                                                     options=QFileDialog.Option.ShowDirsOnly)
-        if directory:
-            self.current_dir = directory
-            self.chosen_directory.emit(str(os.path.join(directory, self.default_extension.currentText())))
-            self.list_model.setStringList(self.list_model.stringList()
-                                          + [os.path.join(directory, self.default_extension.currentText())])
-            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
-
-    def add_path(self, path: str) -> None:
-        """
-        Add the input path to the source model
-
-        :param path: the metadata file path
-        """
-        self.list_model.setStringList(self.list_model.stringList() + [path])
-        self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
 
     def accept(self) -> None:
         """
@@ -238,7 +135,7 @@ class ImportMetaDataDialog(QDialog):
         PyDetecDiv.app.project_selected.emit(PyDetecDiv.project_name)
 
 
-class ImportDataDialog(QDialog):
+class ImportDataDialog(FileListChooserDialog):
     """
     A dialog window to choose sources for image data files to import into the project raw dataset
     """
@@ -247,140 +144,14 @@ class ImportDataDialog(QDialog):
     finished = Signal(bool)
 
     def __init__(self):
-        super().__init__(PyDetecDiv.main_window)
-        self.project_path = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv.project_name)
-        self.setWindowModality(Qt.WindowModality.WindowModal)
-        self.setMinimumWidth(450)
-        self.current_dir = '.'
-
+        super().__init__(title='Import image data', filters=["TIFF (*.tif *.tiff)",
+                                                             "JPEG (*.jpg *.jpeg)",
+                                                             "PNG (*.png)",
+                                                             "Image files (*.tif *.tiff, *.jpg *.jpeg, *.png)"],
+                         extensions=['*.tiff', '*.tif', '*.jpg', '*.jpeg', '*.png', '*'])
         self.setObjectName('ImportData')
-        self.setWindowTitle('Import image data')
+        self.project_path = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv.project_name)
 
-        # Widgets
-        source_group_box = QGroupBox(self)
-        source_group_box.setTitle('Source for image files to import:')
-
-        buttons_widget = QWidget(source_group_box)
-        directory_button = QPushButton('Add directory', buttons_widget)
-        path_button = QPushButton('Add path', buttons_widget)
-        files_button = QPushButton('Add files', buttons_widget)
-        extension_widget = QWidget(source_group_box)
-        extension_label = QLabel('Default image file extension:', extension_widget)
-        self.default_extension = QComboBox(extension_widget)
-        self.default_extension.addItems(['*.tif', '*.tiff', '*.jpg', '*.jpeg', '*.png', '*.txt', '*', ])
-
-        list_view = FileListView(source_group_box)
-        self.list_model = QStringListModel()
-        list_view.setModel(self.list_model)
-
-        # destination_widget = QGroupBox(self)
-        # destination_widget.setTitle('Destination:')
-        # copy_files_widget = QWidget(destination_widget)
-        # copy_files_button = QRadioButton(f'{self.project_path}/data/', copy_files_widget)
-        # self.destination_directory = QComboBox(copy_files_widget)
-        # self.destination_directory.addItems(self.get_destinations())
-        # self.destination_directory.setEditable(True)
-        # self.destination_directory.setValidator(self.sub_directory_name_validator())
-        # keep_in_place_widget = QWidget(destination_widget)
-        # keep_in_place_button = QRadioButton('keep files in place', keep_in_place_widget)
-        # self.keep_copy_buttons = QButtonGroup(destination_widget)
-        # self.keep_copy_buttons.addButton(copy_files_button, id=1)
-        # self.keep_copy_buttons.addButton(keep_in_place_button, id=2)
-
-        self.button_box = QDialogButtonBox(
-                QDialogButtonBox.StandardButton.Close | QDialogButtonBox.StandardButton.Cancel | QDialogButtonBox.StandardButton.Ok,
-                self)
-        self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
-
-        add_path_dialog = AddPathDialog(self)
-        # Layout
-        vertical_layout = QVBoxLayout(self)
-        source_layout = QVBoxLayout(source_group_box)
-        buttons_layout = QHBoxLayout(buttons_widget)
-        extension_layout = QHBoxLayout(extension_widget)
-        # copy_files_layout = QHBoxLayout(copy_files_widget)
-        # keep_in_place_layout = QHBoxLayout(keep_in_place_widget)
-        # destination_layout = QVBoxLayout(destination_widget)
-
-        source_layout.addWidget(list_view)
-        source_layout.addWidget(buttons_widget)
-        source_layout.addWidget(extension_widget)
-
-        buttons_layout.addWidget(path_button)
-        buttons_layout.addWidget(directory_button)
-        buttons_layout.addWidget(files_button)
-
-        extension_layout.addWidget(extension_label)
-        extension_layout.addWidget(self.default_extension)
-
-        # copy_files_layout.addWidget(copy_files_button)
-        # copy_files_layout.addWidget(self.destination_directory)
-        # keep_in_place_layout.addWidget(keep_in_place_button)
-        # destination_layout.addWidget(keep_in_place_widget)
-        # destination_layout.addWidget(copy_files_widget)
-
-        vertical_layout.addWidget(source_group_box)
-        # vertical_layout.addWidget(destination_widget)
-        vertical_layout.addWidget(self.button_box)
-
-        # Widgets behaviour
-        files_button.clicked.connect(self.add_files)
-        directory_button.clicked.connect(self.add_dir)
-        path_button.clicked.connect(add_path_dialog.show)
-        add_path_dialog.path_validated.connect(self.add_path)
-
-        self.button_box.accepted.connect(self.accept)
-        self.button_box.rejected.connect(self.close)
-
-        self.list_model.dataChanged.connect(self.source_list_is_not_empty)
-        self.chosen_directory.connect(add_path_dialog.path_text_input.setText)
-
-        # keep_in_place_button.setChecked(True)
-        # self.keep_copy_buttons.setExclusive(True)
-
-        self.exec()
-        # for child in self.children():
-        #     child.deleteLater()
-        # self.destroy(True)
-
-    def add_files(self) -> None:
-        """
-        Open a file chooser dialog box and add selected files to the source model
-        """
-        filters = ["TIFF (*.tif *.tiff)",
-                   "JPEG (*.jpg *.jpeg)",
-                   "PNG (*.png)",
-                   "Image files (*.tif *.tiff, *.jpg *.jpeg, *.png)"]
-        files, _ = QFileDialog.getOpenFileNames(self, caption='Choose source files',
-                                                dir=self.current_dir,
-                                                filter=";;".join(filters),
-                                                selectedFilter=filters[0])
-        if files:
-            self.current_dir = os.path.dirname(files[0])
-            self.list_model.setStringList(self.list_model.stringList() + files)
-            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
-
-    def add_dir(self) -> None:
-        """
-        Open a directory chooser dialog box and add selected directory to the source model
-        """
-        directory = QFileDialog.getExistingDirectory(self, caption='Choose source directory', dir=self.current_dir,
-                                                     options=QFileDialog.Option.ShowDirsOnly)
-        if directory:
-            self.current_dir = directory
-            self.chosen_directory.emit(str(os.path.join(directory, self.default_extension.currentText())))
-            self.list_model.setStringList(self.list_model.stringList()
-                                          + [os.path.join(directory, self.default_extension.currentText())])
-            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
-
-    def add_path(self, path: str) -> None:
-        """
-        Add the input path to the source model
-
-        :param path: the Data path
-        """
-        self.list_model.setStringList(self.list_model.stringList() + [path])
-        self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
 
     def get_destinations(self) -> list[str]:
         """
@@ -578,59 +349,6 @@ class ImportMetaData(QAction):
         parent.addAction(self)
 
 
-class AddPathDialog(QDialog):
-    """
-    A dialog window to select a path pointing to files or directories to import
-    """
-    path_validated = Signal(str)
-
-    def __init__(self, parent_window: QWidget):
-        super().__init__(parent_window)
-        self.setWindowModality(Qt.WindowModality.WindowModal)
-
-        self.path_widget = QWidget(self)
-        self.path_widget.setMinimumWidth(350)
-        self.path_label = QLabel('Path:', self.path_widget)
-        self.path_text_input = QLineEdit(self.path_widget)
-
-        self.button_box = QDialogButtonBox(
-                QDialogButtonBox.StandardButton.Apply | QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
-                Qt.Orientation.Horizontal, self.path_widget)
-        # self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
-        # self.button_box.button(QDialogButtonBox.Apply).setEnabled(False)
-        self.button_box.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(
-                lambda _: self.path_validated.emit(self.path_text_input.text()))
-
-        self.layout = QVBoxLayout(self)
-        self.layout.addWidget(self.path_widget)
-        self.layout.addWidget(self.button_box)
-        self.path_layout = QHBoxLayout(self.path_widget)
-        self.path_layout.addWidget(self.path_label)
-        self.path_layout.addWidget(self.path_text_input)
-
-        self.button_box.accepted.connect(self.accept)
-        self.button_box.rejected.connect(self.close)
-        # self.path_text_input.textChanged.connect(self.path_specification_changed)
-
-    def accept(self) -> None:
-        """
-        Accept the path input text and add it to the source list
-        """
-        self.path_validated.emit(self.path_text_input.text())
-        self.hide()
-
-    def path_specification_changed(self) -> None:
-        """
-        Checks the path input text actually exists and enables Apply and OK buttons accordingly
-        """
-        if glob.glob(self.path_text_input.text()):
-            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
-            self.button_box.button(QDialogButtonBox.StandardButton.Apply).setEnabled(True)
-        else:
-            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
-            self.button_box.button(QDialogButtonBox.StandardButton.Apply).setEnabled(False)
-
-
 class CreateFOV(QAction):
     """
     Action to import raw data images into a project
@@ -668,15 +386,14 @@ class ComputeDriftDialog(gui.Dialog):
         self.drift = {}
 
         self.select_FOV = self.addGroupBox('Select FOV')
-        self.fov_list = self.select_FOV.addOption(None, widget=gui.ListView,
+        self.fov_list = self.select_FOV.addOption(widget=gui.ListView,
                                                   parameter=ChoiceParameter(name='FOVs', label='FOV',
                                                                             items=self.update_fov_list(
                                                                                     PyDetecDiv.project_name)),
                                                   multiselection=True, height=75)
 
         self.method_box = self.addGroupBox('Method')
-        self.method = self.method_box.addOption(None, widget=gui.ComboBox,
-                                                parameter=ChoiceParameter(name='Method', label='Method', default='vidstab',
+        self.method = self.method_box.addOption(parameter=ChoiceParameter(name='Method', label='Method', default='vidstab',
                                                                           items={'vidstab': None, 'phase correlation': None})
                                                 )
 
@@ -802,3 +519,55 @@ class ApplyDrift(QAction):
                 #     self.setEnabled(False)
         else:
             self.setEnabled(False)
+
+
+class ConvertToNDTiffDialog(FileListChooserDialog):
+    def __init__(self):
+        super().__init__(title='Convert to NDTiff using metadata files', filters=["TXT (*.txt)",], extensions=['*.txt'],
+                         destination=True)
+        # A reference to dataset should be kept to avoid destroying the object along with the wait dialog. Thus, internal threads
+        # can be closed properly when dataset is finished. Otherwise, finishing the dataset might return an error.
+        self.dataset = None
+
+    def accept(self):
+        wait_dialog = WaitDialog(f'Converting multiple TIFF files to NDTiff', self,
+                                 cancel_msg='Rollback of NDTiff conversion: please wait', progress_bar=True, )
+        self.finished.connect(wait_dialog.close_window)
+        self.progress.connect(wait_dialog.show_progress)
+        wait_dialog.wait_for(self.conversion)
+        self.list_model.removeRows(0, self.list_model.rowCount())
+        self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+        self.dataset.finish()
+
+    def conversion(self):
+        self.progress.emit(0)
+        # project_path = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv.project_name)
+        ndtiff_path = './NDTiff' if self.destination.text()=='' else self.destination.text()
+        summary_metadata = json.load(open(self.file_list[0]))['Summary']
+        self.dataset = NDTiffDataset(ndtiff_path, summary_metadata=summary_metadata, writable=True)
+        num_images = len([v for f in self.file_list for k, v in json.load(open(f)).items() if k.startswith('Metadata-')])
+        i = 0
+        for f in self.file_list:
+            print(f)
+            with open(f) as metadata_file:
+                metadata = json.load(metadata_file)
+                summary = metadata['Summary']
+                for d in [v for k, v in metadata.items() if k.startswith('Metadata-')]:
+                    image_coordinates = {'channel' : d['ChannelIndex'], 'time': d['FrameIndex'], 'z': d['SliceIndex'],
+                                         'position': summary['StagePositions'][d['PositionIndex']]['Label']
+                                         }
+                    pixels = tifffile.imread(os.path.join(os.path.dirname(f), os.path.basename(d["FileName"])))
+                    self.dataset.put_image(image_coordinates, pixels, d)
+                    i = i + 100
+                    self.progress.emit(i / num_images)
+        # self.dataset.finish()
+        self.finished.emit(True)
+
+
+class ConvertToNDTiff(QAction):
+
+    def __init__(self, parent: QWidget):
+        super().__init__("Convert to NDTiff", parent)
+        self.triggered.connect(ConvertToNDTiffDialog)
+        self.setEnabled(True)
+        parent.addAction(self)

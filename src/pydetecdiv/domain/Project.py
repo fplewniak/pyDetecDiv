@@ -142,24 +142,9 @@ class Project:
         data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
         return self.repository.import_images(image_files, data_dir_path, destination, **kwargs)
 
-    # def import_images_from_metadata_off(self, metadata_file: str, destination: str = None, **kwargs) -> subprocess.Popen:
-    #     """
-    #     Import images specified in a list of files into a destination
-    #
-    #     :param metadata_files: list of metadata files to load and get information from for image import
-    #     :type metadata_files: list of str
-    #     :param destination: destination directory to import image files into
-    #     :type destination: str
-    #     :param kwargs: extra keyword arguments
-    #     :return: the list of imported files. This list can be used to roll the copy back if needed
-    #     :rtype: list of str
-    #     """
-    #     data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
-    #     return self.repository.import_images_from_metadata(metadata_file, data_dir_path, destination, **kwargs)
-
     def import_images_from_metadata(self, metadata_files: str, destination: str = None, author: str = '',
                                     date: datetime | str = 'now', in_place: bool = True,
-                                    img_format: str = 'imagetiff', **kwargs) -> None:
+                                    img_format: str = 'imagetiff', resource_format=ImageResource.MULTI, **kwargs) -> None:
         """
         Import images specified in a list of files into a destination
 
@@ -185,6 +170,7 @@ class Project:
                     # fov = FOV(project=self, name=positions[d["PositionIndex"]])
                     fov = FOV(project=self, name=d["PositionName"])
                     image_res = ImageResource(project=self, dataset=dataset, fov=fov, multi=True,
+                                              resource_format=resource_format,
                                               zdim=metadata["Summary"]["Slices"],
                                               cdim=metadata["Summary"]["Channels"], tdim=-1,
                                               tscale=metadata["Summary"]["Interval_ms"],

@@ -29,8 +29,12 @@ class ImageResource(DomainSpecificObject):
     """
     A business-logic class defining valid operations and attributes of Image resources
     """
+    MULTI = 1
+    SINGLE = 2
+    NDTIFF = 3
 
     def __init__(self, dataset: int | Dataset, fov: int | FOV, multi: bool,
+                 resource_format: int = MULTI,
                  xdim: int = -1, ydim: int = -1, zdim: int = -1, cdim: int = -1, tdim: int = -1,
                  xyscale: float = 1, tscale: float = 1, zscale: float = 1,
                  xyunit: float = 1e-6, zunit: float = 1e-6, tunit: float = 1e-3, key_val: dict = None,
@@ -50,7 +54,8 @@ class ImageResource(DomainSpecificObject):
         self.zunit = zunit
         self.tscale = tscale
         self.tunit = tunit
-        self.key_val = key_val
+        self.key_val = key_val if key_val is not None else {}
+        self.key_val['format'] = resource_format
         self.validate(updated=False)
 
         self._image_files_5d = None
