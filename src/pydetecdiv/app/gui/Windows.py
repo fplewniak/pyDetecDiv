@@ -164,10 +164,39 @@ class ImageResourceChooser(QDockWidget):
         self.form.setLayout(layout)
         self.setWidget(self.form)
 
-        PyDetecDiv.app.project_selected.connect(self.set_choice)
+        PyDetecDiv.app.project_selected.connect(self.set_position_choice)
+        self.position_choice.currentIndexChanged.connect(self.set_channels_slices)
         self.OK_button.accepted.connect(self.accept)
 
-    def set_choice(self, p_name: str) -> None:
+    def set_channels_slices(self, position_index):
+        self.bright_field_C.clear()
+        self.bright_field_Z.clear()
+        self.fluo_red.clear()
+        self.fluo_green.clear()
+        self.fluo_blue.clear()
+        self.fluo_Z.clear()
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            fov = project.get_named_object('FOV', self.position_choice.currentText())
+            if fov is None:
+                fov = project.get_named_object('FOV', sorted([fov.name for fov in project.get_objects('FOV')])[0])
+            self.get_channels_slices(fov)
+
+    def get_channels_slices(self, fov):
+        kval = fov.image_resource().key_val
+        if (kval is not None) and ('channel_names' in kval):
+            channel_list = [kval['channel_names'][c] for c in range(fov.image_resource().sizeC)]
+        else:
+            channel_list = [str(c) for c in range(fov.image_resource().sizeC)]
+        stack_list = [str(z) for z in range(fov.image_resource().sizeZ)]
+        self.bright_field_C.addItems(channel_list)
+        self.bright_field_Z.addItems(stack_list)
+        self.fluo_red.addItems(['n.a'] + channel_list)
+        self.fluo_green.addItems(['n.a'] + channel_list)
+        self.fluo_blue.addItems(['n.a'] + channel_list)
+        self.fluo_Z.addItems(stack_list)
+
+
+    def set_position_choice(self, p_name: str) -> None:
         """
         Set the available values for FOVs, datasets and channels given a project name
 
@@ -183,19 +212,20 @@ class ImageResourceChooser(QDockWidget):
             self.fluo_Z.clear()
             if project.count_objects('FOV'):
                 self.position_choice.addItems(sorted([fov.name for fov in project.get_objects('FOV')]))
-                fov = project.get_object('FOV', 1)
-                kval = fov.image_resource().key_val
-                if (kval is not None) and ('channel_names' in kval):
-                    channel_list = [kval['channel_names'][c] for c in range(fov.image_resource().sizeC)]
-                else:
-                    channel_list = [str(c) for c in range(fov.image_resource().sizeC)]
-                stack_list = [str(z) for z in range(fov.image_resource().sizeZ)]
-                self.bright_field_C.addItems(channel_list)
-                self.bright_field_Z.addItems(stack_list)
-                self.fluo_red.addItems(['n.a'] + channel_list)
-                self.fluo_green.addItems(['n.a'] + channel_list)
-                self.fluo_blue.addItems(['n.a'] + channel_list)
-                self.fluo_Z.addItems(stack_list)
+                # fov = project.get_object('FOV', 1)
+                # self.get_channels_slices(fov)
+                # kval = fov.image_resource().key_val
+                # if (kval is not None) and ('channel_names' in kval):
+                #     channel_list = [kval['channel_names'][c] for c in range(fov.image_resource().sizeC)]
+                # else:
+                #     channel_list = [str(c) for c in range(fov.image_resource().sizeC)]
+                # stack_list = [str(z) for z in range(fov.image_resource().sizeZ)]
+                # self.bright_field_C.addItems(channel_list)
+                # self.bright_field_Z.addItems(stack_list)
+                # self.fluo_red.addItems(['n.a'] + channel_list)
+                # self.fluo_green.addItems(['n.a'] + channel_list)
+                # self.fluo_blue.addItems(['n.a'] + channel_list)
+                # self.fluo_Z.addItems(stack_list)
 
     def accept(self) -> None:
         """
