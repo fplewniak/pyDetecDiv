@@ -481,6 +481,10 @@ class ConvertToNDTiffDialog(FileListChooserDialog):
         # project_path = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv.project_name)
         ndtiff_path = './NDTiff' if self.destination.text() == '' else self.destination.text()
         summary_metadata = json.load(open(self.file_list[0]))['Summary']
+        if summary_metadata['Width'] == 0:
+            summary_metadata['Width'] = -1
+        if summary_metadata['Height'] == 0:
+            summary_metadata['Height'] = -1
         self.dataset = NDTiffDataset(ndtiff_path, summary_metadata=summary_metadata, writable=True)
         num_images = len([v for f in self.file_list for k, v in json.load(open(f)).items() if k.startswith('Metadata-')])
         i = 0

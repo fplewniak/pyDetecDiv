@@ -184,7 +184,11 @@ class ImageResourceChooser(QDockWidget):
     def get_channels_slices(self, fov):
         kval = fov.image_resource().key_val
         if (kval is not None) and ('channel_names' in kval):
-            channel_list = [kval['channel_names'][c] for c in range(fov.image_resource().sizeC)]
+            for c in range(fov.image_resource().sizeC):
+                if c >= len(kval['channel_names']):
+                    kval['channel_names'].append(str(c))
+            channel_list = kval['channel_names']
+            # channel_list = [kval['channel_names'][c] for c in range(fov.image_resource().sizeC)]
         else:
             channel_list = [str(c) for c in range(fov.image_resource().sizeC)]
         stack_list = [str(z) for z in range(fov.image_resource().sizeZ)]

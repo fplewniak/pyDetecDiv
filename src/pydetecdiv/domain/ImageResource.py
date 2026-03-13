@@ -5,6 +5,8 @@
 """
 from typing import TYPE_CHECKING, TypeVar, Any
 
+from ndtiff import NDTiffDataset
+
 if TYPE_CHECKING:
     from pydetecdiv.domain.Data import Data
 
@@ -62,6 +64,7 @@ class ImageResource(DomainSpecificObject):
 
         self._image_files_5d = None
         self._image_files = None
+        self._image_resource_data = None
         self.pattern = self._pattern
         # self.fov = self._fov
 
@@ -187,8 +190,13 @@ class ImageResource(DomainSpecificObject):
         The image shape determined from first file
         """
         # with Image.open(self.project.get_linked_objects('Data', self)[0].url) as img:
-        with Image.open(self.image_files[0]) as img:
-            self._xdim, self._ydim = img.size
+        if self.isformat(ImageResource.NDTIFF):
+            ndtiff_ds = NDTiffDataset(self.image_files[0])
+            self._xdim, self._ydim = ndtiff_ds.as_array([]).shape
+            ndtiff_ds.close()
+        else:
+            with Image.open(self.image_files[0]) as img:
+                self._xdim, self._ydim = img.size
         self.project.save(self)
         return self._ydim, self._xdim
 
@@ -239,14 +247,14 @@ class ImageResource(DomainSpecificObject):
         :rtype: ImageResourceData (SingleFileImageResource or MultiFileImageResource)
         """
         if self.key_val is not None and 'hdf5' in self.key_val:
-            return Hdf5ImageResource(image_resource=self)
+            self._image_resource_data = Hdf5ImageResource(image_resource=self)
         if self.isformat(ImageResource.SINGLE):
-            return SingleFileImageResource(image_resource=self)
+            self._image_resource_data = SingleFileImageResource(image_resource=self)
         if self.isformat(ImageResource.MULTI):
-            return MultiFileImageResource(image_resource=self)
+            self._image_resource_data = MultiFileImageResource(image_resource=self)
         if self.isformat(ImageResource.NDTIFF):
-            return NDTiffImageResource(image_resource=self)
-        return None
+            self._image_resource_data = NDTiffImageResource(image_resource=self)
+        return self._image_resource_data
 
     @property
     def image_files_5d(self) -> np.ndarray[str] | None:
