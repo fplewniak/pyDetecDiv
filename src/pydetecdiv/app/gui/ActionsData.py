@@ -4,14 +4,15 @@ Handling actions to open, create and interact with projects
 import glob
 import json
 import os
-import time
 from subprocess import Popen
+from typing import Any
 
 import numpy as np
+import polars
 import tifffile
 from PySide6.QtCore import (QRegularExpression, Signal, QDir, QThread)
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
-from PySide6.QtWidgets import (QWidget, QDialogButtonBox, QLabel)
+from PySide6.QtWidgets import (QWidget, QDialogButtonBox, QHBoxLayout, QLineEdit, QPushButton, QFileDialog)
 from ndtiff import NDTiffDataset
 
 from pydetecdiv.app import PyDetecDiv, WaitDialog, pydetecdiv_project, MessageDialog
@@ -24,70 +25,6 @@ from pydetecdiv import delete_files
 from pydetecdiv.app.gui.RawData2FOV import RawData2FOV
 import pydetecdiv.app.gui.core.widgets as gui
 from pydetecdiv.app.gui.core.widgets.files import FileListChooserDialog
-
-
-# class FileListView(QListView):
-#     """
-#     A class extending QListView to display source for image data. Defines a context menu to clear or toggle selection,
-#     remove selected sources, clear list
-#     """
-#
-#     def __init__(self, parent: QWidget):
-#         super().__init__(parent)
-#         self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
-#
-#     def contextMenuEvent(self, e: QContextMenuEvent) -> None:
-#         """
-#         Definition of a context menu to clear or toggle selection of sources in list model, remove selected sources from
-#         the list model, clear the source list model
-#
-#         :param e: mouse event providing the position of the context menu
-#         """
-#         if self.model().rowCount():
-#             context = QMenu(self)
-#             unselect = QAction("Unselect all", self)
-#             unselect.triggered.connect(self.unselect)
-#             context.addAction(unselect)
-#             toggle = QAction("Toggle selection", self)
-#             toggle.triggered.connect(self.toggle)
-#             context.addAction(toggle)
-#             context.addSeparator()
-#             remove = QAction("Remove selected items", self)
-#             remove.triggered.connect(self.remove_items)
-#             context.addAction(remove)
-#             clear_list = QAction("Clear list", self)
-#             context.addAction(clear_list)
-#             clear_list.triggered.connect(self.clear_list)
-#             context.exec(e.globalPos())
-#
-#     def unselect(self) -> None:
-#         """
-#         Clear selection model
-#         """
-#         self.selectionModel().clear()
-#
-#     def toggle(self) -> None:
-#         """
-#         Toggle selection model, selected sources are deselected and unselected ones are selected
-#         """
-#         toggle_selection = QItemSelection()
-#         top_left = self.model().index(0, 0)
-#         bottom_right = self.model().index(self.model().rowCount() - 1, 0)
-#         toggle_selection.select(top_left, bottom_right)
-#         self.selectionModel().select(toggle_selection, QItemSelectionModel.SelectionFlag.Toggle)
-#
-#     def remove_items(self) -> None:
-#         """
-#         Delete selected sources
-#         """
-#         for idx in sorted(self.selectedIndexes(), key=lambda x: x.row(), reverse=True):
-#             self.model().removeRow(idx.row())
-#
-#     def clear_list(self) -> None:
-#         """
-#         Clear the source list
-#         """
-#         self.model().removeRows(0, self.model().rowCount())
 
 
 class ImportMetaDataDialog(FileListChooserDialog):
@@ -151,7 +88,6 @@ class ImportDataDialog(FileListChooserDialog):
                          extensions=['*.tiff', '*.tif', '*.jpg', '*.jpeg', '*.png', '*'])
         self.setObjectName('ImportData')
         self.project_path = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv.project_name)
-
 
     def get_destinations(self) -> list[str]:
         """
@@ -523,10 +459,11 @@ class ApplyDrift(QAction):
 
 class ConvertToNDTiffDialog(FileListChooserDialog):
     def __init__(self):
-        super().__init__(title='Convert to NDTiff using metadata files', filters=["TXT (*.txt)",], extensions=['*.txt'],
+        super().__init__(title='Convert to NDTiff using metadata files', filters=["TXT (*.txt)", ], extensions=['*.txt'],
                          destination=True)
         # A reference to dataset should be kept to avoid destroying the object along with the wait dialog. Thus, internal threads
-        # can be closed properly when dataset is finished. Otherwise, finishing the dataset might return an error.
+        # can be closed properly when dataset is finished. Otherwise, finishing the dataset within the subthread might return an
+        # error.
         self.dataset = None
 
     def accept(self):
@@ -542,7 +479,7 @@ class ConvertToNDTiffDialog(FileListChooserDialog):
     def conversion(self):
         self.progress.emit(0)
         # project_path = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv.project_name)
-        ndtiff_path = './NDTiff' if self.destination.text()=='' else self.destination.text()
+        ndtiff_path = './NDTiff' if self.destination.text() == '' else self.destination.text()
         summary_metadata = json.load(open(self.file_list[0]))['Summary']
         self.dataset = NDTiffDataset(ndtiff_path, summary_metadata=summary_metadata, writable=True)
         num_images = len([v for f in self.file_list for k, v in json.load(open(f)).items() if k.startswith('Metadata-')])
@@ -554,9 +491,10 @@ class ConvertToNDTiffDialog(FileListChooserDialog):
                 summary = metadata['Summary']
                 for d in [v for k, v in metadata.items() if k.startswith('Metadata-')]:
                     image_coordinates = {'channel' : d['ChannelIndex'], 'time': d['FrameIndex'], 'z': d['SliceIndex'],
-                                         'position': summary['StagePositions'][d['PositionIndex']]['Label']
+                                         'position': d['PositionIndex']
                                          }
                     pixels = tifffile.imread(os.path.join(os.path.dirname(f), os.path.basename(d["FileName"])))
+                    d['PositionName'] = summary['StagePositions'][d['PositionIndex']]['Label']
                     self.dataset.put_image(image_coordinates, pixels, d)
                     i = i + 100
                     self.progress.emit(i / num_images)
@@ -570,4 +508,71 @@ class ConvertToNDTiff(QAction):
         super().__init__("Convert to NDTiff", parent)
         self.triggered.connect(ConvertToNDTiffDialog)
         self.setEnabled(True)
+        parent.addAction(self)
+
+
+class ImportNDTiffDataDialog(gui.Dialog):
+    def __init__(self, **kwargs: dict[str, Any]):
+        super().__init__(title='Import NDTiff data', **kwargs)
+
+        ndtiff_dir_box = self.addGroupBox('NDTiff directory', widget=gui.GroupBox)
+        ndtiff_layout = QHBoxLayout(ndtiff_dir_box)
+        self.ndtiff_dir = QLineEdit(ndtiff_dir_box, )
+        self.ndtiff_dir.setMinimumWidth(350)
+        button_path = QPushButton(ndtiff_dir_box)
+        button_path.setIcon(QIcon(":icons/file_chooser"))
+        button_path.clicked.connect(self.select_path)
+        ndtiff_layout.addWidget(self.ndtiff_dir)
+        ndtiff_layout.addWidget(button_path)
+
+        self.button_box = self.addButtonBox()
+        self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+
+        self.arrangeWidgets([
+            ndtiff_dir_box,
+            self.button_box,
+            ])
+
+        gui.set_connections({self.button_box.accepted       : self.accept,
+                             self.button_box.rejected       : self.close,
+                             self.ndtiff_dir.textChanged: self.check_is_ndtiff,
+                             })
+
+        self.fit_to_contents()
+        self.exec()
+        for child in self.children():
+            child.deleteLater()
+        self.destroy(True)
+
+    def accept(self, /):
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            project.import_ndtiff_data(self.ndtiff_dir.text())
+            PyDetecDiv.app.project_selected.emit(PyDetecDiv.project_name)
+            self.close()
+
+    def select_path(self):
+        dir_name = '.'
+        if dir_name != self.ndtiff_dir.text() and self.ndtiff_dir.text():
+            dir_name = self.ndtiff_dir.text()
+        directory = QFileDialog.getExistingDirectory(self, caption='Choose data source directory', dir=dir_name,
+                                                     options=QFileDialog.Option.ShowDirsOnly)
+        if directory:
+            self.ndtiff_dir.setText(directory)
+
+    def check_is_ndtiff(self):
+        if self.ndtiff_dir.text() != '' and os.path.isfile(os.path.join(self.ndtiff_dir.text(), 'NDTiff.index')):
+            self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+        else:
+            self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+
+
+class ImportNDTiffData(QAction):
+    """
+    Action to import raw data images into a project
+    """
+
+    def __init__(self, parent: QWidget):
+        super().__init__(QIcon(":icons/import_images"), "Import NDTiff data", parent)
+        self.triggered.connect(ImportNDTiffDataDialog)
+        self.setEnabled(False)
         parent.addAction(self)

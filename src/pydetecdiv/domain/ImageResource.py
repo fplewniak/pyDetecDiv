@@ -17,6 +17,7 @@ from bioio_base.dimensions import Dimensions
 
 from pydetecdiv.domain.MultiFileImageResource import MultiFileImageResource
 from pydetecdiv.domain.SingleFileImageResource import SingleFileImageResource
+from pydetecdiv.domain.NDTiffImageResource import NDTiffImageResource
 from pydetecdiv.domain.FOV import FOV
 from pydetecdiv.domain.Dataset import Dataset
 from pydetecdiv.domain.ImageResourceData import ImageResourceData
@@ -42,7 +43,6 @@ class ImageResource(DomainSpecificObject):
         super().__init__(**kwargs)
         self._dataset = dataset.id_ if isinstance(dataset, Dataset) else dataset
         self.fov_id = fov.id_ if isinstance(fov, FOV) else fov
-        self.multi = multi
         self._xdim = xdim
         self._ydim = ydim
         self._zdim = zdim
@@ -55,7 +55,9 @@ class ImageResource(DomainSpecificObject):
         self.tscale = tscale
         self.tunit = tunit
         self.key_val = key_val if key_val is not None else {}
-        self.key_val['format'] = resource_format
+        if 'format' not in self.key_val:
+            self.key_val['format'] = resource_format
+        self.multi = True if self.key_val['format'] == ImageResource.MULTI else False
         self.validate(updated=False)
 
         self._image_files_5d = None
@@ -227,7 +229,10 @@ class ImageResource(DomainSpecificObject):
         """
         return self.dims.X
 
-    def image_resource_data(self) -> ImageResourceData:
+    def isformat(self, file_format):
+        return self.key_val['format'] == file_format
+
+    def image_resource_data(self) -> ImageResourceData | None:
         """
         Creates a ImageResourceData object with the appropriate sub-class according to the multi parameter
         :return: the ImageResourceData object
@@ -235,9 +240,13 @@ class ImageResource(DomainSpecificObject):
         """
         if self.key_val is not None and 'hdf5' in self.key_val:
             return Hdf5ImageResource(image_resource=self)
-        if not self.multi:
+        if self.isformat(ImageResource.SINGLE):
             return SingleFileImageResource(image_resource=self)
-        return MultiFileImageResource(image_resource=self)
+        if self.isformat(ImageResource.MULTI):
+            return MultiFileImageResource(image_resource=self)
+        if self.isformat(ImageResource.NDTIFF):
+            return NDTiffImageResource(image_resource=self)
+        return None
 
     @property
     def image_files_5d(self) -> np.ndarray[str] | None:
@@ -250,7 +259,7 @@ class ImageResource(DomainSpecificObject):
         if self._image_files_5d is None:
             data_list = self.project.get_linked_objects('Data', self)
 
-            if self.multi:
+            if self.isformat(ImageResource.MULTI):
                 self._image_files_5d = np.empty((self.sizeT, self.sizeC, self.sizeZ), dtype=object)
                 for data in sorted(data_list, key=lambda x: (x.t, x.c, x.z)):
                     self._image_files_5d[data.t, data.c, data.z] = data.url
@@ -266,8 +275,11 @@ class ImageResource(DomainSpecificObject):
         :rtype: list of str (file paths)
         """
         if self._image_files is None:
-            self._image_files = [d.url for d in
-                                 sorted(self.project.get_linked_objects('Data', self), key=lambda x: (x.t, x.c, x.z))]
+            if self.isformat(ImageResource.NDTIFF):
+                self._image_files = [data.url for data in self.project.get_linked_objects('Data', self)]
+            else:
+                self._image_files = [d.url for d in
+                                     sorted(self.project.get_linked_objects('Data', self), key=lambda x: (x.t, x.c, x.z))]
         return self._image_files
 
     @property

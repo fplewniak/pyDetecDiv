@@ -12,6 +12,8 @@ import itertools
 from collections import defaultdict
 from datetime import datetime
 import pandas as pd
+import polars
+from ndtiff import NDTiffDataset
 
 from pydetecdiv.domain.BoundingBox import BoundingBox
 from pydetecdiv.domain.Entity import Entity
@@ -192,6 +194,52 @@ class Project:
 
             image_res.xdim, image_res.ydim, image_res.tdim = d["Width"], d['Height'], (maxT + 1)
             image_res.validate()
+
+    def import_ndtiff_data(self, ndtiff_dir, author: str = '', date: datetime | str = 'now'):
+        dataset = self.get_named_object('Dataset', 'data')
+        author = get_config_value('project', 'user') if author == '' else author
+        date_time = datetime.now() if date == 'now' else datetime.fromisoformat(date)
+
+        ndtiff_ds = NDTiffDataset(ndtiff_dir)
+        summary = ndtiff_ds.summary_metadata
+        df = polars.DataFrame(ndtiff_ds.get_image_coordinates_list())
+        dims_df = df.group_by(by='position').agg(polars.col('time').max(), polars.col('z').max(), polars.col('channel').max())
+
+        tscale = summary["Interval_ms"]
+        zscale = summary["z-step_um"]
+        channel_names = summary["ChNames"]
+        xdim = summary["Width"]
+        ydim = summary["Height"]
+
+        for row in dims_df.iter_rows():
+            pos_index = row[0]
+            tdim = row[1] + 1
+            zdim = row[2] + 1
+            cdim = row[3] + 1
+
+            fov = FOV(project=self, name=summary["StagePositions"][pos_index]["Label"])
+
+            image_res = ImageResource(project=self, dataset=dataset, fov=fov, multi=False,
+                                      resource_format=ImageResource.NDTIFF,
+                                      xdim=xdim, ydim=ydim, zdim=zdim, cdim=cdim, tdim=tdim,
+                                      xyscale=ndtiff_ds.read_metadata(channel=0, z=0, time=0, position=pos_index)["PixelSizeUm"],
+                                      tscale=tscale, zscale=zscale,
+                                      key_val={'channel_names': channel_names, 'pos_index': pos_index}
+                                      )
+
+            source_dir, rel_url = Device.get_path_id_and_url(ndtiff_dir)
+
+            data = Data(project=self, name=fov.name,
+                         dataset=dataset, author=author, date=date_time,
+                         url=rel_url,
+                         format_='ndtiff', source_dir=source_dir, meta_data={},
+                         key_val={}, image_resource=image_res,
+                         xdim=xdim, ydim=ydim)
+
+            fov.validate()
+            data.validate()
+            image_res.validate()
+        self.commit()
 
     def annotate(self, dataset: Dataset, source: str | Callable, columns: list[str], regex: str) -> pd.DataFrame:
         """

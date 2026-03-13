@@ -264,7 +264,7 @@ class FileListChooserDialog(QDialog):
         ...
 
     def select_path(self):
-        dir_name = './NDTiff'
+        dir_name = '.'
         if dir_name != self.destination.text() and self.destination.text():
             dir_name = self.destination.text()
         directory = QFileDialog.getExistingDirectory(self, caption='Choose data source directory', dir=dir_name,

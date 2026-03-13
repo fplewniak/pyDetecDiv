@@ -64,7 +64,7 @@ class Image:
     """
 
     def __init__(self, data: np.ndarray | torch.Tensor = None):
-        self.torch = data if torch.is_tensor(data) else torch.from_numpy(data)
+        self.torch = data if torch.is_tensor(data) else torch.from_numpy(data.copy())
         self._initial_torch = self.torch
 
     def reset(self) -> None:
