@@ -4,32 +4,15 @@
 from typing import TYPE_CHECKING
 
 from ndtiff import NDTiffDataset
-
-if TYPE_CHECKING:
-    from pydetecdiv.domain.ImageResource import ImageResource
-
-from bioio_base.dimensions import Dimensions
-
 import numpy as np
-from tifffile import tifffile
+from bioio_base.dimensions import Dimensions
 import cv2
+
 from pydetecdiv.domain.ImageResourceData import ImageResourceData
 from pydetecdiv.domain.Image import Image, ImgDType
 
-
-# def aics_indexer(path: str, pattern: str) -> pd.Series:
-#     """
-#     An indexer to determine dimensions (T, C, Z) from file names to be used with AICSImage reader when reading a list of
-#     files
-#
-#     :param path: the path of the file name
-#     :type path: str
-#     :param pattern: the pattern defining the dimension indexes from file names
-#     :type pattern: regex str
-#     :return: the dimension indexes corresponding to the path
-#     :rtype: pandas Series
-#     """
-#     return pd.Series({k: int(v) for k, v in re.search(pattern, path).groupdict().items()})
+if TYPE_CHECKING:
+    from pydetecdiv.domain.ImageResource import ImageResource
 
 
 class NDTiffImageResource(ImageResourceData):
@@ -98,7 +81,11 @@ class NDTiffImageResource(ImageResourceData):
         return self._dims.X
 
     @property
-    def ndtiff_ds(self):
+    def ndtiff_ds(self) -> NDTiffDataset:
+        """
+        Property returning the NDTiff dataset associated with this image resource, creating it if it has not been yet
+        :return: the NDTiff dataset
+        """
         if self._ndtiff_ds is None:
             self._ndtiff_ds = NDTiffDataset(self.path[0])
         return self._ndtiff_ds

@@ -4,14 +4,13 @@
  Class to manipulate Image resources: loading data from files, etc
 """
 import os
-
+import abc
 from PySide6.QtCore import QThread
 import numpy as np
 import pandas as pd
 import cv2 as cv
 from bioio_base.dimensions import Dimensions
 from vidstab import VidStab
-import abc
 
 from pydetecdiv.settings import get_config_value
 
@@ -26,12 +25,19 @@ class ImageResourceData(abc.ABC):
 
     @property
     def drift(self) -> pd.DataFrame | None:
+        """
+        Returns the drift values (dX and dY) for each frame. These values are stored in a csv file that can be loaded into a pandas
+        DataFrame.
+        """
         if self._drift is None:
             self._drift = self.fov.project.get_object('ImageResource', self.image_resource, use_pool=False).drift
         return self._drift
 
     @property
     def drift_method(self) -> str:
+        """
+        Returns the drift method used to correct drift
+        """
         return self.fov.image_resource().drift_method
 
     @property
@@ -99,6 +105,14 @@ class ImageResourceData(abc.ABC):
         """
 
     def image(self, sliceX: slice = None, sliceY: slice = None, C: int = 0, **kwargs) -> np.ndarray:
+        """
+        The in-memory image
+        :param sliceX: X slice
+        :param sliceY: Y slice
+        :param C: channel
+        :param kwargs: arguments passed to private method _image
+        :return: the image array
+        """
         if C is None:
             if sliceX and sliceY:
                 return np.zeros((self.sizeY, self.sizeX), np.uint16)[sliceY, sliceX]
@@ -125,6 +139,13 @@ class ImageResourceData(abc.ABC):
         """
 
     def image_memmap(self, sliceX: slice = None, sliceY: slice = None, **kwargs) -> np.ndarray:
+        """
+        Memory mapped image
+        :param sliceX: X slice
+        :param sliceY: Y slice
+        :param kwargs: arguments passed to the private method _image_memmap
+        :return: the image as a ndarray
+        """
         if sliceX and sliceY:
             return self._image_memmap(sliceX=sliceX, sliceY=sliceY, **kwargs)
         return self._image_memmap(**kwargs)
@@ -242,32 +263,6 @@ class ImageResourceData(abc.ABC):
         return pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)[['dx', 'dy']]
 
     def refresh(self) -> None:
-        pass
-
-    # def correct_drift(self, drift, filename=None, max_mem=5000):
-    #     """
-    #     Apply the drift correction and save to a multipage TIF file
-    #
-    #     :param drift: the cumulative transforms to apply
-    #     :type drift: pandas DataFrame
-    #     :param filename: the file name to save the stabilized time series to
-    #     :type filename: str
-    #     :param max_mem: maximum memory allowed use
-    #     :type max_mem: int
-    #     """
-    #     new_image = ImageResourceData(filename, max_mem=max_mem, mode='readwrite', ome=True,
-    #                                   metadata={'axes': self.dims.order}, shape=self.shape, dtype=np.uint16)
-    #     new_memmap = new_image._memmap
-    #     for c in range(0, self.sizeC):
-    #         for z in range(0, self.sizeZ):
-    #             new_memmap[0, c, z, ...] = self.image(C=c, T=0, Z=z)
-    #             for idx in drift.index:
-    #                 new_memmap[idx + 1, c, z, ...] = cv.warpAffine(np.array(self.image(C=c, T=idx + 1, Z=z)),
-    #                                                                np.float32(
-    #                                                                    [[1, 0, -drift.iloc[idx].dx],
-    #                                                                     [0, 1, -drift.iloc[idx].dy]]),
-    #                                                                self.image(C=c, T=idx + 1, Z=z).shape)
-    #
-    #                 if psutil.Process().memory_info().rss / (1024 * 1024) > max_mem:
-    #                     self.refresh()
-    #                     new_image.refresh()
+        """
+        A method to refresh memory mapped files (close and reopen) if max memory is used or do nothing for others
+        """

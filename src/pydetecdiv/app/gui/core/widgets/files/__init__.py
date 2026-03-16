@@ -1,14 +1,16 @@
+"""
+Widgets to select and handle files
+"""
+import abc
 import glob
 import os
 
 from PySide6.QtCore import QItemSelection, QItemSelectionModel, QStringListModel, Qt, Signal
 from PySide6.QtGui import QContextMenuEvent, QAction, QIcon
 from PySide6.QtWidgets import (QListView, QWidget, QAbstractItemView, QMenu, QFileDialog, QDialogButtonBox, QHBoxLayout,
-                               QVBoxLayout,
-                               QComboBox, QLabel, QPushButton, QGroupBox, QDialog, QLineEdit)
+                               QVBoxLayout, QComboBox, QLabel, QPushButton, QGroupBox, QDialog, QLineEdit)
 
 from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.settings import get_config_value
 
 
 class FileListView(QListView):
@@ -257,13 +259,22 @@ class FileListChooserDialog(QDialog):
         self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
 
     @property
-    def file_list(self):
+    def file_list(self) -> list[str]:
+        """
+        The list of selected files in the list model
+        """
         return [f for source_path in self.list_model.stringList() for f in glob.glob(source_path) if os.path.isfile(f)]
 
-    def accept(self):
-        ...
+    @abc.abstractmethod
+    def accept(self) -> None:
+        """
+        This method should be implemented in subclasses to apply a specific process to selected files
+        """
 
-    def select_path(self):
+    def select_path(self) -> None:
+        """
+        Open a File dialog window and select a path directory
+        """
         dir_name = '.'
         if dir_name != self.destination.text() and self.destination.text():
             dir_name = self.destination.text()

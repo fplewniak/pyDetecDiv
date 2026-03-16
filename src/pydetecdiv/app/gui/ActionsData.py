@@ -8,7 +8,6 @@ from subprocess import Popen
 from typing import Any
 
 import numpy as np
-import polars
 import tifffile
 from PySide6.QtCore import (QRegularExpression, Signal, QDir, QThread)
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
@@ -97,6 +96,7 @@ class ImportDataDialog(FileListChooserDialog):
         """
         return [''] + [d.name for d in os.scandir(os.path.join(self.project_path, 'data')) if d.is_dir()]
 
+    @property
     def file_list(self) -> list[str]:
         """
         Expands all source specification to return a list of files to import
@@ -132,7 +132,7 @@ class ImportDataDialog(FileListChooserDialog):
         with the number of files that have been copied so far
         """
         self.progress.emit(0)
-        file_list = self.file_list()
+        file_list = self.file_list
         if len(file_list) == 0:
             self.finished.emit(True)
             MessageDialog('No data file to import in specified directories')
@@ -159,7 +159,7 @@ class ImportDataDialog(FileListChooserDialog):
         in_place = self.keep_copy_buttons.button(2).isChecked()
         destination = os.path.join(self.project_path, 'data', self.destination_directory.currentText())
         QDir().mkpath(str(destination))
-        file_list = self.file_list()
+        file_list = self.file_list
         if len(file_list) == 0:
             self.finished.emit(True)
             MessageDialog('No data file to import in specified directories')
@@ -458,6 +458,9 @@ class ApplyDrift(QAction):
 
 
 class ConvertToNDTiffDialog(FileListChooserDialog):
+    """
+    A dialog window providing GUI for converting multiple images to ND-Tiff
+    """
     def __init__(self):
         super().__init__(title='Convert to NDTiff using metadata files', filters=["TXT (*.txt)", ], extensions=['*.txt'],
                          destination=True)
@@ -467,7 +470,7 @@ class ConvertToNDTiffDialog(FileListChooserDialog):
         self.dataset = None
 
     def accept(self):
-        wait_dialog = WaitDialog(f'Converting multiple TIFF files to NDTiff', self,
+        wait_dialog = WaitDialog('Converting multiple TIFF files to NDTiff', self,
                                  cancel_msg='Rollback of NDTiff conversion: please wait', progress_bar=True, )
         self.finished.connect(wait_dialog.close_window)
         self.progress.connect(wait_dialog.show_progress)
@@ -476,11 +479,15 @@ class ConvertToNDTiffDialog(FileListChooserDialog):
         self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
         self.dataset.finish()
 
-    def conversion(self):
+    def conversion(self) -> None:
+        """
+        Converts multiple TIFF files to ND-Tiff
+        """
         self.progress.emit(0)
         # project_path = os.path.join(get_config_value('project', 'workspace'), PyDetecDiv.project_name)
         ndtiff_path = './NDTiff' if self.destination.text() == '' else self.destination.text()
-        summary_metadata = json.load(open(self.file_list[0]))['Summary']
+        with open(self.file_list[0]) as f:
+            summary_metadata = json.load(f)['Summary']
         if summary_metadata['Width'] == 0:
             summary_metadata['Width'] = -1
         if summary_metadata['Height'] == 0:
@@ -507,7 +514,9 @@ class ConvertToNDTiffDialog(FileListChooserDialog):
 
 
 class ConvertToNDTiff(QAction):
-
+    """
+    Action for conversion of multiple image files to ND-Tiff
+    """
     def __init__(self, parent: QWidget):
         super().__init__("Convert to NDTiff", parent)
         self.triggered.connect(ConvertToNDTiffDialog)
@@ -516,6 +525,9 @@ class ConvertToNDTiff(QAction):
 
 
 class ImportNDTiffDataDialog(gui.Dialog):
+    """
+    A Dialog window providing GUI for importing NDTiff data
+    """
     def __init__(self, **kwargs: dict[str, Any]):
         super().__init__(title='Import NDTiff data', **kwargs)
 
@@ -548,13 +560,19 @@ class ImportNDTiffDataDialog(gui.Dialog):
             child.deleteLater()
         self.destroy(True)
 
-    def accept(self, /):
+    def accept(self, /) -> None:
+        """
+        When Ok button is clicked, launch the NDTiff data import
+        """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             project.import_ndtiff_data(self.ndtiff_dir.text())
             PyDetecDiv.app.project_selected.emit(PyDetecDiv.project_name)
             self.close()
 
-    def select_path(self):
+    def select_path(self) -> None:
+        """
+        Open a File dialog to select a path to NDTiff dataset
+        """
         dir_name = '.'
         if dir_name != self.ndtiff_dir.text() and self.ndtiff_dir.text():
             dir_name = self.ndtiff_dir.text()
@@ -563,7 +581,10 @@ class ImportNDTiffDataDialog(gui.Dialog):
         if directory:
             self.ndtiff_dir.setText(directory)
 
-    def check_is_ndtiff(self):
+    def check_is_ndtiff(self) -> None:
+        """
+        Check whether the specified path is a NDTiff path and enables the Ok button if it is
+        """
         if self.ndtiff_dir.text() != '' and os.path.isfile(os.path.join(self.ndtiff_dir.text(), 'NDTiff.index')):
             self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
         else:

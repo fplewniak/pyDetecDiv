@@ -14,6 +14,7 @@ from pydetecdiv.app.gui.FOVmanager import FOVmanager
 from pydetecdiv.app.gui.Toolbox import ToolboxTreeView, ToolboxTreeModel
 from pydetecdiv.app.gui.core.widgets.palettes.scene import SceneTreePalette
 from pydetecdiv.app.gui.core.widgets.TabWidgets import TabbedWindow
+from pydetecdiv.domain.FOV import FOV
 
 
 class MainWindow(QMainWindow):
@@ -168,7 +169,10 @@ class ImageResourceChooser(QDockWidget):
         self.position_choice.currentIndexChanged.connect(self.set_channels_slices)
         self.OK_button.accepted.connect(self.accept)
 
-    def set_channels_slices(self, position_index):
+    def set_channels_slices(self, _) -> None:
+        """
+        Sets the choice for channels and z slices according to the selected FOV
+        """
         self.bright_field_C.clear()
         self.bright_field_Z.clear()
         self.fluo_red.clear()
@@ -181,7 +185,11 @@ class ImageResourceChooser(QDockWidget):
                 fov = project.get_named_object('FOV', sorted([fov.name for fov in project.get_objects('FOV')])[0])
             self.get_channels_slices(fov)
 
-    def get_channels_slices(self, fov):
+    def get_channels_slices(self, fov: FOV) -> None:
+        """
+
+        :param fov:
+        """
         kval = fov.image_resource().key_val
         if (kval is not None) and ('channel_names' in kval):
             for c in range(fov.image_resource().sizeC):

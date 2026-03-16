@@ -55,7 +55,14 @@ class GroupBox(QGroupBox):
         self.setVisible(show)
         self.parameter_widgets = {}
 
-    def parameter_widget_factory(self, parameter, **kwargs):
+    def parameter_widget_factory(self, parameter: Parameter, **kwargs) -> QWidget:
+        """
+        A factory method to create a parameter widget for a given parameter
+        :param parent: the parent for the created parameter widget
+        :param parameter: the parameter
+        :param kwargs: any additional keyword arguments passed to the created widget
+        :return:
+        """
         parameter_widgets = {
             'IntParameter': SpinBox,
             'FloatParameter': DoubleSpinBox,
@@ -82,7 +89,7 @@ class GroupBox(QGroupBox):
             sub_box: GroupBox = widget(self, title=title, **kwargs)
             self.layout.addWidget(sub_box)
         if parameters is not None:
-            [sub_box.addOption(parameter) for parameter in parameters]
+            _ = [sub_box.addOption(parameter) for parameter in parameters]
         return sub_box
 
     def addOption(self, parameter: Parameter = None, label: bool = True, enabled: bool = True, widget: Type[QWidget] = None,
@@ -97,10 +104,11 @@ class GroupBox(QGroupBox):
         :param kwargs: extra args passed to the widget
         :return: the option widget
         """
-        ...
 
     def addWidget(self, widget: Type[QWidget] = None) -> Type[QWidget]:
-        ...
+        """
+        Method to add a widget to the Group box. This method should be implemented by subclasses
+        """
 
 
 class InfoGroupBox(GroupBox):
@@ -146,7 +154,7 @@ class ParametersFormGroupBox(GroupBox):
             sub_box: GroupBox = widget(self, title=title, **kwargs)
             self.layout.addRow(sub_box)
         if parameters is not None:
-            [sub_box.addOption(parameter) for parameter in parameters]
+            _ = [sub_box.addOption(parameter) for parameter in parameters]
         return sub_box
 
     def addOption(self, parameter: Parameter = None, label: bool = True, enabled: bool = True, widget: Type[QWidget] = None,
@@ -191,7 +199,7 @@ class ComboBox(QComboBox):
     """
 
     def __init__(self, parent: QWidget, model: GenericModel = None, editable: bool = False,
-                 enabled: bool = True, **kwargs: dict[str, Any]) -> None:
+                 enabled: bool = True) -> None:
         super().__init__(parent)
         if model is not None and model.rows() is not None:
             self.addItemDict(model.rows())
@@ -202,13 +210,13 @@ class ComboBox(QComboBox):
         self.setEditable(editable)
         self.setEnabled(enabled)
 
-    def setCurrentIndex(self, index: int) -> None:
-        """
-        sets the currently selected index
-
-        :param index: the index to select
-        """
-        super().setCurrentIndex(index)
+    # def setCurrentIndex(self, index: int) -> None:
+    #     """
+    #     sets the currently selected index
+    #
+    #     :param index: the index to select
+    #     """
+    #     super().setCurrentIndex(index)
 
     def addItemDict(self, options: dict[str, Any]) -> None:
         """
@@ -291,7 +299,7 @@ class ListView(QListView):
     """
 
     def __init__(self, parent: QWidget, model: StringList = None, height: int = None, multiselection: bool = False,
-                 enabled: bool = True, **kwargs: dict[str, Any]) -> None:
+                 enabled: bool = True) -> None:
         super().__init__(parent)
         if multiselection:
             self.setSelectionMode(QAbstractItemView.MultiSelection)
@@ -332,10 +340,9 @@ class ListView(QListView):
 
     def setValue(self):
         """
-
+        Set the List view content, should be implemented by subclasses
         """
         # could use setSelectionModel(selectionModel) with selectionModel determined from parameter value
-        pass
 
     def contextMenuEvent(self, e: QContextMenuEvent) -> None:
         """
@@ -398,8 +405,7 @@ class ListWidget(QListView):
     """
 
     def __init__(self, parent: QWidget, model: DictItemModel = None, height: int = None, editable: bool = False,
-                 multiselection: bool = False, enabled: bool = True,
-                 **kwargs: dict[str, Any]) -> None:
+                 multiselection: bool = False, enabled: bool = True) -> None:
         super().__init__(parent)
         # self.setSelectionModel(QItemSelectionModel())
         if multiselection:
@@ -444,8 +450,7 @@ class LineEdit(QLineEdit):
     an extension of QLineEdit class
     """
 
-    def __init__(self, parent: QWidget, model: ItemModel = None, editable: bool = True, enabled: bool = True,
-                 **kwargs: dict[str, Any]) -> None:
+    def __init__(self, parent: QWidget, model: ItemModel = None, editable: bool = True, enabled: bool = True) -> None:
         super().__init__(parent)
         self.setEditable(editable)
         self.mapper = QDataWidgetMapper(self)
@@ -494,7 +499,7 @@ class Label(QLabel):
     an extension of QLabel class
     """
 
-    def __init__(self, parent: QWidget, model: ItemModel = None, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, parent: QWidget, model: ItemModel = None) -> None:
         super().__init__(parent)
         self.mapper = QDataWidgetMapper(self)
         self.setModel(model)
@@ -531,7 +536,7 @@ class PushButton(QPushButton):
 
 class ExpandCollapseButton(PushButton):
     """
-    an extension of PushButton class to control collapsible group boxes for advanced options
+    an extension of PushButton class to control collapsible group boxes
     """
 
     def __init__(self, parent: QWidget, text: str = None, show: bool = True) -> None:
@@ -579,11 +584,27 @@ class ExpandCollapseButton(PushButton):
 
     def addSubBox(self, widget: Type[Self], expandable: bool = False, show: bool = True, title: str = None,
                   **kwargs: dict[str, Any]) -> Self:
+        """
+        Add a sub box to the current collapsable group box
+        :param widget: the widget to add
+        :param expandable: whether the widget is expandable or not
+        :param show: whether the widget is shown or not
+        :param title: the sub box title
+        :param kwargs: additional keyword arguments
+        """
         self.group_box.addSubBox(widget, expandable, show, title, **kwargs)
 
     def addOption(self, parameter: Parameter = None, label: bool = True, enabled: bool = True, widget: Type[QWidget] = None,
                    **kwargs: dict[str, Any]) -> QWidget:
-        self.group_box.addOption(parameter, label, enabled, widget, **kwargs)
+        """
+        Add an option to the current collapsable group box
+        :param parameter: the parameter to add
+        :param label: the label to show
+        :param enabled: whether the option is enabled
+        :param widget: the widget to show
+        :param kwargs: additional keyword arguments
+        """
+        return self.group_box.addOption(parameter, label, enabled, widget, **kwargs)
 
 
 class RadioButton(QRadioButton):
@@ -591,8 +612,7 @@ class RadioButton(QRadioButton):
     an extension of the QRadioButton class
     """
 
-    def __init__(self, parent: QWidget, model: ItemModel = None, exclusive: bool = True, enabled: bool = True,
-                 **kwargs: dict[str, Any]) -> None:
+    def __init__(self, parent: QWidget, model: ItemModel = None, exclusive: bool = True, enabled: bool = True) -> None:
         super().__init__(parent)
         self.setAutoExclusive(exclusive)
         self.mapper = QDataWidgetMapper(self)
@@ -638,7 +658,7 @@ class SpinBox(QSpinBox):
     """
 
     def __init__(self, parent: QWidget, model: ItemModel = None, minimum: int = 1, maximum: int = 4096,
-                 single_step: int = 1, adaptive: bool = False, enabled: bool = True, **kwargs: dict[str, Any]) -> None:
+                 single_step: int = 1, adaptive: bool = False, enabled: bool = True) -> None:
         super().__init__(parent)
         self.setRange(minimum, maximum)
         self.setSingleStep(single_step)
@@ -677,8 +697,7 @@ class DoubleSpinBox(QDoubleSpinBox):
     """
 
     def __init__(self, parent: QWidget, model: ItemModel = None, minimum: float = 0.1, maximum: float = 1.0,
-                 decimals: int = 2, single_step: float = 0.1, adaptive: bool = False, enabled: bool = True,
-                 **kwargs: dict[str, Any]) -> None:
+                 decimals: int = 2, single_step: float = 0.1, adaptive: bool = False, enabled: bool = True) -> None:
         super().__init__(parent)
         self.setRange(minimum, maximum)
         self.setDecimals(decimals)
@@ -716,7 +735,7 @@ class TableView(QTableView):
     an extension of the QTableView widget
     """
 
-    def __init__(self, parent, model=None, enabled=True, **kwargs):
+    def __init__(self, parent, model=None, enabled=True):
         super().__init__(parent)
         if model is not None:
             self.setModel(model)
@@ -812,7 +831,7 @@ class Dialog(QDialog):
         group_box.setTitle(title)
         group_box.setStyleSheet(StyleSheets.groupBox)
         if parameters is not None:
-            [group_box.addOption(parameter) for parameter in parameters]
+            _ = [group_box.addOption(parameter) for parameter in parameters]
         return group_box
 
     def addButtonBox(self, buttons: StandardButtonCombination = QDialogButtonBox.Ok | QDialogButtonBox.Close,
@@ -870,14 +889,19 @@ def set_connections(connections: dict[Signal | SignalInstance, Callable]) -> Non
             signal.connect(slot)
 
 
-def parameter_widget_factory(parent, parameter, **kwargs):
-    parameter_widgets = {
-        'IntParameter': SpinBox,
-        'FloatParameter': DoubleSpinBox,
-        'StringParameter': LineEdit,
-        'CheckParameter': RadioButton,
-        'ChoiceParameter': ComboBox,
-        }
-    # print(f'Creating {parameter_widgets[parameter.type]} for {parameter.name} of type {parameter.type}')
-    return parameter_widgets[parameter.type](parent=parent, **parameter.kwargs(), **kwargs)
-    # return parameter_widgets[parameter.type](parent=parent, model=parameter.model, **parameter.kwargs(), **kwargs)
+# def parameter_widget_factory(parent: QWidget, parameter: Parameter, **kwargs) -> QWidget:
+#     """
+#     A factory method to create a parameter widget for a given parameter
+#     :param parent: the parent for the created parameter widget
+#     :param parameter: the parameter
+#     :param kwargs: any additional keyword arguments passed to the created widget
+#     :return:
+#     """
+#     parameter_widgets = {
+#         'IntParameter': SpinBox,
+#         'FloatParameter': DoubleSpinBox,
+#         'StringParameter': LineEdit,
+#         'CheckParameter': RadioButton,
+#         'ChoiceParameter': ComboBox,
+#         }
+#     return parameter_widgets[parameter.type](parent=parent, **parameter.kwargs(), **kwargs)

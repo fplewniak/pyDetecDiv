@@ -3,29 +3,27 @@
 """
  A class defining the business logic methods that can be applied to Fields Of View
 """
-from typing import TYPE_CHECKING, TypeVar, Any
-
-from ndtiff import NDTiffDataset
-
-if TYPE_CHECKING:
-    from pydetecdiv.domain.Data import Data
+from typing import TYPE_CHECKING, Any
 
 import os
-
+from ndtiff import NDTiffDataset
 import numpy as np
 import pandas
 from PIL import Image
 from bioio_base.dimensions import Dimensions
 
+from pydetecdiv.domain.ImageResourceData import ImageResourceData
 from pydetecdiv.domain.MultiFileImageResource import MultiFileImageResource
 from pydetecdiv.domain.SingleFileImageResource import SingleFileImageResource
 from pydetecdiv.domain.NDTiffImageResource import NDTiffImageResource
-from pydetecdiv.domain.FOV import FOV
-from pydetecdiv.domain.Dataset import Dataset
-from pydetecdiv.domain.ImageResourceData import ImageResourceData
 from pydetecdiv.domain.Hdf5ImageResource import Hdf5ImageResource
 from pydetecdiv.domain.dso import DomainSpecificObject
+from pydetecdiv.domain.FOV import FOV
+from pydetecdiv.domain.Dataset import Dataset
 from pydetecdiv.settings import get_config_value
+
+if TYPE_CHECKING:
+    from pydetecdiv.domain.Data import Data
 
 
 class ImageResource(DomainSpecificObject):
@@ -59,7 +57,10 @@ class ImageResource(DomainSpecificObject):
         self.key_val = key_val if key_val is not None else {}
         if 'format' not in self.key_val:
             self.key_val['format'] = resource_format
-        self.multi = True if self.key_val['format'] == ImageResource.MULTI else False
+        if self.key_val['format'] == ImageResource.MULTI:
+            self.multi = True
+        else:
+            self.multi = False
         self.validate(updated=False)
 
         self._image_files_5d = None
@@ -84,6 +85,10 @@ class ImageResource(DomainSpecificObject):
 
     @property
     def drift(self) -> pandas.DataFrame | None:
+        """
+        Returns the drift values (dX and dY) for each frame. These values are stored in a csv file that can be loaded into a pandas
+        DataFrame.
+        """
         if self.key_val is not None and 'drift' in self.key_val:
             drift_path = os.path.join(get_config_value('project', 'workspace'),
                                       self.fov.project.dbname, self.key_val['drift'])
@@ -92,6 +97,9 @@ class ImageResource(DomainSpecificObject):
 
     @property
     def drift_method(self) -> str | None:
+        """
+        Returns the drift method used to correct drift
+        """
         if self.key_val is not None and 'drift_method' in self.key_val:
             return self.key_val['drift_method']
         return None
@@ -236,7 +244,12 @@ class ImageResource(DomainSpecificObject):
         """
         return self.dims.X
 
-    def isformat(self, file_format):
+    def isformat(self, file_format: int) -> bool:
+        """
+        Checks whether the file format of the current Image resource corresponds to the given file format
+        :param file_format: the file format
+        :return: True if file format corresponds, False otherwise
+        """
         return self.key_val['format'] == file_format
 
     def image_resource_data(self) -> ImageResourceData | None:
