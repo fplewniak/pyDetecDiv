@@ -189,10 +189,9 @@ class ImageResource(DomainSpecificObject):
         """
         The image shape determined from first file
         """
-        # with Image.open(self.project.get_linked_objects('Data', self)[0].url) as img:
         if self.isformat(ImageResource.NDTIFF):
             ndtiff_ds = NDTiffDataset(self.image_files[0])
-            self._xdim, self._ydim = ndtiff_ds.as_array([]).shape
+            self._ydim, self._xdim = ndtiff_ds.as_array([]).shape[-2:]
             ndtiff_ds.close()
         else:
             with Image.open(self.image_files[0]) as img:
@@ -246,14 +245,15 @@ class ImageResource(DomainSpecificObject):
         :return: the ImageResourceData object
         :rtype: ImageResourceData (SingleFileImageResource or MultiFileImageResource)
         """
-        if self.key_val is not None and 'hdf5' in self.key_val:
-            self._image_resource_data = Hdf5ImageResource(image_resource=self)
-        if self.isformat(ImageResource.SINGLE):
-            self._image_resource_data = SingleFileImageResource(image_resource=self)
-        if self.isformat(ImageResource.MULTI):
-            self._image_resource_data = MultiFileImageResource(image_resource=self)
-        if self.isformat(ImageResource.NDTIFF):
-            self._image_resource_data = NDTiffImageResource(image_resource=self)
+        if self._image_resource_data is None:
+            if self.key_val is not None and 'hdf5' in self.key_val:
+                self._image_resource_data = Hdf5ImageResource(image_resource=self)
+            if self.isformat(ImageResource.SINGLE):
+                self._image_resource_data = SingleFileImageResource(image_resource=self)
+            if self.isformat(ImageResource.MULTI):
+                self._image_resource_data = MultiFileImageResource(image_resource=self)
+            if self.isformat(ImageResource.NDTIFF):
+                self._image_resource_data = NDTiffImageResource(image_resource=self)
         return self._image_resource_data
 
     @property

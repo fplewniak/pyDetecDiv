@@ -48,8 +48,6 @@ class NDTiffImageResource(ImageResourceData):
         self._drift = image_resource.drift
         self._ndtiff_ds = None
 
-        # print(f'Multiple file image resource: {self.dims}')
-
     @property
     def shape(self) -> tuple[int, int, int, int, int]:
         """
