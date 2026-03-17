@@ -43,14 +43,14 @@ class ImgDType(Enum):
     @staticmethod
     def get_dtype(torch_dtype: torch.dtype) -> ImgDType:
         types = {
-            torch.uint8: ImgDType.uint8,
-            torch.uint16: ImgDType.uint16,
-            torch.uint32: ImgDType.uint32,
-            torch.uint64: ImgDType.uint64,
-            torch.int8: ImgDType.int8,
-            torch.int16: ImgDType.int16,
-            torch.int32: ImgDType.int32,
-            torch.int64: ImgDType.int64,
+            torch.uint8  : ImgDType.uint8,
+            torch.uint16 : ImgDType.uint16,
+            torch.uint32 : ImgDType.uint32,
+            torch.uint64 : ImgDType.uint64,
+            torch.int8   : ImgDType.int8,
+            torch.int16  : ImgDType.int16,
+            torch.int32  : ImgDType.int32,
+            torch.int64  : ImgDType.int64,
             torch.float16: ImgDType.float16,
             torch.float32: ImgDType.float32,
             torch.float64: ImgDType.float64,
@@ -174,7 +174,8 @@ class Image:
         self.torch = self._convert_to_dtype(dtype=ImgDType.get_dtype(self._initial_torch.dtype))
         return self
 
-    def resize(self, shape: tuple[int, int] = None, method: InterpolationMode = InterpolationMode.NEAREST, antialias: bool = True) -> Image:
+    def resize(self, shape: tuple[int, int] = None, method: InterpolationMode = InterpolationMode.NEAREST,
+               antialias: bool = True) -> Image:
         """
         Resize image to the defined shape with the defined method.
 
@@ -423,6 +424,18 @@ class Image:
                      C], alpha=alpha)
         return img
 
+    @staticmethod
+    def sequence(image_resource_data: ImageResourceData, seqlen: int,
+                 C: int = 0, T: int = 0, Z: int | list[int] | tuple[int] = 0,
+                 crop: tuple[slice, slice] = None, drift: bool = False, alpha: bool = False) -> torch.Tensor:
+        sequence = None
+        for frame in range(T, T + seqlen):
+            img = Image.auto_channels(image_resource_data, C=C, T=T, Z=Z, crop=crop, drift=drift, alpha=alpha)
+            if sequence is None:
+                sequence = img.as_tensor()
+            else:
+                sequence = torch.cat([sequence, img.as_tensor()], dim=0)
+        return sequence
 
 # def get_images_sequences(imgdata: ImageResourceData, roi_list: list[ROI], t: int, seqlen: int = None, z: list[int, int, int] = None,
 #                          apply_drift: bool = True) -> tf.Tensor:

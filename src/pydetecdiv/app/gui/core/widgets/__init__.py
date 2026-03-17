@@ -199,7 +199,7 @@ class ComboBox(QComboBox):
     """
 
     def __init__(self, parent: QWidget, model: GenericModel = None, editable: bool = False,
-                 enabled: bool = True) -> None:
+                 enabled: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         if model is not None and model.rows() is not None:
             self.addItemDict(model.rows())
@@ -299,7 +299,7 @@ class ListView(QListView):
     """
 
     def __init__(self, parent: QWidget, model: StringList = None, height: int = None, multiselection: bool = False,
-                 enabled: bool = True) -> None:
+                 enabled: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         if multiselection:
             self.setSelectionMode(QAbstractItemView.MultiSelection)
@@ -405,7 +405,8 @@ class ListWidget(QListView):
     """
 
     def __init__(self, parent: QWidget, model: DictItemModel = None, height: int = None, editable: bool = False,
-                 multiselection: bool = False, enabled: bool = True) -> None:
+                 multiselection: bool = False, enabled: bool = True,
+                 **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         # self.setSelectionModel(QItemSelectionModel())
         if multiselection:
@@ -450,7 +451,8 @@ class LineEdit(QLineEdit):
     an extension of QLineEdit class
     """
 
-    def __init__(self, parent: QWidget, model: ItemModel = None, editable: bool = True, enabled: bool = True) -> None:
+    def __init__(self, parent: QWidget, model: ItemModel = None, editable: bool = True, enabled: bool = True,
+                 **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         self.setEditable(editable)
         self.mapper = QDataWidgetMapper(self)
@@ -499,7 +501,7 @@ class Label(QLabel):
     an extension of QLabel class
     """
 
-    def __init__(self, parent: QWidget, model: ItemModel = None) -> None:
+    def __init__(self, parent: QWidget, model: ItemModel = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         self.mapper = QDataWidgetMapper(self)
         self.setModel(model)
@@ -612,7 +614,8 @@ class RadioButton(QRadioButton):
     an extension of the QRadioButton class
     """
 
-    def __init__(self, parent: QWidget, model: ItemModel = None, exclusive: bool = True, enabled: bool = True) -> None:
+    def __init__(self, parent: QWidget, model: ItemModel = None, exclusive: bool = True, enabled: bool = True,
+                 **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         self.setAutoExclusive(exclusive)
         self.mapper = QDataWidgetMapper(self)
@@ -658,7 +661,7 @@ class SpinBox(QSpinBox):
     """
 
     def __init__(self, parent: QWidget, model: ItemModel = None, minimum: int = 1, maximum: int = 4096,
-                 single_step: int = 1, adaptive: bool = False, enabled: bool = True) -> None:
+                 single_step: int = 1, adaptive: bool = False, enabled: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         self.setRange(minimum, maximum)
         self.setSingleStep(single_step)
@@ -697,7 +700,8 @@ class DoubleSpinBox(QDoubleSpinBox):
     """
 
     def __init__(self, parent: QWidget, model: ItemModel = None, minimum: float = 0.1, maximum: float = 1.0,
-                 decimals: int = 2, single_step: float = 0.1, adaptive: bool = False, enabled: bool = True) -> None:
+                 decimals: int = 2, single_step: float = 0.1, adaptive: bool = False, enabled: bool = True,
+                 **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         self.setRange(minimum, maximum)
         self.setDecimals(decimals)
@@ -735,7 +739,7 @@ class TableView(QTableView):
     an extension of the QTableView widget
     """
 
-    def __init__(self, parent, model=None, enabled=True):
+    def __init__(self, parent, model=None, enabled=True, **kwargs):
         super().__init__(parent)
         if model is not None:
             self.setModel(model)
