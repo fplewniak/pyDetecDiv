@@ -17,7 +17,7 @@ from torchvision.transforms import v2, InterpolationMode
 from torchvision import tv_tensors
 from skimage import exposure
 
-from pydetecdiv.domain import ImageResourceData
+from pydetecdiv.domain.ImageResourceData import ImageResourceData
 
 
 class ImgDType(Enum):
@@ -74,7 +74,7 @@ class Image:
         self.torch = self._initial_torch
 
     @property
-    def shape(self) -> tuple[int, int, int]:
+    def shape(self) -> tuple:
         """
         the shape of this Image
         """
