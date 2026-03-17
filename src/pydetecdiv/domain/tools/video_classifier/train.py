@@ -9,6 +9,7 @@ import torch
 
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
 from pydetecdiv.app.tools.deep_learning import ModelTrainer
+from pydetecdiv.domain.Image import Image
 
 if TYPE_CHECKING:
     from pydetecdiv.domain.tools.video_classifier import VideoClassifier
@@ -34,7 +35,9 @@ class VideoClassifierTrainer(ModelTrainer):
             start = time.perf_counter()
             image_resource_data = fov.image_resource().image_resource_data()
             (x1, y1), (x2, y2) = (roi.top_left, roi.bottom_right)
-            print(torch.tensor(np.array([image_resource_data.image(C=0, T=t, Z=0, sliceX=slice(x1, x2+1), sliceY=slice(y1, y2+1)) for t in range(15)])).shape)
+            # print(torch.tensor(np.array([image_resource_data.image(C=0, T=t, Z=0, sliceX=slice(x1, x2+1), sliceY=slice(y1, y2+1)) for t in range(15)])).shape)
+            for t in range(image_resource_data.sizeT - 15):
+                _ = Image.sequence(image_resource_data, 15, T=t, crop=(slice(x1, x2+1), slice(y1, y2+1)))
             print(time.perf_counter() - start)
 
     def training_loop(self):

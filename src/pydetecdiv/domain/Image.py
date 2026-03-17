@@ -432,33 +432,10 @@ class Image:
         for frame in range(T, T + seqlen):
             img = Image.auto_channels(image_resource_data, C=C, T=T, Z=Z, crop=crop, drift=drift, alpha=alpha)
             if sequence is None:
-                sequence = img.as_tensor()
+                sequence = img.as_tensor().unsqueeze(dim=0)
             else:
-                sequence = torch.cat([sequence, img.as_tensor()], dim=0)
+                sequence = torch.cat([sequence, img.as_tensor().unsqueeze(dim=0)], dim=0)
         return sequence
-
-# def get_images_sequences(imgdata: ImageResourceData, roi_list: list[ROI], t: int, seqlen: int = None, z: list[int, int, int] = None,
-#                          apply_drift: bool = True) -> tf.Tensor:
-#     """
-#     Get a sequence of seqlen images for each roi
-#
-#     :param imgdata: the image data resource
-#     :param roi_list: the list of ROIs
-#     :param t: the starting time point (index of frame)
-#     :param seqlen: the number of frames
-#     :param z: the z-layers to stack
-#     :param apply_drift: True if drift must be applied, False otherwise
-#     :return: a tensor containing the sequences for all ROIs
-#     """
-#     maxt = min(imgdata.sizeT, t + seqlen) if seqlen else imgdata.sizeT
-#     roi_sequences = tf.stack([get_rgb_images_from_stacks(imgdata, roi_list, f, z=z) for f in range(t, maxt)], axis=1,
-#                              apply_drift=apply_drift)
-#     if roi_sequences.shape[1] < seqlen:
-#         padding_config = [[0, 0], [seqlen - roi_sequences.shape[1], 0], [0, 0], [0, 0], [0, 0]]
-#         roi_sequences = tf.pad(roi_sequences, padding_config, mode='CONSTANT', constant_values=0.0)
-#     # print('roi sequence', roi_sequences.shape)
-#     return roi_sequences
-
 
 # def get_rgb_images_from_stacks_memmap(imgdata: ImageResourceData, roi_list: list[ROI], t: int, z: list[int, int, int] = None,
 #                                       apply_drift: bool = True) -> list[torch.Tensor]:
