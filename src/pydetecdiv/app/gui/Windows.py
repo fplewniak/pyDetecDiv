@@ -180,10 +180,11 @@ class ImageResourceChooser(QDockWidget):
         self.fluo_blue.clear()
         self.fluo_Z.clear()
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            fov = project.get_named_object('FOV', self.position_choice.currentText())
-            if fov is None:
-                fov = project.get_named_object('FOV', sorted([fov.name for fov in project.get_objects('FOV')])[0])
-            self.get_channels_slices(fov)
+            if project.count_objects('FOV') > 0:
+                fov = project.get_named_object('FOV', self.position_choice.currentText())
+                if fov is None:
+                    fov = project.get_named_object('FOV', sorted([fov.name for fov in project.get_objects('FOV')])[0])
+                self.get_channels_slices(fov)
 
     def get_channels_slices(self, fov: FOV) -> None:
         """
