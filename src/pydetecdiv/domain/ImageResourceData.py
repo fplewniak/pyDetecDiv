@@ -5,6 +5,8 @@
 """
 import os
 import abc
+
+import torch
 from PySide6.QtCore import QThread
 import numpy as np
 import pandas as pd
@@ -12,6 +14,7 @@ import cv2 as cv
 from bioio_base.dimensions import Dimensions
 from vidstab import VidStab
 
+from pydetecdiv.domain.Image import Image
 from pydetecdiv.settings import get_config_value
 
 
@@ -90,7 +93,8 @@ class ImageResourceData(abc.ABC):
         """
 
     @abc.abstractmethod
-    def _image(self, C: int = 0, Z: int = 0, T: int = 0, drift: bool = False) -> np.ndarray:
+    def _image(self, C: int = 0, Z: int = 0, T: int = 0, sliceX: slice = None, sliceY: slice = None,
+               drift: bool = False) -> np.ndarray:
         """
         A 2D grayscale image (one frame, one channel and one layer)
 
@@ -115,7 +119,8 @@ class ImageResourceData(abc.ABC):
         """
         if C is None:
             if sliceX and sliceY:
-                return np.zeros((self.sizeY, self.sizeX), np.uint16)[sliceY, sliceX]
+                # return np.zeros((self.sizeY, self.sizeX), np.uint16)[sliceY, sliceX]
+                return np.zeros((sliceY.stop - sliceY.start, sliceX.stop - sliceX.start), np.uint16)
             return np.zeros((self.sizeY, self.sizeX), np.uint16)
         if sliceX and sliceY:
             return self._image(C=C, **kwargs)[sliceY, sliceX]
@@ -266,3 +271,47 @@ class ImageResourceData(abc.ABC):
         """
         A method to refresh memory mapped files (close and reopen) if max memory is used or do nothing for others
         """
+
+    def auto_channels(self, C: int = 0, T: int = 0, Z: int | list[int] | tuple[int] = 0,
+                      crop: tuple[slice, slice] = None, drift: bool = False, alpha: bool = False) -> Image:
+        """
+        Returns a RGB, RGBA or grayscale image depending upon the C or Z values. If C (or Z) is a tuple, it is used as
+        RGB values. If alpha is set to True, then the maximum value of every pixel across all channels defines its
+        alpha value. If C and Z are both an index, then the returned image is grayscale.
+
+        :param image_resource_data: the image resource data used to create the Image
+        :param C: the channel or channels tuple
+        :param T: the time frame index
+        :param Z: the z-slice or z-slices tuple
+        :param crop: a tuple defining the crop values as slices = (slice(xmin, xmax), slice(ymin, ymax))
+        :param drift: bool defining whether drift correction should be applied
+        :param alpha: bool defining whether the image should contain an alpha channel
+        :return: Image
+        """
+        img = None
+        if crop is None:
+            crop = (None, None)
+        if isinstance(C, int):
+            if isinstance(Z, (tuple, list)):
+                img = Image.compose_channels(
+                        [Image(self.image(C=C, T=T, Z=c, sliceX=crop[0], sliceY=crop[1], drift=drift)) for c
+                         in Z], alpha=alpha)
+            else:
+                img = Image(self.image(C=C, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift))
+        elif isinstance(C, (tuple, list)):
+            img = Image.compose_channels(
+                    [Image(self.image(C=c, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift)) for c in
+                     C], alpha=alpha)
+        return img
+
+    def sequence(self, seqlen: int,
+                 C: int = 0, T: int = 0, Z: int | list[int] | tuple[int] = 0,
+                 crop: tuple[slice, slice] = None, drift: bool = False, alpha: bool = False) -> torch.Tensor:
+        sequence = None
+        for frame in range(T, T + seqlen):
+            img = self.auto_channels(C=C, T=T, Z=Z, crop=crop, drift=drift, alpha=alpha)
+            if sequence is None:
+                sequence = img.as_tensor().unsqueeze(dim=0)
+            else:
+                sequence = torch.cat([sequence, img.as_tensor().unsqueeze(dim=0)], dim=0)
+        return sequence

@@ -92,7 +92,8 @@ class Hdf5ImageResource(ImageResourceData):
         return self.shape[4]
         # return self._dims.X
 
-    def _image(self, C: int = 0, Z: int = 0, T: int = 0, drift: bool = False) -> np.ndarray:
+    def _image(self, C: int = 0, Z: int = 0, T: int = 0, sliceX: slice = None, sliceY: slice = None,
+               drift: bool = False) -> np.ndarray:
         """
         A 2D grayscale image (on frame, one channel and one layer)
 

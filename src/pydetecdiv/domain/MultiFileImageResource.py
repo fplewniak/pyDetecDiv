@@ -97,7 +97,8 @@ class MultiFileImageResource(ImageResourceData):
         """
         return self._dims.X
 
-    def _image(self, C: int = 0, Z: int = 0, T: int = 0, drift: bool = False) -> np.ndarray:
+    def _image(self, C: int = 0, Z: int = 0, T: int = 0, sliceX: slice = None, sliceY: slice = None,
+               drift: bool = False) -> np.ndarray:
         """
         A 2D grayscale image (on frame, one channel and one layer)
 
@@ -117,7 +118,11 @@ class MultiFileImageResource(ImageResourceData):
                                       (data.shape[1], data.shape[0]))
             # data = tf.image.convert_image_dtype(data, dtype=tf.uint16, saturate=False).numpy()
             data = Image(data).as_array(dtype=ImgDType.uint16)
+            if sliceX and sliceY:
+                return data[sliceY, sliceX]
             return data
+        if sliceX and sliceY:
+            return np.zeros((sliceY.stop - sliceY.start, sliceX.stop - sliceX.start), np.uint16)
         return np.zeros((self.sizeY, self.sizeX), np.uint16)
 
     def _image_memmap(self, sliceX: slice = None, sliceY: slice = None, C: int = 0, Z: int = 0, T: int = 0,

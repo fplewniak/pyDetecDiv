@@ -2,14 +2,13 @@
 A module defining classes to view Images in a layered viewer
 """
 import qimage2ndarray
-import numpy as np
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap, QBitmap, QColor
 from PySide6.QtWidgets import QGraphicsPixmapItem, QWidget, QGraphicsScene
 
 from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui.core.widgets.viewers import GraphicsView, Layer, BackgroundLayer
-from pydetecdiv.domain.Image import Image, ImgDType
+from pydetecdiv.domain.Image import ImgDType
 from pydetecdiv.domain.ImageResourceData import ImageResourceData
 
 
@@ -206,8 +205,11 @@ class ImageItem(QGraphicsPixmapItem):
         :param alpha: True to request RGBA
         :return: a QPixmap object
         """
-        arr = Image.auto_channels(image_resource_data, C=C, T=T, Z=Z, crop=crop,
-                                  drift=PyDetecDiv.apply_drift, alpha=alpha).stretch_contrast().channel_last(ImgDType.uint8).numpy()
+        # arr = Image.auto_channels(image_resource_data, C=C, T=T, Z=Z, crop=crop,
+        #                           drift=PyDetecDiv.apply_drift, alpha=alpha).stretch_contrast().channel_last(ImgDType.uint8).numpy()
+        arr = image_resource_data.auto_channels(C=C, T=T, Z=Z, crop=crop,drift=PyDetecDiv.apply_drift,
+                                                alpha=alpha).stretch_contrast().channel_last(ImgDType.uint8).numpy()
+
         # if alpha:
         #     if len(arr.shape) == 2:
         #         arr = np.dstack((arr, arr, arr, arr))

@@ -17,8 +17,6 @@ from torchvision.transforms import v2, InterpolationMode
 from torchvision import tv_tensors
 from skimage import exposure
 
-from pydetecdiv.domain.ImageResourceData import ImageResourceData
-
 
 class ImgDType(Enum):
     """
@@ -389,53 +387,6 @@ class Image:
                                              channels[2].as_array())))
         # return Image(cv2.merge([img.as_array() for img in channels]))
         return Image(torch.stack([c.as_torch() for c in channels], dim=-3))
-        # return Image(tf.stack([c.as_tensor() for c in channels], axis=-1))
-
-    @staticmethod
-    def auto_channels(image_resource_data: ImageResourceData, C: int = 0, T: int = 0, Z: int | list[int] | tuple[int] = 0,
-                      crop: tuple[slice, slice] = None, drift: bool = False, alpha: bool = False) -> Image:
-        """
-        Returns a RGB, RGBA or grayscale image depending upon the C or Z values. If C (or Z) is a tuple, it is used as
-        RGB values. If alpha is set to True, then the maximum value of every pixel across all channels defines its
-        alpha value. If C and Z are both an index, then the returned image is grayscale.
-
-        :param image_resource_data: the image resource data used to create the Image
-        :param C: the channel or channels tuple
-        :param T: the time frame index
-        :param Z: the z-slice or z-slices tuple
-        :param crop: a tuple defining the crop values as slices = (slice(xmin, xmax), slice(ymin, ymax))
-        :param drift: bool defining whether drift correction should be applied
-        :param alpha: bool defining whether the image should contain an alpha channel
-        :return: Image
-        """
-        img = None
-        if crop is None:
-            crop = (None, None)
-        if isinstance(C, int):
-            if isinstance(Z, (tuple, list)):
-                img = Image.compose_channels(
-                        [Image(image_resource_data.image(C=C, T=T, Z=c, sliceX=crop[0], sliceY=crop[1], drift=drift)) for c
-                         in Z], alpha=alpha)
-            else:
-                img = Image(image_resource_data.image(C=C, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift))
-        elif isinstance(C, (tuple, list)):
-            img = Image.compose_channels(
-                    [Image(image_resource_data.image(C=c, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift)) for c in
-                     C], alpha=alpha)
-        return img
-
-    @staticmethod
-    def sequence(image_resource_data: ImageResourceData, seqlen: int,
-                 C: int = 0, T: int = 0, Z: int | list[int] | tuple[int] = 0,
-                 crop: tuple[slice, slice] = None, drift: bool = False, alpha: bool = False) -> torch.Tensor:
-        sequence = None
-        for frame in range(T, T + seqlen):
-            img = Image.auto_channels(image_resource_data, C=C, T=T, Z=Z, crop=crop, drift=drift, alpha=alpha)
-            if sequence is None:
-                sequence = img.as_tensor().unsqueeze(dim=0)
-            else:
-                sequence = torch.cat([sequence, img.as_tensor().unsqueeze(dim=0)], dim=0)
-        return sequence
 
 # def get_rgb_images_from_stacks_memmap(imgdata: ImageResourceData, roi_list: list[ROI], t: int, z: list[int, int, int] = None,
 #                                       apply_drift: bool = True) -> list[torch.Tensor]:
