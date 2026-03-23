@@ -97,7 +97,7 @@ class NDTiffImageResource(ImageResourceData):
         img_list = []
         for c in channel:
             if c is not None:
-                img_list.append(Image(self.as_array[self.pos_in_array][z][time][c][sliceY, sliceX].compute().squeeze()))
+                img_list.append(Image(self.as_array[self.pos_in_array][c][time][z][sliceY, sliceX].compute().squeeze()))
             else:
                 if sliceX.start and sliceY.start:
                     img_list.append(Image(np.zeros((sliceY.stop - sliceY.start, sliceX.stop - sliceX.start), np.uint16)))

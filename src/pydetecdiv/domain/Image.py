@@ -383,8 +383,7 @@ class Image:
         if alpha:
             # channels.append(Image(tf.math.maximum(tf.math.maximum(channels[0].as_tensor(), channels[1].as_tensor()),
             #                                       channels[2].as_tensor())))
-            channels.append(Image(np.maximum(np.maximum(channels[0].as_array(), channels[1].as_array()),
-                                             channels[2].as_array())))
+            channels.append(Image(np.maximum(np.maximum(channels[0].as_array(), channels[1].as_array()), channels[2].as_array())))
         # return Image(cv2.merge([img.as_array() for img in channels]))
         return Image(torch.stack([c.as_torch() for c in channels], dim=-3))
 
