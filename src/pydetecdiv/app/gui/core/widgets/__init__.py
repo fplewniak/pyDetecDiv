@@ -2,14 +2,15 @@
 Core and absrtact widgets for application GUI. These widgets provide the basic functionalities for the GUI and are expected
 to be extended for concrete or more specific purposes
 """
-
+import os
 from typing import Any, Type, Callable, TypeVar, Union, Self
 
 from PySide6.QtCore import Signal, Slot, QModelIndex, QItemSelectionModel, QItemSelection, QStringListModel, SignalInstance
 from PySide6.QtGui import QIcon, QAction, QContextMenuEvent
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QSizePolicy, QApplication, QDialogButtonBox, QPushButton, QWidget, QGroupBox,
                                QLayout, QLabel, QFormLayout, QTableView, QDataWidgetMapper, QAbstractSpinBox, QDoubleSpinBox,
-                               QSpinBox, QRadioButton, QLineEdit, QAbstractItemView, QListView, QMenu, QComboBox)
+                               QSpinBox, QRadioButton, QLineEdit, QAbstractItemView, QListView, QMenu, QComboBox, QHBoxLayout,
+                               QFileDialog)
 
 from pydetecdiv.app.parameters import Parameter
 from pydetecdiv.app.models import ItemModel, DictItemModel, StringList, GenericModel
@@ -69,6 +70,7 @@ class GroupBox(QGroupBox):
             'StringParameter': LineEdit,
             'CheckParameter': RadioButton,
             'ChoiceParameter': ComboBox,
+            'PathParameter': FileChooser,
             }
         self.parameter_widgets[parameter.name] = parameter_widgets[parameter.type](parent=self, **parameter.kwargs(), **kwargs)
         return self.parameter_widgets[parameter.name]
@@ -494,6 +496,54 @@ class LineEdit(QLineEdit):
         self.mapper.addMapping(self, 0, b"text")
         self.mapper.toFirst()
         self.changed.connect(lambda: self.mapper.submit())
+
+
+class FileChooser(QWidget):
+    def __init__(self, parent: QWidget, model: ItemModel = None, editable: bool = True, select_dir: bool = False,
+                 enabled: bool = True, min_width = 350, current_dir: str | None = None, filters = list[str] | None,
+                 **kwargs: dict[str, Any]) -> None:
+        super().__init__(parent)
+        layout = QHBoxLayout()
+        self.file_name = LineEdit(self, model=model, editable=editable, enabled=enabled)
+        self.file_name.setMinimumWidth(min_width)
+        button_path = QPushButton(self)
+        button_path.setIcon(QIcon(":icons/file_chooser"))
+        layout.addWidget(self.file_name)
+        layout.addWidget(button_path)
+        self.setLayout(layout)
+        self.setEnabled(enabled)
+        if current_dir is not None:
+            self.current_dir = current_dir
+        else:
+            self.current_dir = '.'
+        if filters is not None:
+            self.filters = filters
+        else:
+            self.filters = ['*']
+        if select_dir:
+            self.file_name.setText(self.current_dir)
+            button_path.clicked.connect(self.select_dir)
+        else:
+            button_path.clicked.connect(self.select_file)
+
+    def select_dir(self) -> None:
+        dir_name = self.current_dir
+        if dir_name != self.file_name.text() and self.file_name.text():
+            dir_name = self.file_name.text()
+        directory = QFileDialog.getExistingDirectory(self, caption='Choose data source directory', dir=dir_name,
+                                                     options=QFileDialog.Option.ShowDirsOnly)
+        if directory:
+            self.file_name.setText(directory)
+            self.current_dir = directory
+
+    def select_file(self) -> None:
+        selected_file, _ = QFileDialog.getOpenFileName(self, caption='Choose file',
+                                                dir=self.current_dir,
+                                                filter=";;".join(self.filters),
+                                                selectedFilter=self.filters[0])
+        if selected_file:
+            self.file_name.setText(selected_file)
+            self.current_dir = os.path.dirname(selected_file)
 
 
 class Label(QLabel):

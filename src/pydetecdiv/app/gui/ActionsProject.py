@@ -149,6 +149,7 @@ class ProjectDialog(QDialog):
             with pydetecdiv_project(project_name) as project:
                 PyDetecDiv.app.project_selected.emit(project.dbname)
                 PyDetecDiv.app.raw_data_counted.emit(project.count_objects('Data'))
+                PyDetecDiv.app.roi_counted.emit(project.count_objects('ROI'))
             self.finished.emit(True)
         except OpenProjectError as e:
             self.finished.emit(True)

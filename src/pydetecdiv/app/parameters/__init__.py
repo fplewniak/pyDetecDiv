@@ -283,6 +283,15 @@ class StringParameter(ItemParameter):
                          **kwargs)
 
 
+class PathParameter(ItemParameter):
+    def __init__(self, name: str, label: str = None, default: str = '', validator: Callable[[str], bool] = None,
+                 groups: set[str] = None, updater: Callable = None, current_dir: str | None = None, filters = list[str] | None,
+                 select_dir: bool = False, **kwargs: dict[str, Any]) -> None:
+        super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater, **kwargs)
+        self.select_dir = select_dir
+        self.current_dir = current_dir
+        self.filters = filters
+
 class CheckParameter(ItemParameter):
     """
     Class representing a parameter whose value is either True (checked) or False (unchecked). Such parameters can be
