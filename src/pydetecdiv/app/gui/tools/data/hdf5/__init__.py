@@ -12,17 +12,21 @@ class Create_ROI_HDF5Dialog(ToolDialog):
     def __init__(self):
         super().__init__(PyDetecDiv.tools['cnrs.plewniak.roihdf5creator'], title='Create ROI HDF5 file')
 
-        self.tool.parameters['destination_dir'].current_dir = self.tool.working_dir
+        self.tool.parameters['hdf5_file'].current_dir = self.tool.working_dir
 
         self.destination = self.addGroupBox(title='Destination',
                                                 parameters=[
-                                                    self.tool.parameters['destination_dir'],
+                                                    self.tool.parameters['hdf5_file'],
                                                     ])
+
         self.button_box = self.addButtonBox()
 
-        self.arrangeWidgets([self.destination, self.button_box])
+        self.arrangeWidgets([
+            self.destination,
+            self.button_box,
+            ])
 
-        set_connections({self.button_box.accepted: lambda: print(self.tool.name, self.tool.parameters['destination_dir'].value),
+        set_connections({self.button_box.accepted: lambda: print(self.tool.name, self.tool.parameters['hdf5_file'].value),
                          self.button_box.rejected: lambda: print('Rejected'),
                          })
 

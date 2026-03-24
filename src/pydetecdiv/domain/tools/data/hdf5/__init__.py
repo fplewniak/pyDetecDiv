@@ -11,7 +11,8 @@ class ROI_HDF5creator(Tool):
         super().__init__(parameters, working_dir)
         self.parameters = Parameters(
                 [
-                    PathParameter(name='destination_dir', label='Destination', select_dir=True),
+                    PathParameter(name='hdf5_file', label='HDF5 file', select_dir=False, filters=["HDF5 (*.h5 *.hdf5)",],
+                                  default='roi_data.h5'),
                     ]
                 )
 

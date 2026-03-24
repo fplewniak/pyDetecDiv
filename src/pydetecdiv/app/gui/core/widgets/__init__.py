@@ -524,6 +524,7 @@ class FileChooser(QWidget):
             self.file_name.setText(self.current_dir)
             button_path.clicked.connect(self.select_dir)
         else:
+            self.file_name.setText(os.path.join(self.current_dir, self.file_name.text()))
             button_path.clicked.connect(self.select_file)
 
     def select_dir(self) -> None:
@@ -542,7 +543,7 @@ class FileChooser(QWidget):
                                                 filter=";;".join(self.filters),
                                                 selectedFilter=self.filters[0])
         if selected_file:
-            self.file_name.setText(selected_file)
+            self.file_name.setText(os.path.join(self.current_dir, selected_file))
             self.current_dir = os.path.dirname(selected_file)
 
 
