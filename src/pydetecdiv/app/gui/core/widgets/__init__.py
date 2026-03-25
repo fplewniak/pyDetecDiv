@@ -171,12 +171,11 @@ class ParametersFormGroupBox(GroupBox):
         :param kwargs: extra args passed to the widget
         :return: the option widget
         """
-        # if widget is not None and issubclass(widget, (QPushButton, QDialogButtonBox, QGroupBox)):
+        # if widget is specified, it takes precedence over the standard widget normally used for the specified parameter. It is
+        # the responsibility of the developer though to ensure the widget can manage the said parameter and the associated model
         if widget is not None:
             option: QWidget = widget(parent=self, **parameter.kwargs(), **kwargs)
         else:
-            # option: QWidget = widget(parent=self, model=parameter.model, **parameter.kwargs(), **kwargs)
-            # option: QWidget = parameter_widget_factory(self, parameter, **kwargs)
             option: QWidget = self.parameter_widget_factory(parameter, **kwargs)
 
         if not label:
@@ -499,6 +498,9 @@ class LineEdit(QLineEdit):
 
 
 class FileChooser(QWidget):
+    """
+    A class providing a simple file chooser widget that can be inserted into a ParameterFormGroupBox
+    """
     def __init__(self, parent: QWidget, model: ItemModel = None, editable: bool = True, select_dir: bool = False,
                  enabled: bool = True, min_width = 350, current_dir: str | None = None, filters = list[str] | None,
                  **kwargs: dict[str, Any]) -> None:
@@ -528,6 +530,9 @@ class FileChooser(QWidget):
             button_path.clicked.connect(self.select_file)
 
     def select_dir(self) -> None:
+        """
+        Select a directory
+        """
         dir_name = self.current_dir
         if dir_name != self.file_name.text() and self.file_name.text():
             dir_name = self.file_name.text()
@@ -538,6 +543,9 @@ class FileChooser(QWidget):
             self.current_dir = directory
 
     def select_file(self) -> None:
+        """
+        Select a file
+        """
         selected_file, _ = QFileDialog.getOpenFileName(self, caption='Choose file',
                                                 dir=self.current_dir,
                                                 filter=";;".join(self.filters),
