@@ -150,7 +150,7 @@ class ParametersFormGroupBox(GroupBox):
         if issubclass(widget, (QPushButton, QDialogButtonBox, QGroupBox)):
             option: QWidget = widget(parent=self, **kwargs)
         else:
-            option: QWidget = widget(parent=self, model=parameter.model, **parameter.kwargs(), **kwargs)
+            option: QWidget = widget(parent=self, model=parameter.qmodel, **parameter.kwargs(), **kwargs)
 
         option.setEnabled(enabled)
 
@@ -176,12 +176,12 @@ class ComboBox(QComboBox):
     an extension of the QComboBox class with a custom model/view architecture
     """
 
-    def __init__(self, parent: QWidget, model: DictItemModel = None, editable: bool = False,
+    def __init__(self, parent: QWidget, qmodel: DictItemModel = None, editable: bool = False,
                  enabled: bool = True, default: str = None, **kwargs) -> None:
         super().__init__(parent)
-        if model is not None and model.rows() is not None:
-            self.addItemDict(model.rows())
-            self.setModel(model)
+        if qmodel is not None and qmodel.rows() is not None:
+            self.addItemDict(qmodel.rows())
+            self.setModel(qmodel)
             if default is None:
                 self.setModelColumn(0)
             else:
@@ -279,7 +279,7 @@ class ListView(QListView):
     an extension of the QComboBox class
     """
 
-    def __init__(self, parent: QWidget, model: StringList = None, height: int = None, multiselection: bool = False,
+    def __init__(self, parent: QWidget, qmodel: StringList = None, height: int = None, multiselection: bool = False,
                  enabled: bool = True, **kwargs) -> None:
         super().__init__(parent)
         if multiselection:
@@ -287,8 +287,8 @@ class ListView(QListView):
         if height is not None:
             self.setFixedHeight(height)
         self.setModel(QStringListModel())
-        if model is not None and model.items is not None:
-            self.addItemDict(model.items())
+        if qmodel is not None and qmodel.items is not None:
+            self.addItemDict(qmodel.items())
         self.setEnabled(enabled)
 
     def addItemDict(self, options: dict[str, Any]) -> None:
@@ -386,17 +386,17 @@ class ListWidget(QListView):
     An extension of the QListView providing consistency with other custom widgets.
     """
 
-    def __init__(self, parent: QWidget, model: DictItemModel = None, height: int = None, editable: bool = False,
+    def __init__(self, parent: QWidget, qmodel: DictItemModel = None, height: int = None, editable: bool = False,
                  multiselection: bool = False, enabled: bool = True,
                  **kwargs) -> None:
         super().__init__(parent)
         # self.setSelectionModel(QItemSelectionModel())
         if multiselection:
             self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
-        if model is not None and model.rows() is not None:
-            self.setModel(model)
+        if qmodel is not None and qmodel.rows() is not None:
+            self.setModel(qmodel)
             self.setModelColumn(0)
-            self.addItemDict(model.rows())
+            self.addItemDict(qmodel.rows())
         self.setEnabled(enabled)
         # self.currentIndexChanged.connect(self.model().set_selection)
         self.selectionModel().currentChanged.connect(self.setCurrentIndex)
@@ -727,12 +727,12 @@ class TableView(QTableView):
     an extension of the QTableView widget
     """
 
-    def __init__(self, parent, model=None, enabled=True, **kwargs):
+    def __init__(self, parent, qmodel=None, enabled=True, **kwargs):
         super().__init__(parent)
-        if model is not None:
-            self.setModel(model)
-        # if model is not None and model.rows() is not None:
-        #     self.addItemDict(model.rows())
+        if qmodel is not None:
+            self.setModel(qmodel)
+        # if model is not None and qmodel.rows() is not None:
+        #     self.addItemDict(qmodel.rows())
         #     self.setModel(model)
         #     self.setModelColumn(0)
         #     self.currentIndexChanged.connect(self.model().set_selection)
