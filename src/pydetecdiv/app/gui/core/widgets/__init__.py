@@ -42,6 +42,18 @@ StandardButtonCombination = Union["QDialogButtonBox.StandardButton", ...]
 GenericGroupBox = TypeVar('GenericGroupBox', bound=QGroupBox)
 
 
+def paramwidget_args(parameter, param_args):
+    if param_args is not None and parameter.name in param_args:
+        multiple_val = [arg for arg in param_args[parameter.name] if arg in parameter.kwargs()]
+        if multiple_val:
+            param_args[parameter.name].pop(*multiple_val)
+        # for arg in param_args[parameter.name]:
+        #     if arg in parameter.kwargs():
+        #         # parameter.__dict__.pop(arg)
+        #         param_args[parameter.name].pop(arg)
+        return param_args[parameter.name]
+    return {}
+
 class GroupBox(QGroupBox):
     """
     an extension of QGroupBox class
@@ -65,18 +77,18 @@ class GroupBox(QGroupBox):
         :return:
         """
         parameter_widgets = {
-            'IntParameter': SpinBox,
-            'FloatParameter': DoubleSpinBox,
+            'IntParameter'   : SpinBox,
+            'FloatParameter' : DoubleSpinBox,
             'StringParameter': LineEdit,
-            'CheckParameter': RadioButton,
+            'CheckParameter' : RadioButton,
             'ChoiceParameter': ComboBox,
-            'PathParameter': FileChooser,
+            'PathParameter'  : FileChooser,
             }
         self.parameter_widgets[parameter.name] = parameter_widgets[parameter.type](parent=self, **parameter.kwargs(), **kwargs)
         return self.parameter_widgets[parameter.name]
 
     def addSubBox(self, widget: Type[Self], expandable: bool = False, show: bool = True, title: str = None, parameters: list = None,
-                  **kwargs: dict[str, Any]) -> Self:
+                  widget_args: dict[str, Any] = None, **kwargs: dict[str, Any]) -> Self:
         """
         Adds a sub-box to the current GroupBox
 
@@ -91,11 +103,12 @@ class GroupBox(QGroupBox):
             sub_box: GroupBox = widget(self, title=title, **kwargs)
             self.layout.addWidget(sub_box)
         if parameters is not None:
-            _ = [sub_box.addOption(parameter) for parameter in parameters]
+            for parameter in parameters:
+                sub_box.addOption(parameter, **paramwidget_args(parameter, widget_args))
         return sub_box
 
     def addOption(self, parameter: Parameter = None, label: bool = True, enabled: bool = True, widget: Type[QWidget] = None,
-                   **kwargs: dict[str, Any]) -> QWidget:
+                  **kwargs: dict[str, Any]) -> QWidget:
         """
         add an option to the current Form
 
@@ -141,7 +154,7 @@ class ParametersFormGroupBox(GroupBox):
         self.setVisible(show)
 
     def addSubBox(self, widget: Type[GroupBox], expandable: bool = False, show: bool = True, title: str = None,
-                  parameters: list = None, **kwargs: dict[str, Any]) -> 'GroupBox | ExpandCollapseButton':
+                  parameters: list = None, widget_args: dict[str, Any] = None, **kwargs: dict[str, Any]) -> 'GroupBox | ExpandCollapseButton':
         """
         Adds a sub-box to the current ParametersFormGroupBox
 
@@ -156,11 +169,12 @@ class ParametersFormGroupBox(GroupBox):
             sub_box: GroupBox = widget(self, title=title, **kwargs)
             self.layout.addRow(sub_box)
         if parameters is not None:
-            _ = [sub_box.addOption(parameter) for parameter in parameters]
+            for parameter in parameters:
+                sub_box.addOption(parameter, **paramwidget_args(parameter, widget_args))
         return sub_box
 
     def addOption(self, parameter: Parameter = None, label: bool = True, enabled: bool = True, widget: Type[QWidget] = None,
-                   **kwargs: dict[str, Any]) -> QWidget:
+                  **kwargs: dict[str, Any]) -> QWidget:
         """
         add an option to the current Form
 
@@ -502,7 +516,7 @@ class FileChooser(QWidget):
     A class providing a simple file chooser widget that can be inserted into a ParameterFormGroupBox
     """
     def __init__(self, parent: QWidget, model: ItemModel = None, editable: bool = True, select_dir: bool = False,
-                 enabled: bool = True, min_width = 350, current_dir: str | None = None, filters = list[str] | None,
+                 enabled: bool = True, min_width=350, current_dir: str | None = None, filters=list[str] | None,
                  **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         layout = QHBoxLayout()
@@ -547,9 +561,9 @@ class FileChooser(QWidget):
         Select a file
         """
         selected_file, _ = QFileDialog.getOpenFileName(self, caption='Choose file',
-                                                dir=self.current_dir,
-                                                filter=";;".join(self.filters),
-                                                selectedFilter=self.filters[0])
+                                                       dir=self.current_dir,
+                                                       filter=";;".join(self.filters),
+                                                       selectedFilter=self.filters[0])
         if selected_file:
             self.file_name.setText(os.path.join(self.current_dir, selected_file))
             self.current_dir = os.path.dirname(selected_file)
@@ -630,7 +644,6 @@ class ExpandCollapseButton(PushButton):
             self.setIcon(QIcon(':icons/hide'))
         self.group_box.setVisible(self.show)
 
-
     def toggle(self):
         """
         toggle the advanced button to and from show/hide form
@@ -656,7 +669,7 @@ class ExpandCollapseButton(PushButton):
         self.group_box.addSubBox(widget, expandable, show, title, **kwargs)
 
     def addOption(self, parameter: Parameter = None, label: bool = True, enabled: bool = True, widget: Type[QWidget] = None,
-                   **kwargs: dict[str, Any]) -> QWidget:
+                  **kwargs: dict[str, Any]) -> QWidget:
         """
         Add an option to the current collapsable group box
         :param parameter: the parameter to add
@@ -759,7 +772,7 @@ class DoubleSpinBox(QDoubleSpinBox):
     """
 
     def __init__(self, parent: QWidget, model: ItemModel = None, minimum: float = 0.1, maximum: float = 1.0,
-                 decimals: int = 2, single_step: float = 0.1, adaptive: bool = False, enabled: bool = True,
+                 decimals: int = 2, single_step: float = 0.01, adaptive: bool = False, enabled: bool = True,
                  **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         self.setRange(minimum, maximum)
@@ -883,7 +896,7 @@ class Dialog(QDialog):
         self.adjustSize()
 
     def addGroupBox(self, title: str = None, widget: Type[GroupBox] = ParametersFormGroupBox, parameters: list = None,
-                    expandable: bool = False, show: bool = True) -> GroupBox:
+                    widget_args: dict[str, Any] = None, expandable: bool = False, show: bool = True) -> GroupBox:
         """
         Add a group box to the Dialog window
 
@@ -902,7 +915,8 @@ class Dialog(QDialog):
             group_box.addSubBox(widget=widget, expandable=expandable, show=show, parameters=parameters)
         else:
             if parameters is not None:
-                _ = [group_box.addOption(parameter) for parameter in parameters]
+                for parameter in parameters:
+                    group_box.addOption(parameter, **paramwidget_args(parameter, widget_args))
         return group_box
 
     def addButtonBox(self, buttons: StandardButtonCombination = QDialogButtonBox.Ok | QDialogButtonBox.Close,
@@ -958,7 +972,6 @@ def set_connections(connections: dict[Signal | SignalInstance, Callable]) -> Non
                 signal.connect(s)
         else:
             signal.connect(slot)
-
 
 # def parameter_widget_factory(parent: QWidget, parameter: Parameter, **kwargs) -> QWidget:
 #     """

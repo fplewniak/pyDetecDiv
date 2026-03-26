@@ -39,7 +39,7 @@ class VideoClassifier(DeepTool):
                     FloatParameter(name='num_validation', label='Validation dataset', groups={'training', 'finetune'},
                                    default=0.3, minimum=0.01, maximum=0.99, ),
                     FloatParameter(name='num_test', label='Test dataset', groups={'training', 'finetune'}, default=0.3,
-                                   minimum=0.01, maximum=0.99, decimals=2, enabled=False),
+                                   minimum=0.01, maximum=0.99, enabled=False),
                     IntParameter(name='data_seed', label='Random seed', groups={'training', 'finetune'}, maximum=999999999,
                                  default=42),
                     ]

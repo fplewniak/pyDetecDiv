@@ -152,10 +152,9 @@ class NumParameter(ItemParameter):
 
     def __init__(self, name: str, label: str = None, default: int | float = None, minimum: int | float = None,
                  maximum: int | float = None, validator: Callable[[int | float], bool] = None,
-                 groups: set[str] = None, updater: Callable = None, adaptive: bool = False, **kwargs: dict[str, Any]) -> None:
+                 groups: set[str] = None, updater: Callable = None, **kwargs: dict[str, Any]) -> None:
         self.minimum: int | float = minimum
         self.maximum: int | float = max(minimum, maximum)
-        self.adaptive = adaptive
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          **kwargs)
 
@@ -221,11 +220,10 @@ class IntParameter(NumParameter):
     """
 
     def __init__(self, name: str, label: str = None, default: int = 1, validator: Callable[[int], bool] = None,
-                 minimum: int = 1, maximum: int = 4096, groups: set[str] = None, updater: Callable = None, single_step: int = 1,
+                 minimum: int = 1, maximum: int = 4096, groups: set[str] = None, updater: Callable = None,
                  **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          minimum=minimum, maximum=maximum, **kwargs)
-        self.single_step = single_step
 
     # def kwargs(self) -> dict[str, Any]:
     #     """
@@ -255,11 +253,9 @@ class FloatParameter(NumParameter):
 
     def __init__(self, name: str, label: str = None, default: float = 0.0, validator: Callable[[float], bool] = None,
                  minimum: float = 0.0, maximum: float = 1.0, groups: set[str] = None, updater: Callable = None,
-                 single_step: float = 0.01, decimals: int = 2, **kwargs: dict[str, Any]) -> None:
+                 **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          minimum=minimum, maximum=maximum, **kwargs)
-        self.single_step = single_step
-        self.decimals = decimals
 
     def validate(self, value: float) -> bool:
         """
