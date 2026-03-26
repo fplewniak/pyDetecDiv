@@ -213,12 +213,12 @@ class ComboBox(QComboBox):
     an extension of the QComboBox class with a custom model/view architecture
     """
 
-    def __init__(self, parent: QWidget, model: GenericModel = None, editable: bool = False,
+    def __init__(self, parent: QWidget, qmodel: GenericModel = None, editable: bool = False,
                  enabled: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
-        if model is not None and model.rows() is not None:
-            self.addItemDict(model.rows())
-            self.setModel(model)
+        if qmodel is not None and qmodel.rows() is not None:
+            self.addItemDict(qmodel.rows())
+            self.setModel(qmodel)
             self.setModelColumn(0)
             self.currentIndexChanged.connect(self.model().set_selection)
             self.model().selection_changed.connect(self.setCurrentIndex)
@@ -313,7 +313,7 @@ class ListView(QListView):
     an extension of the QComboBox class
     """
 
-    def __init__(self, parent: QWidget, model: StringList = None, height: int = None, multiselection: bool = False,
+    def __init__(self, parent: QWidget, qmodel: StringList = None, height: int = None, multiselection: bool = False,
                  enabled: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         if multiselection:
@@ -321,8 +321,8 @@ class ListView(QListView):
         if height is not None:
             self.setFixedHeight(height)
         self.setModel(QStringListModel())
-        if model is not None and model.items is not None:
-            self.addItemDict(model.items())
+        if qmodel is not None and qmodel.items is not None:
+            self.addItemDict(qmodel.items())
         self.setEnabled(enabled)
 
     def addItemDict(self, options: dict[str, Any]) -> None:
@@ -419,17 +419,17 @@ class ListWidget(QListView):
     An extension of the QListView providing consistency with other custom widgets.
     """
 
-    def __init__(self, parent: QWidget, model: DictItemModel = None, height: int = None, editable: bool = False,
+    def __init__(self, parent: QWidget, qmodel: DictItemModel = None, height: int = None, editable: bool = False,
                  multiselection: bool = False, enabled: bool = True,
                  **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         # self.setSelectionModel(QItemSelectionModel())
         if multiselection:
             self.setSelectionMode(QAbstractItemView.MultiSelection)
-        if model is not None and model.rows() is not None:
-            self.setModel(model)
+        if qmodel is not None and qmodel.rows() is not None:
+            self.setModel(qmodel)
             self.setModelColumn(0)
-            self.addItemDict(model.rows())
+            self.addItemDict(qmodel.rows())
         self.setEnabled(enabled)
         # self.currentIndexChanged.connect(self.model().set_selection)
         self.selectionModel().currentChanged.connect(self.setCurrentIndex)
@@ -466,12 +466,12 @@ class LineEdit(QLineEdit):
     an extension of QLineEdit class
     """
 
-    def __init__(self, parent: QWidget, model: ItemModel = None, editable: bool = True, enabled: bool = True,
+    def __init__(self, parent: QWidget, qmodel: ItemModel = None, editable: bool = True, enabled: bool = True,
                  **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         self.setEditable(editable)
         self.mapper = QDataWidgetMapper(self)
-        self.setModel(model)
+        self.setModel(qmodel)
         self.setEnabled(enabled)
 
     @property
@@ -499,13 +499,13 @@ class LineEdit(QLineEdit):
         """
         self.setReadOnly(not editable)
 
-    def setModel(self, model: ItemModel) -> None:
+    def setModel(self, qmodel: ItemModel) -> None:
         """
         Sets the model for the LineEdit widget
 
         :param model: the item model containing a str value
         """
-        self.mapper.setModel(model)
+        self.mapper.setModel(qmodel)
         self.mapper.addMapping(self, 0, b"text")
         self.mapper.toFirst()
         self.changed.connect(lambda: self.mapper.submit())
@@ -515,12 +515,12 @@ class FileChooser(QWidget):
     """
     A class providing a simple file chooser widget that can be inserted into a ParameterFormGroupBox
     """
-    def __init__(self, parent: QWidget, model: ItemModel = None, editable: bool = True, select_dir: bool = False,
+    def __init__(self, parent: QWidget, qmodel: ItemModel = None, editable: bool = True, select_dir: bool = False,
                  enabled: bool = True, min_width=350, current_dir: str | None = None, filters=list[str] | None,
                  **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         layout = QHBoxLayout()
-        self.file_name = LineEdit(self, model=model, editable=editable, enabled=enabled)
+        self.file_name = LineEdit(self, qmodel=qmodel, editable=editable, enabled=enabled)
         self.file_name.setMinimumWidth(min_width)
         button_path = QPushButton(self)
         button_path.setIcon(QIcon(":icons/file_chooser"))
@@ -574,22 +574,22 @@ class Label(QLabel):
     an extension of QLabel class
     """
 
-    def __init__(self, parent: QWidget, model: ItemModel = None, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, parent: QWidget, qmodel: ItemModel = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         self.mapper = QDataWidgetMapper(self)
-        self.setModel(model)
+        self.setModel(qmodel)
 
     # @property
     # def changed(self):
     #     return self.textChanged
 
-    def setModel(self, model: ItemModel) -> None:
+    def setModel(self, qmodel: ItemModel) -> None:
         """
         Sets the model for the Label
 
-        :param model: the item model containing a str value
+        :param qmodel: the item model containing a str value
         """
-        self.mapper.setModel(model)
+        self.mapper.setModel(qmodel)
         self.mapper.addMapping(self, 0, b"text")
         self.mapper.toFirst()
 
@@ -686,23 +686,23 @@ class RadioButton(QRadioButton):
     an extension of the QRadioButton class
     """
 
-    def __init__(self, parent: QWidget, model: ItemModel = None, exclusive: bool = True, enabled: bool = True,
+    def __init__(self, parent: QWidget, qmodel: ItemModel = None, exclusive: bool = True, enabled: bool = True,
                  **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         self.setAutoExclusive(exclusive)
         self.mapper = QDataWidgetMapper(self)
-        self.setModel(model)
+        self.setModel(qmodel)
         self.toggled.connect(self.on_toggled)
         self.setEnabled(enabled)
 
-    def setModel(self, model: ItemModel) -> None:
+    def setModel(self, qmodel: ItemModel) -> None:
         """
         Sets the model for the radio button
 
         :param model: the item model containing a bool value
         """
-        if model is not None:
-            self.mapper.setModel(model)
+        if qmodel is not None:
+            self.mapper.setModel(qmodel)
             self.mapper.addMapping(self, 0)
             self.mapper.setSubmitPolicy(QDataWidgetMapper.AutoSubmit)
             self.mapper.toFirst()
@@ -732,7 +732,7 @@ class SpinBox(QSpinBox):
     an extension of the QSpinBox class
     """
 
-    def __init__(self, parent: QWidget, model: ItemModel = None, minimum: int = 1, maximum: int = 4096,
+    def __init__(self, parent: QWidget, qmodel: ItemModel = None, minimum: int = 1, maximum: int = 4096,
                  single_step: int = 1, adaptive: bool = False, enabled: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         self.setRange(minimum, maximum)
@@ -740,17 +740,17 @@ class SpinBox(QSpinBox):
         if adaptive:
             self.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
         self.mapper = QDataWidgetMapper(self)
-        self.setModel(model)
+        self.setModel(qmodel)
         self.setEnabled(enabled)
 
-    def setModel(self, model: ItemModel):
+    def setModel(self, qmodel: ItemModel):
         """
         Sets the model for the spin box
 
         :param model: the item model containing an int value
         """
-        if model is not None:
-            self.mapper.setModel(model)
+        if qmodel is not None:
+            self.mapper.setModel(qmodel)
             self.mapper.addMapping(self, 0)
             self.mapper.toFirst()
             self.changed.connect(lambda _: self.mapper.submit())
@@ -771,7 +771,7 @@ class DoubleSpinBox(QDoubleSpinBox):
     an extension of the QDoubleSpinBox class
     """
 
-    def __init__(self, parent: QWidget, model: ItemModel = None, minimum: float = 0.1, maximum: float = 1.0,
+    def __init__(self, parent: QWidget, qmodel: ItemModel = None, minimum: float = 0.1, maximum: float = 1.0,
                  decimals: int = 2, single_step: float = 0.01, adaptive: bool = False, enabled: bool = True,
                  **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
@@ -781,17 +781,17 @@ class DoubleSpinBox(QDoubleSpinBox):
         if adaptive:
             self.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
         self.mapper: QDataWidgetMapper = QDataWidgetMapper(self)
-        self.setModel(model)
+        self.setModel(qmodel)
         self.setEnabled(enabled)
 
-    def setModel(self, model: ItemModel) -> None:
+    def setModel(self, qmodel: ItemModel) -> None:
         """
         Sets the model for the spin box
 
-        :param model: the item model containing a float value
+        :param qmodel: the item model containing a float value
         """
-        if model is not None:
-            self.mapper.setModel(model)
+        if qmodel is not None:
+            self.mapper.setModel(qmodel)
             self.mapper.addMapping(self, 0)
             self.mapper.toFirst()
             self.changed.connect(lambda _: self.mapper.submit())
@@ -811,10 +811,10 @@ class TableView(QTableView):
     an extension of the QTableView widget
     """
 
-    def __init__(self, parent, model=None, enabled=True, **kwargs):
+    def __init__(self, parent, qmodel=None, enabled=True, **kwargs):
         super().__init__(parent)
-        if model is not None:
-            self.setModel(model)
+        if qmodel is not None:
+            self.setModel(qmodel)
         # if model is not None and model.rows() is not None:
         #     self.addItemDict(model.rows())
         #     self.setModel(model)

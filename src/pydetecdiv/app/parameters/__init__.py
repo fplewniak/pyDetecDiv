@@ -25,7 +25,7 @@ class Parameter:
         self.updater: Callable = updater
         self.updater_kwargs: dict[str, Any] = kwargs
         self.groups: set[str] = set() if groups is None else groups
-        self.model: StandardItemModel | None = None
+        self.qmodel: StandardItemModel | None = None
         self.enabled = enabled
         self.__dict__.update(kwargs)
 
@@ -55,7 +55,7 @@ class Parameter:
         """
         Clears the parameter of it's content
         """
-        self.model.clear()
+        self.qmodel.clear()
 
     @property
     def value(self) -> Any:
@@ -64,7 +64,7 @@ class Parameter:
 
         :return: the current value
         """
-        return self.model.value()
+        return self.qmodel.value()
 
     @property
     def type(self) -> str:
@@ -77,7 +77,7 @@ class Parameter:
 
         :param value: the new parameter value
         """
-        if value != self.model.value() and self.validate(value):
+        if value != self.qmodel.value() and self.validate(value):
             if isinstance(value, (list, dict)):
                 value = json.dumps(value)
             self.value = value
@@ -89,7 +89,7 @@ class Parameter:
 
         :param value: the new parameter value
         """
-        self.model.set_value(value)
+        self.qmodel.set_value(value)
 
     @property
     def json(self) -> Any:
@@ -129,7 +129,7 @@ class Parameter:
 
         :return: boolean indication whether the value has changed
         """
-        return self.model.itemChanged
+        return self.qmodel.itemChanged
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Parameter):
@@ -184,7 +184,7 @@ class ItemParameter(Parameter):
                  groups: set[str] = None, updater: Callable = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          **kwargs)
-        self.model: ItemModel = ItemModel()
+        self.qmodel: ItemModel = ItemModel()
         self.reset()
 
 
@@ -364,7 +364,7 @@ class ChoiceParameter(Parameter):
                  groups: set[str] = None, updater: Callable[..., None] = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          **kwargs)
-        self.model: DictItemModel = DictItemModel(items)
+        self.qmodel: DictItemModel = DictItemModel(items)
 
     # def kwargs(self) -> dict[str, Any]:
     #     """
@@ -394,7 +394,7 @@ class ChoiceParameter(Parameter):
 
         :return: the selected key
         """
-        return self.model.key()
+        return self.qmodel.key()
 
     @property
     def value(self) -> Any:
@@ -403,7 +403,7 @@ class ChoiceParameter(Parameter):
 
         :return: the selected value object
         """
-        return self.model.value()
+        return self.qmodel.value()
 
     @value.setter
     def value(self, key: str) -> None:
@@ -412,7 +412,7 @@ class ChoiceParameter(Parameter):
 
         :param key: the key of the item to select
         """
-        self.model.set_value(key)
+        self.qmodel.set_value(key)
 
     @property
     def keys(self) -> list[str]:
@@ -421,7 +421,7 @@ class ChoiceParameter(Parameter):
 
         :return: the list of all possible choices
         """
-        return self.model.keys()
+        return self.qmodel.keys()
 
     @property
     def values(self) -> list[object]:
@@ -430,7 +430,7 @@ class ChoiceParameter(Parameter):
 
         :return: the list of all possible values
         """
-        return self.model.values()
+        return self.qmodel.values()
 
     @property
     def items(self) -> dict[str, object]:
@@ -440,7 +440,7 @@ class ChoiceParameter(Parameter):
 
         :return: all choice items
         """
-        return self.model.rows()
+        return self.qmodel.rows()
 
     @property
     def item(self) -> object:
@@ -449,7 +449,7 @@ class ChoiceParameter(Parameter):
 
         :return: the object represented by this option
         """
-        return self.model.value()
+        return self.qmodel.value()
 
     def set_value(self, value: Any) -> None:
         """
@@ -460,10 +460,10 @@ class ChoiceParameter(Parameter):
         """
         if value is None:
             value = self.keys[0]
-        if value != self.model.key() and self.validate(value):
+        if value != self.qmodel.key() and self.validate(value):
             if isinstance(value, (list, dict)):
                 value = json.dumps(value)
-            self.model.set_value(value)
+            self.qmodel.set_value(value)
 
     def set_items(self, items: dict[str, object]) -> None:
         """
@@ -473,7 +473,7 @@ class ChoiceParameter(Parameter):
         :param items: a dictionary containing the items to add to the ChoiceParameter. Key is the name/representation
          of the corresponding option, value is the actual object
         """
-        self.model.set_items(items)
+        self.qmodel.set_items(items)
 
     def add_item(self, item: dict[str, object]) -> None:
         """
@@ -482,7 +482,7 @@ class ChoiceParameter(Parameter):
         :param item: the dictionary containing the choice item to add to the ChoiceParameter. Key is the
          name/representation of the corresponding option, value is the actual object.
         """
-        self.model.add_item(item)
+        self.qmodel.add_item(item)
 
     def add_items(self, items: dict[str, object]) -> None:
         """
@@ -496,7 +496,7 @@ class ChoiceParameter(Parameter):
 
     @property
     def changed(self) -> Signal:
-        return self.model.selection_changed
+        return self.qmodel.selection_changed
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, ChoiceParameter):
