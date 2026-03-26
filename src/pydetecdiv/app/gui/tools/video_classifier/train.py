@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 from pydetecdiv.app.gui.core.widgets import ParametersFormGroupBox, set_connections
 from pydetecdiv.app.gui.tools import ToolAction, ToolDialog
+from pydetecdiv.app.parameters import FloatParameter
 from pydetecdiv.app.tools.deep_learning import DeepTool
 
 if TYPE_CHECKING:
@@ -40,11 +41,19 @@ class TrainModelDialog(ToolDialog):
                          self.button_box.rejected: lambda: print('Rejected'),
                          tool.parameters.epochs.changed: lambda: print(tool.parameters.epochs.value),
                          tool.parameters.optimizer.changed: lambda: print(tool.parameters.optimizer.value),
-                         tool.parameters.num_training.changed: lambda: print(tool.parameters.num_training.value),
+                         tool.parameters.num_training.changed: lambda: self.update_datasets(tool.parameters.num_training),
+                         tool.parameters.num_validation.changed: lambda: self.update_datasets(tool.parameters.num_validation),
                          })
 
         self.fit_to_contents()
         self.exec()
+
+    def update_datasets(self, changed_param: FloatParameter = None):
+        self.tool.parameters.num_test.value = 1.0 - (self.tool.parameters.num_training + self.tool.parameters.num_validation)
+        if changed_param:
+            total = self.tool.parameters.num_test + self.tool.parameters.num_training + self.tool.parameters.num_validation
+            if total > 1.0:
+                changed_param.value = changed_param - total + 1.0
 
 
 class TrainModelAction(ToolAction):

@@ -23,11 +23,11 @@ class VideoClassifierTrainer(ModelTrainer):
         Train the video classifier model, running the training loop once per epoch for as many epochs as requested by the user
         """
         print("Training video classifier model...")
-        with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            fov = project.get_object('FOV', 1)
-            start = time.perf_counter()
-            print(fov)
-            print(fov.image_resource().shape)
+        # with pydetecdiv_project(PyDetecDiv.project_name) as project:
+        #     fov = project.get_object('FOV', 1)
+        #     start = time.perf_counter()
+        #     print(fov)
+        #     print(fov.image_resource().shape)
             # image_resource_data = fov.image_resource().image_resource_data()
             # for roi in fov.roi_list:
             #     start_partiel = time.perf_counter()

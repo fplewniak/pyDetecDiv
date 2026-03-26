@@ -25,6 +25,9 @@ class ROI_HDF5creator(Tool):
             print(f'Create ROI HDF5 file: {self.parameters.hdf5_file.value}')
         print(f'Sequence length: {self.parameters.seqlen.value}')
 
+        print(self.parameters.hdf5_file > 'ABC')
+        print(self.parameters.seqlen > 2, self.parameters.seqlen < 3)
+
     def save_run(self, *args, **kwargs):
         pass
 
