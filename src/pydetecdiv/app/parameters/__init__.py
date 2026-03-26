@@ -3,7 +3,7 @@ Module defining the different types of parameters that may be needed to store in
 be specified using GUI widgets which are synchronized thanks to a shared model
 """
 import json
-from typing import Callable, Any
+from typing import Callable, Any, Self
 
 from PySide6.QtCore import Signal
 
@@ -131,6 +131,49 @@ class Parameter:
         """
         return self.model.itemChanged
 
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, Parameter):
+            return self.value == other.value
+        return self.value == other
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __lt__(self, other: Any) -> bool:
+        if isinstance(other, Parameter):
+            return self.value < other.value
+        return self.value < other
+
+    def __le__(self, other: Any) -> bool:
+        if isinstance(other, Parameter):
+            return self.value <= other.value
+        return self.value <= other
+
+    def __gt__(self, other: Any) -> bool:
+        return not self.__le__(other)
+
+    def __ge__(self, other: Any) -> bool:
+        return not self.__lt__(other)
+
+    def __add__(self, other: Any) -> Any:
+        if isinstance(other, Parameter):
+            return self.value + other.value
+        return self.value + other
+
+    def __sub__(self, other: Any) -> Any:
+        if isinstance(other, Parameter):
+            return self.value - other.value
+        return self.value - other
+
+    def __mul__(self, other: Any) -> Any:
+        if isinstance(other, Parameter):
+            return self.value * other.value
+        return self.value * other
+
+    def __truediv__(self, other: Any) -> Any:
+        if isinstance(other, Parameter):
+            return self.value / other.value
+        return self.value / other
 
 class ItemParameter(Parameter):
     """
@@ -455,6 +498,11 @@ class ChoiceParameter(Parameter):
     def changed(self) -> Signal:
         return self.model.selection_changed
 
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, ChoiceParameter):
+            return self.key == other.key
+        return self.key == other
+
 
 class Parameters:
     """
@@ -542,6 +590,11 @@ class Parameters:
         raise KeyError
 
     def __getattr__(self, item: str) -> Parameter:
+        """
+        Dunder method to allow access to parameters using attribute syntax
+        :param item: the name of the parameter
+        :return: the parameter
+        """
         return self.__getitem__(item)
 
     def to_dict(self) -> dict[str, Parameter]:
