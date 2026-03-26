@@ -27,6 +27,7 @@ class Parameter:
         self.groups: set[str] = set() if groups is None else groups
         self.model: StandardItemModel | None = None
         self.enabled = enabled
+        self.__dict__.update(kwargs)
 
     def kwargs(self) -> dict[str, Any]:
         """
@@ -286,7 +287,7 @@ class StringParameter(ItemParameter):
 class PathParameter(ItemParameter):
     def __init__(self, name: str, label: str = None, default: str = '', validator: Callable[[str], bool] = None,
                  groups: set[str] = None, updater: Callable = None, current_dir: str | None = None, filters = list[str] | None,
-                 select_dir: bool = False, **kwargs: dict[str, Any]) -> None:
+                 select_dir: bool = False, **kwargs) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater, **kwargs)
         self.select_dir = select_dir
         self.current_dir = current_dir
