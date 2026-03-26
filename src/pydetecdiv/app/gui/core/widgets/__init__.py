@@ -882,10 +882,15 @@ class Dialog(QDialog):
         QApplication.processEvents()
         self.adjustSize()
 
-    def addGroupBox(self, title: str = None, widget: Type[GroupBox] = ParametersFormGroupBox, parameters: list = None) -> GroupBox:
+    def addGroupBox(self, title: str = None, widget: Type[GroupBox] = ParametersFormGroupBox, parameters: list = None,
+                    expandable: bool = False, show: bool = True) -> GroupBox:
         """
         Add a group box to the Dialog window
 
+        :param show: When expandable is True, the group box is expanded if show is True, otherwise the group box is collapsed. When
+         expandable is False, this argument has no effect.
+        :param expandable: If True, the group box is expandable/collapsable, otherwise the group box is always visible
+        :param parameters: the list of parameters in the group box
         :param title: the title of the group box to add
         :param widget: the class of group box
         :return: the group box
@@ -893,8 +898,11 @@ class Dialog(QDialog):
         group_box = widget(self)
         group_box.setTitle(title)
         group_box.setStyleSheet(StyleSheets.groupBox)
-        if parameters is not None:
-            _ = [group_box.addOption(parameter) for parameter in parameters]
+        if expandable:
+            group_box.addSubBox(widget=widget, expandable=expandable, show=show, parameters=parameters)
+        else:
+            if parameters is not None:
+                _ = [group_box.addOption(parameter) for parameter in parameters]
         return group_box
 
     def addButtonBox(self, buttons: StandardButtonCombination = QDialogButtonBox.Ok | QDialogButtonBox.Close,
