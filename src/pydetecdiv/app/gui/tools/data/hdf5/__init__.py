@@ -2,7 +2,7 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QWidget
 
 from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.app.gui.core.widgets import set_connections, ParametersFormGroupBox
+from pydetecdiv.app.gui.core.widgets import set_connections
 from pydetecdiv.app.gui.tools import ToolDialog
 
 
@@ -10,18 +10,20 @@ class Create_ROI_HDF5Dialog(ToolDialog):
     def __init__(self):
         super().__init__(PyDetecDiv.tools['cnrs.plewniak.roihdf5creator'], title='Create ROI HDF5 file')
 
-        self.tool.parameters['hdf5_file'].current_dir = self.tool.working_dir
+        self.tool.parameters.hdf5_file.current_dir = self.tool.working_dir
 
         self.destination = self.addGroupBox(title='HDF5 destination file',
                                             parameters=[
-                                                self.tool.parameters['hdf5_file'],
+                                                self.tool.parameters.hdf5_file,
                                                 ],
-                                            widget_args={'hdf5_file': {'min_width': 200}}
+                                            widget_args={
+                                                'hdf5_file': {'min_width': 200},
+                                                }
                                             )
         self.other_parameters = self.addGroupBox(title='',
                                                  parameters=[
-                                                     self.tool.parameters['annotations'],
-                                                     self.tool.parameters['seqlen'],
+                                                     self.tool.parameters.annotations,
+                                                     self.tool.parameters.seqlen,
                                                      ],
                                                  )
 

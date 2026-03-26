@@ -541,6 +541,9 @@ class Parameters:
             return self_dict[item]
         raise KeyError
 
+    def __getattr__(self, item: str) -> Parameter:
+        return self.__getitem__(item)
+
     def to_dict(self) -> dict[str, Parameter]:
         """
         Return the parameters as a dictionary

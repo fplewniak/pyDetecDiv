@@ -28,15 +28,15 @@ class VideoClassifierTrainer(ModelTrainer):
             start = time.perf_counter()
             print(fov)
             print(fov.image_resource().shape)
-            image_resource_data = fov.image_resource().image_resource_data()
-            for roi in fov.roi_list:
-                start_partiel = time.perf_counter()
-                (x1, y1), (x2, y2) = (roi.top_left, roi.bottom_right)
-            # print(torch.tensor(np.array([image_resource_data.image(C=0, T=t, Z=0, sliceX=slice(x1, x2+1), sliceY=slice(y1, y2+1)) for t in range(15)])).shape)
-                for t in range(image_resource_data.sizeT - 15):
-                    _ = image_resource_data.sequence(15, T=t, crop=(slice(x1, x2+1), slice(y1, y2+1)))
-                print(f'{roi.name}: {time.perf_counter() - start_partiel}')
-            print(time.perf_counter() - start)
+            # image_resource_data = fov.image_resource().image_resource_data()
+            # for roi in fov.roi_list:
+            #     start_partiel = time.perf_counter()
+            #     (x1, y1), (x2, y2) = (roi.top_left, roi.bottom_right)
+            # # print(torch.tensor(np.array([image_resource_data.image(C=0, T=t, Z=0, sliceX=slice(x1, x2+1), sliceY=slice(y1, y2+1)) for t in range(15)])).shape)
+            #     for t in range(image_resource_data.sizeT - 15):
+            #         _ = image_resource_data.sequence(15, T=t, crop=(slice(x1, x2+1), slice(y1, y2+1)))
+            #     print(f'{roi.name}: {time.perf_counter() - start_partiel}')
+            # print(time.perf_counter() - start)
 
     def training_loop(self):
         """

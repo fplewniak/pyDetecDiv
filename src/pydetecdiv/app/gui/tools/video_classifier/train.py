@@ -14,19 +14,23 @@ class TrainModelDialog(ToolDialog):
 
         self.hyperparameters = self.addGroupBox(title='Hyperparameters',
                                                 parameters=[
-                                                    tool.parameters['epochs'],
-                                                    tool.parameters['batch_size'],
-                                                    tool.parameters['optimizer'],
-                                                    tool.parameters['seed'],
+                                                    tool.parameters.epochs,
+                                                    tool.parameters.batch_size,
+                                                    tool.parameters.optimizer,
+                                                    tool.parameters.seed,
                                                     ])
 
         self.datasets = self.addGroupBox(title='Datasets',
                                          parameters=[
-                                             tool.parameters['num_training'],
-                                             tool.parameters['num_validation'],
-                                             tool.parameters['num_test'],
-                                             tool.parameters['data_seed'],
-                                             ])
+                                             tool.parameters.num_training,
+                                             tool.parameters.num_validation,
+                                             tool.parameters.num_test,
+                                             tool.parameters.data_seed,
+                                             ],
+                                         widget_args={
+                                             'num_test': {'decimals': 2},
+                                             }
+                                         )
 
         self.button_box = self.addButtonBox()
 
@@ -34,9 +38,9 @@ class TrainModelDialog(ToolDialog):
 
         set_connections({self.button_box.accepted: tool.model_trainer.train_model,
                          self.button_box.rejected: lambda: print('Rejected'),
-                         tool.parameters['epochs'].changed: lambda: print(tool.parameters['epochs'].value),
-                         tool.parameters['optimizer'].changed: lambda: print(tool.parameters['optimizer'].value),
-                         tool.parameters['num_training'].changed: lambda: print(tool.parameters['num_training'].value),
+                         tool.parameters.epochs.changed: lambda: print(tool.parameters.epochs.value),
+                         tool.parameters.optimizer.changed: lambda: print(tool.parameters.optimizer.value),
+                         tool.parameters.num_training.changed: lambda: print(tool.parameters.num_training.value),
                          })
 
         self.fit_to_contents()
