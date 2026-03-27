@@ -30,7 +30,7 @@ class NDTiffImageResource(ImageResourceData):
         self._dims = image_resource.dims
         self._drift = image_resource.drift
         self._ndtiff_ds = None
-        self._as_array = None
+        self._dask_array = None
 
     @property
     def shape(self) -> tuple[int, int, int, int, int]:
@@ -98,7 +98,7 @@ class NDTiffImageResource(ImageResourceData):
         data = None
         for c in channel:
             if c is not None:
-                data = self.as_array[self.pos_in_array][c][time][z][sliceY, sliceX].compute().squeeze()
+                data = self.dask_array[time, c, z][sliceY, sliceX].compute().squeeze()
             else:
                 if sliceX.start and sliceY.start:
                     data = np.zeros((sliceY.stop - sliceY.start, sliceX.stop - sliceX.start), np.uint16)
@@ -114,10 +114,10 @@ class NDTiffImageResource(ImageResourceData):
         return img_list
 
     @property
-    def as_array(self):
-        if self._as_array is None:
-            self._as_array = self.ndtiff_ds.as_array(['position', 'channel', 'time', 'z'])
-        return self._as_array
+    def dask_array(self):
+        if self._dask_array is None:
+            self._dask_array = self.ndtiff_ds.as_array(['position', 'time', 'channel', 'z'])[self.pos_in_array]
+        return self._dask_array
 
     @property
     def pos_in_array(self):
@@ -191,7 +191,8 @@ class NDTiffImageResource(ImageResourceData):
             sliceY = slice(None, None)
 
         if isinstance(C, int):
-            data = self.as_array[self.pos_in_array][C][T][Z][sliceY, sliceX].compute()
+            # data = self.dask_array[T][C][Z][sliceY, sliceX].compute()
+            data = self.dask_array[T, C, Z, sliceY, sliceX].compute()
             if drift and self.drift is not None:
                 data = cv2.warpAffine(np.array(data),
                                       np.float32(
@@ -203,18 +204,3 @@ class NDTiffImageResource(ImageResourceData):
             img = Image.compose_channels(self.channel_list(channel=C, z=Z, time=T, sliceX=sliceX, sliceY=sliceY, drift=drift),
                                          alpha=alpha)
         return img
-
-    # def data_sample(self, X: slice = None, Y: slice = None) -> np.ndarray:
-    #     """
-    #     Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for
-    #     regions of interest from a field of view.
-    #
-    #     :param X: the X slice
-    #     :type X: slice
-    #     :param Y: the Y slice
-    #     :type Y: slice
-    #     :return: the sample data (in-memory)
-    #     :rtype: ndarray
-    #     """
-    #     return (AICSImage(self.path, indexer=lambda x: aics_indexer(x, self.pattern)).reader
-    #             .get_image_dask_data('TCZYX', X=X, Y=Y).compute())
