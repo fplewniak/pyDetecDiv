@@ -187,6 +187,12 @@ class Parameter:
     def __rtruediv__(self, other: Any) -> Any:
         return self.__truediv__(other)
 
+    def __bool__(self) -> bool:
+        return bool(self.value)
+
+    def __repr__(self) -> str:
+        return str(self.value)
+
 
 class ItemParameter(Parameter):
     """
