@@ -49,25 +49,27 @@ class ROI_HDF5creator(Tool):
             for idx in roi_new_idx:
                 roi_ids[idx - 1] = roi_id_values[idx - 1]
 
-            # start = time.perf_counter()
-            # for fov in project.get_objects('FOV'):
-            #     start_fov = time.perf_counter()
-            #     print(fov)
-            #     image_resource_data = fov.image_resource().image_resource_data()
-            #     # print(image_resource_data.dask_array.chunksize)
-            #     # print(image_resource_data.dask_array.chunks)
-            #     for roi in fov.roi_list:
-            #         start_partiel = time.perf_counter()
-            #         (x1, y1), (x2, y2) = (roi.top_left, roi.bottom_right)
-            #         t = 0
-            #         seq = image_resource_data.sequence(seqlen, T=0, crop=(slice(x1, x2+1), slice(y1, y2+1)), drift=True)
-            #
-            #         for t in range(1, image_resource_data.sizeT - seqlen, 1):
-            #             # seq = image_resource_data.sequence(seqlen, T=t, crop=(slice(x1, x2+1), slice(y1, y2+1)), drift=True)
-            #             img = image_resource_data.auto_channels(T=t, crop=(slice(x1, x2+1), slice(y1, y2+1)), drift=True)
-            #             seq = torch.cat([seq[1:], img.as_tensor().unsqueeze(dim=0)], dim=0)
-            #         print(f'{roi.name}: {time.perf_counter() - start_partiel} s')
-            #     print(f'{fov.name}: {time.perf_counter() - start_fov}')
+            start = time.perf_counter()
+            for fov in project.get_objects('FOV'):
+                start_fov = time.perf_counter()
+                print(fov)
+                image_resource_data = fov.image_resource().image_resource_data()
+                # print(image_resource_data.dask_array.chunksize)
+                # print(image_resource_data.dask_array.chunks)
+                for roi in fov.roi_list:
+                    start_partiel = time.perf_counter()
+                    (x1, y1), (x2, y2) = (roi.top_left, roi.bottom_right)
+                    t = 0
+                    seq = image_resource_data.sequence(seqlen, T=0, crop=(slice(x1, x2+1), slice(y1, y2+1)), drift=True)
+                    roi_seq[t, roi_mapping[roi.id_]] = seq
+
+                    for t in range(1, image_resource_data.sizeT - seqlen, 1):
+                        # seq = image_resource_data.sequence(seqlen, T=t, crop=(slice(x1, x2+1), slice(y1, y2+1)), drift=True)
+                        img = image_resource_data.auto_channels(T=t, crop=(slice(x1, x2+1), slice(y1, y2+1)), drift=True)
+                        seq = torch.cat([seq[1:], img.as_tensor().unsqueeze(dim=0)], dim=0)
+                        roi_seq[t, roi_mapping[roi.id_]] = seq
+                    print(f'{roi.name}: {time.perf_counter() - start_partiel} s')
+                print(f'{fov.name}: {time.perf_counter() - start_fov}')
 
             h5file.close()
             # print(f'Full job in {time.perf_counter() - start_fov} s')
