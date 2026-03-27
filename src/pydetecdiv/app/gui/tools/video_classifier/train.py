@@ -69,6 +69,6 @@ class TrainModelAction(ToolAction):
         """
         Run training procedure
         """
-        # print(self.parent().title())
-        # print(self.parent().tool.name, self.parent().tool.version, self.parent().tool.id_, )
+        # TODO check there are annotated ROIs in the database. This will be conveniently done using a new Annotations table with
+        # TODO the count_objects() method
         TrainModelDialog(self.parent().tool)
