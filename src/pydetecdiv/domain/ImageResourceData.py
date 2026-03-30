@@ -273,7 +273,7 @@ class ImageResourceData(abc.ABC):
         """
 
     def auto_channels(self, C: int = 0, T: int = 0, Z: int | list[int] | tuple[int] = 0,
-                      crop: tuple[slice, slice] = None, drift: bool = False, alpha: bool = False) -> Image:
+                      crop: tuple[slice, slice] = None, drift: bool = False, alpha: bool = False, resize: tuple[int, int] = None) -> Image:
         """
         Returns a RGB, RGBA or grayscale image depending upon the C or Z values. If C (or Z) is a tuple, it is used as
         RGB values. If alpha is set to True, then the maximum value of every pixel across all channels defines its
@@ -294,22 +294,22 @@ class ImageResourceData(abc.ABC):
         if isinstance(C, int):
             if isinstance(Z, (tuple, list)):
                 img = Image.compose_channels(
-                        [Image(self.image(C=C, T=T, Z=c, sliceX=crop[0], sliceY=crop[1], drift=drift)) for c
+                        [Image(self.image(C=C, T=T, Z=c, sliceX=crop[0], sliceY=crop[1], drift=drift)).resize(shape=resize) for c
                          in Z], alpha=alpha)
             else:
-                img = Image(self.image(C=C, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift))
+                img = Image(self.image(C=C, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift)).resize(shape=resize)
         elif isinstance(C, (tuple, list)):
             img = Image.compose_channels(
-                    [Image(self.image(C=c, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift)) for c in
+                    [Image(self.image(C=c, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift)).resize(shape=resize) for c in
                      C], alpha=alpha)
         return img
 
     def sequence(self, seqlen: int,
-                 C: int = 0, T: int = 0, Z: int | list[int] | tuple[int] = 0,
+                 C: int = 0, T: int = 0, Z: int | list[int] | tuple[int] = 0, resize: tuple[int, int] = None,
                  crop: tuple[slice, slice] = None, drift: bool = False, alpha: bool = False) -> torch.Tensor:
         sequence = None
         for frame in range(T, T + seqlen):
-            img = self.auto_channels(C=C, T=T, Z=Z, crop=crop, drift=drift, alpha=alpha)
+            img = self.auto_channels(C=C, T=T, Z=Z, crop=crop, drift=drift, alpha=alpha, resize=resize)
             if sequence is None:
                 sequence = img.as_tensor().unsqueeze(dim=0)
             else:

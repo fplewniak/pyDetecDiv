@@ -91,7 +91,7 @@ class NDTiffImageResource(ImageResourceData):
             self._ndtiff_ds = NDTiffDataset(self.path[0])
         return self._ndtiff_ds
 
-    def channel_list(self, channel=None, z=None, time=None, sliceX=None, sliceY=None, drift=False, alpha=False):
+    def channel_list(self, channel=None, z=None, time=None, sliceX=None, sliceY=None, drift=False, alpha=False, resize: tuple[int, int] = None):
         if not isinstance(channel, (tuple, list)):
             channel = [channel]
         img_list = []
@@ -110,7 +110,7 @@ class NDTiffImageResource(ImageResourceData):
                                               [[1, 0, -self.drift.iloc[time].dx],
                                                [0, 1, -self.drift.iloc[time].dy]]),
                                       (data.shape[1], data.shape[0]))
-            img_list.append(Image(data))
+            img_list.append(Image(data).resize(shape=resize))
         return img_list
 
     @property
@@ -166,7 +166,7 @@ class NDTiffImageResource(ImageResourceData):
         return self._image(C, Z, T)[sliceY, sliceX]
 
     def auto_channels(self, C: int = 0, T: int = 0, Z: int | list[int] | tuple[int] = 0,
-                      crop: tuple[slice, slice] = None, drift: bool = False, alpha: bool = False) -> Image:
+                      crop: tuple[slice, slice] = None, drift: bool = False, alpha: bool = False, resize: tuple[int, int] = None) -> Image:
         """
         Returns a RGB, RGBA or grayscale image depending upon the C or Z values. If C (or Z) is a tuple, it is used as
         RGB values. If alpha is set to True, then the maximum value of every pixel across all channels defines its
@@ -199,7 +199,7 @@ class NDTiffImageResource(ImageResourceData):
                                               [[1, 0, -self.drift.iloc[T].dx],
                                                [0, 1, -self.drift.iloc[T].dy]]),
                                       (data.shape[1], data.shape[0]))
-            img = Image(data)
+            img = Image(data).resize(shape=resize)
         elif isinstance(C, (tuple, list)):
             img = Image.compose_channels(self.channel_list(channel=C, z=Z, time=T, sliceX=sliceX, sliceY=sliceY, drift=drift),
                                          alpha=alpha)

@@ -166,6 +166,7 @@ class Image:
 
     def warp_affine(self, affine_matrix: np.ndarray, in_place: bool = True) -> Image:
         tensor = torch.from_numpy(cv2.warpAffine(self.as_array(), np.float32(affine_matrix), (self.shape[1], self.shape[0])))
+        # tensor = v2.functional.affine(self.as_tensor(dtype=ImgDType.float32), translate=(affine_matrix[0,2], affine_matrix[1,2],))
         if in_place is False:
             return Image(tensor)
         self.torch = tensor
@@ -200,6 +201,8 @@ class Image:
         """
         # tensor = tf.expand_dims(self.tensor, axis=-1) if len(self.shape) == 2 else self.tensor
         # return Image(tf.squeeze(tf.image.resize(tensor, shape, method=method)))
+        if shape is None or shape == self.shape[-2:]:
+            return self
         return Image(v2.Resize(size=shape, interpolation=method)(self.torch))
 
     def show(self, ax: matplotlib.axes.Axes, grayscale: bool = False, **kwargs):

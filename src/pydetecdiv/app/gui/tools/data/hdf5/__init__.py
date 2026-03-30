@@ -22,8 +22,15 @@ class Create_ROI_HDF5Dialog(ToolDialog):
                                             )
         self.other_parameters = self.addGroupBox(title='',
                                                  parameters=[
-                                                     self.tool.parameters.annotations,
                                                      self.tool.parameters.seqlen,
+                                                     self.tool.parameters.annotations,
+                                                     ],
+                                                 )
+        self.channels = self.addGroupBox(title='Channels',
+                                                 parameters=[
+                                                     self.tool.parameters.red_channel,
+                                                     self.tool.parameters.green_channel,
+                                                     self.tool.parameters.blue_channel,
                                                      ],
                                                  )
 
@@ -32,12 +39,15 @@ class Create_ROI_HDF5Dialog(ToolDialog):
         self.arrangeWidgets([
             self.destination,
             self.other_parameters,
+            self.channels,
             self.button_box,
             ])
 
         set_connections({self.button_box.accepted: self.tool.create_file,
                          self.button_box.rejected: lambda: print('Rejected'),
                          })
+
+        self.tool.update_channels()
 
         self.fit_to_contents()
         self.exec()
