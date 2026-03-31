@@ -51,14 +51,21 @@ class ROI_HDF5creator(Tool):
 
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             num_rois = project.count_objects('ROI')
-            num_frames = np.max([fov.image_resource().sizeT for fov in project.get_objects('FOV')])
+            num_frames = int(np.max([fov.image_resource().sizeT for fov in project.get_objects('FOV')]))
+            num_sequences = num_frames - seqlen
             height = np.int64(np.max([roi.height for roi in project.get_objects('ROI')]))
             width = np.int64(np.max([roi.width for roi in project.get_objects('ROI')]))
             roi_seq = h5file.create_carray(h5file.root, 'roi_seq', atom=tbl.Float16Atom(shape=(seqlen, np.int64(3), height, width)),
                                            chunkshape=(num_frames, 1,), shape=(num_frames, num_rois))
-            roi_ids = h5file.create_carray(h5file.root,  'roi_ids', atom=tbl.UInt16Atom(shape=(1,)),
+            roi_ids = h5file.create_carray(h5file.root,  'roi_ids', atom=tbl.UInt16Atom(shape=(np.int64(1),)),
                                            chunkshape=(num_rois,), shape=(num_rois,))
-            roi_id_values = np.array(sorted([roi.id_ for roi in project.get_objects('ROI')]))
+            if self.parameters.annotations:
+                targets = h5file.create_carray(h5file.root, 'targets', atom=tbl.Float16Atom(shape=(np.int64(1),)),
+                                           chunkshape=(num_sequences, 1,), shape=(num_sequences, num_rois))
+                roi_id_values = np.array(sorted([roi.id_ for roi in project.get_annotated_rois()]))
+            else:
+                roi_id_values = np.array(sorted([roi.id_ for roi in project.get_objects('ROI')]))
+
             roi_new_idx, roi_mapping = fastremap.renumber(roi_id_values, in_place=False, preserve_zero=False)
             for idx in roi_new_idx:
                 roi_ids[idx - 1] = roi_id_values[idx - 1]

@@ -8,6 +8,7 @@ from subprocess import Popen
 from typing import Any
 
 import numpy as np
+import polars
 import tifffile
 from PySide6.QtCore import (QRegularExpression, Signal, QDir, QThread)
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
@@ -601,3 +602,33 @@ class ImportNDTiffData(QAction):
         self.triggered.connect(ImportNDTiffDataDialog)
         self.setEnabled(False)
         parent.addAction(self)
+
+
+class ImportROIannotations(QAction):
+
+    def __init__(self, parent: QWidget):
+        super().__init__("Import annotated ROIs", parent)
+        self.triggered.connect(self.import_annotated_rois)
+        self.setEnabled(False)
+        parent.addAction(self)
+
+    def import_annotated_rois(self):
+        filters = ["csv (*.csv)", "tsv (*.tsv)", ]
+        annotation_file, _ = QFileDialog.getOpenFileName(PyDetecDiv.main_window,
+                                                             caption='Choose file with annotated ROIs',
+                                                             dir='.',
+                                                             filter=";;".join(filters),
+                                                             selectedFilter=filters[0])
+        if annotation_file:
+            print('Import annotated ROIs from file')
+            with pydetecdiv_project(PyDetecDiv.project_name) as project:
+                fov_names = [fov.name for fov in project.get_objects('FOV')]
+                roi_names = [roi.name for roi in project.get_objects('ROI')]
+                annotated_rois = polars.read_csv(annotation_file).filter(polars.col('fov').is_in(fov_names))
+                classification = project.get_object('Classification', 1)
+                class_names = annotated_rois.select('class_name').unique('class_name').to_numpy().flatten()
+                print(class_names, classification.classes)
+                print(set(class_names).issubset(set(classification.classes)))
+                # for row in annotated_rois.iter_rows(named=True):
+                #     print(row['roi'], row['frame'], row['fov'], row['class_name'], row['ann'], row['x'], row['y'], row['width'], row['height'])
+            print(annotated_rois)

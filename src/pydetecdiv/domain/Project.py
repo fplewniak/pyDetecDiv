@@ -16,9 +16,11 @@ import polars
 from ndtiff import NDTiffDataset
 
 from pydetecdiv.domain.BoundingBox import BoundingBox
+from pydetecdiv.domain.Classification import Classification
 from pydetecdiv.domain.Entity import Entity
 from pydetecdiv.domain.Mask import Mask
 from pydetecdiv.domain.Point import Point
+from pydetecdiv.domain.RoiAnnotations import RoiAnnotations
 from pydetecdiv.settings import get_config_value, Device
 from pydetecdiv.persistence.project import open_project
 from pydetecdiv.domain.dso import DomainSpecificObject
@@ -54,6 +56,8 @@ class Project:
         'BoundingBox'  : BoundingBox,
         'Point'        : Point,
         'Mask'         : Mask,
+        'Classification' : Classification,
+        'RoiAnnotations' : RoiAnnotations,
         }
 
     def __init__(self, dbname: str = None, dbms: str = None):

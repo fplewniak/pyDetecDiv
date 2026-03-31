@@ -13,6 +13,7 @@ from pydetecdiv.app import MessageDialog
 from pydetecdiv.app.gui.SourcePath import TableEditor, PathCreator
 from pydetecdiv.persistence.project import delete_project
 from pydetecdiv.exceptions import OpenProjectError, UnknownRepositoryTypeError
+from pydetecdiv.persistence.sqlalchemy.orm.main import Base
 from pydetecdiv.settings import Device
 
 
@@ -325,3 +326,19 @@ class ConfigureProjectSourceDir(QAction):
                               f'<p>This may prevent to share project <b>{project.dbname}</b> across multiple devices')
             else:
                 MessageDialog('<center><p>Project data source configuration completed</p></center>')
+
+
+class UpgradeRepository(QAction):
+    def __init__(self, parent: QWidget):
+        super().__init__("Upgrade repository", parent)
+        self.setEnabled(False)
+        self.triggered.connect(self.upgrade_repository)
+        parent.addAction(self)
+
+    @staticmethod
+    def upgrade_repository() -> None:
+        """
+        Upgrade the repository, to keep compatibility after new objects have been added (new tables in database for instance)
+        """
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            Base.metadata.create_all(project.repository.engine)
