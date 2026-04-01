@@ -355,6 +355,8 @@ class ShallowSQLite3(ShallowDb):
             #     linked_rec = [self.get_record(cls_name, self.get_record(parent_cls_name, parent_id)['roi'])]
             case ['ROI', ('FOV' | 'Data')]:
                 linked_rec = dao[parent_cls_name](self.session).roi_list(parent_id)
+            case ['Run', ('Classification')]:
+                linked_rec = dao[parent_cls_name](self.session).runs(parent_id)
             case ['Entity', ('ROI')]:
                 linked_rec = dao[parent_cls_name](self.session).entities(parent_id)
             case ['BoundingBox', 'Entity']:

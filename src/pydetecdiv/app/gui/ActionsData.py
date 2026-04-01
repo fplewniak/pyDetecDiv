@@ -19,6 +19,9 @@ from pydetecdiv.app import PyDetecDiv, WaitDialog, pydetecdiv_project, MessageDi
 from pydetecdiv.domain.FOV import FOV
 from pydetecdiv.domain.Project import Project
 from pydetecdiv.app.parameters import ChoiceParameter
+from pydetecdiv.domain.ROI import ROI
+from pydetecdiv.domain.RoiAnnotations import RoiAnnotations
+from pydetecdiv.domain.Run import Run
 
 from pydetecdiv.settings import get_config_value
 from pydetecdiv import delete_files
@@ -462,6 +465,7 @@ class ConvertToNDTiffDialog(FileListChooserDialog):
     """
     A dialog window providing GUI for converting multiple images to ND-Tiff
     """
+
     def __init__(self):
         super().__init__(title='Convert to NDTiff using metadata files', filters=["TXT (*.txt)", ], extensions=['*.txt'],
                          destination=True)
@@ -518,6 +522,7 @@ class ConvertToNDTiff(QAction):
     """
     Action for conversion of multiple image files to ND-Tiff
     """
+
     def __init__(self, parent: QWidget):
         super().__init__("Convert to NDTiff", parent)
         self.triggered.connect(ConvertToNDTiffDialog)
@@ -529,6 +534,7 @@ class ImportNDTiffDataDialog(gui.Dialog):
     """
     A Dialog window providing GUI for importing NDTiff data
     """
+
     def __init__(self, **kwargs: dict[str, Any]):
         super().__init__(title='Import NDTiff data', **kwargs)
 
@@ -550,8 +556,8 @@ class ImportNDTiffDataDialog(gui.Dialog):
             self.button_box,
             ])
 
-        gui.set_connections({self.button_box.accepted       : self.accept,
-                             self.button_box.rejected       : self.close,
+        gui.set_connections({self.button_box.accepted   : self.accept,
+                             self.button_box.rejected   : self.close,
                              self.ndtiff_dir.textChanged: self.check_is_ndtiff,
                              })
 
@@ -615,20 +621,34 @@ class ImportROIannotations(QAction):
     def import_annotated_rois(self):
         filters = ["csv (*.csv)", "tsv (*.tsv)", ]
         annotation_file, _ = QFileDialog.getOpenFileName(PyDetecDiv.main_window,
-                                                             caption='Choose file with annotated ROIs',
-                                                             dir='.',
-                                                             filter=";;".join(filters),
-                                                             selectedFilter=filters[0])
+                                                         caption='Choose file with annotated ROIs',
+                                                         dir='.',
+                                                         filter=";;".join(filters),
+                                                         selectedFilter=filters[0])
         if annotation_file:
             print('Import annotated ROIs from file')
             with pydetecdiv_project(PyDetecDiv.project_name) as project:
-                fov_names = [fov.name for fov in project.get_objects('FOV')]
+                fov_list = {fov.name: fov.id_ for fov in project.get_objects('FOV')}
                 roi_names = [roi.name for roi in project.get_objects('ROI')]
-                annotated_rois = polars.read_csv(annotation_file).filter(polars.col('fov').is_in(fov_names))
+                annotated_rois = polars.read_csv(annotation_file).filter(polars.col('fov').is_in(fov_list))
                 classification = project.get_object('Classification', 1)
                 class_names = annotated_rois.select('class_name').unique('class_name').to_numpy().flatten()
                 print(class_names, classification.classes)
-                print(set(class_names).issubset(set(classification.classes)))
-                # for row in annotated_rois.iter_rows(named=True):
-                #     print(row['roi'], row['frame'], row['fov'], row['class_name'], row['ann'], row['x'], row['y'], row['width'], row['height'])
+                if not set(class_names).issubset(set(classification.classes)):
+                    print('Invalid class names: not compatible with the current classification scheme.')
+                    return
+                run = Run(project=project, tool_name='ROI annotations', tool_version='1.0.0',
+                          command='import_annotated_rois')
+                for row in annotated_rois.iter_rows(named=True):
+                    if row['roi'] not in roi_names:
+                        new_roi = ROI(project=project, name=row['roi'], fov=fov_list[row['fov']],
+                                      top_left=(row['x'], row['y']),
+                                      bottom_right=(row['x'] + row['width'], row['y'] + row['height']))
+                        roi_names.append(new_roi.name)
+                        # class_index = class_names.where(class_names==row['class_name'])[0] + 1
+                    class_index = next(i for i, class_name in enumerate(classification.classes) if class_name == row['class_name']) + 1
+                    new_annotation = RoiAnnotations(project=project, roi=new_roi.id_, t=row['frame'],
+                                        classification=classification, annotation=class_index,
+                                        run=run, key_val={'class_name': row['class_name']})
+                project.commit()
             print(annotated_rois)

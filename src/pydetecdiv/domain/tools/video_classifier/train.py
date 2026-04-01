@@ -23,6 +23,11 @@ class VideoClassifierTrainer(ModelTrainer):
         Train the video classifier model, running the training loop once per epoch for as many epochs as requested by the user
         """
         print("Training video classifier model...")
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+
+            # classification = project.get_object('Classification', 1)
+            # for run in classification.runs():
+            #     print(f'Run: {run.id_} - {run.tool_name}/{run.command}')
 
 
     def training_loop(self):

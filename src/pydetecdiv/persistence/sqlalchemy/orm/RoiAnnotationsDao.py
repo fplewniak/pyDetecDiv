@@ -1,7 +1,6 @@
 from typing import Any
 
 from sqlalchemy import Column, Integer, String, JSON, ForeignKey
-from sqlalchemy.orm import relationship, joinedload
 
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 

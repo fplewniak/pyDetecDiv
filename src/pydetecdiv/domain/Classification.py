@@ -20,6 +20,9 @@ class Classification(NamedDSO):
         """
         self.project.delete(self)
 
+    def runs(self):
+        return self.project.get_linked_objects('Run', self)
+
     def record(self, no_id: bool = False) -> dict[str, Any]:
         """
         Returns a record dictionary of the current Classifier

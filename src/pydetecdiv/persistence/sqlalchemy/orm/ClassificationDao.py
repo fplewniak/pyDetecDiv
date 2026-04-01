@@ -1,5 +1,6 @@
 from typing import Any
 
+import sqlalchemy
 from sqlalchemy import Column, Integer, String, JSON
 from sqlalchemy.orm import relationship, joinedload
 
@@ -23,7 +24,7 @@ class ClassificationDao(DAO, Base):
     key_val = Column(JSON)
 
     roi_annotations_ = relationship('RoiAnnotationsDao', viewonly=True)
-    runs_ = relationship('RunDao', secondary=RoiAnnotationsDao.__table__, viewonly=True)
+    # runs_ = relationship('RunDao', secondary=RoiAnnotationsDao.__table__, viewonly=True)
 
     @property
     def record(self) -> dict[str, Any]:
@@ -40,36 +41,37 @@ class ClassificationDao(DAO, Base):
                 'key_val': self.key_val,
                 }
 
-    def roi_annotations(self, classifier_id: int) -> list[dict[str, object]]:
+    def roi_annotations(self, classification_id: int) -> list[dict[str, object]]:
         """
-        A method returning the list of ROI Annotations records whose parent Classifier has id_ == classifier_id
+        A method returning the list of ROI Annotations records whose parent Classification has id_ == classification_id
 
-        :param classifier_id: the id of the Classifier
-        :return: a list of ROI Annotations records with parent Classifier id_ == classifier_id
+        :param classification_id: the id of the Classification
+        :return: a list of ROI Annotations records with parent Classification id_ == classification_id
         """
-        if self.session.query(ClassificationDao).filter(ClassificationDao.id_ == classifier_id).first() is not None:
+        if self.session.query(ClassificationDao).filter(ClassificationDao.id_ == classification_id).first() is not None:
             annotations = [annotation.record
                            for annotation in self.session.query(ClassificationDao)
                            .options(joinedload(ClassificationDao.roi_annotations_))
-                           .filter(ClassificationDao.id_ == classifier_id)
+                           .filter(ClassificationDao.id_ == classification_id)
                            .first().roi_annotations_]
         else:
             annotations = []
         return annotations
 
-    def runs(self, classifier_id: int) -> list[dict[str, object]]:
+    def runs(self, classification_id: int) -> list[dict[str, object]]:
         """
-        A method returning the list of Run records whose parent Classifier has id_ == classifier_id
+        A method returning the list of Run records whose parent Classification has id_ == classification_id
 
-        :param classifier_id: the id of the Classifier
-        :return: a list of Run records with parent Classifier id_ == classifier_id
+        :param classification_id: the id of the Classification
+        :return: a list of Run records with parent Classification id_ == classification_id
         """
-        if self.session.query(ClassificationDao).filter(ClassificationDao.id_ == classifier_id).first() is not None:
-            runs = [run.record
-                    for run in self.session.query(RunDao)
-                    .options(joinedload(ClassificationDao.runs_))
-                    .filter(ClassificationDao.id_ == classifier_id)
-                    .first().runs_]
+        if self.session.query(ClassificationDao).filter(ClassificationDao.id_ == classification_id).first() is not None:
+            stmt = (sqlalchemy.select(RunDao).join_from(RoiAnnotationsDao, ClassificationDao)
+                    .where(ClassificationDao.id_ == classification_id)
+                    .where(RoiAnnotationsDao.classification == ClassificationDao.id_)
+                    .where(RoiAnnotationsDao.run == RunDao.id_))
+
+            runs = [run.record for run in self.session.execute(stmt).unique().scalars()]
         else:
             runs = []
         return runs
