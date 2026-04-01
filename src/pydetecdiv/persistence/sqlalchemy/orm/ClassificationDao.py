@@ -68,8 +68,8 @@ class ClassificationDao(DAO, Base):
         if self.session.query(ClassificationDao).filter(ClassificationDao.id_ == classification_id).first() is not None:
             stmt = (sqlalchemy.select(RunDao).join_from(RoiAnnotationsDao, ClassificationDao)
                     .where(ClassificationDao.id_ == classification_id)
-                    .where(RoiAnnotationsDao.classification == ClassificationDao.id_)
-                    .where(RoiAnnotationsDao.run == RunDao.id_))
+                    .where(ClassificationDao.id_ == RoiAnnotationsDao.classification)
+                    .where(RunDao.id_ == RoiAnnotationsDao.run))
 
             runs = [run.record for run in self.session.execute(stmt).unique().scalars()]
         else:

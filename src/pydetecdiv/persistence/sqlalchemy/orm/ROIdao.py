@@ -5,9 +5,12 @@ Access to ROI data
 """
 from typing import Any
 
+import sqlalchemy
 from sqlalchemy import Column, Integer, String, ForeignKey, text
 from sqlalchemy.types import JSON
 from sqlalchemy.orm import joinedload, relationship
+
+from pydetecdiv.persistence.sqlalchemy.orm.RoiAnnotationsDao import RoiAnnotationsDao
 from pydetecdiv.persistence.sqlalchemy.orm.associations import ROIdata
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 from pydetecdiv.persistence.sqlalchemy.orm import dao
@@ -83,6 +86,22 @@ class ROIdao(DAO, Base):
         else:
             entities = []
         return entities
+
+    def annotations(self, roi_id: int) -> list[dict[str, object]]:
+        """
+        A method returning the list of Entity records whose parent ROI has id_ == roi_id
+
+        :param roi_id: the id of the ROI
+        :return: a list of Entity records with parent ROI id_ == roi_id
+        """
+        if self.session.query(ROIdao).filter(ROIdao.id_ == roi_id).first() is not None:
+            stmt = (sqlalchemy.select(RoiAnnotationsDao).join(ROIdao)
+                    .where(roi_id == RoiAnnotationsDao.roi).where(ROIdao.id_ == roi_id))
+
+            annotations = [annotation.record for annotation in self.session.execute(stmt).unique().scalars()]
+        else:
+            annotations = []
+        return annotations
 
     # def image_data(self, roi_id):
     #     """

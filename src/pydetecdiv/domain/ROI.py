@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pydetecdiv.domain.Entity import Entity
+    from pydetecdiv.domain.RoiAnnotations import RoiAnnotations
 
 from typing import Any
 
@@ -47,6 +48,10 @@ class ROI(NamedDSO, BoxedDSO):
     @property
     def entities(self) -> list['Entity']:
         return self.project.get_linked_objects('Entity', to=self)
+
+    @property
+    def annotations(self) -> list['RoiAnnotations']:
+        return self.project.get_linked_objects('RoiAnnotations', to=self)
 
     @property
     def fov(self) -> FOV:

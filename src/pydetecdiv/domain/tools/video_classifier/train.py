@@ -1,8 +1,9 @@
 """
 Video classifier trainer class
 """
-import time
 from typing import TYPE_CHECKING
+
+import polars
 
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
 from pydetecdiv.app.tools.deep_learning import ModelTrainer
@@ -24,7 +25,11 @@ class VideoClassifierTrainer(ModelTrainer):
         """
         print("Training video classifier model...")
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-
+            roi = project.get_object('ROI', 1)
+            annotations = [dict(annotation.record()) for annotation in roi.annotations]
+            print(annotations[0])
+            print(annotations[0].keys())
+            print(polars.from_records(annotations, schema=list(annotations[0].keys())))
             # classification = project.get_object('Classification', 1)
             # for run in classification.runs():
             #     print(f'Run: {run.id_} - {run.tool_name}/{run.command}')
