@@ -49,8 +49,9 @@ class ROI(NamedDSO, BoxedDSO):
     def entities(self) -> list['Entity']:
         return self.project.get_linked_objects('Entity', to=self)
 
-    @property
-    def annotations(self) -> list['RoiAnnotations']:
+    def annotations(self, as_records=False) -> list['RoiAnnotations']:
+        if as_records:
+            return self.project.get_linked_records('RoiAnnotations', to=self)
         return self.project.get_linked_objects('RoiAnnotations', to=self)
 
     @property
