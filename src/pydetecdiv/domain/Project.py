@@ -413,6 +413,9 @@ class Project:
         """
         return pd.DataFrame.from_records(self.get_records(class_name, id_list))
 
+    def get_polars(self, class_name: str, id_list: list[int] = None) -> polars.DataFrame:
+        return polars.from_records(self.get_records(class_name, id_list))
+
     def count_objects(self, class_name: str) -> int:
         """
         Count all objects of a given class in the current project
@@ -426,6 +429,15 @@ class Project:
         # if class_name == 'ROI':
         #     return len(self._get_rois(None))
         # return len(self.repository.get_records(class_name, None))
+
+    def get_annotated_rois(self, ids_only=False, id_list: list[int] = None) -> list[ROI] | list[int]:
+        annotations_df = self.get_polars('RoiAnnotations')
+        roi_ids = annotations_df.select('roi').unique().to_series().to_list()
+        if id_list is not None:
+            roi_ids = list(set(roi_ids).intersection(set(id_list)))
+        if ids_only:
+            return sorted(roi_ids)
+        return self.get_objects('ROI', roi_ids)
 
     def _get_rois(self, id_list: list[int] = None) -> list[ROI]:
         """
@@ -488,6 +500,9 @@ class Project:
         object_list = [self.build_dso(class_name, rec) for rec in
                        self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_)]
         return object_list
+
+    def get_linked_records(self, class_name: str, to: DSO = None) -> list[dict[str, Any]]:
+        return self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_)
 
     def link_objects(self, dso1: DSO, dso2: otherDSO) -> None:
         """

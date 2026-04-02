@@ -25,11 +25,12 @@ class VideoClassifierTrainer(ModelTrainer):
         """
         print("Training video classifier model...")
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            roi = project.get_object('ROI', 1)
-            annotations = [dict(annotation.record()) for annotation in roi.annotations]
-            print(annotations[0])
-            print(annotations[0].keys())
-            print(polars.from_records(annotations, schema=list(annotations[0].keys())))
+            annotations_df = project.get_polars('RoiAnnotations')
+            roi_list = project.get_annotated_rois(ids_only=True, id_list=[2, 4, 6, 8])
+            print(roi_list)
+            # all_annotations = project.get_objects('RoiAnnotations')
+            # annotations = [ann for roi in project.get_annotated_rois() for ann in roi.annotations(as_records=True)]
+            # print(polars.from_records(annotations, schema=list(annotations[0].keys())))
             # classification = project.get_object('Classification', 1)
             # for run in classification.runs():
             #     print(f'Run: {run.id_} - {run.tool_name}/{run.command}')
