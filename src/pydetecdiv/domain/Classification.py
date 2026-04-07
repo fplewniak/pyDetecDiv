@@ -5,7 +5,7 @@ from pydetecdiv.domain.dso import NamedDSO
 
 class Classification(NamedDSO):
     """
-    A business-logic class defining valid operations and attributes of Classifiers
+    A business-logic class defining valid operations and attributes of Classification schemas
     """
 
     def __init__(self, classes:list['str'] = None, key_val: dict[str, Any] = None,**kwargs):
@@ -25,7 +25,7 @@ class Classification(NamedDSO):
 
     def record(self, no_id: bool = False) -> dict[str, Any]:
         """
-        Returns a record dictionary of the current Classifier
+        Returns a record dictionary of the current Classification schemas
 
         :param no_id: if True, the id_ is not passed included in the record to allow transfer from one project to another
         :type no_id: bool
