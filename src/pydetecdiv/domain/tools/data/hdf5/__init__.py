@@ -8,6 +8,7 @@ import tables as tbl
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
 from pydetecdiv.app.parameters import Parameters, PathParameter, CheckParameter, IntParameter, ChoiceParameter
 from pydetecdiv.app.tools import Tool
+from pydetecdiv.utils import hdf5
 
 
 class ROI_HDF5creator(Tool):
@@ -19,9 +20,10 @@ class ROI_HDF5creator(Tool):
         super().__init__(parameters, working_dir)
         self.parameters = Parameters(
                 [
-                    PathParameter(name='hdf5_file', label='', select_dir=False, filters=["HDF5 (*.h5 *.hdf5)",],
-                                  default='roi_data.h5',),
+                    PathParameter(name='hdf5_file', label='', select_dir=False, filters=["HDF5 (*.h5 *.hdf5)", ],
+                                  default='roi_data.h5', ),
                     CheckParameter(name='annotations', label='Annotated ROIs', default=True),
+                    ChoiceParameter(name='classification', label='Classes', updater=self.update_classification),
                     IntParameter(name='seqlen', label='Sequence length', default=15),
                     ChoiceParameter(name='red_channel', label='Red', default='0', updater=self.update_channels),
                     ChoiceParameter(name='green_channel', label='Green', default='0', updater=self.update_channels),
@@ -40,6 +42,10 @@ class ROI_HDF5creator(Tool):
         for param in ['red_channel', 'green_channel', 'blue_channel']:
             self.parameters[param].set_items({str(i): i for i in range(n_layers)})
 
+    def update_classification(self) -> None:
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            self.parameters.classification.set_items({f'{c.name} {c.classes}': c for c in project.get_objects('Classification')})
+
     def create_file(self):
         if self.parameters.annotations:
             print(f'Create ROI HDF5 file with annotations: {self.parameters.hdf5_file}')
@@ -55,13 +61,16 @@ class ROI_HDF5creator(Tool):
             num_sequences = num_frames - seqlen
             height = np.int64(np.max([roi.height for roi in project.get_objects('ROI')]))
             width = np.int64(np.max([roi.width for roi in project.get_objects('ROI')]))
-            roi_seq_hdf5 = h5file.create_carray(h5file.root, 'roi_seq', atom=tbl.Float16Atom(shape=(seqlen, np.int64(3), height, width)),
-                                           chunkshape=(num_frames, 1,), shape=(num_frames, num_rois))
-            roi_ids_hdf5 = h5file.create_carray(h5file.root,  'roi_ids', atom=tbl.UInt16Atom(shape=(np.int64(1),)),
-                                           chunkshape=(num_rois,), shape=(num_rois,))
+            roi_seq_hdf5 = h5file.create_carray(h5file.root, 'roi_seq',
+                                                atom=tbl.Float16Atom(shape=(seqlen, np.int64(3), height, width)),
+                                                chunkshape=(num_frames, 1,), shape=(num_frames, num_rois))
+            roi_ids_hdf5 = h5file.create_carray(h5file.root, 'roi_ids', atom=tbl.UInt16Atom(shape=(np.int64(1),)),
+                                                chunkshape=(num_rois,), shape=(num_rois,))
             if self.parameters.annotations:
                 targets_hdf5 = h5file.create_carray(h5file.root, 'targets', atom=tbl.UInt16Atom(shape=(np.int64(1),)),
-                                           chunkshape=(num_sequences, 1,), shape=(num_sequences, num_rois))
+                                                    chunkshape=(num_sequences, 1,), shape=(num_sequences, num_rois))
+                classes_hdf5 = h5file.create_table(h5file.root, 'class_names', hdf5.TblNamesRow, 'Class names')
+                classes_hdf5.append([(name,) for name in self.parameters.classification.value.classes])
                 roi_id_values = np.array(sorted([roi.id_ for roi in project.get_annotated_rois()]))
             else:
                 roi_id_values = np.array(sorted([roi.id_ for roi in project.get_objects('ROI')]))
@@ -81,8 +90,8 @@ class ROI_HDF5creator(Tool):
                     start_partiel = time.perf_counter()
                     (x1, y1), (x2, y2) = (roi.top_left, roi.bottom_right)
                     t = 0
-                    roi_seq = image_resource_data.sequence(seqlen, T=0, Z=z_channels, crop=(slice(x1, x2+1), slice(y1, y2+1)),
-                                                       drift=True, resize=(height, width))
+                    roi_seq = image_resource_data.sequence(seqlen, T=0, Z=z_channels, crop=(slice(x1, x2 + 1), slice(y1, y2 + 1)),
+                                                           drift=True, resize=(height, width))
                     roi_seq_hdf5[t, roi_mapping[roi.id_] - 1] = roi_seq.numpy()
 
                     if self.parameters.annotations:
@@ -91,7 +100,7 @@ class ROI_HDF5creator(Tool):
 
                     for t in range(1, image_resource_data.sizeT - seqlen, 1):
                         # seq = image_resource_data.sequence(seqlen, T=t, crop=(slice(x1, x2+1), slice(y1, y2+1)), drift=True)
-                        img = image_resource_data.auto_channels(T=t, Z=z_channels, crop=(slice(x1, x2+1), slice(y1, y2+1)),
+                        img = image_resource_data.auto_channels(T=t, Z=z_channels, crop=(slice(x1, x2 + 1), slice(y1, y2 + 1)),
                                                                 drift=True, resize=(height, width))
                         roi_seq = torch.cat([roi_seq[1:], img.as_tensor().unsqueeze(dim=0)], dim=0)
                         roi_seq_hdf5[t, roi_mapping[roi.id_] - 1] = roi_seq.numpy()
@@ -105,4 +114,3 @@ class ROI_HDF5creator(Tool):
 
     def save_run(self, *args, **kwargs):
         pass
-

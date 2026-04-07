@@ -34,12 +34,17 @@ class Create_ROI_HDF5Dialog(ToolDialog):
                                                      ],
                                                  )
 
+        self.classification = self.addGroupBox(title='Classification schema',
+                                               parameters=[self.tool.parameters.classification],
+                                               )
+
         self.button_box = self.addButtonBox()
 
         self.arrangeWidgets([
             self.destination,
             self.other_parameters,
             self.channels,
+            self.classification,
             self.button_box,
             ])
 
@@ -48,6 +53,7 @@ class Create_ROI_HDF5Dialog(ToolDialog):
                          })
 
         self.tool.update_channels()
+        self.tool.update_classification()
 
         self.fit_to_contents()
         self.exec()
