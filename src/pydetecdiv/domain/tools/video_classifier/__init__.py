@@ -3,7 +3,7 @@ Video classifier tool
 """
 from torch import optim
 
-from pydetecdiv.app.parameters import Parameters, IntParameter, FloatParameter, ChoiceParameter
+from pydetecdiv.app.parameters import Parameters, IntParameter, FloatParameter, ChoiceParameter, PathParameter
 from pydetecdiv.app.tools.deep_learning import DeepTool, ModelTrainer, ModelEvaluator, Predictor
 from pydetecdiv.domain.tools.video_classifier.train import VideoClassifierTrainer
 from pydetecdiv.domain.tools.video_classifier.evaluate import VideoClassifierEvaluator
@@ -35,13 +35,15 @@ class VideoClassifier(DeepTool):
                                  default=42, ),
 
                     FloatParameter(name='num_training', label='Training dataset', groups={'training', 'finetune'}, default=0.4,
-                                   minimum=0.01, maximum=0.99, ),
+                                   minimum=0.01, maximum=0.98, ),
                     FloatParameter(name='num_validation', label='Validation dataset', groups={'training', 'finetune'},
-                                   default=0.3, minimum=0.01, maximum=0.99, ),
+                                   default=0.3, minimum=0.01, maximum=0.98, ),
                     FloatParameter(name='num_test', label='Test dataset', groups={'training', 'finetune'}, default=0.3,
-                                   minimum=0.01, maximum=0.99, enabled=False),
+                                   minimum=0.01, maximum=0.98, enabled=False),
                     IntParameter(name='data_seed', label='Random seed', groups={'training', 'finetune'}, maximum=999999999,
                                  default=42),
+                    PathParameter(name='hdf5_file', label='', select_dir=False, groups={'training', 'finetune', 'predict'},
+                                  filters=["HDF5 (*.h5 *.hdf5)",], default='roi_data.h5',),
                     ]
                 )
 

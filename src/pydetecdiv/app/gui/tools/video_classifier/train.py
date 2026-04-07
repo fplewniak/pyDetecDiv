@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui.core.widgets import ParametersFormGroupBox, set_connections
 from pydetecdiv.app.gui.tools import ToolAction, ToolDialog
 from pydetecdiv.app.parameters import FloatParameter
@@ -33,9 +34,14 @@ class TrainModelDialog(ToolDialog):
                                              }
                                          )
 
+        self.tool.parameters.hdf5_file.current_dir = PyDetecDiv.tools['cnrs.plewniak.roihdf5creator'].working_dir
+        self.hdf5_file = self.addGroupBox(title='Data File',
+                                          parameters=[tool.parameters.hdf5_file],
+                                          )
+
         self.button_box = self.addButtonBox()
 
-        self.arrangeWidgets([self.hyperparameters, self.datasets, self.button_box])
+        self.arrangeWidgets([self.hyperparameters, self.datasets, self.hdf5_file, self.button_box])
 
         set_connections({self.button_box.accepted: tool.model_trainer.train_model,
                          self.button_box.rejected: lambda: print('Rejected'),
