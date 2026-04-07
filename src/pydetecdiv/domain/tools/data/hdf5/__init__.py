@@ -60,7 +60,7 @@ class ROI_HDF5creator(Tool):
             roi_ids_hdf5 = h5file.create_carray(h5file.root,  'roi_ids', atom=tbl.UInt16Atom(shape=(np.int64(1),)),
                                            chunkshape=(num_rois,), shape=(num_rois,))
             if self.parameters.annotations:
-                targets_hdf5 = h5file.create_carray(h5file.root, 'targets', atom=tbl.Float16Atom(shape=(np.int64(1),)),
+                targets_hdf5 = h5file.create_carray(h5file.root, 'targets', atom=tbl.UInt16Atom(shape=(np.int64(1),)),
                                            chunkshape=(num_sequences, 1,), shape=(num_sequences, num_rois))
                 roi_id_values = np.array(sorted([roi.id_ for roi in project.get_annotated_rois()]))
             else:
@@ -85,12 +85,18 @@ class ROI_HDF5creator(Tool):
                                                        drift=True, resize=(height, width))
                     roi_seq_hdf5[t, roi_mapping[roi.id_] - 1] = roi_seq.numpy()
 
+                    if self.parameters.annotations:
+                        targets = roi.annotations()
+                        targets_hdf5[t, roi_mapping[roi.id_] - 1] = targets[t + int(seqlen / 2)].annotation
+
                     for t in range(1, image_resource_data.sizeT - seqlen, 1):
                         # seq = image_resource_data.sequence(seqlen, T=t, crop=(slice(x1, x2+1), slice(y1, y2+1)), drift=True)
                         img = image_resource_data.auto_channels(T=t, Z=z_channels, crop=(slice(x1, x2+1), slice(y1, y2+1)),
                                                                 drift=True, resize=(height, width))
                         roi_seq = torch.cat([roi_seq[1:], img.as_tensor().unsqueeze(dim=0)], dim=0)
                         roi_seq_hdf5[t, roi_mapping[roi.id_] - 1] = roi_seq.numpy()
+                        if self.parameters.annotations and t < (len(targets) - int(seqlen / 2)):
+                            targets_hdf5[t, roi_mapping[roi.id_] - 1] = targets[t + int(seqlen / 2)].annotation
                     print(f'{roi.name}: {time.perf_counter() - start_partiel} s')
                 print(f'{fov.name}: {time.perf_counter() - start_fov}')
 

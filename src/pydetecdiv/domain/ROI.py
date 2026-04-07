@@ -3,7 +3,8 @@
 """
  A class defining the business logic methods that can be applied to Regions Of Interest
 """
-from typing import TYPE_CHECKING
+from operator import attrgetter
+from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
     from pydetecdiv.domain.Entity import Entity
@@ -49,10 +50,12 @@ class ROI(NamedDSO, BoxedDSO):
     def entities(self) -> list['Entity']:
         return self.project.get_linked_objects('Entity', to=self)
 
-    def annotations(self, as_records=False) -> list['RoiAnnotations']:
-        if as_records:
-            return self.project.get_linked_records('RoiAnnotations', to=self)
-        return self.project.get_linked_objects('RoiAnnotations', to=self)
+    def annotations(self, mode: Literal['objects', 'records'] = 'objects') -> list['RoiAnnotations'] | list[dict[str, Any]]:
+        match mode:
+            case 'records':
+                return self.project.get_linked_records('RoiAnnotations', to=self)
+            case 'objects':
+                return sorted(self.project.get_linked_objects('RoiAnnotations', to=self), key=attrgetter('t'))
 
     @property
     def fov(self) -> FOV:

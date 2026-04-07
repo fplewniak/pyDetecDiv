@@ -8,7 +8,7 @@ from pydetecdiv.domain.dso import DomainSpecificObject
 
 class RoiAnnotations(DomainSpecificObject):
     """
-    A business-logic class defining valid operations and attributes of Image resources
+    A business-logic class defining valid operations and attributes of ROI annotations
     """
 
     def __init__(self, roi, t, annotation, classification, run, key_val, **kwargs):
@@ -31,7 +31,7 @@ class RoiAnnotations(DomainSpecificObject):
 
     @property
     def annotation(self):
-        return self.project.get_object('RoiAnnotation', self._annotation)
+        return self._annotation
 
     @property
     def class_name(self):
