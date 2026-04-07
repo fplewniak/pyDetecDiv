@@ -24,6 +24,7 @@ class VideoClassifierTrainer(ModelTrainer):
         Train the video classifier model, running the training loop once per epoch for as many epochs as requested by the user
         """
         print("Training video classifier model...")
+        self.tool.prepare_data_for_training()
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             annotations_df = project.get_polars('RoiAnnotations')
             roi_list = project.get_annotated_rois(ids_only=True, id_list=[2, 4, 6, 8])

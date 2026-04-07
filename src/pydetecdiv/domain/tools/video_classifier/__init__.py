@@ -1,6 +1,7 @@
 """
 Video classifier tool
 """
+import tables
 from torch import optim
 
 from pydetecdiv.app.parameters import Parameters, IntParameter, FloatParameter, ChoiceParameter, PathParameter
@@ -51,6 +52,12 @@ class VideoClassifier(DeepTool):
         """
         Prepare the data for training
         """
+        print('Preparing data for training')
+        h5file = tables.open_file(self.parameters.hdf5_file.value, mode='r')
+        targets_arr = h5file.root.targets
+        num_frames = targets_arr.shape[0]
+        num_rois = targets_arr.shape[1]
+        print(f'{num_rois} ROIs and {num_frames} frames')
 
     def prepare_data_for_prediction(self, *args, **kwargs) -> None:
         """
