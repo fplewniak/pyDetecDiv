@@ -34,7 +34,7 @@ class TrainModelDialog(ToolDialog):
                                              }
                                          )
 
-        self.tool.parameters.hdf5_file.current_dir = PyDetecDiv.tools['cnrs.plewniak.roihdf5creator'].working_dir
+        self.tool.parameters.hdf5_file.current_dir = PyDetecDiv.tools['cnrs.plewniak.roiseqhdf5creator'].working_dir
         self.hdf5_file = self.addGroupBox(title='Data File',
                                           parameters=[tool.parameters.hdf5_file],
                                           )

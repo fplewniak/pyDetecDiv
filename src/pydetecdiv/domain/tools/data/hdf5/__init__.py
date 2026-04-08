@@ -1,4 +1,6 @@
 import time
+
+import tables
 import torch
 
 import fastremap
@@ -8,11 +10,12 @@ import tables as tbl
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
 from pydetecdiv.app.parameters import Parameters, PathParameter, CheckParameter, IntParameter, ChoiceParameter
 from pydetecdiv.app.tools import Tool
+from pydetecdiv.domain.tools.data import RoiDataReader
 from pydetecdiv.utils import hdf5
 
 
-class ROI_HDF5creator(Tool):
-    id_ = 'cnrs.plewniak.roihdf5creator'
+class ROIseqHDF5creator(Tool):
+    id_ = 'cnrs.plewniak.roiseqhdf5creator'
     version = '1.0.0'
     name = 'ROI HDF5 creator'
 
@@ -113,4 +116,23 @@ class ROI_HDF5creator(Tool):
             print(f'Full job in {time.perf_counter() - start} s')
 
     def save_run(self, *args, **kwargs):
+        pass
+
+
+class ROIseqHDF5reader(RoiDataReader):
+    def __init__(self, source: tables.File):
+        super().__init__(source)
+        self.targets = source.__contains__('/targets')
+        if self.targets:
+            print('There are targets in HDF5 file')
+        else:
+            print('There are no targets in HDF5 file')
+
+    def roi_data(self, roi_idx: int = None, frame: int = 0) -> torch.Tensor:
+        pass
+
+    def target(self, roi_idx: int = None, frame: int = 0) -> torch.Tensor:
+        pass
+
+    def class_names(self) -> list[str]:
         pass

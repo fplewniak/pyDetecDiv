@@ -1,6 +1,8 @@
 """
 Video classifier tool
 """
+import locale
+
 import tables
 from torch import optim
 
@@ -9,6 +11,7 @@ from pydetecdiv.app.tools.deep_learning import DeepTool, ModelTrainer, ModelEval
 from pydetecdiv.domain.tools.video_classifier.train import VideoClassifierTrainer
 from pydetecdiv.domain.tools.video_classifier.evaluate import VideoClassifierEvaluator
 from pydetecdiv.domain.tools.video_classifier.predict import VideoClassifierPredictor
+from pydetecdiv.domain.tools.data.hdf5 import ROIseqHDF5reader
 
 
 class VideoClassifier(DeepTool):
@@ -54,10 +57,15 @@ class VideoClassifier(DeepTool):
         """
         print('Preparing data for training')
         h5file = tables.open_file(self.parameters.hdf5_file.value, mode='r')
-        targets_arr = h5file.root.targets
-        num_frames = targets_arr.shape[0]
-        num_rois = targets_arr.shape[1]
-        print(f'{num_rois} ROIs and {num_frames} frames')
+        roi_data_reader = ROIseqHDF5reader(h5file)
+        # targets_arr = h5file.root.targets
+        # num_frames = targets_arr.shape[0]
+        # num_rois = targets_arr.shape[1]
+        #
+        # print(f'{num_rois} ROIs and {num_frames} frames')
+        # class_names = [c[0].decode(locale.getpreferredencoding()) for c in h5file.root.class_names.read()]
+        # print(f'Class names: {class_names}')
+        h5file.close()
 
     def prepare_data_for_prediction(self, *args, **kwargs) -> None:
         """

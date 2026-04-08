@@ -14,7 +14,7 @@ from pydetecdiv.app.gui import FileMenu, ProjectMenu, DataMenu, PluginMenu, Vide
 from pydetecdiv.app.gui.Windows import MainWindow
 from pydetecdiv.app.gui import SourcePath
 from pydetecdiv.app.gui.tools.video_classifier import VideoClassifierMenu
-from pydetecdiv.domain.tools.data.hdf5 import ROI_HDF5creator
+from pydetecdiv.domain.tools.data.hdf5 import ROIseqHDF5creator
 from pydetecdiv.domain.tools.video_classifier import VideoClassifier
 
 
@@ -59,7 +59,7 @@ def main_gui():
 
     # Create tools
     PyDetecDiv.update_tools({'cnrs.plewniak.videoclassifier': VideoClassifier(working_dir='video_classifier'),
-                             'cnrs.plewniak.roihdf5creator' : ROI_HDF5creator(working_dir='data')
+                             'cnrs.plewniak.roiseqhdf5creator' : ROIseqHDF5creator(working_dir='data')
                              })
 
     video_tool_menus = [

@@ -414,7 +414,8 @@ class Project:
         return pd.DataFrame.from_records(self.get_records(class_name, id_list))
 
     def get_polars(self, class_name: str, id_list: list[int] = None) -> polars.DataFrame:
-        return polars.from_records(self.get_records(class_name, id_list))
+        df = polars.from_records(self.get_records(class_name, id_list))
+        return df.unnest('key_val')
 
     def count_objects(self, class_name: str) -> int:
         """

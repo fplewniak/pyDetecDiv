@@ -8,7 +8,7 @@ from pydetecdiv.app.gui.tools import ToolDialog
 
 class Create_ROI_HDF5Dialog(ToolDialog):
     def __init__(self):
-        super().__init__(PyDetecDiv.tools['cnrs.plewniak.roihdf5creator'], title='Create ROI HDF5 file')
+        super().__init__(PyDetecDiv.tools['cnrs.plewniak.roiseqhdf5creator'], title='Create ROI HDF5 file')
 
         self.tool.parameters.hdf5_file.current_dir = self.tool.working_dir
 
