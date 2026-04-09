@@ -25,6 +25,8 @@ class VideoClassifierTrainer(ModelTrainer):
         """
         print("Training video classifier model...")
         self.tool.prepare_data_for_training()
+        #run = self.tool.save_run(command='training')
+
         # with pydetecdiv_project(PyDetecDiv.project_name) as project:
         #     annotations_df = project.get_polars('RoiAnnotations')
         #     print(annotations_df)

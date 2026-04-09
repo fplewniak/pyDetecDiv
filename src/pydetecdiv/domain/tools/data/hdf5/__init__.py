@@ -168,3 +168,18 @@ class ROIHDF5reader(RoiDataReader):
 
     def roi_id(self, roi_idx: int = None) -> int:
         return self.source.root.roi_ids[roi_idx]
+
+    @property
+    def roi_ids(self):
+        return self.source.root.roi_ids[:]
+
+    def num_rois(self) -> int:
+        return len(self.source.root.roi_ids)
+
+    def num_targets(self) -> int:
+        if self.targets:
+            if self.time_first:
+                return len(self.source.root.targets)
+            return int(self.source.root.targets.shape[-1])
+        return 0
+

@@ -4,6 +4,7 @@ Video classifier tool
 import datetime
 import locale
 
+import numpy as np
 import tables
 from torch import optim
 
@@ -59,18 +60,30 @@ class VideoClassifier(DeepTool):
         Prepare the data for training
         """
         print('Preparing data for training')
-        print(self.parameters.hdf5_file.value)
-        # h5file = tables.open_file(self.parameters.hdf5_file.value, mode='r')
-        # hdf5_reader = ROIHDF5reader(h5file)
+        np.random.default_rng(self.parameters.data_seed.value)
+
         hdf5_reader = ROIHDF5reader(tables.open_file(self.parameters.hdf5_file.value, mode='r'),
                                     time_first=self.parameters.time_first.value)
-        print(f'{hdf5_reader.roi_data(slice(0, 4), 0).shape}')
-        print(f'{hdf5_reader.target(slice(0, 3), slice(0, 5))}')
-        print(f'{hdf5_reader.target(0, 0)}')
-        # print(f'{hdf5_reader.class_names()[hdf5_reader.target(0, 0)]}')
-        print(f'{hdf5_reader.class_names()}')
-        print(f'{hdf5_reader.roi_id(0)}')
-        print(f'{hdf5_reader.roi(0)}')
+        roi_ids = hdf5_reader.roi_ids
+        np.random.shuffle(roi_ids)
+        num_rois = len(roi_ids)
+
+        num_training = int(num_rois * self.parameters.num_training + 0.5)
+        num_validation = int(num_rois * self.parameters.num_validation + 0.5)
+        num_test = num_rois - (num_training + num_validation)
+
+        print('Number of training images: {}'.format(num_training))
+        print('Number of validation images: {}'.format(num_validation))
+        print('Number of test images: {}'.format(num_test))
+
+        training_idx = roi_ids[:num_training]
+        validation_idx = roi_ids[num_training:num_training + num_validation]
+        test_idx = roi_ids[num_training + num_validation:]
+
+        print(f'{training_idx}')
+        print(f'{validation_idx}')
+        print(f'{test_idx}')
+
         # targets_arr = h5file.root.targets
         # num_frames = targets_arr.shape[0]
         # num_rois = targets_arr.shape[1]
@@ -80,9 +93,9 @@ class VideoClassifier(DeepTool):
         # print(f'Class names: {class_names}')
         # h5file.close()
         hdf5_reader.source.close()
-        run = self.save_run(command='prepare_data', param_list=[self.parameters.hdf5_file,
-                                                                self.parameters.time_first])
-        print(run)
+        # run = self.save_run(command='prepare_data', param_list=[self.parameters.hdf5_file,
+        #                                                         self.parameters.time_first])
+        # print(run)
 
     def prepare_data_for_prediction(self, *args, **kwargs) -> None:
         """
