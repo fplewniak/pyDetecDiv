@@ -1,6 +1,7 @@
 """
 Video classifier tool
 """
+import datetime
 import locale
 
 import tables
@@ -58,6 +59,7 @@ class VideoClassifier(DeepTool):
         Prepare the data for training
         """
         print('Preparing data for training')
+        print(self.parameters.hdf5_file.value)
         # h5file = tables.open_file(self.parameters.hdf5_file.value, mode='r')
         # hdf5_reader = ROIHDF5reader(h5file)
         hdf5_reader = ROIHDF5reader(tables.open_file(self.parameters.hdf5_file.value, mode='r'),
@@ -78,6 +80,9 @@ class VideoClassifier(DeepTool):
         # print(f'Class names: {class_names}')
         # h5file.close()
         hdf5_reader.source.close()
+        run = self.save_run(command='prepare_data', param_list=[self.parameters.hdf5_file,
+                                                                self.parameters.time_first])
+        print(run)
 
     def prepare_data_for_prediction(self, *args, **kwargs) -> None:
         """
@@ -102,7 +107,7 @@ class VideoClassifier(DeepTool):
         """
         return VideoClassifierPredictor(self)
 
-    def save_run(self, *args, **kwargs):
-        """
-        Concrete method saving the video classifier run
-        """
+    # def save_run(self, *args, **kwargs):
+    #     """
+    #     Concrete method saving the video classifier run
+    #     """
