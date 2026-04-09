@@ -15,6 +15,7 @@ class Create_ROI_HDF5Dialog(ToolDialog):
         self.destination = self.addGroupBox(title='HDF5 destination file',
                                             parameters=[
                                                 self.tool.parameters.hdf5_file,
+                                                self.tool.parameters.time_first,
                                                 ],
                                             widget_args={
                                                 'hdf5_file': {'min_width': 200},
