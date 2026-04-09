@@ -491,6 +491,10 @@ class LineEdit(QLineEdit):
         """
         return self.editingFinished
 
+    def setText(self, arg__1 , /):
+        super().setText(arg__1)
+        self.editingFinished.emit()
+
     def setEditable(self, editable: bool = True) -> None:
         """
         Sets the property editable for the LineEdit widget
