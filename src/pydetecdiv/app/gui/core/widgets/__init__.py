@@ -508,7 +508,8 @@ class LineEdit(QLineEdit):
         self.mapper.setModel(qmodel)
         self.mapper.addMapping(self, 0, b"text")
         self.mapper.toFirst()
-        self.changed.connect(lambda: self.mapper.submit())
+        # self.changed.connect(lambda: self.mapper.submit())
+        self.editingFinished.connect(lambda: self.mapper.submit())
 
 
 class FileChooser(QWidget):
