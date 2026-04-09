@@ -6,12 +6,12 @@ import locale
 import tables
 from torch import optim
 
-from pydetecdiv.app.parameters import Parameters, IntParameter, FloatParameter, ChoiceParameter, PathParameter
+from pydetecdiv.app.parameters import Parameters, IntParameter, FloatParameter, ChoiceParameter, PathParameter, CheckParameter
 from pydetecdiv.app.tools.deep_learning import DeepTool, ModelTrainer, ModelEvaluator, Predictor
 from pydetecdiv.domain.tools.video_classifier.train import VideoClassifierTrainer
 from pydetecdiv.domain.tools.video_classifier.evaluate import VideoClassifierEvaluator
 from pydetecdiv.domain.tools.video_classifier.predict import VideoClassifierPredictor
-from pydetecdiv.domain.tools.data.hdf5 import ROIseqHDF5reader
+from pydetecdiv.domain.tools.data.hdf5 import ROIHDF5reader
 
 
 class VideoClassifier(DeepTool):
@@ -48,6 +48,8 @@ class VideoClassifier(DeepTool):
                                  default=42),
                     PathParameter(name='hdf5_file', label='', select_dir=False, groups={'training', 'finetune', 'predict'},
                                   filters=["HDF5 (*.h5 *.hdf5)",], default='roi_data.h5',),
+                    CheckParameter(name='time_first', label='Time first', groups={'training', 'finetune', 'predict'},
+                                   default=False),
                     ]
                 )
 
@@ -56,8 +58,17 @@ class VideoClassifier(DeepTool):
         Prepare the data for training
         """
         print('Preparing data for training')
-        h5file = tables.open_file(self.parameters.hdf5_file.value, mode='r')
-        roi_data_reader = ROIseqHDF5reader(h5file)
+        # h5file = tables.open_file(self.parameters.hdf5_file.value, mode='r')
+        # hdf5_reader = ROIHDF5reader(h5file)
+        hdf5_reader = ROIHDF5reader(tables.open_file(self.parameters.hdf5_file.value, mode='r'),
+                                    time_first=self.parameters.time_first.value)
+        print(f'{hdf5_reader.roi_data(slice(0, 4), 0).shape}')
+        print(f'{hdf5_reader.target(slice(0, 3), slice(0, 5))}')
+        print(f'{hdf5_reader.target(0, 0)}')
+        # print(f'{hdf5_reader.class_names()[hdf5_reader.target(0, 0)]}')
+        print(f'{hdf5_reader.class_names()}')
+        print(f'{hdf5_reader.roi_id(0)}')
+        print(f'{hdf5_reader.roi(0)}')
         # targets_arr = h5file.root.targets
         # num_frames = targets_arr.shape[0]
         # num_rois = targets_arr.shape[1]
@@ -65,7 +76,8 @@ class VideoClassifier(DeepTool):
         # print(f'{num_rois} ROIs and {num_frames} frames')
         # class_names = [c[0].decode(locale.getpreferredencoding()) for c in h5file.root.class_names.read()]
         # print(f'Class names: {class_names}')
-        h5file.close()
+        # h5file.close()
+        hdf5_reader.source.close()
 
     def prepare_data_for_prediction(self, *args, **kwargs) -> None:
         """

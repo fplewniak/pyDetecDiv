@@ -3,6 +3,9 @@ from typing import Any
 
 import torch
 
+from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
+from pydetecdiv.domain.ROI import ROI
+
 
 class RoiDataReader(ABC):
     """
@@ -38,3 +41,20 @@ class RoiDataReader(ABC):
         Returns a list of class names
         :return: the list of class names
         """
+
+    @abstractmethod
+    def roi_id(self, roi_idx: int = None) -> int:
+        """
+        Returns the id_ of the desired ROI, designated by its index in the HDF5 file
+        :param roi_idx: the index of the ROI in the HDF5 file
+        :return: the ROI id_
+        """
+
+    def roi(self, roi_idx: int = None) -> ROI:
+        """
+        Returns the ROI object designated by its index in the HDF5 file
+        :param roi_idx: the index of the ROI in the HDF5 file
+        :return: the ROI object
+        """
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            return project.get_object('ROI', self.roi_id(roi_idx))
