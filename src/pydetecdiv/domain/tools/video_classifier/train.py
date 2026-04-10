@@ -4,8 +4,11 @@ Video classifier trainer class
 from typing import TYPE_CHECKING
 
 import polars
+import torch
+from torchvision.transforms import v2
 
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
+from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer
 from pydetecdiv.app.tools.deep_learning import ModelTrainer
 
 if TYPE_CHECKING:
@@ -24,7 +27,33 @@ class VideoClassifierTrainer(ModelTrainer):
         Train the video classifier model, running the training loop once per epoch for as many epochs as requested by the user
         """
         print("Training video classifier model...")
-        self.tool.prepare_data_for_training()
+        training_dataset, validation_dataset = self.tool.prepare_data_for_training()
+
+        print(f'Training dataset size: {len(training_dataset)}')
+        print(f'Validation dataset size: {len(validation_dataset)}')
+
+        img, target = training_dataset[0]
+        roi_id, frame = training_dataset.get_ref(0)
+        print(f'{roi_id}: {training_dataset.indices[0]}')
+        print(training_dataset.roi(training_dataset.indices[0]['roi'].item()))
+        print(img.shape, img[7].shape, target)
+
+        seqlen = img.shape[0]
+        plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=seqlen, rows=1)
+        for i in range(seqlen):
+            img_channel_last = (torch.as_tensor(img[i].permute([1, 2, 0])))/img[i].max()
+            plot_viewer.axes[i].imshow(img_channel_last)
+            if i == int(seqlen / 2):
+                plot_viewer.axes[i].set_title(f'{training_dataset.class_names[target - 1]}')
+            plot_viewer.axes[i].set_xlabel(f'{frame + i}')
+        tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {roi_id}')
+        tab.project_name = PyDetecDiv.project_name
+        tab.addTab(plot_viewer, 'Sample sequence')
+        tab.setCurrentWidget(plot_viewer)
+
+        training_dataset.close()
+        validation_dataset.close()
+
         #run = self.tool.save_run(command='training')
 
         # with pydetecdiv_project(PyDetecDiv.project_name) as project:

@@ -152,7 +152,7 @@ class ROIHDF5reader(RoiDataReader):
     def roi_data(self, roi_idx: int | slice = None, frame: int | slice = 0) -> torch.Tensor:
         if self.time_first:
             return self.source.root.roi_data[frame, roi_idx]
-        return self.source.root.roi_data[roi_idx, frame]
+        return torch.as_tensor(self.source.root.roi_data[roi_idx, frame])
 
     def target(self, roi_idx: int | slice = None, frame: int | slice = 0) -> torch.Tensor | None:
         if self.targets:
@@ -161,6 +161,7 @@ class ROIHDF5reader(RoiDataReader):
             return self.source.root.targets[roi_idx, frame]
         return None
 
+    @property
     def class_names(self) -> list[str] | None:
         if self.targets:
             return [c[0].decode(locale.getpreferredencoding()) for c in self.source.root.class_names.read()]
@@ -173,13 +174,14 @@ class ROIHDF5reader(RoiDataReader):
     def roi_ids(self):
         return self.source.root.roi_ids[:]
 
+    @property
     def num_rois(self) -> int:
         return len(self.source.root.roi_ids)
 
+    @property
     def num_targets(self) -> int:
         if self.targets:
             if self.time_first:
                 return len(self.source.root.targets)
             return int(self.source.root.targets.shape[-1])
         return 0
-

@@ -5,11 +5,12 @@ import datetime
 import locale
 
 import numpy as np
+import polars
 import tables
 from torch import optim
 
 from pydetecdiv.app.parameters import Parameters, IntParameter, FloatParameter, ChoiceParameter, PathParameter, CheckParameter
-from pydetecdiv.app.tools.deep_learning import DeepTool, ModelTrainer, ModelEvaluator, Predictor
+from pydetecdiv.app.tools.deep_learning import DeepTool, ModelTrainer, ModelEvaluator, Predictor, ROIDataset
 from pydetecdiv.domain.tools.video_classifier.train import VideoClassifierTrainer
 from pydetecdiv.domain.tools.video_classifier.evaluate import VideoClassifierEvaluator
 from pydetecdiv.domain.tools.video_classifier.predict import VideoClassifierPredictor
@@ -36,7 +37,7 @@ class VideoClassifier(DeepTool):
                                            'Adadelta': optim.Adadelta,
                                            'Adamax'  : optim.Adamax,
                                            'Nadam'   : optim.NAdam,
-                                           },),
+                                           }, ),
                     IntParameter(name='seed', label='Random seed', groups={'training', 'finetune'}, maximum=999999999,
                                  default=42, ),
 
@@ -49,53 +50,39 @@ class VideoClassifier(DeepTool):
                     IntParameter(name='data_seed', label='Random seed', groups={'training', 'finetune'}, maximum=999999999,
                                  default=42),
                     PathParameter(name='hdf5_file', label='', select_dir=False, groups={'training', 'finetune', 'predict'},
-                                  filters=["HDF5 (*.h5 *.hdf5)",], default='roi_data.h5',),
+                                  filters=["HDF5 (*.h5 *.hdf5)", ], default='roi_data.h5', ),
                     CheckParameter(name='time_first', label='Time first', groups={'training', 'finetune', 'predict'},
                                    default=False),
                     ]
                 )
 
-    def prepare_data_for_training(self, *args, **kwargs) -> None:
+    def prepare_data_for_training(self, *args, **kwargs) -> tuple[ROIDataset, ROIDataset]:
         """
         Prepare the data for training
         """
-        print('Preparing data for training')
-        np.random.default_rng(self.parameters.data_seed.value)
-
         hdf5_reader = ROIHDF5reader(tables.open_file(self.parameters.hdf5_file.value, mode='r'),
                                     time_first=self.parameters.time_first.value)
-        roi_ids = hdf5_reader.roi_ids
-        np.random.shuffle(roi_ids)
-        num_rois = len(roi_ids)
+        roi_idx = list(range(hdf5_reader.num_rois))
+        np.random.default_rng(self.parameters.data_seed.value)
+        np.random.shuffle(roi_idx)
 
-        num_training = int(num_rois * self.parameters.num_training + 0.5)
-        num_validation = int(num_rois * self.parameters.num_validation + 0.5)
-        num_test = num_rois - (num_training + num_validation)
+        num_training = int(hdf5_reader.num_rois * self.parameters.num_training + 0.5)
+        num_validation = int(hdf5_reader.num_rois * self.parameters.num_validation + 0.5)
 
-        print('Number of training images: {}'.format(num_training))
-        print('Number of validation images: {}'.format(num_validation))
-        print('Number of test images: {}'.format(num_test))
+        training_idx = hdf5_reader.indices(roi_idx[:num_training])
+        validation_idx = hdf5_reader.indices(roi_idx[num_training:num_training + num_validation])
+        hdf5_reader.close()
 
-        training_idx = roi_ids[:num_training]
-        validation_idx = roi_ids[num_training:num_training + num_validation]
-        test_idx = roi_ids[num_training + num_validation:]
-
-        print(f'{training_idx}')
-        print(f'{validation_idx}')
-        print(f'{test_idx}')
-
-        # targets_arr = h5file.root.targets
-        # num_frames = targets_arr.shape[0]
-        # num_rois = targets_arr.shape[1]
-        #
-        # print(f'{num_rois} ROIs and {num_frames} frames')
-        # class_names = [c[0].decode(locale.getpreferredencoding()) for c in h5file.root.class_names.read()]
-        # print(f'Class names: {class_names}')
-        # h5file.close()
-        hdf5_reader.source.close()
+        training_dataset = ROIDataset(ROIHDF5reader(tables.open_file(self.parameters.hdf5_file.value, mode='r'),
+                                                    time_first=self.parameters.time_first.value),
+                                      training_idx, targets=True)
+        validation_dataset = ROIDataset(ROIHDF5reader(tables.open_file(self.parameters.hdf5_file.value, mode='r'),
+                                                      time_first=self.parameters.time_first.value),
+                                        validation_idx, targets=True)
         # run = self.save_run(command='prepare_data', param_list=[self.parameters.hdf5_file,
         #                                                         self.parameters.time_first])
         # print(run)
+        return training_dataset, validation_dataset
 
     def prepare_data_for_prediction(self, *args, **kwargs) -> None:
         """

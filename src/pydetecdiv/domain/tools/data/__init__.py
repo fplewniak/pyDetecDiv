@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
+import polars
 import torch
 
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
@@ -15,7 +16,7 @@ class RoiDataReader(ABC):
         self.source = source
 
     @abstractmethod
-    def roi_data(self, roi_idx: int = None, frame: int = 0) -> torch.Tensor:
+    def roi_data(self, roi_idx: int | slice = None, frame: int | slice = 0) -> torch.Tensor:
         """
         Returns data for the ROI specified by `roi_idx` and `frame`. Should return a sequence only if targets apply when using a
         many-to-one classifier. For many-to-may classifiers, the method should return a single ROI data and it should be the
@@ -35,6 +36,7 @@ class RoiDataReader(ABC):
         :return: a 0D Tensor of target data
         """
 
+    @property
     @abstractmethod
     def class_names(self) -> list[str]:
         """
@@ -50,6 +52,30 @@ class RoiDataReader(ABC):
         :return: the ROI id_
         """
 
+    @property
+    @abstractmethod
+    def roi_ids(self):
+        """
+        Returns the list of all ROI IDs
+        :return: all ROI ids in a list
+        """
+
+    @property
+    @abstractmethod
+    def num_rois(self) -> int:
+        """
+        Returns the number of ROIs in the source
+        :return: the number of ROIs
+        """
+
+    @property
+    @abstractmethod
+    def num_targets(self) -> int:
+        """
+        Returns the number of targets in the source
+        :return: the number of targets
+        """
+
     def roi(self, roi_idx: int = None) -> ROI:
         """
         Returns the ROI object designated by its index in the HDF5 file
@@ -58,3 +84,24 @@ class RoiDataReader(ABC):
         """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             return project.get_object('ROI', self.roi_id(roi_idx))
+
+    def indices(self, roi_idx: int | list[int] = None) -> polars.DataFrame:
+        """
+        Returns all the indices of (ROI, frame) pairs in the source
+        :return: all the indices
+        """
+        if roi_idx is None:
+            roi_idx = list(range(self.num_rois))
+        elif isinstance(roi_idx, int):
+            roi_idx = [roi_idx]
+        rois, frames = [], []
+        for idx in roi_idx:
+            for frame in range(self.num_targets):
+                if self.target(idx, frame) > 0:
+                    rois.append(idx)
+                    frames.append(frame)
+        return polars.DataFrame({'roi': rois, 'frame': frames})
+
+    def close(self):
+        if hasattr(self.source, 'close'):
+            self.source.close()

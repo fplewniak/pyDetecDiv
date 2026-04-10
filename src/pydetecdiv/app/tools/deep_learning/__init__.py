@@ -3,7 +3,11 @@ Abstract DeepTool class
 """
 from abc import abstractmethod
 
+import polars
 import torch
+from torch import Tensor
+from torch.utils.data import Dataset
+from torchvision.transforms import v2, transforms, functional as F
 
 from pydetecdiv.app.parameters import Parameters
 from pydetecdiv.app.tools import Tool
@@ -11,12 +15,59 @@ from pydetecdiv.app.tools import Tool
 from pydetecdiv.app.tools.deep_learning.train import ModelTrainer
 from pydetecdiv.app.tools.deep_learning.evaluate import ModelEvaluator
 from pydetecdiv.app.tools.deep_learning.predict import Predictor
+from pydetecdiv.domain.ROI import ROI
+from pydetecdiv.domain.tools.data import RoiDataReader
+
+
+class ROIDataset(Dataset):
+    def __init__(self, data_reader: RoiDataReader, indices: polars.DataFrame, targets: bool = False,
+                 image_shape: tuple[int, int] = (60, 60), transform: torch.nn.Module = None):
+        self.reader = data_reader
+        self.indices = indices
+        self.targets = targets
+        self.image_shape = list(image_shape)
+        self.transform = v2.ToDtype(torch.float, scale=True)
+        if transform:
+            self.transform = transforms.Compose([self.transform, transform])
+
+    def __len__(self):
+        return len(self.indices)
+
+    def __getitem__(self, idx: int) -> Tensor | tuple[Tensor, Tensor]:
+        df = self.indices[idx]
+        roi_idx = df['roi'].item()
+        frame_idx = df['frame'].item()
+        item = self.reader.roi_data(roi_idx=roi_idx, frame=frame_idx)
+        item = F.resize(item, size=self.image_shape)
+        if self.transform:
+                item = self.transform(item)
+        if self.targets:
+            target = self.reader.target(roi_idx=roi_idx, frame=frame_idx)
+            return item, target
+        return item
+
+    def close(self):
+        self.reader.close()
+
+    @property
+    def class_names(self):
+        return self.reader.class_names
+
+    def roi(self, idx: int) -> ROI:
+        return self.reader.roi(idx)
+
+    def get_ref(self, idx: int) -> tuple[int, int]:
+        df = self.indices[idx]
+        roi_idx = df['roi'].item()
+        frame_idx = df['frame'].item()
+        return self.reader.roi_id(roi_idx), frame_idx
 
 
 class DeepTool(Tool):
     """
     DeepTool abstract class providing the basic functionality for deep-learning tools
     """
+
     def __init__(self, parameters: Parameters | None = None, working_dir: str | None = None, device: torch.device | None = None,
                  model: torch.nn.Module = None):
         super().__init__(parameters=parameters, working_dir=working_dir)
@@ -76,7 +127,7 @@ class DeepTool(Tool):
         """
 
     @abstractmethod
-    def prepare_data_for_training(self, *args, **kwargs) -> None:
+    def prepare_data_for_training(self, *args, **kwargs) -> tuple[ROIDataset, ROIDataset]:
         """
         Abstract method to prepare the data for training
         """
