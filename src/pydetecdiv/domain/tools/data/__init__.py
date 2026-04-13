@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
+import numpy as np
 import polars
 import torch
 
@@ -105,3 +106,12 @@ class RoiDataReader(ABC):
     def close(self):
         if hasattr(self.source, 'close'):
             self.source.close()
+
+def compute_class_weights(targets: np.ndarray) -> torch.Tensor:
+    labels = targets.flatten()
+    labels = labels[labels > 0] - 1
+    classes, class_counts = np.unique(labels, return_counts=True)
+    total_counts = np.sum(class_counts)
+    num_classes = len(class_counts)
+    alpha = total_counts / class_counts
+    return torch.tensor((num_classes * alpha) / np.sum(alpha), dtype=torch.float32)

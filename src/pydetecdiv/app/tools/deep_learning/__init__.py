@@ -18,6 +18,10 @@ from pydetecdiv.app.tools.deep_learning.predict import Predictor
 from pydetecdiv.domain.ROI import ROI
 from pydetecdiv.domain.tools.data import RoiDataReader
 
+class toStandardizedFloat32(torch.nn.Module):
+    def forward(self, img: torch.Tensor) -> torch.Tensor:
+        return v2.ToDtype(torch.float32, scale=True)(img) / torch.max(img).item()
+
 
 class ROIDataset(Dataset):
     def __init__(self, data_reader: RoiDataReader, indices: polars.DataFrame, targets: bool = False,
@@ -26,7 +30,7 @@ class ROIDataset(Dataset):
         self.indices = indices
         self.targets = targets
         self.image_shape = list(image_shape)
-        self.transform = v2.ToDtype(torch.float, scale=True)
+        self.transform = transforms.Compose([v2.Resize(image_shape), toStandardizedFloat32()])
         if transform:
             self.transform = transforms.Compose([self.transform, transform])
 
@@ -38,9 +42,8 @@ class ROIDataset(Dataset):
         roi_idx = df['roi'].item()
         frame_idx = df['frame'].item()
         item = self.reader.roi_data(roi_idx=roi_idx, frame=frame_idx)
-        item = F.resize(item, size=self.image_shape)
         if self.transform:
-                item = self.transform(item)
+            item = self.transform(item)
         if self.targets:
             target = self.reader.target(roi_idx=roi_idx, frame=frame_idx)
             return item, target
@@ -127,7 +130,7 @@ class DeepTool(Tool):
         """
 
     @abstractmethod
-    def prepare_data_for_training(self, *args, **kwargs) -> tuple[ROIDataset, ROIDataset]:
+    def prepare_data_for_training(self, *args, **kwargs) -> tuple[ROIDataset, ROIDataset, torch.Tensor]:
         """
         Abstract method to prepare the data for training
         """

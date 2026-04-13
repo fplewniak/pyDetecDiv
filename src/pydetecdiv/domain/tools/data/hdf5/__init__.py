@@ -146,7 +146,7 @@ class ROIseqHDF5creator(Tool):
 class ROIHDF5reader(RoiDataReader):
     def __init__(self, source: tables.File, time_first: bool = False):
         super().__init__(source)
-        self.targets = source.__contains__('/targets')
+        self.contains_targets = source.__contains__('/targets')
         self.time_first = time_first
 
     def roi_data(self, roi_idx: int | slice = None, frame: int | slice = 0) -> torch.Tensor:
@@ -155,7 +155,7 @@ class ROIHDF5reader(RoiDataReader):
         return torch.as_tensor(self.source.root.roi_data[roi_idx, frame])
 
     def target(self, roi_idx: int | slice = None, frame: int | slice = 0) -> torch.Tensor | None:
-        if self.targets:
+        if self.contains_targets:
             if self.time_first:
                 return self.source.root.targets[frame, roi_idx]
             return self.source.root.targets[roi_idx, frame]
@@ -163,7 +163,7 @@ class ROIHDF5reader(RoiDataReader):
 
     @property
     def class_names(self) -> list[str] | None:
-        if self.targets:
+        if self.contains_targets:
             return [c[0].decode(locale.getpreferredencoding()) for c in self.source.root.class_names.read()]
         return None
 
@@ -179,8 +179,12 @@ class ROIHDF5reader(RoiDataReader):
         return len(self.source.root.roi_ids)
 
     @property
+    def targets(self):
+        return self.source.root.targets[:]
+
+    @property
     def num_targets(self) -> int:
-        if self.targets:
+        if self.contains_targets:
             if self.time_first:
                 return len(self.source.root.targets)
             return int(self.source.root.targets.shape[-1])

@@ -61,9 +61,9 @@ from .gui.training import TrainingDialog, FineTuningDialog, ImportClassifierDial
 from .training import train_loop
 from .utils import get_classifications, get_annotation_runs
 from ...domain.Dataset import Dataset
-from ...torch import ClassifierTrainingStats, TrainingStats, is_single_value_metric
+from ...torch import ClassifierTrainingStats, TrainingStats
 from ...torch.loss import FocalLoss
-from ...torch.metrics import NWScore
+from ...torch.metrics import NWScore, is_single_value_metric
 
 Base = registry().generate_base()
 

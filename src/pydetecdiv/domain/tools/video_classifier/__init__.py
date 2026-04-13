@@ -7,10 +7,12 @@ import locale
 import numpy as np
 import polars
 import tables
+import torch
 from torch import optim
 
 from pydetecdiv.app.parameters import Parameters, IntParameter, FloatParameter, ChoiceParameter, PathParameter, CheckParameter
 from pydetecdiv.app.tools.deep_learning import DeepTool, ModelTrainer, ModelEvaluator, Predictor, ROIDataset
+from pydetecdiv.domain.tools.data import compute_class_weights
 from pydetecdiv.domain.tools.video_classifier.train import VideoClassifierTrainer
 from pydetecdiv.domain.tools.video_classifier.evaluate import VideoClassifierEvaluator
 from pydetecdiv.domain.tools.video_classifier.predict import VideoClassifierPredictor
@@ -30,7 +32,7 @@ class VideoClassifier(DeepTool):
         self.parameters = Parameters(
                 [
                     IntParameter(name='epochs', label='Epochs', groups={'training', 'finetune'}, default=32),
-                    IntParameter(name='batch_size', label='Batch size', groups={'training', 'finetune'}, default=32, ),
+                    IntParameter(name='batch_size', label='Batch size', groups={'training', 'finetune'}, default=8, ),
                     ChoiceParameter(name='optimizer', label='Optimizer', groups={'training', 'finetune'}, default='AdamW',
                                     items={'AdamW'   : optim.AdamW,
                                            'SGD'     : optim.SGD,
@@ -40,7 +42,10 @@ class VideoClassifier(DeepTool):
                                            }, ),
                     IntParameter(name='seed', label='Random seed', groups={'training', 'finetune'}, maximum=999999999,
                                  default=42, ),
-
+                    FloatParameter(name='learning_rate', label='Learning rate', groups={'training', 'finetune'}, default=1.5e-4,
+                                   minimum=1e-20, maximum=1.0),
+                    FloatParameter(name='focal_gamma', label='Focal loss gamma', groups={'training', 'finetune'}, default=1.0,
+                                   minimum=0.0, maximum=2.0, ),
                     FloatParameter(name='num_training', label='Training dataset', groups={'training', 'finetune'}, default=0.4,
                                    minimum=0.01, maximum=0.98, ),
                     FloatParameter(name='num_validation', label='Validation dataset', groups={'training', 'finetune'},
@@ -56,7 +61,7 @@ class VideoClassifier(DeepTool):
                     ]
                 )
 
-    def prepare_data_for_training(self, *args, **kwargs) -> tuple[ROIDataset, ROIDataset]:
+    def prepare_data_for_training(self, image_shape=(224, 224), *args, **kwargs) -> tuple[ROIDataset, ROIDataset, torch.Tensor]:
         """
         Prepare the data for training
         """
@@ -71,18 +76,21 @@ class VideoClassifier(DeepTool):
 
         training_idx = hdf5_reader.indices(roi_idx[:num_training])
         validation_idx = hdf5_reader.indices(roi_idx[num_training:num_training + num_validation])
+        class_weights = compute_class_weights(hdf5_reader.targets)
+
         hdf5_reader.close()
 
         training_dataset = ROIDataset(ROIHDF5reader(tables.open_file(self.parameters.hdf5_file.value, mode='r'),
                                                     time_first=self.parameters.time_first.value),
-                                      training_idx, targets=True)
+                                      training_idx, targets=True, image_shape=image_shape)
         validation_dataset = ROIDataset(ROIHDF5reader(tables.open_file(self.parameters.hdf5_file.value, mode='r'),
                                                       time_first=self.parameters.time_first.value),
-                                        validation_idx, targets=True)
+                                        validation_idx, targets=True, image_shape=image_shape)
+
         # run = self.save_run(command='prepare_data', param_list=[self.parameters.hdf5_file,
         #                                                         self.parameters.time_first])
         # print(run)
-        return training_dataset, validation_dataset
+        return training_dataset, validation_dataset, class_weights
 
     def prepare_data_for_prediction(self, *args, **kwargs) -> None:
         """

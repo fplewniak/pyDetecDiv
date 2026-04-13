@@ -20,7 +20,8 @@ from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer, ChartVi
 from pydetecdiv.plugins.gui import (ComboBox, AdvancedButton, SpinBox, ParametersFormGroupBox, DoubleSpinBox,
                                     RadioButton, set_connections, Label, Dialog)
 from pydetecdiv.plugins.roi_classification.data import ROIDataset
-from pydetecdiv.torch import ClassifierTrainingStats, TrainingHistory, is_single_value_metric
+from pydetecdiv.torch import ClassifierTrainingStats, TrainingHistory
+from pydetecdiv.torch.metrics import is_single_value_metric
 
 
 class TuneHyperparamDialog(Dialog):

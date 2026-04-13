@@ -619,6 +619,9 @@ class Parameters:
         """
         return self.__getitem__(item)
 
+    def __contains__(self, item: str) -> bool:
+        return item in self.to_dict()
+
     def to_dict(self) -> dict[str, Parameter]:
         """
         Return the parameters as a dictionary

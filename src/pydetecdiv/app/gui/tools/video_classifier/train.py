@@ -19,8 +19,14 @@ class TrainModelDialog(ToolDialog):
                                                     tool.parameters.epochs,
                                                     tool.parameters.batch_size,
                                                     tool.parameters.optimizer,
+                                                    tool.parameters.learning_rate,
+                                                    tool.parameters.focal_gamma,
                                                     tool.parameters.seed,
-                                                    ])
+                                                    ],
+                                                widget_args={
+                                                    'learning_rate': {'decimals': 5, 'single_step': 1e-5, 'adaptive': False,},
+                                                    }
+                                                )
 
         self.datasets = self.addGroupBox(title='Datasets',
                                          parameters=[

@@ -9,7 +9,10 @@ import torch
 from pyseq_align import NeedlemanWunsch
 from torch import Tensor
 
-from torchmetrics import Metric
+from torchmetrics import Metric, MetricCollection
+from torchmetrics.classification import (MulticlassMatthewsCorrCoef, MulticlassF1Score, MulticlassAUROC, MulticlassAccuracy,
+                                         MulticlassAveragePrecision, MulticlassCalibrationError, MulticlassPrecision,
+                                         MulticlassRecall)
 
 
 class NWScore(Metric):
@@ -106,3 +109,28 @@ class NWScore(Metric):
 #                 return correct.sum()
 #             case None:
 #                 return correct
+
+def is_single_value_metric(metric_name: str) -> bool:
+    return metric_name not in ['ROC', 'PRC', 'ConfusionMatrix_recall', 'ConfusionMatrix_precision']
+
+def set_metrics(num_classes: int) -> MetricCollection:
+    """
+    Set the metrics collection for the run
+
+    :param num_classes: the number of classes
+    :return: the metrics collection
+    """
+    metrics = MetricCollection([
+        MetricCollection({'MCC': MulticlassMatthewsCorrCoef(num_classes=num_classes)}),
+        MetricCollection({'F1score': MulticlassF1Score(num_classes=num_classes, average='weighted')}),
+        MetricCollection({'AUROC': MulticlassAUROC(num_classes=num_classes)}),
+        MetricCollection({'Accuracy': MulticlassAccuracy(num_classes=num_classes)}),
+        MetricCollection({'AUPRC': MulticlassAveragePrecision(num_classes=num_classes)}),
+        MetricCollection({'Calibration Error': MulticlassCalibrationError(num_classes=num_classes)}),
+        # MetricCollection({'Negative Predictive Value': MulticlassNegativePredictiveValue(num_classes=num_classes)}),
+        MetricCollection({'Precision': MulticlassPrecision(num_classes=num_classes)}),
+        MetricCollection({'Recall': MulticlassRecall(num_classes=num_classes)}),
+        # MetricCollection({'NWScore': NWScore(num_classes=num_classes)}),
+        # MetricCollection({'Specificity': MulticlassSpecificity(num_classes=num_classes)}),
+        ])
+    return metrics
