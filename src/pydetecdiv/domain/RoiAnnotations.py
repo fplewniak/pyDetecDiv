@@ -15,7 +15,7 @@ class RoiAnnotations(DomainSpecificObject):
         super().__init__(**kwargs)
         self._roi = roi.id_ if isinstance(roi, ROI) else roi
         self._classification = classification.id_ if isinstance(classification, Classification) else classification
-        self._annotation = self.classification.classes.index(annotation) + 1 if isinstance(annotation, str) else annotation
+        self._annotation = self.classification.classes.index(annotation) if isinstance(annotation, str) else annotation
         self.t = t
         self._run = run.id_ if isinstance(run, Run) else run
         self.key_val = key_val
@@ -23,7 +23,7 @@ class RoiAnnotations(DomainSpecificObject):
 
     @property
     def classification(self):
-        return self.project.get_object('Classifier', self._classification)
+        return self.project.get_object('Classification', self._classification)
 
     @property
     def roi(self):
@@ -35,7 +35,7 @@ class RoiAnnotations(DomainSpecificObject):
 
     @property
     def class_name(self):
-        return self.classification.classes[self._annotation - 1]
+        return self.classification.classes[self._annotation]
 
     @property
     def run(self):

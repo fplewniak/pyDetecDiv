@@ -98,7 +98,7 @@ class RoiDataReader(ABC):
         rois, frames = [], []
         for idx in roi_idx:
             for frame in range(self.num_targets):
-                if self.target(idx, frame) > 0:
+                if self.target(idx, frame) > -1:
                     rois.append(idx)
                     frames.append(frame)
         return polars.DataFrame({'roi': rois, 'frame': frames})
