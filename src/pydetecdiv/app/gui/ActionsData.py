@@ -646,9 +646,9 @@ class ImportROIannotations(QAction):
                                       bottom_right=(row['x'] + row['width'], row['y'] + row['height']))
                         roi_names.append(new_roi.name)
                         # class_index = class_names.where(class_names==row['class_name'])[0] + 1
-                    class_index = next(i for i, class_name in enumerate(classification.classes) if class_name == row['class_name']) + 1
+                    # class_index = next(i for i, class_name in enumerate(classification.classes) if class_name == row['class_name']) + 1
                     new_annotation = RoiAnnotations(project=project, roi=new_roi.id_, t=row['frame'],
-                                        classification=classification, annotation=class_index,
+                                        classification=classification, annotation=row['class_name'],
                                         run=run, key_val={'class_name': row['class_name']})
                 project.commit()
             print(annotated_rois)
