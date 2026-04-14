@@ -109,7 +109,7 @@ class RoiDataReader(ABC):
 
 def compute_class_weights(targets: np.ndarray) -> torch.Tensor:
     labels = targets.flatten()
-    labels = labels[labels > 0] - 1
+    labels = labels[labels > -1]
     classes, class_counts = np.unique(labels, return_counts=True)
     total_counts = np.sum(class_counts)
     num_classes = len(class_counts)

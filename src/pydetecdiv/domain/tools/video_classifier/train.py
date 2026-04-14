@@ -80,7 +80,7 @@ class VideoClassifierTrainer(ModelTrainer):
                   f"Training Loss: {train_stats.history.loss[-1]:.4f}, "
                   f"Validation Loss: {train_stats.history.val_loss[-1]:.4f}, "
                   f"{main_metric}: {train_stats.history.metric_history(main_metric)[-1]:.3f}, "
-                  f"Val {main_metric}: {train_stats.history.metric_history.val_metric_history(main_metric)[-1]:.3f}, "
+                  f"Val {main_metric}: {train_stats.history.val_metric_history(main_metric)[-1]:.3f}, "
                   # f"learning rate: {scheduler.get_last_lr()[0]:0.2e}, "
                   f" -- ({datetime.now().strftime('%H:%M:%S')})")
 
@@ -91,7 +91,7 @@ class VideoClassifierTrainer(ModelTrainer):
         #     img_channel_last = torch.as_tensor(img[i].permute([1, 2, 0]))
         #     plot_viewer.axes[i].imshow(img_channel_last)
         #     if i == int(seqlen / 2):
-        #         plot_viewer.axes[i].set_title(f'{training_dataset.class_names[target - 1]}')
+        #         plot_viewer.axes[i].set_title(f'{training_dataset.class_names[target]}')
         #     plot_viewer.axes[i].set_xlabel(f'{frame + i}')
         # tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {roi_id}')
         # tab.project_name = PyDetecDiv.project_name

@@ -38,7 +38,7 @@ class ModelTrainer(ABC):
         scaler = GradScaler(device)
 
         for images, gt in training_dataloader:
-            images, gt = images.to(device), gt.type(torch.LongTensor).to(device) - 1
+            images, gt = images.to(device), gt.type(torch.LongTensor).to(device)
             # optimizer.zero_grad()
 
             with autocast(device.type):

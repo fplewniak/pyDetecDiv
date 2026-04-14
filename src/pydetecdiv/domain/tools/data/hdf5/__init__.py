@@ -77,12 +77,17 @@ class ROIseqHDF5creator(Tool):
             roi_ids_hdf5 = h5file.create_carray(h5file.root, 'roi_ids', atom=tbl.UInt16Atom(shape=()),
                                                 chunkshape=(num_rois,), shape=(num_rois,))
             if self.parameters.annotations:
+
                 if self.parameters.time_first:
-                    targets_hdf5 = h5file.create_carray(h5file.root, 'targets', atom=tbl.UInt16Atom(shape=()),
-                                                        chunkshape=(num_sequences, 1,), shape=(num_sequences, num_rois))
+                    initial_values = np.zeros((num_sequences, num_rois,), dtype=np.int8) - 1
+                    targets_hdf5 = h5file.create_carray(h5file.root, 'targets', atom=tbl.Int8Atom(shape=()),
+                                                        chunkshape=(num_sequences, 1,), shape=(num_sequences, num_rois),
+                                                        obj=initial_values)
                 else:
-                    targets_hdf5 = h5file.create_carray(h5file.root, 'targets', atom=tbl.UInt16Atom(shape=()),
-                                                        chunkshape=(1, num_sequences,), shape=(num_rois, num_sequences,))
+                    initial_values = np.zeros((num_rois, num_sequences), dtype=np.int8) - 1
+                    targets_hdf5 = h5file.create_carray(h5file.root, 'targets', atom=tbl.Int8Atom(shape=()),
+                                                        chunkshape=(1, num_sequences,), shape=(num_rois, num_sequences,),
+                                                        obj=initial_values)
                 classes_hdf5 = h5file.create_table(h5file.root, 'class_names', hdf5.TblNamesRow, 'Class names')
                 classes_hdf5.append([(name,) for name in self.parameters.classification.value.classes])
                 roi_id_values = np.array(sorted([roi.id_ for roi in project.get_annotated_rois()]))
@@ -115,9 +120,9 @@ class ROIseqHDF5creator(Tool):
                     if self.parameters.annotations:
                         targets = roi.annotations()
                         if self.parameters.time_first:
-                            targets_hdf5[t, roi_mapping[roi.id_] - 1] = targets[t + int(seqlen / 2)].annotation
+                            targets_hdf5[t, roi_mapping[roi.id_] - 1] = targets[t + int(seqlen / 2)].annotation - 1
                         else:
-                            targets_hdf5[roi_mapping[roi.id_] - 1, t] = targets[t + int(seqlen / 2)].annotation
+                            targets_hdf5[roi_mapping[roi.id_] - 1, t] = targets[t + int(seqlen / 2)].annotation - 1
 
                     for t in range(1, image_resource_data.sizeT - seqlen, 1):
                         # seq = image_resource_data.sequence(seqlen, T=t, crop=(slice(x1, x2+1), slice(y1, y2+1)), drift=True)
@@ -128,11 +133,11 @@ class ROIseqHDF5creator(Tool):
                         if self.parameters.time_first:
                             roi_seq_hdf5[t, roi_mapping[roi.id_] - 1] = roi_seq.numpy()
                             if self.parameters.annotations and t < (len(targets) - int(seqlen / 2)):
-                                targets_hdf5[t, roi_mapping[roi.id_] - 1] = targets[t + int(seqlen / 2)].annotation
+                                targets_hdf5[t, roi_mapping[roi.id_] - 1] = targets[t + int(seqlen / 2)].annotation - 1
                         else:
                             roi_seq_hdf5[roi_mapping[roi.id_] - 1, t] = roi_seq.numpy()
                             if self.parameters.annotations and t < (len(targets) - int(seqlen / 2)):
-                                targets_hdf5[roi_mapping[roi.id_] - 1, t] = targets[t + int(seqlen / 2)].annotation
+                                targets_hdf5[roi_mapping[roi.id_] - 1, t] = targets[t + int(seqlen / 2)].annotation - 1
                     print(f'{roi.name}: {time.perf_counter() - start_partiel} s')
                 print(f'{fov.name}: {time.perf_counter() - start_fov}')
 
