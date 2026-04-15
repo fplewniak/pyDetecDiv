@@ -309,7 +309,7 @@ class ImageResourceData(abc.ABC):
                  crop: tuple[slice, slice] = None, drift: bool = False, alpha: bool = False) -> torch.Tensor:
         sequence = None
         for frame in range(T, T + seqlen):
-            img = self.auto_channels(C=C, T=T, Z=Z, crop=crop, drift=drift, alpha=alpha, resize=resize)
+            img = self.auto_channels(C=C, T=frame, Z=Z, crop=crop, drift=drift, alpha=alpha, resize=resize)
             if sequence is None:
                 sequence = img.as_tensor().unsqueeze(dim=0)
             else:
