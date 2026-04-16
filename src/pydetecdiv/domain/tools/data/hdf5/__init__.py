@@ -63,7 +63,7 @@ class ROIseqHDF5creator(Tool):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             num_rois = project.count_objects('ROI')
             num_frames = int(np.max([fov.image_resource().sizeT for fov in project.get_objects('FOV')]))
-            num_sequences = num_frames - seqlen
+            num_sequences = num_frames - seqlen + 1
             height = np.int64(np.max([roi.height for roi in project.get_objects('ROI')]))
             width = np.int64(np.max([roi.width for roi in project.get_objects('ROI')]))
             if self.parameters.time_first:
@@ -95,6 +95,7 @@ class ROIseqHDF5creator(Tool):
                 roi_id_values = np.array(sorted([roi.id_ for roi in project.get_objects('ROI')]))
 
             roi_new_idx, roi_mapping = fastremap.renumber(roi_id_values, in_place=False, preserve_zero=False)
+            roi_mapping = {k: v - 1 for k, v in roi_mapping.items()}
             for idx in roi_new_idx:
                 roi_ids_hdf5[idx - 1] = roi_id_values[idx - 1]
 
@@ -113,33 +114,35 @@ class ROIseqHDF5creator(Tool):
                                                            drift=True, resize=(height, width))
 
                     if self.parameters.time_first:
-                        roi_seq_hdf5[t, roi_mapping[roi.id_] - 1] = roi_seq.numpy()
+                        roi_seq_hdf5[t, roi_mapping[roi.id_]] = roi_seq.numpy()
                     else:
-                        roi_seq_hdf5[roi_mapping[roi.id_] - 1, t] = roi_seq.numpy()
+                        roi_seq_hdf5[roi_mapping[roi.id_], t] = roi_seq.numpy()
 
                     if self.parameters.annotations:
                         targets = roi.annotations()
                         if self.parameters.time_first:
-                            targets_hdf5[t, roi_mapping[roi.id_] - 1] = targets[t + int(seqlen / 2) - 1].annotation - 1
+                            targets_hdf5[t, roi_mapping[roi.id_]] = targets[t + int(seqlen / 2)].annotation - 1
                         else:
-                            targets_hdf5[roi_mapping[roi.id_] - 1, t] = targets[t + int(seqlen / 2) - 1].annotation - 1
+                            targets_hdf5[roi_mapping[roi.id_], t] = targets[t + int(seqlen / 2)].annotation - 1
 
-                    for t in range(1, image_resource_data.sizeT - seqlen, 1):
+                    # for t in range(1, image_resource_data.sizeT - seqlen, 1):
+                    for t in range(1, num_sequences, 1):
                         # seq = image_resource_data.sequence(seqlen, T=t, crop=(slice(x1, x2+1), slice(y1, y2+1)), drift=True)
-                        img = image_resource_data.auto_channels(T=t, Z=z_channels, crop=(slice(x1, x2 + 1), slice(y1, y2 + 1)),
+                        frame = t - 1 + seqlen
+                        img = image_resource_data.auto_channels(T=frame, Z=z_channels, crop=(slice(x1, x2 + 1), slice(y1, y2 + 1)),
                                                                 drift=True, resize=(height, width))
                         roi_seq = torch.cat([roi_seq[1:], img.as_tensor().unsqueeze(dim=0)], dim=0)
 
                         if self.parameters.time_first:
-                            roi_seq_hdf5[t, roi_mapping[roi.id_] - 1] = roi_seq.numpy()
+                            roi_seq_hdf5[t, roi_mapping[roi.id_]] = roi_seq.numpy()
                             # if self.parameters.annotations and t < (len(targets) - int(seqlen / 2)):
-                            if self.parameters.annotations:
-                                targets_hdf5[t, roi_mapping[roi.id_] - 1] = targets[t + int(seqlen / 2) - 1].annotation - 1
+                            if self.parameters.annotations and (t + int(seqlen / 2)) < len(targets):
+                                targets_hdf5[t, roi_mapping[roi.id_]] = targets[t + int(seqlen / 2)].annotation
                         else:
-                            roi_seq_hdf5[roi_mapping[roi.id_] - 1, t] = roi_seq.numpy()
+                            roi_seq_hdf5[roi_mapping[roi.id_], t] = roi_seq.numpy()
                             # if self.parameters.annotations and t < (len(targets) - int(seqlen / 2)):
-                            if self.parameters.annotations:
-                                targets_hdf5[roi_mapping[roi.id_] - 1, t] = targets[t + int(seqlen / 2) - 1].annotation - 1
+                            if self.parameters.annotations and (t + int(seqlen / 2)) < len(targets):
+                                targets_hdf5[roi_mapping[roi.id_], t] = targets[t + int(seqlen / 2)].annotation
                     print(f'{roi.name}: {time.perf_counter() - start_partiel} s')
                 print(f'{fov.name}: {time.perf_counter() - start_fov}')
 
