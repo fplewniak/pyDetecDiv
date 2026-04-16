@@ -5,7 +5,7 @@ to meet the specific needs of tools
 from abc import abstractmethod
 from typing import Any
 
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QCloseEvent
 from PySide6.QtWidgets import QMenu
 
 from pydetecdiv.app.gui.core.widgets import Dialog
@@ -19,6 +19,10 @@ class ToolDialog(Dialog):
     def __init__(self, tool: Tool, title: str = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(title, **kwargs)
         self.tool = tool
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        for parameter in self.tool.parameters.parameter_list:
+            parameter.should_be_saved = False
 
 
 class ToolMenu(QMenu):

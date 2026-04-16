@@ -27,6 +27,7 @@ class Parameter:
         self.groups: set[str] = set() if groups is None else groups
         self.qmodel: StandardItemModel | None = None
         self.enabled = enabled
+        self.should_be_saved: bool = False
         self.__dict__.update(kwargs)
 
     def kwargs(self) -> dict[str, Any]:

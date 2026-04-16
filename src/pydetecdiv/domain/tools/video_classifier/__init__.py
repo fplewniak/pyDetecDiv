@@ -31,33 +31,25 @@ class VideoClassifier(DeepTool):
         super().__init__(parameters, working_dir)
         self.parameters = Parameters(
                 [
-                    IntParameter(name='epochs', label='Epochs', groups={'training', 'finetune'}, default=32),
-                    IntParameter(name='batch_size', label='Batch size', groups={'training', 'finetune'}, default=8, ),
-                    ChoiceParameter(name='optimizer', label='Optimizer', groups={'training', 'finetune'}, default='AdamW',
+                    IntParameter(name='epochs', label='Epochs', default=32),
+                    IntParameter(name='batch_size', label='Batch size', default=8, ),
+                    ChoiceParameter(name='optimizer', label='Optimizer', default='AdamW',
                                     items={'AdamW'   : optim.AdamW,
                                            'SGD'     : optim.SGD,
                                            'Adadelta': optim.Adadelta,
                                            'Adamax'  : optim.Adamax,
                                            'Nadam'   : optim.NAdam,
                                            }, ),
-                    IntParameter(name='seed', label='Random seed', groups={'training', 'finetune'}, maximum=999999999,
-                                 default=42, ),
-                    FloatParameter(name='learning_rate', label='Learning rate', groups={'training', 'finetune'}, default=1.5e-4,
-                                   minimum=1e-20, maximum=1.0),
-                    FloatParameter(name='focal_gamma', label='Focal loss gamma', groups={'training', 'finetune'}, default=1.0,
-                                   minimum=0.0, maximum=2.0, ),
-                    FloatParameter(name='num_training', label='Training dataset', groups={'training', 'finetune'}, default=0.4,
-                                   minimum=0.01, maximum=0.98, ),
-                    FloatParameter(name='num_validation', label='Validation dataset', groups={'training', 'finetune'},
-                                   default=0.3, minimum=0.01, maximum=0.98, ),
-                    FloatParameter(name='num_test', label='Test dataset', groups={'training', 'finetune'}, default=0.3,
-                                   minimum=0.01, maximum=0.98, enabled=False),
-                    IntParameter(name='data_seed', label='Random seed', groups={'training', 'finetune'}, maximum=999999999,
-                                 default=42),
-                    PathParameter(name='hdf5_file', label='', select_dir=False, groups={'training', 'finetune', 'predict'},
-                                  filters=["HDF5 (*.h5 *.hdf5)", ], default='roi_data.h5', ),
-                    CheckParameter(name='time_first', label='Time first', groups={'training', 'finetune', 'predict'},
-                                   default=False),
+                    IntParameter(name='seed', label='Random seed', maximum=999999999, default=42, ),
+                    FloatParameter(name='learning_rate', label='Learning rate', default=1.5e-4, minimum=1e-20, maximum=1.0),
+                    FloatParameter(name='focal_gamma', label='Focal loss gamma', default=1.0, minimum=0.0, maximum=2.0, ),
+                    FloatParameter(name='num_training', label='Training dataset', default=0.4, minimum=0.01, maximum=0.98, ),
+                    FloatParameter(name='num_validation', label='Validation dataset', default=0.3, minimum=0.01, maximum=0.98, ),
+                    FloatParameter(name='num_test', label='Test dataset', default=0.3, minimum=0.01, maximum=0.98, enabled=False),
+                    IntParameter(name='data_seed', label='Random seed', maximum=999999999, default=42),
+                    PathParameter(name='hdf5_file', label='', select_dir=False, filters=["HDF5 (*.h5 *.hdf5)", ],
+                                  default='roi_data.h5', ),
+                    CheckParameter(name='time_first', label='Time first', default=False),
                     ]
                 )
 
@@ -87,9 +79,6 @@ class VideoClassifier(DeepTool):
                                                       time_first=self.parameters.time_first.value),
                                         validation_idx, targets=True, image_shape=image_shape)
 
-        # run = self.save_run(command='prepare_data', param_list=[self.parameters.hdf5_file,
-        #                                                         self.parameters.time_first])
-        # print(run)
         return training_dataset, validation_dataset, class_weights
 
     def prepare_data_for_prediction(self, *args, **kwargs) -> None:

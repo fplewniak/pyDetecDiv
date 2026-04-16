@@ -40,12 +40,6 @@ class VideoClassifierTrainer(ModelTrainer):
         print(f'Training dataset size: {len(training_dataset)}')
         print(f'Validation dataset size: {len(validation_dataset)}')
 
-        # img, target = training_dataset[0]
-        # roi_id, frame = training_dataset.get_ref(0)
-        # print(f'{roi_id}: {training_dataset.indices[0]}')
-        # print(training_dataset.roi(training_dataset.indices[0]['roi'].item()))
-        # print(img.shape, img[7].shape, target)
-
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f'running training on {"GPU" if device.type == "cuda" else "CPU"}')
 
@@ -113,37 +107,5 @@ class VideoClassifierTrainer(ModelTrainer):
         training_dataset.close()
         validation_dataset.close()
 
-        #run = self.tool.save_run(command='training')
-
-    # def training_loop(self, training_dataloader, validation_dataloader, model, loss_fn, optimizer, device, train_stats):
-    #     """
-    #     The training loop for the video classifier, run once per epoch
-    #     """
-    #     model.train()
-    #     train_stats.metrics.reset()
-    #     running_loss = 0.0
-    #     scaler = GradScaler('cuda')
-    #
-    #     for images, gt in training_dataloader:
-    #         images, gt = images.to(device), gt.type(torch.LongTensor).to(device)
-    #         # optimizer.zero_grad()
-    #
-    #         with autocast('cuda'):
-    #             outputs = model(images)
-    #             train_stats.metrics.update(outputs, gt - 1)
-    #             loss = loss_fn(outputs, gt - 1)
-    #
-    #         scaler.scale(loss).backward()
-    #         scaler.step(optimizer)
-    #         scaler.update()
-    #         optimizer.zero_grad()
-    #
-    #         running_loss += loss.item()
-    #
-    #     avg_train_loss = running_loss / len(training_dataloader)
-    #     train_stats.log_metrics()
-    #     train_stats.log_loss(avg_train_loss)
-    #
-    #     # avg_val_loss = evaluate_metrics(model, validation_dataloader, loss_fn,device, train_stats.val_metrics)
-    #     # train_stats.log_val_metrics()
-    #     # train_stats.log_val_loss(avg_val_loss)
+        run = self.tool.save_run(command='train_model')
+        print(run)
