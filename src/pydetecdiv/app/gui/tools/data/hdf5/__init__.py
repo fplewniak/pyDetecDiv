@@ -50,6 +50,7 @@ class Create_ROI_HDF5Dialog(ToolDialog):
             ])
 
         set_connections({self.button_box.accepted: self.tool.create_file,
+                         # self.button_box.accepted: self.tool.test_image_file,
                          self.button_box.rejected: lambda: print('Rejected'),
                          })
 

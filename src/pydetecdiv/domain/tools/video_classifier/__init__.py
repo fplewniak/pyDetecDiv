@@ -50,6 +50,7 @@ class VideoClassifier(DeepTool):
                     PathParameter(name='hdf5_file', label='', select_dir=False, filters=["HDF5 (*.h5 *.hdf5)", ],
                                   default='roi_data.h5', ),
                     CheckParameter(name='time_first', label='Time first', default=False),
+                    IntParameter(name='idx', label='Dataset index', maximum=999999999, minimum=0, default=0),
                     ]
                 )
 

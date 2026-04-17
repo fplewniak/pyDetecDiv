@@ -11,6 +11,7 @@ import tables as tbl
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
 from pydetecdiv.app.parameters import Parameters, PathParameter, CheckParameter, IntParameter, ChoiceParameter
 from pydetecdiv.app.tools import Tool
+from pydetecdiv.domain.Image import ImgDType
 from pydetecdiv.domain.tools.data import RoiDataReader
 from pydetecdiv.utils import hdf5
 
@@ -50,6 +51,22 @@ class ROIseqHDF5creator(Tool):
     def update_classification(self) -> None:
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             self.parameters.classification.set_items({f'{c.name} {c.classes}': c for c in project.get_objects('Classification')})
+
+    def test_image_file(self):
+        z_channels = [self.parameters.red_channel.value, self.parameters.green_channel.value, self.parameters.blue_channel.value]
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            fov = next(fov for fov in project.get_objects('FOV') if fov.roi_list)
+            print(fov)
+            image_resource_data = fov.image_resource().image_resource_data()
+            height = np.int64(np.max([roi.height for roi in fov.roi_list]))
+            width = np.int64(np.max([roi.width for roi in fov.roi_list]))
+            for roi in fov.roi_list:
+                (x1, y1), (x2, y2) = (roi.top_left, roi.bottom_right)
+                for t in range(1, image_resource_data.sizeT, 1):
+                    img = image_resource_data.auto_channels(T=t, Z=z_channels, crop=(slice(x1, x2 + 1), slice(y1, y2 + 1)),
+                                                                drift=True, resize=(height, width))
+                    print(f'{roi.id_}, {roi.name}: {t=}, {torch.max(img.as_tensor(dtype=ImgDType.float32))}, {img.dtype}, {img.shape}')
+
 
     def create_file(self):
         if self.parameters.annotations:
