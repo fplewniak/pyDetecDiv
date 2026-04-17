@@ -43,7 +43,7 @@ class VideoClassifierTrainer(ModelTrainer):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f'running training on {"GPU" if device.type == "cuda" else "CPU"}')
 
-        torch.random.manual_seed(self.tool.parameters['seed'].value)
+        torch.random.manual_seed(self.tool.parameters.seed.value)
 
         model = MViT_v2_s(n_classes=6)
         model_name = 'MViT_v2_small'
