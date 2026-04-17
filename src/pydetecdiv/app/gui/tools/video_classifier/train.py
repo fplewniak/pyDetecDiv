@@ -34,6 +34,7 @@ class TrainModelDialog(ToolDialog):
                                              tool.parameters.num_validation,
                                              tool.parameters.num_test,
                                              tool.parameters.data_seed,
+                                             # tool.parameters.idx,
                                              ],
                                          widget_args={
                                              'num_test': {'decimals': 2},
