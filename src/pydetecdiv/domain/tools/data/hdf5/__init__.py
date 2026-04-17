@@ -121,9 +121,9 @@ class ROIseqHDF5creator(Tool):
                     if self.parameters.annotations:
                         targets = roi.annotations()
                         if self.parameters.time_first:
-                            targets_hdf5[t, roi_mapping[roi.id_]] = targets[t + int(seqlen / 2)].annotation - 1
+                            targets_hdf5[t, roi_mapping[roi.id_]] = targets[t + int(seqlen / 2)].annotation
                         else:
-                            targets_hdf5[roi_mapping[roi.id_], t] = targets[t + int(seqlen / 2)].annotation - 1
+                            targets_hdf5[roi_mapping[roi.id_], t] = targets[t + int(seqlen / 2)].annotation
 
                     # for t in range(1, image_resource_data.sizeT - seqlen, 1):
                     for t in range(1, num_sequences, 1):
