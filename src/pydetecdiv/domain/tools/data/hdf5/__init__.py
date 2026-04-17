@@ -68,11 +68,11 @@ class ROIseqHDF5creator(Tool):
             width = np.int64(np.max([roi.width for roi in project.get_objects('ROI')]))
             if self.parameters.time_first:
                 roi_seq_hdf5 = h5file.create_carray(h5file.root, 'roi_data',
-                                                    atom=tbl.Float16Atom(shape=(seqlen, np.int64(3), height, width)),
+                                                    atom=tbl.Float32Atom(shape=(seqlen, np.int64(3), height, width)),
                                                     chunkshape=(num_frames, 1,), shape=(num_frames, num_rois))
             else:
                 roi_seq_hdf5 = h5file.create_carray(h5file.root, 'roi_data',
-                                                    atom=tbl.Float16Atom(shape=(seqlen, np.int64(3), height, width)),
+                                                    atom=tbl.Float32Atom(shape=(seqlen, np.int64(3), height, width)),
                                                     chunkshape=(1, num_frames,), shape=(num_rois, num_frames))
             roi_ids_hdf5 = h5file.create_carray(h5file.root, 'roi_ids', atom=tbl.UInt16Atom(shape=()),
                                                 chunkshape=(num_rois,), shape=(num_rois,))
