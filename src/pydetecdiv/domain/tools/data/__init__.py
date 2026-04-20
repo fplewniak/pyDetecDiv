@@ -71,6 +71,14 @@ class RoiDataReader(ABC):
 
     @property
     @abstractmethod
+    def num_frames(self) -> int:
+        """
+        Returns the number of frames in the source
+        :return: the number of frames
+        """
+
+    @property
+    @abstractmethod
     def num_targets(self) -> int:
         """
         Returns the number of targets in the source
@@ -86,7 +94,24 @@ class RoiDataReader(ABC):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             return project.get_object('ROI', self.roi_id(roi_idx))
 
-    def indices(self, roi_idx: int | list[int] = None) -> polars.DataFrame:
+    def target_indices(self, roi_idx: int | list[int] = None) -> polars.DataFrame:
+        """
+        Returns all the indices of (ROI, frame) pairs in the source that have a target
+        :return: the indices
+        """
+        if roi_idx is None:
+            roi_idx = list(range(self.num_rois))
+        elif isinstance(roi_idx, int):
+            roi_idx = [roi_idx]
+        rois, frames = [], []
+        for idx in roi_idx:
+            for frame in range(self.num_targets):
+                if self.num_targets > 0 and self.target(idx, frame) > -1:
+                    rois.append(idx)
+                    frames.append(frame)
+        return polars.DataFrame({'roi': rois, 'frame': frames})
+
+    def all_indices(self, roi_idx: int | list[int] = None) -> polars.DataFrame:
         """
         Returns all the indices of (ROI, frame) pairs in the source
         :return: all the indices
@@ -97,11 +122,19 @@ class RoiDataReader(ABC):
             roi_idx = [roi_idx]
         rois, frames = [], []
         for idx in roi_idx:
-            for frame in range(self.num_targets):
-                if self.target(idx, frame) > -1:
-                    rois.append(idx)
-                    frames.append(frame)
+            for frame in range(self.num_frames):
+                rois.append(idx)
+                frames.append(frame)
         return polars.DataFrame({'roi': rois, 'frame': frames})
+
+    def no_target_indices(self, roi_idx: int | list[int] = None) -> polars.DataFrame:
+        """
+        Returns all the indices of (ROI, frame) pairs in the source that do not have any target
+        :return: the indices
+        """
+        with_targets = self.target_indices(roi_idx)
+        all_indices = self.all_indices(roi_idx)
+        return all_indices.join(with_targets, left_on=['roi', 'frame'], right_on=['roi', 'frame'], how='anti')
 
     def close(self):
         if hasattr(self.source, 'close'):

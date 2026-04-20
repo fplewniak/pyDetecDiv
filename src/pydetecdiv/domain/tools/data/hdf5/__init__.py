@@ -216,3 +216,9 @@ class ROIHDF5reader(RoiDataReader):
                 return len(self.source.root.targets)
             return int(self.source.root.targets.shape[-1])
         return 0
+
+    @property
+    def num_frames(self) -> int:
+        if self.time_first:
+            return len(self.source.root.roi_data)
+        return int(self.source.root.roi_data.shape[-1])

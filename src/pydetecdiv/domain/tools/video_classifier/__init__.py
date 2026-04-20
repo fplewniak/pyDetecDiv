@@ -67,8 +67,8 @@ class VideoClassifier(DeepTool):
         num_training = int(hdf5_reader.num_rois * self.parameters.num_training + 0.5)
         num_validation = int(hdf5_reader.num_rois * self.parameters.num_validation + 0.5)
 
-        training_idx = hdf5_reader.indices(roi_idx[:num_training])
-        validation_idx = hdf5_reader.indices(roi_idx[num_training:num_training + num_validation])
+        training_idx = hdf5_reader.target_indices(roi_idx[:num_training])
+        validation_idx = hdf5_reader.target_indices(roi_idx[num_training:num_training + num_validation])
         class_weights = compute_class_weights(hdf5_reader.targets)
 
         hdf5_reader.close()
