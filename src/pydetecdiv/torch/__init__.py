@@ -4,6 +4,7 @@ A module with torch specific helper classes
 from typing import Literal, Iterable
 
 import matplotlib.axes
+import numpy as np
 import torch
 from torch import jit, nn, Tensor
 from torchmetrics import MetricCollection
@@ -213,6 +214,10 @@ class TrainingStats(ModelStats):
         :return: the loss history
         """
         return self.history.val_loss
+
+    def is_best_val_loss(self, epoch: int = -1) -> bool:
+        epoch = len(self.val_loss) - 1 if epoch == -1 else epoch
+        return epoch == np.argmin(self.val_loss)
 
     def metric_history(self, metric_name: str = None) -> list[float] | dict[str, list[float]]:
         """

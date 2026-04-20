@@ -1,6 +1,7 @@
 """
 Video classifier trainer class
 """
+import os
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -11,7 +12,7 @@ from torch.utils.data import DataLoader
 from torchinfo import summary
 from torchvision.transforms import v2
 
-from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
+from pydetecdiv.app import pydetecdiv_project, PyDetecDiv, get_project_dir
 from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer
 from pydetecdiv.app.tools.deep_learning import ModelTrainer
 from pydetecdiv.domain.tools.video_classifier.models.MViT import MViT_v2_s, MViT_v1_b
@@ -68,6 +69,12 @@ class VideoClassifierTrainer(ModelTrainer):
 
         # summary(model, (self.tool.parameters['batch_size'].value, 15, 3, 224, 224), device=device)
 
+        run = self.tool.save_run(command='train_model')
+        print(run)
+
+        base_checkpoint_path = os.path.join(get_project_dir(), 'video_classification', 'checkpoints', 'runs', str(run.id_))
+        os.makedirs(base_checkpoint_path, exist_ok=True)
+
         for epoch in range(self.tool.parameters['epochs'].value):
             self.training_loop(training_dataloader, validation_dataloader, model, loss_fn, optimizer, device, train_stats)
             print(f"Epoch {epoch + 1}/{self.tool.parameters['epochs'].value}, "
@@ -77,6 +84,17 @@ class VideoClassifierTrainer(ModelTrainer):
                   f"Val {main_metric}: {train_stats.history.val_metric_history(main_metric)[-1]:.3f}, "
                   # f"learning rate: {scheduler.get_last_lr()[0]:0.2e}, "
                   f" -- ({datetime.now().strftime('%H:%M:%S')})")
+
+            if train_stats.is_best_val_loss(epoch):
+                checkpoint_filepath = os.path.join(base_checkpoint_path, f'epoch{epoch}_best_loss.pt')
+                model_scripted = torch.jit.script(model)
+                model_scripted.save(checkpoint_filepath)
+                print(f"Saving best model at epoch {epoch + 1} with val loss {train_stats.history.val_loss[-1]:.4f}" 
+                      f" and train loss {train_stats.history.loss[-1]:.4f}")
+
+        checkpoint_filepath = os.path.join(base_checkpoint_path, f'last_epoch{epoch}.pt')
+        model_scripted = torch.jit.script(model)
+        model_scripted.save(checkpoint_filepath)
 
         # idx = self.tool.parameters.idx.value
         # sequence, target = training_dataset[idx]
@@ -106,6 +124,3 @@ class VideoClassifierTrainer(ModelTrainer):
 
         training_dataset.close()
         validation_dataset.close()
-
-        run = self.tool.save_run(command='train_model')
-        print(run)
