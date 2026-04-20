@@ -178,7 +178,7 @@ class ROIHDF5reader(RoiDataReader):
 
     def roi_data(self, roi_idx: int | slice = None, frame: int | slice = 0) -> torch.Tensor:
         if self.time_first:
-            return self.source.root.roi_data[frame, roi_idx]
+            return torch.as_tensor(self.source.root.roi_data[frame, roi_idx])
         return torch.as_tensor(self.source.root.roi_data[roi_idx, frame])
 
     def target(self, roi_idx: int | slice = None, frame: int | slice = 0) -> torch.Tensor | None:
