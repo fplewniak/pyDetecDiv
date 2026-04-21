@@ -126,3 +126,5 @@ class VideoClassifierTrainer(ModelTrainer):
 
         training_dataset.close()
         validation_dataset.close()
+
+        return train_stats

@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui.core.widgets import ParametersFormGroupBox, set_connections
 from pydetecdiv.app.gui.tools import ToolAction, ToolDialog
+from pydetecdiv.app.gui.tools.deep_learning import plot_training_results
 from pydetecdiv.app.parameters import FloatParameter
 from pydetecdiv.app.tools.deep_learning import DeepTool
 
@@ -26,8 +27,8 @@ class TrainModelDialog(ToolDialog):
                                                     tool.parameters.seed,
                                                     ],
                                                 widget_args={
-                                                    'learning_rate': {'decimals': 5, 'single_step': 1e-5, 'adaptive': False,},
-                                                    'lambda_reg': {'decimals': 5, 'single_step': 1e-5, 'adaptive': False},
+                                                    'learning_rate': {'decimals': 5, 'single_step': 1e-5, 'adaptive': False, },
+                                                    'lambda_reg'   : {'decimals': 5, 'single_step': 1e-5, 'adaptive': False},
                                                     }
                                                 )
 
@@ -57,13 +58,15 @@ class TrainModelDialog(ToolDialog):
 
         self.arrangeWidgets([self.hyperparameters, self.datasets, self.hdf5_file, self.button_box])
 
-        set_connections({self.button_box.accepted: tool.model_trainer.train_model,
-                         self.button_box.rejected: lambda: print('Rejected'),
-                         tool.parameters.epochs.changed: lambda: print(tool.parameters.epochs.value),
-                         tool.parameters.optimizer.changed: lambda: print(tool.parameters.optimizer.value),
-                         tool.parameters.num_training.changed: lambda: self.update_datasets(tool.parameters.num_training),
+        set_connections({self.button_box.accepted              : lambda: self.wait_for_process(tool.model_trainer.train_model),
+                         self.button_box.rejected              : lambda: print('Rejected'),
+                         tool.parameters.epochs.changed        : lambda: print(tool.parameters.epochs.value),
+                         tool.parameters.optimizer.changed     : lambda: print(tool.parameters.optimizer.value),
+                         tool.parameters.num_training.changed  : lambda: self.update_datasets(tool.parameters.num_training),
                          tool.parameters.num_validation.changed: lambda: self.update_datasets(tool.parameters.num_validation),
                          })
+
+        self.run_after_process([plot_training_results])
 
         tool.parameters.reset()
         self.fit_to_contents()
@@ -75,6 +78,9 @@ class TrainModelDialog(ToolDialog):
             total = self.tool.parameters.num_test + self.tool.parameters.num_training + self.tool.parameters.num_validation
             if total > 1.0:
                 changed_param.value = changed_param - total + 1.0
+
+    # def run_process(self) -> None:
+    #     self.job_finished.emit(self.tool.model_trainer.train_model())
 
 
 class TrainModelAction(ToolAction):
