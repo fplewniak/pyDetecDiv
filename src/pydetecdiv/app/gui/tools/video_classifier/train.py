@@ -21,10 +21,13 @@ class TrainModelDialog(ToolDialog):
                                                     tool.parameters.optimizer,
                                                     tool.parameters.learning_rate,
                                                     tool.parameters.focal_gamma,
+                                                    tool.parameters.regularization,
+                                                    tool.parameters.lambda_reg,
                                                     tool.parameters.seed,
                                                     ],
                                                 widget_args={
                                                     'learning_rate': {'decimals': 5, 'single_step': 1e-5, 'adaptive': False,},
+                                                    'lambda_reg': {'decimals': 5, 'single_step': 1e-5, 'adaptive': False},
                                                     }
                                                 )
 
@@ -34,6 +37,7 @@ class TrainModelDialog(ToolDialog):
                                              tool.parameters.num_validation,
                                              tool.parameters.num_test,
                                              tool.parameters.data_seed,
+                                             tool.parameters.augmentation,
                                              # tool.parameters.idx,
                                              ],
                                          widget_args={

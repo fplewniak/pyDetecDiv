@@ -9,6 +9,7 @@ import polars
 import tables
 import torch
 from torch import optim
+from torchvision.transforms import InterpolationMode, v2
 
 from pydetecdiv.app.parameters import Parameters, IntParameter, FloatParameter, ChoiceParameter, PathParameter, CheckParameter
 from pydetecdiv.app.tools.deep_learning import DeepTool, ModelTrainer, ModelEvaluator, Predictor, ROIDataset
@@ -17,6 +18,7 @@ from pydetecdiv.domain.tools.video_classifier.train import VideoClassifierTraine
 from pydetecdiv.domain.tools.video_classifier.evaluate import VideoClassifierEvaluator
 from pydetecdiv.domain.tools.video_classifier.predict import VideoClassifierPredictor
 from pydetecdiv.domain.tools.data.hdf5 import ROIHDF5reader
+from pydetecdiv.utils.Alphabets import greek
 
 
 class VideoClassifier(DeepTool):
@@ -50,7 +52,15 @@ class VideoClassifier(DeepTool):
                     PathParameter(name='hdf5_file', label='', select_dir=False, filters=["HDF5 (*.h5 *.hdf5)", ],
                                   default='roi_data.h5', ),
                     CheckParameter(name='time_first', label='Time first', default=False),
-                    IntParameter(name='idx', label='Dataset index', maximum=999999999, minimum=0, default=0),
+                    CheckParameter(name='augmentation', label='Augmentation', groups={'training', 'finetune'}, default=False,
+                                   exclusive=False),
+                    ChoiceParameter(name='regularization', label='Regularization method', default='Ridge (L2)',
+                                    items={'None'      : 0,
+                                           'LASSO (L1)': 1,
+                                           'Ridge (L2)': 2,
+                                           }),
+                    FloatParameter(name='lambda_reg', label=f'{greek["lambda"]} parameter', default=2e-5, ),
+                    # IntParameter(name='idx', label='Dataset index', maximum=999999999, minimum=0, default=0),
                     ]
                 )
 
@@ -73,9 +83,13 @@ class VideoClassifier(DeepTool):
 
         hdf5_reader.close()
 
+        augmentation = v2.RandomAffine(degrees=5.0, translate=(4.0 / 60.0, 4.0 / 60.0), scale=(0.9, 1.111),
+                                       interpolation=InterpolationMode.BILINEAR) if self.parameters.augmentation else None
+        print(f'{augmentation=}')
+
         training_dataset = ROIDataset(ROIHDF5reader(tables.open_file(self.parameters.hdf5_file.value, mode='r'),
                                                     time_first=self.parameters.time_first.value),
-                                      training_idx, targets=True, image_shape=image_shape)
+                                      training_idx, targets=True, image_shape=image_shape, transform=augmentation)
         validation_dataset = ROIDataset(ROIHDF5reader(tables.open_file(self.parameters.hdf5_file.value, mode='r'),
                                                       time_first=self.parameters.time_first.value),
                                         validation_idx, targets=True, image_shape=image_shape)

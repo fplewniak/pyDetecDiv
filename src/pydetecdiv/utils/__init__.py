@@ -8,7 +8,6 @@ import numpy as np
 from typing import Callable, Any
 
 
-
 def singleton(class_) -> Callable:
     """
     Definition of a singleton annotation, creating an object if it does not exist yet or returning the current one if
@@ -69,7 +68,7 @@ def previous(iterator) -> Any:
     return iterator.__previous__()
 
 
-def round_to_even(value: float, ceil: bool=True) -> int:
+def round_to_even(value: float, ceil: bool = True) -> int:
     """
     Round a float value to an even integer. If ceil is True then the returned integer is the first even number equal to
     or larger than the rounded integer, otherwise, it is the first smaller or equal even number
@@ -104,7 +103,8 @@ def remove_keys_from_dict(dictionary: dict[str | Any, Any], keys: list[str | Any
     return dict(filter(lambda item: item[0] not in keys, dictionary.items()))
 
 
-def split_list(arr: list[Any] | np.ndarray[Any], sep: list[Any] | Any, max_length: int=None, constant_length: bool=True) -> list:
+def split_list(arr: list[Any] | np.ndarray[Any], sep: list[Any] | Any, max_length: int = None,
+               constant_length: bool = True) -> list:
     arr = np.array(arr)
     sep = sep if isinstance(sep, list) else [sep]
     indices = np.where(np.diff([arr == s for s in sep]))[0] + 1
@@ -122,6 +122,7 @@ def split_list(arr: list[Any] | np.ndarray[Any], sep: list[Any] | Any, max_lengt
     if constant_length:
         return [sublist for sublist in sublists if len(sublist) == max_length]
     return sublists
+
 
 def flatten_list(list_of_lists):
     return [x for sublist in list_of_lists for x in sublist]
@@ -143,4 +144,3 @@ def increment_string(s: str) -> str:
         s[i] = 'a'  # reset and carry over
         i -= 1
     return 'a' + ''.join(s)  # expand if overflow (zzz → aaaa)
-

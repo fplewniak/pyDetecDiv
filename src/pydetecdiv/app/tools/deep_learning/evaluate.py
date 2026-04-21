@@ -21,7 +21,7 @@ class ModelEvaluator(ABC):
         self.tool.command = 'evaluate_model'
 
     @staticmethod
-    def evaluate_model(data_loader, model, loss_fn, device, metrics):
+    def evaluate_model(data_loader, model, loss_fn, device, metrics, regularization: int = 0, lambda_reg: float = 0.0):
         """
         Method to evaluate the model
         """
@@ -35,7 +35,10 @@ class ModelEvaluator(ABC):
                     outputs = model(images)
                     loss = loss_fn(outputs, gt)
                     metrics.update(outputs, gt)
-
+                if regularization == 1:
+                    loss += lambda_reg * torch.abs(torch.cat([x.view(-1) for x in model.parameters()])).sum()
+                elif regularization == 2:
+                    loss += lambda_reg * torch.square(torch.cat([x.view(-1) for x in model.parameters()])).sum()
                 running_loss += loss.item()
 
         return running_loss / len(data_loader)

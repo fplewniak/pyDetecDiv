@@ -28,7 +28,8 @@ class ModelTrainer(ABC):
         """
 
     @staticmethod
-    def training_loop(training_dataloader, validation_dataloader, model, loss_fn, optimizer, device, train_stats):
+    def training_loop(training_dataloader, validation_dataloader, model, loss_fn, optimizer, device, train_stats,
+                      regularization: int = 0, lambda_reg: float = 0.0):
         """
         The elementary training loop, run once per epoch on all batches
         """
@@ -46,6 +47,11 @@ class ModelTrainer(ABC):
                 train_stats.metrics.update(outputs, gt)
                 loss = loss_fn(outputs, gt)
 
+            if regularization == 1:
+                loss += lambda_reg * torch.abs(torch.cat([x.view(-1) for x in model.parameters()])).sum()
+            elif regularization == 2:
+                loss += lambda_reg * torch.square(torch.cat([x.view(-1) for x in model.parameters()])).sum()
+
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
@@ -57,6 +63,7 @@ class ModelTrainer(ABC):
         train_stats.log_metrics()
         train_stats.log_loss(avg_train_loss)
 
-        avg_val_loss = ModelEvaluator.evaluate_model(validation_dataloader, model, loss_fn, device, train_stats.val_metrics)
+        avg_val_loss = ModelEvaluator.evaluate_model(validation_dataloader, model, loss_fn, device, train_stats.val_metrics,
+                                                     regularization, lambda_reg)
         train_stats.log_val_metrics()
         train_stats.log_val_loss(avg_val_loss)
