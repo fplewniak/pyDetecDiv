@@ -61,6 +61,7 @@ class TrainModelDialog(ToolDialog):
                          tool.parameters.num_validation.changed: lambda: self.update_datasets(tool.parameters.num_validation),
                          })
 
+        tool.parameters.reset()
         self.fit_to_contents()
         self.exec()
 
