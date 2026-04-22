@@ -1,16 +1,19 @@
 """
 A module with torch specific helper classes
 """
+import sys
 from typing import Literal, Iterable
 
 import matplotlib.axes
 import numpy as np
 import torch
 from torch import jit, nn, Tensor
+from torch.optim.lr_scheduler import LinearLR, StepLR, ReduceLROnPlateau, SequentialLR, LRScheduler
 from torchmetrics import MetricCollection
 from torchmetrics.classification import MulticlassConfusionMatrix
 
 from pydetecdiv.app.parameters import Parameters
+
 
 def set_optimizer(parameters: Parameters, model_param: dict | Iterable) -> torch.optim.Optimizer:
     """
@@ -29,6 +32,27 @@ def set_optimizer(parameters: Parameters, model_param: dict | Iterable) -> torch
             optimizer = parameters['optimizer'].value(model_param, lr=lr, momentum=momentum, weight_decay=weight_decay)
 
     return optimizer
+
+
+def set_schedulers(parameters: Parameters, optimizer: torch.optim.Optimizer) -> tuple[SequentialLR | StepLR, ReduceLROnPlateau]:
+    reduce_on_plateau = None
+    main_scheduler = StepLR(optimizer, step_size=parameters.step_size.value, gamma=parameters.step_gamma.value, last_epoch=-1)
+    if parameters.step_scheduler:
+        print('Step scheduler', file=sys.stderr)
+
+    if parameters.warmup:
+        print('Warm-up scheduler', file=sys.stderr)
+        warmup = LinearLR(optimizer, start_factor=parameters.wu_start.value, end_factor=parameters.wu_end.value,
+                          total_iters=parameters.wu_duration.value)
+        main_scheduler = SequentialLR(optimizer, schedulers=[warmup, main_scheduler], milestones=[parameters.wu_duration.value])
+
+    if parameters.reduce_lr_on_plateau:
+        print('Reduce LR on plateau scheduler', file=sys.stderr)
+        reduce_on_plateau = ReduceLROnPlateau(optimizer, mode='min', patience=parameters.reduce_patience.value,
+                                              factor=parameters.reduction_factor.value)
+
+    return main_scheduler, reduce_on_plateau
+
 
 class ModelStats:
     """
@@ -102,7 +126,7 @@ class TrainingHistory:
         self.val_loss = []
         self.metrics_values = []
         self.val_metrics_values = []
-        self.main_metric: str|None = None
+        self.main_metric: str | None = None
         self.best_epoch = 0
 
     @property

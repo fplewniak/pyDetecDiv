@@ -22,15 +22,37 @@ class TrainModelDialog(ToolDialog):
                                                     tool.parameters.optimizer,
                                                     tool.parameters.learning_rate,
                                                     tool.parameters.focal_gamma,
-                                                    tool.parameters.regularization,
-                                                    tool.parameters.lambda_reg,
                                                     tool.parameters.seed,
                                                     ],
                                                 widget_args={
                                                     'learning_rate': {'decimals': 5, 'single_step': 1e-5, 'adaptive': False, },
-                                                    'lambda_reg'   : {'decimals': 5, 'single_step': 1e-5, 'adaptive': False},
                                                     }
                                                 )
+
+        self.scheduler = self.addGroupBox(title='Scheduler',
+                                          parameters=[
+                                              tool.parameters.step_scheduler,
+                                              tool.parameters.step_gamma,
+                                              tool.parameters.step_size,
+                                              tool.parameters.warmup,
+                                              tool.parameters.wu_start,
+                                              tool.parameters.wu_end,
+                                              tool.parameters.wu_duration,
+                                              tool.parameters.reduce_lr_on_plateau,
+                                              tool.parameters.reduce_patience,
+                                              tool.parameters.reduction_factor,
+                                              ],
+                                          )
+
+        self.regularization = self.addGroupBox(title='Regularization',
+                                               parameters=[
+                                                   tool.parameters.regularization,
+                                                   tool.parameters.lambda_reg,
+                                                   ],
+                                               widget_args={
+                                                   'lambda_reg'   : {'decimals': 5, 'single_step': 1e-5, 'adaptive': False},
+                                                   }
+                                               )
 
         self.datasets = self.addGroupBox(title='Datasets',
                                          parameters=[

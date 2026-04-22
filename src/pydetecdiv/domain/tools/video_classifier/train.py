@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 
 import polars
 import torch
-from torch import GradScaler, autocast
 from torch.utils.data import DataLoader
 from torchinfo import summary
 from torchvision.transforms import v2, InterpolationMode
@@ -16,7 +15,7 @@ from pydetecdiv.app import pydetecdiv_project, PyDetecDiv, get_project_dir
 from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer
 from pydetecdiv.app.tools.deep_learning import ModelTrainer
 from pydetecdiv.domain.tools.video_classifier.models.MViT import MViT_v2_s, MViT_v1_b
-from pydetecdiv.torch import ClassifierTrainingStats, set_optimizer
+from pydetecdiv.torch import ClassifierTrainingStats, set_optimizer, set_schedulers
 from pydetecdiv.torch.loss import FocalLoss
 from pydetecdiv.torch.metrics import set_metrics
 
@@ -68,6 +67,8 @@ class VideoClassifierTrainer(ModelTrainer):
         print(training_dataset.class_names)
         loss_fn = FocalLoss(alpha=class_weights, gamma=1.0, reduction='mean')
 
+        main_scheduler, reduce_on_plateau = set_schedulers(parameters=self.tool.parameters, optimizer=optimizer)
+
         # summary(model, (self.tool.parameters['batch_size'].value, 15, 3, 224, 224), device=device)
 
         run = self.tool.save_run(command='train_model')
@@ -83,7 +84,7 @@ class VideoClassifierTrainer(ModelTrainer):
                   f"Validation Loss: {train_stats.history.val_loss[-1]:.4f}, "
                   f"{main_metric}: {train_stats.history.metric_history(main_metric)[-1]:.3f}, "
                   f"Val {main_metric}: {train_stats.history.val_metric_history(main_metric)[-1]:.3f}, "
-                  # f"learning rate: {scheduler.get_last_lr()[0]:0.2e}, "
+                  f"learning rate: {main_scheduler.get_last_lr()[0]:0.2e}, "
                   f" -- ({datetime.now().strftime('%H:%M:%S')})")
 
             if train_stats.is_best_val_loss(epoch):
@@ -92,6 +93,10 @@ class VideoClassifierTrainer(ModelTrainer):
                 model_scripted.save(checkpoint_filepath)
                 print(f"Saving best model at epoch {epoch + 1} with val loss {train_stats.history.val_loss[-1]:.4f}"
                       f" and train loss {train_stats.history.loss[-1]:.4f}")
+
+            main_scheduler.step()
+            if reduce_on_plateau is not None:
+                reduce_on_plateau.step(train_stats.history.val_loss[-1])
 
         checkpoint_filepath = os.path.join(base_checkpoint_path, f'last_epoch{epoch}.pt')
         model_scripted = torch.jit.script(model)
