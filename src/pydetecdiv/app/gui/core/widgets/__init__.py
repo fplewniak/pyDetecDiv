@@ -107,7 +107,7 @@ class GroupBox(QGroupBox):
                 sub_box.addOption(parameter, **paramwidget_args(parameter, widget_args))
         return sub_box
 
-    def addOption(self, parameter: Parameter = None, label: bool = True, enabled: bool = True, widget: Type[QWidget] = None,
+    def addOption(self, parameter: Parameter = None, label: bool = True, widget: Type[QWidget] = None,
                   **kwargs: dict[str, Any]) -> QWidget:
         """
         add an option to the current Form
@@ -173,7 +173,7 @@ class ParametersFormGroupBox(GroupBox):
                 sub_box.addOption(parameter, **paramwidget_args(parameter, widget_args))
         return sub_box
 
-    def addOption(self, parameter: Parameter = None, label: bool = True, enabled: bool = True, widget: Type[QWidget] = None,
+    def addOption(self, parameter: Parameter = None, label: bool = True, widget: Type[QWidget] = None,
                   **kwargs: dict[str, Any]) -> QWidget:
         """
         add an option to the current Form

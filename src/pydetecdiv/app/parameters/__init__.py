@@ -16,7 +16,7 @@ class Parameter:
     """
 
     def __init__(self, name: str, label: str = None, default: Any = None, validator: Callable[[Any], bool] = None,
-                 groups: set[str] = None, updater: Callable = None, enabled: bool = True, **kwargs: dict[str, Any]) -> None:
+                 groups: set[str] = None, updater: Callable = None, **kwargs: dict[str, Any]) -> None:
         super().__init__()
         self.name: str = name
         self.label: str = label
@@ -26,7 +26,6 @@ class Parameter:
         self.updater_kwargs: dict[str, Any] = kwargs
         self.groups: set[str] = set() if groups is None else groups
         self.qmodel: StandardItemModel | None = None
-        self.enabled = enabled
         self.should_be_saved: bool = False
         self.__dict__.update(kwargs)
 

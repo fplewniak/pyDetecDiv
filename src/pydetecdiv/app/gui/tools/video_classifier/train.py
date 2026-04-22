@@ -42,7 +42,7 @@ class TrainModelDialog(ToolDialog):
                                              # tool.parameters.idx,
                                              ],
                                          widget_args={
-                                             'num_test': {'decimals': 2},
+                                             'num_test': {'enabled': False},
                                              }
                                          )
 
@@ -56,7 +56,11 @@ class TrainModelDialog(ToolDialog):
 
         self.button_box = self.addButtonBox()
 
-        self.arrangeWidgets([self.hyperparameters, self.datasets, self.hdf5_file, self.button_box])
+        self.arrangeWidgets([self.hyperparameters,
+                             self.regularization,
+                             self.scheduler,
+                             self.datasets, self.hdf5_file,
+                             self.button_box])
 
         set_connections({self.button_box.accepted              : lambda: self.wait_for_process(tool.model_trainer.train_model),
                          self.button_box.rejected              : lambda: print('Rejected'),
