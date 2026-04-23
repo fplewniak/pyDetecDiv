@@ -13,9 +13,9 @@ from torchvision.transforms import v2, InterpolationMode
 
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv, get_project_dir
 from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer
-from pydetecdiv.app.tools.deep_learning import ModelTrainer
+from pydetecdiv.app.tools.deep_learning import ModelTrainer, set_optimizer, set_schedulers
 from pydetecdiv.domain.tools.video_classifier.models.MViT import MViT_v2_s, MViT_v1_b
-from pydetecdiv.torch import ClassifierTrainingStats, set_optimizer, set_schedulers
+from pydetecdiv.torch import ClassifierTrainingStats
 from pydetecdiv.torch.loss import FocalLoss
 from pydetecdiv.torch.metrics import set_metrics
 

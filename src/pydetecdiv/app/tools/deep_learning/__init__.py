@@ -1,14 +1,20 @@
 """
 Abstract DeepTool class
 """
+import os
+import sys
 from abc import abstractmethod
+from typing import Iterable
 
 import polars
 import torch
 from torch import Tensor
+from torch.optim.lr_scheduler import SequentialLR, StepLR, ReduceLROnPlateau, LinearLR
 from torch.utils.data import Dataset
 from torchvision.transforms import v2, transforms, functional as F
 
+from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
+from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer
 from pydetecdiv.app.parameters import Parameters
 from pydetecdiv.app.tools import Tool
 
@@ -16,11 +22,49 @@ from pydetecdiv.app.tools.deep_learning.train import ModelTrainer
 from pydetecdiv.app.tools.deep_learning.evaluate import ModelEvaluator
 from pydetecdiv.app.tools.deep_learning.predict import Predictor
 from pydetecdiv.domain.ROI import ROI
+from pydetecdiv.domain.Run import Run
 from pydetecdiv.domain.tools.data import RoiDataReader
+from pydetecdiv.torch.transforms import toStandardizedFloat32
 
-class toStandardizedFloat32(torch.nn.Module):
-    def forward(self, img: torch.Tensor) -> torch.Tensor:
-        return v2.ToDtype(torch.float32, scale=True)(img) / torch.max(img).item()
+
+def set_optimizer(parameters: Parameters, model_param: dict | Iterable) -> torch.optim.Optimizer:
+    """
+    Set the optimizer.
+
+    :param parameters: the parameters
+    :param model_param: model parameters that will be passed to the optimizer constructor
+    :return: the optimizer
+    """
+    lr = parameters['learning_rate'].value if 'learning_rate' in parameters else 0.001
+    weight_decay = parameters['weight_decay'].value if 'weight_decay' in parameters else 0.01
+    momentum = parameters['momentum'].value if 'momentum' in parameters else 0.9
+    optimizer = parameters['optimizer'].value(model_param, lr=lr, weight_decay=weight_decay)
+    match parameters['optimizer'].key:
+        case 'SGD':
+            optimizer = parameters['optimizer'].value(model_param, lr=lr, momentum=momentum, weight_decay=weight_decay)
+
+    return optimizer
+
+
+def set_schedulers(parameters: Parameters, optimizer: torch.optim.Optimizer) -> tuple[SequentialLR | StepLR, ReduceLROnPlateau]:
+    reduce_on_plateau = None
+    main_scheduler = StepLR(optimizer, step_size=parameters.step_size.value, gamma=parameters.step_gamma.value, last_epoch=-1)
+    if parameters.step_scheduler:
+        print('Step scheduler', file=sys.stderr)
+
+    if parameters.warmup:
+        print('Warm-up scheduler', file=sys.stderr)
+        warmup = LinearLR(optimizer, start_factor=parameters.wu_start.value, end_factor=parameters.wu_end.value,
+                          total_iters=parameters.wu_duration.value)
+        main_scheduler = SequentialLR(optimizer, schedulers=[warmup, main_scheduler], milestones=[parameters.wu_duration.value])
+
+    if parameters.reduce_lr_on_plateau:
+        print('Reduce LR on plateau scheduler', file=sys.stderr)
+        reduce_on_plateau = ReduceLROnPlateau(optimizer, mode='min', patience=parameters.reduce_patience.value,
+                                              factor=parameters.reduction_factor.value)
+
+    return main_scheduler, reduce_on_plateau
+
 
 
 class ROIDataset(Dataset):
