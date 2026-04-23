@@ -99,8 +99,6 @@ class VideoClassifierTrainer(ModelTrainer):
         model_scripted = torch.jit.script(model)
         model_scripted.save(checkpoint_filepath)
 
-        training_dataset.plot_sample(0)
-
         training_dataset.close()
         validation_dataset.close()
 
