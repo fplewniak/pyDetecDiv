@@ -109,6 +109,27 @@ class ROIDataset(Dataset):
         frame_idx = df['frame'].item()
         return self.reader.roi_id(roi_idx), frame_idx
 
+    def plot_sample(self, idx):
+        sequence, target = self[idx]
+        print(sequence.shape)
+        roi_id, frame = self.get_ref(idx)
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            roi = project.get_object('ROI', roi_id)
+
+        rowlen = 5
+        plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=rowlen, rows=3)
+        for i in range(3):
+            for j in range(rowlen):
+                img_channel_last = torch.as_tensor(sequence[rowlen * i + j].permute([1, 2, 0]))
+                plot_viewer.axes[i][j].imshow(img_channel_last)
+                if (rowlen * i + j) == int(3 * rowlen / 2):
+                    plot_viewer.axes[i][j].set_title(f'{self.class_names[target]}')
+                plot_viewer.axes[i][j].set_xlabel(f'{frame + rowlen * i + j}')
+        tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {roi_id}')
+        tab.project_name = PyDetecDiv.project_name
+        tab.addTab(plot_viewer, 'Sample sequence')
+        tab.setCurrentWidget(plot_viewer)
+
 
 class DeepTool(Tool):
     """

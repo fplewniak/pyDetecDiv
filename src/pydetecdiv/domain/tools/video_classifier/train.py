@@ -102,32 +102,7 @@ class VideoClassifierTrainer(ModelTrainer):
         model_scripted = torch.jit.script(model)
         model_scripted.save(checkpoint_filepath)
 
-        # idx = self.tool.parameters.idx.value
-        # idx = 0
-        # sequence, target = training_dataset[idx]
-        # print(sequence.shape)
-        # roi_id, frame = training_dataset.get_ref(idx)
-        # with pydetecdiv_project(PyDetecDiv.project_name) as project:
-        #     roi = project.get_object('ROI', roi_id)
-        #     print(roi.annotations()[frame])
-        # print(training_dataset.indices[idx - 5: idx + 5])
-        # print(polars.DataFrame([{'roi': training_dataset.get_ref(i)[0],
-        #                           'frame': training_dataset.get_ref(i)[1],
-        #                           'target': training_dataset[i][1],
-        #                          'class': training_dataset.class_names[training_dataset[i][1]]} for i in range(idx - 5, idx + 5)]))
-        # rowlen = 5
-        # plot_viewer = MatplotViewer(PyDetecDiv.main_window.active_subwindow, columns=rowlen, rows=3)
-        # for i in range(3):
-        #     for j in range(rowlen):
-        #         img_channel_last = torch.as_tensor(sequence[rowlen * i + j].permute([1, 2, 0]))
-        #         plot_viewer.axes[i][j].imshow(img_channel_last)
-        #         if (rowlen * i + j) == int(3 * rowlen / 2):
-        #             plot_viewer.axes[i][j].set_title(f'{training_dataset.class_names[target]}')
-        #         plot_viewer.axes[i][j].set_xlabel(f'{frame + rowlen * i + j}')
-        # tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {roi_id}')
-        # tab.project_name = PyDetecDiv.project_name
-        # tab.addTab(plot_viewer, 'Sample sequence')
-        # tab.setCurrentWidget(plot_viewer)
+        training_dataset.plot_sample(0)
 
         training_dataset.close()
         validation_dataset.close()
