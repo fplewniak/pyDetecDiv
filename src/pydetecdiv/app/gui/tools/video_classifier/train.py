@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.app.gui.core.widgets import ParametersFormGroupBox, set_connections
+from pydetecdiv.app.gui.core.widgets import set_connections
 from pydetecdiv.app.gui.tools import ToolAction, ToolDialog
 from pydetecdiv.app.gui.tools.deep_learning import plot_training_results
 from pydetecdiv.app.parameters import FloatParameter
