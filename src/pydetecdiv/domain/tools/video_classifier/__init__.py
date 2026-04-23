@@ -92,7 +92,7 @@ class VideoClassifier(DeepTool):
 
         hdf5_reader.close()
 
-        augmentation = v2.RandomAffine(degrees=5.0, translate=(4.0 / 60.0, 4.0 / 60.0), scale=(0.9, 1.111),
+        augmentation = v2.RandomAffine(degrees=5.0, translate=(0.08, 0.08), scale=(0.9, 1.111),
                                        interpolation=InterpolationMode.BILINEAR) if self.parameters.augmentation else None
         print(f'{augmentation=}')
 
