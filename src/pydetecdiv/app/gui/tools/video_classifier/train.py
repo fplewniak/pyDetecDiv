@@ -92,7 +92,7 @@ class TrainModelDialog(ToolDialog):
                          tool.parameters.num_validation.changed: lambda: self.update_datasets(tool.parameters.num_validation),
                          })
 
-        self.run_after_process([plot_training_results])
+        self.run_after_process([plot_training_results, tool.dump_train_stats])
 
         tool.parameters.reset()
         self.fit_to_contents()

@@ -2,6 +2,7 @@
 Abstract DeepTool class
 """
 import os
+import pickle
 import sys
 from abc import abstractmethod
 from typing import Iterable
@@ -64,7 +65,6 @@ def set_schedulers(parameters: Parameters, optimizer: torch.optim.Optimizer) -> 
                                               factor=parameters.reduction_factor.value)
 
     return main_scheduler, reduce_on_plateau
-
 
 
 class ROIDataset(Dataset):
@@ -153,6 +153,12 @@ class DeepTool(Tool):
         path = os.path.join(self.run_path(run), 'checkpoints')
         os.makedirs(path, exist_ok=True)
         return path
+
+    def dump_train_stats(self, train_stats):
+        if self.run is not None:
+            train_stats_filepath = os.path.join(self.run_path(self.run), 'train_stats.pckl')
+            with open(train_stats_filepath, 'wb') as fp:
+                    pickle.dump(train_stats, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
     def set_model(self, model: torch.nn.Module):
         """
