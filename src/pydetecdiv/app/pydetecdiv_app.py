@@ -58,7 +58,7 @@ def main_gui():
     PyDetecDiv.check_data_source_paths(table_editor)
 
     # Create tools
-    PyDetecDiv.update_tools({'cnrs.plewniak.videoclassifier': VideoClassifier(working_dir='video_classifier'),
+    PyDetecDiv.update_tools({'cnrs.plewniak.videoclassifier': VideoClassifier(working_dir='video_classification'),
                              'cnrs.plewniak.roiseqhdf5creator' : ROIseqHDF5creator(working_dir='data')
                              })
 

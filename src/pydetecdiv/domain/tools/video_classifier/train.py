@@ -74,9 +74,6 @@ class VideoClassifierTrainer(ModelTrainer):
         run = self.tool.save_run(command='train_model')
         print(run)
 
-        base_checkpoint_path = os.path.join(get_project_dir(), 'video_classification', 'checkpoints', 'runs', str(run.id_))
-        os.makedirs(base_checkpoint_path, exist_ok=True)
-
         for epoch in range(self.tool.parameters['epochs'].value):
             self.training_loop(training_dataloader, validation_dataloader, model, loss_fn, optimizer, device, train_stats)
             print(f"Epoch {epoch + 1}/{self.tool.parameters['epochs'].value}, "
@@ -88,7 +85,7 @@ class VideoClassifierTrainer(ModelTrainer):
                   f" -- ({datetime.now().strftime('%H:%M:%S')})")
 
             if train_stats.is_best_val_loss(epoch):
-                checkpoint_filepath = os.path.join(base_checkpoint_path, f'epoch{epoch}_best_loss.pt')
+                checkpoint_filepath = os.path.join(self.tool.checkpoints_path(run), f'epoch{epoch}_best_loss.pt')
                 model_scripted = torch.jit.script(model)
                 model_scripted.save(checkpoint_filepath)
                 print(f"Saving best model at epoch {epoch + 1} with val loss {train_stats.history.val_loss[-1]:.4f}"
@@ -98,7 +95,7 @@ class VideoClassifierTrainer(ModelTrainer):
             if reduce_on_plateau is not None:
                 reduce_on_plateau.step(train_stats.history.val_loss[-1])
 
-        checkpoint_filepath = os.path.join(base_checkpoint_path, f'last_epoch{epoch}.pt')
+        checkpoint_filepath = os.path.join(self.tool.checkpoints_path(run), f'last_epoch{epoch}.pt')
         model_scripted = torch.jit.script(model)
         model_scripted.save(checkpoint_filepath)
 

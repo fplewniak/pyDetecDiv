@@ -178,6 +178,7 @@ class AbstractWaitDialog(QDialog):
         self._ignore_close_event = ignore_close_event
         self.setWindowModality(Qt.WindowModality.WindowModal)
         self.pdd_thread = PyDetecDivThread()
+        self.parent = parent
 
     def wait_for(self, func: Callable, *args: list, **kwargs: dict) -> None:
         """
@@ -360,6 +361,8 @@ class StdoutWaitDialog(AbstractWaitDialog):
         self.log.moveCursor(QTextCursor.MoveOperation.End)
         self.log.insertHtml(html)
         self.log.insertHtml('<br>')
+        if hasattr(self.parent, 'tool'):
+            self.parent.tool.log_text(text)
 
     def cancel(self) -> None:
         """

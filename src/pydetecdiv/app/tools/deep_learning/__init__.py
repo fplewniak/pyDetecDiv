@@ -149,6 +149,11 @@ class DeepTool(Tool):
         self._model_evaluator = None
         self._model_predictor = None
 
+    def checkpoints_path(self, run: Run) -> str:
+        path = os.path.join(self.run_path(run), 'checkpoints')
+        os.makedirs(path, exist_ok=True)
+        return path
+
     def set_model(self, model: torch.nn.Module):
         """
         Set the deep-learning model used by the tool

@@ -3,9 +3,8 @@ Abstract Tool class
 """
 import datetime
 import os
-from abc import abstractmethod, ABC
-
-from sqlalchemy import False_
+from abc import ABC
+from os import makedirs
 
 from pydetecdiv.app import get_project_dir, PyDetecDiv, pydetecdiv_project
 from pydetecdiv.app.parameters import Parameters, Parameter
@@ -24,6 +23,8 @@ class Tool(ABC):
         self.parameters = parameters
         self._working_dir = working_dir
         self._command: str | None = None
+        self._log_text = ''
+        self.run = None
         PyDetecDiv.app.project_selected.connect(self.project_selected)
 
     def project_selected(self):
@@ -34,6 +35,22 @@ class Tool(ABC):
         if get_project_dir() is not None:
             return os.path.join(get_project_dir(), self._working_dir)
         return None
+
+    def run_path(self, run: Run = None) -> str:
+        path = os.path.join(self.working_dir, 'runs', str(run.id_))
+        makedirs(path, exist_ok=True)
+        return path
+
+    def log_path(self, run: Run = None) -> str:
+        path = os.path.join(self.run_path(run), 'log.txt')
+        return path
+
+    def log_text(self, text: str) -> None:
+        self._log_text = self._log_text + text
+        if self.run is not None:
+            with open(self.log_path(self.run), 'a') as f:
+                f.write(self._log_text)
+                self._log_text = ''
 
     def save_run(self, command: str, param_list: list[Parameter] = None, key_val: dict = None):
         """
@@ -61,9 +78,9 @@ class Tool(ABC):
             # 'uuid': self.uuid
             }
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            run = Run(project=project, **record)
+            self.run = Run(project=project, **record)
         # project.commit()
-        return run
+        return self.run
 
     @property
     def command(self) -> str:
