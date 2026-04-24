@@ -4,8 +4,8 @@ A set of general utility functions
 #  CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21
 #  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
 from __future__ import annotations
-import numpy as np
 from typing import Callable, Any
+import numpy as np
 
 
 def singleton(class_) -> Callable:
@@ -27,6 +27,9 @@ def singleton(class_) -> Callable:
 
 
 class Singleton:
+    """
+    A class defining a Singleton (can only be instantiated once in an application)
+    """
     instance = None
     initialized = False
 
@@ -42,6 +45,9 @@ class Singleton:
 
 
 class BidirectionalIterator:
+    """
+    An iterator that can go backwards
+    """
     def __init__(self, data: list[Any]):
         self.data = data
         self.index = -1  # Start before the first element
@@ -53,18 +59,22 @@ class BidirectionalIterator:
         if self.index < len(self.data) - 1:
             self.index += 1
             return self.data[self.index]
-        else:
-            raise StopIteration
+        raise StopIteration
 
     def __previous__(self) -> Any:
         if self.index > 0:
             self.index -= 1
             return self.data[self.index]
-        else:
-            raise StopIteration("No previous element")
+        raise StopIteration("No previous element")
 
 
 def previous(iterator) -> Any:
+    """
+    the previous element
+
+    :param iterator: the iterator
+    :return: the previous element
+    """
     return iterator.__previous__()
 
 
@@ -105,6 +115,15 @@ def remove_keys_from_dict(dictionary: dict[str | Any, Any], keys: list[str | Any
 
 def split_list(arr: list[Any] | np.ndarray[Any], sep: list[Any] | Any, max_length: int = None,
                constant_length: bool = True) -> list:
+    """
+    Split a list
+
+    :param arr: the array to split
+    :param sep: the separator
+    :param max_length: the maximum length of the split
+    :param constant_length: whether all sublists should be of the same length
+    :return: the split list
+    """
     arr = np.array(arr)
     sep = sep if isinstance(sep, list) else [sep]
     indices = np.where(np.diff([arr == s for s in sep]))[0] + 1
@@ -124,7 +143,13 @@ def split_list(arr: list[Any] | np.ndarray[Any], sep: list[Any] | Any, max_lengt
     return sublists
 
 
-def flatten_list(list_of_lists):
+def flatten_list(list_of_lists: list[list[Any]]) -> list[Any]:
+    """
+    Flatten a list of lists
+
+    :param list_of_lists: the list of lists to flatten
+    :return: the flat list
+    """
     return [x for sublist in list_of_lists for x in sublist]
 
 

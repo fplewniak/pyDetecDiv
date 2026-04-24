@@ -1,5 +1,5 @@
 """
-Core and absrtact widgets for application GUI. These widgets provide the basic functionalities for the GUI and are expected
+Core and absract widgets for application GUI. These widgets provide the basic functionalities for the GUI and are expected
 to be extended for concrete or more specific purposes
 """
 import os
@@ -42,7 +42,16 @@ StandardButtonCombination = Union["QDialogButtonBox.StandardButton", ...]
 GenericGroupBox = TypeVar('GenericGroupBox', bound=QGroupBox)
 
 
-def paramwidget_args(parameter, param_args):
+def paramwidget_args(parameter: Parameter, param_args: dict[str, Any]) -> dict[str, Any]:
+    """
+    Return the arguments defined in param_args (declared when creating the Dialog object) and corresponding to the parameter when
+    adding an option to a group box. It is thus possible to specify GUI-specific arguments during GUI creation without having to
+    define them initially when creating parameters.
+
+    :param parameter: the parameter
+    :param param_args: the GUI-specific arguments
+    :return: the parameter's arguments
+    """
     if param_args is not None and parameter.name in param_args:
         multiple_val = [arg for arg in param_args[parameter.name] if arg in parameter.kwargs()]
         if multiple_val:
@@ -53,6 +62,7 @@ def paramwidget_args(parameter, param_args):
         #         param_args[parameter.name].pop(arg)
         return param_args[parameter.name]
     return {}
+
 
 class GroupBox(QGroupBox):
     """
@@ -154,7 +164,8 @@ class ParametersFormGroupBox(GroupBox):
         self.setVisible(show)
 
     def addSubBox(self, widget: Type[GroupBox], expandable: bool = False, show: bool = True, title: str = None,
-                  parameters: list = None, widget_args: dict[str, Any] = None, **kwargs: dict[str, Any]) -> 'GroupBox | ExpandCollapseButton':
+                  parameters: list = None, widget_args: dict[str, Any] = None,
+                  **kwargs: dict[str, Any]) -> 'GroupBox | ExpandCollapseButton':
         """
         Adds a sub-box to the current ParametersFormGroupBox
 
@@ -492,7 +503,11 @@ class LineEdit(QLineEdit):
         """
         return self.editingFinished
 
-    def setText(self, arg__1 , /):
+    def setText(self, arg__1, /):
+        """
+        set text of line text editor
+        :param arg__1: the text
+        """
         super().setText(arg__1)
         self.editingFinished.emit()
 
@@ -521,6 +536,7 @@ class FileChooser(QWidget):
     """
     A class providing a simple file chooser widget that can be inserted into a ParameterFormGroupBox
     """
+
     def __init__(self, parent: QWidget, qmodel: ItemModel = None, editable: bool = True, select_dir: bool = False,
                  enabled: bool = True, min_width=350, current_dir: str | None = None, filters=list[str] | None,
                  **kwargs: dict[str, Any]) -> None:
@@ -978,20 +994,3 @@ def set_connections(connections: dict[Signal | SignalInstance, Callable]) -> Non
                 signal.connect(s)
         else:
             signal.connect(slot)
-
-# def parameter_widget_factory(parent: QWidget, parameter: Parameter, **kwargs) -> QWidget:
-#     """
-#     A factory method to create a parameter widget for a given parameter
-#     :param parent: the parent for the created parameter widget
-#     :param parameter: the parameter
-#     :param kwargs: any additional keyword arguments passed to the created widget
-#     :return:
-#     """
-#     parameter_widgets = {
-#         'IntParameter': SpinBox,
-#         'FloatParameter': DoubleSpinBox,
-#         'StringParameter': LineEdit,
-#         'CheckParameter': RadioButton,
-#         'ChoiceParameter': ComboBox,
-#         }
-#     return parameter_widgets[parameter.type](parent=parent, **parameter.kwargs(), **kwargs)

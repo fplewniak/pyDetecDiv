@@ -3,13 +3,6 @@
 """
 Definition of global objects and methods for easy access from all parts of the application
 """
-from typing import TYPE_CHECKING, Callable
-
-if TYPE_CHECKING:
-    from pydetecdiv.app.gui.Windows import MainWindow
-    from pydetecdiv.app.gui.SourcePath import TableEditor
-    from pydetecdiv.app.tools import Tool
-
 import os.path
 import sys
 from collections import defaultdict
@@ -27,10 +20,17 @@ from pydetecdiv.settings import get_config_file, get_appdata_dir, get_config_val
 from pydetecdiv.persistence.project import list_projects
 from pydetecdiv.domain.Project import Project
 
+from typing import TYPE_CHECKING, Callable
+
+if TYPE_CHECKING:
+    from pydetecdiv.app.gui.Windows import MainWindow
+    from pydetecdiv.app.gui.SourcePath import TableEditor
+    from pydetecdiv.app.tools import Tool
+
 
 class DrawingTools(StrEnum):
     """
-    Enumeration of available drawing tools
+    Enumeration of available drawing new_tools
     """
     Cursor = 'Select/move'
     DrawRect = 'Draw Rectangle'
@@ -70,8 +70,12 @@ class PyDetecDiv(QApplication):
         # self.check_data_source_paths()
 
     @staticmethod
-    def update_tools(tools: dict[str, 'Tool']) -> None:
-        PyDetecDiv.tools.update(tools)
+    def update_tools(new_tools: dict[str, 'Tool']) -> None:
+        """
+        Update the list of tools installed in the application
+        :param new_tools: the dictionary declaring tools
+        """
+        PyDetecDiv.tools.update(new_tools)
 
     @staticmethod
     def load_plugins() -> None:
@@ -396,9 +400,6 @@ class StreamRedirector(QObject):
     """Custom stream redirector to emit stdout/stderr output."""
     new_text = Signal(str)
 
-    def __init__(self):
-        super().__init__()
-
     def write(self, text: str) -> None:
         """
         Write text to the stream redirector
@@ -411,7 +412,7 @@ class StreamRedirector(QObject):
         """
         A dummy method required only for compatibility with the Python IO system
         """
-        pass  # Required for compatibility with Python's IO system
+        # Required for compatibility with Python's IO system
 
 
 def get_settings() -> QSettings:
@@ -457,7 +458,6 @@ def project_list() -> list[str]:
     :return: the list of available projects
     """
     return list_projects()
-
 
 # def create_app() -> PyDetecDiv:
 #     """

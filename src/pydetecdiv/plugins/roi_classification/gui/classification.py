@@ -492,7 +492,7 @@ class PredictionViewer(AnnotationTool):
 
 class AnnotationMenuBar(QMenuBar):
     """
-    The menu bar for annotation tools
+    The menu bar for annotation new_tools
     """
 
     def __init__(self, parent: AnnotationTool):

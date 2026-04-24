@@ -34,23 +34,23 @@ class VideoClassifier(DeepTool):
         self.parameters = Parameters(
                 [
                     IntParameter(name='epochs', label='Epochs', default=32),
-                    IntParameter(name='batch_size', label='Batch size', default=8, ),
+                    IntParameter(name='batch_size', label='Batch size', default=8),
                     ChoiceParameter(name='optimizer', label='Optimizer', default='AdamW',
                                     items={'AdamW'   : optim.AdamW,
                                            'SGD'     : optim.SGD,
                                            'Adadelta': optim.Adadelta,
                                            'Adamax'  : optim.Adamax,
                                            'Nadam'   : optim.NAdam,
-                                           }, ),
-                    IntParameter(name='seed', label='Random seed', maximum=999999999, default=42, ),
+                                           }),
+                    IntParameter(name='seed', label='Random seed', maximum=999999999, default=42),
                     FloatParameter(name='learning_rate', label='Learning rate', default=1.5e-4, minimum=1e-20, maximum=1.0),
-                    FloatParameter(name='focal_gamma', label=f'Focal loss {greek["gamma"]}', default=1.5, minimum=0.0, maximum=2.0, ),
-                    FloatParameter(name='num_training', label='Training dataset', default=0.4, minimum=0.01, maximum=0.98, ),
-                    FloatParameter(name='num_validation', label='Validation dataset', default=0.3, minimum=0.01, maximum=0.98, ),
+                    FloatParameter(name='focal_gamma', label=f'Focal loss {greek["gamma"]}', default=1.5, minimum=0.0, maximum=2.0),
+                    FloatParameter(name='num_training', label='Training dataset', default=0.4, minimum=0.01, maximum=0.98),
+                    FloatParameter(name='num_validation', label='Validation dataset', default=0.3, minimum=0.01, maximum=0.98),
                     FloatParameter(name='num_test', label='Test dataset', default=0.3, minimum=0.01, maximum=0.98),
                     IntParameter(name='data_seed', label='Random seed', maximum=999999999, default=42),
-                    PathParameter(name='hdf5_file', label='', select_dir=False, filters=["HDF5 (*.h5 *.hdf5)", ],
-                                  default='roi_data.h5', ),
+                    PathParameter(name='hdf5_file', label='', select_dir=False, filters=["HDF5 (*.h5 *.hdf5)"],
+                                  default='roi_data.h5'),
                     CheckParameter(name='time_first', label='Time first', default=False),
                     CheckParameter(name='augmentation', label='Augmentation', default=False, exclusive=False),
                     ChoiceParameter(name='regularization', label='Regularization method', default='Ridge (L2)',
@@ -58,22 +58,23 @@ class VideoClassifier(DeepTool):
                                            'LASSO (L1)': 1,
                                            'Ridge (L2)': 2,
                                            }),
-                    FloatParameter(name='lambda_reg', label=f'{greek["lambda"]} parameter', default=2e-3, ),
+                    FloatParameter(name='lambda_reg', label=f'{greek["lambda"]} parameter', default=2e-3),
                     CheckParameter(name='warmup', label='Warm-up', default=False, exclusive=False),
                     FloatParameter(name='wu_start', label='   * warm-up start factor', default=0.1, minimum=0.1, maximum=0.5),
                     FloatParameter(name='wu_end', label='   * warm-up end factor', default=1.0, minimum=0.5, maximum=1.0),
-                    IntParameter(name='wu_duration', label='   * warm-up duration', default=8, minimum=2, maximum=100, ),
+                    IntParameter(name='wu_duration', label='   * warm-up duration', default=8, minimum=2, maximum=100),
                     CheckParameter(name='step_scheduler', label='Step scheduler', default=True, exclusive=True),
-                    FloatParameter(name='step_gamma', label=f'   * {greek["gamma"]} parameter', default=0.95, minimum=0.01, maximum=0.99,),
-                    IntParameter(name='step_size', label='   * step size', default=4, minimum=1, maximum=100, ),
+                    FloatParameter(name='step_gamma', label=f'   * {greek["gamma"]} parameter', default=0.95, minimum=0.01,
+                                   maximum=0.99),
+                    IntParameter(name='step_size', label='   * step size', default=4, minimum=1, maximum=100),
                     CheckParameter(name='reduce_lr_on_plateau', label='Reduce LR on plateau', default=False, exclusive=False),
-                    IntParameter(name='reduce_patience', label='   * patience', default=10, minimum=1, maximum=100, ),
-                    FloatParameter(name='reduction_factor', label='   * reduction factor', default=0.5, minimum=0.1, maximum=1.0, ),
+                    IntParameter(name='reduce_patience', label='   * patience', default=10, minimum=1, maximum=100),
+                    FloatParameter(name='reduction_factor', label='   * reduction factor', default=0.5, minimum=0.1, maximum=1.0),
                     # IntParameter(name='idx', label='Dataset index', maximum=999999999, minimum=0, default=0),
                     ]
                 )
 
-    def prepare_data_for_training(self, image_shape=(224, 224), *args, **kwargs) -> tuple[ROIDataset, ROIDataset, torch.Tensor]:
+    def prepare_data_for_training(self, *args, image_shape=(224, 224), **kwargs) -> tuple[ROIDataset, ROIDataset, torch.Tensor]:
         """
         Prepare the data for training
         """

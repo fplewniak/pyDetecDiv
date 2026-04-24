@@ -28,27 +28,52 @@ class Tool(ABC):
         PyDetecDiv.app.project_selected.connect(self.project_selected)
 
     def project_selected(self):
+        """
+        Create the base working directory for the tool when a new project is selected
+        """
         os.makedirs(self.working_dir, exist_ok=True)
 
     @property
-    def working_dir(self):
+    def working_dir(self)-> str:
+        """
+        The working directory for the tool
+
+        :return: the working directory
+        """
         if get_project_dir() is not None:
             return os.path.join(get_project_dir(), self._working_dir)
         return None
 
     def run_path(self, run: Run = None) -> str:
+        """
+        Return the path for the specified run where to save related results and log files which do not fit in repository
+
+        :param run: the run
+        :return: the path
+        """
         path = os.path.join(self.working_dir, 'runs', str(run.id_))
         makedirs(path, exist_ok=True)
         return path
 
     def log_path(self, run: Run = None) -> str:
+        """
+        The path of the log file
+
+        :param run: the corresponding run
+        :return: the path of the log file
+        """
         path = os.path.join(self.run_path(run), 'log.txt')
         return path
 
     def log_text(self, text: str) -> None:
+        """
+        Sends standard output text to log file
+
+        :param text: the captured stdout text
+        """
         self._log_text = self._log_text + text
         if self.run is not None:
-            with open(self.log_path(self.run), 'a') as f:
+            with open(self.log_path(self.run), 'a', encoding='utf-8') as f:
                 f.write(self._log_text)
                 self._log_text = ''
 

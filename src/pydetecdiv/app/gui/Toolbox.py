@@ -27,7 +27,7 @@ class ToolItem(TreeItem):
 
 class ToolboxTreeView(QTreeView):
     """
-    A class expanding QTreeView with specific features to view tools and tool categories as a tree.
+    A class expanding QTreeView with specific features to view new_tools and tool categories as a tree.
     """
 
     def contextMenuEvent(self, event):
@@ -118,8 +118,8 @@ class ToolForm(QDialog):
 
 class ToolboxTreeModel(TreeDictModel):
     """
-    A class expanding TreeDictModel with specific features to handle tools and tool categories. This model is populated
-    from a dictionary with categories as keys and list of tools as values. The dictionary is return by the list_tools()
+    A class expanding TreeDictModel with specific features to handle new_tools and tool categories. This model is populated
+    from a dictionary with categories as keys and list of new_tools as values. The dictionary is return by the list_tools()
     function
     """
 

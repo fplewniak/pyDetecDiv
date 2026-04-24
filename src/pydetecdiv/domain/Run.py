@@ -64,7 +64,7 @@ class Run(DomainSpecificObject):
             record['id_'] = self.id_
         return record
 
-    # # The following code is not working currently, and will need to be adapted to include command line tools integration
+    # # The following code is not working currently, and will need to be adapted to include command line new_tools integration
     # def execute(self, tool: CommandLineTool, testing: bool = False):
     #     """
     #     Execute the job after having installed requirements if necessary

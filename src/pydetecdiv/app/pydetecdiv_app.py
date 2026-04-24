@@ -57,7 +57,7 @@ def main_gui():
     table_editor = SourcePath.TableEditor(title='Missing data source path definition', editable_col=None)
     PyDetecDiv.check_data_source_paths(table_editor)
 
-    # Create tools
+    # Create new_tools
     PyDetecDiv.update_tools({'cnrs.plewniak.videoclassifier': VideoClassifier(working_dir='video_classification'),
                              'cnrs.plewniak.roiseqhdf5creator' : ROIseqHDF5creator(working_dir='data')
                              })

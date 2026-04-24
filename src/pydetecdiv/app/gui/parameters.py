@@ -1,5 +1,5 @@
 """
-Parameter widget classes to automatically create forms for launching tools and plugins
+Parameter widget classes to automatically create forms for launching new_tools and plugins
 """
 from PySide6.QtWidgets import QFrame, QLabel, QLineEdit, QSpinBox, QDoubleSpinBox, QCheckBox, QComboBox, \
     QListWidget, QAbstractItemView

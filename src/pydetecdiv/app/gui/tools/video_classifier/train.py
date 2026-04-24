@@ -1,3 +1,6 @@
+"""
+GUI classes for video classifier model training
+"""
 from typing import TYPE_CHECKING
 
 from pydetecdiv.app import PyDetecDiv
@@ -12,6 +15,9 @@ if TYPE_CHECKING:
 
 
 class TrainModelDialog(ToolDialog):
+    """
+    Dialog to choose the parameters for training a Video classifier model
+    """
     def __init__(self, tool: DeepTool, **kwargs):
         super().__init__(tool, title='Training Video classifier', **kwargs)
 
@@ -50,7 +56,7 @@ class TrainModelDialog(ToolDialog):
                                                    tool.parameters.lambda_reg,
                                                    ],
                                                widget_args={
-                                                   'lambda_reg'   : {'decimals': 5, 'single_step': 1e-5, 'adaptive': False},
+                                                   'lambda_reg': {'decimals': 5, 'single_step': 1e-5, 'adaptive': False},
                                                    }
                                                )
 
@@ -98,15 +104,17 @@ class TrainModelDialog(ToolDialog):
         self.fit_to_contents()
         self.exec()
 
-    def update_datasets(self, changed_param: FloatParameter = None):
+    def update_datasets(self, changed_param: FloatParameter = None) -> None:
+        """
+        Update the dataset proportions values to make sure they sup up to 1
+
+        :param changed_param: the changed parameter
+        """
         self.tool.parameters.num_test.value = 1.0 - (self.tool.parameters.num_training + self.tool.parameters.num_validation)
         if changed_param:
             total = self.tool.parameters.num_test + self.tool.parameters.num_training + self.tool.parameters.num_validation
             if total > 1.0:
                 changed_param.value = changed_param - total + 1.0
-
-    # def run_process(self) -> None:
-    #     self.job_finished.emit(self.tool.model_trainer.train_model())
 
 
 class TrainModelAction(ToolAction):
@@ -116,12 +124,12 @@ class TrainModelAction(ToolAction):
 
     def __init__(self, parent: 'VideoClassifierMenu'):
         super().__init__("Train model", parent)
+        # TODO check there are annotated ROIs in the database. This will be conveniently done using a new Annotations table with
+        # TODO the count_objects() method
         self.setEnabled(True)
 
     def launch(self):
         """
         Run training procedure
         """
-        # TODO check there are annotated ROIs in the database. This will be conveniently done using a new Annotations table with
-        # TODO the count_objects() method
         TrainModelDialog(self.parent().tool)

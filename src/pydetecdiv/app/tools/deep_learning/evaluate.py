@@ -1,7 +1,7 @@
 """
 Abstract ModelEvaluator class
 """
-from abc import ABC, abstractmethod
+from abc import ABC
 
 from typing import TYPE_CHECKING
 

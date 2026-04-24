@@ -25,6 +25,7 @@ from pydetecdiv.app.tools.deep_learning.predict import Predictor
 from pydetecdiv.domain.ROI import ROI
 from pydetecdiv.domain.Run import Run
 from pydetecdiv.domain.tools.data import RoiDataReader
+from pydetecdiv.torch import TrainingStats
 from pydetecdiv.torch.transforms import toStandardizedFloat32
 
 
@@ -48,6 +49,13 @@ def set_optimizer(parameters: Parameters, model_param: dict | Iterable) -> torch
 
 
 def set_schedulers(parameters: Parameters, optimizer: torch.optim.Optimizer) -> tuple[SequentialLR | StepLR, ReduceLROnPlateau]:
+    """
+    Set the schedulers for adjusting learning rate during training
+
+    :param parameters: the tool parameters
+    :param optimizer: the optimizer
+    :return: a tuple with the main scheduler and the optional ReduceLROnPlateau
+    """
     reduce_on_plateau = None
     main_scheduler = StepLR(optimizer, step_size=parameters.step_size.value, gamma=parameters.step_gamma.value, last_epoch=-1)
     if parameters.step_scheduler:
@@ -68,6 +76,9 @@ def set_schedulers(parameters: Parameters, optimizer: torch.optim.Optimizer) -> 
 
 
 class ROIDataset(Dataset):
+    """
+    A Pytorch dataset for ROI access in deep learning tools.
+    """
     def __init__(self, data_reader: RoiDataReader, indices: polars.DataFrame, targets: bool = False,
                  image_shape: tuple[int, int] = (60, 60), transform: torch.nn.Module = None):
         self.reader = data_reader
@@ -94,22 +105,47 @@ class ROIDataset(Dataset):
         return item
 
     def close(self):
+        """
+        Close the reader
+        """
         self.reader.close()
 
     @property
-    def class_names(self):
+    def class_names(self) -> list[str]:
+        """
+        Return the class names for the corresponding classification
+
+        :return: the list of class names
+        """
         return self.reader.class_names
 
     def roi(self, idx: int) -> ROI:
+        """
+        Return the ROI for the given index.
+
+        :param idx: the index
+        :return: the ROI object
+        """
         return self.reader.roi(idx)
 
     def get_ref(self, idx: int) -> tuple[int, int]:
+        """
+        Get the references (roi and frame indices) of the ROIDataset item
+
+        :param idx: the dataset index
+        :return: tuple with the ROI.id_ and the frame index
+        """
         df = self.indices[idx]
         roi_idx = df['roi'].item()
         frame_idx = df['frame'].item()
         return self.reader.roi_id(roi_idx), frame_idx
 
-    def plot_sample(self, idx):
+    def plot_sample(self, idx: int) -> None:
+        """
+        Plot the sample having index = idx
+
+        :param idx: the index of the sample
+        """
         sequence, target = self[idx]
         print(sequence.shape)
         roi_id, frame = self.get_ref(idx)
@@ -125,7 +161,7 @@ class ROIDataset(Dataset):
                 if (rowlen * i + j) == int(3 * rowlen / 2):
                     plot_viewer.axes[i][j].set_title(f'{self.class_names[target]}')
                 plot_viewer.axes[i][j].set_xlabel(f'{frame + rowlen * i + j}')
-        tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {roi_id}')
+        tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {roi.name}')
         tab.project_name = PyDetecDiv.project_name
         tab.addTab(plot_viewer, 'Sample sequence')
         tab.setCurrentWidget(plot_viewer)
@@ -133,7 +169,7 @@ class ROIDataset(Dataset):
 
 class DeepTool(Tool):
     """
-    DeepTool abstract class providing the basic functionality for deep-learning tools
+    DeepTool abstract class providing the basic functionality for deep-learning new_tools
     """
 
     def __init__(self, parameters: Parameters | None = None, working_dir: str | None = None, device: torch.device | None = None,
@@ -150,15 +186,25 @@ class DeepTool(Tool):
         self._model_predictor = None
 
     def checkpoints_path(self, run: Run) -> str:
+        """
+        Return the path where to store checkpoints achieved when training a model
+
+        :param run: the training run
+        :return: the path
+        """
         path = os.path.join(self.run_path(run), 'checkpoints')
         os.makedirs(path, exist_ok=True)
         return path
 
-    def dump_train_stats(self, train_stats):
+    def dump_train_stats(self, train_stats: TrainingStats):
+        """
+        Dumpt training statistics object into a pickle file
+        :param train_stats:
+        """
         if self.run is not None:
             train_stats_filepath = os.path.join(self.run_path(self.run), 'train_stats.pckl')
             with open(train_stats_filepath, 'wb') as fp:
-                    pickle.dump(train_stats, fp, protocol=pickle.HIGHEST_PROTOCOL)
+                pickle.dump(train_stats, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
     def set_model(self, model: torch.nn.Module):
         """
@@ -171,18 +217,34 @@ class DeepTool(Tool):
 
     @property
     def model_trainer(self) -> 'ModelTrainer':
+        """
+        Return the model trainer object associated with this tool
+
+        :return: the model trainer
+        """
         if self._model_trainer is None:
             self._model_trainer = self.create_trainer()
         return self._model_trainer
 
+
     @property
     def model_evaluator(self) -> 'ModelEvaluator':
+        """
+        Return the model evaluator object associated with this tool
+
+        :return: the model evaluator
+        """
         if self._model_evaluator is None:
             self._model_evaluator = self.create_evaluator()
         return self._model_evaluator
 
     @property
     def model_predictor(self) -> 'Predictor':
+        """
+        Return the model predictor object associated with this tool
+
+        :return: the model predictor
+        """
         if self._model_predictor is None:
             self._model_predictor = self.create_predictor()
         return self._model_predictor

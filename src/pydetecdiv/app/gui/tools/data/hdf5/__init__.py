@@ -1,3 +1,6 @@
+"""
+Classes and functions to manage GUI for ROI HDF5 data source creation
+"""
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QWidget
 
@@ -7,6 +10,9 @@ from pydetecdiv.app.gui.tools import ToolDialog
 
 
 class Create_ROI_HDF5Dialog(ToolDialog):
+    """
+    Dialog window to create ROI HDF5 file
+    """
     def __init__(self):
         super().__init__(PyDetecDiv.tools['cnrs.plewniak.roiseqhdf5creator'], title='Create ROI HDF5 file')
 
@@ -50,7 +56,6 @@ class Create_ROI_HDF5Dialog(ToolDialog):
             ])
 
         set_connections({self.button_box.accepted: self.tool.create_file,
-                         # self.button_box.accepted: self.tool.test_image_file,
                          self.button_box.rejected: lambda: print('Rejected'),
                          })
 
@@ -62,6 +67,9 @@ class Create_ROI_HDF5Dialog(ToolDialog):
 
 
 class Create_ROI_HDF5(QAction):
+    """
+    Action triggering ROI HDF5 file creation.
+    """
     def __init__(self, parent: QWidget):
         super().__init__("Create ROI HDF5", parent)
         self.triggered.connect(Create_ROI_HDF5Dialog)

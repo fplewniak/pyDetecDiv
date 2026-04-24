@@ -306,11 +306,11 @@ class ImageResourceChooser(QDockWidget):
 
 class DrawingToolsPalette(QDockWidget):
     """
-    A dockable window with tools for drawing ROIs and other items.
+    A dockable window with new_tools for drawing ROIs and other items.
     """
 
     def __init__(self, parent: MainWindow):
-        super().__init__('Drawing tools', parent)
+        super().__init__('Drawing new_tools', parent)
         self.setObjectName('Drawing_tools_palette')
         self.palette = QFrame()
         self.palette_layout = QVBoxLayout(self.palette)
@@ -365,7 +365,7 @@ class DrawingToolsPalette(QDockWidget):
 
     def unset_tools(self) -> None:
         """
-        Unset all available tools
+        Unset all available new_tools
         """
         for t in self.tools:
             t.setChecked(False)
@@ -383,7 +383,7 @@ class DrawingToolsPalette(QDockWidget):
 
     def set_item_width(self, width: int):
         """
-        Sets the width of the currently selected item, using the spinbox in drawing tools
+        Sets the width of the currently selected item, using the spinbox in drawing new_tools
 
         :param width: the desired width
         """
@@ -391,7 +391,7 @@ class DrawingToolsPalette(QDockWidget):
 
     def set_item_height(self, height: int):
         """
-        Sets the height of the currently selected item, using the spinbox in drawing tools
+        Sets the height of the currently selected item, using the spinbox in drawing new_tools
 
         :param height: the desired height
         """
@@ -488,11 +488,11 @@ class DrawPoint(QToolButton):
 
 class AnalysisToolsTree(QDockWidget):
     """
-    A dockable window with tools for image analysis.
+    A dockable window with new_tools for image analysis.
     """
 
     def __init__(self, parent: MainWindow):
-        super().__init__('Analysis tools', parent)
+        super().__init__('Analysis new_tools', parent)
         self.setObjectName('Analysis_tools_tree')
         tree_view = ToolboxTreeView()
         tree_view.setModel(ToolboxTreeModel(parent=self))

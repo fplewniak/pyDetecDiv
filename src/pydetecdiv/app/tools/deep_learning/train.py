@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 import torch
 from torch import autocast, GradScaler
 from pydetecdiv.app.tools.deep_learning.evaluate import ModelEvaluator
+from pydetecdiv.torch import TrainingStats
 
 if TYPE_CHECKING:
     from pydetecdiv.app.tools.deep_learning import DeepTool
@@ -14,14 +15,14 @@ if TYPE_CHECKING:
 
 class ModelTrainer(ABC):
     """
-    Abstract ModelTrainer class providing the basic functionalities for model training of deep learning tools
+    Abstract ModelTrainer class providing the basic functionalities for model training of deep learning new_tools
     """
     def __init__(self, tool: 'DeepTool'):
         self.tool = tool
         self.tool.command = 'train_model'
 
     @abstractmethod
-    def train_model(self):
+    def train_model(self) -> TrainingStats:
         """
         The global training procedure. This method should be implemented by subclasses to run the training loop for as many epochs
         as requested by the user.
@@ -29,7 +30,7 @@ class ModelTrainer(ABC):
 
     @staticmethod
     def training_loop(training_dataloader, validation_dataloader, model, loss_fn, optimizer, device, train_stats,
-                      regularization: int = 0, lambda_reg: float = 0.0):
+                      regularization: int = 0, lambda_reg: float = 0.0) -> None:
         """
         The elementary training loop, run once per epoch on all batches
         """

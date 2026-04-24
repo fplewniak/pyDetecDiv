@@ -196,6 +196,12 @@ class TrainingStats(ModelStats):
         return self.history.val_loss
 
     def is_best_val_loss(self, epoch: int = -1) -> bool:
+        """
+        Check whether the specified epoch has the best validation loss
+
+        :param epoch: the epoch number
+        :return: True if epoch has the best validation loss, False otherwise
+        """
         epoch = len(self.val_loss) - 1 if epoch == -1 else epoch
         return epoch == np.argmin(self.val_loss)
 

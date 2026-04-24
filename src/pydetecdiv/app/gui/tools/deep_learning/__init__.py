@@ -1,3 +1,6 @@
+"""
+GUI functions and classes specific to Deep Learning tool GUI
+"""
 import matplotlib
 import numpy as np
 from PySide6.QtCore import Qt
@@ -99,10 +102,10 @@ def plot_heatmap(axis: matplotlib.axes.Axes, data: np.ndarray, class_names: list
     axis.set_xlabel("Predicted classes", size=8)
     axis.set_ylabel("True classes", size=8)
 
-    im = axis.imshow(data)
+    axis.imshow(data)
     for i, row in enumerate(data):
-        for j, val in enumerate(row):
-            text = axis.text(j, i, f'{data[i, j].item():0.2f}', ha="center", va="center", color="w", size=8)
+        for j, _ in enumerate(row):
+            _ = axis.text(j, i, f'{data[i, j].item():0.2f}', ha="center", va="center", color="w", size=8)
 
 def plot_history(history: TrainingHistory) -> MatplotViewer:
     """

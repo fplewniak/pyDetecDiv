@@ -1,6 +1,6 @@
 """
 Generic widgets providing basic functionalities to build tool GUIs. These widgets are expected to be extended and implemented
-to meet the specific needs of tools
+to meet the specific needs of new_tools
 """
 from abc import abstractmethod
 from typing import Any, Callable
@@ -25,6 +25,10 @@ class ToolDialog(Dialog):
         self.tool = tool
 
     def closeEvent(self, event: QCloseEvent) -> None:
+        """
+        When the Dialog is closed, undeclare parameters to save in the run record (they should have been saved already anyway)
+        :param event: the close event
+        """
         for parameter in self.tool.parameters.parameter_list:
             parameter.should_be_saved = False
 
@@ -39,6 +43,10 @@ class ToolDialog(Dialog):
         self.close()
 
     def run_after_process(self, list_func: list[Callable]) -> None:
+        """
+        Declares the list of functions that should be run when the job is finished
+        :param list_func: the list of functions
+        """
         for func in list_func:
             self.job_finished.connect(func)
 
@@ -58,6 +66,9 @@ class ToolMenu(QMenu):
         self.tool = tool
 
 class ToolAction(QAction):
+    """
+    Generic action to trigger a tool process
+    """
     def __init__(self, title: str, parent: ToolMenu, **kwargs: dict[str, Any]) -> None:
         super().__init__(title, parent)
         self.triggered.connect(self.launch)
@@ -66,6 +77,10 @@ class ToolAction(QAction):
         self._parent = parent
 
     def parent(self) -> ToolMenu:
+        """
+        Returns the parent menu
+        :return: the parent ToolMenu
+        """
         return self._parent
 
     @abstractmethod

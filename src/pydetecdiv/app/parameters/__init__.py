@@ -68,6 +68,11 @@ class Parameter:
 
     @property
     def type(self) -> str:
+        """
+        Return the parameter's type
+
+        :return: the parameter's type
+        """
         return self.__class__.__name__
 
     def set_value(self, value: Any) -> None:
@@ -346,6 +351,9 @@ class StringParameter(ItemParameter):
 
 
 class PathParameter(ItemParameter):
+    """
+    Class representing a parameter holding a path.
+    """
     def __init__(self, name: str, label: str = None, default: str = '', validator: Callable[[str], bool] = None,
                  groups: set[str] = None, updater: Callable = None, current_dir: str | None = None, filters = list[str] | None,
                  select_dir: bool = False, **kwargs) -> None:

@@ -26,14 +26,14 @@ from pydetecdiv.domain.parameters import ParameterFactory, Parameter
 
 def list_tools() -> dict:
     """
-    Provide a list of available tools arranged by categories
-    :return: the list of available tools and categories
+    Provide a list of available new_tools arranged by categories
+    :return: the list of available new_tools and categories
     :rtype: dict
     """
     toolbox_path = get_config_value('paths', 'toolbox')
     json_data = json.load(open(os.path.join(toolbox_path, 'toolboxes.json'), encoding='utf-8'))
     tool_list = {c['name']: [] for c in json_data['categories']}
-    for current_path, _, files in os.walk(os.path.abspath(os.path.join(toolbox_path, 'tools'))):
+    for current_path, _, files in os.walk(os.path.abspath(os.path.join(toolbox_path, 'new_tools'))):
         for file in files:
             if file.endswith('.xml'):
                 tool = CommandLineTool(os.path.join(current_path, file))
@@ -176,7 +176,7 @@ class Outputs:
 
 class Command:
     """
-    A class handling commands for running tools. A command can be a command-line or a call to the execute method of a
+    A class handling commands for running new_tools. A command can be a command-line or a call to the execute method of a
     class inheriting from CommandLineTool (i.e. generic tool) and representing a particular tool
     """
 
@@ -276,8 +276,8 @@ class Command:
 
 class CommandLineTool:
     """
-    A class for handling tools specified by XML files. A CommandLineTool object represents a generic tool in the toolbox. Internal
-    tools must inherit from this class with the addition of a supplementary method implementing the tool's algorithm.
+    A class for handling new_tools specified by XML files. A CommandLineTool object represents a generic tool in the toolbox. Internal
+    new_tools must inherit from this class with the addition of a supplementary method implementing the tool's algorithm.
     """
 
     def __init__(self, path: str):

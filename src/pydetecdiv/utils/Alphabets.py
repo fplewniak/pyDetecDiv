@@ -1,3 +1,6 @@
+"""
+Unicode codes for different alphabets
+"""
 greek = {
     'Alpha'  : '\u0391',
     'Beta'   : '\u0392',

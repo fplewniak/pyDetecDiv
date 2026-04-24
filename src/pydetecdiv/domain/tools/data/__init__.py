@@ -1,3 +1,6 @@
+"""
+Classes and functions to handle data
+"""
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -55,7 +58,7 @@ class RoiDataReader(ABC):
 
     @property
     @abstractmethod
-    def roi_ids(self):
+    def roi_ids(self) -> list[int]:
         """
         Returns the list of all ROI IDs
         :return: all ROI ids in a list
@@ -136,11 +139,20 @@ class RoiDataReader(ABC):
         all_indices = self.all_indices(roi_idx)
         return all_indices.join(with_targets, left_on=['roi', 'frame'], right_on=['roi', 'frame'], how='anti')
 
-    def close(self):
+    def close(self) -> None:
+        """
+        Close the data source if it has the close() method
+        """
         if hasattr(self.source, 'close'):
             self.source.close()
 
 def compute_class_weights(targets: np.ndarray) -> torch.Tensor:
+    """
+    Compute the weights for classes for class balancing
+
+    :param targets: all the targets
+    :return: the class weights
+    """
     labels = targets.flatten()
     labels = labels[labels > -1]
     classes, class_counts = np.unique(labels, return_counts=True)

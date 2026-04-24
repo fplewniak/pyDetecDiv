@@ -350,7 +350,7 @@ class Scene(QGraphicsScene):
 
     def display_Item_size(self, item: QGraphicsRectItem) -> None:
         """
-        Displays the item size in the Drawing tools palette
+        Displays the item size in the Drawing new_tools palette
 
         :param item: the item
         """
