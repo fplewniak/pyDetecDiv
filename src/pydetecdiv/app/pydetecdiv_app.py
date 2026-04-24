@@ -10,7 +10,7 @@ from PySide6.QtGui import QIcon
 import pyqtgraph as pg
 
 from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.app.gui import FileMenu, ProjectMenu, DataMenu, PluginMenu, VideoMenu
+from pydetecdiv.app.gui import FileMenu, ProjectMenu, DataMenu, PluginMenu, VideoMenu, DeepLearningMenu
 from pydetecdiv.app.gui.Windows import MainWindow
 from pydetecdiv.app.gui import SourcePath
 from pydetecdiv.app.gui.tools.video_classifier import VideoClassifierMenu
@@ -73,6 +73,7 @@ def main_gui():
     FileMenu(PyDetecDiv.main_window)
     ProjectMenu(PyDetecDiv.main_window)
     DataMenu(PyDetecDiv.main_window)
+    DeepLearningMenu(PyDetecDiv.main_window)
     VideoMenu(PyDetecDiv.main_window, video_tool_menus)
     PluginMenu(PyDetecDiv.main_window)
 

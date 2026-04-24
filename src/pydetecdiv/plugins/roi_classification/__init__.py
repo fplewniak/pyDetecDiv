@@ -323,7 +323,7 @@ class Plugin(plugins.Plugin):
     id_ = 'gmgm.plewniak.roiclassification'
     version = '1.0.0'
     name = 'ROI classification'
-    category = 'Deep learning'
+    category = 'Plugins: Deep learning'
 
     def __init__(self):
         super().__init__()

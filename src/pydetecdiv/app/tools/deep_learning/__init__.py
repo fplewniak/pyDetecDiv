@@ -279,23 +279,23 @@ class DeepTool(Tool):
         Abstract method to prepare the data for prediction
         """
 
-    def run_training(self):
-        """
-        Generic method calling the trainer factory and training the model on the training and validation datasets
-        """
-        model_trainer = self.create_trainer()
-        model_trainer.train_model()
-
-    def run_evaluation(self):
-        """
-        Generic method calling the evaluator factory and evaluating the model on the test dataset
-        """
-        model_evaluator = self.create_evaluator()
-        model_evaluator.evaluate_model()
-
-    def predict(self):
-        """
-        Generic method calling the predictor factory to make prediction with the model
-        """
-        predictor = self.create_predictor()
-        predictor.predict()
+    # def run_training(self):
+    #     """
+    #     Generic method calling the trainer factory and training the model on the training and validation datasets
+    #     """
+    #     model_trainer = self.create_trainer()
+    #     model_trainer.train_model()
+    #
+    # def run_evaluation(self):
+    #     """
+    #     Generic method calling the evaluator factory and evaluating the model on the test dataset
+    #     """
+    #     model_evaluator = self.create_evaluator()
+    #     model_evaluator.evaluate_model()
+    #
+    # def predict(self):
+    #     """
+    #     Generic method calling the predictor factory to make prediction with the model
+    #     """
+    #     predictor = self.create_predictor()
+    #     predictor.predict()

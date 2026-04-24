@@ -12,7 +12,7 @@ from PySide6.QtGui import QAction, QIcon, QFont
 from PySide6.QtWidgets import QToolBar, QStatusBar, QMenu, QApplication, QDialog, QDialogButtonBox, QSizePolicy, QLabel
 
 from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.app.gui import ActionsSettings, ActionsProject, ActionsData
+from pydetecdiv.app.gui import ActionsSettings, ActionsProject, ActionsData, ActionsDeepLearning
 import pydetecdiv.app.gui.resources_rc
 from pydetecdiv.app.gui.ActionsData import ImportROIannotations
 from pydetecdiv.app.gui.tools.data.hdf5 import Create_ROI_HDF5
@@ -89,6 +89,17 @@ class DataMenu(QMenu):
         PyDetecDiv.app.project_selected.connect(lambda _: import_annotated_rois.setEnabled(True))
         PyDetecDiv.app.roi_counted.connect(create_roi_hdf5.enable)
         apply_drift.triggered.connect(PyDetecDiv.app.set_apply_drift)
+
+class DeepLearningMenu(QMenu):
+    """
+    The main window Deep learning menu to manage general deep learning actions
+    """
+    def __init__(self, parent: 'MainWindow', *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        menu = parent.menuBar().addMenu("Deep learning")
+        ActionsDeepLearning.CreateClassificationSchemeAction(menu)
+        ActionsDeepLearning.ShowModelInformationAction(menu)
+
 
 class VideoMenu(QMenu):
     """
