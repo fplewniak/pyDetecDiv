@@ -94,11 +94,11 @@ class DeepLearningMenu(QMenu):
     """
     The main window Deep learning menu to manage general deep learning actions
     """
-    def __init__(self, parent: 'MainWindow', *args, **kwargs):
+    def __init__(self, parent: 'MainWindow', tool_menus: list[QMenu], *args, **kwargs):
         super().__init__(*args, **kwargs)
         menu = parent.menuBar().addMenu("Deep learning")
-        ActionsDeepLearning.CreateClassificationSchemeAction(menu)
-        ActionsDeepLearning.ShowModelInformationAction(menu)
+        for tool_menu in tool_menus:
+            menu.addMenu(tool_menu)
 
 
 class VideoMenu(QMenu):

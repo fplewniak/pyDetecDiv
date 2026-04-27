@@ -13,8 +13,12 @@ from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui import FileMenu, ProjectMenu, DataMenu, PluginMenu, VideoMenu, DeepLearningMenu
 from pydetecdiv.app.gui.Windows import MainWindow
 from pydetecdiv.app.gui import SourcePath
+from pydetecdiv.app.gui.tools.deep_learning.classification_schemes import ClassificationSchemeMenu
+from pydetecdiv.app.gui.tools.deep_learning.model_info import ModelInfoMenu
 from pydetecdiv.app.gui.tools.video_classifier import VideoClassifierMenu
 from pydetecdiv.domain.tools.data.hdf5 import ROIseqHDF5creator
+from pydetecdiv.domain.tools.deep_learning.classification_schemes import ClassificationSchemeManagement
+from pydetecdiv.domain.tools.deep_learning.model_info import ModelInfo
 from pydetecdiv.domain.tools.video_classifier import VideoClassifier
 
 
@@ -59,11 +63,18 @@ def main_gui():
 
     # Create new_tools
     PyDetecDiv.update_tools({'cnrs.plewniak.videoclassifier': VideoClassifier(working_dir='video_classification'),
-                             'cnrs.plewniak.roiseqhdf5creator' : ROIseqHDF5creator(working_dir='data')
+                             'cnrs.plewniak.roiseqhdf5creator' : ROIseqHDF5creator(working_dir='data'),
+                             'cnrs.plewniak.classificationschemes' : ClassificationSchemeManagement(working_dir='data'),
+                             'cnrs.plewniak.deeplearningmodelinfo' : ModelInfo(working_dir='data'),
                              })
 
     video_tool_menus = [
         VideoClassifierMenu(PyDetecDiv.tools['cnrs.plewniak.videoclassifier']),
+        ]
+
+    deeplearning_tool_menus = [
+        ClassificationSchemeMenu(PyDetecDiv.tools['cnrs.plewniak.classificationschemes']),
+        ModelInfoMenu(PyDetecDiv.tools['cnrs.plewniak.deeplearningmodelinfo']),
         ]
 
     # Set main application window
@@ -73,7 +84,7 @@ def main_gui():
     FileMenu(PyDetecDiv.main_window)
     ProjectMenu(PyDetecDiv.main_window)
     DataMenu(PyDetecDiv.main_window)
-    DeepLearningMenu(PyDetecDiv.main_window)
+    DeepLearningMenu(PyDetecDiv.main_window, deeplearning_tool_menus)
     VideoMenu(PyDetecDiv.main_window, video_tool_menus)
     PluginMenu(PyDetecDiv.main_window)
 

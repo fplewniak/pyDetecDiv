@@ -64,6 +64,7 @@ class ToolMenu(QMenu):
     def __init__(self, tool: Tool, **kwargs: dict[str, Any]) -> None:
         super().__init__(**kwargs)
         self.tool = tool
+        self.setTitle(tool.name)
 
 class ToolAction(QAction):
     """

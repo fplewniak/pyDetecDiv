@@ -30,6 +30,7 @@ def plot_training_results(train_stats: ClassifierTrainingStats) -> None:
     interactive = plot_interactive_history(train_stats)
     tab.addTab(interactive, 'Interactive history')
 
+
 def plot_interactive_history(train_stats: ClassifierTrainingStats) -> QFrame:
     """
     Create a QFrame to display the interactive history in: the left panel shows the training and validation confusion matrices at
@@ -54,7 +55,7 @@ def plot_interactive_history(train_stats: ClassifierTrainingStats) -> QFrame:
     layout.addWidget(chart_view, 0, 1)
 
     epoch_line.sigPositionChangeFinished.connect(
-        lambda x: update_heat_maps(confusion_matrices_view, train_stats, epoch=int(x.getXPos() + 0.5)))
+            lambda x: update_heat_maps(confusion_matrices_view, train_stats, epoch=int(x.getXPos() + 0.5)))
     epoch_line.sigPositionChangeFinished.connect(lambda x: x.setPos(float(int(x.getXPos() + 0.5))))
 
     return frame
@@ -86,6 +87,7 @@ def update_heat_maps(matplot_view, train_stats, epoch=None):
 
     matplot_view.show()
 
+
 def plot_heatmap(axis: matplotlib.axes.Axes, data: np.ndarray, class_names: list[str] = None, title: str | None = None):
     """
     Plot a heatmap in matplotlib axis for classes named in class_names and defined by data
@@ -107,6 +109,7 @@ def plot_heatmap(axis: matplotlib.axes.Axes, data: np.ndarray, class_names: list
         for j, _ in enumerate(row):
             _ = axis.text(j, i, f'{data[i, j].item():0.2f}', ha="center", va="center", color="w", size=8)
 
+
 def plot_history(history: TrainingHistory) -> MatplotViewer:
     """
     Plots metrics history.
@@ -125,6 +128,7 @@ def plot_history(history: TrainingHistory) -> MatplotViewer:
 
     plot_viewer.show()
     return plot_viewer
+
 
 def plot_metrics_history(train_stats: ClassifierTrainingStats, epoch: int | None = None) -> tuple[ChartView, pg.InfiniteLine]:
     """

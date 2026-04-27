@@ -79,6 +79,7 @@ class ROIDataset(Dataset):
     """
     A Pytorch dataset for ROI access in deep learning tools.
     """
+
     def __init__(self, data_reader: RoiDataReader, indices: polars.DataFrame, targets: bool = False,
                  image_shape: tuple[int, int] = (60, 60), transform: torch.nn.Module = None):
         self.reader = data_reader
@@ -225,7 +226,6 @@ class DeepTool(Tool):
         if self._model_trainer is None:
             self._model_trainer = self.create_trainer()
         return self._model_trainer
-
 
     @property
     def model_evaluator(self) -> 'ModelEvaluator':
