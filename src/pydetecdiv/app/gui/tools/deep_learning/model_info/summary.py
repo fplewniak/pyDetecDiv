@@ -37,7 +37,7 @@ class ModelSummaryDialog(ToolDialog):
 
     def show_model_information(self):
         model = self.tool.parameters.model.value(n_classes=self.tool.parameters.num_classes.value)
-        summary(model, (self.tool.parameters.batch_size.value, 15, 3, 224, 224), device='cpu')
+        summary(model, (self.tool.parameters.batch_size.value,) + model.expected_shape[1:], device='cpu')
 
 
 class ModelSummaryAction(ToolAction):
