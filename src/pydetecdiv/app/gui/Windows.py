@@ -86,6 +86,10 @@ class MainWindow(QMainWindow):
             else:
                 menu.addSeparator()
 
+    def add_top_menus(self, top_menus: dict[str, list[ToolMenu | ToolAction]]):
+        for title, actions in top_menus.items():
+            self.add_top_menu(title, actions)
+
     def add_tabbed_window(self, title: str) -> TabbedWindow:
         """
         Add a new Tabbed Mdi subwindow to visualize related information and analyses

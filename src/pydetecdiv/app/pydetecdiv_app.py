@@ -84,8 +84,10 @@ def main_gui():
     FileMenu(mw)
     ProjectMenu(mw)
     DataMenu(mw)
-    mw.add_top_menu('Deep learning', deeplearning_tool_actions)
-    mw.add_top_menu('Video', video_tool_actions)
+    mw.add_top_menus({
+        'Deep learning': deeplearning_tool_actions,
+        'Video': video_tool_actions,
+        })
     PluginMenu(PyDetecDiv.main_window)
 
     # Launch application GUI
