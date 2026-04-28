@@ -47,8 +47,6 @@ class ModelSummaryAction(ToolAction):
 
     def __init__(self, parent: 'ModelInfoMenu'):
         super().__init__("Show model summary", parent)
-        # TODO check a project is open
-        self.setEnabled(True)
 
     def launch(self):
         """

@@ -1,8 +1,12 @@
 from typing import Any, TYPE_CHECKING
 
+from PySide6.QtCore import SignalInstance
+
+from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui.core.widgets import set_connections
 from pydetecdiv.app.tools import Tool
 from pydetecdiv.app.gui.tools import ToolDialog, ToolAction
+from pydetecdiv.persistence.project import project_exists
 
 if TYPE_CHECKING:
     from pydetecdiv.app.gui.tools.deep_learning.classification_schemes import ClassificationSchemeMenu
@@ -40,8 +44,12 @@ class ManageClassificationSchemesAction(ToolAction):
 
     def __init__(self, parent: 'ClassificationSchemeMenu'):
         super().__init__("Manage classification schemes", parent)
-        # TODO check a project is open
-        self.setEnabled(True)
+
+    def determine_enabled_status(self, **kwargs: dict[str, Any]):
+        if project_exists(PyDetecDiv.project_name):
+            self.setEnabled(True)
+        else:
+            self.setEnabled(False)
 
     def launch(self):
         """

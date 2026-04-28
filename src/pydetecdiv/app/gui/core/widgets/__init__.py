@@ -981,7 +981,7 @@ class Dialog(QDialog):
             self.vert_layout.addWidget(widget)
 
 
-def set_connections(connections: dict[Signal | SignalInstance, Callable]) -> None:
+def set_connections(connections: dict[SignalInstance, Callable]) -> None:
     """
     connect a signal to a slot or a list of slots, as defined in a dictionary
 
@@ -994,3 +994,13 @@ def set_connections(connections: dict[Signal | SignalInstance, Callable]) -> Non
                 signal.connect(s)
         else:
             signal.connect(slot)
+
+
+def connect_enabling_signals(action: QAction | QMenu, signals: list[SignalInstance] | SignalInstance) -> None:
+    if signals is not None:
+        if not isinstance(signals, list):
+            signals = [signals]
+        for signal in signals:
+            signal.connect(lambda: action.setEnabled(True))
+    else:
+        action.setEnabled(action.enabled_default)

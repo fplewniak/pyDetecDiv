@@ -61,21 +61,24 @@ class ToolMenu(QMenu):
     """
     Abstract Tool submenu class
     """
+
     def __init__(self, tool: Tool, **kwargs: dict[str, Any]) -> None:
         super().__init__(**kwargs)
         self.tool = tool
         self.setTitle(tool.name)
 
+
 class ToolAction(QAction):
     """
     Generic action to trigger a tool process
     """
-    def __init__(self, title: str, parent: ToolMenu, **kwargs: dict[str, Any]) -> None:
+
+    def __init__(self, title: str, parent: ToolMenu, **kwargs: dict[str, Any]):
         super().__init__(title, parent)
         self.triggered.connect(self.launch)
-        self.setEnabled(False)
         parent.addAction(self)
         self._parent = parent
+        parent.aboutToShow.connect(self.determine_enabled_status)
 
     def parent(self) -> ToolMenu:
         """
@@ -83,6 +86,10 @@ class ToolAction(QAction):
         :return: the parent ToolMenu
         """
         return self._parent
+
+    @abstractmethod
+    def determine_enabled_status(self, **kwargs: dict[str, Any]):
+        pass
 
     @abstractmethod
     def launch(self):

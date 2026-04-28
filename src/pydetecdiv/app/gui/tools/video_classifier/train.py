@@ -1,14 +1,17 @@
 """
 GUI classes for video classifier model training
 """
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from pydetecdiv.app import PyDetecDiv
+from PySide6.QtCore import SignalInstance
+
+from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 from pydetecdiv.app.gui.core.widgets import set_connections
 from pydetecdiv.app.gui.tools import ToolAction, ToolDialog
 from pydetecdiv.app.gui.tools.deep_learning import plot_training_results
 from pydetecdiv.app.parameters import FloatParameter
 from pydetecdiv.app.tools.deep_learning import DeepTool
+from pydetecdiv.persistence.project import project_exists
 
 if TYPE_CHECKING:
     from pydetecdiv.app.gui.tools.video_classifier import VideoClassifierMenu
@@ -18,6 +21,7 @@ class TrainModelDialog(ToolDialog):
     """
     Dialog to choose the parameters for training a Video classifier model
     """
+
     def __init__(self, tool: DeepTool, **kwargs):
         super().__init__(tool, title='Training Video classifier', **kwargs)
 
@@ -124,9 +128,13 @@ class TrainModelAction(ToolAction):
 
     def __init__(self, parent: 'VideoClassifierMenu'):
         super().__init__("Train model", parent)
-        # TODO check there are annotated ROIs in the database. This will be conveniently done using a new Annotations table with
-        # TODO the count_objects() method
-        self.setEnabled(True)
+
+    def determine_enabled_status(self, **kwargs: dict[str, Any]):
+        self.setEnabled(False)
+        if project_exists(PyDetecDiv.project_name):
+            with pydetecdiv_project(PyDetecDiv.project_name) as project:
+                if (project.count_objects('RoiAnnotations') > 0) and (project.count_objects('Classification') > 0):
+                    self.setEnabled(True)
 
     def launch(self):
         """
