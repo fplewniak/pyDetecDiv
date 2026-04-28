@@ -4,8 +4,9 @@ Classes for persistent windows of the GUI
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCursor, QIcon, QCloseEvent
-from PySide6.QtWidgets import QMainWindow, QMdiArea, QDockWidget, QLabel, QComboBox, \
-    QDialogButtonBox, QFrame, QVBoxLayout, QGridLayout, QToolButton, QSpinBox, QGroupBox, QHBoxLayout, QCheckBox
+from PySide6.QtWidgets import (QMainWindow, QMdiArea, QDockWidget, QLabel, QComboBox,
+                               QDialogButtonBox, QFrame, QVBoxLayout, QGridLayout, QToolButton, QSpinBox, QGroupBox, QHBoxLayout,
+                               QCheckBox)
 
 from pydetecdiv.app.gui import MainToolBar, MainStatusBar
 from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project, DrawingTools
@@ -14,6 +15,7 @@ from pydetecdiv.app.gui.FOVmanager import FOVmanager
 from pydetecdiv.app.gui.Toolbox import ToolboxTreeView, ToolboxTreeModel
 from pydetecdiv.app.gui.core.widgets.palettes.scene import SceneTreePalette
 from pydetecdiv.app.gui.core.widgets.TabWidgets import TabbedWindow
+from pydetecdiv.app.gui.tools import ToolAction, ToolMenu
 from pydetecdiv.domain.FOV import FOV
 
 
@@ -73,6 +75,16 @@ class MainWindow(QMainWindow):
     #         self.tabs[title] = TabbedWindow(title)
     #         self.tabs[title].set_top_tab(ImageViewer(), title)
     #     return self.tabs[title]
+
+    def add_top_menu(self, title: str, tool_actions: list[ToolMenu | ToolAction], *args, **kwargs):
+        menu = self.menuBar().addMenu(title)
+        for tool_action in tool_actions:
+            if isinstance(tool_action, ToolAction):
+                tool_action.add_to_menu(menu)
+            elif isinstance(tool_action, ToolMenu):
+                menu.addMenu(tool_action)
+            else:
+                menu.addSeparator()
 
     def add_tabbed_window(self, title: str) -> TabbedWindow:
         """

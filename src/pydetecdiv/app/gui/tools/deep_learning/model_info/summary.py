@@ -45,11 +45,11 @@ class ModelSummaryAction(ToolAction):
     Action to open a shared data source configuration window
     """
 
-    def __init__(self, parent: 'ModelInfoMenu'):
-        super().__init__("Show model summary", parent)
+    def __init__(self, tool: Tool, parent: 'ModelInfoMenu'):
+        super().__init__("Show model summary", tool, parent)
 
     def launch(self):
         """
         Run training procedure
         """
-        ModelSummaryDialog(self.parent().tool)
+        ModelSummaryDialog(self.tool)

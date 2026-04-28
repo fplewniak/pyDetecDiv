@@ -73,14 +73,19 @@ class ToolAction(QAction):
     Generic action to trigger a tool process
     """
 
-    def __init__(self, title: str, parent: ToolMenu, **kwargs: dict[str, Any]):
+    def __init__(self, title: str, tool: Tool, parent: ToolMenu | None = None, **kwargs: dict[str, Any]):
         super().__init__(title, parent)
+        self.tool = tool
         self.triggered.connect(self.launch)
-        parent.addAction(self)
-        self._parent = parent
-        parent.aboutToShow.connect(self.determine_enabled_status)
+        if parent is not None:
+            self.add_to_menu(parent)
 
-    def parent(self) -> ToolMenu:
+    def add_to_menu(self, menu: QMenu) -> None:
+        menu.addAction(self)
+        self._parent = menu
+        menu.aboutToShow.connect(self.determine_enabled_status)
+
+    def parent(self) -> QMenu:
         """
         Returns the parent menu
         :return: the parent ToolMenu

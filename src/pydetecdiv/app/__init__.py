@@ -101,7 +101,7 @@ class PyDetecDiv(QApplication):
                 table_editor.exec()
 
     @staticmethod
-    def set_main_window(main_window: 'MainWindow') -> None:
+    def set_main_window(main_window: 'MainWindow') -> 'MainWindow':
         """
         Sets the main window global variable to make it accessible across the whole application
 
@@ -109,6 +109,7 @@ class PyDetecDiv(QApplication):
         """
         PyDetecDiv.main_window = main_window
         PyDetecDiv.main_window.show()
+        return PyDetecDiv.main_window
 
     @staticmethod
     def set_apply_drift(apply_drift: bool) -> None:

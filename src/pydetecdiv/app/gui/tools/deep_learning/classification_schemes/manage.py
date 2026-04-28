@@ -42,8 +42,8 @@ class ManageClassificationSchemesAction(ToolAction):
     Action to open a shared data source configuration window
     """
 
-    def __init__(self, parent: 'ClassificationSchemeMenu'):
-        super().__init__("Manage classification schemes", parent)
+    def __init__(self, tool: Tool, parent: 'ClassificationSchemeMenu' = None):
+        super().__init__("Manage classification schemes", tool, parent)
 
     def determine_enabled_status(self, **kwargs: dict[str, Any]):
         if project_exists(PyDetecDiv.project_name):
@@ -55,4 +55,4 @@ class ManageClassificationSchemesAction(ToolAction):
         """
         Run training procedure
         """
-        ManageClassificationSchemeDialog(self.parent().tool)
+        ManageClassificationSchemeDialog(self.tool)

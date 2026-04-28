@@ -90,28 +90,6 @@ class DataMenu(QMenu):
         PyDetecDiv.app.roi_counted.connect(create_roi_hdf5.enable)
         apply_drift.triggered.connect(PyDetecDiv.app.set_apply_drift)
 
-class DeepLearningMenu(QMenu):
-    """
-    The main window Deep learning menu to manage general deep learning actions
-    """
-    def __init__(self, parent: 'MainWindow', tool_menus: list[QMenu], *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        menu = parent.menuBar().addMenu("Deep learning")
-        for tool_menu in tool_menus:
-            menu.addMenu(tool_menu)
-
-
-class VideoMenu(QMenu):
-    """
-    The main window Video menu to manage video analysis and manipulation
-    """
-
-    def __init__(self, parent: 'MainWindow', tool_menus: list[QMenu], *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        menu = parent.menuBar().addMenu("Video")
-        for tool_menu in tool_menus:
-            menu.addMenu(tool_menu)
-
 
 class PluginMenu(QMenu):
     """

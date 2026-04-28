@@ -10,12 +10,12 @@ from PySide6.QtGui import QIcon
 import pyqtgraph as pg
 
 from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.app.gui import FileMenu, ProjectMenu, DataMenu, PluginMenu, VideoMenu, DeepLearningMenu
+from pydetecdiv.app.gui import FileMenu, ProjectMenu, DataMenu, PluginMenu
 from pydetecdiv.app.gui.Windows import MainWindow
 from pydetecdiv.app.gui import SourcePath
 from pydetecdiv.app.gui.tools.deep_learning.classification_schemes import ClassificationSchemeMenu
 from pydetecdiv.app.gui.tools.deep_learning.model_info import ModelInfoMenu
-from pydetecdiv.app.gui.tools.video_classifier import VideoClassifierMenu
+from pydetecdiv.app.gui.tools.video_classifier import VideoClassifierMenu, TrainModelAction
 from pydetecdiv.domain.tools.data.hdf5 import ROIseqHDF5creator
 from pydetecdiv.domain.tools.deep_learning.classification_schemes import ClassificationSchemeManagement
 from pydetecdiv.domain.tools.deep_learning.model_info import ModelInfo
@@ -68,24 +68,24 @@ def main_gui():
                              'cnrs.plewniak.deeplearningmodelinfo' : ModelInfo(working_dir='data'),
                              })
 
-    video_tool_menus = [
+    video_tool_actions = [
         VideoClassifierMenu(PyDetecDiv.tools['cnrs.plewniak.videoclassifier']),
         ]
 
-    deeplearning_tool_menus = [
+    deeplearning_tool_actions = [
         ClassificationSchemeMenu(PyDetecDiv.tools['cnrs.plewniak.classificationschemes']),
         ModelInfoMenu(PyDetecDiv.tools['cnrs.plewniak.deeplearningmodelinfo']),
         ]
 
     # Set main application window
-    PyDetecDiv.set_main_window(MainWindow())
+    mw = PyDetecDiv.set_main_window(MainWindow())
 
     # Create menus
-    FileMenu(PyDetecDiv.main_window)
-    ProjectMenu(PyDetecDiv.main_window)
-    DataMenu(PyDetecDiv.main_window)
-    DeepLearningMenu(PyDetecDiv.main_window, deeplearning_tool_menus)
-    VideoMenu(PyDetecDiv.main_window, video_tool_menus)
+    FileMenu(mw)
+    ProjectMenu(mw)
+    DataMenu(mw)
+    mw.add_top_menu('Deep learning', deeplearning_tool_actions)
+    mw.add_top_menu('Video', video_tool_actions)
     PluginMenu(PyDetecDiv.main_window)
 
     # Launch application GUI

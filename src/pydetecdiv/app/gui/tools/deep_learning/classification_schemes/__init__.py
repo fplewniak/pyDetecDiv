@@ -8,4 +8,4 @@ from pydetecdiv.domain.tools.deep_learning.classification_schemes import Classif
 class ClassificationSchemeMenu(ToolMenu):
     def __init__(self, tool: ClassificationSchemeManagement, **kwargs: dict[str, Any]):
         super().__init__(tool, **kwargs)
-        ManageClassificationSchemesAction(self)
+        ManageClassificationSchemesAction(tool, self)
