@@ -6,6 +6,6 @@ from pydetecdiv.domain.tools.video_classifier import VideoClassifier
 
 
 class VideoClassifierMenu(ToolMenu):
-    def __init__(self, tool: VideoClassifier, **kwargs: dict[str, Any]):
-        super().__init__(tool, **kwargs)
-        TrainModelAction(tool, self)
+    def __init__(self, tool_name: str, **kwargs: dict[str, Any]):
+        super().__init__(tool_name, **kwargs)
+        TrainModelAction(tool_name, self)

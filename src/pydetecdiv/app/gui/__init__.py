@@ -8,14 +8,14 @@ import psutil
 import numpy as np
 
 from PySide6.QtCore import QTimer, QRect
-from PySide6.QtGui import QAction, QIcon, QFont
+from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QToolBar, QStatusBar, QMenu, QApplication, QDialog, QDialogButtonBox, QSizePolicy, QLabel
 
 from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui import ActionsSettings, ActionsProject, ActionsData
 import pydetecdiv.app.gui.resources_rc
 from pydetecdiv.app.gui.ActionsData import ImportROIannotations
-from pydetecdiv.app.gui.tools.data.hdf5 import Create_ROI_HDF5
+from pydetecdiv.app.gui.tools.data.hdf5 import Create_ROI_HDF5Action
 
 if TYPE_CHECKING:
     from pydetecdiv.app.gui.Windows import MainWindow
@@ -75,7 +75,7 @@ class DataMenu(QMenu):
         menu.addSeparator()
         convert_to_ndtiff = ActionsData.ConvertToNDTiff(menu)
         menu.addSeparator()
-        create_roi_hdf5 = Create_ROI_HDF5(menu)
+        Create_ROI_HDF5Action('cnrs.plewniak.roiseqhdf5creator', parent=menu)
         import_annotated_rois = ImportROIannotations(menu)
         menu.addSeparator()
         compute_drift = ActionsData.ComputeDrift(menu)
@@ -87,7 +87,7 @@ class DataMenu(QMenu):
         PyDetecDiv.app.project_selected.connect(compute_drift.enable)
         PyDetecDiv.app.project_selected.connect(apply_drift.enable)
         PyDetecDiv.app.project_selected.connect(lambda _: import_annotated_rois.setEnabled(True))
-        PyDetecDiv.app.roi_counted.connect(create_roi_hdf5.enable)
+        # PyDetecDiv.app.roi_counted.connect(create_roi_hdf5.enable)
         apply_drift.triggered.connect(PyDetecDiv.app.set_apply_drift)
 
 

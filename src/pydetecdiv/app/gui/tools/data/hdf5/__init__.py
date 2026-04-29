@@ -1,20 +1,22 @@
 """
 Classes and functions to manage GUI for ROI HDF5 data source creation
 """
-from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QWidget
+from typing import Any
 
-from pydetecdiv.app import PyDetecDiv
+from PySide6.QtWidgets import QMenu
+
+from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 from pydetecdiv.app.gui.core.widgets import set_connections
-from pydetecdiv.app.gui.tools import ToolDialog
+from pydetecdiv.app.gui.tools import ToolDialog, ToolAction
+from pydetecdiv.persistence.project import project_exists
 
 
 class Create_ROI_HDF5Dialog(ToolDialog):
     """
     Dialog window to create ROI HDF5 file
     """
-    def __init__(self):
-        super().__init__(PyDetecDiv.tools['cnrs.plewniak.roiseqhdf5creator'], title='Create ROI HDF5 file')
+    def __init__(self, tool):
+        super().__init__(tool, title='Create ROI HDF5 file')
 
         self.tool.parameters.hdf5_file.current_dir = self.tool.working_dir
 
@@ -66,23 +68,23 @@ class Create_ROI_HDF5Dialog(ToolDialog):
         self.exec()
 
 
-class Create_ROI_HDF5(QAction):
+class Create_ROI_HDF5Action(ToolAction):
     """
     Action triggering ROI HDF5 file creation.
     """
-    def __init__(self, parent: QWidget):
-        super().__init__("Create ROI HDF5", parent)
-        self.triggered.connect(Create_ROI_HDF5Dialog)
+    def __init__(self, tool_name: str, parent: QMenu = None):
+        super().__init__("Create ROI HDF5", tool_name, parent)
+
+    def determine_enabled_status(self, **kwargs: dict[str, Any]):
         self.setEnabled(False)
-        parent.addAction(self)
+        if project_exists(PyDetecDiv.project_name):
+            with pydetecdiv_project(PyDetecDiv.project_name) as project:
+                if project.count_objects('ROI') > 0:
+                    self.setEnabled(True)
 
-    def enable(self, roi_count: int):
+    def launch(self):
         """
-        Enable or disable this action whether there are roi data or not.
+        Run training procedure
+        """
 
-        :param roi_count: the number of ROIs in project
-        """
-        if PyDetecDiv.project_name and (roi_count > 0):
-            self.setEnabled(True)
-        else:
-            self.setEnabled(False)
+        Create_ROI_HDF5Dialog(self.tool)

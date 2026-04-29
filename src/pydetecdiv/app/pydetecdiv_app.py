@@ -3,19 +3,16 @@
 """
  The Graphical User Interface to pyDetecDiv application
 """
-# import importlib
-# import os
-
 from PySide6.QtGui import QIcon
 import pyqtgraph as pg
 
 from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.app.gui import FileMenu, ProjectMenu, DataMenu, PluginMenu
+from pydetecdiv.app.gui import FileMenu, ProjectMenu, DataMenu, PluginMenu, Create_ROI_HDF5Action
 from pydetecdiv.app.gui.Windows import MainWindow
 from pydetecdiv.app.gui import SourcePath
 from pydetecdiv.app.gui.tools.deep_learning.classification_schemes import ClassificationSchemeMenu
 from pydetecdiv.app.gui.tools.deep_learning.model_info import ModelInfoMenu
-from pydetecdiv.app.gui.tools.video_classifier import VideoClassifierMenu, TrainModelAction
+from pydetecdiv.app.gui.tools.video_classifier import VideoClassifierMenu
 from pydetecdiv.domain.tools.data.hdf5 import ROIseqHDF5creator
 from pydetecdiv.domain.tools.deep_learning.classification_schemes import ClassificationSchemeManagement
 from pydetecdiv.domain.tools.deep_learning.model_info import ModelInfo
@@ -61,7 +58,10 @@ def main_gui():
     table_editor = SourcePath.TableEditor(title='Missing data source path definition', editable_col=None)
     PyDetecDiv.check_data_source_paths(table_editor)
 
-    # Create new_tools
+    # Set main application window
+    mw = PyDetecDiv.set_main_window(MainWindow())
+
+    # Create tools
     PyDetecDiv.update_tools({'cnrs.plewniak.videoclassifier': VideoClassifier(working_dir='video_classification'),
                              'cnrs.plewniak.roiseqhdf5creator' : ROIseqHDF5creator(working_dir='data'),
                              'cnrs.plewniak.classificationschemes' : ClassificationSchemeManagement(working_dir='data'),
@@ -69,26 +69,28 @@ def main_gui():
                              })
 
     video_tool_actions = [
-        VideoClassifierMenu(PyDetecDiv.tools['cnrs.plewniak.videoclassifier']),
+        VideoClassifierMenu('cnrs.plewniak.videoclassifier'),
         ]
 
     deeplearning_tool_actions = [
-        ClassificationSchemeMenu(PyDetecDiv.tools['cnrs.plewniak.classificationschemes']),
-        ModelInfoMenu(PyDetecDiv.tools['cnrs.plewniak.deeplearningmodelinfo']),
+        ClassificationSchemeMenu('cnrs.plewniak.classificationschemes'),
+        ModelInfoMenu('cnrs.plewniak.deeplearningmodelinfo'),
         ]
 
-    # Set main application window
-    mw = PyDetecDiv.set_main_window(MainWindow())
+    data_tools = [
+        Create_ROI_HDF5Action('cnrs.plewniak.roiseqhdf5creator'),
+        ]
 
     # Create menus
     FileMenu(mw)
     ProjectMenu(mw)
     DataMenu(mw)
     mw.add_top_menus({
+        'Data': data_tools,
         'Deep learning': deeplearning_tool_actions,
         'Video': video_tool_actions,
         })
-    PluginMenu(PyDetecDiv.main_window)
+    PluginMenu(mw)
 
     # Launch application GUI
     PyDetecDiv.app.exec()

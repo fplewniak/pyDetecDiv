@@ -1,13 +1,11 @@
-from typing import Any, TYPE_CHECKING
+from typing import Any
 
+from PySide6.QtWidgets import QMenu
 from torchinfo import summary
 
 from pydetecdiv.app.tools import Tool
 from pydetecdiv.app.gui.tools import ToolDialog, ToolAction
 from pydetecdiv.plugins.gui import set_connections
-
-if TYPE_CHECKING:
-    from pydetecdiv.app.gui.tools.deep_learning.model_info import ModelInfoMenu
 
 
 class ModelSummaryDialog(ToolDialog):
@@ -45,8 +43,8 @@ class ModelSummaryAction(ToolAction):
     Action to open a shared data source configuration window
     """
 
-    def __init__(self, tool: Tool, parent: 'ModelInfoMenu'):
-        super().__init__("Show model summary", tool, parent)
+    def __init__(self, tool_name: str, parent: QMenu):
+        super().__init__("Show model summary", tool_name, parent)
 
     def launch(self):
         """

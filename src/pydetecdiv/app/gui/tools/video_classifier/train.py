@@ -1,7 +1,9 @@
 """
 GUI classes for video classifier model training
 """
-from typing import TYPE_CHECKING, Any
+from typing import Any
+
+from PySide6.QtWidgets import QMenu
 
 from pydetecdiv.app.tools import Tool
 
@@ -13,8 +15,6 @@ from pydetecdiv.app.parameters import FloatParameter
 from pydetecdiv.app.tools.deep_learning import DeepTool
 from pydetecdiv.persistence.project import project_exists
 
-if TYPE_CHECKING:
-    from pydetecdiv.app.gui.tools.video_classifier import VideoClassifierMenu
 
 
 class TrainModelDialog(ToolDialog):
@@ -126,8 +126,8 @@ class TrainModelAction(ToolAction):
     Action to import raw data images into a project
     """
 
-    def __init__(self, tool: Tool, parent: 'VideoClassifierMenu' = None):
-        super().__init__("Train model", tool, parent)
+    def __init__(self, tool_name: str, parent: QMenu = None):
+        super().__init__("Train model", tool_name, parent)
 
     def determine_enabled_status(self, **kwargs: dict[str, Any]):
         self.setEnabled(False)

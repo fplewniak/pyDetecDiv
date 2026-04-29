@@ -9,7 +9,7 @@ from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction, QCloseEvent
 from PySide6.QtWidgets import QMenu
 
-from pydetecdiv.app import StdoutWaitDialog
+from pydetecdiv.app import StdoutWaitDialog, PyDetecDiv
 from pydetecdiv.app.gui.core.widgets import Dialog
 from pydetecdiv.app.tools import Tool
 
@@ -62,10 +62,10 @@ class ToolMenu(QMenu):
     Abstract Tool submenu class
     """
 
-    def __init__(self, tool: Tool, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, tool_name: str, **kwargs: dict[str, Any]) -> None:
         super().__init__(**kwargs)
-        self.tool = tool
-        self.setTitle(tool.name)
+        self.tool = PyDetecDiv.tools[tool_name]
+        self.setTitle(self.tool.name)
 
 
 class ToolAction(QAction):
@@ -73,9 +73,9 @@ class ToolAction(QAction):
     Generic action to trigger a tool process
     """
 
-    def __init__(self, title: str, tool: Tool, parent: ToolMenu | None = None, **kwargs: dict[str, Any]):
+    def __init__(self, title: str, tool_name: str, parent: QMenu | None = None, **kwargs: dict[str, Any]):
         super().__init__(title, parent)
-        self.tool = tool
+        self.tool = PyDetecDiv.tools[tool_name]
         self.triggered.connect(self.launch)
         if parent is not None:
             self.add_to_menu(parent)
@@ -101,3 +101,4 @@ class ToolAction(QAction):
         """
         Launch the action
         """
+

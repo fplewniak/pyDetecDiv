@@ -6,6 +6,6 @@ from pydetecdiv.domain.tools.deep_learning.classification_schemes import Classif
 
 
 class ClassificationSchemeMenu(ToolMenu):
-    def __init__(self, tool: ClassificationSchemeManagement, **kwargs: dict[str, Any]):
-        super().__init__(tool, **kwargs)
-        ManageClassificationSchemesAction(tool, self)
+    def __init__(self, tool_name: str, **kwargs: dict[str, Any]):
+        super().__init__(tool_name, **kwargs)
+        ManageClassificationSchemesAction(tool_name, self)
