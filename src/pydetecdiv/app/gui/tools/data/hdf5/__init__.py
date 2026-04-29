@@ -1,14 +1,8 @@
 """
 Classes and functions to manage GUI for ROI HDF5 data source creation
 """
-from typing import Any
-
-from PySide6.QtWidgets import QMenu
-
-from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 from pydetecdiv.app.gui.core.widgets import set_connections
-from pydetecdiv.app.gui.tools import ToolDialog, ToolAction
-from pydetecdiv.persistence.project import project_exists
+from pydetecdiv.app.gui.tools import ToolDialog
 
 
 class Create_ROI_HDF5Dialog(ToolDialog):
@@ -66,25 +60,3 @@ class Create_ROI_HDF5Dialog(ToolDialog):
 
         self.fit_to_contents()
         self.exec()
-
-
-class Create_ROI_HDF5Action(ToolAction):
-    """
-    Action triggering ROI HDF5 file creation.
-    """
-    def __init__(self, tool_name: str, parent: QMenu = None):
-        super().__init__("Create ROI HDF5", tool_name, parent)
-
-    def determine_enabled_status(self, **kwargs: dict[str, Any]):
-        self.setEnabled(False)
-        if project_exists(PyDetecDiv.project_name):
-            with pydetecdiv_project(PyDetecDiv.project_name) as project:
-                if project.count_objects('ROI') > 0:
-                    self.setEnabled(True)
-
-    def launch(self):
-        """
-        Run training procedure
-        """
-
-        Create_ROI_HDF5Dialog(self.tool)

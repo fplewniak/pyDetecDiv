@@ -12,10 +12,11 @@ from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QToolBar, QStatusBar, QMenu, QApplication, QDialog, QDialogButtonBox, QSizePolicy, QLabel
 
 from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.app.gui import ActionsSettings, ActionsProject, ActionsData
+from pydetecdiv.app.gui import ActionsSettings, ActionsProject, ActionsData, Enable
 import pydetecdiv.app.gui.resources_rc
 from pydetecdiv.app.gui.ActionsData import ImportROIannotations
-from pydetecdiv.app.gui.tools.data.hdf5 import Create_ROI_HDF5Action
+from pydetecdiv.app.gui.tools import ToolAction
+from pydetecdiv.app.gui.tools.data.hdf5 import Create_ROI_HDF5Dialog
 
 if TYPE_CHECKING:
     from pydetecdiv.app.gui.Windows import MainWindow
@@ -75,7 +76,8 @@ class DataMenu(QMenu):
         menu.addSeparator()
         convert_to_ndtiff = ActionsData.ConvertToNDTiff(menu)
         menu.addSeparator()
-        Create_ROI_HDF5Action('cnrs.plewniak.roiseqhdf5creator', parent=menu)
+        ToolAction('Create ROI HDF5', 'cnrs.plewniak.roiseqhdf5creator', parent=menu, enable=Enable.if_rois,
+                   launch=Create_ROI_HDF5Dialog)
         import_annotated_rois = ImportROIannotations(menu)
         menu.addSeparator()
         compute_drift = ActionsData.ComputeDrift(menu)

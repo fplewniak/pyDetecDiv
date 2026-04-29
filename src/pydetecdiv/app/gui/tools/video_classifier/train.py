@@ -1,19 +1,12 @@
 """
 GUI classes for video classifier model training
 """
-from typing import Any
-
-from PySide6.QtWidgets import QMenu
-
-from pydetecdiv.app.tools import Tool
-
-from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
+from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui.core.widgets import set_connections
-from pydetecdiv.app.gui.tools import ToolAction, ToolDialog
+from pydetecdiv.app.gui.tools import ToolDialog
 from pydetecdiv.app.gui.tools.deep_learning import plot_training_results
 from pydetecdiv.app.parameters import FloatParameter
 from pydetecdiv.app.tools.deep_learning import DeepTool
-from pydetecdiv.persistence.project import project_exists
 
 
 
@@ -119,25 +112,3 @@ class TrainModelDialog(ToolDialog):
             total = self.tool.parameters.num_test + self.tool.parameters.num_training + self.tool.parameters.num_validation
             if total > 1.0:
                 changed_param.value = changed_param - total + 1.0
-
-
-class TrainModelAction(ToolAction):
-    """
-    Action to import raw data images into a project
-    """
-
-    def __init__(self, tool_name: str, parent: QMenu = None):
-        super().__init__("Train model", tool_name, parent)
-
-    def determine_enabled_status(self, **kwargs: dict[str, Any]):
-        self.setEnabled(False)
-        if project_exists(PyDetecDiv.project_name):
-            with pydetecdiv_project(PyDetecDiv.project_name) as project:
-                if (project.count_objects('RoiAnnotations') > 0) and (project.count_objects('Classification') > 0):
-                    self.setEnabled(True)
-
-    def launch(self):
-        """
-        Run training procedure
-        """
-        TrainModelDialog(self.tool)

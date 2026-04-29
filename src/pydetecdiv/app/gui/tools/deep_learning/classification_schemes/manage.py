@@ -1,12 +1,8 @@
 from typing import Any
 
-from PySide6.QtWidgets import QMenu
-
-from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui.core.widgets import set_connections
 from pydetecdiv.app.tools import Tool
-from pydetecdiv.app.gui.tools import ToolDialog, ToolAction
-from pydetecdiv.persistence.project import project_exists
+from pydetecdiv.app.gui.tools import ToolDialog
 
 
 class ManageClassificationSchemeDialog(ToolDialog):
@@ -32,24 +28,3 @@ class ManageClassificationSchemeDialog(ToolDialog):
 
         self.fit_to_contents()
         self.exec()
-
-
-class ManageClassificationSchemesAction(ToolAction):
-    """
-    Action to open a shared data source configuration window
-    """
-
-    def __init__(self, tool_name: str, parent: QMenu = None):
-        super().__init__("Manage classification schemes", tool_name, parent)
-
-    def determine_enabled_status(self, **kwargs: dict[str, Any]):
-        if project_exists(PyDetecDiv.project_name):
-            self.setEnabled(True)
-        else:
-            self.setEnabled(False)
-
-    def launch(self):
-        """
-        Run training procedure
-        """
-        ManageClassificationSchemeDialog(self.tool)

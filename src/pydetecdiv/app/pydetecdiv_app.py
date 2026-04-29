@@ -5,9 +5,12 @@
 """
 from PySide6.QtGui import QIcon
 import pyqtgraph as pg
+from pydetecdiv.app.gui.tools import ToolAction
+
+from pydetecdiv.app.gui.tools.data.hdf5 import Create_ROI_HDF5Dialog
 
 from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.app.gui import FileMenu, ProjectMenu, DataMenu, PluginMenu, Create_ROI_HDF5Action
+from pydetecdiv.app.gui import FileMenu, ProjectMenu, DataMenu, PluginMenu, Enable
 from pydetecdiv.app.gui.Windows import MainWindow
 from pydetecdiv.app.gui import SourcePath
 from pydetecdiv.app.gui.tools.deep_learning.classification_schemes import ClassificationSchemeMenu
@@ -62,10 +65,10 @@ def main_gui():
     mw = PyDetecDiv.set_main_window(MainWindow())
 
     # Create tools
-    PyDetecDiv.update_tools({'cnrs.plewniak.videoclassifier': VideoClassifier(working_dir='video_classification'),
-                             'cnrs.plewniak.roiseqhdf5creator' : ROIseqHDF5creator(working_dir='data'),
-                             'cnrs.plewniak.classificationschemes' : ClassificationSchemeManagement(working_dir='data'),
-                             'cnrs.plewniak.deeplearningmodelinfo' : ModelInfo(working_dir='data'),
+    PyDetecDiv.update_tools({'cnrs.plewniak.videoclassifier'      : VideoClassifier(working_dir='video_classification'),
+                             'cnrs.plewniak.roiseqhdf5creator'    : ROIseqHDF5creator(working_dir='data'),
+                             'cnrs.plewniak.classificationschemes': ClassificationSchemeManagement(working_dir='data'),
+                             'cnrs.plewniak.deeplearningmodelinfo': ModelInfo(working_dir='data'),
                              })
 
     video_tool_actions = [
@@ -78,7 +81,8 @@ def main_gui():
         ]
 
     data_tools = [
-        Create_ROI_HDF5Action('cnrs.plewniak.roiseqhdf5creator'),
+        ToolAction('Create ROI HDF5', 'cnrs.plewniak.roiseqhdf5creator', enable=Enable.if_rois,
+                   launch=Create_ROI_HDF5Dialog)
         ]
 
     # Create menus
@@ -86,9 +90,9 @@ def main_gui():
     ProjectMenu(mw)
     DataMenu(mw)
     mw.add_top_menus({
-        'Data': data_tools,
+        'Data'         : data_tools,
         'Deep learning': deeplearning_tool_actions,
-        'Video': video_tool_actions,
+        'Video'        : video_tool_actions,
         })
     PluginMenu(mw)
 

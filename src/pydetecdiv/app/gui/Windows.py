@@ -87,8 +87,8 @@ class MainWindow(QMainWindow):
                 menu.addSeparator()
 
     def add_top_menus(self, top_menus: dict[str, list[ToolMenu | ToolAction]]):
-        for title, actions in top_menus.items():
-            self.add_top_menu(title, actions)
+        for title, action in top_menus.items():
+            self.add_top_menu(title, action)
 
     def add_tabbed_window(self, title: str) -> TabbedWindow:
         """

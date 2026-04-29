@@ -1,11 +1,12 @@
 from typing import Any
 
-from pydetecdiv.app.gui.tools import ToolMenu
-from pydetecdiv.app.gui.tools.deep_learning.classification_schemes.manage import ManageClassificationSchemesAction
-from pydetecdiv.domain.tools.deep_learning.classification_schemes import ClassificationSchemeManagement
+from pydetecdiv.app.gui import Enable
+from pydetecdiv.app.gui.tools import ToolMenu, ToolAction
+from pydetecdiv.app.gui.tools.deep_learning.classification_schemes.manage import ManageClassificationSchemeDialog
 
 
 class ClassificationSchemeMenu(ToolMenu):
     def __init__(self, tool_name: str, **kwargs: dict[str, Any]):
         super().__init__(tool_name, **kwargs)
-        ManageClassificationSchemesAction(tool_name, self)
+        ToolAction('Manage classification schemes', tool_name, self, enable=Enable.if_project_exists,
+                   launch=ManageClassificationSchemeDialog)
