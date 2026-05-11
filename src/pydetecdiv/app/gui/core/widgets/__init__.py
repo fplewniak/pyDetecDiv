@@ -690,7 +690,7 @@ class ExpandCollapseButton(PushButton):
         """
         self.group_box.addSubBox(widget, expandable, show, title, **kwargs)
 
-    def addOption(self, parameter: Parameter = None, label: bool = True, enabled: bool = True, widget: Type[QWidget] = None,
+    def addOption(self, parameter: Parameter = None, label: bool = True, widget: Type[QWidget] = None,
                   **kwargs: dict[str, Any]) -> QWidget:
         """
         Add an option to the current collapsable group box
@@ -700,7 +700,19 @@ class ExpandCollapseButton(PushButton):
         :param widget: the widget to show
         :param kwargs: additional keyword arguments
         """
-        return self.group_box.addOption(parameter, label, enabled, widget, **kwargs)
+        return self.group_box.addOption(parameter, label, widget, **kwargs)
+
+    # def addOption(self, parameter: Parameter = None, label: bool = True, enabled: bool = True, widget: Type[QWidget] = None,
+    #               **kwargs: dict[str, Any]) -> QWidget:
+    #     """
+    #     Add an option to the current collapsable group box
+    #     :param parameter: the parameter to add
+    #     :param label: the label to show
+    #     :param enabled: whether the option is enabled
+    #     :param widget: the widget to show
+    #     :param kwargs: additional keyword arguments
+    #     """
+    #     return self.group_box.addOption(parameter, label, enabled, widget, **kwargs)
 
 
 class RadioButton(QRadioButton):
