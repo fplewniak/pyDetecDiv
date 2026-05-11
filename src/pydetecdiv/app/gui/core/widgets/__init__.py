@@ -130,7 +130,7 @@ class GroupBox(QGroupBox):
         :return: the option widget
         """
 
-    def addWidget(self, widget: Type[QWidget] = None) -> Type[QWidget]:
+    def addWidget(self, widget: Type[QWidget]) -> Type[QWidget]:
         """
         Method to add a widget to the Group box. This method should be implemented by subclasses
         """
@@ -147,7 +147,7 @@ class InfoGroupBox(GroupBox):
         self.setLayout(self.layout)
         self.setVisible(show)
 
-    def addWidget(self, widget: Type[QWidget] = None) -> Type[QWidget]:
+    def addWidget(self, widget: Type[QWidget]) -> Type[QWidget]:
         self.layout.addWidget(widget)
         return widget
 
