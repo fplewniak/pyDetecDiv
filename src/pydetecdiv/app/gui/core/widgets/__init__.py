@@ -102,6 +102,11 @@ class GroupBox(QGroupBox):
         """
         Adds a sub-box to the current GroupBox
 
+        :param expandable: True if sub-box can be collapsed/expanded
+        :param show: True if expandable sub-box should be shown (expanded) by default
+        :param title: the title of the sub-box (optional)
+        :param parameters: the list of parameters
+        :param widget_args: a dictionary of keyword arguments passed to the created widget (optional)
         :param widget: the class of the GroupBox to add as a sub box
         :param kwargs: keywords arguments to pass to the sub box
         :return: the sub box object
@@ -169,6 +174,11 @@ class ParametersFormGroupBox(GroupBox):
         """
         Adds a sub-box to the current ParametersFormGroupBox
 
+        :param expandable: True if sub-box can be collapsed/expanded
+        :param show: True if expandable sub-box should be shown (expanded) by default
+        :param title: the title of the sub-box (optional)
+        :param parameters: the list of parameters
+        :param widget_args: a dictionary of keyword arguments passed to the created widget (optional)
         :param widget: the class of the GroupBox to add as a sub box
         :param kwargs: keywords arguments to pass to the sub box
         :return: the sub box object
@@ -934,6 +944,7 @@ class Dialog(QDialog):
         """
         Add a group box to the Dialog window
 
+        :param widget_args: extra widget parameters
         :param show: When expandable is True, the group box is expanded if show is True, otherwise the group box is collapsed. When
          expandable is False, this argument has no effect.
         :param expandable: If True, the group box is expandable/collapsable, otherwise the group box is always visible
