@@ -64,7 +64,7 @@ class ItemModel(StandardItemModel, Generic[GenericModel]):
         return 1
 
 
-class StringList(QStringListModel, Generic[GenericModel]):
+class StringListModel(QStringListModel, Generic[GenericModel]):
     """
  Class for string list model
     """

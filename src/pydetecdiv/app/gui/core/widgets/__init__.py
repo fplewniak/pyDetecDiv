@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QSizePolicy, QApplication, 
                                QFileDialog)
 
 from pydetecdiv.app.parameters import Parameter
-from pydetecdiv.app.models import ItemModel, DictItemModel, StringList, GenericModel
+from pydetecdiv.app.models import ItemModel, DictItemModel, StringListModel, GenericModel
 
 
 class StyleSheets:
@@ -325,7 +325,7 @@ class ListView(QListView):
     an extension of the QComboBox class
     """
 
-    def __init__(self, parent: QWidget, qmodel: StringList = None, height: int = None, multiselection: bool = False,
+    def __init__(self, parent: QWidget, qmodel: StringListModel = None, height: int = None, multiselection: bool = False,
                  enabled: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         if multiselection:
