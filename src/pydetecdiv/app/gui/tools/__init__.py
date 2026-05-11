@@ -2,7 +2,6 @@
 Generic widgets providing basic functionalities to build tool GUIs. These widgets are expected to be extended and implemented
 to meet the specific needs of new_tools
 """
-from abc import abstractmethod
 from typing import Any, Callable
 
 from PySide6.QtCore import Signal
@@ -73,7 +72,7 @@ class ToolAction(QAction):
     Generic action to trigger a tool process
     """
 
-    def __init__(self, title: str, tool_name: str, parent: QMenu | None = None, enable = None, launch = None,
+    def __init__(self, title: str, tool_name: str, launch: Callable, parent: QMenu | None = None, enable = None,
                  **kwargs: dict[str, Any]):
         super().__init__(title, parent)
         self.tool = PyDetecDiv.tools[tool_name]

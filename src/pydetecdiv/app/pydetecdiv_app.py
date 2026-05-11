@@ -81,8 +81,8 @@ def main_gui():
         ]
 
     data_tools = [
-        ToolAction('Create ROI HDF5', 'cnrs.plewniak.roiseqhdf5creator', enable=Enable.if_rois,
-                   launch=Create_ROI_HDF5Dialog)
+        ToolAction('Create ROI HDF5', 'cnrs.plewniak.roiseqhdf5creator', Create_ROI_HDF5Dialog,
+                   enable=Enable.if_rois)
         ]
 
     # Create menus
