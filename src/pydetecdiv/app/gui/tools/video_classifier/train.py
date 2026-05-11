@@ -89,8 +89,6 @@ class TrainModelDialog(ToolDialog):
 
         set_connections({self.button_box.accepted              : lambda: self.wait_for_process(tool.model_trainer.train_model),
                          self.button_box.rejected              : lambda: print('Rejected'),
-                         tool.parameters.epochs.changed        : lambda: print(tool.parameters.epochs.value),
-                         tool.parameters.optimizer.changed     : lambda: print(tool.parameters.optimizer.value),
                          tool.parameters.num_training.changed  : lambda: self.update_datasets(tool.parameters.num_training),
                          tool.parameters.num_validation.changed: lambda: self.update_datasets(tool.parameters.num_validation),
                          })
