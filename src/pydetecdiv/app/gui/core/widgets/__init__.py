@@ -283,7 +283,7 @@ class ComboBox(QComboBox):
         return self.currentText()
 
     @property
-    def selected(self) -> Signal:
+    def selected(self) -> SignalInstance:
         """
         return property telling whether the current index of this ComboBox has changed
 
@@ -292,7 +292,7 @@ class ComboBox(QComboBox):
         return self.currentIndexChanged
 
     @property
-    def changed(self) -> Signal:
+    def changed(self) -> SignalInstance:
         """
         return property telling whether the current text of this ComboBox has changed. This overwrites the Pyside
         equivalent method in order to have the same method name for all widgets
@@ -347,7 +347,7 @@ class ListView(QListView):
         self.model().setStringList(list(options.keys()))
 
     @property
-    def changed(self) -> Signal:
+    def changed(self) -> SignalInstance:
         """
         return property telling whether the current text of this ComboBox has changed. This overwrites the Pyside
         equivalent method in order to have the same method name for all widgets
@@ -495,7 +495,7 @@ class LineEdit(QLineEdit):
         return self.textChanged
 
     @property
-    def edited(self) -> Signal:
+    def edited(self) -> SignalInstance:
         """
         returns the Signal that editing is finished
 
@@ -730,7 +730,7 @@ class RadioButton(QRadioButton):
             self.mapper.toFirst()
 
     @property
-    def changed(self) -> Signal:
+    def changed(self) -> SignalInstance:
         """
         return property telling whether the RadioButton value has changed. This overwrites the Pyside equivalent method
          in order to have the same method name for all widgets
@@ -778,7 +778,7 @@ class SpinBox(QSpinBox):
             self.changed.connect(lambda _: self.mapper.submit())
 
     @property
-    def changed(self) -> Signal:
+    def changed(self) -> SignalInstance:
         """
         return property telling whether the spinbox value has changed. This overwrites the Pyside equivalent method in
          order to have the same method name for all widgets
