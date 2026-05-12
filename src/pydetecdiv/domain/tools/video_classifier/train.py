@@ -60,7 +60,7 @@ class VideoClassifierTrainer(ModelTrainer):
 
         print(class_weights)
         print(training_dataset.class_names)
-        loss_fn = FocalLoss(alpha=class_weights, gamma=1.0, reduction='mean')
+        loss_fn = FocalLoss(alpha=class_weights, gamma=self.tool.parameters.focal_gamma.value, reduction='mean')
 
         main_scheduler, reduce_on_plateau = set_schedulers(parameters=self.tool.parameters, optimizer=optimizer)
 
