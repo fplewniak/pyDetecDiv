@@ -41,7 +41,7 @@ class VideoClassifierTrainer(ModelTrainer):
 
         torch.random.manual_seed(self.tool.parameters.seed.value)
 
-        model = MViT_v2_s(n_classes=6)
+        model = MViT_v2_s(n_classes=len(training_dataset.class_names), dropout=self.tool.parameters.dropout.value)
         model_name = 'MViT_v2_small'
 
         model = model.to(device)

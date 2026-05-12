@@ -60,6 +60,7 @@ class VideoClassifier(DeepTool):
                                            }),
                     FloatParameter(name='lambda_reg', label=f'{greek["lambda"]} parameter', default=0.8, minimum=1e-8,
                                    maximum=10.0),
+                    FloatParameter(name='dropout', label='Dropout', default=0.5, minimum=0.0, maximum=0.9),
                     CheckParameter(name='warmup', label='Warm-up', default=False, exclusive=False),
                     FloatParameter(name='wu_start', label='   * warm-up start factor', default=0.1, minimum=0.1, maximum=0.5),
                     FloatParameter(name='wu_end', label='   * warm-up end factor', default=1.0, minimum=0.5, maximum=1.0),

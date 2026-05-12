@@ -49,6 +49,7 @@ class TrainModelDialog(ToolDialog):
 
         self.regularization = self.addGroupBox(title='Regularization',
                                                parameters=[
+                                                   tool.parameters.dropout,
                                                    tool.parameters.regularization,
                                                    tool.parameters.lambda_reg,
                                                    ],
