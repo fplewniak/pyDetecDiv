@@ -18,7 +18,13 @@ class TrainModelDialog(ToolDialog):
     def __init__(self, tool: DeepTool, **kwargs):
         super().__init__(tool, title='Training Video classifier', **kwargs)
 
-        self.hyperparameters = self.addGroupBox(title='Hyperparameters',
+        self.model_choice = self.addGroupBox(title='Model',
+                                             parameters=[
+                                                 tool.parameters.model,
+                                                 tool.parameters.dropout,
+                                                 ])
+
+        self.hyperparameters = self.addGroupBox(title='Hyperparameters', expandable=True, show=True,
                                                 parameters=[
                                                     tool.parameters.epochs,
                                                     tool.parameters.batch_size,
@@ -32,7 +38,7 @@ class TrainModelDialog(ToolDialog):
                                                     }
                                                 )
 
-        self.scheduler = self.addGroupBox(title='Scheduler',
+        self.scheduler = self.addGroupBox(title='Scheduler', expandable=True, show=False,
                                           parameters=[
                                               tool.parameters.step_scheduler,
                                               tool.parameters.step_gamma,
@@ -47,9 +53,8 @@ class TrainModelDialog(ToolDialog):
                                               ],
                                           )
 
-        self.regularization = self.addGroupBox(title='Regularization',
+        self.regularization = self.addGroupBox(title='Regularization', expandable=True, show=False,
                                                parameters=[
-                                                   tool.parameters.dropout,
                                                    tool.parameters.regularization,
                                                    tool.parameters.lambda_reg,
                                                    ],
@@ -58,7 +63,7 @@ class TrainModelDialog(ToolDialog):
                                                    }
                                                )
 
-        self.datasets = self.addGroupBox(title='Datasets',
+        self.datasets = self.addGroupBox(title='Datasets', expandable=True, show=False,
                                          parameters=[
                                              tool.parameters.num_training,
                                              tool.parameters.num_validation,
@@ -82,7 +87,8 @@ class TrainModelDialog(ToolDialog):
 
         self.button_box = self.addButtonBox()
 
-        self.arrangeWidgets([self.hyperparameters,
+        self.arrangeWidgets([self.model_choice,
+                             self.hyperparameters,
                              self.regularization,
                              self.scheduler,
                              self.datasets, self.hdf5_file,

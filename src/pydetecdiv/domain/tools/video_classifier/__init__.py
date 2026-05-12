@@ -11,6 +11,7 @@ import torch
 from torch import optim
 from torchvision.transforms import InterpolationMode, v2
 
+from pydetecdiv.domain.tools.video_classifier.models import MViT
 from pydetecdiv.app.parameters import Parameters, IntParameter, FloatParameter, ChoiceParameter, PathParameter, CheckParameter
 from pydetecdiv.app.tools.deep_learning import DeepTool, ModelTrainer, ModelEvaluator, Predictor, ROIDataset
 from pydetecdiv.domain.tools.data import compute_class_weights
@@ -33,6 +34,9 @@ class VideoClassifier(DeepTool):
         super().__init__(parameters, working_dir)
         self.parameters = Parameters(
                 [
+                    ChoiceParameter(name='model', label='Model name', default='MViT_v2_s',
+                                    items={'MViT_v1_b': MViT.MViT_v1_b,
+                                           'MViT_v2_s': MViT.MViT_v2_s}),
                     IntParameter(name='epochs', label='Epochs', default=32),
                     IntParameter(name='batch_size', label='Batch size', default=8),
                     ChoiceParameter(name='optimizer', label='Optimizer', default='AdamW',
