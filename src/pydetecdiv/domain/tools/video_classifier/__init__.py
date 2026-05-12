@@ -11,7 +11,7 @@ import torch
 from torch import optim
 from torchvision.transforms import InterpolationMode, v2
 
-from pydetecdiv.domain.tools.video_classifier.models import MViT
+from pydetecdiv.domain.tools.video_classifier.models import MViT, Swin3D, S3D, VideoResNet
 from pydetecdiv.app.parameters import Parameters, IntParameter, FloatParameter, ChoiceParameter, PathParameter, CheckParameter
 from pydetecdiv.app.tools.deep_learning import DeepTool, ModelTrainer, ModelEvaluator, Predictor, ROIDataset
 from pydetecdiv.domain.tools.data import compute_class_weights
@@ -35,8 +35,16 @@ class VideoClassifier(DeepTool):
         self.parameters = Parameters(
                 [
                     ChoiceParameter(name='model', label='Model name', default='MViT_v2_s',
-                                    items={'MViT_v1_b': MViT.MViT_v1_b,
-                                           'MViT_v2_s': MViT.MViT_v2_s}),
+                                    items={'MViT_v1_b'   : MViT.MViT_v1_b,
+                                           'MViT_v2_s'   : MViT.MViT_v2_s,
+                                           'Swin3D_tiny' : Swin3D.Swin3D_tiny,
+                                           'Swin3D_small': Swin3D.Swin3D_small,
+                                           'Swin3D_base' : Swin3D.Swin3D_base,
+                                           'S3D'         : S3D.S3D,
+                                           'R3D_18'      : VideoResNet.R3D_18,
+                                           'MC3_18'      : VideoResNet.MC3_18,
+                                           'R2+1d_18'    : VideoResNet.R2Plus1d_18,
+                                           }),
                     IntParameter(name='epochs', label='Epochs', default=32),
                     IntParameter(name='batch_size', label='Batch size', default=8),
                     ChoiceParameter(name='optimizer', label='Optimizer', default='AdamW',

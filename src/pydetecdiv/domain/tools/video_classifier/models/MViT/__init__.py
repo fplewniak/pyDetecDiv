@@ -25,13 +25,11 @@ class MViT_v1_b(nn.Module):
     def __init__(self, n_classes=400, dropout=0.5, **kwargs):
         super(MViT_v1_b, self).__init__()
 
-        self.expected_shape = ('Batch', 15, 3, 224, 224)
+        self.expected_shape = ('Batch', 16, 3, 224, 224)
 
-        mvit = mvit_v1_b(weights=MViT_V1_B_Weights.DEFAULT)
-        self.mvit = mvit
-        # self.mvit = nn.Sequential(*list(mvit.children())[:-1])  # Remove FC layer
-        #
-        mvit.head = nn.Sequential(nn.Dropout(p=dropout, inplace=True),
+        self.mvit = mvit_v1_b(weights=MViT_V1_B_Weights.DEFAULT)
+
+        self.mvit.head = nn.Sequential(nn.Dropout(p=dropout, inplace=True),
                                   nn.Linear(in_features=768, out_features=n_classes, bias=True)
                                   )
 
@@ -45,13 +43,11 @@ class MViT_v2_s(nn.Module):
     def __init__(self, n_classes=400, dropout=0.5, **kwargs):
         super(MViT_v2_s, self).__init__()
 
-        self.expected_shape = ('Batch', 15, 3, 224, 224)
+        self.expected_shape = ('Batch', 16, 3, 224, 224)
 
-        mvit = mvit_v2_s(weights=MViT_V2_S_Weights.DEFAULT)
-        self.mvit = mvit
-        # self.mvit = nn.Sequential(*list(mvit.children())[:-1])  # Remove FC layer
-        #
-        mvit.head = nn.Sequential(nn.Dropout(p=dropout, inplace=True),
+        self.mvit = mvit_v2_s(weights=MViT_V2_S_Weights.DEFAULT)
+
+        self.mvit.head = nn.Sequential(nn.Dropout(p=dropout, inplace=True),
                                   nn.Linear(in_features=768, out_features=n_classes, bias=True)
                                   )
 
