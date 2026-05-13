@@ -29,7 +29,7 @@ class ROIseqHDF5creator(Tool):
                                   default='roi_data.h5', ),
                     CheckParameter(name='annotations', label='Annotated ROIs', default=True),
                     ChoiceParameter(name='classification', label='Classes', updater=self.update_classification),
-                    IntParameter(name='seqlen', label='Sequence length', default=15),
+                    IntParameter(name='seqlen', label='Sequence length', default=16),
                     ChoiceParameter(name='red_channel', label='Red', default='0', updater=self.update_channels),
                     ChoiceParameter(name='green_channel', label='Green', default='0', updater=self.update_channels),
                     ChoiceParameter(name='blue_channel', label='Blue', default='0', updater=self.update_channels),
