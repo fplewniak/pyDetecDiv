@@ -73,7 +73,7 @@ class GroupBox(QGroupBox):
         super().__init__(parent, **kwargs)
         if title is not None:
             self.setTitle(title)
-        self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
+        self.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Maximum)
         self.layout: QLayout = self.layout()
         self.setVisible(show)
         self.parameter_widgets = {}
@@ -339,7 +339,7 @@ class ListView(QListView):
                  enabled: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         if multiselection:
-            self.setSelectionMode(QAbstractItemView.MultiSelection)
+            self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
         if height is not None:
             self.setFixedHeight(height)
         self.setModel(QStringListModel())
@@ -420,7 +420,7 @@ class ListView(QListView):
         top_left = self.model().index(0, 0)
         bottom_right = self.model().index(self.model().rowCount() - 1, 0)
         toggle_selection.select(top_left, bottom_right)
-        self.selectionModel().select(toggle_selection, QItemSelectionModel.Toggle)
+        self.selectionModel().select(toggle_selection, QItemSelectionModel.SelectionFlag.Toggle)
 
     def remove_items(self) -> None:
         """
@@ -447,7 +447,7 @@ class ListWidget(QListView):
         super().__init__(parent)
         # self.setSelectionModel(QItemSelectionModel())
         if multiselection:
-            self.setSelectionMode(QAbstractItemView.MultiSelection)
+            self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
         if qmodel is not None and qmodel.rows() is not None:
             self.setModel(qmodel)
             self.setModelColumn(0)
@@ -749,7 +749,7 @@ class RadioButton(QRadioButton):
         if qmodel is not None:
             self.mapper.setModel(qmodel)
             self.mapper.addMapping(self, 0)
-            self.mapper.setSubmitPolicy(QDataWidgetMapper.AutoSubmit)
+            self.mapper.setSubmitPolicy(QDataWidgetMapper.SubmitPolicy.AutoSubmit)
             self.mapper.toFirst()
 
     @property
@@ -783,7 +783,7 @@ class SpinBox(QSpinBox):
         self.setRange(minimum, maximum)
         self.setSingleStep(single_step)
         if adaptive:
-            self.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
+            self.setStepType(QAbstractSpinBox.StepType.AdaptiveDecimalStepType)
         self.mapper = QDataWidgetMapper(self)
         self.setModel(qmodel)
         self.setEnabled(enabled)
@@ -839,7 +839,7 @@ class DoubleSpinBox(QDoubleSpinBox):
             self.mapper.setModel(qmodel)
             self.mapper.addMapping(self, 0)
             self.mapper.toFirst()
-            self.changed.connect(lambda _: self.mapper.submit())
+            # self.changed.connect(lambda _: self.mapper.submit())
 
     @property
     def changed(self):
@@ -941,7 +941,8 @@ class DialogButtonBox(QDialogButtonBox):
     """
 
     def __init__(self, parent: QWidget,
-                 buttons: StandardButtonCombination = (QDialogButtonBox.Ok, QDialogButtonBox.Close)) -> None:
+                 buttons: StandardButtonCombination = (QDialogButtonBox.StandardButton.Ok,
+                                                       QDialogButtonBox.StandardButton.Close)) -> None:
         super().__init__(parent)
         for button in buttons:
             self.addButton(button)
@@ -976,7 +977,7 @@ class Dialog(QDialog):
         self.setLayout(self.vert_layout)
         if title is not None:
             self.setWindowTitle(title)
-        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
+        self.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Maximum)
 
     def fit_to_contents(self) -> None:
         """
@@ -1010,7 +1011,8 @@ class Dialog(QDialog):
                     group_box.addOption(parameter, **paramwidget_args(parameter, widget_args))
         return group_box
 
-    def addButtonBox(self, buttons: StandardButtonCombination = QDialogButtonBox.Ok | QDialogButtonBox.Close,
+    def addButtonBox(self,
+                     buttons: StandardButtonCombination = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Close,
                      centered: bool = True) -> DialogButtonBox:
         """
         Add a button box to the Dialog window
