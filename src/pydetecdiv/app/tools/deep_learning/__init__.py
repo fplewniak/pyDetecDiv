@@ -30,6 +30,15 @@ from pydetecdiv.torch import TrainingStats
 from pydetecdiv.torch.transforms import toStandardizedFloat32
 
 
+def find_tensors_on_gpu():
+    for obj in gc.get_objects():
+        try:
+            if torch.is_tensor(obj) and obj.is_cuda:
+                print(f"Tensor: Size: {obj.size()}, Device: {obj.device}", file=sys.stderr)
+        except:
+            pass
+
+
 def set_optimizer(parameters: Parameters, model_param: dict | Iterable) -> torch.optim.Optimizer:
     """
     Set the optimizer.
@@ -82,7 +91,7 @@ class ROIDataset(Dataset):
     """
 
     def __init__(self, data_reader: RoiDataReader, indices: polars.DataFrame, targets: bool = False,
-                 image_shape: tuple[int, int] = (60, 60), slice_seq: slice |  None = None, transform: torch.nn.Module = None):
+                 image_shape: tuple[int, int] = (60, 60), slice_seq: slice | None = None, transform: torch.nn.Module = None):
         self.reader = data_reader
         self.indices = indices
         self.targets = targets
@@ -212,6 +221,7 @@ class DeepTool(Tool):
                 pickle.dump(train_stats, fp, protocol=pickle.HIGHEST_PROTOCOL)
         del train_stats
         gc.collect()
+        torch.cuda.empty_cache()
 
     def set_model(self, model: torch.nn.Module):
         """
