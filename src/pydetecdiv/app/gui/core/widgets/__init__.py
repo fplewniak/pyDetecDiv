@@ -688,7 +688,8 @@ class ExpandCollapseButton(PushButton):
             self.group_box.setVisible(True)
         self.parent().parent().fit_to_contents()
 
-    def addSubBox(self, widget: Type[Self], expandable: bool = False, show: bool = True, title: str = None,
+    def addSubBox(self, widget: Type[Self], expandable: bool = False, show: bool = True, title: str = None, parameters: list = None,
+                  widget_args: dict[str, Any] = None,
                   **kwargs: dict[str, Any]) -> Self:
         """
         Add a sub box to the current collapsable group box
@@ -698,7 +699,7 @@ class ExpandCollapseButton(PushButton):
         :param title: the sub box title
         :param kwargs: additional keyword arguments
         """
-        self.group_box.addSubBox(widget, expandable, show, title, **kwargs)
+        self.group_box.addSubBox(widget, expandable, show, title, parameters, widget_args, **kwargs)
 
     def addOption(self, parameter: Parameter = None, label: bool = True, widget: Type[QWidget] = None,
                   **kwargs: dict[str, Any]) -> QWidget:
@@ -957,7 +958,7 @@ class Dialog(QDialog):
         group_box.setTitle(title)
         group_box.setStyleSheet(StyleSheets.groupBox)
         if expandable:
-            group_box.addSubBox(widget=widget, expandable=expandable, show=show, parameters=parameters)
+            group_box.addSubBox(widget=widget, expandable=expandable, show=show, parameters=parameters, widget_args=widget_args)
         else:
             if parameters is not None:
                 for parameter in parameters:
