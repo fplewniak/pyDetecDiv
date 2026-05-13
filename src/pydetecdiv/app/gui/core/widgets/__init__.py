@@ -11,7 +11,6 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QSizePolicy, QApplication, 
                                QLayout, QLabel, QFormLayout, QTableView, QDataWidgetMapper, QAbstractSpinBox, QDoubleSpinBox,
                                QSpinBox, QRadioButton, QLineEdit, QAbstractItemView, QListView, QMenu, QComboBox, QHBoxLayout,
                                QFileDialog)
-
 from pydetecdiv.app.parameters import Parameter
 from pydetecdiv.app.models import ItemModel, DictItemModel, StringListModel, GenericModel
 
@@ -135,7 +134,7 @@ class GroupBox(QGroupBox):
         :return: the option widget
         """
 
-    def addWidget(self, widget: Type[QWidget]) -> Type[QWidget]:
+    def addWidget(self, widget: Type[QWidget], **kwargs: dict[str, Any]) -> Type[QWidget]:
         """
         Method to add a widget to the Group box. This method should be implemented by subclasses
         """
@@ -152,8 +151,8 @@ class InfoGroupBox(GroupBox):
         self.setLayout(self.layout)
         self.setVisible(show)
 
-    def addWidget(self, widget: Type[QWidget]) -> Type[QWidget]:
-        self.layout.addWidget(widget)
+    def addWidget(self, widget: Type[QWidget], **kwargs: dict[str, Any]) -> Type[QWidget]:
+        self.layout.addWidget(widget(**kwargs))
         return widget
 
 
@@ -648,7 +647,7 @@ class ExpandCollapseButton(PushButton):
 
     def __init__(self, parent: QWidget, text: str = None, show: bool = True) -> None:
         super().__init__(parent, text=text, icon=QIcon(':icons/show'), flat=True)
-        self.group_box: GroupBox = None
+        self.group_box: GroupBox | None = None
         self.clicked.connect(self.toggle)
         self.show = show
 
@@ -712,18 +711,6 @@ class ExpandCollapseButton(PushButton):
         :param kwargs: additional keyword arguments
         """
         return self.group_box.addOption(parameter, label, widget, **kwargs)
-
-    # def addOption(self, parameter: Parameter = None, label: bool = True, enabled: bool = True, widget: Type[QWidget] = None,
-    #               **kwargs: dict[str, Any]) -> QWidget:
-    #     """
-    #     Add an option to the current collapsable group box
-    #     :param parameter: the parameter to add
-    #     :param label: the label to show
-    #     :param enabled: whether the option is enabled
-    #     :param widget: the widget to show
-    #     :param kwargs: additional keyword arguments
-    #     """
-    #     return self.group_box.addOption(parameter, label, enabled, widget, **kwargs)
 
 
 class RadioButton(QRadioButton):
@@ -1012,7 +999,8 @@ class Dialog(QDialog):
         return group_box
 
     def addButtonBox(self,
-                     buttons: StandardButtonCombination = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Close,
+                     buttons: StandardButtonCombination = QDialogButtonBox.StandardButton.Ok
+                                                          | QDialogButtonBox.StandardButton.Close,
                      centered: bool = True) -> DialogButtonBox:
         """
         Add a button box to the Dialog window
