@@ -34,7 +34,7 @@ class TrainModelDialog(ToolDialog):
                                                     tool.parameters.seed,
                                                     ],
                                                 widget_args={
-                                                    'learning_rate': {'decimals': 5, 'single_step': 1e-5, 'adaptive': False, },
+                                                    'learning_rate': {'adaptive': True, },
                                                     }
                                                 )
 
@@ -59,7 +59,7 @@ class TrainModelDialog(ToolDialog):
                                                    tool.parameters.lambda_reg,
                                                    ],
                                                widget_args={
-                                                   'lambda_reg': {'decimals': 5, 'single_step': 1e-5, 'adaptive': False},
+                                                   'lambda_reg': {'adaptive': True},
                                                    }
                                                )
 

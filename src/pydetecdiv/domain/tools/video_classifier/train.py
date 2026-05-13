@@ -1,6 +1,7 @@
 """
 Video classifier trainer class
 """
+import gc
 import os
 from datetime import datetime
 from typing import TYPE_CHECKING
