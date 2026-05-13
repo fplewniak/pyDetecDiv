@@ -35,9 +35,7 @@ class VideoClassifier(DeepTool):
         self.parameters = Parameters(
                 [
                     ChoiceParameter(name='model', label='Model name', default='MViT_v2_s',
-                                    items={'MViT_v1_b'   : MViT.MViT_v1_b,
-                                           'MViT_v2_s'   : MViT.MViT_v2_s,
-                                           'Swin3D_tiny' : Swin3D.Swin3D_tiny,
+                                    items={'Swin3D_tiny' : Swin3D.Swin3D_tiny,
                                            'Swin3D_small': Swin3D.Swin3D_small,
                                            'Swin3D_base' : Swin3D.Swin3D_base,
                                            'S3D'         : S3D.S3D,
@@ -92,6 +90,7 @@ class VideoClassifier(DeepTool):
         """
         Prepare the data for training
         """
+        slice_seq = slice(0, 14) if self.parameters.model.key == 'S3D' else slice(4, 8)
         hdf5_reader = ROIHDF5reader(tables.open_file(self.parameters.hdf5_file.value, mode='r'),
                                     time_first=self.parameters.time_first.value)
         roi_idx = list(range(hdf5_reader.num_rois))
@@ -113,10 +112,10 @@ class VideoClassifier(DeepTool):
 
         training_dataset = ROIDataset(ROIHDF5reader(tables.open_file(self.parameters.hdf5_file.value, mode='r'),
                                                     time_first=self.parameters.time_first.value),
-                                      training_idx, targets=True, image_shape=image_shape, transform=augmentation)
+                                      training_idx, targets=True, image_shape=image_shape, slice_seq=slice_seq, transform=augmentation)
         validation_dataset = ROIDataset(ROIHDF5reader(tables.open_file(self.parameters.hdf5_file.value, mode='r'),
                                                       time_first=self.parameters.time_first.value),
-                                        validation_idx, targets=True, image_shape=image_shape)
+                                        validation_idx, targets=True, image_shape=image_shape, slice_seq=slice_seq)
 
         return training_dataset, validation_dataset, class_weights
 

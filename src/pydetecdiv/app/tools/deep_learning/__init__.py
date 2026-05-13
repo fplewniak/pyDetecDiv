@@ -81,11 +81,12 @@ class ROIDataset(Dataset):
     """
 
     def __init__(self, data_reader: RoiDataReader, indices: polars.DataFrame, targets: bool = False,
-                 image_shape: tuple[int, int] = (60, 60), transform: torch.nn.Module = None):
+                 image_shape: tuple[int, int] = (60, 60), slice_seq: slice |  None = None, transform: torch.nn.Module = None):
         self.reader = data_reader
         self.indices = indices
         self.targets = targets
         self.image_shape = list(image_shape)
+        self.slice = slice_seq
         self.transform = transforms.Compose([v2.Resize(image_shape), toStandardizedFloat32()])
         if transform:
             self.transform = transforms.Compose([self.transform, transform])
@@ -98,6 +99,8 @@ class ROIDataset(Dataset):
         roi_idx = df['roi'].item()
         frame_idx = df['frame'].item()
         item = self.reader.roi_data(roi_idx=roi_idx, frame=frame_idx)
+        if len(item.shape) == 4:
+            item = item[self.slice, :]
         if self.transform:
             item = self.transform(item)
         if self.targets:
