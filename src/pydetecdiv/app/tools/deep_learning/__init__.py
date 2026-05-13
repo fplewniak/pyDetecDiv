@@ -1,6 +1,7 @@
 """
 Abstract DeepTool class
 """
+import gc
 import os
 import pickle
 import sys
@@ -209,6 +210,8 @@ class DeepTool(Tool):
             train_stats_filepath = os.path.join(self.run_path(self.run), 'train_stats.pckl')
             with open(train_stats_filepath, 'wb') as fp:
                 pickle.dump(train_stats, fp, protocol=pickle.HIGHEST_PROTOCOL)
+        del train_stats
+        gc.collect()
 
     def set_model(self, model: torch.nn.Module):
         """

@@ -10,7 +10,6 @@ import torch
 from torch.utils.data import DataLoader
 
 from pydetecdiv.app.tools.deep_learning import ModelTrainer, set_optimizer, set_schedulers
-from pydetecdiv.domain.tools.video_classifier.models.MViT import MViT_v2_s, MViT_v1_b
 from pydetecdiv.torch import ClassifierTrainingStats
 from pydetecdiv.torch.loss import FocalLoss
 from pydetecdiv.torch.metrics import set_metrics
@@ -66,8 +65,6 @@ class VideoClassifierTrainer(ModelTrainer):
 
         main_scheduler, reduce_on_plateau = set_schedulers(parameters=self.tool.parameters, optimizer=optimizer)
 
-        # summary(model, (self.tool.parameters['batch_size'].value, 15, 3, 224, 224), device=device)
-
         run = self.tool.save_run(command='train_model')
         print(run)
 
@@ -96,7 +93,10 @@ class VideoClassifierTrainer(ModelTrainer):
         model_scripted = torch.jit.script(model)
         model_scripted.save(checkpoint_filepath)
 
+        del model_scripted
+        del model
         training_dataset.close()
         validation_dataset.close()
+        gc.collect()
 
         return train_stats
