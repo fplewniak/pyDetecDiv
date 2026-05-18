@@ -41,4 +41,8 @@ class ModelEvaluator(ABC):
                     loss += lambda_reg * torch.square(torch.cat([x.view(-1) for x in model.parameters()])).sum()
                 running_loss += loss.item()
 
-        return running_loss / len(data_loader)
+        avg_loss = running_loss / len(data_loader)
+        del running_loss, loss, outputs, images, gt
+        torch.cuda.empty_cache()
+
+        return avg_loss

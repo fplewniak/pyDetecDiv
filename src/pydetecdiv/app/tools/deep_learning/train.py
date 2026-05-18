@@ -64,6 +64,9 @@ class ModelTrainer(ABC):
         train_stats.log_metrics()
         train_stats.log_loss(avg_train_loss)
 
+        del running_loss, loss, outputs, images, gt
+        torch.cuda.empty_cache()
+
         avg_val_loss = ModelEvaluator.evaluate_model(validation_dataloader, model, loss_fn, device, train_stats.val_metrics,
                                                      regularization, lambda_reg)
         train_stats.log_val_metrics()
