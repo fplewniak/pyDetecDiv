@@ -65,7 +65,7 @@ class VideoClassifierTrainer(ModelTrainer):
 
         main_scheduler, reduce_on_plateau = set_schedulers(parameters=self.tool.parameters, optimizer=optimizer)
 
-        run = self.tool.save_run(command='train_model')
+        run = self.tool.save_run()
         print(run)
 
         for epoch in range(self.tool.parameters['epochs'].value):

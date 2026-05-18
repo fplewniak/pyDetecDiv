@@ -77,7 +77,7 @@ class Tool(ABC):
                 f.write(self._log_text)
                 self._log_text = ''
 
-    def save_run(self, command: str, param_list: list[Parameter] = None, key_val: dict = None):
+    def save_run(self, command: str = None, param_list: list[Parameter] = None, key_val: dict = None):
         """
         Saves the run for this tool
         """
@@ -97,7 +97,7 @@ class Tool(ABC):
             'tool_name'   : self.id_,
             'tool_version': self.version,
             'is_plugin'   : False,
-            'command'     : command,
+            'command'     : self.command if command is None else command,
             'parameters'  : self.parameters.json(param_list=param_list),
             'key_val'     : key_val,
             # 'uuid': self.uuid
