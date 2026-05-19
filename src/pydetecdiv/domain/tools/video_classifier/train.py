@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 import torch
 from torch.utils.data import DataLoader
 
-from pydetecdiv.app.tools.deep_learning import ModelTrainer, set_optimizer, set_schedulers, find_tensors_on_gpu
+from pydetecdiv.app.tools.deep_learning import ModelTrainer, set_optimizer, set_schedulers, find_gpu_tensor_references
 from pydetecdiv.torch import ClassifierTrainingStats
 from pydetecdiv.torch.loss import FocalLoss
 from pydetecdiv.torch.metrics import set_metrics
@@ -100,4 +100,5 @@ class VideoClassifierTrainer(ModelTrainer):
         gc.collect()
         torch.cuda.empty_cache()
 
+        # find_gpu_tensor_references()
         return train_stats

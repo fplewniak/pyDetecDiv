@@ -38,6 +38,27 @@ def find_tensors_on_gpu():
         except:
             pass
 
+def find_gpu_tensor_references():
+    for obj in gc.get_objects():
+        if torch.is_tensor(obj) and obj.is_cuda:
+            print(f"\nTensor: {obj}, Size: {obj.size()}, Device: {obj.device}", file=sys.stderr)
+            referrers = gc.get_referrers(obj)
+            print(f"  Referrers: {len(referrers)}", file=sys.stderr)
+            for ref in referrers:
+                if isinstance(ref, dict):
+                    for k, v in ref.items():
+                        if v is obj:
+                            print(f"    - Dict key: {k}", file=sys.stderr)
+                elif isinstance(ref, list):
+                    for i, item in enumerate(ref):
+                        if item is obj:
+                            print(f"    - List index: {i}", file=sys.stderr)
+                elif hasattr(ref, '__dict__'):
+                    for attr, val in ref.__dict__.items():
+                        if val is obj:
+                            print(f"    - Attribute '{attr}' of {type(ref)}", file=sys.stderr)
+                elif not isinstance(ref, type) and not isinstance(ref, str):
+                    print(f"    - {type(ref)}", file=sys.stderr)
 
 def set_optimizer(parameters: Parameters, model_param: dict | Iterable) -> torch.optim.Optimizer:
     """
