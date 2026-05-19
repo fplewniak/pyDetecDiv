@@ -3,6 +3,7 @@ Video classifier tool
 """
 import datetime
 import locale
+import sys
 
 import numpy as np
 import polars
@@ -63,6 +64,7 @@ class VideoClassifier(DeepTool):
                                   default='roi_data.h5'),
                     CheckParameter(name='time_first', label='Time first', default=False),
                     CheckParameter(name='augmentation', label='Augmentation', default=False, exclusive=False),
+                    IntParameter(name='seq_len', label='Sequence length', maximum=16, default=14),
                     ChoiceParameter(name='regularization', label='Regularization method', default='LASSO (L1)',
                                     items={'None'      : 0,
                                            'LASSO (L1)': 1,
@@ -90,7 +92,8 @@ class VideoClassifier(DeepTool):
         """
         Prepare the data for training
         """
-        slice_seq = slice(0, 14) if self.parameters.model.key == 'S3D' else slice(4, 8)
+        # slice_seq = slice(0, 14) if self.parameters.model.key == 'S3D' else slice(4, 8)
+        slice_seq = slice(int(7 - self.parameters.seq_len / 2), int(7 + self.parameters.seq_len / 2))
         hdf5_reader = ROIHDF5reader(tables.open_file(self.parameters.hdf5_file.value, mode='r'),
                                     time_first=self.parameters.time_first.value)
         roi_idx = list(range(hdf5_reader.num_rois))

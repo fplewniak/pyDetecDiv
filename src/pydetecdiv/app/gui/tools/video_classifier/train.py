@@ -70,6 +70,7 @@ class TrainModelDialog(ToolDialog):
                                              tool.parameters.num_test,
                                              tool.parameters.data_seed,
                                              tool.parameters.augmentation,
+                                             tool.parameters.seq_len,
                                              # tool.parameters.idx,
                                              ],
                                          widget_args={
