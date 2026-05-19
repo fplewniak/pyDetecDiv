@@ -1,6 +1,6 @@
 from pydetecdiv.app.tools import Tool
 
-from pydetecdiv.app.parameters import Parameters, StringParameter, ChoiceParameter, IntParameter
+from pydetecdiv.app.parameters import Parameters, StringParameter, ChoiceParameter, IntParameter, Parameter
 from pydetecdiv.domain.tools.video_classifier.models import MViT, Swin3D, S3D, VideoResNet
 
 
@@ -29,3 +29,6 @@ class ModelInfo(Tool):
                     IntParameter('batch_size', label='Batch size', default=8)
                     ]
                 )
+
+    def save_run(self, command: str = None, param_list: list[Parameter] = None, key_val: dict = None):
+        pass

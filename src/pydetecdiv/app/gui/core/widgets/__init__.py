@@ -216,7 +216,7 @@ class ParametersFormGroupBox(GroupBox):
             self.layout.addRow(option)
         else:
             self.layout.addRow(QLabel(parameter.label), option)
-        parameter.should_be_saved = True
+        # parameter.should_be_saved = True
         return option
 
     def setRowVisible(self, index: int, on: bool = True) -> None:

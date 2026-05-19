@@ -84,10 +84,14 @@ class Tool(ABC):
         if param_list is None:
             param_list = []
 
-        param_list.extend([p for p in self.parameters.parameter_list if p.should_be_saved])
+        if command is None:
+            command = self.command
 
-        for parameter in param_list:
-            parameter.should_be_saved = False
+        param_list.extend([p for p in self.parameters.parameter_list if command in p.commands])
+        # param_list.extend([p for p in self.parameters.parameter_list if p.should_be_saved])
+
+        # for parameter in param_list:
+        #     parameter.should_be_saved = False
 
         if key_val is None:
             key_val = {}
@@ -97,7 +101,7 @@ class Tool(ABC):
             'tool_name'   : self.id_,
             'tool_version': self.version,
             'is_plugin'   : False,
-            'command'     : self.command if command is None else command,
+            'command'     : command,
             'parameters'  : self.parameters.json(param_list=param_list),
             'key_val'     : key_val,
             # 'uuid': self.uuid

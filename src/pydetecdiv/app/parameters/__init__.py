@@ -16,7 +16,7 @@ class Parameter:
     """
 
     def __init__(self, name: str, label: str = None, default: Any = None, validator: Callable[[Any], bool] = None,
-                 groups: set[str] = None, updater: Callable = None, **kwargs: dict[str, Any]) -> None:
+                 groups: set[str] = None, updater: Callable = None, commands: set[str] = None, **kwargs: dict[str, Any]) -> None:
         super().__init__()
         self.name: str = name
         self.label: str = label
@@ -26,7 +26,8 @@ class Parameter:
         self.updater_kwargs: dict[str, Any] = kwargs
         self.groups: set[str] = set() if groups is None else groups
         self.qmodel: StandardItemModel | None = None
-        self.should_be_saved: bool = False
+        # self.should_be_saved: bool = False
+        self.commands: set[str] = set() if commands is None else commands
         self.__dict__.update(kwargs)
 
     def kwargs(self) -> dict[str, Any]:
@@ -208,9 +209,9 @@ class ItemParameter(Parameter):
     """
 
     def __init__(self, name: str, label: str = None, default: Any = None, validator: Callable[..., bool] = None,
-                 groups: set[str] = None, updater: Callable = None, **kwargs: dict[str, Any]) -> None:
+                 groups: set[str] = None, updater: Callable = None, commands: set[str] = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
-                         **kwargs)
+                         commands=commands, **kwargs)
         self.qmodel: ItemModel = ItemModel()
         self.reset()
 
@@ -222,11 +223,11 @@ class NumParameter(ItemParameter):
 
     def __init__(self, name: str, label: str = None, default: int | float = None, minimum: int | float = None,
                  maximum: int | float = None, validator: Callable[[int | float], bool] = None,
-                 groups: set[str] = None, updater: Callable = None, **kwargs: dict[str, Any]) -> None:
+                 groups: set[str] = None, updater: Callable = None, commands: set[str] = None, **kwargs: dict[str, Any]) -> None:
         self.minimum: int | float = minimum
         self.maximum: int | float = max(minimum, maximum)
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
-                         **kwargs)
+                         commands=commands, **kwargs)
 
     # def kwargs(self) -> dict[str, Any]:
     #     """
@@ -291,9 +292,9 @@ class IntParameter(NumParameter):
 
     def __init__(self, name: str, label: str = None, default: int = 1, validator: Callable[[int], bool] = None,
                  minimum: int = 1, maximum: int = 4096, groups: set[str] = None, updater: Callable = None,
-                 **kwargs: dict[str, Any]) -> None:
+                 commands: set[str] = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
-                         minimum=minimum, maximum=maximum, **kwargs)
+                         minimum=minimum, maximum=maximum, commands=commands, **kwargs)
 
     # def kwargs(self) -> dict[str, Any]:
     #     """
@@ -323,9 +324,9 @@ class FloatParameter(NumParameter):
 
     def __init__(self, name: str, label: str = None, default: float = 0.0, validator: Callable[[float], bool] = None,
                  minimum: float = 0.0, maximum: float = 1.0, groups: set[str] = None, updater: Callable = None,
-                 **kwargs: dict[str, Any]) -> None:
+                 commands: set[str] = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
-                         minimum=minimum, maximum=maximum, **kwargs)
+                         minimum=minimum, maximum=maximum, commands=commands, **kwargs)
 
     def validate(self, value: float) -> bool:
         """
@@ -345,9 +346,9 @@ class StringParameter(ItemParameter):
     """
 
     def __init__(self, name: str, label: str = None, default: str = '', validator: Callable[[str], bool] = None,
-                 groups: set[str] = None, updater: Callable = None, **kwargs: dict[str, Any]) -> None:
+                 groups: set[str] = None, updater: Callable = None, commands: set[str] = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
-                         **kwargs)
+                         commands=commands, **kwargs)
 
 
 class PathParameter(ItemParameter):
@@ -356,8 +357,9 @@ class PathParameter(ItemParameter):
     """
     def __init__(self, name: str, label: str = None, default: str = '', validator: Callable[[str], bool] = None,
                  groups: set[str] = None, updater: Callable = None, current_dir: str | None = None, filters = list[str] | None,
-                 select_dir: bool = False, **kwargs) -> None:
-        super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater, **kwargs)
+                 select_dir: bool = False, commands: set[str] = None, **kwargs) -> None:
+        super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
+                         commands=commands, **kwargs)
         self.select_dir = select_dir
         self.current_dir = current_dir
         self.filters = filters
@@ -370,9 +372,10 @@ class CheckParameter(ItemParameter):
 
     def __init__(self, name: str, label: str = None, exclusive: bool = True,
                  default: str | int | float | bool | Callable = None, validator: Callable[[bool], bool] = None,
-                 groups: set[str] = None, updater: Callable[..., None] = None, **kwargs: dict[str, Any]) -> None:
+                 groups: set[str] = None, updater: Callable[..., None] = None, commands: set[str] = None,
+                 **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
-                         **kwargs)
+                         commands=commands, **kwargs)
         self.exclusive: bool = exclusive
 
     # def kwargs(self) -> dict[str, Any]:
@@ -391,9 +394,10 @@ class ChoiceParameter(Parameter):
 
     def __init__(self, name: str, items: dict[str, object] = None, label: str = None,
                  default: str | int | float | bool | Callable = None, validator: Callable[[Any], bool] = None,
-                 groups: set[str] = None, updater: Callable[..., None] = None, **kwargs: dict[str, Any]) -> None:
+                 groups: set[str] = None, updater: Callable[..., None] = None, commands: set[str] = None,
+                 **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
-                         **kwargs)
+                         commands=commands, **kwargs)
         self.qmodel: DictItemModel = DictItemModel(items)
 
     # def kwargs(self) -> dict[str, Any]:
@@ -596,6 +600,9 @@ class Parameters:
         if union:
             return [param for param in self.parameter_list if param.groups.union(groups)]
         return [param for param in self.parameter_list if param.groups.intersection(groups)]
+
+    def for_command(self, command: str) -> list[Parameter]:
+        return [param for param in self.parameter_list if command in param.commands]
 
     def __repr__(self) -> str:
         """
