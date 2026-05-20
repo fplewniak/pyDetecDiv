@@ -41,9 +41,18 @@ class VideoClassifierTrainer(ModelTrainer):
 
         torch.random.manual_seed(self.tool.parameters.seed.value)
 
-        model = self.tool.parameters.model.value(n_classes=len(training_dataset.class_names),
-                                                 dropout=self.tool.parameters.dropout.value)
         model_name = self.tool.parameters.model.key
+        if model_name == 'CustomR2Plus_1D':
+            model = self.tool.parameters.model.value(n_classes=len(training_dataset.class_names),
+                                                     layers=self.tool.parameters.layers.value,
+                                                     blocks=self.tool.parameters.blocks.value,
+                                                     dropout=self.tool.parameters.dropout.value)
+        else:
+            model = self.tool.parameters.model.value(n_classes=len(training_dataset.class_names),
+                                                     dropout=self.tool.parameters.dropout.value)
+
+        # model = self.tool.parameters.model.value(n_classes=len(training_dataset.class_names),
+        #                                          dropout=self.tool.parameters.dropout.value)
 
         model = model.to(device)
 

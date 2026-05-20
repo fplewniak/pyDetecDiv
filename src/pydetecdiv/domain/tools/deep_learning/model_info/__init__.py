@@ -24,8 +24,11 @@ class ModelInfo(Tool):
                         'R3D_18': VideoResNet.R3D_18,
                         'MC3_18': VideoResNet.MC3_18,
                         'R2+1d_18': VideoResNet.R2Plus1d_18,
+                        'CustomR2Plus_1D': VideoResNet.CustomR2Plus_1D,
                         }, label='Model'),
                     IntParameter('num_classes', label='Number of classes', default=6),
+                    IntParameter(name='layers', label='Number of layers', default=2),
+                    IntParameter(name='blocks', label='Number of blocks', default=2),
                     IntParameter('batch_size', label='Batch size', default=8)
                     ]
                 )

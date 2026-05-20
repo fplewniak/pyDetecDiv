@@ -21,6 +21,8 @@ class TrainModelDialog(ToolDialog):
         self.model_choice = self.addGroupBox(title='Model',
                                              parameters=[
                                                  tool.parameters.model,
+                                                 tool.parameters.layers,
+                                                 tool.parameters.blocks,
                                                  tool.parameters.dropout,
                                                  ])
 

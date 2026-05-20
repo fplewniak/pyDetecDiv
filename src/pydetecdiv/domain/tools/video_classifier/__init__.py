@@ -16,6 +16,7 @@ from pydetecdiv.domain.tools.video_classifier.models import MViT, Swin3D, S3D, V
 from pydetecdiv.app.parameters import Parameters, IntParameter, FloatParameter, ChoiceParameter, PathParameter, CheckParameter
 from pydetecdiv.app.tools.deep_learning import DeepTool, ModelTrainer, ModelEvaluator, Predictor, ROIDataset
 from pydetecdiv.domain.tools.data import compute_class_weights
+from pydetecdiv.domain.tools.video_classifier.models.VideoResNet import CustomR2Plus_1D
 from pydetecdiv.domain.tools.video_classifier.train import VideoClassifierTrainer
 from pydetecdiv.domain.tools.video_classifier.evaluate import VideoClassifierEvaluator
 from pydetecdiv.domain.tools.video_classifier.predict import VideoClassifierPredictor
@@ -36,14 +37,17 @@ class VideoClassifier(DeepTool):
         self.parameters = Parameters(
                 [
                     ChoiceParameter(name='model', label='Model name', default='R2+1d_18',
-                                    items={'Swin3D_tiny' : Swin3D.Swin3D_tiny,
-                                           'Swin3D_small': Swin3D.Swin3D_small,
-                                           'Swin3D_base' : Swin3D.Swin3D_base,
-                                           'S3D'         : S3D.S3D,
-                                           'R3D_18'      : VideoResNet.R3D_18,
-                                           'MC3_18'      : VideoResNet.MC3_18,
-                                           'R2+1d_18'    : VideoResNet.R2Plus1d_18,
+                                    items={'Swin3D_tiny'    : Swin3D.Swin3D_tiny,
+                                           'Swin3D_small'   : Swin3D.Swin3D_small,
+                                           'Swin3D_base'    : Swin3D.Swin3D_base,
+                                           'S3D'            : S3D.S3D,
+                                           'R3D_18'         : VideoResNet.R3D_18,
+                                           'MC3_18'         : VideoResNet.MC3_18,
+                                           'R2+1d_18'       : VideoResNet.R2Plus1d_18,
+                                           'CustomR2Plus_1D': CustomR2Plus_1D,
                                            }, commands={'train_model'}),
+                    IntParameter(name='layers', label='Number of layers', default=2, commands={'train_model'}),
+                    IntParameter(name='blocks', label='Number of blocks', default=2, commands={'train_model'}),
                     IntParameter(name='epochs', label='Epochs', default=32, commands={'train_model'}),
                     IntParameter(name='batch_size', label='Batch size', default=8, commands={'train_model'}),
                     ChoiceParameter(name='optimizer', label='Optimizer', default='AdamW',
@@ -131,7 +135,8 @@ class VideoClassifier(DeepTool):
 
         training_dataset = ROIDataset(ROIHDF5reader(tables.open_file(self.parameters.hdf5_file.value, mode='r'),
                                                     time_first=self.parameters.time_first.value),
-                                      training_idx, targets=True, image_shape=image_shape, slice_seq=slice_seq, transform=augmentation)
+                                      training_idx, targets=True, image_shape=image_shape, slice_seq=slice_seq,
+                                      transform=augmentation)
         validation_dataset = ROIDataset(ROIHDF5reader(tables.open_file(self.parameters.hdf5_file.value, mode='r'),
                                                       time_first=self.parameters.time_first.value),
                                         validation_idx, targets=True, image_shape=image_shape, slice_seq=slice_seq)

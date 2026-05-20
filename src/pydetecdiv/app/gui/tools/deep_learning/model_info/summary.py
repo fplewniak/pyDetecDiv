@@ -15,6 +15,8 @@ class ModelSummaryDialog(ToolDialog):
                 parameters=[
                     self.tool.parameters.model,
                     self.tool.parameters.num_classes,
+                    self.tool.parameters.layers,
+                    self.tool.parameters.blocks,
                     self.tool.parameters.batch_size
                     ],
                 )
@@ -33,5 +35,10 @@ class ModelSummaryDialog(ToolDialog):
         self.exec()
 
     def show_model_information(self):
-        model = self.tool.parameters.model.value(n_classes=self.tool.parameters.num_classes.value)
+        if self.tool.parameters.model.key == 'CustomR2Plus_1D':
+            model = self.tool.parameters.model.value(n_classes=self.tool.parameters.num_classes.value,
+                                                     layers=self.tool.parameters.layers.value,
+                                                     blocks=self.tool.parameters.blocks.value)
+        else:
+            model = self.tool.parameters.model.value(n_classes=self.tool.parameters.num_classes.value)
         summary(model, (self.tool.parameters.batch_size.value,) + model.expected_shape[1:], device='cpu')
