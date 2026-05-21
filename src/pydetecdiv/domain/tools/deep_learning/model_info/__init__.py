@@ -27,8 +27,10 @@ class ModelInfo(Tool):
                         'CustomR2Plus_1D': VideoResNet.CustomR2Plus_1D,
                         }, label='Model'),
                     IntParameter('num_classes', label='Number of classes', default=6),
-                    IntParameter(name='layers', label='Number of layers', default=2),
-                    IntParameter(name='blocks', label='Number of blocks', default=2),
+                    StringParameter(name='layers', label='Blocks layers', default='[1, 2]'),
+                    StringParameter(name='strides', label='Strides', default='[1, 2]'),
+                    # IntParameter(name='num_layers', label='Number of layers', default=2),
+                    # IntParameter(name='blocks', label='Number of blocks', default=2),
                     IntParameter('batch_size', label='Batch size', default=8)
                     ]
                 )

@@ -22,7 +22,7 @@ class TrainModelDialog(ToolDialog):
                                              parameters=[
                                                  tool.parameters.model,
                                                  tool.parameters.layers,
-                                                 tool.parameters.blocks,
+                                                 tool.parameters.strides,
                                                  tool.parameters.dropout,
                                                  ])
 

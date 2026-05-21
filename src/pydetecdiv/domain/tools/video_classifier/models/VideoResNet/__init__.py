@@ -166,16 +166,16 @@ class CustomVideoResnet(nn.Module):
 
 
 class CustomR2Plus_1D(nn.Module):
-    def __init__(self, n_classes=6, dropout=0.2, layers=None, blocks=2, **kwargs):
+    def __init__(self, n_classes=6, dropout=0.2, layers=None, strides=None, **kwargs):
         super(CustomR2Plus_1D, self).__init__()
         self.expected_shape = ('Batch', 4, 3, 224, 224)
 
         if layers is None:
-            layers = [2] * blocks
-        else:
-            layers = [layers] * blocks
+            layers = [2, 2, 2, 2]
 
-        strides = [1] * blocks
+        blocks = len(layers)
+        if strides is None:
+            strides = [1] + [2] * (blocks - 1)
 
         self.model = CustomVideoResnet(BasicBlock, [Conv2Plus1D] * blocks, layers, strides, R2Plus1dStem, n_classes,
                                        True, **kwargs)

@@ -2,6 +2,7 @@
 Video classifier trainer class
 """
 import gc
+import json
 import os
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -44,8 +45,8 @@ class VideoClassifierTrainer(ModelTrainer):
         model_name = self.tool.parameters.model.key
         if model_name == 'CustomR2Plus_1D':
             model = self.tool.parameters.model.value(n_classes=len(training_dataset.class_names),
-                                                     layers=self.tool.parameters.layers.value,
-                                                     blocks=self.tool.parameters.blocks.value,
+                                                     layers=json.loads(self.tool.parameters.layers.value),
+                                                     strides=json.loads(self.tool.parameters.strides.value),
                                                      dropout=self.tool.parameters.dropout.value)
         else:
             model = self.tool.parameters.model.value(n_classes=len(training_dataset.class_names),

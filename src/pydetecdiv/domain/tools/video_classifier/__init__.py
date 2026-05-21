@@ -13,7 +13,8 @@ from torch import optim
 from torchvision.transforms import InterpolationMode, v2
 
 from pydetecdiv.domain.tools.video_classifier.models import MViT, Swin3D, S3D, VideoResNet
-from pydetecdiv.app.parameters import Parameters, IntParameter, FloatParameter, ChoiceParameter, PathParameter, CheckParameter
+from pydetecdiv.app.parameters import (Parameters, IntParameter, FloatParameter, ChoiceParameter, PathParameter, CheckParameter,
+                                       StringParameter)
 from pydetecdiv.app.tools.deep_learning import DeepTool, ModelTrainer, ModelEvaluator, Predictor, ROIDataset
 from pydetecdiv.domain.tools.data import compute_class_weights
 from pydetecdiv.domain.tools.video_classifier.models.VideoResNet import CustomR2Plus_1D
@@ -46,8 +47,8 @@ class VideoClassifier(DeepTool):
                                            'R2+1d_18'       : VideoResNet.R2Plus1d_18,
                                            'CustomR2Plus_1D': CustomR2Plus_1D,
                                            }, commands={'train_model'}),
-                    IntParameter(name='layers', label='Number of layers', default=2, commands={'train_model'}),
-                    IntParameter(name='blocks', label='Number of blocks', default=2, commands={'train_model'}),
+                    StringParameter(name='layers', label='Blocks layers', default='[1, 2]', commands={'train_model'}),
+                    StringParameter(name='strides', label='Strides', default='[1, 2]', commands={'train_model'}),
                     IntParameter(name='epochs', label='Epochs', default=32, commands={'train_model'}),
                     IntParameter(name='batch_size', label='Batch size', default=8, commands={'train_model'}),
                     ChoiceParameter(name='optimizer', label='Optimizer', default='AdamW',

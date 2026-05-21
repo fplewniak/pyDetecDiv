@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 from torchinfo import summary
@@ -16,7 +17,7 @@ class ModelSummaryDialog(ToolDialog):
                     self.tool.parameters.model,
                     self.tool.parameters.num_classes,
                     self.tool.parameters.layers,
-                    self.tool.parameters.blocks,
+                    self.tool.parameters.strides,
                     self.tool.parameters.batch_size
                     ],
                 )
@@ -37,8 +38,8 @@ class ModelSummaryDialog(ToolDialog):
     def show_model_information(self):
         if self.tool.parameters.model.key == 'CustomR2Plus_1D':
             model = self.tool.parameters.model.value(n_classes=self.tool.parameters.num_classes.value,
-                                                     layers=self.tool.parameters.layers.value,
-                                                     blocks=self.tool.parameters.blocks.value)
+                                                     layers=json.loads(self.tool.parameters.layers.value),
+                                                     strides=json.loads(self.tool.parameters.strides.value),)
         else:
             model = self.tool.parameters.model.value(n_classes=self.tool.parameters.num_classes.value)
         summary(model, (self.tool.parameters.batch_size.value,) + model.expected_shape[1:], device='cpu')
