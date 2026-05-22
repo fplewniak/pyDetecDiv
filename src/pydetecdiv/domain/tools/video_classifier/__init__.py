@@ -37,7 +37,7 @@ class VideoClassifier(DeepTool):
         super().__init__(parameters, working_dir)
         self.parameters = Parameters(
                 [
-                    ChoiceParameter(name='model', label='Model name', default='R2+1d_18',
+                    ChoiceParameter(name='model', label='Model name', default='CustomR2Plus_1D',
                                     items={'Swin3D_tiny'    : Swin3D.Swin3D_tiny,
                                            'Swin3D_small'   : Swin3D.Swin3D_small,
                                            'Swin3D_base'    : Swin3D.Swin3D_base,

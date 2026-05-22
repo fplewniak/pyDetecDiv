@@ -340,7 +340,7 @@ class StdoutWaitDialog(AbstractWaitDialog):
         super().__init__(parent, cancel_msg=cancel_msg, ignore_close_event=ignore_close_event)
         self.log = QTextEdit(self)
         self.log.setReadOnly(True)
-        self.addText(msg)
+        self.log.setHtml(markdown.markdown(msg))
         layout = QVBoxLayout(self)
         layout.addWidget(self.log)
         self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close, self)
@@ -353,10 +353,21 @@ class StdoutWaitDialog(AbstractWaitDialog):
         layout.addWidget(self.button_box)
         self.setLayout(layout)
         self.redirector = StreamRedirector()
-        self.redirector.new_text.connect(self.addText)
+        self.redirector.new_text.connect(self.addHtmlText)
         sys.stdout = self.redirector
 
     def addText(self, text: str) -> None:
+        """
+        Add text to the log window
+
+        :param text: the text to add
+        """
+        self.log.moveCursor(QTextCursor.MoveOperation.End)
+        self.log.insertPlainText(text)
+        if hasattr(self.parent, 'tool'):
+            self.parent.tool.log_text(text)
+
+    def addHtmlText(self, text: str) -> None:
         """
         Add text to the log window
 

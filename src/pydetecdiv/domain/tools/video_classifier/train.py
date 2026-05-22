@@ -5,6 +5,7 @@ import gc
 import json
 import os
 from datetime import datetime
+from pprint import pprint
 from typing import TYPE_CHECKING
 
 import torch
@@ -76,7 +77,7 @@ class VideoClassifierTrainer(ModelTrainer):
         main_scheduler, reduce_on_plateau = set_schedulers(parameters=self.tool.parameters, optimizer=optimizer)
 
         run = self.tool.save_run()
-        print(run)
+        pprint(run)
 
         for epoch in range(self.tool.parameters['epochs'].value):
             self.training_loop(training_dataloader, validation_dataloader, model, loss_fn, optimizer, device, train_stats)

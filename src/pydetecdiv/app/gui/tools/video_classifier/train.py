@@ -97,7 +97,8 @@ class TrainModelDialog(ToolDialog):
                              self.datasets, self.hdf5_file,
                              self.button_box])
 
-        set_connections({self.button_box.accepted              : lambda: self.wait_for_process(tool.model_trainer.train_model),
+        set_connections({self.button_box.accepted              : lambda: self.wait_for_process(tool.model_trainer.train_model,
+                                                                                               '**Training model**'),
                          self.button_box.rejected              : lambda: print('Rejected'),
                          tool.parameters.num_training.changed  : lambda: self.update_datasets(tool.parameters.num_training),
                          tool.parameters.num_validation.changed: lambda: self.update_datasets(tool.parameters.num_validation),

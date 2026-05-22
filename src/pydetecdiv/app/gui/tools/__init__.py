@@ -31,14 +31,14 @@ class ToolDialog(Dialog):
         for parameter in self.tool.parameters.parameter_list:
             parameter.should_be_saved = False
 
-    def wait_for_process(self, func: Callable) -> None:
+    def wait_for_process(self, func: Callable, title: str, **kwargs) -> None:
         """
         Open a waiting dialog window to wait for completion of job
         """
-        wait_dialog = StdoutWaitDialog('**Training model**', self)
+        wait_dialog = StdoutWaitDialog(title, self)
         wait_dialog.resize(500, 300)
         self.job_finished.connect(wait_dialog.stop_redirection)
-        wait_dialog.wait_for(lambda: self.run_process(func))
+        wait_dialog.wait_for(lambda: self.run_process(func), **kwargs)
         self.close()
 
     def run_after_process(self, list_func: list[Callable]) -> None:
@@ -49,11 +49,11 @@ class ToolDialog(Dialog):
         for func in list_func:
             self.job_finished.connect(func)
 
-    def run_process(self, func) -> None:
+    def run_process(self, func: Callable, **kwargs) -> None:
         """
         Run a job
         """
-        self.job_finished.emit(func())
+        self.job_finished.emit(func(**kwargs))
 
 
 class ToolMenu(QMenu):
