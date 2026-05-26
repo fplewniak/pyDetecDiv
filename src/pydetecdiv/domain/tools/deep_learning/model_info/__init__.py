@@ -31,7 +31,8 @@ class ModelInfo(Tool):
                     StringParameter(name='strides', label='Strides', default='[1, 2]'),
                     # IntParameter(name='num_layers', label='Number of layers', default=2),
                     # IntParameter(name='blocks', label='Number of blocks', default=2),
-                    IntParameter('batch_size', label='Batch size', default=8)
+                    IntParameter('batch_size', label='Batch size', default=8),
+                    IntParameter('depth', label='Depth', default=3)
                     ]
                 )
 

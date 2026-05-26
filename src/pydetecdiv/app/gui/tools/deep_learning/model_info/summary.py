@@ -18,7 +18,8 @@ class ModelSummaryDialog(ToolDialog):
                     self.tool.parameters.num_classes,
                     self.tool.parameters.layers,
                     self.tool.parameters.strides,
-                    self.tool.parameters.batch_size
+                    self.tool.parameters.batch_size,
+                    self.tool.parameters.depth,
                     ],
                 )
         button_box = self.addButtonBox()
@@ -42,4 +43,5 @@ class ModelSummaryDialog(ToolDialog):
                                                      strides=json.loads(self.tool.parameters.strides.value),)
         else:
             model = self.tool.parameters.model.value(n_classes=self.tool.parameters.num_classes.value)
-        summary(model, (self.tool.parameters.batch_size.value,) + model.expected_shape[1:], device='cpu')
+        summary(model, (self.tool.parameters.batch_size.value,) + model.expected_shape[1:], device='cpu',
+                depth=self.tool.parameters.depth.value)
