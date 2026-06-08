@@ -5,6 +5,7 @@ to be extended for concrete or more specific purposes
 import os
 from typing import Any, Type, Callable, TypeVar, Union, Self
 
+import polars
 from PySide6.QtCore import Signal, Slot, QModelIndex, QItemSelectionModel, QItemSelection, QStringListModel, SignalInstance
 from PySide6.QtGui import QIcon, QAction, QContextMenuEvent, QValidator
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QSizePolicy, QApplication, QDialogButtonBox, QPushButton, QWidget, QGroupBox,
@@ -12,7 +13,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QSizePolicy, QApplication, 
                                QSpinBox, QRadioButton, QLineEdit, QAbstractItemView, QListView, QMenu, QComboBox, QHBoxLayout,
                                QFileDialog, QHeaderView)
 from pydetecdiv.app.parameters import Parameter
-from pydetecdiv.app.models import ItemModel, DictItemModel, StringListModel, GenericModel
+from pydetecdiv.app.models import ItemModel, DictItemModel, StringListModel, GenericModel, TableModel
 
 
 class StyleSheets:
@@ -888,10 +889,11 @@ class TableView(QTableView):
     an extension of the QTableView widget
     """
 
-    def __init__(self, parent, qmodel=None, enabled=True, **kwargs):
+    def __init__(self, parent, qmodel: TableModel|None=None, enabled=True, **kwargs):
         super().__init__(parent)
         if qmodel is not None:
             self.setModel(qmodel)
+            self._model = qmodel
         self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.horizontalHeader().setStretchLastSection(True)
         self.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
@@ -902,6 +904,17 @@ class TableView(QTableView):
         #     self.currentIndexChanged.connect(self.model().set_selection)
         #     self.model().selection_changed.connect(self.setCurrentIndex)
         self.setEnabled(enabled)
+
+    def setModel(self, model: TableModel, /):
+        super().setModel(model)
+        self._model = model
+
+    @property
+    def data(self):
+        return self._model.df
+
+    def add_rows(self, df: polars.DataFrame) -> None:
+        self._model.add_rows(df)
 
     # def __init__(self, parent, parameter, multiselection=True, behavior='rows', enabled=True):
     #     super().__init__(parent)
