@@ -347,6 +347,10 @@ class TableModel(QAbstractTableModel):
         #     return Qt.AlignRight
         return None
 
+    def add_rows(self, df):
+        self.df.extend(df)
+        self.layoutChanged.emit()
+
 
 class EditableTableModel(TableModel):
     """
