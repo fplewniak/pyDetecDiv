@@ -10,7 +10,7 @@ from PySide6.QtGui import QIcon, QAction, QContextMenuEvent, QValidator
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QSizePolicy, QApplication, QDialogButtonBox, QPushButton, QWidget, QGroupBox,
                                QLayout, QLabel, QFormLayout, QTableView, QDataWidgetMapper, QAbstractSpinBox, QDoubleSpinBox,
                                QSpinBox, QRadioButton, QLineEdit, QAbstractItemView, QListView, QMenu, QComboBox, QHBoxLayout,
-                               QFileDialog)
+                               QFileDialog, QHeaderView)
 from pydetecdiv.app.parameters import Parameter
 from pydetecdiv.app.models import ItemModel, DictItemModel, StringListModel, GenericModel
 
@@ -36,7 +36,7 @@ class StyleSheets:
                 """
 
 
-StandardButtonCombination = Union["QDialogButtonBox.StandardButton", ...]
+StandardButtonCombination = Union["QDialogButtonBox.StandardButton"]
 
 GenericGroupBox = TypeVar('GenericGroupBox', bound=QGroupBox)
 
@@ -892,6 +892,9 @@ class TableView(QTableView):
         super().__init__(parent)
         if qmodel is not None:
             self.setModel(qmodel)
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.horizontalHeader().setStretchLastSection(True)
+        self.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         # if model is not None and model.rows() is not None:
         #     self.addItemDict(model.rows())
         #     self.setModel(model)
@@ -974,7 +977,7 @@ class Dialog(QDialog):
         self.adjustSize()
 
     def addGroupBox(self, title: str = None, widget: Type[GroupBox] = ParametersFormGroupBox, parameters: list = None,
-                    widget_args: dict[str, Any] = None, expandable: bool = False, show: bool = True) -> GroupBox:
+                    widget_args: dict[str, Any] = None, expandable: bool = False, show: bool = True, **kwargs: dict[str, Any]) -> GroupBox:
         """
         Add a group box to the Dialog window
 
@@ -991,11 +994,13 @@ class Dialog(QDialog):
         group_box.setTitle(title)
         group_box.setStyleSheet(StyleSheets.groupBox)
         if expandable:
-            group_box.addSubBox(widget=widget, expandable=expandable, show=show, parameters=parameters, widget_args=widget_args)
+            group_box.addSubBox(widget=widget, expandable=expandable, show=show, parameters=parameters, widget_args=widget_args, **kwargs)
         else:
             if parameters is not None:
                 for parameter in parameters:
                     group_box.addOption(parameter, **paramwidget_args(parameter, widget_args))
+            else:
+                group_box.addSubBox(widget=widget, expandable=expandable, show=show, **kwargs)
         return group_box
 
     def addButtonBox(self,
