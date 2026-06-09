@@ -20,7 +20,7 @@ from pydetecdiv.settings import get_config_file, get_appdata_dir, get_config_val
 from pydetecdiv.persistence.project import list_projects
 from pydetecdiv.domain.Project import Project
 
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Any, Generator
 
 if TYPE_CHECKING:
     from pydetecdiv.app.gui.Windows import MainWindow
@@ -122,7 +122,7 @@ class PyDetecDiv(QApplication):
 
 
 @contextmanager
-def pydetecdiv_project(project_name: str) -> Project:
+def pydetecdiv_project(project_name: str) -> Generator[Project, Any, None]:
     """
     Context manager for projects.
 
@@ -348,7 +348,7 @@ class StdoutWaitDialog(AbstractWaitDialog):
         self.button_box.button(QDialogButtonBox.StandardButton.Close).setEnabled(False)
         if self.cancel_msg:
             self.button_box.addButton(QDialogButtonBox.StandardButton.Cancel)
-            self.button_box.button(QDialogButtonBox.StandardButton.Cancel).clicked(self.cancel)
+            self.button_box.button(QDialogButtonBox.StandardButton.Cancel).clicked.connect(self.cancel)
             self.button_box.button(QDialogButtonBox.StandardButton.Cancel).clicked.connect(self.set_ignore_close_event)
         layout.addWidget(self.button_box)
         self.setLayout(layout)
