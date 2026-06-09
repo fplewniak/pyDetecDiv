@@ -314,7 +314,7 @@ class TableModel(QAbstractTableModel):
         """
         return self.df.shape[1]
 
-    def headerData(self, section: int, orientation: Qt.Orientation, role: int = ...) -> str:
+    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole) -> str:
         """
         Returns the data for the given role and section in the header with the specified orientation.
 
@@ -327,7 +327,7 @@ class TableModel(QAbstractTableModel):
             return self.df.columns[section]
         if orientation == Qt.Vertical and role == Qt.DisplayRole:
             return f"{section + 1}"
-        return ''
+        return super().headerData(section, orientation, role)
 
     def data(self, index: QModelIndex | QPersistentModelIndex, role: int = Qt.DisplayRole) -> object | None:
         """
@@ -340,6 +340,8 @@ class TableModel(QAbstractTableModel):
         row = index.row()
 
         if role in (Qt.DisplayRole, Qt.EditRole):
+            if isinstance(self.df[row, column], polars.series.Series):
+                return json.dumps(self.df[row, column].to_list())
             return self.df[row, column]
         # elif role == Qt.BackgroundRole:
         #     return QColor(Qt.white)

@@ -50,6 +50,12 @@ def main_gui():
                  QTabWidget::red {
                     font-size: 20pt;
                  }
+                 QHeaderView {
+                    font-style: italic;
+                    font-weight: bold;
+                    color: white;
+                    background: #bbb;
+                 }
             """
 
     # Apply the style sheet to the application

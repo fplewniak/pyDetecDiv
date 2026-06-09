@@ -43,6 +43,7 @@ class TableEditor(QDialog):
         # # QTableView Headers
         self.horizontal_header = self.table_view.horizontalHeader()
         self.vertical_header = self.table_view.verticalHeader()
+        self.vertical_header.setVisible(False)
         self.horizontal_header.setSectionResizeMode(QHeaderView.ResizeToContents)
         self.vertical_header.setSectionResizeMode(QHeaderView.ResizeToContents)
         self.horizontal_header.setStretchLastSection(True)
@@ -364,6 +365,7 @@ class DataSourceGroup(QGroupBox):
         self.other_devices_horizontal_header.setSectionResizeMode(QHeaderView.ResizeToContents)
         self.other_devices_horizontal_header.setStretchLastSection(True)
         self.other_devices_view.verticalHeader().setStretchLastSection(False)
+        self.other_devices_view.verticalHeader().setVisible(False)
         self.other_devices_view.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
         self.other_devices_view.adjustSize()
 
