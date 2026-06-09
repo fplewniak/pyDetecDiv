@@ -1,6 +1,6 @@
 from typing import Any
 
-import polars
+from PySide6.QtWidgets import QAbstractItemView
 
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
 from pydetecdiv.app.gui.core.widgets import set_connections, TableView
@@ -14,13 +14,7 @@ class ManageClassificationSchemeDialog(ToolDialog):
         super().__init__(tool, title, **kwargs)
 
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            data = project.get_polars('Classification')
-            # data = polars.DataFrame(classification_schemes[0].record())
-            # print(classification_schemes[0].record())
-            # for classification_scheme in classification_schemes[1:]:
-            #     data.extend(polars.DataFrame(classification_scheme.record()))
-        self.data_view = TableView(self, TableModel(data))
-        self.data_view.verticalHeader().setVisible(False)
+            self.data_view = TableView(self,TableModel(project.get_polars('Classification')))
 
         classification_management = self.addGroupBox(
                 parameters=[
@@ -37,8 +31,11 @@ class ManageClassificationSchemeDialog(ToolDialog):
             ])
 
         set_connections({
-            button_box.accepted: lambda: print(self.tool.parameters),
+            button_box.accepted: self.edit_selected_scheme,
             })
 
         self.fit_to_contents()
         self.exec()
+
+    def edit_selected_scheme(self):
+        print(self.data_view.selected_rows(data=True))

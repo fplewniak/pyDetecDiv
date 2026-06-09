@@ -897,6 +897,9 @@ class TableView(QTableView):
         self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.horizontalHeader().setStretchLastSection(True)
         self.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.verticalHeader().setVisible(False)
+        self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        # self.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         # if model is not None and model.rows() is not None:
         #     self.addItemDict(model.rows())
         #     self.setModel(model)
@@ -908,6 +911,12 @@ class TableView(QTableView):
     def setModel(self, model: TableModel, /):
         super().setModel(model)
         self._model = model
+
+    def selected_rows(self, data= False):
+        selected_rows_idx = [selection.row() for selection in self.selectionModel().selectedRows()]
+        if data:
+            return self._model.df.gather(selected_rows_idx)
+        return selected_rows_idx
 
     @property
     def data(self):
