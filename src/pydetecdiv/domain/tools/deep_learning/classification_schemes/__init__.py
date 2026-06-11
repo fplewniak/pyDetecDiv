@@ -1,6 +1,8 @@
+from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
 from pydetecdiv.app.tools import Tool
 
-from pydetecdiv.app.parameters import Parameters, StringParameter
+from pydetecdiv.app.parameters import Parameters, StringParameter, StringListParameter
+from pydetecdiv.domain.Classification import Classification
 
 
 class ClassificationSchemeManagement(Tool):
@@ -14,6 +16,15 @@ class ClassificationSchemeManagement(Tool):
         self.parameters = Parameters(
                 [
                     StringParameter('name', label='Name'),
-                    # ('num_classes', label='Number of classes', default=6),
+                    StringListParameter('classes', label='Classes'),
                     ]
                 )
+
+    def save_scheme(self):
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            scheme = project.get_named_object('Classification', self.parameters.name.value)
+            if scheme is None:
+                scheme = Classification(project=project, name=self.parameters.name.value, classes=self.parameters.classes.value,)
+            else:
+                scheme.classes = self.parameters.classes.value
+                scheme.validate(updated=True)
