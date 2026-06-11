@@ -73,13 +73,25 @@ class StringListModel(QStringListModel, Generic[GenericModel]):
         super().__init__()
         self._data: list[str] = data if data else []
 
-    @property
+    def set_value(self, data: list[str]):
+        self._data: list[str] = data
+
+    def setData(self, index: QModelIndex, value: Any, /, role: int = Qt.ItemDataRole.EditRole):
+        if role == Qt.ItemDataRole.EditRole:
+            self._data[index.row()]= value
+            return True
+        return False
+
+
     def value(self) -> list[str]:
         """
         Returns the data in the list
 
         :return: the list of strings in the model
         """
+        return self._data
+
+    def items(self) -> list[str]:
         return self._data
 
     def data(self, index: QModelIndex, role: IntEnum = Qt.ItemDataRole.DisplayRole) -> str | None:
@@ -90,7 +102,7 @@ class StringListModel(QStringListModel, Generic[GenericModel]):
         :param role: the role of data, typically Qt.DisplayRole
         :return: the data at the requested position
         """
-        if role == Qt.ItemDataRole.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole or role == Qt.ItemDataRole.EditRole:
             return self._data[index.row()]
         return None
 
@@ -113,6 +125,10 @@ class StringListModel(QStringListModel, Generic[GenericModel]):
         self._data.append(item)
         self.endInsertRows()
 
+    def add_items(self, items: list[str]) -> None:
+        for item in items:
+            self.add_item(item)
+
     def remove_item(self, row: int) -> None:
         """
         Removes from the model the item at the specified row index
@@ -124,15 +140,19 @@ class StringListModel(QStringListModel, Generic[GenericModel]):
             self._data.pop(row)
             self.endRemoveRows()
 
+    def clear(self):
+        self._data = []
+
     def update_item(self, row: int, item: str) -> None:
         """
 
         :param row: 
         :param item: 
         """
-        if 0 <= row < len(self._data):
-            self._data[row] = item
-            self.dataChanged.emit(self.index(row, 0), self.index(row, 0), [Qt.ItemDataRole.DisplayRole])
+        self.setData(self.index(row, 0), item, Qt.ItemDataRole.EditRole)
+        # if 0 <= row < len(self._data):
+        #     self._data[row] = item
+        #     self.dataChanged.emit(self.index(row, 0), self.index(row, 0), [Qt.ItemDataRole.DisplayRole])
 
 
 class DictItemModel(StandardItemModel, Generic[GenericModel]):

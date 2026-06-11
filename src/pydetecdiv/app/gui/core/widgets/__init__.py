@@ -87,12 +87,13 @@ class GroupBox(QGroupBox):
         :return:
         """
         parameter_widgets = {
-            'IntParameter'   : SpinBox,
-            'FloatParameter' : DoubleSpinBox,
-            'StringParameter': LineEdit,
-            'CheckParameter' : RadioButton,
-            'ChoiceParameter': ComboBox,
-            'PathParameter'  : FileChooser,
+            'IntParameter'       : SpinBox,
+            'FloatParameter'     : DoubleSpinBox,
+            'StringParameter'    : LineEdit,
+            'CheckParameter'     : RadioButton,
+            'ChoiceParameter'    : ComboBox,
+            'PathParameter'      : FileChooser,
+            'StringListParameter': ListView,
             }
         self.parameter_widgets[parameter.name] = parameter_widgets[parameter.type](parent=self, **parameter.kwargs(), **kwargs)
         return self.parameter_widgets[parameter.name]
@@ -342,19 +343,21 @@ class ListView(QListView):
             self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
         if height is not None:
             self.setFixedHeight(height)
-        self.setModel(QStringListModel())
-        if qmodel is not None and qmodel.items is not None:
-            self.addItemDict(qmodel.items())
+        if qmodel is not None and qmodel.items() is not None:
+            self.qmodel: StringListModel = qmodel
+        else:
+            self.qmodel: StringListModel = StringListModel()
+        self.setModel(self.qmodel)
         self.setEnabled(enabled)
 
-    def addItemDict(self, options: dict[str, Any]) -> None:
+    def addItems(self, items: list[str]) -> None:
         """
         add items to the ComboBox as a dictionary
 
         :param options: dictionary of options specifying labels and corresponding user data {label: userData, ...}
         """
-        self.items = options
-        self.model().setStringList(list(options.keys()))
+        self.qmodel.add_items(items)
+        # self.model().setStringList(list(items.keys()))
 
     @property
     def changed(self) -> SignalInstance:
@@ -375,7 +378,7 @@ class ListView(QListView):
         return [self.items[self.model().data(idx)] for idx in
                 sorted(self.selectedIndexes(), key=lambda x: x.row(), reverse=False)]
 
-    def setValue(self):
+    def select_value(self):
         """
         Set the List view content, should be implemented by subclasses
         """
@@ -394,9 +397,10 @@ class ListView(QListView):
             unselect = QAction("Unselect all", self)
             unselect.triggered.connect(self.unselect)
             context.addAction(unselect)
-            toggle = QAction("Toggle selection", self)
-            toggle.triggered.connect(self.toggle)
-            context.addAction(toggle)
+            if self.SelectionMode == QAbstractItemView.SelectionMode.MultiSelection:
+                toggle = QAction("Toggle selection", self)
+                toggle.triggered.connect(self.toggle)
+                context.addAction(toggle)
             context.addSeparator()
             remove = QAction("Remove selected items", self)
             remove.triggered.connect(self.remove_items)
@@ -427,13 +431,13 @@ class ListView(QListView):
         Delete selected sources
         """
         for idx in sorted(self.selectedIndexes(), key=lambda x: x.row(), reverse=True):
-            self.model().removeRow(idx.row())
+            self.qmodel.remove_item(idx.row())
 
     def clear_list(self) -> None:
         """
         Clear the source list
         """
-        self.model().removeRows(0, self.model().rowCount())
+        self.qmodel.clear()
 
 
 class ListWidget(QListView):
@@ -470,6 +474,7 @@ class ListWidget(QListView):
 
         :param options: dictionary of options specifying labels and corresponding user data {label: userData, ...}
         """
+        self.items = options
         for text, data in options.items():
             self.addItem(text, userData=data)
 
@@ -481,6 +486,15 @@ class ListWidget(QListView):
         :param userData: the associated data (can be any type of object)
         """
         self.model().add_item({text: userData})
+
+    def selection(self) -> list[Any]:
+        """
+        method to standardize the way widget values from a form are returned
+
+        :return: the current data (if it is defined) or the current text of the selected item
+        """
+        return [self.items[self.model().data(idx)] for idx in
+                sorted(self.selectedIndexes(), key=lambda x: x.row(), reverse=False)]
 
 
 class LineEdit(QLineEdit):
@@ -889,7 +903,7 @@ class TableView(QTableView):
     an extension of the QTableView widget
     """
 
-    def __init__(self, parent, qmodel: TableModel|None=None, enabled=True, **kwargs):
+    def __init__(self, parent, qmodel: TableModel | None = None, enabled=True, **kwargs):
         super().__init__(parent)
         if qmodel is not None:
             self.setModel(qmodel)
@@ -912,7 +926,7 @@ class TableView(QTableView):
         super().setModel(model)
         self._model = model
 
-    def selected_rows(self, data= False):
+    def selected_rows(self, data=False):
         selected_rows_idx = [selection.row() for selection in self.selectionModel().selectedRows()]
         if data:
             return self._model.df.gather(selected_rows_idx)
@@ -999,7 +1013,8 @@ class Dialog(QDialog):
         self.adjustSize()
 
     def addGroupBox(self, title: str = None, widget: Type[GroupBox] = ParametersFormGroupBox, parameters: list = None,
-                    widget_args: dict[str, Any] = None, expandable: bool = False, show: bool = True, **kwargs: dict[str, Any]) -> GroupBox:
+                    widget_args: dict[str, Any] = None, expandable: bool = False, show: bool = True,
+                    **kwargs: dict[str, Any]) -> GroupBox:
         """
         Add a group box to the Dialog window
 
@@ -1016,13 +1031,15 @@ class Dialog(QDialog):
         group_box.setTitle(title)
         group_box.setStyleSheet(StyleSheets.groupBox)
         if expandable:
-            group_box.addSubBox(widget=widget, expandable=expandable, show=show, parameters=parameters, widget_args=widget_args, **kwargs)
+            group_box.addSubBox(widget=widget, expandable=expandable, show=show, parameters=parameters, widget_args=widget_args,
+                                **kwargs)
         else:
             if parameters is not None:
                 for parameter in parameters:
                     group_box.addOption(parameter, **paramwidget_args(parameter, widget_args))
             else:
-                group_box.addSubBox(widget=widget, expandable=expandable, show=show, **kwargs)
+                # group_box.addSubBox(widget=widget, expandable=expandable, show=show, **kwargs)
+                pass
         return group_box
 
     def addButtonBox(self,

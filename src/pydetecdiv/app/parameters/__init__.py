@@ -7,7 +7,7 @@ from typing import Callable, Any, Self
 
 from PySide6.QtCore import Signal
 
-from pydetecdiv.app.models import ItemModel, DictItemModel, StandardItemModel
+from pydetecdiv.app.models import ItemModel, DictItemModel, StandardItemModel, StringListModel
 
 
 class Parameter:
@@ -349,6 +349,19 @@ class StringParameter(ItemParameter):
                  groups: set[str] = None, updater: Callable = None, commands: set[str] = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          commands=commands, **kwargs)
+
+
+class StringListParameter(Parameter):
+    def __init__(self, name: str, label: str = None, default: list[str] = None, validator: Callable[[str], bool] = None,
+                 groups: set[str] = None, updater: Callable = None, commands: set[str] = None, **kwargs: dict[str, Any]) -> None:
+        super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
+                         commands=commands, **kwargs)
+
+        self.qmodel: StringListModel = StringListModel()
+        # self.reset()
+
+    def set_value(self, value: list[str]) -> None:
+        self.value = value
 
 
 class PathParameter(ItemParameter):

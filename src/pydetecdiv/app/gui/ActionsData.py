@@ -326,7 +326,7 @@ class ComputeDriftDialog(gui.Dialog):
         self.drift = {}
 
         self.select_FOV = self.addGroupBox('Select FOV')
-        self.fov_list = self.select_FOV.addOption(widget=gui.ListView,
+        self.fov_list = self.select_FOV.addOption(widget=gui.ListWidget,
                                                   parameter=ChoiceParameter(name='FOVs', label='FOV',
                                                                             items=self.update_fov_list(
                                                                                     PyDetecDiv.project_name)),
