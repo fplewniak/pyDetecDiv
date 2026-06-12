@@ -41,7 +41,7 @@ class ClassificationDao(DAO, Base):
                 'key_val': self.key_val,
                 }
 
-    def roi_annotations(self, classification_id: int) -> list[dict[str, object]]:
+    def annotations(self, classification_id: int) -> list[dict[str, object]]:
         """
         A method returning the list of ROI Annotations records whose parent Classification has id_ == classification_id
 

@@ -357,7 +357,7 @@ class ShallowSQLite3(ShallowDb):
                 linked_rec = dao[parent_cls_name](self.session).roi_list(parent_id)
             case ['Run', ('Classification')]:
                 linked_rec = dao[parent_cls_name](self.session).runs(parent_id)
-            case ['RoiAnnotations', ('ROI')]:
+            case ['RoiAnnotations', ('ROI' | 'Classification')]:
                 linked_rec = dao[parent_cls_name](self.session).annotations(parent_id)
             case ['Entity', ('ROI')]:
                 linked_rec = dao[parent_cls_name](self.session).entities(parent_id)

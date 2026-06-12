@@ -2,7 +2,7 @@ from typing import Any
 
 from PySide6.QtWidgets import QDialogButtonBox
 
-from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
+from pydetecdiv.app import pydetecdiv_project, PyDetecDiv, MessageDialog
 from pydetecdiv.app.gui.core.widgets import set_connections, TableView
 from pydetecdiv.app.models import TableModel
 from pydetecdiv.app.tools import Tool
@@ -35,7 +35,10 @@ class ManageClassificationSchemeDialog(ToolDialog):
 
     def edit_selected_schemes(self):
         for row in self.data_view.selected_rows(data=True).iter_rows(named=True):
-            EditClassificationSchemeDialog(self.tool, self, title=f'Edit {row["name"]}', row=row)
+            if self.tool.scheme_is_not_used(row['name']) :
+                EditClassificationSchemeDialog(self.tool, self, title=f'Edit {row["name"]}', row=row)
+            else:
+                MessageDialog(f'{row["name"]} classification scheme cannot be edited because it is already in use.',)
 
     def add_new_scheme(self):
         EditClassificationSchemeDialog(self.tool, self, title='Add new scheme', row=None)
