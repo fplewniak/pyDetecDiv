@@ -363,6 +363,9 @@ class StringListParameter(Parameter):
     def set_value(self, value: list[str]) -> None:
         self.value = value
 
+    def append(self, item: str) -> None:
+        self.qmodel.add_item(item)
+
 
 class PathParameter(ItemParameter):
     """

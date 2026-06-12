@@ -82,7 +82,6 @@ class StringListModel(QStringListModel, Generic[GenericModel]):
             return True
         return False
 
-
     def value(self) -> list[str]:
         """
         Returns the data in the list
@@ -317,6 +316,7 @@ class TableModel(QAbstractTableModel):
         :param data:
         """
         self.df = data
+        self.layoutChanged.emit()
 
     def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
         """

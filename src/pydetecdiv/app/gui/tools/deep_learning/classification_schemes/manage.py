@@ -1,5 +1,7 @@
 from typing import Any
 
+from PySide6.QtWidgets import QDialogButtonBox
+
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
 from pydetecdiv.app.gui.core.widgets import set_connections, TableView
 from pydetecdiv.app.models import TableModel
@@ -10,11 +12,13 @@ from pydetecdiv.app.gui.tools import ToolDialog
 class ManageClassificationSchemeDialog(ToolDialog):
     def __init__(self, tool: Tool, title: str = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(tool, title, **kwargs)
+        self.setMinimumWidth(650)
 
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             self.data_view = TableView(self,TableModel(project.get_polars('Classification')))
 
         button_box = self.addButtonBox()
+        new_button = button_box.addButton('New', QDialogButtonBox.ButtonRole.ActionRole)
 
         self.arrangeWidgets([
             self.data_view,
@@ -23,6 +27,7 @@ class ManageClassificationSchemeDialog(ToolDialog):
 
         set_connections({
             button_box.accepted: self.edit_selected_schemes,
+            new_button.pressed: self.add_new_scheme,
             })
 
         self.fit_to_contents()
@@ -31,6 +36,9 @@ class ManageClassificationSchemeDialog(ToolDialog):
     def edit_selected_schemes(self):
         for row in self.data_view.selected_rows(data=True).iter_rows(named=True):
             EditClassificationSchemeDialog(self.tool, self, title=f'Edit {row["name"]}', row=row)
+
+    def add_new_scheme(self):
+        EditClassificationSchemeDialog(self.tool, self, title='Add new scheme', row=None)
 
     def refresh(self):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
@@ -43,8 +51,9 @@ class EditClassificationSchemeDialog(ToolDialog):
         super().__init__(tool, title, **kwargs)
         self.parent = parent
 
-        self.tool.parameters.name.set_value(row['name'])
-        self.tool.parameters.classes.set_value(row['classes'])
+        if row is not None:
+            self.tool.parameters.name.set_value(row['name'])
+            self.tool.parameters.classes.set_value(row['classes'])
 
         classification_management = self.addGroupBox(
                 parameters=[
@@ -54,6 +63,7 @@ class EditClassificationSchemeDialog(ToolDialog):
                 )
 
         button_box = self.addButtonBox()
+        new_class_button = button_box.addButton('Add class', QDialogButtonBox.ButtonRole.ActionRole)
 
         self.arrangeWidgets([
             classification_management,
@@ -62,10 +72,16 @@ class EditClassificationSchemeDialog(ToolDialog):
 
         set_connections({
             button_box.accepted: self.save_edit,
+            new_class_button.pressed: self.add_new_class,
             })
 
         self.fit_to_contents()
         self.exec()
+
+    def add_new_class(self):
+        print('Adding new class')
+        self.tool.parameters.classes.append('new class')
+
 
     def save_edit(self):
         self.tool.save_scheme()
