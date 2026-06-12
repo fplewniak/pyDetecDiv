@@ -369,10 +369,6 @@ class TableModel(QAbstractTableModel):
         #     return Qt.AlignRight
         return None
 
-    def add_rows(self, df):
-        self.df.extend(df)
-        self.layoutChanged.emit()
-
 
 class EditableTableModel(TableModel):
     """
@@ -441,10 +437,10 @@ class EditableTableModel(TableModel):
         :param index: the index
         """
         if not index.isValid():
-            return Qt.NoItemFlags
+            return Qt.ItemFlag.NoItemFlags
         if self.is_editable(index):
-            return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
-        return Qt.ItemIsSelectable | Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsEditable
+        return Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
 
     def is_editable(self, index: QModelIndex | QPersistentModelIndex) -> bool:
         """
@@ -456,3 +452,10 @@ class EditableTableModel(TableModel):
         if self.editable_row:
             return (index.column() in self.editable_col) and (index.row() in self.editable_row)
         return index.column() in self.editable_col
+
+    def add_rows(self, df):
+        self.df.extend(df)
+        self.layoutChanged.emit()
+
+    def delete_row(self, idx):
+        self.set_data(self.df.remove(polars.col('id_') == idx))

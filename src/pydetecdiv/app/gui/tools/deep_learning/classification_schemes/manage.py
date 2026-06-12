@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QDialogButtonBox
 
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv, MessageDialog
 from pydetecdiv.app.gui.core.widgets import set_connections, TableView
-from pydetecdiv.app.models import TableModel
+from pydetecdiv.app.models import TableModel, EditableTableModel
 from pydetecdiv.app.tools import Tool
 from pydetecdiv.app.gui.tools import ToolDialog
 
@@ -15,10 +15,12 @@ class ManageClassificationSchemeDialog(ToolDialog):
         self.setMinimumWidth(650)
 
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            self.data_view = TableView(self,TableModel(project.get_polars('Classification')))
+            self.data_view = TableView(self,EditableTableModel(project.get_polars('Classification')))
 
         button_box = self.addButtonBox()
+        edit_button = button_box.addButton('Edit', QDialogButtonBox.ButtonRole.ActionRole)
         new_button = button_box.addButton('New', QDialogButtonBox.ButtonRole.ActionRole)
+        delete_button = button_box.addButton('Delete', QDialogButtonBox.ButtonRole.ActionRole)
 
         self.arrangeWidgets([
             self.data_view,
@@ -26,8 +28,10 @@ class ManageClassificationSchemeDialog(ToolDialog):
             ])
 
         set_connections({
-            button_box.accepted: self.edit_selected_schemes,
+            button_box.accepted: self.delete_removed_schemes,
+            edit_button.pressed: self.edit_selected_schemes,
             new_button.pressed: self.add_new_scheme,
+            delete_button.pressed: self.delete_selected_schemes,
             })
 
         self.fit_to_contents()
@@ -40,12 +44,26 @@ class ManageClassificationSchemeDialog(ToolDialog):
             else:
                 MessageDialog(f'{row["name"]} classification scheme cannot be edited because it is already in use.',)
 
+    def delete_selected_schemes(self):
+        for row in self.data_view.selected_rows(data=True).iter_rows(named=True):
+            if self.tool.scheme_is_not_used(row['name']) :
+                self.data_view.delete_row(row['id_'])
+            else:
+                MessageDialog(f'{row["name"]} classification scheme cannot be deleted because it is in use.',)
+
     def add_new_scheme(self):
         EditClassificationSchemeDialog(self.tool, self, title='Add new scheme', row=None)
 
+    def delete_removed_schemes(self):
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            for row in project.get_polars('Classification').join(self.data_view.data,
+                                                                 left_on='id_', right_on='id_', how='anti').iter_rows(named=True):
+                project.delete(project.get_object('Classification', row['id_']))
+        self.close()
+
     def refresh(self):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            self.data_view._model.set_data(project.get_polars('Classification'))
+            self.data_view.set_data(project.get_polars('Classification'))
 
 
 class EditClassificationSchemeDialog(ToolDialog):

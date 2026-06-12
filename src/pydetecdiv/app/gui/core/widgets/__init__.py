@@ -942,8 +942,14 @@ class TableView(QTableView):
     def data(self):
         return self._model.df
 
+    def set_data(self, data):
+        self._model.set_data(data)
+
     def add_rows(self, df: polars.DataFrame) -> None:
         self._model.add_rows(df)
+
+    def delete_row(self, row_id):
+        self._model.delete_row(row_id)
 
     # def __init__(self, parent, parameter, multiselection=True, behavior='rows', enabled=True):
     #     super().__init__(parent)
@@ -973,15 +979,15 @@ class DialogButtonBox(QDialogButtonBox):
     """
 
     def __init__(self, parent: QWidget,
-                 buttons: StandardButtonCombination = (QDialogButtonBox.StandardButton.Ok,
-                                                       QDialogButtonBox.StandardButton.Close)) -> None:
+                 buttons: StandardButtonCombination = QDialogButtonBox.StandardButton.Ok |
+                                                       QDialogButtonBox.StandardButton.Close) -> None:
         super().__init__(parent)
         for button in buttons:
             self.addButton(button)
 
     def connect_to(self, connections: dict[Signal, Callable] = None) -> None:
         """
-        Specify the connections between the signal from this button box and slots specified in a directory
+        Specify the connections between the signal from this button box and slots specified in a dictionary
 
         :param connections: the dictionary linking signals to slots
         """
