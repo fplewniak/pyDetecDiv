@@ -932,6 +932,12 @@ class TableView(QTableView):
         super().setModel(model)
         self._model = model
 
+    def row_counts(self):
+        return self._model.rowCount()
+
+    def is_empty(self):
+        return self.row_counts() == 0 or self._model.df[0][0] is None
+
     def selected_rows(self, data=False):
         selected_rows_idx = [selection.row() for selection in self.selectionModel().selectedRows()]
         if data:

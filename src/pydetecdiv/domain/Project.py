@@ -423,7 +423,7 @@ class Project:
                 return df.unnest('key_val')
             except ColumnNotFoundError:
                 return df
-        return polars.from_records([self.repository.get_empty_record(class_name)])
+        return polars.DataFrame(schema=self.repository.get_field_names(class_name))
 
     def count_objects(self, class_name: str) -> int:
         """
