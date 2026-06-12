@@ -82,8 +82,7 @@ class EditClassificationSchemeDialog(ToolDialog):
         self.exec()
 
     def add_new_class(self):
-        print('Adding new class')
-        self.tool.parameters.classes.append('new class')
+        self.tool.parameters.classes.append('new')
 
 
     def save_edit(self):

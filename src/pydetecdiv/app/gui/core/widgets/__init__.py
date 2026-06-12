@@ -402,6 +402,9 @@ class ListView(QListView):
                 toggle.triggered.connect(self.toggle)
                 context.addAction(toggle)
             context.addSeparator()
+            add = QAction("Add item", self)
+            add.triggered.connect(self.add_item)
+            context.addAction(add)
             remove = QAction("Remove selected items", self)
             remove.triggered.connect(self.remove_items)
             context.addAction(remove)
@@ -425,6 +428,9 @@ class ListView(QListView):
         bottom_right = self.model().index(self.model().rowCount() - 1, 0)
         toggle_selection.select(top_left, bottom_right)
         self.selectionModel().select(toggle_selection, QItemSelectionModel.SelectionFlag.Toggle)
+
+    def add_item(self) -> None:
+        self.qmodel.add_item('new')
 
     def remove_items(self) -> None:
         """
