@@ -13,6 +13,7 @@ from collections import defaultdict
 from datetime import datetime
 import pandas as pd
 import polars
+from _polars_runtime_32._polars_runtime import ColumnNotFoundError
 from ndtiff import NDTiffDataset
 
 from pydetecdiv.domain.BoundingBox import BoundingBox
@@ -414,8 +415,15 @@ class Project:
         return pd.DataFrame.from_records(self.get_records(class_name, id_list))
 
     def get_polars(self, class_name: str, id_list: list[int] = None) -> polars.DataFrame:
-        df = polars.from_records(self.get_records(class_name, id_list))
-        return df.unnest('key_val')
+        records = self.get_records(class_name, id_list)
+        if records is not None:
+            df = polars.from_records(records)
+            try:
+                df.get_column('key_val')
+                return df.unnest('key_val')
+            except ColumnNotFoundError:
+                return df
+        return polars.from_records([self.repository.get_empty_record(class_name)])
 
     def count_objects(self, class_name: str) -> int:
         """

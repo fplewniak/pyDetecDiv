@@ -39,17 +39,19 @@ class ManageClassificationSchemeDialog(ToolDialog):
 
     def edit_selected_schemes(self):
         for row in self.data_view.selected_rows(data=True).iter_rows(named=True):
-            if self.tool.scheme_is_not_used(row['name']) :
-                EditClassificationSchemeDialog(self.tool, self, title=f'Edit {row["name"]}', row=row)
-            else:
-                MessageDialog(f'{row["name"]} classification scheme cannot be edited because it is already in use.',)
+            if row['id_'] is not None:
+                if self.tool.scheme_is_not_used(row['name']) :
+                    EditClassificationSchemeDialog(self.tool, self, title=f'Edit {row["name"]}', row=row)
+                else:
+                    MessageDialog(f'{row["name"]} classification scheme cannot be edited because it is already in use.',)
 
     def delete_selected_schemes(self):
         for row in self.data_view.selected_rows(data=True).iter_rows(named=True):
-            if self.tool.scheme_is_not_used(row['name']) :
-                self.data_view.delete_row(row['id_'])
-            else:
-                MessageDialog(f'{row["name"]} classification scheme cannot be deleted because it is in use.',)
+            if row['id_'] is not None:
+                if self.tool.scheme_is_not_used(row['name']) :
+                    self.data_view.delete_row(row['id_'])
+                else:
+                    MessageDialog(f'{row["name"]} classification scheme cannot be deleted because it is in use.',)
 
     def add_new_scheme(self):
         EditClassificationSchemeDialog(self.tool, self, title='Add new scheme', row=None)
@@ -58,7 +60,8 @@ class ManageClassificationSchemeDialog(ToolDialog):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             for row in project.get_polars('Classification').join(self.data_view.data,
                                                                  left_on='id_', right_on='id_', how='anti').iter_rows(named=True):
-                project.delete(project.get_object('Classification', row['id_']))
+                if row['id_'] is not None:
+                    project.delete(project.get_object('Classification', row['id_']))
         self.close()
 
     def refresh(self):

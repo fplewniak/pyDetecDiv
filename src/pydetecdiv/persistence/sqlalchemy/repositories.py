@@ -312,6 +312,9 @@ class ShallowSQLite3(ShallowDb):
             return obj.record
         return None
 
+    def get_empty_record(self, class_name: str) -> dict[str, Any]:
+        return {column.key: None for column in dao[class_name].__table__.columns if column.key != 'key_val'}
+
     def get_records(self, class_name: str, id_list: list[int] = None) -> list[dict[str, Any]]:
         """
         A method returning the list of all object records of a given class or select those whose id is in id_list
@@ -327,7 +330,9 @@ class ShallowSQLite3(ShallowDb):
             dao_list = self.session.query(dao[class_name]).where(dao[class_name].id_.in_(id_list))
         else:
             dao_list = self.session.query(dao[class_name])
-        return [obj.record for obj in dao_list]
+        if dao_list.count():
+            return [obj.record for obj in dao_list]
+        return None
 
     def get_linked_records(self, cls_name:str, parent_cls_name: str, parent_id: int) -> list[dict[str, Any]]:
         """
