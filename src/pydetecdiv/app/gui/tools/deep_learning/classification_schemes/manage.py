@@ -4,9 +4,10 @@ from PySide6.QtWidgets import QDialogButtonBox
 
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv, MessageDialog
 from pydetecdiv.app.gui.core.widgets import set_connections, TableView
-from pydetecdiv.app.models import TableModel, EditableTableModel
+from pydetecdiv.app.models import EditableTableModel
 from pydetecdiv.app.tools import Tool
 from pydetecdiv.app.gui.tools import ToolDialog
+from pydetecdiv.domain.tools.deep_learning.classification_schemes import ClassificationSchemeManagement
 
 
 class ManageClassificationSchemeDialog(ToolDialog):
@@ -49,14 +50,14 @@ class ManageClassificationSchemeDialog(ToolDialog):
 
     def edit_selected_schemes(self):
         for row in self.data_view.selected_rows(data=True).iter_rows(named=True):
-            if self.tool.scheme_is_not_used(row['name']) :
+            if ClassificationSchemeManagement.scheme_is_not_used(row['name']):
                 EditClassificationSchemeDialog(self.tool, self, title=f'Edit {row["name"]}', row=row)
             else:
                 MessageDialog(f'{row["name"]} classification scheme cannot be edited because it is already in use.',)
 
     def delete_selected_schemes(self):
         for row in self.data_view.selected_rows(data=True).iter_rows(named=True):
-            if self.tool.scheme_is_not_used(row['name']) :
+            if ClassificationSchemeManagement.scheme_is_not_used(row['name']):
                 self.data_view.delete_row(row['id_'])
                 self.toggle_buttons()
             else:

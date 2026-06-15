@@ -3,7 +3,6 @@ from pydetecdiv.app.tools import Tool
 
 from pydetecdiv.app.parameters import Parameters, StringParameter, StringListParameter
 from pydetecdiv.domain.Classification import Classification
-from pydetecdiv.domain.Project import Project
 
 
 class ClassificationSchemeManagement(Tool):
@@ -31,7 +30,8 @@ class ClassificationSchemeManagement(Tool):
                 scheme.classes = self.parameters.classes.value
                 scheme.validate(updated=True)
 
-    def scheme_is_not_used(self, scheme_name: str):
+    @staticmethod
+    def scheme_is_not_used(scheme_name: str):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             scheme = project.get_named_object('Classification', scheme_name)
             return not project.has_links('RoiAnnotations', scheme)
