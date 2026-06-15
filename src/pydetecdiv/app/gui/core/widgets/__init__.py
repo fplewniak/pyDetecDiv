@@ -242,9 +242,11 @@ class ComboBox(QComboBox):
         if qmodel is not None and qmodel.rows() is not None:
             self.addItemDict(qmodel.rows())
             self.setModel(qmodel)
+            self.qmodel = qmodel
             self.setModelColumn(0)
-            self.currentIndexChanged.connect(self.model().set_selection)
-            self.model().selection_changed.connect(self.setCurrentIndex)
+            self.currentIndexChanged.connect(self.qmodel.set_selection)
+            self.qmodel.selection_changed.connect(self.setCurrentIndex)
+            self.setCurrentIndex(self.qmodel.selection)
         self.setEditable(editable)
         self.setEnabled(enabled)
 

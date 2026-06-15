@@ -54,9 +54,9 @@ class Create_ROI_HDF5Dialog(ToolDialog):
         set_connections({self.button_box.accepted: self.tool.create_file,
                          self.button_box.rejected: lambda: print('Rejected'),
                          })
-
-        self.tool.update_channels()
-        self.tool.update_classification()
+        #
+        # self.tool.update_channels()
+        # self.tool.update_classification()
 
         self.fit_to_contents()
         self.exec()
