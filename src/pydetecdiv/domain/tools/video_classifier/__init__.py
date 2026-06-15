@@ -108,6 +108,7 @@ class VideoClassifier(DeepTool):
                     # IntParameter(name='idx', label='Dataset index', maximum=999999999, minimum=0, default=0),
                     ]
                 )
+        self.parameters.reset()
 
     def prepare_data_for_training(self, *args, image_shape=(224, 224), **kwargs) -> tuple[ROIDataset, ROIDataset, torch.Tensor]:
         """

@@ -108,6 +108,7 @@ class VideoClassifierTrainer(ModelTrainer):
         validation_dataset.close()
 
         del model, model_scripted, optimizer, loss_fn, training_dataloader, validation_dataloader
+        # train_stats.metrics_to_cpu()
         gc.collect()
         torch.cuda.empty_cache()
 

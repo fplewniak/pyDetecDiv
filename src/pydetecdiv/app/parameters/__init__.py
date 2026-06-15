@@ -213,7 +213,7 @@ class ItemParameter(Parameter):
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          commands=commands, **kwargs)
         self.qmodel: ItemModel = ItemModel()
-        self.reset()
+        # self.reset()
 
 
 class NumParameter(ItemParameter):
@@ -508,12 +508,13 @@ class ChoiceParameter(Parameter):
 
         :param value: the new parameter selected key, pointing to the new value
         """
-        if value is None:
-            value = self.keys[0]
-        if value != self.qmodel.key() and self.validate(value):
-            if isinstance(value, (list, dict)):
-                value = json.dumps(value)
-            self.qmodel.set_value(value)
+        if len(self.keys):
+            if value is None:
+                value = self.keys[0]
+            if value != self.qmodel.key() and self.validate(value):
+                if isinstance(value, (list, dict)):
+                    value = json.dumps(value)
+                self.qmodel.set_value(value)
 
     def set_items(self, items: dict[str, object]) -> None:
         """
@@ -571,8 +572,9 @@ class Parameters:
 
         :param groups: the groups to reset
         """
-        for parameter in self.get_groups(groups):
-            parameter.reset()
+        if self.parameter_list:
+            for parameter in self.get_groups(groups):
+                parameter.reset()
 
     def update(self, groups: list[str] | str = None) -> None:
         """

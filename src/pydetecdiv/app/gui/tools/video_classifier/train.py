@@ -106,7 +106,7 @@ class TrainModelDialog(ToolDialog):
 
         self.run_after_process([plot_training_results, tool.dump_train_stats])
 
-        tool.parameters.reset()
+        # tool.parameters.reset()
         self.fit_to_contents()
         self.exec()
 
