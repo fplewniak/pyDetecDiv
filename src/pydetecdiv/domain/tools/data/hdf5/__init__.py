@@ -8,6 +8,7 @@ import fastremap
 import numpy as np
 import tables as tbl
 
+from pydetecdiv.app import set_connections
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
 from pydetecdiv.app.parameters import Parameters, PathParameter, CheckParameter, IntParameter, ChoiceParameter
 from pydetecdiv.app.tools import Tool
@@ -36,6 +37,10 @@ class ROIseqHDF5creator(Tool):
                     CheckParameter(name='time_first', label='Time first', default=False),
                     ]
                 )
+
+        set_connections({PyDetecDiv.app.project_selected: [self.update_channels, self.update_classification]})
+
+        self.parameters.reset()
 
     def update_channels(self) -> None:
         """

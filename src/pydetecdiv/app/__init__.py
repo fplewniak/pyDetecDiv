@@ -12,7 +12,7 @@ import markdown
 
 from PySide6.QtGui import QCursor, QTextCursor, QCloseEvent
 from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox, QTextEdit, QWidget)
-from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal, QObject
+from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal, QObject, SignalInstance
 
 from pydetecdiv import plugins
 from pydetecdiv.domain.dso import DomainSpecificObject
@@ -470,6 +470,20 @@ def project_list() -> list[str]:
     :return: the list of available projects
     """
     return list_projects()
+
+def set_connections(connections: dict[SignalInstance, Callable | list[Callable]]) -> None:
+    """
+    connect a signal to a slot or a list of slots, as defined in a dictionary
+
+    :param connections: the dictionary {signal: slot,...} or {signal: [slot1, slot2,...],...} containing the connections
+     to create
+    """
+    for signal, slot in connections.items():
+        if isinstance(slot, list):
+            for s in slot:
+                signal.connect(s)
+        else:
+            signal.connect(slot)
 
 # def create_app() -> PyDetecDiv:
 #     """
