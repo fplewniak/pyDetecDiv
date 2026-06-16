@@ -38,9 +38,13 @@ class ROIseqHDF5creator(Tool):
                     ]
                 )
 
-        set_connections({PyDetecDiv.app.project_selected: [self.update_channels, self.update_classification]})
+        set_connections({PyDetecDiv.app.project_selected: [self.update_channels, self.update_classification, self.update_dir]})
 
         self.parameters.reset()
+
+    def update_dir(self) -> None:
+        self.parameters.hdf5_file.current_dir = self.working_dir
+        self.parameters.hdf5_file.reset()
 
     def update_channels(self) -> None:
         """

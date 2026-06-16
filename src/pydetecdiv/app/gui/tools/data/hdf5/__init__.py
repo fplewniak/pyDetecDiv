@@ -12,8 +12,6 @@ class Create_ROI_HDF5Dialog(ToolDialog):
     def __init__(self, tool):
         super().__init__(tool, title='Create ROI HDF5 file')
 
-        self.tool.parameters.hdf5_file.current_dir = self.tool.working_dir
-
         self.destination = self.addGroupBox(title='HDF5 destination file',
                                             parameters=[
                                                 self.tool.parameters.hdf5_file,

@@ -3,6 +3,7 @@ Module defining the different types of parameters that may be needed to store in
 be specified using GUI widgets which are synchronized thanks to a shared model
 """
 import json
+import os.path
 from typing import Callable, Any, Self
 
 from PySide6.QtCore import Signal
@@ -372,13 +373,16 @@ class PathParameter(ItemParameter):
     Class representing a parameter holding a path.
     """
     def __init__(self, name: str, label: str = None, default: str = '', validator: Callable[[str], bool] = None,
-                 groups: set[str] = None, updater: Callable = None, current_dir: str | None = None, filters = list[str] | None,
+                 groups: set[str] = None, updater: Callable = None, current_dir: str = '.', filters = list[str] | None,
                  select_dir: bool = False, commands: set[str] = None, **kwargs) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          commands=commands, **kwargs)
         self.select_dir = select_dir
         self.current_dir = current_dir
         self.filters = filters
+
+    def reset(self):
+        self.qmodel.set_value(os.path.join(self.current_dir, self.default))
 
 class CheckParameter(ItemParameter):
     """
