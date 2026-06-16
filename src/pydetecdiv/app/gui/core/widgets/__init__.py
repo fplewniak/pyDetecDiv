@@ -3,6 +3,7 @@ Core and absract widgets for application GUI. These widgets provide the basic fu
 to be extended for concrete or more specific purposes
 """
 import os
+from abc import abstractmethod
 from typing import Any, Type, Callable, TypeVar, Union, Self
 
 import polars
@@ -92,7 +93,8 @@ class GroupBox(QGroupBox):
             'StringParameter'    : LineEdit,
             'CheckParameter'     : RadioButton,
             'ChoiceParameter'    : ComboBox,
-            'PathParameter'      : FileChooser,
+            'DirParameter'       : DirChooser,
+            'FileParameter'      : FileChooser,
             'StringListParameter': ListView,
             }
         self.parameter_widgets[parameter.name] = parameter_widgets[parameter.type](parent=self, **parameter.kwargs(), **kwargs)
@@ -564,63 +566,67 @@ class LineEdit(QLineEdit):
         self.editingFinished.connect(lambda: self.mapper.submit())
 
 
-class FileChooser(QWidget):
-    """
-    A class providing a simple file chooser widget that can be inserted into a ParameterFormGroupBox
-    """
-
-    def __init__(self, parent: QWidget, qmodel: ItemModel = None, editable: bool = True, select_dir: bool = False,
-                 enabled: bool = True, min_width=350, current_dir: str | None = None, filters=list[str] | None,
-                 **kwargs: dict[str, Any]) -> None:
+class PathChooser(QWidget):
+    def __init__(self, parent: QWidget, qmodel: ItemModel = None, editable: bool = True, enabled: bool = True,
+                 min_width=350, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         layout = QHBoxLayout()
-        self.file_name = LineEdit(self, qmodel=qmodel, editable=editable, enabled=enabled)
-        self.file_name.setMinimumWidth(min_width)
+        self.path = LineEdit(self, qmodel=qmodel, editable=editable, enabled=enabled)
+        self.path.setMinimumWidth(min_width)
         button_path = QPushButton(self)
         button_path.setIcon(QIcon(":icons/file_chooser"))
-        layout.addWidget(self.file_name)
+        layout.addWidget(self.path)
         layout.addWidget(button_path)
         self.setLayout(layout)
         self.setEnabled(enabled)
-        if current_dir is not None:
-            self.current_dir = current_dir
-        else:
-            self.current_dir = '.'
+        button_path.clicked.connect(self.select_path)
+
+    @abstractmethod
+    def select_path(self) -> None:
+        pass
+
+
+class FileChooser(PathChooser):
+    def __init__(self, parent: QWidget, qmodel: ItemModel = None, editable: bool = True, require_existing: bool = False,
+                 enabled: bool = True, min_width=350, filters: list[str] | None = None, selected_filter: int = 0,
+                 **kwargs: dict[str, Any]) -> None:
+        super().__init__(parent, qmodel, editable, enabled, min_width, **kwargs)
+
         if filters is not None:
             self.filters = filters
         else:
-            self.filters = ['*']
-        if select_dir:
-            self.file_name.setText(self.current_dir)
-            button_path.clicked.connect(self.select_dir)
-        else:
-            self.file_name.setText(os.path.join(self.current_dir, self.file_name.text()))
-            button_path.clicked.connect(self.select_file)
+            self.filters = ['All files (*)']
+        self.selected_filter = selected_filter if selected_filter < len(self.filters) else 0
+        self.require_existing = require_existing
 
-    def select_dir(self) -> None:
-        """
-        Select a directory
-        """
-        dir_name = self.current_dir
-        if dir_name != self.file_name.text() and self.file_name.text():
-            dir_name = self.file_name.text()
-        directory = QFileDialog.getExistingDirectory(self, caption='Choose data source directory', dir=dir_name,
-                                                     options=QFileDialog.Option.ShowDirsOnly)
-        if directory:
-            self.file_name.setText(directory)
-            self.current_dir = directory
+    def select_path(self):
+        self.select_file()
 
     def select_file(self) -> None:
-        """
-        Select a file
-        """
-        selected_file, _ = QFileDialog.getOpenFileName(self, caption='Choose file',
-                                                       dir=self.current_dir,
-                                                       filter=";;".join(self.filters),
-                                                       selectedFilter=self.filters[0])
-        if selected_file:
-            self.file_name.setText(os.path.join(self.current_dir, selected_file))
-            self.current_dir = os.path.dirname(selected_file)
+        current_dir = os.path.dirname(self.path.text())
+        if self.require_existing:
+            file_name, _ = QFileDialog.getOpenFileName(self, caption='Choose file', dir=current_dir, filter=";;".join(self.filters),
+                                                       selectedFilter=self.filters[self.selected_filter])
+        else:
+            file_name, _ = QFileDialog.getSaveFileName(self, caption='Choose file', dir=current_dir, filter=";;".join(self.filters),
+                                                       selectedFilter=self.filters[self.selected_filter])
+        if file_name:
+            self.path.setText(file_name)
+
+
+class DirChooser(PathChooser):
+    def __init__(self, parent: QWidget, qmodel: ItemModel = None, editable: bool = True,
+                 enabled: bool = True, min_width=350, **kwargs: dict[str, Any]) -> None:
+        super().__init__(parent, qmodel, editable, enabled, min_width, **kwargs)
+
+    def select_path(self):
+        self.select_dir()
+
+    def select_dir(self) -> None:
+        current_dir = self.path.text()
+        path = QFileDialog.getExistingDirectory(self, caption='Choose directory', dir=current_dir)
+        if path:
+            self.path.setText(path)
 
 
 class Label(QLabel):

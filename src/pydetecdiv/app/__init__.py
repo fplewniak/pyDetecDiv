@@ -460,6 +460,8 @@ def get_project_dir(project_name: str = None) -> str:
     if project_name is None:
         project_name = PyDetecDiv.project_name
     workspace_dir = get_config_value('project', 'workspace')
+    if project_name is None:
+        return workspace_dir
     return os.path.join(workspace_dir, project_name)
 
 

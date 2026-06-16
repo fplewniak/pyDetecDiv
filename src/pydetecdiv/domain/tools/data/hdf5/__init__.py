@@ -1,4 +1,5 @@
 import locale
+import os.path
 import time
 
 import tables
@@ -10,7 +11,7 @@ import tables as tbl
 
 from pydetecdiv.app import set_connections
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
-from pydetecdiv.app.parameters import Parameters, PathParameter, CheckParameter, IntParameter, ChoiceParameter
+from pydetecdiv.app.parameters import Parameters, CheckParameter, IntParameter, ChoiceParameter, FileParameter, DirParameter
 from pydetecdiv.app.tools import Tool
 from pydetecdiv.domain.Image import ImgDType
 from pydetecdiv.domain.tools.data import RoiDataReader
@@ -26,8 +27,7 @@ class ROIseqHDF5creator(Tool):
         super().__init__(parameters, working_dir)
         self.parameters = Parameters(
                 [
-                    PathParameter(name='hdf5_file', label='', select_dir=False, filters=["HDF5 (*.h5 *.hdf5)", ],
-                                  default='roi_data.h5', ),
+                    FileParameter(name='hdf5_file', label='', require_existing=False, default=self.update_file, ),
                     CheckParameter(name='annotations', label='Annotated ROIs', default=True),
                     ChoiceParameter(name='classification', label='Classes', updater=self.update_classification),
                     IntParameter(name='seqlen', label='Sequence length', default=16),
@@ -38,13 +38,12 @@ class ROIseqHDF5creator(Tool):
                     ]
                 )
 
-        set_connections({PyDetecDiv.app.project_selected: [self.update_channels, self.update_classification, self.update_dir]})
+        set_connections({PyDetecDiv.app.project_selected: [self.update_channels, self.update_classification, self.update_file]})
 
         self.parameters.reset()
 
-    def update_dir(self) -> None:
-        self.parameters.hdf5_file.current_dir = self.working_dir
-        self.parameters.hdf5_file.reset()
+    def update_file(self):
+        self.parameters.hdf5_file.set_value(os.path.join(self.working_dir, 'roi_data.h5'))
 
     def update_channels(self) -> None:
         """

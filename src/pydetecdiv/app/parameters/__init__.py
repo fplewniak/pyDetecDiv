@@ -368,18 +368,37 @@ class StringListParameter(Parameter):
         self.qmodel.add_item(item)
 
 
+class FileParameter(ItemParameter):
+    def __init__(self, name: str, label: str | None = None, default: str | Callable = '',
+                 validator: Callable[[str], bool] | None = None, groups: set[str]  | None = None, updater: Callable | None = None,
+                 filters: list[str] | None = None, commands: set[str]  | None = None,
+                 require_existing: bool = False, **kwargs) -> None:
+        super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
+                         commands=commands, **kwargs)
+        # self.filter = filters
+        self.require_existing = require_existing
+
+
+class DirParameter(ItemParameter):
+    def __init__(self, name: str, label: str | None = None, default: str | Callable = '.',
+                 validator: Callable[[str], bool] | None = None, groups: set[str]  | None = None, updater: Callable | None = None,
+                 commands: set[str]  | None = None, **kwargs) -> None:
+        super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
+                         commands=commands, **kwargs)
+
 class PathParameter(ItemParameter):
     """
     Class representing a parameter holding a path.
     """
-    def __init__(self, name: str, label: str = None, default: str = '', validator: Callable[[str], bool] = None,
-                 groups: set[str] = None, updater: Callable = None, current_dir: str = '.', filters = list[str] | None,
-                 select_dir: bool = False, commands: set[str] = None, **kwargs) -> None:
+    def __init__(self, name: str, label: str | None = None, default: str = '', validator: Callable[[str], bool] | None = None,
+                 groups: set[str] | None = None, updater: Callable | None = None, current_dir: str = '.',
+                 filters = list[str] | None, select_dir: bool = False, commands: set[str] | None = None,
+                 **kwargs) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          commands=commands, **kwargs)
         self.select_dir = select_dir
         self.current_dir = current_dir
-        self.filters = filters
+        # self.filters = filters
 
     def reset(self):
         self.qmodel.set_value(os.path.join(self.current_dir, self.default))

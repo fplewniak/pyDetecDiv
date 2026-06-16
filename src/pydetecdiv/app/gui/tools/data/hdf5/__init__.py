@@ -1,7 +1,8 @@
 """
 Classes and functions to manage GUI for ROI HDF5 data source creation
 """
-from pydetecdiv.app.gui.core.widgets import set_connections
+from pydetecdiv.app import set_connections
+# from pydetecdiv.app.gui.core.widgets import set_connections
 from pydetecdiv.app.gui.tools import ToolDialog
 
 
@@ -18,7 +19,12 @@ class Create_ROI_HDF5Dialog(ToolDialog):
                                                 self.tool.parameters.time_first,
                                                 ],
                                             widget_args={
-                                                'hdf5_file': {'min_width': 200},
+                                                'hdf5_file': {'filters': ["All files (*)", "HDF5 (*.h5 *.hdf5)", ],
+                                                              'selected_filter': 1,
+                                                              'min_width': 200},
+                                                'hdf5_file2': {'filters': ["All files (*)", "HDF5 (*.h5 *.hdf5)", ],
+                                                               'selected_filter': 1,
+                                                               'min_width': 200},
                                                 }
                                             )
         self.other_parameters = self.addGroupBox(title='',
@@ -50,7 +56,7 @@ class Create_ROI_HDF5Dialog(ToolDialog):
             ])
 
         set_connections({self.button_box.accepted: self.tool.create_file,
-                         self.button_box.rejected: lambda: print('Rejected'),
+                         self.button_box.rejected: lambda: print(self.tool.parameters.hdf5_file.value)
                          })
         #
         # self.tool.update_channels()
