@@ -1,9 +1,11 @@
 """
 Classes and functions to manage GUI for ROI HDF5 data source creation
 """
+from typing import cast
+
 from pydetecdiv.app import set_connections
-# from pydetecdiv.app.gui.core.widgets import set_connections
 from pydetecdiv.app.gui.tools import ToolDialog
+from pydetecdiv.domain.tools.data.hdf5 import ROIseqHDF5creator
 
 
 class Create_ROI_HDF5Dialog(ToolDialog):
