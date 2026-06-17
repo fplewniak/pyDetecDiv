@@ -4,9 +4,9 @@ be specified using GUI widgets which are synchronized thanks to a shared model
 """
 import json
 import os.path
-from typing import Callable, Any, Self
+from typing import Callable, Any, cast
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, SignalInstance
 
 from pydetecdiv.app.models import ItemModel, DictItemModel, StandardItemModel, StringListModel
 
@@ -16,14 +16,15 @@ class Parameter:
     Generic class defining the general behaviour of parameters
     """
 
-    def __init__(self, name: str, label: str = None, default: Any = None, validator: Callable[[Any], bool] = None,
-                 groups: set[str] = None, updater: Callable = None, commands: set[str] = None, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, name: str, label: str | None = None, default: Any = None, validator: Callable[[Any], bool] | None = None,
+                 groups: set[str] | None = None, updater: Callable | None = None, commands: set[str] | None = None,
+                 **kwargs: dict[str, Any]) -> None:
         super().__init__()
         self.name: str = name
-        self.label: str = label
+        self.label: str | None = label
         self._default: Any = default
-        self.validator: Callable[[Any], bool] = validator
-        self.updater: Callable = updater
+        self.validator: Callable[[Any], bool] | None = validator
+        self.updater: Callable | None = updater
         self.updater_kwargs: dict[str, Any] = kwargs
         self.groups: set[str] = set() if groups is None else groups
         self.qmodel: StandardItemModel | None = None
@@ -57,7 +58,8 @@ class Parameter:
         """
         Clears the parameter of it's content
         """
-        self.qmodel.clear()
+        if self.qmodel is not None:
+            self.qmodel.clear()
 
     @property
     def value(self) -> Any:
@@ -66,7 +68,19 @@ class Parameter:
 
         :return: the current value
         """
-        return self.qmodel.value()
+        if self.qmodel is not None:
+            return self.qmodel.value()
+        return None
+
+    @value.setter
+    def value(self, value: Any) -> None:
+        """
+        Setter for the current value of the parameter
+
+        :param value: the new parameter value
+        """
+        if self.qmodel is not None:
+            self.qmodel.set_value(value)
 
     @property
     def type(self) -> str:
@@ -88,15 +102,6 @@ class Parameter:
             if isinstance(value, (list, dict)):
                 value = json.dumps(value)
             self.value = value
-
-    @value.setter
-    def value(self, value: Any) -> None:
-        """
-        Setter for the current value of the parameter
-
-        :param value: the new parameter value
-        """
-        self.qmodel.set_value(value)
 
     @property
     def json(self) -> Any:
@@ -121,7 +126,7 @@ class Parameter:
         if self.updater is not None:
             self.updater(**self.updater_kwargs)
 
-    def validate(self, value: Any) -> None:
+    def validate(self, value: Any) -> bool:
         """
         Validates the value using the specified validator callable or always returning True if validator is None.
         This method should be overridden for more specific needs of particular Parameter types
@@ -129,14 +134,15 @@ class Parameter:
         return (self.validator is None) or self.validator(value)
 
     @property
-    def changed(self) -> Signal:
+    def changed(self) -> SignalInstance | None:
         """
         return property telling whether the spinbox value has changed. This overwrites the Pyside equivalent method in
          order to have the same method name for all widgets
 
         :return: boolean indication whether the value has changed
         """
-        return self.qmodel.itemChanged
+        if self.qmodel is not None:
+            return self.qmodel.itemChanged
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Parameter):
@@ -209,8 +215,9 @@ class ItemParameter(Parameter):
     Class representing a parameter holding any kind of single value parameter (item).
     """
 
-    def __init__(self, name: str, label: str = None, default: Any = None, validator: Callable[..., bool] = None,
-                 groups: set[str] = None, updater: Callable = None, commands: set[str] = None, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, name: str, label: str | None = None, default: Any | None = None,
+                 validator: Callable[..., bool] | None = None, groups: set[str] | None = None, updater: Callable | None = None,
+                 commands: set[str] | None = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          commands=commands, **kwargs)
         self.qmodel: ItemModel = ItemModel()
@@ -222,11 +229,12 @@ class NumParameter(ItemParameter):
     Class representing a parameter holding a number.
     """
 
-    def __init__(self, name: str, label: str = None, default: int | float = None, minimum: int | float = None,
-                 maximum: int | float = None, validator: Callable[[int | float], bool] = None,
-                 groups: set[str] = None, updater: Callable = None, commands: set[str] = None, **kwargs: dict[str, Any]) -> None:
-        self.minimum: int | float = minimum
-        self.maximum: int | float = max(minimum, maximum)
+    def __init__(self, name: str, label: str | None = None, default: int | float | None = None, minimum: int | float | None = None,
+                 maximum: int | float | None = None, validator: Callable[[int | float], bool] | None = None,
+                 groups: set[str] | None = None, updater: Callable | None = None, commands: set[str] | None = None,
+                 **kwargs: dict[str, Any]) -> None:
+        self.minimum: int | float | None = minimum
+        self.maximum: int | float | None = max(cast(int | float, minimum), cast(int | float, maximum))
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          commands=commands, **kwargs)
 
@@ -291,9 +299,9 @@ class IntParameter(NumParameter):
     Class representing a parameter holding a integer number.
     """
 
-    def __init__(self, name: str, label: str = None, default: int = 1, validator: Callable[[int], bool] = None,
-                 minimum: int = 1, maximum: int = 4096, groups: set[str] = None, updater: Callable = None,
-                 commands: set[str] = None, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, name: str, label: str | None = None, default: int = 1, validator: Callable[[int], bool] | None = None,
+                 minimum: int = 1, maximum: int = 4096, groups: set[str] | None = None, updater: Callable | None = None,
+                 commands: set[str] | None = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          minimum=minimum, maximum=maximum, commands=commands, **kwargs)
 
@@ -314,7 +322,7 @@ class IntParameter(NumParameter):
         :return: the result of the validation test: True if the value is validated, False otherwise
         """
         if self.validator is None:
-            return isinstance(value, int) & (self.minimum <= value <= self.maximum)
+            return isinstance(value, int) & (cast(int, self.minimum) <= value <= cast(int, self.maximum))
         return self.validator(value)
 
 
@@ -323,9 +331,10 @@ class FloatParameter(NumParameter):
     Class representing a parameter holding a float number.
     """
 
-    def __init__(self, name: str, label: str = None, default: float = 0.0, validator: Callable[[float], bool] = None,
-                 minimum: float = 0.0, maximum: float = 1.0, groups: set[str] = None, updater: Callable = None,
-                 commands: set[str] = None, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, name: str, label: str | None = None, default: float = 0.0,
+                 validator: Callable[[float], bool] | None = None, minimum: float = 0.0, maximum: float = 1.0,
+                 groups: set[str] | None = None, updater: Callable | None = None, commands: set[str] | None = None,
+                 **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          minimum=minimum, maximum=maximum, commands=commands, **kwargs)
 
@@ -346,15 +355,17 @@ class StringParameter(ItemParameter):
     Class representing a parameter holding text.
     """
 
-    def __init__(self, name: str, label: str = None, default: str = '', validator: Callable[[str], bool] = None,
-                 groups: set[str] = None, updater: Callable = None, commands: set[str] = None, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, name: str, label: str | None = None, default: str = '', validator: Callable[[str], bool] | None = None,
+                 groups: set[str] | None = None, updater: Callable | None = None, commands: set[str] | None = None,
+                 **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          commands=commands, **kwargs)
 
 
 class StringListParameter(Parameter):
-    def __init__(self, name: str, label: str = None, default: list[str] = None, validator: Callable[[str], bool] = None,
-                 groups: set[str] = None, updater: Callable = None, commands: set[str] = None, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, name: str, label: str | None = None, default: list[str] | None = None,
+                 validator: Callable[[str], bool] | None = None, groups: set[str] | None = None, updater: Callable | None = None,
+                 commands: set[str] | None = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          commands=commands, **kwargs)
 
@@ -409,9 +420,9 @@ class CheckParameter(ItemParameter):
     linked to CheckBox arranged in the same GroupBox and set to be mutually exclusive.
     """
 
-    def __init__(self, name: str, label: str = None, exclusive: bool = True,
-                 default: str | int | float | bool | Callable = None, validator: Callable[[bool], bool] = None,
-                 groups: set[str] = None, updater: Callable[..., None] = None, commands: set[str] = None,
+    def __init__(self, name: str, label: str | None = None, exclusive: bool = True,
+                 default: str | int | float | bool | Callable | None = None, validator: Callable[[bool], bool] | None = None,
+                 groups: set[str] | None = None, updater: Callable[..., None] | None = None, commands: set[str] | None = None,
                  **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          commands=commands, **kwargs)
@@ -431,9 +442,9 @@ class ChoiceParameter(Parameter):
     Class representing a parameter whose value is a selection among several options (items)
     """
 
-    def __init__(self, name: str, items: dict[str, object] = None, label: str = None,
-                 default: str | int | float | bool | Callable = None, validator: Callable[[Any], bool] = None,
-                 groups: set[str] = None, updater: Callable[..., None] = None, commands: set[str] = None,
+    def __init__(self, name: str, items: dict[str, object] | None = None, label: str | None = None,
+                 default: str | int | float | bool | Callable | None = None, validator: Callable[[Any], bool] | None = None,
+                 groups: set[str] | None = None, updater: Callable[..., None] | None = None, commands: set[str] | None= None,
                  **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          commands=commands, **kwargs)
@@ -456,12 +467,12 @@ class ChoiceParameter(Parameter):
         :return: the json-compatible representation of selected key
         """
         try:
-            return json.loads(self.key)
+            return json.loads(cast(str, self.key))
         except json.decoder.JSONDecodeError:
-            return self.key
+            return cast(str, self.key)
 
     @property
-    def key(self) -> str:
+    def key(self) -> str | None :
         """
         Returns the key of the selected choice
 
@@ -583,13 +594,13 @@ class Parameters:
     A class to handle a list of parameters
     """
 
-    def __init__(self, parameters: list[Parameter] | Parameter = None) -> None:
+    def __init__(self, parameters: list[Parameter] | Parameter | None = None) -> None:
         if isinstance(parameters, list):
             self.parameter_list: list = parameters
         else:
             self.parameter_list: list = [parameters]
 
-    def reset(self, groups: list[str] | str = None) -> None:
+    def reset(self, groups: list[str] | str | None = None) -> None:
         """
         Reset all parameters in groups
 
@@ -599,7 +610,7 @@ class Parameters:
             for parameter in self.get_groups(groups):
                 parameter.reset()
 
-    def update(self, groups: list[str] | str = None) -> None:
+    def update(self, groups: list[str] | str | None = None) -> None:
         """
         Updates all parameters in groups
 
@@ -608,7 +619,7 @@ class Parameters:
         for parameter in self.get_groups(groups):
             parameter.update()
 
-    def values(self, param_list: list[Parameter] = None, groups: list[str] | str = None) -> dict[str, Parameter]:
+    def values(self, param_list: list[Parameter] | None = None, groups: list[str] | str | None = None) -> dict[str, Parameter]:
         """
         Returns a dictionary of parameters with name as key and value as value
 
@@ -623,7 +634,7 @@ class Parameters:
             param_list = [param for param in (param_list or group_params) if param in group_params]
         return {param.name: param.value for param in param_list}
 
-    def get_groups(self, groups: list[str] | str, union: bool = False) -> list[Parameter]:
+    def get_groups(self, groups: list[str] | str | None, union: bool = False) -> list[Parameter]:
         """
         Get parameters from groups. If multiple groups are given, either intersection (default) or union of the
         parameters sets is returned
@@ -686,7 +697,7 @@ class Parameters:
         """
         return {param.name: param for param in self.parameter_list}
 
-    def json(self, param_list: list[Parameter] = None, groups: list[str] | str = None) -> dict[str, object]:
+    def json(self, param_list: list[Parameter] | None = None, groups: list[str] | str | None = None) -> dict[str, object]:
         """
         Return dictionary of parameters representing each of them as a json-compatible object
 
