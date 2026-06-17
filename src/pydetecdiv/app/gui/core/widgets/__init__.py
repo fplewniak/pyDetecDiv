@@ -43,7 +43,7 @@ StandardButtonCombination = Union["QDialogButtonBox.StandardButton"]
 GenericGroupBox = TypeVar('GenericGroupBox', bound=QGroupBox)
 
 
-def paramwidget_args(parameter: Parameter, param_args: dict[str, Any]) -> dict[str, Any]:
+def paramwidget_args(parameter: Parameter, param_args: dict[str, Any] | None) -> dict[str, Any]:
     """
     Return the arguments defined in param_args (declared when creating the Dialog object) and corresponding to the parameter when
     adding an option to a group box. It is thus possible to specify GUI-specific arguments during GUI creation without having to
@@ -70,12 +70,12 @@ class GroupBox(QGroupBox):
     an extension of QGroupBox class
     """
 
-    def __init__(self, parent: QWidget, title: str = None, show: bool = True, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, parent: QWidget, title: str | None = None, show: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent, **kwargs)
         if title is not None:
             self.setTitle(title)
         self.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Maximum)
-        self.layout: QLayout = self.layout()
+        self.layout: QLayout = cast(QLayout, self.layout())
         self.setVisible(show)
         self.parameter_widgets = {}
 
@@ -100,8 +100,9 @@ class GroupBox(QGroupBox):
         self.parameter_widgets[parameter.name] = parameter_widgets[parameter.type](parent=self, **parameter.kwargs(), **kwargs)
         return self.parameter_widgets[parameter.name]
 
-    def addSubBox(self, widget: Type[Self], expandable: bool = False, show: bool = True, title: str = None, parameters: list = None,
-                  widget_args: dict[str, Any] = None, **kwargs: dict[str, Any]) -> Self:
+    def addSubBox(self, widget: Type[Self], expandable: bool = False, show: bool = True, title: str | None = None,
+                  parameters: list | None = None, widget_args: dict[str, Any] | None = None,
+                  **kwargs: dict[str, Any]) -> 'Self | ExpandCollapseButton':
         """
         Adds a sub-box to the current GroupBox
 
@@ -118,14 +119,14 @@ class GroupBox(QGroupBox):
             sub_box: ExpandCollapseButton = ExpandCollapseButton(self, text=title, show=show)
             sub_box.linkGroupBox(widget(self, **kwargs))
         else:
-            sub_box: GroupBox = widget(self, title=title, **kwargs)
+            sub_box: 'Self | ExpandCollapseButton' = widget(self, title=title, **kwargs)
             self.layout.addWidget(sub_box)
         if parameters is not None:
             for parameter in parameters:
                 sub_box.addOption(parameter, **paramwidget_args(parameter, widget_args))
         return sub_box
 
-    def addOption(self, parameter: Parameter = None, label: bool = True, widget: Type[QWidget] = None,
+    def addOption(self, parameter: Parameter | None = None, label: bool = True, widget: Type[QWidget] | None = None,
                   **kwargs: dict[str, Any]) -> QWidget:
         """
         add an option to the current Form
@@ -149,7 +150,7 @@ class InfoGroupBox(GroupBox):
     an extension of GroupBox class to show information
     """
 
-    def __init__(self, parent: QWidget, title: str = None, show: bool = True, layout: QLayout = None) -> None:
+    def __init__(self, parent: QWidget, title: str | None = None, show: bool = True, layout: QLayout | None = None) -> None:
         super().__init__(parent, title)
         self.layout: QLayout = QVBoxLayout(self) if layout is None else layout
         self.setLayout(self.layout)
@@ -165,14 +166,14 @@ class ParametersFormGroupBox(GroupBox):
     an extension of GroupBox class to handle Forms
     """
 
-    def __init__(self, parent: QWidget, title: str = None, show: bool = True, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, parent: QWidget, title: str | None = None, show: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent, title, **kwargs)
         self.layout: QFormLayout = QFormLayout(self)
         self.setLayout(self.layout)
         self.setVisible(show)
 
-    def addSubBox(self, widget: Type[GroupBox], expandable: bool = False, show: bool = True, title: str = None,
-                  parameters: list = None, widget_args: dict[str, Any] = None,
+    def addSubBox(self, widget: Type[GroupBox], expandable: bool = False, show: bool = True, title: str | None = None,
+                  parameters: list | None = None, widget_args: dict[str, Any] | None = None,
                   **kwargs: dict[str, Any]) -> 'GroupBox | ExpandCollapseButton':
         """
         Adds a sub-box to the current ParametersFormGroupBox
@@ -197,7 +198,7 @@ class ParametersFormGroupBox(GroupBox):
                 sub_box.addOption(parameter, **paramwidget_args(parameter, widget_args))
         return sub_box
 
-    def addOption(self, parameter: Parameter = None, label: bool = True, widget: Type[QWidget] = None,
+    def addOption(self, parameter: Parameter | None = None, label: bool = True, widget: Type[QWidget] | None = None,
                   **kwargs: dict[str, Any]) -> QWidget:
         """
         add an option to the current Form
@@ -238,7 +239,7 @@ class ComboBox(QComboBox):
     an extension of the QComboBox class with a custom model/view architecture
     """
 
-    def __init__(self, parent: QWidget, qmodel: GenericModel = None, editable: bool = False,
+    def __init__(self, parent: QWidget, qmodel: DictItemModel = DictItemModel(), editable: bool = False,
                  enabled: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         if qmodel is not None and qmodel.rows() is not None:
@@ -251,14 +252,6 @@ class ComboBox(QComboBox):
             self.setCurrentIndex(self.qmodel.selection)
         self.setEditable(editable)
         self.setEnabled(enabled)
-
-    # def setCurrentIndex(self, index: int) -> None:
-    #     """
-    #     sets the currently selected index
-    #
-    #     :param index: the index to select
-    #     """
-    #     super().setCurrentIndex(index)
 
     def addItemDict(self, options: dict[str, Any]) -> None:
         """
@@ -340,7 +333,7 @@ class ListView(QListView):
     an extension of the QComboBox class
     """
 
-    def __init__(self, parent: QWidget, qmodel: StringListModel | None = None, height: int | None = None,
+    def __init__(self, parent: QWidget, qmodel: StringListModel = StringListModel(), height: int | None = None,
                  multiselection: bool = False, enabled: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         self.multiselection = multiselection
@@ -458,7 +451,7 @@ class ListWidget(QListView):
     An extension of the QListView providing consistency with other custom widgets.
     """
 
-    def __init__(self, parent: QWidget, qmodel: DictItemModel = None, height: int = None, editable: bool = False,
+    def __init__(self, parent: QWidget, qmodel: DictItemModel = DictItemModel(), height: int | None = None, editable: bool = False,
                  multiselection: bool = False, enabled: bool = True,
                  **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
@@ -515,7 +508,7 @@ class LineEdit(QLineEdit):
     an extension of QLineEdit class
     """
 
-    def __init__(self, parent: QWidget, qmodel: ItemModel = None, editable: bool = True, enabled: bool = True,
+    def __init__(self, parent: QWidget, qmodel: ItemModel = ItemModel(), editable: bool = True, enabled: bool = True,
                  **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         self.setEditable(editable)
@@ -570,11 +563,11 @@ class LineEdit(QLineEdit):
 
 
 class PathChooser(QWidget):
-    def __init__(self, parent: QWidget, qmodel: ItemModel = None, editable: bool = True, enabled: bool = True,
+    def __init__(self, parent: QWidget, qmodel: ItemModel = ItemModel(), editable: bool = True, enabled: bool = True,
                  min_width=350, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         layout = QHBoxLayout()
-        self.path = LineEdit(self, qmodel=qmodel, editable=editable, enabled=enabled)
+        self.path: LineEdit = LineEdit(self, qmodel=qmodel, editable=editable, enabled=enabled)
         self.path.setMinimumWidth(min_width)
         button_path = QPushButton(self)
         button_path.setIcon(QIcon(":icons/file_chooser"))
@@ -590,7 +583,7 @@ class PathChooser(QWidget):
 
 
 class FileChooser(PathChooser):
-    def __init__(self, parent: QWidget, qmodel: ItemModel = None, editable: bool = True, require_existing: bool = False,
+    def __init__(self, parent: QWidget, qmodel: ItemModel = ItemModel(), editable: bool = True, require_existing: bool = False,
                  enabled: bool = True, min_width=350, filters: list[str] | None = None, selected_filter: int = 0,
                  **kwargs: dict[str, Any]) -> None:
         super().__init__(parent, qmodel, editable, enabled, min_width, **kwargs)
@@ -618,7 +611,7 @@ class FileChooser(PathChooser):
 
 
 class DirChooser(PathChooser):
-    def __init__(self, parent: QWidget, qmodel: ItemModel = None, editable: bool = True,
+    def __init__(self, parent: QWidget, qmodel: ItemModel = ItemModel(), editable: bool = True,
                  enabled: bool = True, min_width=350, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent, qmodel, editable, enabled, min_width, **kwargs)
 
@@ -637,7 +630,7 @@ class Label(QLabel):
     an extension of QLabel class
     """
 
-    def __init__(self, parent: QWidget, qmodel: ItemModel = None, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, parent: QWidget, qmodel: ItemModel = ItemModel(), **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         self.mapper = QDataWidgetMapper(self)
         self.setModel(qmodel)
@@ -662,7 +655,7 @@ class PushButton(QPushButton):
     an extension of QPushButton class
     """
 
-    def __init__(self, parent: QWidget, text: str, icon: QIcon = None, flat: bool = False,
+    def __init__(self, parent: QWidget, text: str, icon: QIcon | None = None, flat: bool = False,
                  enabled: bool = True) -> None:
         if icon is None:
             super().__init__(text, parent)
@@ -677,7 +670,7 @@ class ExpandCollapseButton(PushButton):
     an extension of PushButton class to control collapsible group boxes
     """
 
-    def __init__(self, parent: QWidget, text: str = None, show: bool = True) -> None:
+    def __init__(self, parent: QWidget, text: str | None = None, show: bool = True) -> None:
         super().__init__(parent, text=text, icon=QIcon(':icons/show'), flat=True)
         self.group_box: GroupBox | None = None
         self.clicked.connect(self.toggle)
@@ -750,7 +743,7 @@ class RadioButton(QRadioButton):
     an extension of the QRadioButton class
     """
 
-    def __init__(self, parent: QWidget, qmodel: ItemModel = None, exclusive: bool = True, enabled: bool = True,
+    def __init__(self, parent: QWidget, qmodel: ItemModel = ItemModel(), exclusive: bool = True, enabled: bool = True,
                  **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         self.setAutoExclusive(exclusive)
@@ -796,7 +789,7 @@ class SpinBox(QSpinBox):
     an extension of the QSpinBox class
     """
 
-    def __init__(self, parent: QWidget, qmodel: ItemModel = None, minimum: int = 1, maximum: int = 4096,
+    def __init__(self, parent: QWidget, qmodel: ItemModel = ItemModel(), minimum: int = 1, maximum: int = 4096,
                  single_step: int = 1, adaptive: bool = False, enabled: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         self.setRange(minimum, maximum)
@@ -835,7 +828,7 @@ class DoubleSpinBox(QDoubleSpinBox):
     an extension of the QDoubleSpinBox class
     """
 
-    def __init__(self, parent: QWidget, qmodel: ItemModel = None, minimum: float = 0.1, maximum: float = 1.0,
+    def __init__(self, parent: QWidget, qmodel: ItemModel = ItemModel(), minimum: float = 0.1, maximum: float = 1.0,
                  decimals: int = 15, single_step: float = 0.1, adaptive: bool = False, enabled: bool = True,
                  **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
@@ -920,11 +913,11 @@ class TableView(QTableView):
     an extension of the QTableView widget
     """
 
-    def __init__(self, parent, qmodel: TableModel | None = None, enabled=True, **kwargs):
+    def __init__(self, parent, qmodel: TableModel = TableModel(), enabled=True, **kwargs):
         super().__init__(parent)
         if qmodel is not None:
             self.setModel(qmodel)
-            self._model = qmodel
+            self._model: TableModel = qmodel
         self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.horizontalHeader().setStretchLastSection(True)
         self.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
@@ -1002,7 +995,7 @@ class DialogButtonBox(QDialogButtonBox):
         for button in buttons:
             self.addButton(button)
 
-    def connect_to(self, connections: dict[Signal, Callable] = None) -> None:
+    def connect_to(self, connections: dict[Signal, Callable] | None = None) -> None:
         """
         Specify the connections between the signal from this button box and slots specified in a dictionary
 
@@ -1026,7 +1019,7 @@ class Dialog(QDialog):
     An extension of QDialog to define forms that may be used to specify plugin options
     """
 
-    def __init__(self, title: str = None, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, title: str | None = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(**kwargs)
         self.vert_layout = QVBoxLayout(self)
         self.setLayout(self.vert_layout)
@@ -1041,8 +1034,8 @@ class Dialog(QDialog):
         QApplication.processEvents()
         self.adjustSize()
 
-    def addGroupBox(self, title: str = None, widget: Type[GroupBox] = ParametersFormGroupBox, parameters: list = None,
-                    widget_args: dict[str, Any] = None, expandable: bool = False, show: bool = True,
+    def addGroupBox(self, title: str | None = None, widget: Type[GroupBox] = ParametersFormGroupBox, parameters: list | None = None,
+                    widget_args: dict[str, Any] | None = None, expandable: bool = False, show: bool = True,
                     **kwargs: dict[str, Any]) -> GroupBox:
         """
         Add a group box to the Dialog window
@@ -1057,7 +1050,7 @@ class Dialog(QDialog):
         :return: the group box
         """
         group_box = widget(self)
-        group_box.setTitle(title)
+        group_box.setTitle(cast(str, title))
         group_box.setStyleSheet(StyleSheets.groupBox)
         if expandable:
             group_box.addSubBox(widget=widget, expandable=expandable, show=show, parameters=parameters, widget_args=widget_args,
@@ -1087,7 +1080,7 @@ class Dialog(QDialog):
         button_box.rejected.connect(self.close)
         return button_box
 
-    def addButton(self, widget: Type[QPushButton], text: str = None, icon: QIcon = None,
+    def addButton(self, widget: Type[QPushButton], text: str | None = None, icon: QIcon | None = None,
                   flat: bool = False) -> QPushButton:
         """
         Add a button to the Dialog window

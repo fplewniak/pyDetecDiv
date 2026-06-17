@@ -24,9 +24,6 @@ class Create_ROI_HDF5Dialog(ToolDialog):
                                                 'hdf5_file': {'filters': ["All files (*)", "HDF5 (*.h5 *.hdf5)", ],
                                                               'selected_filter': 1,
                                                               'min_width': 200},
-                                                'hdf5_file2': {'filters': ["All files (*)", "HDF5 (*.h5 *.hdf5)", ],
-                                                               'selected_filter': 1,
-                                                               'min_width': 200},
                                                 }
                                             )
         self.other_parameters = self.addGroupBox(title='',
