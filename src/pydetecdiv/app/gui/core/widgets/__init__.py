@@ -4,10 +4,10 @@ to be extended for concrete or more specific purposes
 """
 import os
 from abc import abstractmethod
-from typing import Any, Type, Callable, TypeVar, Union, Self
+from typing import Any, Type, Callable, TypeVar, Union, Self, cast
 
 import polars
-from PySide6.QtCore import Signal, Slot, QModelIndex, QItemSelectionModel, QItemSelection, QStringListModel, SignalInstance
+from PySide6.QtCore import Signal, Slot, QModelIndex, QItemSelectionModel, QItemSelection, SignalInstance
 from PySide6.QtGui import QIcon, QAction, QContextMenuEvent, QValidator
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QSizePolicy, QApplication, QDialogButtonBox, QPushButton, QWidget, QGroupBox,
                                QLayout, QLabel, QFormLayout, QTableView, QDataWidgetMapper, QAbstractSpinBox, QDoubleSpinBox,
@@ -340,9 +340,10 @@ class ListView(QListView):
     an extension of the QComboBox class
     """
 
-    def __init__(self, parent: QWidget, qmodel: StringListModel = None, height: int = None, multiselection: bool = False,
-                 enabled: bool = True, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, parent: QWidget, qmodel: StringListModel | None = None, height: int | None = None,
+                 multiselection: bool = False, enabled: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
+        self.multiselection = multiselection
         if multiselection:
             self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
         if height is not None:
@@ -361,7 +362,6 @@ class ListView(QListView):
         :param options: dictionary of options specifying labels and corresponding user data {label: userData, ...}
         """
         self.qmodel.add_items(items)
-        # self.model().setStringList(list(items.keys()))
 
     @property
     def changed(self) -> SignalInstance:
@@ -379,8 +379,8 @@ class ListView(QListView):
 
         :return: the current data (if it is defined) or the current text of the selected item
         """
-        return [self.items[self.model().data(idx)] for idx in
-                sorted(self.selectedIndexes(), key=lambda x: x.row(), reverse=False)]
+        return [self.qmodel.items()[idx.row()] for idx in
+                sorted(self.selectionModel().selectedRows(), key=lambda x: x.row(), reverse=False)]
 
     def select_value(self):
         """
@@ -401,7 +401,7 @@ class ListView(QListView):
             unselect = QAction("Unselect all", self)
             unselect.triggered.connect(self.unselect)
             context.addAction(unselect)
-            if self.SelectionMode == QAbstractItemView.SelectionMode.MultiSelection:
+            if self.multiselection:
                 toggle = QAction("Toggle selection", self)
                 toggle.triggered.connect(self.toggle)
                 context.addAction(toggle)
@@ -415,6 +415,9 @@ class ListView(QListView):
             clear_list = QAction("Clear list", self)
             context.addAction(clear_list)
             clear_list.triggered.connect(self.clear_list)
+            test_selection = QAction("Test selection", self)
+            context.addAction(test_selection)
+            test_selection.triggered.connect(lambda : print(self.selection()))
             context.exec(e.globalPos())
 
     def unselect(self) -> None:
