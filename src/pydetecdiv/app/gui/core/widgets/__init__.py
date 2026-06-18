@@ -78,6 +78,7 @@ class GroupBox(QGroupBox):
         self.layout: QLayout = cast(QLayout, self.layout())
         self.setVisible(show)
         self.parameter_widgets = {}
+        self.option = {}
 
     def parameter_widget_factory(self, parameter: Parameter, **kwargs) -> QWidget:
         """
@@ -143,6 +144,14 @@ class GroupBox(QGroupBox):
         """
         Method to add a widget to the Group box. This method should be implemented by subclasses
         """
+
+    def __getattr__(self, item: str) -> QWidget:
+        """
+        Dunder method to allow access to option widget using attribute syntax
+        :param item: the name of the option (the same as the corresponding parameter)
+        :return: the option widget
+        """
+        return self.option[item]
 
 
 class InfoGroupBox(GroupBox):
@@ -212,17 +221,18 @@ class ParametersFormGroupBox(GroupBox):
         """
         # if widget is specified, it takes precedence over the standard widget normally used for the specified parameter. It is
         # the responsibility of the developer though to ensure the widget can manage the said parameter and the associated model
+        parameter = cast(Parameter, parameter)
         if widget is not None:
-            option: QWidget = widget(parent=self, **parameter.kwargs(), **kwargs)
+            self.option[parameter.name]: QWidget = widget(parent=self, **parameter.kwargs(), **kwargs)
         else:
-            option: QWidget = self.parameter_widget_factory(parameter, **kwargs)
+            self.option[parameter.name]: QWidget = self.parameter_widget_factory(parameter, **kwargs)
 
         if not label:
-            self.layout.addRow(option)
+            self.layout.addRow(self.option[parameter.name])
         else:
-            self.layout.addRow(QLabel(parameter.label), option)
+            self.layout.addRow(QLabel(parameter.label), self.option[parameter.name])
         # parameter.should_be_saved = True
-        return option
+        return self.option[parameter.name]
 
     def setRowVisible(self, index: int, on: bool = True) -> None:
         """
@@ -444,6 +454,18 @@ class ListView(QListView):
         Clear the source list
         """
         self.qmodel.clear()
+
+
+class DictListView(ListView):
+    def __init__(self, parent: QWidget, qmodel: DictItemModel = DictItemModel(), height: int | None = None,
+                 multiselection: bool = False, enabled: bool = True, **kwargs: dict[str, Any]) -> None:
+        super().__init__(parent, height=height, multiselection=multiselection, enabled=enabled)
+        if qmodel is not None and qmodel.items() is not None:
+            self.qmodel: DictItemModel = qmodel
+        else:
+            self.qmodel: DictItemModel = DictItemModel()
+        self.setModel(qmodel)
+        self.setModelColumn(0)
 
 
 class ListWidget(QListView):
@@ -1106,7 +1128,7 @@ class Dialog(QDialog):
             self.vert_layout.addWidget(widget)
 
 
-def set_connections(connections: dict[SignalInstance, Callable]) -> None:
+def set_connections(connections: dict[SignalInstance, Callable | list[Callable]]) -> None:
     """
     connect a signal to a slot or a list of slots, as defined in a dictionary
 
