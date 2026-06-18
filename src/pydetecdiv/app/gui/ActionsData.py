@@ -325,17 +325,16 @@ class ComputeDriftDialog(gui.Dialog):
         self.wait = None
         self.drift = {}
 
-        self.select_FOV = self.addGroupBox('Select FOV')
-        self.fov_list = self.select_FOV.addOption(widget=gui.ListWidget,
-                                                  parameter=ChoiceParameter(name='FOVs', label='FOV',
-                                                                            items=self.update_fov_list(
-                                                                                    PyDetecDiv.project_name)),
-                                                  multiselection=True, height=75)
+        self.select_FOV = self.addGroupBox('Select FOVs',
+                                           parameters=[ChoiceParameter(name='FOVs', label='FOV',
+                                                                       items=self.update_fov_list(PyDetecDiv.project_name))],
+                                           widget_args={'FOVs': {'widget': gui.ListWidget}}
+                                           )
 
-        self.method_box = self.addGroupBox('Method')
-        self.method = self.method_box.addOption(parameter=ChoiceParameter(name='Method', label='Method', default='vidstab',
-                                                                          items={'vidstab': None, 'phase correlation': None})
-                                                )
+        self.method_box = self.addGroupBox('Method',
+                                           parameters=[ChoiceParameter(name='Method', label='Method', default='vidstab',
+                                                                       items={'vidstab': None, 'phase correlation': None})],
+                                           )
 
         self.button_box = self.addButtonBox()
 
@@ -351,9 +350,6 @@ class ComputeDriftDialog(gui.Dialog):
                              })
 
         self.exec()
-        for child in self.children():
-            child.deleteLater()
-        self.destroy(True)
 
     def update_fov_list(self, project_name: str) -> dict[str, FOV]:
         """
@@ -375,9 +371,9 @@ class ComputeDriftDialog(gui.Dialog):
         self.wait.wait_for(self.compute_drift, Z=0, C=0)
 
         tab = PyDetecDiv.main_window.add_tabbed_window(
-                f'{PyDetecDiv.project_name} / Drift correction ({self.method.value()})')
+                f'{PyDetecDiv.project_name} / Drift correction ({self.method_box.Method.value()})')
         tab.project_name = PyDetecDiv.project_name
-        for fov in self.fov_list.selection():
+        for fov in self.select_FOV.FOVs.selection():
             tab.show_plot(self.drift[fov.name], title=fov.name)
 
     def compute_drift(self, Z: int = 0, C: int = 0) -> None:
@@ -387,9 +383,9 @@ class ComputeDriftDialog(gui.Dialog):
         :param Z: the reference z-layer
         :param C: the reference channel
         """
-        for fov in self.fov_list.selection():
+        for fov in self.select_FOV.FOVs.selection():
             self.drift[fov.name] = fov.image_resource().image_resource_data().compute_drift(Z=Z, C=C,
-                                                                                            method=self.method.value())
+                                                                                            method=self.method_box.Method.value())
         self.finished.emit(True)
 
 
