@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QSizePolicy, QApplication, 
                                QSpinBox, QRadioButton, QLineEdit, QAbstractItemView, QListView, QMenu, QComboBox, QHBoxLayout,
                                QFileDialog, QHeaderView)
 from pydetecdiv.app.parameters import Parameter
-from pydetecdiv.app.models import ItemModel, DictItemModel, StringListModel, GenericModel, TableModel
+from pydetecdiv.app.models import ItemModel, DictItemModel, StringListModel, TableModel
 
 
 class StyleSheets:
@@ -467,62 +467,70 @@ class DictListView(ListView):
         self.setModel(qmodel)
         self.setModelColumn(0)
 
-
-class ListWidget(QListView):
-    """
-    An extension of the QListView providing consistency with other custom widgets.
-    """
-
-    def __init__(self, parent: QWidget, qmodel: DictItemModel = DictItemModel(), height: int | None = None, editable: bool = False,
-                 multiselection: bool = False, enabled: bool = True,
-                 **kwargs: dict[str, Any]) -> None:
-        super().__init__(parent)
-        # self.setSelectionModel(QItemSelectionModel())
-        if multiselection:
-            self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
-        if qmodel is not None and qmodel.rows() is not None:
-            self.setModel(qmodel)
-            self.setModelColumn(0)
-            self.addItemDict(qmodel.rows())
-        self.setEnabled(enabled)
-        # self.currentIndexChanged.connect(self.model().set_selection)
-        self.selectionModel().currentChanged.connect(self.setCurrentIndex)
-
-    def setCurrentIndex(self, index: QModelIndex) -> None:
-        """
-        Sets the current index (current selection)
-
-        :param index: the index for the current selection
-        """
-        self.model().set_selection(index.row())
-
-    def addItemDict(self, options: dict[str, Any]) -> Any:
-        """
-        add items to the ListWidget as a dictionary
-
-        :param options: dictionary of options specifying labels and corresponding user data {label: userData, ...}
-        """
-        self.items = options
-        for text, data in options.items():
-            self.addItem(text, userData=data)
-
-    def addItem(self, text: str, userData: Any = None) -> None:
-        """
-        Adds an item to the list
-
-        :param text: the text to display in the List view
-        :param userData: the associated data (can be any type of object)
-        """
-        self.model().add_item({text: userData})
-
     def selection(self) -> list[Any]:
         """
         method to standardize the way widget values from a form are returned
 
         :return: the current data (if it is defined) or the current text of the selected item
         """
-        return [self.items[self.model().data(idx)] for idx in
-                sorted(self.selectedIndexes(), key=lambda x: x.row(), reverse=False)]
+        return [self.qmodel.values()[idx.row()] for idx in self.selectionModel().selectedRows()]
+
+
+# class ListWidget(QListView):
+#     """
+#     An extension of the QListView providing consistency with other custom widgets.
+#     """
+#
+#     def __init__(self, parent: QWidget, qmodel: DictItemModel = DictItemModel(), height: int | None = None, editable: bool = False,
+#                  multiselection: bool = False, enabled: bool = True,
+#                  **kwargs: dict[str, Any]) -> None:
+#         super().__init__(parent)
+#         # self.setSelectionModel(QItemSelectionModel())
+#         if multiselection:
+#             self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+#         if qmodel is not None and qmodel.rows() is not None:
+#             self.setModel(qmodel)
+#             self.setModelColumn(0)
+#             self.addItemDict(qmodel.rows())
+#         self.setEnabled(enabled)
+#         # self.currentIndexChanged.connect(self.model().set_selection)
+#         self.selectionModel().currentChanged.connect(self.setCurrentIndex)
+#
+#     def setCurrentIndex(self, index: QModelIndex) -> None:
+#         """
+#         Sets the current index (current selection)
+#
+#         :param index: the index for the current selection
+#         """
+#         self.model().set_selection(index.row())
+#
+#     def addItemDict(self, options: dict[str, Any]) -> Any:
+#         """
+#         add items to the ListWidget as a dictionary
+#
+#         :param options: dictionary of options specifying labels and corresponding user data {label: userData, ...}
+#         """
+#         self.items = options
+#         for text, data in options.items():
+#             self.addItem(text, userData=data)
+#
+#     def addItem(self, text: str, userData: Any = None) -> None:
+#         """
+#         Adds an item to the list
+#
+#         :param text: the text to display in the List view
+#         :param userData: the associated data (can be any type of object)
+#         """
+#         self.model().add_item({text: userData})
+#
+#     def selection(self) -> list[Any]:
+#         """
+#         method to standardize the way widget values from a form are returned
+#
+#         :return: the current data (if it is defined) or the current text of the selected item
+#         """
+#         return [self.items[self.model().data(idx)] for idx in
+#                 sorted(self.selectedIndexes(), key=lambda x: x.row(), reverse=False)]
 
 
 class LineEdit(QLineEdit):

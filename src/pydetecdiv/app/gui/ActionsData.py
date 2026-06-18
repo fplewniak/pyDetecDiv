@@ -328,7 +328,7 @@ class ComputeDriftDialog(gui.Dialog):
         self.select_FOV = self.addGroupBox('Select FOVs',
                                            parameters=[ChoiceParameter(name='FOVs', label='FOV',
                                                                        items=self.update_fov_list(PyDetecDiv.project_name))],
-                                           widget_args={'FOVs': {'widget': gui.ListWidget}}
+                                           widget_args={'FOVs': {'widget': gui.DictListView, 'multiselection': True}}
                                            )
 
         self.method_box = self.addGroupBox('Method',
