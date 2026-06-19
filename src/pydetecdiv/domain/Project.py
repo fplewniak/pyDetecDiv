@@ -4,7 +4,7 @@
 The central class for keeping track of all available objects in a project.
 """
 import subprocess
-from typing import Callable, Any, Generator
+from typing import Callable, Any, Generator, cast
 
 import json
 import os
@@ -396,7 +396,10 @@ class Project:
         """
         if class_name == 'ROI':
             return self._get_rois(id_list)
-        return [self.build_dso(class_name, rec) for rec in self.repository.get_records(class_name, id_list)]
+        records = self.repository.get_records(class_name, id_list)
+        if records is not None:
+            return [cast(DSO, self.build_dso(class_name, rec)) for rec in records]
+        return []
 
     def get_records(self, class_name: str, id_list: list[int] | None = None) -> list[dict[str, Any]]:
         """
