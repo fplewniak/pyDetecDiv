@@ -11,9 +11,9 @@ from typing import Iterable
 import polars
 import torch
 from torch import Tensor
-from torch.optim.lr_scheduler import SequentialLR, StepLR, ReduceLROnPlateau, LinearLR
+from torch.optim.lr_scheduler import SequentialLR, StepLR, ReduceLROnPlateau, LinearLR, LRScheduler
 from torch.utils.data import Dataset
-from torchvision.transforms import v2, transforms, functional as F
+from torchvision.transforms import v2, transforms
 
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
 from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer
@@ -38,6 +38,7 @@ def find_tensors_on_gpu():
         except:
             pass
 
+
 def find_gpu_tensor_references():
     for obj in gc.get_objects():
         if torch.is_tensor(obj) and obj.is_cuda:
@@ -60,6 +61,7 @@ def find_gpu_tensor_references():
                 elif not isinstance(ref, type) and not isinstance(ref, str):
                     print(f"    - {type(ref)}", file=sys.stderr)
 
+
 def set_optimizer(parameters: Parameters, model_param: dict | Iterable) -> torch.optim.Optimizer:
     """
     Set the optimizer.
@@ -68,18 +70,18 @@ def set_optimizer(parameters: Parameters, model_param: dict | Iterable) -> torch
     :param model_param: model parameters that will be passed to the optimizer constructor
     :return: the optimizer
     """
-    lr = parameters['learning_rate'].value if 'learning_rate' in parameters else 0.001
-    weight_decay = parameters['weight_decay'].value if 'weight_decay' in parameters else 0.01
-    momentum = parameters['momentum'].value if 'momentum' in parameters else 0.9
-    optimizer = parameters['optimizer'].value(model_param, lr=lr, weight_decay=weight_decay)
-    match parameters['optimizer'].key:
+    lr = parameters.learning_rate.value if 'learning_rate' in parameters else 0.001
+    weight_decay = parameters.weight_decay.value if 'weight_decay' in parameters else 0.01
+    momentum = parameters.momentum.value if 'momentum' in parameters else 0.9
+    optimizer = parameters.optimizer.value(model_param, lr=lr, weight_decay=weight_decay)
+    match parameters.optimizer.key:
         case 'SGD':
-            optimizer = parameters['optimizer'].value(model_param, lr=lr, momentum=momentum, weight_decay=weight_decay)
+            optimizer = parameters.optimizer.value(model_param, lr=lr, momentum=momentum, weight_decay=weight_decay)
 
     return optimizer
 
 
-def set_schedulers(parameters: Parameters, optimizer: torch.optim.Optimizer) -> tuple[SequentialLR | StepLR, ReduceLROnPlateau]:
+def set_schedulers(parameters: Parameters, optimizer: torch.optim.Optimizer) -> tuple[LRScheduler, ReduceLROnPlateau | None]:
     """
     Set the schedulers for adjusting learning rate during training
 
@@ -112,7 +114,7 @@ class ROIDataset(Dataset):
     """
 
     def __init__(self, data_reader: RoiDataReader, indices: polars.DataFrame, targets: bool = False,
-                 image_shape: tuple[int, int] = (60, 60), slice_seq: slice | None = None, transform: torch.nn.Module = None):
+                 image_shape: tuple[int, int] = (60, 60), slice_seq: slice | None = None, transform: torch.nn.Module | None = None):
         self.reader = data_reader
         self.indices = indices
         self.targets = targets
@@ -208,7 +210,7 @@ class DeepTool(Tool):
     """
 
     def __init__(self, parameters: Parameters | None = None, working_dir: str | None = None, device: torch.device | None = None,
-                 model: torch.nn.Module = None):
+                 model: torch.nn.Module | None = None):
         super().__init__(parameters=parameters, working_dir=working_dir)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu") if device is None else device
         self.model = model

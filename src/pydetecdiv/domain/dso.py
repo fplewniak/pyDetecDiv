@@ -4,16 +4,16 @@
 Domain specific generic attributes and methods shared by domain objects. Other domain classes (except Project)
 should inherit from these classes according to their type.
 """
-from __future__ import annotations
+# from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from pydetecdiv.domain import Project
+from typing import TYPE_CHECKING, Self
 
 import uuid
 from pydetecdiv.exceptions import MissingNameError
 from pydetecdiv.utils.Shapes import Box
+
+if TYPE_CHECKING:
+    from pydetecdiv.domain import Project
 
 
 class DomainSpecificObject:
@@ -32,9 +32,9 @@ class DomainSpecificObject:
         """
         self.project = project
         if 'id_' not in kwargs:
-            self.id_ = None
+            self.id_: int | None = None
         else:
-            self.id_ = kwargs['id_']
+            self.id_: int = kwargs['id_']
 
         if 'uuid' not in kwargs or kwargs['uuid'] is None:
             self.uuid = str(uuid.uuid4())
@@ -42,7 +42,7 @@ class DomainSpecificObject:
             self.uuid = kwargs['uuid']
         self._data = kwargs
 
-    def __eq__(self, o : DomainSpecificObject) -> bool:
+    def __eq__(self, o : Self) -> bool:
         """
         Defines equality of domain-specific objects as having the same id and same class
 
@@ -68,7 +68,7 @@ class DomainSpecificObject:
         Checks the validity of the current object
         """
 
-    def validate(self, updated: bool = True) -> DomainSpecificObject:
+    def validate(self, updated: bool = True) -> Self:
         """
         Validate the current object and pass newly created and updated object to project for saving modifications. Sets
         the id of the object for new objects.
@@ -81,6 +81,9 @@ class DomainSpecificObject:
         return self
 
     def commit(self) -> None:
+        """
+        Commit changes
+        """
         self.project.commit()
 
     def record(self, no_id=False) -> dict:
@@ -150,18 +153,30 @@ class BoxedDSO(DomainSpecificObject):
 
     @property
     def x(self) -> int:
+        """
+        the top left x coordinate of the Box
+        """
         return self.box.top_left[0]
 
     @property
     def y(self) -> int:
+        """
+        the top left y coordinate of the Box
+        """
         return self.box.top_left[1]
 
     @property
     def width(self) -> int:
+        """
+        the box width
+        """
         return self.box.width
 
     @property
     def height(self) -> int:
+        """
+        the box height
+        """
         return self.box.height
 
     @property

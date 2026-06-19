@@ -4,7 +4,7 @@
 The central class for keeping track of all available objects in a project.
 """
 import subprocess
-from typing import Callable, Any, TypeVar
+from typing import Callable, Any, Generator
 
 import json
 import os
@@ -24,7 +24,7 @@ from pydetecdiv.domain.Point import Point
 from pydetecdiv.domain.RoiAnnotations import RoiAnnotations
 from pydetecdiv.settings import get_config_value, Device
 from pydetecdiv.persistence.project import open_project
-from pydetecdiv.domain.dso import DomainSpecificObject
+from pydetecdiv.domain.dso import DomainSpecificObject as DSO
 from pydetecdiv.domain.Dataset import Dataset
 from pydetecdiv.domain.Run import Run
 from pydetecdiv.domain.ROI import ROI
@@ -34,8 +34,8 @@ from pydetecdiv.domain.Data import Data
 from pydetecdiv.domain.ImageResource import ImageResource
 
 # TypeVar definitions to enable type checking for subclasses of DomainSpecificObject class
-DSO = TypeVar('DSO', bound=DomainSpecificObject)
-otherDSO = TypeVar('otherDSO', bound=DomainSpecificObject)
+# DSO = TypeVar('DSO', bound=DomainSpecificObject)
+# otherDSO = TypeVar('otherDSO', bound=DomainSpecificObject)
 
 
 class Project:
@@ -61,10 +61,10 @@ class Project:
         'RoiAnnotations' : RoiAnnotations,
         }
 
-    def __init__(self, dbname: str = None, dbms: str = None):
+    def __init__(self, dbname: str, dbms: str | None = None):
         self.repository = open_project(dbname, dbms)
         self.dbname = dbname
-        self.pool = defaultdict(DomainSpecificObject)
+        self.pool = defaultdict(DSO)
 
     @property
     def path(self) -> str:
@@ -136,7 +136,7 @@ class Project:
     #     """
     #     return ImageResourceData(path, pattern=pattern)
 
-    def import_images(self, image_files: list[str], destination: str = None, **kwargs) -> subprocess.Popen:
+    def import_images(self, image_files: list[str], destination: str | None = None, **kwargs) -> subprocess.Popen:
         """
         Import images specified in a list of files into a destination
 
@@ -264,7 +264,7 @@ class Project:
         """
         return self.repository.annotate_data(dataset, source, columns, regex)
 
-    def create_fov_from_raw_data(self, df: pd.DataFrame, multi: bool) -> None:
+    def create_fov_from_raw_data(self, df: pd.DataFrame, multi: bool) -> Generator[int]:
         """
         Create domain-specific objects from raw data using a regular expression applied to a database field
         or a combination thereof specified by source. DSOs to create are specified by the values in keys.
@@ -354,12 +354,12 @@ class Project:
         :param dso: the object to delete
         :type dso: object (DomainSpecificObject)
         """
-        if dso is not None:
+        if dso is not None and dso.id_ is not None:
             if (dso.__class__.__name__, dso.id_) in self.pool:
                 del self.pool[dso.__class__.__name__, dso.id_]
             self.repository.delete_object(dso.__class__.__name__, dso.id_)
 
-    def get_object(self, class_name: str, id_: int = None, uuid: str = None, use_pool: bool = True) -> DSO:
+    def get_object(self, class_name: str, id_: int | None = None, uuid: str | None = None, use_pool: bool = True) -> DSO:
         """
         Get an object referenced by its id
 
@@ -383,7 +383,7 @@ class Project:
         """
         return self.build_dso(class_name, self.repository.get_record_by_name(class_name, name))
 
-    def get_objects(self, class_name: str, id_list: list[int] = None) -> list[DSO]:
+    def get_objects(self, class_name: str, id_list: list[int] | None = None) -> list[DSO]:
         """
         Get a list of all domain objects of a given class in the current project retrieved from the repository
 
@@ -398,7 +398,7 @@ class Project:
             return self._get_rois(id_list)
         return [self.build_dso(class_name, rec) for rec in self.repository.get_records(class_name, id_list)]
 
-    def get_records(self, class_name: str, id_list: list[int] = None) -> list[dict[str, Any]]:
+    def get_records(self, class_name: str, id_list: list[int] | None = None) -> list[dict[str, Any]]:
         """
         get list of dictionary records of DSOs of the specified class with id in list
         :param class_name: the name of the class
@@ -406,7 +406,7 @@ class Project:
         """
         return self.repository.get_records(class_name, id_list)
 
-    def get_dataframe(self, class_name: str, id_list: list[int] = None) -> pd.DataFrame:
+    def get_dataframe(self, class_name: str, id_list: list[int] | None = None) -> pd.DataFrame:
         """
         get a pandas DataFrame with records of DSOs of the specified class with id in list
         :param class_name: the name of the class
@@ -414,7 +414,7 @@ class Project:
         """
         return pd.DataFrame.from_records(self.get_records(class_name, id_list))
 
-    def get_polars(self, class_name: str, id_list: list[int] = None) -> polars.DataFrame:
+    def get_polars(self, class_name: str, id_list: list[int] | None = None) -> polars.DataFrame:
         records = self.get_records(class_name, id_list)
         if records is not None:
             df = polars.from_records(records)
@@ -439,7 +439,7 @@ class Project:
         #     return len(self._get_rois(None))
         # return len(self.repository.get_records(class_name, None))
 
-    def get_annotated_rois(self, ids_only=False, id_list: list[int] = None) -> list[ROI] | list[int]:
+    def get_annotated_rois(self, ids_only=False, id_list: list[int] | None = None) -> list[ROI] | list[int]:
         annotations_df = self.get_polars('RoiAnnotations')
         roi_ids = annotations_df.select('roi').unique().to_series().to_list()
         if id_list is not None:
@@ -448,7 +448,7 @@ class Project:
             return sorted(roi_ids)
         return self.get_objects('ROI', roi_ids)
 
-    def _get_rois(self, id_list: list[int] = None) -> list[ROI]:
+    def _get_rois(self, id_list: list[int] | None = None) -> list[ROI]:
         """
         Gets ROIs using FOV.roi_list properties for all FOVs in order to show the initial ROIs only for FOVs that have
         no other defined ROI. This method is used by the generic get_objects method to deal with the special case of
@@ -464,7 +464,7 @@ class Project:
             return list(all_rois)
         return [roi for roi in all_rois if roi.id_ in id_list]
 
-    def has_links(self, class_name: str, to: DSO = None) -> bool:
+    def has_links(self, class_name: str, to: DSO) -> bool:
         """
         Checks whether there are links to a given object from objects of a given class.
 
@@ -475,11 +475,11 @@ class Project:
         :return: True if links exist, False otherwise
         :rtype: bool
         """
-        if self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_):
+        if to.id_ is not None and self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_):
             return True
         return False
 
-    def count_links(self, class_name: str, to: DSO = None) -> int:
+    def count_links(self, class_name: str, to: DSO) -> int:
         """
         Counts the number of objects of a given class having a link to an object
 
@@ -490,9 +490,11 @@ class Project:
         :return: the number of objects of class class_name that are linked to the specified object
         :rtype: int
         """
-        return len(self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_))
+        if to.id_ is not None:
+            return len(self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_))
+        return 0
 
-    def get_linked_objects(self, class_name: str, to: DSO = None) -> list[otherDSO]:
+    def get_linked_objects(self, class_name: str, to: DSO) -> list[DSO]:
         """
         A method returning the list of all objects of class defined by class_name that are linked to an object specified
         by argument to=
@@ -506,14 +508,18 @@ class Project:
         :return: the list of objects linked to linked_to object
         :rtype: list of objects
         """
-        object_list = [self.build_dso(class_name, rec) for rec in
-                       self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_)]
+        object_list = []
+        if to.id_ is not None:
+            object_list = [self.build_dso(class_name, rec) for rec in
+                           self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_)]
         return object_list
 
-    def get_linked_records(self, class_name: str, to: DSO = None) -> list[dict[str, Any]]:
-        return self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_)
+    def get_linked_records(self, class_name: str, to: DSO) -> list[dict[str, Any]]:
+        if to.id_ is not None:
+            return self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_)
+        return []
 
-    def link_objects(self, dso1: DSO, dso2: otherDSO) -> None:
+    def link_objects(self, dso1: DSO, dso2: DSO) -> None:
         """
         Create a direct link between two objects. This method only works for objects that have a direct logical
         connection defined in an association table. It does not work to create transitive links with intermediate
@@ -524,9 +530,10 @@ class Project:
         :param dso2: second domain-specific object to link
         :type dso2: object
         """
-        self.repository.link(dso1.__class__.__name__, dso1.id_, dso2.__class__.__name__, dso2.id_, )
+        if dso1.id_ is not None and dso2.id_ is not None:
+            self.repository.link(dso1.__class__.__name__, dso1.id_, dso2.__class__.__name__, dso2.id_, )
 
-    def unlink_objects(self, dso1: DSO, dso2: otherDSO) -> None:
+    def unlink_objects(self, dso1: DSO, dso2: DSO) -> None:
         """
         Delete a direct link between two objects. This method only works for objects that have a direct logical
         connection defined in an association table. It does not work to delete transitive links with intermediate
@@ -537,7 +544,8 @@ class Project:
         :param dso2: second domain-specific object to unlink
         :type dso2: object
         """
-        self.repository.unlink(dso1.__class__.__name__, dso1.id_, dso2.__class__.__name__, dso2.id_, )
+        if dso1.id_ is not None and dso2.id_ is not None:
+            self.repository.unlink(dso1.__class__.__name__, dso1.id_, dso2.__class__.__name__, dso2.id_, )
 
     def build_dso(self, class_name: str, rec: dict[str, Any], use_pool: bool = True) -> DSO | None:
         """

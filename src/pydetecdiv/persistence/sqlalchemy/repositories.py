@@ -14,7 +14,6 @@ from PIL import Image
 
 import pandas
 import sqlalchemy
-from narwhals._compliant import column
 from sqlalchemy import delete
 from sqlalchemy.orm import sessionmaker
 from pandas import DataFrame
@@ -314,9 +313,21 @@ class ShallowSQLite3(ShallowDb):
         return None
 
     def get_empty_record(self, class_name: str) -> dict[str, Any]:
+        """
+        Returns an empty record that can be used to define columns of a table without the need for an actual object
+
+        :param class_name: the class name for the table
+        :return: the empty record
+        """
         return {column.key: None for column in dao[class_name].__table__.columns if column.key != 'key_val'}
 
     def get_field_names(self, class_name: str) -> list[str]:
+        """
+        Returns all fields except key_val which should be treated separately
+
+        :param class_name: the class name for the table
+        :return: the list of field names
+        """
         return [column.key for column in dao[class_name].__table__.columns if column.key != 'key_val']
 
     def get_records(self, class_name: str, id_list: list[int] = None) -> list[dict[str, Any]]:

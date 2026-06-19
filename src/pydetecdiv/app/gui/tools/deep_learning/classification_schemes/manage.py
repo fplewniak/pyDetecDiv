@@ -11,7 +11,7 @@ from pydetecdiv.domain.tools.deep_learning.classification_schemes import Classif
 
 
 class ManageClassificationSchemeDialog(ToolDialog):
-    def __init__(self, tool: Tool, title: str = None, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, tool: ClassificationSchemeManagement, title: str | None = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(tool, title, **kwargs)
         self.setMinimumWidth(650)
 
@@ -80,8 +80,8 @@ class ManageClassificationSchemeDialog(ToolDialog):
 
 
 class EditClassificationSchemeDialog(ToolDialog):
-    def __init__(self, tool: Tool, parent: ManageClassificationSchemeDialog, title: str = None, row: dict[str, Any]|None = None,
-                 **kwargs: dict[str, Any]) -> None:
+    def __init__(self, tool: ClassificationSchemeManagement, parent: ManageClassificationSchemeDialog, title: str | None = None,
+                 row: dict[str, Any]|None = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(tool, title, **kwargs)
         self.parent = parent
 

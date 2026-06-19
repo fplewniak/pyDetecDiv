@@ -21,7 +21,7 @@ class Tool(ABC):
 
     def __init__(self, parameters: Parameters | None = None, working_dir: str | None = None):
         self.parameters = parameters
-        self._working_dir = working_dir
+        self._working_dir = '.' if working_dir is None else working_dir
         self._command: str | None = None
         self._log_text = ''
         self.run = None
@@ -42,9 +42,9 @@ class Tool(ABC):
         """
         if get_project_dir() is not None:
             return os.path.join(get_project_dir(), self._working_dir)
-        return None
+        return self._working_dir
 
-    def run_path(self, run: Run = None) -> str:
+    def run_path(self, run: Run) -> str:
         """
         Return the path for the specified run where to save related results and log files which do not fit in repository
 
@@ -55,7 +55,7 @@ class Tool(ABC):
         makedirs(path, exist_ok=True)
         return path
 
-    def log_path(self, run: Run = None) -> str:
+    def log_path(self, run: Run) -> str:
         """
         The path of the log file
 
@@ -77,7 +77,7 @@ class Tool(ABC):
                 f.write(self._log_text)
                 self._log_text = ''
 
-    def save_run(self, command: str = None, param_list: list[Parameter] = None, key_val: dict = None):
+    def save_run(self, command: str | None = None, param_list: list[Parameter] | None = None, key_val: dict | None = None):
         """
         Saves the run for this tool
         """

@@ -5,7 +5,7 @@ import glob
 import json
 import os
 from subprocess import Popen
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import polars
@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (QWidget, QDialogButtonBox, QHBoxLayout, QLineEdit
 from ndtiff import NDTiffDataset
 
 from pydetecdiv.app import PyDetecDiv, WaitDialog, pydetecdiv_project, MessageDialog
+from pydetecdiv.domain.Classification import Classification
 from pydetecdiv.domain.FOV import FOV
 from pydetecdiv.domain.Project import Project
 from pydetecdiv.app.parameters import ChoiceParameter
@@ -319,7 +320,7 @@ class ComputeDriftDialog(gui.Dialog):
     # progress = Signal(int)
     finished = Signal(bool)
 
-    def __init__(self, title: str = None):
+    def __init__(self, title: str | None = None):
         super().__init__(title=title)
 
         self.wait = None
@@ -359,7 +360,7 @@ class ComputeDriftDialog(gui.Dialog):
         :return: a dictionary of FOVs in project
         """
         with pydetecdiv_project(project_name) as project:
-            return {fov.name: fov for fov in project.get_objects('FOV')}
+            return {cast(FOV, fov).name: cast(FOV, fov) for fov in project.get_objects('FOV')}
 
     def accept(self) -> None:
         """
@@ -545,7 +546,7 @@ class ImportNDTiffDataDialog(gui.Dialog):
         ndtiff_layout.addWidget(button_path)
 
         self.button_box = self.addButtonBox()
-        self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+        self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
         self.arrangeWidgets([
             ndtiff_dir_box,
@@ -589,9 +590,9 @@ class ImportNDTiffDataDialog(gui.Dialog):
         Check whether the specified path is a NDTiff path and enables the Ok button if it is
         """
         if self.ndtiff_dir.text() != '' and os.path.isfile(os.path.join(self.ndtiff_dir.text(), 'NDTiff.index')):
-            self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
         else:
-            self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
 
 class ImportNDTiffData(QAction):
@@ -624,12 +625,12 @@ class ImportROIannotations(QAction):
         if annotation_file:
             print('Import annotated ROIs from file')
             with pydetecdiv_project(PyDetecDiv.project_name) as project:
-                fov_list = {fov.name: fov.id_ for fov in project.get_objects('FOV')}
-                roi_names = [roi.name for roi in project.get_objects('ROI')]
+                fov_list = {cast(FOV, fov).name: fov.id_ for fov in project.get_objects('FOV')}
+                roi_names = [cast(ROI, roi).name for roi in project.get_objects('ROI')]
                 annotated_rois = polars.read_csv(annotation_file).filter(polars.col('fov').is_in(fov_list))
-                classification = project.get_object('Classification', 1)
+                classification = cast(Classification,project.get_object('Classification', 1))
                 class_names = annotated_rois.select('class_name').unique('class_name').to_numpy().flatten()
-                print(class_names, classification.classes)
+                print(class_names,  classification.classes)
                 if not set(class_names).issubset(set(classification.classes)):
                     print('Invalid class names: not compatible with the current classification scheme.')
                     return

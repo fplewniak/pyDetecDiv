@@ -2,7 +2,7 @@
 Generic widgets providing basic functionalities to build tool GUIs. These widgets are expected to be extended and implemented
 to meet the specific needs of new_tools
 """
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction, QCloseEvent
@@ -19,9 +19,9 @@ class ToolDialog(Dialog):
     """
     job_finished: Signal = Signal(object)
 
-    def __init__(self, tool: Tool, title: str = None, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, tool: Tool, title: str | None = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(title, **kwargs)
-        self.tool = tool
+        self.tool = cast(type[tool], tool)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """

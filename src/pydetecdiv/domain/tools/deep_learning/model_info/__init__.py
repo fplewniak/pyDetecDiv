@@ -36,5 +36,5 @@ class ModelInfo(Tool):
                     ]
                 )
 
-    def save_run(self, command: str = None, param_list: list[Parameter] = None, key_val: dict = None):
+    def save_run(self, command: str | None = None, param_list: list[Parameter] | None = None, key_val: dict | None = None) -> None:
         pass

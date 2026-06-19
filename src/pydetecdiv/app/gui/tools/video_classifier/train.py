@@ -110,7 +110,7 @@ class TrainModelDialog(ToolDialog):
         self.fit_to_contents()
         self.exec()
 
-    def update_datasets(self, changed_param: FloatParameter = None) -> None:
+    def update_datasets(self, changed_param: FloatParameter) -> None:
         """
         Update the dataset proportions values to make sure they sup up to 1
 

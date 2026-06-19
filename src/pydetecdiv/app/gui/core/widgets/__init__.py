@@ -742,8 +742,8 @@ class ExpandCollapseButton(PushButton):
             self.group_box.setVisible(True)
         self.parent().parent().fit_to_contents()
 
-    def addSubBox(self, widget: Type[Self], expandable: bool = False, show: bool = True, title: str = None, parameters: list = None,
-                  widget_args: dict[str, Any] = None,
+    def addSubBox(self, widget: Type[Self], expandable: bool = False, show: bool = True, title: str | None = None,
+                  parameters: list | None = None, widget_args: dict[str, Any] | None = None,
                   **kwargs: dict[str, Any]) -> Self:
         """
         Add a sub box to the current collapsable group box
@@ -753,9 +753,9 @@ class ExpandCollapseButton(PushButton):
         :param title: the sub box title
         :param kwargs: additional keyword arguments
         """
-        self.group_box.addSubBox(widget, expandable, show, title, parameters, widget_args, **kwargs)
+        return self.group_box.addSubBox(widget, expandable, show, title, parameters, widget_args, **kwargs)
 
-    def addOption(self, parameter: Parameter = None, label: bool = True, widget: Type[QWidget] = None,
+    def addOption(self, parameter: Parameter | None = None, label: bool = True, widget: Type[QWidget] | None = None,
                   **kwargs: dict[str, Any]) -> QWidget:
         """
         Add an option to the current collapsable group box
@@ -991,27 +991,6 @@ class TableView(QTableView):
     def delete_row(self, row_id):
         self._model.delete_row(row_id)
 
-    # def __init__(self, parent, parameter, multiselection=True, behavior='rows', enabled=True):
-    #     super().__init__(parent)
-    #     self.model = QSqlQueryModel()
-    #     self.setModel(self.model)
-    #     if multiselection:
-    #         self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
-    #     match behavior:
-    #         case 'rows':
-    #             self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-    #         case _:
-    #             pass
-    #     self.setEnabled(enabled)
-    #
-    # def setQuery(self, query):
-    #     """
-    #     set the SQL query used to feed the model of the table view
-    #
-    #     :param query: the query
-    #     """
-    #     self.model.setQuery(query)
-
 
 class DialogButtonBox(QDialogButtonBox):
     """
@@ -1151,11 +1130,11 @@ def set_connections(connections: dict[SignalInstance, Callable | list[Callable]]
             signal.connect(slot)
 
 
-def connect_enabling_signals(action: QAction | QMenu, signals: list[SignalInstance] | SignalInstance) -> None:
-    if signals is not None:
-        if not isinstance(signals, list):
-            signals = [signals]
-        for signal in signals:
-            signal.connect(lambda: action.setEnabled(True))
-    else:
-        action.setEnabled(action.enabled_default)
+# def connect_enabling_signals(action: QAction | QMenu, signals: list[SignalInstance] | SignalInstance) -> None:
+#     if signals is not None:
+#         if not isinstance(signals, list):
+#             signals = [signals]
+#         for signal in signals:
+#             signal.connect(lambda: action.setEnabled(True))
+#     else:
+#         action.setEnabled(action.enabled_default)

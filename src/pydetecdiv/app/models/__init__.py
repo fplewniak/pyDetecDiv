@@ -334,7 +334,7 @@ class TableModel(QAbstractTableModel):
         """
         return self.df.shape[1]
 
-    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole) -> str:
+    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.ItemDataRole.DisplayRole) -> str:
         """
         Returns the data for the given role and section in the header with the specified orientation.
 
@@ -342,14 +342,14 @@ class TableModel(QAbstractTableModel):
         :param orientation: the orientation
         :param role: the role
         """
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             # return f"Column {section + 1}"
             return self.df.columns[section]
-        if orientation == Qt.Vertical and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Vertical and role == Qt.ItemDataRole.DisplayRole:
             return f"{section + 1}"
         return super().headerData(section, orientation, role)
 
-    def data(self, index: QModelIndex | QPersistentModelIndex, role: int = Qt.DisplayRole) -> object | None:
+    def data(self, index: QModelIndex | QPersistentModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> object | None:
         """
         Returns the data stored under the given role for the item referred to by the index.
 
@@ -359,7 +359,7 @@ class TableModel(QAbstractTableModel):
         column = index.column()
         row = index.row()
 
-        if role in (Qt.DisplayRole, Qt.EditRole):
+        if role in (Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole):
             if isinstance(self.df[row, column], polars.series.Series):
                 return json.dumps(self.df[row, column].to_list())
             return self.df[row, column]
@@ -398,13 +398,13 @@ class EditableTableModel(TableModel):
         """
         column = index.column()
         row = index.row()
-        if role == Qt.EditRole:
+        if role == Qt.ItemDataRole.EditRole:
             self.df[row, column] = value
-            self.dataChanged.emit(index, index, [Qt.EditRole, Qt.DisplayRole])
+            self.dataChanged.emit(index, index, [Qt.ItemDataRole.EditRole, Qt.ItemDataRole.DisplayRole])
             return True
         return False
 
-    def set_editable_col(self, col: list[int] | int, editable: list[bool] | bool) -> None:
+    def set_editable_col(self, col: list[int], editable: list[bool]) -> None:
         """
         Sets columns referred to by their index in col list to the editable value
 
@@ -417,7 +417,7 @@ class EditableTableModel(TableModel):
             else:
                 self.editable_col.discard(c)
 
-    def set_editable_row(self, row: list[int] | int, editable: list[bool] | bool) -> None:
+    def set_editable_row(self, row: list[int], editable: list[bool]) -> None:
         """
         Sets rows referred to by their index in row list to the editable value
 
