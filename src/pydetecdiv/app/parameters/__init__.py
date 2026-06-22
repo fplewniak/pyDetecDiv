@@ -596,9 +596,40 @@ class Parameters:
 
     def __init__(self, parameters: list[Parameter] | Parameter | None = None) -> None:
         if isinstance(parameters, list):
-            self.parameter_list: list = parameters
+            self.parameter_dict: dict[str, Parameter] = {parameter.name: parameter for parameter in parameters}
+        elif isinstance(parameters, Parameter):
+            self.parameter_dict: dict[str, Parameter] = {parameters.name: parameters}
         else:
-            self.parameter_list: list = [parameters]
+            self.parameter_dict: dict[str, Parameter] = {}
+        # if isinstance(parameters, list):
+        #     self.parameter_list: list = parameters
+        # elif parameters is not None:
+        #     self.parameter_list: list = [parameters]
+        # else:
+        #     self.parameter_list: list = []
+
+    @property
+    def parameter_list(self):
+        return self.parameter_dict.values()
+
+    @parameter_list.setter
+    def parameter_list(self, parameters: list[Parameter] | Parameter | None) -> None:
+        if isinstance(parameters, list):
+            self.parameter_dict: dict[str, Parameter] = {parameter.name: parameter for parameter in parameters}
+        elif isinstance(parameters, Parameter):
+            self.parameter_dict: dict[str, Parameter] = {parameters.name: parameters}
+        else:
+            self.parameter_dict: dict[str, Parameter] = {}
+
+    def add_parameters(self, parameters: list[Parameter] | Parameter) -> None:
+        """
+        Adds parameters to the list of parameters
+
+        :param parameters: the parameter or list of parameters to add
+        """
+        if not isinstance(parameters, list):
+            parameters = [parameters]
+        self.parameter_dict.update({p.name: p for p in parameters})
 
     def reset(self, groups: list[str] | str | None = None) -> None:
         """
