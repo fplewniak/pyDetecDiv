@@ -609,8 +609,8 @@ class Parameters:
         #     self.parameter_list: list = []
 
     @property
-    def parameter_list(self):
-        return self.parameter_dict.values()
+    def parameter_list(self) -> list[Parameter]:
+        return list(self.parameter_dict.values())
 
     @parameter_list.setter
     def parameter_list(self, parameters: list[Parameter] | Parameter | None) -> None:
