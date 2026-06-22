@@ -15,7 +15,7 @@ from pydetecdiv.persistence.repository import ShallowDb
 from pydetecdiv.persistence.sqlalchemy.repositories import ShallowSQLite3
 
 
-def open_project(dbname: str, dbms: str | None = None) -> ShallowDb | None:
+def open_project(dbname: str, dbms: str | None = None) -> ShallowDb:
     """
     A function to open a shallow persistence from its name. The default type of persistence is defined in the [project]
     sections of the configuration file settings.ini
@@ -24,16 +24,14 @@ def open_project(dbname: str, dbms: str | None = None) -> ShallowDb | None:
     :param dbms: A str specifying the database management system to use with the project
     :return: a shallowDb abstract connector encapsulating the concrete connectors
     """
-    db = None
     dbms = get_config_value('project', 'dbms') if dbms is None else dbms
     match dbms:
         case 'SQLite3':
             # dbname = dbname if dbname is not None else get_config_value('project.sqlite', 'database')
             workspace = get_config_value('project', 'workspace')
-            db = ShallowSQLite3(f'{workspace}/{dbname}.db')
+            return ShallowSQLite3(f'{workspace}/{dbname}.db')
         case _:
             raise NotImplementedError(f'{dbms} is not implemented')
-    return db
 
 def project_exists(dbname: str, dbms: str | None = None) -> bool:
     """
