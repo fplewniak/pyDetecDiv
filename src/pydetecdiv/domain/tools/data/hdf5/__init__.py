@@ -49,6 +49,9 @@ class ROIseqHDF5creator(Tool):
         self.parameters.reset()
 
     def update_file(self):
+        """
+        Update the HDF5 file path according to the current project.
+        """
         self.parameters.hdf5_file.set_value(os.path.join(self.working_dir, 'roi_data.h5'))
 
     def update_channels(self) -> None:
@@ -60,11 +63,11 @@ class ROIseqHDF5creator(Tool):
             n_layers = image_resource.zdim if image_resource else 0
 
         for param in ['red_channel', 'green_channel', 'blue_channel']:
-            self.parameters[param].set_items({str(i): i for i in range(n_layers)})
+            cast(ChoiceParameter, self.parameters[param]).set_items({str(i): i for i in range(n_layers)})
 
     def update_classification(self) -> None:
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            self.parameters.classification.set_items(
+            cast(ChoiceParameter, self.parameters.classification).set_items(
                     {f'{c.name} {c.classes}': c for c in cast(list[Classification], project.get_objects('Classification'))})
 
     def test_image_file(self):
