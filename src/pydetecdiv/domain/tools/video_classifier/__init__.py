@@ -1,21 +1,16 @@
 """
 Video classifier tool
 """
-import datetime
-import locale
-import sys
-
 import numpy as np
-import polars
 import tables
 import torch
 from torch import optim
 from torchvision.transforms import InterpolationMode, v2
 
 from pydetecdiv.domain.tools.video_classifier.models import MViT, Swin3D, S3D, VideoResNet
-from pydetecdiv.app.parameters import (Parameters, IntParameter, FloatParameter, ChoiceParameter, PathParameter, CheckParameter,
-                                       StringParameter)
-from pydetecdiv.app.tools.deep_learning import DeepTool, ModelTrainer, ModelEvaluator, Predictor, ROIDataset
+from pydetecdiv.app.parameters import (Parameters, IntParameter, FloatParameter, ChoiceParameter, CheckParameter,
+                                       StringParameter, FileParameter)
+from pydetecdiv.app.tools.deep_learning import DeepTool, ROIDataset
 from pydetecdiv.domain.tools.data import compute_class_weights
 from pydetecdiv.domain.tools.video_classifier.models.VideoResNet import CustomR2Plus_1D
 from pydetecdiv.domain.tools.video_classifier.train import VideoClassifierTrainer
@@ -72,7 +67,7 @@ class VideoClassifier(DeepTool):
                                    commands={'train_model'}),
                     IntParameter(name='data_seed', label='Random seed', maximum=999999999, default=42,
                                  commands={'train_model'}),
-                    PathParameter(name='hdf5_file', label='', select_dir=False, filters=["HDF5 (*.h5 *.hdf5)"],
+                    FileParameter(name='hdf5_file', label='', filters=["HDF5 (*.h5 *.hdf5)"], require_existing=True,
                                   default='roi_data.h5', commands={'train_model'}),
                     CheckParameter(name='time_first', label='Time first', default=False, commands={'train_model'}),
                     CheckParameter(name='augmentation', label='Augmentation', default=False, exclusive=False,
