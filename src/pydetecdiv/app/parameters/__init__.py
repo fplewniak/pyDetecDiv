@@ -623,6 +623,10 @@ class Parameters:
 
     @property
     def parameter_list(self) -> list[Parameter]:
+        """
+        The list of parameters for legacy
+        :return: the parameters as a list
+        """
         return list(self.parameter_dict.values())
 
     @parameter_list.setter
