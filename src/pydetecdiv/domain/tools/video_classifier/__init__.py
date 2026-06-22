@@ -1,12 +1,15 @@
 """
 Video classifier tool
 """
+import os
+
 import numpy as np
 import tables
 import torch
 from torch import optim
 from torchvision.transforms import InterpolationMode, v2
 
+from pydetecdiv.app import PyDetecDiv, set_connections
 from pydetecdiv.domain.tools.video_classifier.models import MViT, Swin3D, S3D, VideoResNet
 from pydetecdiv.app.parameters import (Parameters, IntParameter, FloatParameter, ChoiceParameter, CheckParameter,
                                        StringParameter, FileParameter)
@@ -68,7 +71,7 @@ class VideoClassifier(DeepTool):
                     IntParameter(name='data_seed', label='Random seed', maximum=999999999, default=42,
                                  commands={'train_model'}),
                     FileParameter(name='hdf5_file', label='', filters=["HDF5 (*.h5 *.hdf5)"], require_existing=True,
-                                  default='roi_data.h5', commands={'train_model'}),
+                                  default=self.update_file, commands={'train_model'}),
                     CheckParameter(name='time_first', label='Time first', default=False, commands={'train_model'}),
                     CheckParameter(name='augmentation', label='Augmentation', default=False, exclusive=False,
                                    commands={'train_model'}),
@@ -104,7 +107,18 @@ class VideoClassifier(DeepTool):
                     # IntParameter(name='idx', label='Dataset index', maximum=999999999, minimum=0, default=0),
                     ]
                 )
+        set_connections({PyDetecDiv.app.project_selected: [self.update_file]})
+
         self.parameters.reset()
+
+    def update_file(self):
+        """
+        Update the HDF5 file path according to the current project. The default path corresponds to the default path for the HDF5
+        ROI creator tool
+        """
+        if 'cnrs.plewniak.roiseqhdf5creator' in PyDetecDiv.tools:
+            self.parameters.hdf5_file.set_value(os.path.join(PyDetecDiv.tools['cnrs.plewniak.roiseqhdf5creator'].working_dir,
+                                                             'roi_data.h5'))
 
     def prepare_data_for_training(self, *args, image_shape=(224, 224), **kwargs) -> tuple[ROIDataset, ROIDataset, torch.Tensor]:
         """
