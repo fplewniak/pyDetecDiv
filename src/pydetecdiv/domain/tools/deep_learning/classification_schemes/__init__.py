@@ -21,6 +21,9 @@ class ClassificationSchemeManagement(Tool):
                 )
 
     def save_scheme(self):
+        """
+        Saves the scheme whose name is in self.parameters.name parameter
+        """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             scheme = project.get_named_object('Classification', self.parameters.name.value)
             if scheme is None:
@@ -32,6 +35,12 @@ class ClassificationSchemeManagement(Tool):
 
     @staticmethod
     def scheme_is_not_used(scheme_name: str):
+        """
+        Tests whether the scheme is used in the project
+
+        :param scheme_name: the scheme name
+        :return: True if scheme is NOT used, False otherwise
+        """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             scheme = project.get_named_object('Classification', scheme_name)
             return not project.has_links('RoiAnnotations', scheme)
