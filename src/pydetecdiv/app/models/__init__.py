@@ -12,11 +12,20 @@ from PySide6.QtGui import QStandardItemModel, QStandardItem
 GenericModel = TypeVar('GenericModel')
 
 class StandardItemModel(QStandardItemModel):
+    """
+    The base class for all item models, defining the common required interface
+    """
     def set_value(self, value: Any) -> None:
-        pass
+        """
+        sets the value of the model
+
+        :param value: the value
+        """
 
     def value(self) -> Any:
-        pass
+        """
+        Returns the value of the model
+        """
 
 class ItemModel(StandardItemModel, Generic[GenericModel]):
     """
@@ -26,7 +35,7 @@ class ItemModel(StandardItemModel, Generic[GenericModel]):
     def __init__(self, data: Any = None) -> None:
         super().__init__(1, 1)
         item: QStandardItem = QStandardItem()
-        item.setData(data, Qt.EditRole)
+        item.setData(data, Qt.ItemDataRole.EditRole)
         self.setItem(0, 0, item)
 
     def value(self) -> Any:
@@ -35,7 +44,7 @@ class ItemModel(StandardItemModel, Generic[GenericModel]):
 
         :return: the current value
         """
-        return self.data(self.index(0, 0), role=Qt.DisplayRole)
+        return self.data(self.index(0, 0), role=Qt.ItemDataRole.DisplayRole)
 
     def set_value(self, value: Any) -> None:
         """
@@ -69,14 +78,27 @@ class StringListModel(QStringListModel, Generic[GenericModel]):
  Class for string list model
     """
 
-    def __init__(self, data: list[str] = None) -> None:
+    def __init__(self, data: list[str] | None = None) -> None:
         super().__init__()
         self._data: list[str] = data if data else []
 
     def set_value(self, data: list[str]):
+        """
+        Sets the value of the model
+
+        :param data: the value
+        """
         self._data: list[str] = data
 
     def setData(self, index: QModelIndex, value: Any, /, role: int = Qt.ItemDataRole.EditRole):
+        """
+        Sets the item data at a given index
+
+        :param index: the index to set
+        :param value: the value
+        :param role: the role of the item
+        :return: True if the item was set, False otherwise
+        """
         if role == Qt.ItemDataRole.EditRole:
             self._data[index.row()]= value
             return True
@@ -91,6 +113,11 @@ class StringListModel(QStringListModel, Generic[GenericModel]):
         return self._data
 
     def items(self) -> list[str]:
+        """
+        Returns the whole list
+
+        :return: the list of strings
+        """
         return self._data
 
     def data(self, index: QModelIndex, role: IntEnum = Qt.ItemDataRole.DisplayRole) -> str | None:
@@ -105,7 +132,7 @@ class StringListModel(QStringListModel, Generic[GenericModel]):
             return self._data[index.row()]
         return None
 
-    def rowCount(self, parent: QModelIndex = None) -> int:
+    def rowCount(self, parent: QModelIndex | None = None) -> int:
         """
         Returns the number of rows in the model
 
@@ -125,6 +152,11 @@ class StringListModel(QStringListModel, Generic[GenericModel]):
         self.endInsertRows()
 
     def add_items(self, items: list[str]) -> None:
+        """
+        Add a list of strings to the model
+
+        :param items: the list of strings
+        """
         for item in items:
             self.add_item(item)
 
@@ -140,6 +172,9 @@ class StringListModel(QStringListModel, Generic[GenericModel]):
             self.endRemoveRows()
 
     def clear(self):
+        """
+        Deletes everything in the model
+        """
         self._data = []
 
     def update_item(self, row: int, item: str) -> None:
@@ -161,7 +196,7 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
     """
     selection_changed = Signal(int)
 
-    def __init__(self, data_dict: dict[str, Any] = None) -> None:
+    def __init__(self, data_dict: dict[str, Any] | None = None) -> None:
         super().__init__()
         if data_dict:
             self.set_items(data_dict)
@@ -454,8 +489,17 @@ class EditableTableModel(TableModel):
         return index.column() in self.editable_col
 
     def add_rows(self, df):
+        """
+        Add rows to the model with data contained in the dataframe
+        :param df: dataframe containing the rows to add
+        """
         self.df.extend(df)
         self.layoutChanged.emit()
 
     def delete_row(self, idx):
+        """
+        Deletes the row with index idx
+
+        :param idx: the index of the row to delete
+        """
         self.set_data(self.df.remove(polars.col('id_') == idx))

@@ -3,11 +3,10 @@ Core and absract widgets for application GUI. These widgets provide the basic fu
 to be extended for concrete or more specific purposes
 """
 import os
-from abc import abstractmethod
-from typing import Any, Type, Callable, TypeVar, Union, Self, cast, overload
+from typing import Any, Type, Callable, TypeVar, Union, Self, cast
 
 import polars
-from PySide6.QtCore import Signal, Slot, QModelIndex, QItemSelectionModel, QItemSelection, SignalInstance
+from PySide6.QtCore import Signal, Slot, QItemSelectionModel, QItemSelection, SignalInstance
 from PySide6.QtGui import QIcon, QAction, QContextMenuEvent, QValidator
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QSizePolicy, QApplication, QDialogButtonBox, QPushButton, QWidget, QGroupBox,
                                QLayout, QLabel, QFormLayout, QTableView, QDataWidgetMapper, QAbstractSpinBox, QDoubleSpinBox,
@@ -340,7 +339,7 @@ class ComboBox(QComboBox):
 
 class ListView(QListView):
     """
-    an extension of the QComboBox class
+    an extension of the QListView class providing generic methods for managing lists
     """
 
     def __init__(self, parent: QWidget, qmodel: StringListModel = StringListModel(), height: int | None = None,
@@ -440,6 +439,9 @@ class ListView(QListView):
         self.selectionModel().select(toggle_selection, QItemSelectionModel.SelectionFlag.Toggle)
 
     def add_item(self) -> None:
+        """
+        Add an item to the list
+        """
         self.qmodel.add_item('new')
 
     def remove_items(self) -> None:
@@ -457,6 +459,10 @@ class ListView(QListView):
 
 
 class DictListView(ListView):
+    """
+    An extension of ListView for dictionaries: the key (str) is displayed on the view, and the value is the corresponding data. This
+    allows to use a ListView to manage and select any kind of object that has a name.
+    """
     def __init__(self, parent: QWidget, qmodel: DictItemModel = DictItemModel(), height: int | None = None,
                  multiselection: bool = False, enabled: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent, height=height, multiselection=multiselection, enabled=enabled)
@@ -593,6 +599,9 @@ class LineEdit(QLineEdit):
 
 
 class PathChooser(QWidget):
+    """
+    A generic class providing the basic methods for file and directory choosers
+    """
     def __init__(self, parent: QWidget, qmodel: ItemModel = ItemModel(), editable: bool = True, enabled: bool = True,
                  min_width=350, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
@@ -607,12 +616,16 @@ class PathChooser(QWidget):
         self.setEnabled(enabled)
         button_path.clicked.connect(self.select_path)
 
-    @abstractmethod
     def select_path(self) -> None:
-        pass
+        """
+        Select a path
+        """
 
 
 class FileChooser(PathChooser):
+    """
+    A widget  to choose a file
+    """
     def __init__(self, parent: QWidget, qmodel: ItemModel = ItemModel(), editable: bool = True, require_existing: bool = False,
                  enabled: bool = True, min_width=350, filters: list[str] | None = None, selected_filter: int = 0,
                  **kwargs: dict[str, Any]) -> None:
@@ -625,10 +638,16 @@ class FileChooser(PathChooser):
         self.selected_filter = selected_filter if selected_filter < len(self.filters) else 0
         self.require_existing = require_existing
 
-    def select_path(self):
+    def select_path(self) -> None:
+        """
+        Select a file path
+        """
         self.select_file()
 
     def select_file(self) -> None:
+        """
+        Select a file
+        """
         current_dir = os.path.dirname(self.path.text())
         if self.require_existing:
             file_name, _ = QFileDialog.getOpenFileName(self, caption='Choose file', dir=current_dir, filter=";;".join(self.filters),
@@ -641,14 +660,23 @@ class FileChooser(PathChooser):
 
 
 class DirChooser(PathChooser):
+    """
+    A widget to choose a directory
+    """
     def __init__(self, parent: QWidget, qmodel: ItemModel = ItemModel(), editable: bool = True,
                  enabled: bool = True, min_width=350, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent, qmodel, editable, enabled, min_width, **kwargs)
 
-    def select_path(self):
+    def select_path(self) -> None:
+        """
+        Select a directory
+        """
         self.select_dir()
 
     def select_dir(self) -> None:
+        """
+        select a directory
+        """
         current_dir = self.path.text()
         path = QFileDialog.getExistingDirectory(self, caption='Choose directory', dir=current_dir)
         if path:

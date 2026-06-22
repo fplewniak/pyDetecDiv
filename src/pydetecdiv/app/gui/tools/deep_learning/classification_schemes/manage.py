@@ -13,6 +13,18 @@ from pydetecdiv.utils.dataframe import update
 
 
 class ManageClassificationSchemeDialog(ToolDialog):
+    """A dialog for managing classification schemes.
+
+        This dialog allows users to view, edit, add, delete, export, and import classification schemes.
+        It interacts with the project's classification data and provides a table-based interface for management.
+
+        Attributes:
+            tool (ClassificationSchemeManagement): The tool for managing classification schemes.
+            data_view (EditableTableView): The table view displaying classification schemes.
+            edit_button (QPushButton): Button to edit selected schemes.
+            delete_button (QPushButton): Button to delete selected schemes.
+            export_button (QPushButton): Button to export selected schemes.
+    """
     def __init__(self, tool: ClassificationSchemeManagement, title: str | None = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(tool, title, **kwargs)
         self.setMinimumWidth(650)
@@ -46,7 +58,10 @@ class ManageClassificationSchemeDialog(ToolDialog):
         self.fit_to_contents()
         self.exec()
 
-    def toggle_buttons(self):
+    def toggle_buttons(self) -> None:
+        """
+        Enables or disables the edit and delete buttons based on whether the table is empty.
+        """
         if self.data_view.is_empty():
             self.edit_button.setEnabled(False)
             self.delete_button.setEnabled(False)
@@ -54,14 +69,20 @@ class ManageClassificationSchemeDialog(ToolDialog):
             self.edit_button.setEnabled(True)
             self.delete_button.setEnabled(True)
 
-    def edit_selected_schemes(self):
+    def edit_selected_schemes(self) -> None:
+        """
+        Opens a dialog to edit the selected classification schemes. If a scheme is in use, a warning message is displayed.
+        """
         for row in self.data_view.selected_rows(data=True).iter_rows(named=True):
             if ClassificationSchemeManagement.scheme_is_not_used(row['name']):
                 EditClassificationSchemeDialog(self.tool, self, title=f'Edit {row["name"]}', row=row)
             else:
                 MessageDialog(f'{row["name"]} classification scheme cannot be edited because it is already in use.',)
 
-    def delete_selected_schemes(self):
+    def delete_selected_schemes(self) -> None:
+        """
+        Deletes the selected classification schemes from the table. If a scheme is in use, a warning message is displayed.
+        """
         for row in self.data_view.selected_rows(data=True).iter_rows(named=True):
             if ClassificationSchemeManagement.scheme_is_not_used(row['name']):
                 self.data_view.delete_row(row['id_'])
@@ -69,23 +90,36 @@ class ManageClassificationSchemeDialog(ToolDialog):
             else:
                 MessageDialog(f'{row["name"]} classification scheme cannot be deleted because it is in use.',)
 
-    def add_new_scheme(self):
+    def add_new_scheme(self) -> None:
+        """
+        Opens a dialog to add a new classification scheme.
+        """
         EditClassificationSchemeDialog(self.tool, self, title='Add new scheme', row=None)
         self.toggle_buttons()
 
-    def delete_removed_schemes(self):
+    def delete_removed_schemes(self) -> None:
+        """
+        Deletes classification schemes records in repository that were removed from the table view.
+        """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             for row in project.get_polars('Classification').join(self.data_view.data,
                                                                  left_on='name', right_on='name', how='anti').iter_rows(named=True):
                 project.delete(project.get_object('Classification', row['id_']))
         self.close()
 
-    def refresh(self):
+    def refresh(self) -> None:
+        """
+        Refreshes the table data from the project and toggles the buttons.
+        """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             self.data_view.set_data(project.get_polars('Classification'))
         self.toggle_buttons()
 
-    def save_schemes(self):
+    def save_schemes(self) -> None:
+        """
+        Saves the classification schemes from the table to the project. If a scheme is in use, a warning message is displayed and
+        the scheme is not updated.
+        """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             for row in self.data_view.data.iter_rows(named=True):
                 scheme = project.get_named_object('Classification', row['name'])
@@ -99,7 +133,10 @@ class ManageClassificationSchemeDialog(ToolDialog):
                     else:
                         MessageDialog(f'{row["name"]} classification scheme cannot be updated because it is in use.',)
 
-    def export(self):
+    def export(self) -> None:
+        """
+        Exports the selected classification schemes to a JSON file.
+        """
         filters = ["All files (*)", "JSON (*.json *.jsn)", ]
         file_name, _ = QFileDialog.getSaveFileName(self, caption='Choose file', dir=self.tool.working_dir, filter=";;".join(filters),
                                                        selectedFilter="JSON (*.json *.jsn)")
@@ -107,7 +144,12 @@ class ManageClassificationSchemeDialog(ToolDialog):
             schemes = self.data_view.selected_rows(data=True)
             schemes.write_json(file_name)
 
-    def import_json(self):
+    def import_json(self) -> None:
+        """
+        Imports classification schemes from a JSON file and updates the table. If the table is empty, the imported data replaces
+        the current data. Otherwise, the imported data is merged with the existing data. If a scheme is in use, a warning message
+        is displayed and the scheme is not updated.
+        """
         filters = ["All files (*)", "JSON (*.json *.jsn)", ]
         file_name, _ = QFileDialog.getOpenFileName(self, caption='Choose file', dir=self.tool.working_dir, filter=";;".join(filters),
                                                        selectedFilter="JSON (*.json *.jsn)")
@@ -122,6 +164,16 @@ class ManageClassificationSchemeDialog(ToolDialog):
 
 
 class EditClassificationSchemeDialog(ToolDialog):
+    """
+    A dialog for editing or adding a classification scheme.
+
+    This dialog allows users to modify the name and classes of a classification scheme.
+    It is typically opened from the `ManageClassificationSchemeDialog`.
+
+    Attributes:
+        parent (ManageClassificationSchemeDialog): The parent dialog.
+        tool (ClassificationSchemeManagement): The tool for managing classification schemes.
+    """
     def __init__(self, tool: ClassificationSchemeManagement, parent: ManageClassificationSchemeDialog, title: str | None = None,
                  row: dict[str, Any]|None = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(tool, title, **kwargs)
@@ -155,10 +207,16 @@ class EditClassificationSchemeDialog(ToolDialog):
         self.exec()
 
     def add_new_class(self):
+        """
+        Adds a new class to the classification scheme
+        """
         self.tool.parameters.classes.append('new')
 
 
     def save_edit(self):
+        """
+        Saves the edited classification scheme and refreshes the table view in the parent dialog.
+        """
         self.tool.save_scheme()
         self.parent.refresh()
         self.close()
