@@ -560,6 +560,7 @@ class Project:
 
         :param class_name: the class name of the dso to build
         :param rec: the record representing the object to build (if id_ is not in the record, the object is a new creation
+        :param use_pool: use the project's object pool if True
         :return: the requested object
         """
         if rec is None:
