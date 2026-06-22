@@ -11,6 +11,7 @@ from pydetecdiv.app.models import EditableTableModel
 from pydetecdiv.app.gui.tools import ToolDialog
 from pydetecdiv.domain.Classification import Classification
 from pydetecdiv.domain.tools.deep_learning.classification_schemes import ClassificationSchemeManagement
+from pydetecdiv.utils.dataframe import update
 
 
 class ManageClassificationSchemeDialog(ToolDialog):
@@ -117,10 +118,7 @@ class ManageClassificationSchemeDialog(ToolDialog):
             if self.data_view.is_empty():
                 self.data_view.set_data(imported_schemes)
             else:
-                print(imported_schemes.join(self.data_view.data, left_on='name', right_on='name', how='semi'))
-                print(imported_schemes.join(self.data_view.data, left_on='name', right_on='name', how='anti'))
-                self.data_view.add_rows(imported_schemes.join(self.data_view.data, left_on='name', right_on='name', how='semi'))
-                self.data_view.add_rows(imported_schemes.join(self.data_view.data, left_on='name', right_on='name', how='anti'))
+                self.data_view.set_data(update(self.data_view.data, imported_schemes, ['name']))
         self.save_schemes()
         self.refresh()
 
