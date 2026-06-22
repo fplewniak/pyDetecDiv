@@ -1,12 +1,10 @@
-import json
 from typing import Any
 
 import polars
 from PySide6.QtWidgets import QDialogButtonBox, QFileDialog
-from pyqtgraph.debug import pretty
 
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv, MessageDialog
-from pydetecdiv.app.gui.core.widgets import set_connections, TableView
+from pydetecdiv.app.gui.core.widgets import set_connections, EditableTableView
 from pydetecdiv.app.models import EditableTableModel
 from pydetecdiv.app.gui.tools import ToolDialog
 from pydetecdiv.domain.Classification import Classification
@@ -20,7 +18,7 @@ class ManageClassificationSchemeDialog(ToolDialog):
         self.setMinimumWidth(650)
 
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            self.data_view = TableView(self,EditableTableModel(project.get_polars('Classification')))
+            self.data_view = EditableTableView(self,EditableTableModel(project.get_polars('Classification')))
 
         button_box = self.addButtonBox()
         self.edit_button = button_box.addButton('Edit', QDialogButtonBox.ButtonRole.ActionRole)
@@ -107,7 +105,7 @@ class ManageClassificationSchemeDialog(ToolDialog):
                                                        selectedFilter="JSON (*.json *.jsn)")
         if file_name:
             schemes = self.data_view.selected_rows(data=True)
-            schemes.write_json(file_name, )
+            schemes.write_json(file_name)
 
     def import_json(self):
         filters = ["All files (*)", "JSON (*.json *.jsn)", ]

@@ -305,9 +305,9 @@ class TableModel(QAbstractTableModel):
     A table model based on a polars dataframe. This model can be used to visualize non-editable tabular data
     """
 
-    def __init__(self, data=None):
+    def __init__(self, data: polars.DataFrame):
         super().__init__()
-        self.df = data
+        self.df: polars.DataFrame = data
 
     def set_data(self, data: polars.DataFrame) -> None:
         """
@@ -375,9 +375,9 @@ class EditableTableModel(TableModel):
     A table model based on a polars dataframe. This model can be used to visualize editable tabular data
     """
 
-    def __init__(self, data=None, editable_col=None, editable_row=None):
-        super().__init__()
-        self.df = data
+    def __init__(self, data: polars.DataFrame, editable_col=None, editable_row=None):
+        super().__init__(data)
+        # self.df = data
         if editable_col is None:
             self.editable_col = set()
         else:

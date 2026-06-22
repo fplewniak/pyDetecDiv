@@ -4,7 +4,7 @@ to be extended for concrete or more specific purposes
 """
 import os
 from abc import abstractmethod
-from typing import Any, Type, Callable, TypeVar, Union, Self, cast
+from typing import Any, Type, Callable, TypeVar, Union, Self, cast, overload
 
 import polars
 from PySide6.QtCore import Signal, Slot, QModelIndex, QItemSelectionModel, QItemSelection, SignalInstance
@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QSizePolicy, QApplication, 
                                QSpinBox, QRadioButton, QLineEdit, QAbstractItemView, QListView, QMenu, QComboBox, QHBoxLayout,
                                QFileDialog, QHeaderView)
 from pydetecdiv.app.parameters import Parameter
-from pydetecdiv.app.models import ItemModel, DictItemModel, StringListModel, TableModel
+from pydetecdiv.app.models import ItemModel, DictItemModel, StringListModel, TableModel, EditableTableModel
 
 
 class StyleSheets:
@@ -943,7 +943,7 @@ class TableView(QTableView):
     an extension of the QTableView widget
     """
 
-    def __init__(self, parent, qmodel: TableModel = TableModel(), enabled=True, **kwargs):
+    def __init__(self, parent, qmodel: TableModel = TableModel(polars.DataFrame()), enabled=True, **kwargs):
         super().__init__(parent)
         if qmodel is not None:
             self.setModel(qmodel)
@@ -984,6 +984,14 @@ class TableView(QTableView):
 
     def set_data(self, data):
         self._model.set_data(data)
+
+
+class EditableTableView(TableView):
+    def __init__(self, parent, qmodel: EditableTableModel = EditableTableModel(polars.DataFrame()), enabled=True, **kwargs):
+        super().__init__(parent, qmodel, enabled, **kwargs)
+        if qmodel is not None:
+            self.setModel(qmodel)
+            self._model: EditableTableModel = qmodel
 
     def add_rows(self, df: polars.DataFrame) -> None:
         self._model.add_rows(df)
