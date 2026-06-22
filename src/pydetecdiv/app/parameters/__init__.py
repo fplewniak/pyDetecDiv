@@ -4,7 +4,7 @@ be specified using GUI widgets which are synchronized thanks to a shared model
 """
 import json
 import os.path
-from typing import Callable, Any, cast
+from typing import Callable, Any, cast, overload
 
 from PySide6.QtCore import Signal, SignalInstance
 
@@ -228,6 +228,19 @@ class NumParameter(ItemParameter):
     """
     Class representing a parameter holding a number.
     """
+    @overload
+    def __init__(self, name: str, label: str | None = None, default: int | None = None, minimum: int | None = None,
+                 maximum: int | None = None, validator: Callable[[int], bool] | None = None,
+                 groups: set[str] | None = None, updater: Callable | None = None, commands: set[str] | None = None,
+                 **kwargs: dict[str, Any]) -> None:
+        pass
+
+    @overload
+    def __init__(self, name: str, label: str | None = None, default: float | None = None, minimum: float | None = None,
+                 maximum: float | None = None, validator: Callable[[float], bool] | None = None,
+                 groups: set[str] | None = None, updater: Callable | None = None, commands: set[str] | None = None,
+                 **kwargs: dict[str, Any]) -> None:
+        pass
 
     def __init__(self, name: str, label: str | None = None, default: int | float | None = None, minimum: int | float | None = None,
                  maximum: int | float | None = None, validator: Callable[[int | float], bool] | None = None,
