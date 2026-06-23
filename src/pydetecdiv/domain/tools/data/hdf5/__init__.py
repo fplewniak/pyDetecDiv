@@ -29,9 +29,9 @@ class ROIseqHDF5creator(Tool):
     version = '1.0.0'
     name = 'ROI HDF5 creator'
 
-    def __init__(self, parameters: Parameters | None = None, working_dir: str | None = None):
+    def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None):
         super().__init__(parameters, working_dir)
-        self.parameters = Parameters(
+        self.parameters.add_parameters(
                 [
                     FileParameter(name='hdf5_file', label='', require_existing=False, default=self.update_file, ),
                     CheckParameter(name='annotations', label='Annotated ROIs', default=True),
@@ -45,8 +45,6 @@ class ROIseqHDF5creator(Tool):
                 )
 
         set_connections({PyDetecDiv.app.project_selected: [self.update_channels, self.update_classification, self.update_file]})
-
-        self.parameters.reset()
 
     def update_file(self):
         """

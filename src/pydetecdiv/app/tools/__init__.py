@@ -19,7 +19,7 @@ class Tool(ABC):
     version = '1.0.0'
     name = None
 
-    def __init__(self, parameters: Parameters | None = None, working_dir: str | None = None):
+    def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None):
         self.parameters = parameters
         self._working_dir = '.' if working_dir is None else working_dir
         self._command: str | None = None

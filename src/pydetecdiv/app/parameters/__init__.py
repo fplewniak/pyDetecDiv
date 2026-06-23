@@ -647,6 +647,8 @@ class Parameters:
         if not isinstance(parameters, list):
             parameters = [parameters]
         self.parameter_dict.update({p.name: p for p in parameters})
+        for parameter in parameters:
+            parameter.reset()
 
     def reset(self, groups: list[str] | str | None = None) -> None:
         """

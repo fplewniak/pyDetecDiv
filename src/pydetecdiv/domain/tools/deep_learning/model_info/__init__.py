@@ -9,10 +9,10 @@ class ModelInfo(Tool):
     version = '1.0.0'
     name = 'Model information'
 
-    def __init__(self, parameters: Parameters | None = None, working_dir: str | None = None):
+    def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None):
         super().__init__(parameters=parameters, working_dir=working_dir)
 
-        self.parameters = Parameters(
+        self.parameters.add_parameters(
                 [
                     ChoiceParameter('model', items={
                         'MViT_v2_small': MViT.MViT_v2_s,
@@ -25,12 +25,10 @@ class ModelInfo(Tool):
                         'MC3_18': VideoResNet.MC3_18,
                         'R2+1d_18': VideoResNet.R2Plus1d_18,
                         'CustomR2Plus_1D': VideoResNet.CustomR2Plus_1D,
-                        }, label='Model'),
+                        }, label='Model', default='R2+1d_18'),
                     IntParameter('num_classes', label='Number of classes', default=6),
                     StringParameter(name='layers', label='Blocks layers', default='[1, 2]'),
                     StringParameter(name='strides', label='Strides', default='[1, 2]'),
-                    # IntParameter(name='num_layers', label='Number of layers', default=2),
-                    # IntParameter(name='blocks', label='Number of blocks', default=2),
                     IntParameter('batch_size', label='Batch size', default=8),
                     IntParameter('depth', label='Depth', default=3)
                     ]

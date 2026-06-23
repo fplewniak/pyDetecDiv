@@ -10,10 +10,10 @@ class ClassificationSchemeManagement(Tool):
     version = '1.0.0'
     name = 'Classification schemes'
 
-    def __init__(self, parameters: Parameters | None = None, working_dir: str | None = None):
+    def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None):
         super().__init__(parameters=parameters, working_dir=working_dir)
 
-        self.parameters = Parameters(
+        self.parameters.add_parameters(
                 [
                     StringParameter('name', label='Name'),
                     StringListParameter('classes', label='Classes'),

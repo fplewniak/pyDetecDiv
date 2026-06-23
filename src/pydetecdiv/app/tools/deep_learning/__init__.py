@@ -209,7 +209,7 @@ class DeepTool(Tool):
     DeepTool abstract class providing the basic functionality for deep-learning new_tools
     """
 
-    def __init__(self, parameters: Parameters | None = None, working_dir: str | None = None, device: torch.device | None = None,
+    def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None, device: torch.device | None = None,
                  model: torch.nn.Module | None = None):
         super().__init__(parameters=parameters, working_dir=working_dir)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu") if device is None else device

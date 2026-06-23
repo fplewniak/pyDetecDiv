@@ -31,9 +31,9 @@ class VideoClassifier(DeepTool):
     version = '1.0.0'
     name = 'Video Classifier'
 
-    def __init__(self, parameters: Parameters | None = None, working_dir: str | None = None):
+    def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None):
         super().__init__(parameters, working_dir)
-        self.parameters = Parameters(
+        self.parameters.add_parameters(
                 [
                     ChoiceParameter(name='model', label='Model name', default='CustomR2Plus_1D',
                                     items={'Swin3D_tiny'    : Swin3D.Swin3D_tiny,
@@ -108,8 +108,6 @@ class VideoClassifier(DeepTool):
                     ]
                 )
         set_connections({PyDetecDiv.app.project_selected: [self.update_file]})
-
-        self.parameters.reset()
 
     def update_file(self):
         """
