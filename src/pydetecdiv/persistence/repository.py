@@ -7,9 +7,11 @@ concrete repositories.
 import abc
 import subprocess
 from datetime import datetime
-from typing import Any
+from typing import Any, Callable
 
 import pandas
+
+from pydetecdiv.domain.Dataset import Dataset
 
 
 class ShallowDb(abc.ABC):
@@ -44,8 +46,8 @@ class ShallowDb(abc.ABC):
         """
 
     @abc.abstractmethod
-    def import_images(self, image_files: list[str], data_dir_path: str, destination: str, author: str = '', date: datetime = 'now',
-                      in_place: bool = False, img_format: str = 'imagetiff') -> subprocess.Popen:
+    def import_images(self, image_files: list[str], data_dir_path: str, destination: str | None, author: str = '',
+                      date: str = 'now', in_place: bool = False, img_format: str = 'imagetiff') -> subprocess.Popen:
         """
         Import images specified in a list of files into a destination
 
@@ -57,6 +59,46 @@ class ShallowDb(abc.ABC):
         :param in_place: boolean indicating whether image files should be copied (False) or kept in place (True)
         :param img_format: the file format
         :return: the list of imported files. This list can be used to roll the copy back if needed
+        """
+
+    @abc.abstractmethod
+    def annotate_data(self, dataset: Dataset, source: str | Callable, keys_: tuple[str, ...], regex: str) -> pandas.DataFrame:
+        """
+                Method to annotate data files in a dataset according to a regular expression applied to a source. The resulting
+                key-value pairs are placed in a key_val column.
+
+                :param dataset: the dataset whose data should be annotated
+                :type dataset: Dataset object
+                :param source: the database field or combination of fields to apply the regular expression to
+                :type source: str or callable returning a str
+                :param keys_: the list of classes created objects belong to
+                :type keys_: tuple of str
+                :param regex: regular expression defining the annotations
+                :type regex: regular expression str
+                :return: list of annotated Data records in a dataframe
+                :rtype: pandas.DataFrame
+                """
+
+    @abc.abstractmethod
+    def get_record_by_name(self, class_name: str, name: str) -> dict[str, Any] | None:
+        """
+        Return a record from its name
+
+        :param class_name: class name of the corresponding DSO object
+        :type class_name: str
+        :param name: the name of the requested record
+        :type name: str
+        :return: the record
+        :rtype: dict
+        """
+
+    @abc.abstractmethod
+    def get_field_names(self, class_name: str) -> list[str]:
+        """
+        Returns all fields except key_val which should be treated separately
+
+        :param class_name: the class name for the table
+        :return: the list of field names
         """
 
     @abc.abstractmethod

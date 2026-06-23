@@ -4,7 +4,7 @@
 The central class for keeping track of all available objects in a project.
 """
 import subprocess
-from typing import Callable, Any, Generator, cast
+from typing import Callable, Any, Generator, cast, TypeVar
 
 import json
 import os
@@ -24,7 +24,7 @@ from pydetecdiv.domain.Point import Point
 from pydetecdiv.domain.RoiAnnotations import RoiAnnotations
 from pydetecdiv.settings import get_config_value, Device
 from pydetecdiv.persistence.project import open_project
-from pydetecdiv.domain.dso import DomainSpecificObject as DSO
+from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.domain.Dataset import Dataset
 from pydetecdiv.domain.Run import Run
 from pydetecdiv.domain.ROI import ROI
@@ -34,9 +34,8 @@ from pydetecdiv.domain.Data import Data
 from pydetecdiv.domain.ImageResource import ImageResource
 
 # TypeVar definitions to enable type checking for subclasses of DomainSpecificObject class
-# DSO = TypeVar('DSO', bound=DomainSpecificObject)
+DSO = TypeVar('DSO', bound=DomainSpecificObject)
 # otherDSO = TypeVar('otherDSO', bound=DomainSpecificObject)
-
 
 class Project:
     """
@@ -64,7 +63,7 @@ class Project:
     def __init__(self, dbname: str, dbms: str | None = None):
         self.repository = open_project(dbname, dbms)
         self.dbname = dbname
-        self.pool = defaultdict(DSO)
+        self.pool = defaultdict(DomainSpecificObject)
 
     @property
     def path(self) -> str:
@@ -149,18 +148,23 @@ class Project:
         data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
         return self.repository.import_images(image_files, data_dir_path, destination, **kwargs)
 
-    def import_images_from_metadata(self, metadata_files: str, destination: str = None, author: str = '',
-                                    date: datetime | str = 'now', in_place: bool = True,
+    def import_images_from_metadata(self, metadata_files: str, destination: str | None = None, author: str = '',
+                                    date: str = 'now', in_place: bool = True,
                                     img_format: str = 'imagetiff', resource_format=ImageResource.MULTI, **kwargs) -> None:
         """
         Import images specified in a list of files into a destination
 
+        :param author: the user id
+        :param resource_format: the kind of resource (MULTI, SINGLE, NDTIFF)
+        :param img_format: the image format (information stored in the repository)
+        :param date: the import date
         :param metadata_files: list of metadata files to load and get information from for image import
-        :param destination: destination directory to import image files into
+        :param destination: destination directory to import image files into (Obsolete)
+        :param in_place: if True, image files are not copied (Obsolete)
         :param kwargs: extra keyword arguments
         """
         # data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
-        dataset = self.get_named_object('Dataset', 'data')
+        dataset: Dataset = cast(Dataset, self.get_named_object('Dataset', 'data'))
         author = get_config_value('project', 'user') if author == '' else author
         date_time = datetime.now() if date == 'now' else datetime.fromisoformat(date)
         dirname = os.path.dirname(metadata_files)
@@ -184,9 +188,10 @@ class Project:
                                               zscale=metadata["Summary"]["z-step_um"],
                                               key_val={'channel_names': metadata["Summary"]["ChNames"]}, )
 
-                image_file = os.path.join(dirname, os.path.basename(d["FileName"]))
-                url = image_file if in_place else os.path.join(destination, os.path.basename(image_file))
-                source_dir, rel_url = Device.get_path_id_and_url(url)
+                image_file = os.path.join(dirname, os.path.basename(str(d["FileName"])))
+                source_dir, rel_url = Device.get_path_id_and_url(image_file)
+                # url = image_file if in_place else os.path.join(destination, os.path.basename(image_file))
+                # source_dir, rel_url = Device.get_path_id_and_url(url)
 
                 _ = Data(project=self, name=os.path.basename(image_file),
                          dataset=dataset, author=author, date=date_time,
@@ -200,8 +205,8 @@ class Project:
             image_res.xdim, image_res.ydim, image_res.tdim = d["Width"], d['Height'], (maxT + 1)
             image_res.validate()
 
-    def import_ndtiff_data(self, ndtiff_dir, author: str = '', date: datetime | str = 'now'):
-        dataset = self.get_named_object('Dataset', 'data')
+    def import_ndtiff_data(self, ndtiff_dir, author: str = '', date: str = 'now'):
+        dataset: Dataset = cast(Dataset, self.get_named_object('Dataset', 'data'))
         author = get_config_value('project', 'user') if author == '' else author
         date_time = datetime.now() if date == 'now' else datetime.fromisoformat(date)
 
@@ -246,7 +251,7 @@ class Project:
             image_res.validate()
         self.commit()
 
-    def annotate(self, dataset: Dataset, source: str | Callable, columns: list[str], regex: str) -> pd.DataFrame:
+    def annotate(self, dataset: Dataset, source: str | Callable, columns: tuple[str, ...], regex: str) -> pd.DataFrame:
         """
         Annotate data in a dataset using a regular expression applied to columns specified by source (column name or
         callable returning a str built from column names)
@@ -318,7 +323,7 @@ class Project:
         :param class_name: the class name
         :return: the name to id mapping
         """
-        return {obj.name: obj.id_ for obj in self.get_objects(class_name)}
+        return {str(obj.name): cast(int, obj.id_) for obj in self.get_objects(class_name)}
 
     def save_record(self, class_name: str, record: dict[str, Any]) -> int:
         """
@@ -359,7 +364,7 @@ class Project:
                 del self.pool[dso.__class__.__name__, dso.id_]
             self.repository.delete_object(dso.__class__.__name__, dso.id_)
 
-    def get_object(self, class_name: str, id_: int | None = None, uuid: str | None = None, use_pool: bool = True) -> DSO:
+    def get_object(self, class_name: str, id_: int | None = None, uuid: str | None = None, use_pool: bool = True) -> DSO | None:
         """
         Get an object referenced by its id
 
@@ -371,9 +376,12 @@ class Project:
         :param use_pool: True if object should be obtained from the pool unless it has not been created yet
         :return: the desired object
         """
-        return self.build_dso(class_name, self.repository.get_record(class_name, int(id_), uuid), use_pool)
+        record = self.repository.get_record(class_name, id_, uuid)
+        if record is not None:
+            return self.build_dso(class_name, record, use_pool)
+        return None
 
-    def get_named_object(self, class_name, name=None) -> DSO:
+    def get_named_object(self, class_name, name=None, use_pool: bool = True) -> DSO | None:
         """
         Return a named object by its name
 
@@ -381,7 +389,10 @@ class Project:
         :param name: the name of the requested object
         :return: the object
         """
-        return self.build_dso(class_name, self.repository.get_record_by_name(class_name, name))
+        record = self.repository.get_record_by_name(class_name, name)
+        if record is not None:
+            return self.build_dso(class_name, record, use_pool)
+        return None
 
     def get_objects(self, class_name: str, id_list: list[int] | None = None) -> list[DSO]:
         """
@@ -398,7 +409,7 @@ class Project:
             return self._get_rois(id_list)
         records = self.repository.get_records(class_name, id_list)
         if records is not None:
-            return [cast(DSO, self.build_dso(class_name, rec)) for rec in records]
+            return [self.build_dso(class_name, rec) for rec in records]
         return []
 
     def get_records(self, class_name: str, id_list: list[int] | None = None) -> list[dict[str, Any]]:
@@ -518,6 +529,16 @@ class Project:
         return object_list
 
     def get_linked_records(self, class_name: str, to: DSO) -> list[dict[str, Any]]:
+        """
+         A method returning the list of all records of class defined by class_name that are linked to an object specified
+        by argument to=
+
+        :param class_name: the class name of the objects to retrieve
+        :type class_name: str
+        :param to: the object the retrieve objects should be linked to
+        :type to: DomainSpecificObject
+        :return: the list of records linked to linked_to object
+        """
         if to.id_ is not None:
             return self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_)
         return []

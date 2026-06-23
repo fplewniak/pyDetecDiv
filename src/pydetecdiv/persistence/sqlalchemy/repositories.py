@@ -8,7 +8,7 @@ import re
 import sqlite3
 import subprocess
 from datetime import datetime
-from typing import Any
+from typing import Any, Callable
 
 from PIL import Image
 
@@ -33,7 +33,7 @@ class ShallowSQLite3(ShallowDb):
     A concrete shallow SQLite3 persistence inheriting ShallowDb and implementing SQLite3-specific engine
     """
 
-    def __init__(self, dbname: str = None):
+    def __init__(self, dbname: str):
         self.name = dbname
         try:
             self.engine = sqlalchemy.create_engine(f'sqlite+pysqlite:///{self.name}?check_same_thread=True')
@@ -101,13 +101,13 @@ class ShallowSQLite3(ShallowDb):
                               'pattern': None,
                               }
             self.save_object('Dataset', dataset_record)
-            os.mkdir(os.path.join(experiment_path, dataset_record['name']))
+            os.mkdir(os.path.join(experiment_path, 'data'))
             experiment_record = {'id_'        : None,
                                  'uuid'       : generate_uuid(),
                                  'name'       : exp_name,
                                  'author'     : get_config_value('project', 'user'),
                                  'date'       : datetime.now(),
-                                 'raw_dataset': self.get_record_by_name('Dataset', dataset_record['name'])['id_'],
+                                 'raw_dataset': self.get_record_by_name('Dataset', 'data')['id_'],
                                  }
             self.save_object('Experiment', experiment_record)
             self.commit()
@@ -118,8 +118,8 @@ class ShallowSQLite3(ShallowDb):
         """
         self.engine.dispose()
 
-    def import_images(self, image_files: list[str], data_dir_path: str, destination: str, author: str = '', date: str = 'now',
-                      in_place: bool = False, img_format: str = 'imagetiff') -> subprocess.Popen:
+    def import_images(self, image_files: list[str], data_dir_path: str, destination: str | None, author: str = '',
+                      date: str = 'now', in_place: bool = False, img_format: str = 'imagetiff') -> subprocess.Popen | None:
         """
         Import images specified in a list of files into a destination
 
@@ -141,11 +141,14 @@ class ShallowSQLite3(ShallowDb):
         :rtype: list of str
         """
         # urls = []
-        if destination:
+        if destination is not None:
             data_dir_path = os.path.join(data_dir_path, destination)
+        else:
+            destination = ''
         try:
             process = copy_files(image_files, data_dir_path) if not in_place else None
             for image_file in image_files:
+                url = image_file if in_place else os.path.join(destination, os.path.basename(image_file))
                 record = {
                     'id_'       : None,
                     'uuid'      : generate_uuid(),
@@ -153,13 +156,13 @@ class ShallowSQLite3(ShallowDb):
                     'dataset'   : self.get_record_by_name('Dataset', 'data')['id_'],
                     'author'    : get_config_value('project', 'user') if author == '' else author,
                     'date'      : datetime.now() if date == 'now' else datetime.fromisoformat(date),
-                    'url'       : image_file if in_place else os.path.join(destination, os.path.basename(image_file)),
+                    'url'       : url,
                     'format'    : img_format,
                     'source_dir': os.path.dirname(image_file),
                     'meta_data' : '{}',
                     'key_val'   : '{}',
                     }
-                with Image.open(record['url']) as img:
+                with Image.open(url) as img:
                     record['xdim'], record['ydim'] = img.size
 
                 record['source_dir'], record['url'] = Device.get_path_id_and_url(record['url'])
@@ -171,7 +174,7 @@ class ShallowSQLite3(ShallowDb):
         # return urls, process
         return process
 
-    def annotate_data(self, dataset: Dataset, source: str, keys_: tuple[str, ...], regex: str) -> pandas.DataFrame:
+    def annotate_data(self, dataset: Dataset, source: str | Callable, keys_: tuple[str, ...], regex: str) -> pandas.DataFrame:
         """
         Method to annotate data files in a dataset according to a regular expression applied to a source. The resulting
         key-value pairs are placed in a key_val column.
@@ -234,7 +237,7 @@ class ShallowSQLite3(ShallowDb):
         self.session.execute(stmt)
         self.session.commit()
 
-    def _get_records(self, class_name: str = None, query: list[str] = None) -> list[dict[str, object]]:
+    def _get_records(self, class_name: str, query: list[str] | None = None) -> list[dict[str, object]]:
         """
         A private method returning the list of all object records of a given class specified by its name and verifying a
         query built from a list of where clauses
@@ -250,7 +253,6 @@ class ShallowSQLite3(ShallowDb):
         if query is not None:
             for q in query:
                 dao_list = dao_list.where(q)
-
         return [obj.record for obj in dao_list]
 
     def count_records(self, class_name: str) -> int:
@@ -264,7 +266,7 @@ class ShallowSQLite3(ShallowDb):
         """
         return self.session.query(dao[class_name]).count()
 
-    def get_dataframe(self, class_name: str, id_list: list[int] = None) -> pandas.DataFrame:
+    def get_dataframe(self, class_name: str, id_list: list[int] | None = None) -> pandas.DataFrame:
         """
         Get a DataFrame containing the list of all domain objects of a given class in the current project
 
@@ -277,7 +279,7 @@ class ShallowSQLite3(ShallowDb):
         """
         return DataFrame(self.get_records(class_name, id_list))
 
-    def get_record(self, class_name: str, id_: int = None, uuid: str = None) -> dict[str, Any] | None:
+    def get_record(self, class_name: str, id_: int | None = None, uuid: str | None = None) -> dict[str, Any] | None:
         """
         A method returning an object record of a given class from its id
 
@@ -296,7 +298,7 @@ class ShallowSQLite3(ShallowDb):
             return self.session.query(dao[class_name]).filter(dao[class_name].uuid == uuid).first().record
         return None
 
-    def get_record_by_name(self, class_name: str, name: str = None) -> dict[str, Any] | None:
+    def get_record_by_name(self, class_name: str, name: str) -> dict[str, Any] | None:
         """
         Return a record from its name
 
@@ -330,7 +332,7 @@ class ShallowSQLite3(ShallowDb):
         """
         return [column.key for column in dao[class_name].__table__.columns if column.key != 'key_val']
 
-    def get_records(self, class_name: str, id_list: list[int] = None) -> list[dict[str, Any]]:
+    def get_records(self, class_name: str, id_list: list[int] | None = None) -> list[dict[str, Any]] | None:
         """
         A method returning the list of all object records of a given class or select those whose id is in id_list
 
@@ -405,7 +407,7 @@ class ShallowSQLite3(ShallowDb):
                 linked_rec = []
         return linked_rec
 
-    def _get_dao(self, class_name: str, id_: int = None) -> DAO:
+    def _get_dao(self, class_name: str, id_: int) -> DAO:
         """
         A method returning a DAO of a given class from its id
 
