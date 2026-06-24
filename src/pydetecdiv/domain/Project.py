@@ -370,7 +370,7 @@ class Project:
                 del self.pool[dso.__class__.__name__, dso.id_]
             self.repository.delete_object(dso.__class__.__name__, dso.id_)
 
-    def get_object(self, class_name: str, id_: int | None = None, uuid: str | None = None, use_pool: bool = True) -> DSO | None:
+    def get_object(self, class_name: str, id_: int | None = None, uuid: str | None = None, use_pool: bool = True) -> Any:
         """
         Get an object referenced by its id
 
@@ -528,7 +528,7 @@ class Project:
             return len(self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_))
         return 0
 
-    def get_linked_objects(self, class_name: str, to: DSO) -> list[DSO]:
+    def get_linked_objects(self, class_name: str, to: DSO) -> list[Any]:
         """
         A method returning the list of all objects of class defined by class_name that are linked to an object specified
         by argument to=

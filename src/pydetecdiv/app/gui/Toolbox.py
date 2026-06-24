@@ -1,6 +1,7 @@
 """
 Module for handling tree representations of data.
 """
+import warnings
 from subprocess import CalledProcessError
 
 from PySide6.QtCore import Qt, Signal
@@ -13,7 +14,7 @@ from pydetecdiv.app.models.Trees import TreeDictModel, TreeItem
 from pydetecdiv.domain import Run
 from pydetecdiv.domain.CommandLineTool import list_tools
 
-
+@warnings.deprecated('deprecated')
 class ToolItem(TreeItem):
     """
     A tool-specific tree item
@@ -25,6 +26,7 @@ class ToolItem(TreeItem):
         self.item_data = [data.name, data.version]
 
 
+@warnings.deprecated('deprecated')
 class ToolboxTreeView(QTreeView):
     """
     A class expanding QTreeView with specific features to view new_tools and tool categories as a tree.
@@ -58,6 +60,7 @@ class ToolboxTreeView(QTreeView):
         # selection.internalPointer().tool.requirements.install()
 
 
+@warnings.deprecated('deprecated')
 class ToolForm(QDialog):
     """
     A form to define input and parameters for running a tool job
@@ -116,6 +119,7 @@ class ToolForm(QDialog):
             self.finished.emit(True)
 
 
+@warnings.deprecated('deprecated')
 class ToolboxTreeModel(TreeDictModel):
     """
     A class expanding TreeDictModel with specific features to handle new_tools and tool categories. This model is populated

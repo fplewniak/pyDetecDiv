@@ -1,6 +1,7 @@
 """
 Classes for persistent windows of the GUI
 """
+import warnings
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCursor, QIcon, QCloseEvent
@@ -40,9 +41,9 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.image_resource_selector, Qt.Orientation.Vertical)
         self.drawing_tools = DrawingToolsPalette(self)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.drawing_tools, Qt.Orientation.Vertical)
-        self.analysis_tools = AnalysisToolsTree(self)
-        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.analysis_tools, Qt.Orientation.Vertical)
-        self.analysis_tools.hide()
+        # self.analysis_tools = AnalysisToolsTree(self)
+        # self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.analysis_tools, Qt.Orientation.Vertical)
+        # self.analysis_tools.hide()
         self.scene_tree_palette = SceneTreePalette(self)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.scene_tree_palette, Qt.Orientation.Vertical)
         self.mdi_area.subWindowActivated.connect(self.subwindow_activation)
@@ -502,6 +503,7 @@ class DrawPoint(QToolButton):
         self.setChecked(True)
         PyDetecDiv.current_drawing_tool = DrawingTools.DrawPoint
 
+@warnings.deprecated('deprecated')
 class AnalysisToolsTree(QDockWidget):
     """
     A dockable window with new_tools for image analysis.

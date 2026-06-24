@@ -13,7 +13,7 @@ from pydetecdiv.exceptions import MissingNameError
 from pydetecdiv.utils.Shapes import Box
 
 if TYPE_CHECKING:
-    from pydetecdiv.domain import Project
+    from pydetecdiv.domain.Project import Project
 
 
 class DomainSpecificObject:
@@ -21,7 +21,7 @@ class DomainSpecificObject:
     A business-logic class defining valid operations and attributes common to all domain-specific classes
     """
 
-    def __init__(self, project: 'Project' = None, **kwargs):
+    def __init__(self, project: 'Project', **kwargs):
         """
         Initialization of the object with a link to the Project it belongs to and associated _data as a dictionary
 
@@ -102,7 +102,7 @@ class NamedDSO(DomainSpecificObject):
     A domain-specific class for objects with a name.
     """
 
-    def __init__(self, name: str = None, **kwargs):
+    def __init__(self, name: str, **kwargs):
         if name is None:
             raise MissingNameError(self)
         super().__init__(**kwargs)
@@ -136,7 +136,7 @@ class BoxedDSO(DomainSpecificObject):
     right corners).
     """
 
-    def __init__(self, top_left: tuple[int, int] = None, bottom_right: tuple[int, int] = None, **kwargs):
+    def __init__(self, top_left: tuple[int, int] | None = None, bottom_right: tuple[int, int] | None = None, **kwargs):
         super().__init__(**kwargs)
         self._top_left = top_left
         self._bottom_right = bottom_right

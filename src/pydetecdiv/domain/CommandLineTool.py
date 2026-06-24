@@ -1,6 +1,7 @@
 """
 CommandLineTool module to handle tool definition, requirements and running them in an appropriate environment.
 """
+import warnings
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -23,7 +24,7 @@ from pydetecdiv.domain.tools import Plugins
 from pydetecdiv.settings import get_config_value
 from pydetecdiv.domain.parameters import ParameterFactory, Parameter
 
-
+@warnings.deprecated('deprecated')
 def list_tools() -> dict:
     """
     Provide a list of available new_tools arranged by categories
@@ -41,7 +42,7 @@ def list_tools() -> dict:
                     tool_list[category].append(tool)
     return tool_list
 
-
+@warnings.deprecated('deprecated')
 class Requirements:
     """
     Class to handle tool requirements, install an environment and the required packages.
@@ -143,6 +144,7 @@ class Requirements:
         subprocess.run(cmd, shell=True, check=True, )
 
 
+@warnings.deprecated('deprecated')
 class Inputs:
     """
     A class to handle CommandLineTool's input as defined in the configuration file
@@ -164,6 +166,7 @@ class Inputs:
         return list(self.list.values())
 
 
+@warnings.deprecated('deprecated')
 class Outputs:
     """
     A class to handle CommandLineTool's input as defined in the configuration file
@@ -174,6 +177,7 @@ class Outputs:
         self.list = {p.attrib['name']: ParameterFactory().create(p, tool) for p in self.element.findall('.//data')}
 
 
+@warnings.deprecated('deprecated')
 class Command:
     """
     A class handling commands for running new_tools. A command can be a command-line or a call to the execute method of a
@@ -274,6 +278,7 @@ class Command:
         return output
 
 
+@warnings.deprecated('deprecated')
 class CommandLineTool:
     """
     A class for handling new_tools specified by XML files. A CommandLineTool object represents a generic tool in the toolbox. Internal

@@ -21,10 +21,9 @@ class Data(NamedDSO):
     """
 
     def __init__(self, dataset: int | Dataset, author: str, date: str | datetime.datetime, url: str, format_: str, source_dir: str,
-                 meta_data: dict, key_val: dict, image_resource: int | ImageResource, c: int = None, t: int = None, z: int = None,
-                 xdim: int = -1, ydim: int = -1, uuid: str = None, **kwargs):
+                 meta_data: dict, key_val: dict, image_resource: int | ImageResource, c: int = 0, t: int = 0, z: int = 0,
+                 xdim: int = -1, ydim: int = -1, **kwargs):
         super().__init__(**kwargs)
-        self.uuid = uuid
         self.dataset_ = dataset.id_ if isinstance(dataset, Dataset) else dataset
         self.author = author
         self.date = date
