@@ -1,3 +1,6 @@
+"""
+Tools for management of classification schemes used by deep learning classifiers
+"""
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
 from pydetecdiv.app.tools import Tool
 
@@ -6,6 +9,9 @@ from pydetecdiv.domain.Classification import Classification
 
 
 class ClassificationSchemeManagement(Tool):
+    """
+    Classification scheme management tool
+    """
     id_ = 'cnrs.plewniak.classificationschemes'
     version = '1.0.0'
     name = 'Classification schemes'

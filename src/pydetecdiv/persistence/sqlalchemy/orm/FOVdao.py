@@ -3,6 +3,8 @@
 """
 Access to FOV data
 """
+from typing import Any
+
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.types import JSON
 from sqlalchemy.orm import relationship, joinedload
@@ -24,16 +26,11 @@ class FOVdao(DAO, Base):
     comments = Column(String)
     key_val = Column(JSON)
 
-    # xsize = Column(Integer, nullable=False, server_default=text('1000'))
-    # ysize = Column(Integer, nullable=False, server_default=text('1000'))
-
     roi_list_ = relationship('ROIdao')
-
-    # data_list = FovData.fov_to_data()
 
     image_resources_ = relationship('ImageResourceDao')
 
-    def image_resources(self, fov_id: int) -> list[dict[str, object]]:
+    def image_resources(self, fov_id: int) -> list[dict[str, Any]]:
         """
         A method returning the list of ImageResource records whose parent FOV has id_ == fov_id
 
@@ -51,51 +48,21 @@ class FOVdao(DAO, Base):
         return data_list
 
     @property
-    def record(self) -> dict[str, object]:
+    def record(self) -> dict[str, Any]:
         """
         A method creating a DAO record dictionary from a fov row dictionary. This method is used to convert the SQL
         table columns into the FOV record fields expected by the domain layer
 
         :return: a FOV record as a dictionary with keys() appropriate for handling by the domain layer
         """
-        return {'id_': self.id_,
-                'name': self.name,
+        return {'id_'     : self.id_,
+                'name'    : self.name,
                 'comments': self.comments,
-                'uuid': self.uuid,
-                'key_val': self.key_val,
+                'uuid'    : self.uuid,
+                'key_val' : self.key_val,
                 }
 
-    # def data(self, fov_id):
-    #     """
-    #     Returns a list of DataDao objects linked to the FOVdao object with the specified id_
-    #
-    #     :param fov_id: the id_ of the FOV
-    #     :type fov_id: int
-    #     :return: the list of Data records linked to the FOV
-    #     :type: list of dict
-    #     """
-    #     return [i.record
-    #             for i in self.session.query(dao.DataDao)
-    #             .filter(FovData.data == dao.DataDao.id_)
-    #             .filter(FovData.fov == fov_id)
-    #     ]
-
-    # def image_data(self, fov_id):
-    #     """
-    #     A method returning the list of Image data object records linked to FOV with id_ == fov_id
-    #     :param fov_id: the id of the FOV
-    #     :type fov_id: int
-    #     :return: a list of ImageData records linked to FOV with id_ == fov_id
-    #     :rtype: list
-    #     """
-    #     image_data = [i.record
-    #                   for i in itertools.chain(*[roi.image_data_list
-    #                                              for roi in self.session.query(dao.ROIdao)
-    #                                            .filter(dao.ROIdao.fov == fov_id)
-    #                                            .all()])]
-    #     return image_data
-
-    def roi_list(self, fov_id: int) -> list[dict[str, object]]:
+    def roi_list(self, fov_id: int) -> list[dict[str, Any]]:
         """
         A method returning the list of ROI records whose parent FOV has id == fov_id
 
@@ -111,20 +78,3 @@ class FOVdao(DAO, Base):
         else:
             roi_list = []
         return roi_list
-
-    # def image_list(self, fov_id):
-    #     """
-    #     A method returning the Image records linked to FOV with id_ == fov_id
-    #     :param fov_id: the id of the Image data
-    #     :type fov_id: int
-    #     :return: a list containing the Image records linked to FOV with id_ == fov_id
-    #     :rtype: list
-    #     """
-    #     image_list = [image.record for image in
-    #                   self.session.scalars(
-    #                       select(dao.ImageDao)
-    #                       .where(dao.ImageDataDao.id_ == dao.ImageDao.image_data)
-    #                       .where(dao.ROIdao.id_ == dao.ImageDataDao.roi)
-    #                       .where(fov_id == dao.ROIdao.fov)
-    #                   )]
-    #     return image_list

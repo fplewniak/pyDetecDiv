@@ -19,9 +19,9 @@ class RunDao(DAO, Base):
     translate = {}
 
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
-    uuid = Column(String(36),)
-    tool_name = Column(String, nullable=False,)
-    tool_version = Column(String, nullable=False,)
+    uuid = Column(String(36), )
+    tool_name = Column(String, nullable=False, )
+    tool_version = Column(String, nullable=False, )
     is_plugin = Column(Boolean, nullable=False)
     command = Column(String)
     parameters = Column(JSON)
@@ -35,12 +35,12 @@ class RunDao(DAO, Base):
 
         :return: a Run record as a dictionary with keys() appropriate for handling by the domain layer
         """
-        return {'id_': self.id_,
-                'uuid': self.uuid,
-                'tool_name': self.tool_name,
+        return {'id_'         : self.id_,
+                'uuid'        : self.uuid,
+                'tool_name'   : self.tool_name,
                 'tool_version': self.tool_version,
-                'is_plugin': self.is_plugin,
-                'command': self.command,
-                'parameters': self.parameters,
-                'key_val': self.key_val,
+                'is_plugin'   : self.is_plugin,
+                'command'     : self.command,
+                'parameters'  : self.parameters,
+                'key_val'     : self.key_val,
                 }

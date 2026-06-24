@@ -3,6 +3,8 @@
 """
 Access to ImageResourceData data
 """
+from typing import Any
+
 from sqlalchemy import Column, Integer, Float, Boolean, String, text, ForeignKey
 from sqlalchemy.types import JSON
 from sqlalchemy.orm import relationship, joinedload, composite
@@ -15,7 +17,7 @@ class ImageResourceDao(DAO, Base):
     DAO class for access to ImageResource records from the SQL database
     """
     __tablename__ = 'ImageResource'
-    exclude = ['id_',]
+    exclude = ['id_', ]
     translate = {'shape': ('tdim', 'cdim', 'zdim', 'ydim', 'xdim'), }
 
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
@@ -46,12 +48,12 @@ class ImageResourceDao(DAO, Base):
 
     data_list_ = relationship('DataDao')
 
-    def data_list(self, image_res_id: int) -> list[dict[str, object]]:
+    def data_list(self, image_res_id: int) -> list[dict[str, Any]]:
         """
         A method returning the list of Data records whose parent Dataset has id_ == dataset_id
 
-        :param dataset_id: the id of the Dataset
-        :return: a list of Data records whose parent Dataset has id_ == dataset_id
+        :param image_res_id: the id of the image resource
+        :return: the list of Data records
         """
         if self.session.query(ImageResourceDao).filter(ImageResourceDao.id_ == image_res_id).first() is not None:
             data_list = [data.record
@@ -64,29 +66,28 @@ class ImageResourceDao(DAO, Base):
         return data_list
 
     @property
-    def record(self) -> dict[str, object]:
+    def record(self) -> dict[str, Any]:
         """
         A method creating a DAO record dictionary from a fov row dictionary. This method is used to convert the SQL
         table columns into the FOV record fields expected by the domain layer
 
         :return: a FOV record as a dictionary with keys() appropriate for handling by the domain layer
         """
-        return {'id_': self.id_,
-                # 'dims': self.dims,
-                'xdim': self.xdim,
-                'ydim': self.ydim,
-                'zdim': self.zdim,
-                'cdim': self.cdim,
-                'tdim': self.tdim,
+        return {'id_'    : self.id_,
+                'xdim'   : self.xdim,
+                'ydim'   : self.ydim,
+                'zdim'   : self.zdim,
+                'cdim'   : self.cdim,
+                'tdim'   : self.tdim,
                 'xyscale': self.xyscale,
-                'xyunit': self.xyunit,
-                'zscale': self.zscale,
-                'zunit': self.zunit,
-                'tscale': self.tscale,
-                'tunit': self.tunit,
-                'uuid': self.uuid,
-                'fov': self.fov,
+                'xyunit' : self.xyunit,
+                'zscale' : self.zscale,
+                'zunit'  : self.zunit,
+                'tscale' : self.tscale,
+                'tunit'  : self.tunit,
+                'uuid'   : self.uuid,
+                'fov'    : self.fov,
                 'dataset': self.dataset,
-                'multi': self.multi,
+                'multi'  : self.multi,
                 'key_val': self.key_val,
                 }

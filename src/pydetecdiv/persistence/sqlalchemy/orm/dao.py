@@ -20,17 +20,17 @@ from pydetecdiv.persistence.sqlalchemy.orm.RoiAnnotationsDao import RoiAnnotatio
 from pydetecdiv.persistence.sqlalchemy.orm.RunDao import RunDao
 
 dso_dao_mapping = {
-    'FOV': FOVdao,
-    'ROI': ROIdao,
-    'Experiment': ExperimentDao,
-    'Dataset': DatasetDao,
-    'Data': DataDao,
-    'ImageResource': ImageResourceDao,
-    'Run': RunDao,
-    'Entity': EntityDao,
-    'BoundingBox': BoundingBoxDao,
-    'Point': PointDao,
-    'Mask': MaskDao,
+    'FOV'           : FOVdao,
+    'ROI'           : ROIdao,
+    'Experiment'    : ExperimentDao,
+    'Dataset'       : DatasetDao,
+    'Data'          : DataDao,
+    'ImageResource' : ImageResourceDao,
+    'Run'           : RunDao,
+    'Entity'        : EntityDao,
+    'BoundingBox'   : BoundingBoxDao,
+    'Point'         : PointDao,
+    'Mask'          : MaskDao,
     'Classification': ClassificationDao,
     'RoiAnnotations': RoiAnnotationsDao,
-}
+    }

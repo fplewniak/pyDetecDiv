@@ -608,14 +608,19 @@ class ImportNDTiffData(QAction):
 
 
 class ImportROIannotations(QAction):
-
+    """
+    Action to import annotated ROIs into a project
+    """
     def __init__(self, parent: QWidget):
         super().__init__("Import annotated ROIs", parent)
         self.triggered.connect(self.import_annotated_rois)
         self.setEnabled(False)
         parent.addAction(self)
 
-    def import_annotated_rois(self):
+    def import_annotated_rois(self) -> None:
+        """
+        Import a csv file containing annotated ROIs. ROIs that do not exist yet in the project are created.
+        """
         filters = ["csv (*.csv)", "tsv (*.tsv)", ]
         annotation_file, _ = QFileDialog.getOpenFileName(PyDetecDiv.main_window,
                                                          caption='Choose file with annotated ROIs',
@@ -628,9 +633,9 @@ class ImportROIannotations(QAction):
                 fov_list = {cast(FOV, fov).name: fov.id_ for fov in project.get_objects('FOV')}
                 roi_names = [cast(ROI, roi).name for roi in project.get_objects('ROI')]
                 annotated_rois = polars.read_csv(annotation_file).filter(polars.col('fov').is_in(fov_list))
-                classification = cast(Classification,project.get_object('Classification', 1))
+                classification = cast(Classification, project.get_object('Classification', 1))
                 class_names = annotated_rois.select('class_name').unique('class_name').to_numpy().flatten()
-                print(class_names,  classification.classes)
+                print(class_names, classification.classes)
                 if not set(class_names).issubset(set(classification.classes)):
                     print('Invalid class names: not compatible with the current classification scheme.')
                     return
@@ -642,10 +647,8 @@ class ImportROIannotations(QAction):
                                       top_left=(row['x'], row['y']),
                                       bottom_right=(row['x'] + row['width'], row['y'] + row['height']))
                         roi_names.append(new_roi.name)
-                        # class_index = class_names.where(class_names==row['class_name'])[0] + 1
-                    # class_index = next(i for i, class_name in enumerate(classification.classes) if class_name == row['class_name']) + 1
-                    new_annotation = RoiAnnotations(project=project, roi=new_roi.id_, t=row['frame'],
-                                        classification=classification, annotation=row['class_name'],
-                                        run=run, key_val={'class_name': row['class_name']})
+                    _ = RoiAnnotations(project=project, roi=new_roi.id_, t=row['frame'],
+                                       classification=classification, annotation=row['class_name'],
+                                       run=run, key_val={'class_name': row['class_name']})
                 project.commit()
             print(annotated_rois)

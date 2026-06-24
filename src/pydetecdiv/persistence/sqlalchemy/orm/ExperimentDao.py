@@ -3,6 +3,8 @@
 """
 Access to ROI data
 """
+from typing import Any
+
 from sqlalchemy import Column, String, Integer, ForeignKey, Date
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 
@@ -16,24 +18,24 @@ class ExperimentDao(DAO, Base):
     translate = {}
 
     id_ = Column(Integer, primary_key=True, autoincrement='auto')
-    uuid = Column(String(36),)
+    uuid = Column(String(36), )
     name = Column(String, unique=True, nullable=False)
     author = Column(String)
     date = Column(Date)
     raw_dataset = Column(String, ForeignKey('dataset.id_'), index=True)
 
     @property
-    def record(self) -> dict[str, object]:
+    def record(self) -> dict[str, Any]:
         """
         A method creating a record dictionary from a data row dictionary. This method is used to convert the SQL
         table columns into the data record fields expected by the domain layer
 
         :return: a data record as a dictionary with keys() appropriate for handling by the domain layer
         """
-        return {'id_': self.id_,
-                'uuid': self.uuid,
-                'name': self.name,
-                'author': self.author,
-                'date': self.date,
+        return {'id_'        : self.id_,
+                'uuid'       : self.uuid,
+                'name'       : self.name,
+                'author'     : self.author,
+                'date'       : self.date,
                 'raw_dataset': self.raw_dataset,
                 }

@@ -34,7 +34,6 @@ class ROIdao(DAO, Base):
     uuid = Column(String(36))
     key_val = Column(JSON)
 
-    # image_data_list = relationship('ImageDataDao')
     data_list = ROIdata.roi_to_data()
 
     entities_ = relationship('EntityDao')
@@ -47,17 +46,17 @@ class ROIdao(DAO, Base):
 
         :return: a ROI record as a dictionary with keys() appropriate for handling by the domain layer
         """
-        return {'id_': self.id_,
-                'name': self.name,
-                'fov': self.fov,
-                'top_left': (self.x0_, self.y0_),
+        return {'id_'         : self.id_,
+                'name'        : self.name,
+                'fov'         : self.fov,
+                'top_left'    : (self.x0_, self.y0_),
                 'bottom_right': (self.x1_, self.y1_),
-                'size': (self.x1_ - self.x0_ + 1, self.y1_ - self.y0_ + 1),
-                'uuid': self.uuid,
-                'key_val': self.key_val,
+                'size'        : (self.x1_ - self.x0_ + 1, self.y1_ - self.y0_ + 1),
+                'uuid'        : self.uuid,
+                'key_val'     : self.key_val,
                 }
 
-    def data(self, roi_id: int) -> list[dict[str, Any]]:
+    def data(self, roi_id: int) -> list[dict[str, Any] | property]:
         """
         Returns a list of DataDao objects linked to the ROIdao object with the specified id_
 
@@ -70,7 +69,7 @@ class ROIdao(DAO, Base):
                 .filter(ROIdata.roi == roi_id)
                 ]
 
-    def entities(self, roi_id: int) -> list[dict[str, object]]:
+    def entities(self, roi_id: int) -> list[dict[str, Any]]:
         """
         A method returning the list of Entity records whose parent ROI has id_ == roi_id
 
@@ -87,7 +86,7 @@ class ROIdao(DAO, Base):
             entities = []
         return entities
 
-    def annotations(self, roi_id: int) -> list[dict[str, object]]:
+    def annotations(self, roi_id: int) -> list[dict[str, Any]]:
         """
         A method returning the list of Entity records whose parent ROI has id_ == roi_id
 
@@ -102,33 +101,3 @@ class ROIdao(DAO, Base):
         else:
             annotations = []
         return annotations
-
-    # def image_data(self, roi_id):
-    #     """
-    #     A method returning the list of Image data object records linked to ROI with id_ == roi_id
-    #     :param roi_id: the id of the ROI
-    #     :type roi_id: int
-    #     :return: a list of ImageData records linked to ROI with id_ == roi_id
-    #     :rtype: list
-    #     """
-    #     image_data = [image_data.record
-    #                   for image_data in self.session.query(ROIdao)
-    #                   .options(joinedload(ROIdao.image_data_list))
-    #                   .filter(ROIdao.id_ == roi_id)
-    #                   .first().image_data_list]
-    #     return image_data
-    #
-    # def image_list(self, roi_id):
-    #     """
-    #     A method returning the Image records linked to ImageData with id_ == roi_id
-    #     :param roi_id: the id of the ROI
-    #     :type roi_id: int
-    #     :return: a list containing the Image records linked to ROI with id_ == roi_id
-    #     :rtype: list
-    #     """
-    #     image_list = [image.record for image in
-    #                   self.session.query(dao.ImageDao)
-    #                   .filter(dao.ImageDataDao.id_ == dao.ImageDao.image_data)
-    #                   .filter(roi_id == dao.ImageDataDao.roi)
-    #                   .all()]
-    #     return image_list

@@ -143,6 +143,7 @@ class Parameter:
         """
         if self.qmodel is not None:
             return self.qmodel.itemChanged
+        return None
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Parameter):
@@ -376,6 +377,9 @@ class StringParameter(ItemParameter):
 
 
 class StringListParameter(Parameter):
+    """
+    A parameter defining a list of strings
+    """
     def __init__(self, name: str, label: str | None = None, default: list[str] | None = None,
                  validator: Callable[[str], bool] | None = None, groups: set[str] | None = None, updater: Callable | None = None,
                  commands: set[str] | None = None, **kwargs: dict[str, Any]) -> None:
@@ -389,43 +393,52 @@ class StringListParameter(Parameter):
         self.value = value
 
     def append(self, item: str) -> None:
+        """
+        Append a string to the list
+
+        :param item: the string item to add
+        """
         self.qmodel.add_item(item)
 
 
 class FileParameter(ItemParameter):
+    """
+    A parameter for choosing a file path.
+    """
     def __init__(self, name: str, label: str | None = None, default: str | Callable = '',
                  validator: Callable[[str], bool] | None = None, groups: set[str]  | None = None, updater: Callable | None = None,
-                 filters: list[str] | None = None, commands: set[str]  | None = None,
-                 require_existing: bool = False, **kwargs) -> None:
+                 commands: set[str]  | None = None, require_existing: bool = False, **kwargs) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          commands=commands, **kwargs)
-        # self.filter = filters
         self.require_existing = require_existing
 
 
 class DirParameter(ItemParameter):
+    """
+    A parameter for choosing a directory path.
+    """
     def __init__(self, name: str, label: str | None = None, default: str | Callable = '.',
                  validator: Callable[[str], bool] | None = None, groups: set[str]  | None = None, updater: Callable | None = None,
                  commands: set[str]  | None = None, **kwargs) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          commands=commands, **kwargs)
 
-class PathParameter(ItemParameter):
-    """
-    Class representing a parameter holding a path.
-    """
-    def __init__(self, name: str, label: str | None = None, default: str = '', validator: Callable[[str], bool] | None = None,
-                 groups: set[str] | None = None, updater: Callable | None = None, current_dir: str = '.',
-                 filters = list[str] | None, select_dir: bool = False, commands: set[str] | None = None,
-                 **kwargs) -> None:
-        super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
-                         commands=commands, **kwargs)
-        self.select_dir = select_dir
-        self.current_dir = current_dir
-        # self.filters = filters
-
-    def reset(self):
-        self.qmodel.set_value(os.path.join(self.current_dir, self.default))
+# class PathParameter(ItemParameter):
+#     """
+#     Class representing a parameter holding a path.
+#     """
+#     def __init__(self, name: str, label: str | None = None, default: str = '', validator: Callable[[str], bool] | None = None,
+#                  groups: set[str] | None = None, updater: Callable | None = None, current_dir: str = '.',
+#                  filters = list[str] | None, select_dir: bool = False, commands: set[str] | None = None,
+#                  **kwargs) -> None:
+#         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
+#                          commands=commands, **kwargs)
+#         self.select_dir = select_dir
+#         self.current_dir = current_dir
+#         # self.filters = filters
+#
+#     def reset(self):
+#         self.qmodel.set_value(os.path.join(self.current_dir, self.default))
 
 class CheckParameter(ItemParameter):
     """
@@ -704,6 +717,12 @@ class Parameters:
         return [param for param in self.parameter_list if param.groups.intersection(groups)]
 
     def for_command(self, command: str) -> list[Parameter]:
+        """
+        Gets all the parameters realted to a specific command
+
+        :param command: the command
+        :return: the corresponding list of parameters
+        """
         return [param for param in self.parameter_list if command in param.commands]
 
     def __repr__(self) -> str:

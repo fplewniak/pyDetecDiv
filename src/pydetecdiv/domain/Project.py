@@ -148,9 +148,8 @@ class Project:
         data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
         return self.repository.import_images(image_files, data_dir_path, destination, **kwargs)
 
-    def import_images_from_metadata(self, metadata_files: str, destination: str | None = None, author: str = '',
-                                    date: str = 'now', in_place: bool = True,
-                                    img_format: str = 'imagetiff', resource_format=ImageResource.MULTI, **kwargs) -> None:
+    def import_images_from_metadata(self, metadata_files: str, author: str = '', date: str = 'now', img_format: str = 'imagetiff',
+                                    resource_format=ImageResource.MULTI) -> None:
         """
         Import images specified in a list of files into a destination
 
@@ -206,6 +205,13 @@ class Project:
             image_res.validate()
 
     def import_ndtiff_data(self, ndtiff_dir, author: str = '', date: str = 'now'):
+        """
+        Import images in NDTiff format
+
+        :param ndtiff_dir: the NDTiff directory
+        :param author: the user importing the data
+        :param date: the date of import
+        """
         dataset: Dataset = cast(Dataset, self.get_named_object('Dataset', 'data'))
         author = get_config_value('project', 'user') if author == '' else author
         date_time = datetime.now() if date == 'now' else datetime.fromisoformat(date)
@@ -281,12 +287,12 @@ class Project:
         new_fovs = [FOV(project=self, name=fov_name, top_left=(0, 0), bottom_right=(999, 999)) for fov_name in
                     new_fov_names if fov_name not in fov_names]
         if multi:
-            new_image_resources = {fov.id_: ImageResource(project=self, dataset=self.raw_dataset, fov=fov, multi=True,
+            _ = {fov.id_: ImageResource(project=self, dataset=self.raw_dataset, fov=fov, multi=True,
                                                           zdim=int(df['Z'].max()),
                                                           cdim=int(df['C'].max()),
                                                           tdim=int(df['T'].max())) for fov in new_fovs}
         else:
-            new_image_resources = {fov.id_: ImageResource(project=self, dataset=self.raw_dataset, fov=fov, multi=False,
+            _ = {fov.id_: ImageResource(project=self, dataset=self.raw_dataset, fov=fov, multi=False,
                                                           ) for fov in new_fovs}
         image_resources = {fov.id_: fov.image_resource('data') for fov in self.get_objects('FOV')}
 
@@ -429,6 +435,13 @@ class Project:
         return pd.DataFrame.from_records(self.get_records(class_name, id_list))
 
     def get_polars(self, class_name: str, id_list: list[int] | None = None) -> polars.DataFrame:
+        """
+        Returns a list of objects of a certain class with their records presented as a polars.DataFrame
+
+        :param class_name: the name of the class
+        :param id_list: a list of ids to restrict the output
+        :return: the polars.DataFrame presenting the requested objects
+        """
         records = self.get_records(class_name, id_list)
         if records is not None:
             df = polars.from_records(records)
@@ -454,6 +467,13 @@ class Project:
         # return len(self.repository.get_records(class_name, None))
 
     def get_annotated_rois(self, ids_only=False, id_list: list[int] | None = None) -> list[ROI] | list[int]:
+        """
+        Get a list of ROIs, or ids thereof, which have annotations
+
+        :param ids_only: return ids if True, actual ROI objects otherwise
+        :param id_list: a list of ROI ids to restrict the list of returned ROIs
+        :return: the list of annotated ROIs or ids thereof
+        """
         annotations_df = self.get_polars('RoiAnnotations')
         roi_ids = annotations_df.select('roi').unique().to_series().to_list()
         if id_list is not None:
