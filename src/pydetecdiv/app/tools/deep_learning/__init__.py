@@ -10,14 +10,14 @@ from typing import Iterable
 
 import polars
 import torch
-from torch import Tensor
+from torch import Tensor, optim
 from torch.optim.lr_scheduler import SequentialLR, StepLR, ReduceLROnPlateau, LinearLR, LRScheduler
 from torch.utils.data import Dataset
 from torchvision.transforms import v2, transforms
 
-from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
+from pydetecdiv.app import pydetecdiv_project, PyDetecDiv, set_connections
 from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer
-from pydetecdiv.app.parameters import Parameters
+from pydetecdiv.app.parameters import Parameters, IntParameter, ChoiceParameter, FloatParameter, CheckParameter, FileParameter
 from pydetecdiv.app.tools import Tool
 
 from pydetecdiv.app.tools.deep_learning.train import ModelTrainer
@@ -28,6 +28,7 @@ from pydetecdiv.domain.Run import Run
 from pydetecdiv.domain.tools.data import RoiDataReader
 from pydetecdiv.torch import TrainingStats
 from pydetecdiv.torch.transforms import toStandardizedFloat32
+from pydetecdiv.utils.Alphabets import greek
 
 
 def find_tensors_on_gpu():
@@ -212,6 +213,51 @@ class DeepTool(Tool):
     def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None, device: torch.device | None = None,
                  model: torch.nn.Module | None = None):
         super().__init__(parameters=parameters, working_dir=working_dir)
+        self.parameters.add_parameters(
+                [
+                    IntParameter(name='epochs', label='Epochs', default=32, commands={'train_model'}),
+                    IntParameter(name='batch_size', label='Batch size', default=8, commands={'train_model'}),
+                    ChoiceParameter(name='optimizer', label='Optimizer', default='AdamW',
+                                    items={'AdamW'   : optim.AdamW,
+                                           'SGD'     : optim.SGD,
+                                           'Adadelta': optim.Adadelta,
+                                           'Adamax'  : optim.Adamax,
+                                           'Nadam'   : optim.NAdam,
+                                           }, commands={'train_model'}),
+                    IntParameter(name='seed', label='Random seed', maximum=999999999, default=42, commands={'train_model'}),
+                    FloatParameter(name='learning_rate', label='Learning rate', default=1.0e-4, minimum=1e-20, maximum=1.0,
+                                   commands={'train_model'}),
+                    FloatParameter(name='focal_gamma', label=f'Focal loss {greek["gamma"]}', default=1.5, minimum=0.0, maximum=2.0,
+                                   commands={'train_model'}),
+                    ChoiceParameter(name='regularization', label='Regularization method', default='LASSO (L1)',
+                                    items={'None'      : 0,
+                                           'LASSO (L1)': 1,
+                                           'Ridge (L2)': 2,
+                                           }, commands={'train_model'}),
+                    FloatParameter(name='lambda_reg', label=f'{greek["lambda"]} parameter', default=2e-5, minimum=1e-8,
+                                   maximum=10.0, commands={'train_model'}),
+                    CheckParameter(name='warmup', label='Warm-up', default=False, exclusive=False, commands={'train_model'}),
+                    FloatParameter(name='wu_start', label='   * warm-up start factor', default=0.1, minimum=0.1, maximum=0.5,
+                                   commands={'train_model'}),
+                    FloatParameter(name='wu_end', label='   * warm-up end factor', default=1.0, minimum=0.5, maximum=1.0,
+                                   commands={'train_model'}),
+                    IntParameter(name='wu_duration', label='   * warm-up duration', default=8, minimum=2, maximum=100,
+                                 commands={'train_model'}),
+                    CheckParameter(name='step_scheduler', label='Step scheduler', default=True, exclusive=True,
+                                   commands={'train_model'}),
+                    FloatParameter(name='step_gamma', label=f'   * {greek["gamma"]} parameter', default=0.95, minimum=0.01,
+                                   maximum=0.99, commands={'train_model'}),
+                    IntParameter(name='step_size', label='   * step size', default=4, minimum=1, maximum=100,
+                                 commands={'train_model'}),
+                    CheckParameter(name='reduce_lr_on_plateau', label='Reduce LR on plateau', default=False, exclusive=False,
+                                   commands={'train_model'}),
+                    IntParameter(name='reduce_patience', label='   * patience', default=10, minimum=1, maximum=100,
+                                 commands={'train_model'}),
+                    FloatParameter(name='reduction_factor', label='   * reduction factor', default=0.5, minimum=0.1, maximum=1.0,
+                                   commands={'train_model'}),
+                    ]
+                )
+
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu") if device is None else device
         self.model = model
         if self.model is not None:
@@ -318,23 +364,34 @@ class DeepTool(Tool):
         Abstract method to prepare the data for prediction
         """
 
-    # def run_training(self):
-    #     """
-    #     Generic method calling the trainer factory and training the model on the training and validation datasets
-    #     """
-    #     model_trainer = self.create_trainer()
-    #     model_trainer.train_model()
-    #
-    # def run_evaluation(self):
-    #     """
-    #     Generic method calling the evaluator factory and evaluating the model on the test dataset
-    #     """
-    #     model_evaluator = self.create_evaluator()
-    #     model_evaluator.evaluate_model()
-    #
-    # def predict(self):
-    #     """
-    #     Generic method calling the predictor factory to make prediction with the model
-    #     """
-    #     predictor = self.create_predictor()
-    #     predictor.predict()
+
+class SupervisedDeepTool(DeepTool):
+    def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None, device: torch.device | None = None,
+                 model: torch.nn.Module | None = None):
+        super().__init__(parameters=parameters, working_dir=working_dir)
+        self.parameters.add_parameters(
+                [FloatParameter(name='num_training', label='Training dataset', default=0.4, minimum=0.01, maximum=0.98,
+                                   commands={'train_model'}),
+                    FloatParameter(name='num_validation', label='Validation dataset', default=0.3, minimum=0.01, maximum=0.98,
+                                   commands={'train_model'}),
+                    FloatParameter(name='num_test', label='Test dataset', default=0.3, minimum=0.01, maximum=0.98,
+                                   commands={'train_model'}),
+                    IntParameter(name='data_seed', label='Random seed', maximum=999999999, default=42,
+                                 commands={'train_model'}),
+                    FileParameter(name='hdf5_file', label='', filters=["HDF5 (*.h5 *.hdf5)"], require_existing=True,
+                                  default=self.update_file, commands={'train_model'}),
+                    CheckParameter(name='time_first', label='Time first', default=False, commands={'train_model'}),
+                    CheckParameter(name='augmentation', label='Augmentation', default=False, exclusive=False,
+                                   commands={'train_model'}),
+                 ]
+                )
+        set_connections({PyDetecDiv.app.project_selected: [self.update_file]})
+
+    def update_file(self):
+        """
+        Update the HDF5 file path according to the current project. The default path corresponds to the default path for the HDF5
+        ROI creator tool
+        """
+        if 'cnrs.plewniak.roiseqhdf5creator' in PyDetecDiv.tools:
+            self.parameters.hdf5_file.set_value(os.path.join(PyDetecDiv.tools['cnrs.plewniak.roiseqhdf5creator'].working_dir,
+                                                             'roi_data.h5'))

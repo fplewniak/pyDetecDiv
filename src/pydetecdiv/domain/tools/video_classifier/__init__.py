@@ -13,7 +13,7 @@ from pydetecdiv.app import PyDetecDiv, set_connections
 from pydetecdiv.domain.tools.video_classifier.models import MViT, Swin3D, S3D, VideoResNet
 from pydetecdiv.app.parameters import (Parameters, IntParameter, FloatParameter, ChoiceParameter, CheckParameter,
                                        StringParameter, FileParameter)
-from pydetecdiv.app.tools.deep_learning import DeepTool, ROIDataset
+from pydetecdiv.app.tools.deep_learning import DeepTool, ROIDataset, SupervisedDeepTool
 from pydetecdiv.domain.tools.data import compute_class_weights
 from pydetecdiv.domain.tools.video_classifier.models.VideoResNet import CustomR2Plus_1D
 from pydetecdiv.domain.tools.video_classifier.train import VideoClassifierTrainer
@@ -23,7 +23,7 @@ from pydetecdiv.domain.tools.data.hdf5 import ROIHDF5reader
 from pydetecdiv.utils.Alphabets import greek
 
 
-class VideoClassifier(DeepTool):
+class VideoClassifier(SupervisedDeepTool):
     """
     Video classifier tool, providing all functionalities for deep learning video classification (training, evaluation, prediction)
     """
@@ -44,79 +44,15 @@ class VideoClassifier(DeepTool):
                                            'MC3_18'         : VideoResNet.MC3_18,
                                            'R2+1d_18'       : VideoResNet.R2Plus1d_18,
                                            'CustomR2Plus_1D': CustomR2Plus_1D,
-                                           'MViT_small': MViT.MViT_v2_s,
+                                           'MViT_small'     : MViT.MViT_v2_s,
                                            }, commands={'train_model'}),
                     StringParameter(name='layers', label='Blocks layers', default='[1, 2]', commands={'train_model'}),
                     StringParameter(name='strides', label='Strides', default='[1, 2]', commands={'train_model'}),
-                    IntParameter(name='epochs', label='Epochs', default=32, commands={'train_model'}),
-                    IntParameter(name='batch_size', label='Batch size', default=8, commands={'train_model'}),
-                    ChoiceParameter(name='optimizer', label='Optimizer', default='AdamW',
-                                    items={'AdamW'   : optim.AdamW,
-                                           'SGD'     : optim.SGD,
-                                           'Adadelta': optim.Adadelta,
-                                           'Adamax'  : optim.Adamax,
-                                           'Nadam'   : optim.NAdam,
-                                           }, commands={'train_model'}),
-                    IntParameter(name='seed', label='Random seed', maximum=999999999, default=42, commands={'train_model'}),
-                    FloatParameter(name='learning_rate', label='Learning rate', default=1.0e-4, minimum=1e-20, maximum=1.0,
-                                   commands={'train_model'}),
-                    FloatParameter(name='focal_gamma', label=f'Focal loss {greek["gamma"]}', default=1.5, minimum=0.0, maximum=2.0,
-                                   commands={'train_model'}),
-                    FloatParameter(name='num_training', label='Training dataset', default=0.4, minimum=0.01, maximum=0.98,
-                                   commands={'train_model'}),
-                    FloatParameter(name='num_validation', label='Validation dataset', default=0.3, minimum=0.01, maximum=0.98,
-                                   commands={'train_model'}),
-                    FloatParameter(name='num_test', label='Test dataset', default=0.3, minimum=0.01, maximum=0.98,
-                                   commands={'train_model'}),
-                    IntParameter(name='data_seed', label='Random seed', maximum=999999999, default=42,
-                                 commands={'train_model'}),
-                    FileParameter(name='hdf5_file', label='', filters=["HDF5 (*.h5 *.hdf5)"], require_existing=True,
-                                  default=self.update_file, commands={'train_model'}),
-                    CheckParameter(name='time_first', label='Time first', default=False, commands={'train_model'}),
-                    CheckParameter(name='augmentation', label='Augmentation', default=False, exclusive=False,
-                                   commands={'train_model'}),
                     IntParameter(name='seq_len', label='Sequence length', maximum=16, default=4, commands={'train_model'}),
-                    ChoiceParameter(name='regularization', label='Regularization method', default='LASSO (L1)',
-                                    items={'None'      : 0,
-                                           'LASSO (L1)': 1,
-                                           'Ridge (L2)': 2,
-                                           }, commands={'train_model'}),
-                    FloatParameter(name='lambda_reg', label=f'{greek["lambda"]} parameter', default=2e-5, minimum=1e-8,
-                                   maximum=10.0, commands={'train_model'}),
                     FloatParameter(name='dropout', label='Dropout', default=0.2, minimum=0.0, maximum=0.9,
                                    commands={'train_model'}),
-                    CheckParameter(name='warmup', label='Warm-up', default=False, exclusive=False, commands={'train_model'}),
-                    FloatParameter(name='wu_start', label='   * warm-up start factor', default=0.1, minimum=0.1, maximum=0.5,
-                                   commands={'train_model'}),
-                    FloatParameter(name='wu_end', label='   * warm-up end factor', default=1.0, minimum=0.5, maximum=1.0,
-                                   commands={'train_model'}),
-                    IntParameter(name='wu_duration', label='   * warm-up duration', default=8, minimum=2, maximum=100,
-                                 commands={'train_model'}),
-                    CheckParameter(name='step_scheduler', label='Step scheduler', default=True, exclusive=True,
-                                   commands={'train_model'}),
-                    FloatParameter(name='step_gamma', label=f'   * {greek["gamma"]} parameter', default=0.95, minimum=0.01,
-                                   maximum=0.99, commands={'train_model'}),
-                    IntParameter(name='step_size', label='   * step size', default=4, minimum=1, maximum=100,
-                                 commands={'train_model'}),
-                    CheckParameter(name='reduce_lr_on_plateau', label='Reduce LR on plateau', default=False, exclusive=False,
-                                   commands={'train_model'}),
-                    IntParameter(name='reduce_patience', label='   * patience', default=10, minimum=1, maximum=100,
-                                 commands={'train_model'}),
-                    FloatParameter(name='reduction_factor', label='   * reduction factor', default=0.5, minimum=0.1, maximum=1.0,
-                                   commands={'train_model'}),
-                    # IntParameter(name='idx', label='Dataset index', maximum=999999999, minimum=0, default=0),
                     ]
                 )
-        set_connections({PyDetecDiv.app.project_selected: [self.update_file]})
-
-    def update_file(self):
-        """
-        Update the HDF5 file path according to the current project. The default path corresponds to the default path for the HDF5
-        ROI creator tool
-        """
-        if 'cnrs.plewniak.roiseqhdf5creator' in PyDetecDiv.tools:
-            self.parameters.hdf5_file.set_value(os.path.join(PyDetecDiv.tools['cnrs.plewniak.roiseqhdf5creator'].working_dir,
-                                                             'roi_data.h5'))
 
     def prepare_data_for_training(self, *args, image_shape=(224, 224), **kwargs) -> tuple[ROIDataset, ROIDataset, torch.Tensor]:
         """

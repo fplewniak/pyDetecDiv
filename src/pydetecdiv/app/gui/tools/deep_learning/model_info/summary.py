@@ -9,7 +9,7 @@ from pydetecdiv.plugins.gui import set_connections
 
 
 class ModelSummaryDialog(ToolDialog):
-    def __init__(self, tool: Tool, title: str = None, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, tool: Tool, title: str | None = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(tool, title, **kwargs)
 
         model_choice = self.addGroupBox(
