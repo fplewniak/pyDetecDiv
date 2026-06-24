@@ -6,7 +6,7 @@
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from pydetecdiv.domain import Data
+    from pydetecdiv.domain.Data import Data
 
 import os
 

@@ -1,3 +1,6 @@
+"""
+GUI for deep learning model summary tool
+"""
 import json
 from typing import Any
 
@@ -9,6 +12,9 @@ from pydetecdiv.plugins.gui import set_connections
 
 
 class ModelSummaryDialog(ToolDialog):
+    """
+    Dialog window for deep learning model summary tool
+    """
     def __init__(self, tool: Tool, title: str | None = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(tool, title, **kwargs)
 
@@ -36,7 +42,10 @@ class ModelSummaryDialog(ToolDialog):
         self.fit_to_contents()
         self.exec()
 
-    def show_model_information(self):
+    def show_model_information(self) -> None:
+        """
+        Shows the model summary
+        """
         if self.tool.parameters.model.key == 'CustomR2Plus_1D':
             model = self.tool.parameters.model.value(n_classes=self.tool.parameters.num_classes.value,
                                                      layers=json.loads(self.tool.parameters.layers.value),

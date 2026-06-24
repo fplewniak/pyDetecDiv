@@ -3,6 +3,8 @@
 """
 Access to Dataset data
 """
+from typing import Any
+
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.types import JSON
 from sqlalchemy.orm import relationship, joinedload
@@ -28,7 +30,7 @@ class DatasetDao(DAO, Base):
 
     data_list_ = relationship('DataDao')
 
-    def data_list(self, dataset_id: int) -> list[dict[str, object]]:
+    def data_list(self, dataset_id: int) -> list[dict[str, Any]]:
         """
         A method returning the list of Data records whose parent Dataset has id_ == dataset_id
 
@@ -46,19 +48,19 @@ class DatasetDao(DAO, Base):
         return data_list
 
     @property
-    def record(self) -> dict[str, object]:
+    def record(self) -> dict[str, Any]:
         """
         A method creating a record dictionary from a dataset row dictionary. This method is used to convert the SQL
         table columns into the dataset record fields expected by the domain layer
 
         :return: a dataset record as a dictionary with keys() appropriate for handling by the domain layer
         """
-        return {'id_': self.id_,
-                'uuid': self.uuid,
-                'name': self.name,
-                'url': self.url,
-                'type_': self.type_,
-                'run': self.run,
+        return {'id_'    : self.id_,
+                'uuid'   : self.uuid,
+                'name'   : self.name,
+                'url'    : self.url,
+                'type_'  : self.type_,
+                'run'    : self.run,
                 'pattern': self.pattern,
                 'key_val': self.key_val,
                 }

@@ -1,26 +1,20 @@
 """
 Video classifier tool
 """
-import os
-
 import numpy as np
 import tables
 import torch
-from torch import optim
 from torchvision.transforms import InterpolationMode, v2
 
-from pydetecdiv.app import PyDetecDiv, set_connections
 from pydetecdiv.domain.tools.video_classifier.models import MViT, Swin3D, S3D, VideoResNet
-from pydetecdiv.app.parameters import (Parameters, IntParameter, FloatParameter, ChoiceParameter, CheckParameter,
-                                       StringParameter, FileParameter)
-from pydetecdiv.app.tools.deep_learning import DeepTool, ROIDataset, SupervisedDeepTool
+from pydetecdiv.app.parameters import Parameters, IntParameter, FloatParameter, ChoiceParameter, StringParameter
+from pydetecdiv.app.tools.deep_learning import ROIDataset, SupervisedDeepTool
 from pydetecdiv.domain.tools.data import compute_class_weights
 from pydetecdiv.domain.tools.video_classifier.models.VideoResNet import CustomR2Plus_1D
 from pydetecdiv.domain.tools.video_classifier.train import VideoClassifierTrainer
 from pydetecdiv.domain.tools.video_classifier.evaluate import VideoClassifierEvaluator
 from pydetecdiv.domain.tools.video_classifier.predict import VideoClassifierPredictor
 from pydetecdiv.domain.tools.data.hdf5 import ROIHDF5reader
-from pydetecdiv.utils.Alphabets import greek
 
 
 class VideoClassifier(SupervisedDeepTool):

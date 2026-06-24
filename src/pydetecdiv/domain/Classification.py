@@ -8,10 +8,10 @@ class Classification(NamedDSO):
     A business-logic class defining valid operations and attributes of Classification schemas
     """
 
-    def __init__(self, classes:list['str'] = None, key_val: dict[str, Any] = None,**kwargs):
+    def __init__(self, classes:list['str'] | None = None, key_val: dict[str, Any] | None = None,**kwargs):
         super().__init__(**kwargs)
-        self.classes = classes
-        self.key_val = key_val
+        self.classes = classes if classes is not None else []
+        self.key_val = key_val if key_val is not None else {}
         self.validate(updated=False)
 
     def delete(self) -> None:

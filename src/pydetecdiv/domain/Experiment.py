@@ -14,9 +14,8 @@ class Experiment(NamedDSO):
     A business-logic class defining valid operations and attributes of an experiment
     """
 
-    def __init__(self, uuid: str, author: str, date: datetime.datetime, raw_dataset: int, **kwargs):
+    def __init__(self, author: str, date: datetime.datetime, raw_dataset: int, **kwargs):
         super().__init__(**kwargs)
-        self.uuid = uuid
         self.author = author
         self.date = date
         self.raw_dataset_ = raw_dataset

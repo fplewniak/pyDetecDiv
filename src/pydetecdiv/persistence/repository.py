@@ -6,7 +6,6 @@ concrete repositories.
 """
 import abc
 import subprocess
-from datetime import datetime
 from typing import Any, Callable
 
 import pandas

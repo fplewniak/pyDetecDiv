@@ -31,7 +31,7 @@ class EntityDao(DAO, Base):
     masks_ = relationship('MaskDao')
     points_ = relationship('PointDao')
 
-    def bounding_boxes(self, entity_id: int) -> list[dict[str, object]]:
+    def bounding_boxes(self, entity_id: int) -> list[dict[str, Any]]:
         """
         A method returning the list of BoundingBox records whose parent Entity has id == entity_id
 
@@ -50,7 +50,7 @@ class EntityDao(DAO, Base):
             bounding_boxes = []
         return bounding_boxes
 
-    def masks(self, entity_id: int) -> list[dict[str, object]]:
+    def masks(self, entity_id: int) -> list[dict[str, Any]]:
         """
         A method returning the list of Mask records whose parent Entity has id == entity_id
 
@@ -69,7 +69,7 @@ class EntityDao(DAO, Base):
             masks = []
         return masks
 
-    def points(self, entity_id: int) -> list[dict[str, object]]:
+    def points(self, entity_id: int) -> list[dict[str, Any]]:
         """
         A method returning the list of Mask records whose parent Entity has id == entity_id
 

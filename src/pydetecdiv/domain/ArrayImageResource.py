@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from bioio_base.dimensions import Dimensions
 
 if TYPE_CHECKING:
-    from pydetecdiv.domain import ImageResource
+    from pydetecdiv.domain.ImageResource import ImageResource
 
 from bioio import BioImage
 import numpy as np
@@ -19,7 +19,7 @@ class ArrayImageResource(ImageResourceData):
     """
     A business-logic class defining valid operations and attributes of Image resources stored in a data array
     """
-    def __init__(self, data: np.ndarray = None, image_resource: 'ImageResource' = None, max_mem=5000):
+    def __init__(self, data: np.ndarray, image_resource: 'ImageResource', max_mem=5000):
         self.img_data = BioImage(data)
         self.fov = image_resource.fov
         self.image_resource = image_resource.id_
@@ -76,10 +76,11 @@ class ArrayImageResource(ImageResourceData):
         """
         return self.img_data.dims.X
 
-    def image(self, C: int = 0, Z: int = 0, T: int = 0, drift: bool = None) -> np.ndarray:
+    def image(self, C: int = 0, Z: int = 0, T: int = 0, drift: bool = False) -> np.ndarray:
         """
         A 2D grayscale image (on frame, one channel and one layer)
 
+        :param drift: Apply drift correction if True
         :param C: the channel index
         :type C: int
         :param Z: the layer index
@@ -91,11 +92,11 @@ class ArrayImageResource(ImageResourceData):
         """
         data = self.img_data.get_image_dask_data('YX', C=C, Z=Z, T=T).compute()
 
-        if drift is not None:
+        if drift and self.drift is not None:
             return cv2.warpAffine(np.array(data),
                                   np.float32(
-                                      [[1, 0, -drift.dx],
-                                       [0, 1, -drift.dy]]),
+                                      [[1, 0, -self.drift.dx],
+                                       [0, 1, -self.drift.dy]]),
                                   (data.shape[1], data.shape[0]))
         return data
 

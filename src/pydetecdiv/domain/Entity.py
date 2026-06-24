@@ -4,25 +4,28 @@
  A class defining the business logic methods that can be applied to Entities
 """
 import sys
-from typing import Any, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING, cast
 
 from pydetecdiv.domain.ROI import ROI
 from pydetecdiv.domain.dso import NamedDSO
 
 if TYPE_CHECKING:
-    from pydetecdiv.domain import Mask
+    from pydetecdiv.domain.Mask import Mask
+    from pydetecdiv.domain.BoundingBox import BoundingBox
+    from pydetecdiv.domain.Point import Point
 
 class Entity(NamedDSO):
     """
     A class defining an entity that can be segmented, tracked, etc in a time-lapse microscopy video
     """
 
-    def __init__(self, roi: int | ROI, category: str = 'cell', exit_frame: int = sys.maxsize, key_val: dict = None, **kwargs):
+    def __init__(self, roi: int | ROI, category: str = 'cell',
+                 exit_frame: int = sys.maxsize, key_val: dict | None = None, **kwargs):
         super().__init__(**kwargs)
         self._roi = roi.id_ if isinstance(roi, ROI) else roi
         self._exit_frame = exit_frame
         self.category = category
-        self.key_val = key_val
+        self.key_val = key_val if key_val is not None else {}
         self.validate(updated=False)
 
     @property
@@ -32,7 +35,7 @@ class Entity(NamedDSO):
 
         :return: the parent ROI object
         """
-        return self.project.get_object('ROI', self._roi)
+        return cast(ROI, self.project.get_object('ROI', self._roi))
 
     @roi.setter
     def roi(self, roi: int | ROI) -> None:
@@ -60,7 +63,7 @@ class Entity(NamedDSO):
             return self.bounding_boxes(frame=frame)[0]
         return None
 
-    def bounding_boxes(self, frame: int = None) -> list['Bounding_Box']:
+    def bounding_boxes(self, frame: int | None = None) -> list['BoundingBox']:
         """
         return a list of Bounding boxes for this Entity if frame is None, otherwise return the bounding box at the requested frame
         :param frame: the frame or None
@@ -68,7 +71,7 @@ class Entity(NamedDSO):
         all_bounding_boxes = self.project.get_linked_objects('BoundingBox', self)
         return [bb for bb in all_bounding_boxes if bb.frame == frame] if frame is not None else all_bounding_boxes
 
-    def points(self, frame: int = None) -> list['Point']:
+    def points(self, frame: int | None = None) -> list['Point']:
         """
         return a list of points for this Entity
         :param frame: the frame or None
@@ -76,7 +79,7 @@ class Entity(NamedDSO):
         all_points = self.project.get_linked_objects('Point', self)
         return [p for p in all_points if p.frame == frame] if frame is not None else all_points
 
-    def masks(self, frame: int = None) -> list['Mask']:
+    def masks(self, frame: int | None = None) -> list['Mask']:
         """
         return a list of masks for this Entity if frame is None, otherwise, returns the mask at the given frame
         :param frame: the frame or None

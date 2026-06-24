@@ -41,10 +41,6 @@ class DAO:
             .values(**record)
         )
         primary_key = self.session.execute(stmt).inserted_primary_key[0]
-        # primary_key = self.session.execute(Insert(self.__class__).values(record)).inserted_primary_key[0]
-        # with self.session() as session:
-        #     primary_key = session.execute(Insert(self.__class__).values(record)).inserted_primary_key[0]
-        #     session.commit()
         return primary_key
 
     def update(self, rec: dict[str, Any]) -> int:

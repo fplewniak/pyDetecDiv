@@ -32,6 +32,9 @@ from pydetecdiv.utils.Alphabets import greek
 
 
 def find_tensors_on_gpu():
+    """
+    Find tensors stored on GPU (for debugging purposes)
+    """
     for obj in gc.get_objects():
         try:
             if torch.is_tensor(obj) and obj.is_cuda:
@@ -41,6 +44,9 @@ def find_tensors_on_gpu():
 
 
 def find_gpu_tensor_references():
+    """
+    Find references to tensors stored on GPU (for debugging purposes)
+    """
     for obj in gc.get_objects():
         if torch.is_tensor(obj) and obj.is_cuda:
             print(f"\nTensor: {obj}, Size: {obj.size()}, Device: {obj.device}", file=sys.stderr)
@@ -366,6 +372,9 @@ class DeepTool(Tool):
 
 
 class SupervisedDeepTool(DeepTool):
+    """
+    Generic class defining tool for supervised deep learning
+    """
     def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None, device: torch.device | None = None,
                  model: torch.nn.Module | None = None):
         super().__init__(parameters=parameters, working_dir=working_dir)

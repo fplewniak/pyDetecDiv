@@ -1,3 +1,6 @@
+"""
+Access to Classification schemes data
+"""
 from typing import Any
 
 import sqlalchemy
@@ -24,7 +27,6 @@ class ClassificationDao(DAO, Base):
     key_val = Column(JSON)
 
     roi_annotations_ = relationship('RoiAnnotationsDao', viewonly=True)
-    # runs_ = relationship('RunDao', secondary=RoiAnnotationsDao.__table__, viewonly=True)
 
     @property
     def record(self) -> dict[str, Any]:
@@ -41,7 +43,7 @@ class ClassificationDao(DAO, Base):
                 'key_val': self.key_val,
                 }
 
-    def annotations(self, classification_id: int) -> list[dict[str, object]]:
+    def annotations(self, classification_id: int) -> list[dict[str, Any]]:
         """
         A method returning the list of ROI Annotations records whose parent Classification has id_ == classification_id
 
@@ -58,7 +60,7 @@ class ClassificationDao(DAO, Base):
             annotations = []
         return annotations
 
-    def runs(self, classification_id: int) -> list[dict[str, object]]:
+    def runs(self, classification_id: int) -> list[dict[str, Any]]:
         """
         A method returning the list of Run records whose parent Classification has id_ == classification_id
 

@@ -1,3 +1,6 @@
+"""
+Tool for creating HDF5 files with ROI sequences
+"""
 import locale
 import os.path
 import time
@@ -8,7 +11,6 @@ import torch
 
 import fastremap
 import numpy as np
-import tables as tbl
 
 from pydetecdiv.app import set_connections
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
@@ -25,6 +27,9 @@ from pydetecdiv.utils import hdf5
 
 
 class ROIseqHDF5creator(Tool):
+    """
+    Class defining the tool for creating HDF5 containing ROI sequences
+    """
     id_ = 'cnrs.plewniak.roiseqhdf5creator'
     version = '1.0.0'
     name = 'ROI HDF5 creator'
@@ -64,11 +69,17 @@ class ROIseqHDF5creator(Tool):
             cast(ChoiceParameter, self.parameters[param]).set_items({str(i): i for i in range(n_layers)})
 
     def update_classification(self) -> None:
+        """
+        Update the list of classification schemes available in the current project
+        """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             cast(ChoiceParameter, self.parameters.classification).set_items(
                     {f'{c.name} {c.classes}': c for c in cast(list[Classification], project.get_objects('Classification'))})
 
-    def test_image_file(self):
+    def test_image_file(self) -> None:
+        """
+        Test image file for debugging purposes
+        """
         z_channels = [self.parameters.red_channel.value, self.parameters.green_channel.value, self.parameters.blue_channel.value]
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             fov: FOV = cast(FOV, next(fov for fov in cast(list[FOV], project.get_objects('FOV')) if fov.roi_list))
@@ -81,16 +92,19 @@ class ROIseqHDF5creator(Tool):
                 for t in range(1, image_resource_data.sizeT, 1):
                     img = image_resource_data.auto_channels(T=t, Z=z_channels, crop=(slice(x1, x2 + 1), slice(y1, y2 + 1)),
                                                             drift=True, resize=(height, width))
-                    print(
-                        f'{roi.id_}, {roi.name}: {t=}, {torch.max(img.as_tensor(dtype=ImgDType.float32))}, {img.dtype}, {img.shape}')
+                    print(f'{roi.id_}, {roi.name}: {t=},'
+                          f' {torch.max(img.as_tensor(dtype=ImgDType.float32))}, {img.dtype}, {img.shape}')
 
-    def create_file(self):
+    def create_file(self) -> None:
+        """
+        Create the HDF5 file
+        """
         if self.parameters.annotations:
             print(f'Create ROI HDF5 file with annotations: {self.parameters.hdf5_file}')
         else:
             print(f'Create ROI HDF5 file: {self.parameters.hdf5_file}')
         seqlen = self.parameters.seqlen.value
-        h5file = tbl.open_file(self.parameters.hdf5_file.value, mode='w', title='ROI data')
+        h5file = tables.open_file(self.parameters.hdf5_file.value, mode='w', title='ROI data')
         z_channels = [self.parameters.red_channel.value, self.parameters.green_channel.value, self.parameters.blue_channel.value]
 
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
@@ -101,24 +115,24 @@ class ROIseqHDF5creator(Tool):
             width = np.int64(np.max([roi.width for roi in cast(list[ROI], project.get_objects('ROI'))]))
             if self.parameters.time_first:
                 roi_seq_hdf5 = h5file.create_carray(h5file.root, 'roi_data',
-                                                    atom=tbl.Float32Atom(shape=(seqlen, np.int64(3), height, width)),
+                                                    atom=tables.Float32Atom(shape=(seqlen, np.int64(3), height, width)),
                                                     chunkshape=(num_sequences, 1,), shape=(num_frames, num_rois))
             else:
                 roi_seq_hdf5 = h5file.create_carray(h5file.root, 'roi_data',
-                                                    atom=tbl.Float32Atom(shape=(seqlen, np.int64(3), height, width)),
+                                                    atom=tables.Float32Atom(shape=(seqlen, np.int64(3), height, width)),
                                                     chunkshape=(1, num_sequences,), shape=(num_rois, num_frames))
-            roi_ids_hdf5 = h5file.create_carray(h5file.root, 'roi_ids', atom=tbl.UInt16Atom(shape=()),
+            roi_ids_hdf5 = h5file.create_carray(h5file.root, 'roi_ids', atom=tables.UInt16Atom(shape=()),
                                                 chunkshape=(num_rois,), shape=(num_rois,))
             if self.parameters.annotations:
 
                 if self.parameters.time_first:
                     initial_values = np.zeros((num_sequences, num_rois,), dtype=np.int8) - 1
-                    targets_hdf5 = h5file.create_carray(h5file.root, 'targets', atom=tbl.Int8Atom(shape=()),
+                    targets_hdf5 = h5file.create_carray(h5file.root, 'targets', atom=tables.Int8Atom(shape=()),
                                                         chunkshape=(num_sequences, 1,), shape=(num_sequences, num_rois),
                                                         obj=initial_values)
                 else:
                     initial_values = np.zeros((num_rois, num_sequences), dtype=np.int8) - 1
-                    targets_hdf5 = h5file.create_carray(h5file.root, 'targets', atom=tbl.Int8Atom(shape=()),
+                    targets_hdf5 = h5file.create_carray(h5file.root, 'targets', atom=tables.Int8Atom(shape=()),
                                                         chunkshape=(1, num_sequences,), shape=(num_rois, num_sequences,),
                                                         obj=initial_values)
                 classes_hdf5 = h5file.create_table(h5file.root, 'class_names', hdf5.TblNamesRow, 'Class names')
@@ -183,11 +197,14 @@ class ROIseqHDF5creator(Tool):
             h5file.close()
             print(f'Full job in {time.perf_counter() - start} s')
 
-    def save_run(self, *args, **kwargs):
+    def save_run(self, *args, **kwargs) -> None:
         pass
 
 
 class ROIHDF5reader(RoiDataReader):
+    """
+    Class extending the generic ROIDataReader and defining the methods to read an HDF5 file containing ROI data
+    """
     def __init__(self, source: tables.File, time_first: bool = False):
         super().__init__(source)
         self.contains_targets = source.__contains__('/targets')
@@ -223,7 +240,10 @@ class ROIHDF5reader(RoiDataReader):
         return len(self.source.root.roi_ids)
 
     @property
-    def targets(self):
+    def targets(self) -> np.ndarray:
+        """
+        Property returning the list of targets
+        """
         return self.source.root.targets[:]
 
     @property

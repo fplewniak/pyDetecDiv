@@ -155,7 +155,7 @@ def compute_class_weights(targets: np.ndarray) -> torch.Tensor:
     """
     labels = targets.flatten()
     labels = labels[labels > -1]
-    classes, class_counts = np.unique(labels, return_counts=True)
+    _, class_counts = np.unique(labels, return_counts=True)
     total_counts = np.sum(class_counts)
     num_classes = len(class_counts)
     alpha = total_counts / class_counts

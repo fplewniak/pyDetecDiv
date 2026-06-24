@@ -3,6 +3,7 @@
 """
 ORM classes describing associations between DAOs/tables
 """
+import warnings
 from typing import TypeVar, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -17,6 +18,7 @@ from pydetecdiv.persistence.sqlalchemy.orm.main import Base, DAO
 DAOvar = TypeVar('DAOvar', bound=DAO)
 
 
+@warnings.deprecated('deprecated')
 class ROIdata(Base):
     """
     Association many to many between ROI and Image data
@@ -89,7 +91,7 @@ class ROIdata(Base):
             'data': self.data,
             }
 
-
+@warnings.deprecated('deprecated')
 class Linker:
     """
     A class providing methods for linking two Data access objects.

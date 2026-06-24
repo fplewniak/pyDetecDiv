@@ -1,3 +1,6 @@
+"""
+Tools providing information about deep learning models
+"""
 from pydetecdiv.app.tools import Tool
 
 from pydetecdiv.app.parameters import Parameters, StringParameter, ChoiceParameter, IntParameter, Parameter
@@ -5,6 +8,9 @@ from pydetecdiv.domain.tools.video_classifier.models import MViT, Swin3D, S3D, V
 
 
 class ModelInfo(Tool):
+    """
+    Tool to display a deep learning model summary
+    """
     id_ = 'cnrs.plewniak.deeplearningmodelinfo'
     version = '1.0.0'
     name = 'Model information'

@@ -50,7 +50,7 @@ class BoundingBox(NamedDSO):
         return self.project.get_object('Entity', self._entity)
 
     @property
-    def x(self) -> float | None:
+    def x(self) -> float:
         """
         the x coordinate of the bounding box (top-left corner)
         """
@@ -60,7 +60,7 @@ class BoundingBox(NamedDSO):
         return self.graphics_item.pos().x()
 
     @property
-    def y(self) -> float | None:
+    def y(self) -> float:
         """
         the y coordinate of the bounding box (top-left corner)
         """
@@ -70,7 +70,7 @@ class BoundingBox(NamedDSO):
         return self.graphics_item.pos().y()
 
     @property
-    def width(self) -> int | None:
+    def width(self) -> float:
         """
         the width of the bounding box
         """
@@ -80,7 +80,7 @@ class BoundingBox(NamedDSO):
         return self.graphics_item.rect().width()
 
     @property
-    def height(self) -> int | None:
+    def height(self) -> float :
         """
         the height of the bounding box
         """
@@ -90,7 +90,7 @@ class BoundingBox(NamedDSO):
         return self.graphics_item.rect().height()
 
     @property
-    def coords(self) -> list[float]:
+    def coords(self) -> list[float | None]:
         """
         the coordinates of the bounding box (top-left corner / bottom-right corner)
         """
