@@ -56,7 +56,7 @@ class PyDetecDiv(QApplication):
     project_name = None
     main_window = None
     current_drawing_tool = None
-    plugin_list = None
+    # plugin_list = None
     app = None
     tools = {}
 
@@ -66,7 +66,7 @@ class PyDetecDiv(QApplication):
     def __init__(self, *args: list):
         super().__init__(*args)
         self.setApplicationName('pyDetecDiv')
-        self.load_plugins()
+        # self.load_plugins()
         # self.check_data_source_paths()
 
     @staticmethod
@@ -78,12 +78,12 @@ class PyDetecDiv(QApplication):
         PyDetecDiv.tools.update(new_tools)
 
     @staticmethod
-    def load_plugins() -> None:
-        """
-        Load the available plugins
-        """
-        PyDetecDiv.plugin_list = plugins.PluginList()
-        PyDetecDiv.plugin_list.load()
+    # def load_plugins() -> None:
+    #     """
+    #     Load the available plugins
+    #     """
+    #     PyDetecDiv.plugin_list = plugins.PluginList()
+    #     PyDetecDiv.plugin_list.load()
 
     @staticmethod
     def check_data_source_paths(table_editor: 'TableEditor') -> None:

@@ -9,8 +9,8 @@ from pydetecdiv.app.gui.tools import ToolAction
 
 from pydetecdiv.app.gui.tools.data.hdf5 import Create_ROI_HDF5Dialog
 
-from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.app.gui import FileMenu, ProjectMenu, DataMenu, PluginMenu, Enable
+from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
+from pydetecdiv.app.gui import FileMenu, ProjectMenu, DataMenu, Enable #, PluginMenu
 from pydetecdiv.app.gui.Windows import MainWindow
 from pydetecdiv.app.gui import SourcePath
 from pydetecdiv.app.gui.tools.deep_learning.classification_schemes import ClassificationSchemeMenu
@@ -33,7 +33,7 @@ def main_gui():
     Main function for GUI application
     """
     PyDetecDiv.app = PyDetecDiv([])
-    PyDetecDiv.plugin_list.register_all()
+    # PyDetecDiv.plugin_list.register_all()
     pg.setConfigOptions(antialias=True, background='w')
 
     style_sheet = """
@@ -88,6 +88,8 @@ def main_gui():
 
     data_tools = [
         ToolAction('Create ROI HDF5', 'cnrs.plewniak.roiseqhdf5creator', Create_ROI_HDF5Dialog,
+                   enable=Enable.if_rois),
+        ToolAction('Show ROI datafiles', 'cnrs.plewniak.roiseqhdf5creator', show_datafiles_for_roi,
                    enable=Enable.if_rois)
         ]
 
@@ -100,11 +102,16 @@ def main_gui():
         'Deep learning': deeplearning_tool_actions,
         'Video'        : video_tool_actions,
         })
-    PluginMenu(mw)
+    # PluginMenu(mw)
 
     # Launch application GUI
     PyDetecDiv.app.exec()
 
+def show_datafiles_for_roi(tool):
+    with pydetecdiv_project(PyDetecDiv.project_name) as project:
+        roi = project.get_object('FOV', 1)
+        data_files = project.get_linked_objects('Data', roi)
+        print(data_files)
 
 if __name__ == '__main__':
     main_gui()

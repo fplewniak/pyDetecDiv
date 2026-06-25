@@ -13,7 +13,7 @@ from pydetecdiv.app.gui import MainToolBar, MainStatusBar
 from pydetecdiv.app import get_settings, PyDetecDiv, pydetecdiv_project, DrawingTools
 from pydetecdiv.app.gui.FOVmanager import FOVmanager
 
-from pydetecdiv.app.gui.Toolbox import ToolboxTreeView, ToolboxTreeModel
+# from pydetecdiv.app.gui.Toolbox import ToolboxTreeView, ToolboxTreeModel
 from pydetecdiv.app.gui.core.widgets.palettes.scene import SceneTreePalette
 from pydetecdiv.app.gui.core.widgets.TabWidgets import TabbedWindow
 from pydetecdiv.app.gui.tools import ToolAction, ToolMenu
@@ -503,15 +503,15 @@ class DrawPoint(QToolButton):
         self.setChecked(True)
         PyDetecDiv.current_drawing_tool = DrawingTools.DrawPoint
 
-@warnings.deprecated('deprecated')
-class AnalysisToolsTree(QDockWidget):
-    """
-    A dockable window with new_tools for image analysis.
-    """
-
-    def __init__(self, parent: MainWindow):
-        super().__init__('Analysis new_tools', parent)
-        self.setObjectName('Analysis_tools_tree')
-        tree_view = ToolboxTreeView()
-        tree_view.setModel(ToolboxTreeModel(parent=self))
-        self.setWidget(tree_view)
+# @warnings.deprecated('deprecated')
+# class AnalysisToolsTree(QDockWidget):
+#     """
+#     A dockable window with new_tools for image analysis.
+#     """
+#
+#     def __init__(self, parent: MainWindow):
+#         super().__init__('Analysis new_tools', parent)
+#         self.setObjectName('Analysis_tools_tree')
+#         tree_view = ToolboxTreeView()
+#         tree_view.setModel(ToolboxTreeModel(parent=self))
+#         self.setWidget(tree_view)
