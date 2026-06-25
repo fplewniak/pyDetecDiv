@@ -9,7 +9,7 @@ from pydetecdiv.app.gui.tools import ToolAction
 
 from pydetecdiv.app.gui.tools.data.hdf5 import Create_ROI_HDF5Dialog
 
-from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
+from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui import FileMenu, ProjectMenu, DataMenu, Enable #, PluginMenu
 from pydetecdiv.app.gui.Windows import MainWindow
 from pydetecdiv.app.gui import SourcePath
@@ -89,8 +89,6 @@ def main_gui():
     data_tools = [
         ToolAction('Create ROI HDF5', 'cnrs.plewniak.roiseqhdf5creator', Create_ROI_HDF5Dialog,
                    enable=Enable.if_rois),
-        ToolAction('Show ROI datafiles', 'cnrs.plewniak.roiseqhdf5creator', show_datafiles_for_roi,
-                   enable=Enable.if_rois)
         ]
 
     # Create menus
@@ -107,11 +105,6 @@ def main_gui():
     # Launch application GUI
     PyDetecDiv.app.exec()
 
-def show_datafiles_for_roi(tool):
-    with pydetecdiv_project(PyDetecDiv.project_name) as project:
-        roi = project.get_object('FOV', 1)
-        data_files = project.get_linked_objects('Data', roi)
-        print(data_files)
 
 if __name__ == '__main__':
     main_gui()

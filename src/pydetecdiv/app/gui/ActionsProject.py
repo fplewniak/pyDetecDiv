@@ -272,9 +272,6 @@ class ConfigureProjectSourceDir(QAction):
                 ukn_urls = data_list.with_columns(directory=polars.col('url').str.replace(r'/[^/]*$', '')).filter(
                         polars.col('source_dir').is_in(unknown_path_ids)).with_columns(polars.col('source_dir').alias('path_id'))
                 for _, grp in ukn_urls.group_by('path_id'):
-                    # common_path = os.path.commonpath(grp['directory'].to_list())
-                    # grp['directory'] = [common_path] * grp.shape[0]
-
                     table_editor = PathCreator('Undefined source path',
                                                description=f'<p>A data source path is referenced in <b>{project.dbname}</b>'
                                                            f' but is not configured on any device in this workspace.<br/>'
@@ -287,8 +284,6 @@ class ConfigureProjectSourceDir(QAction):
                                                editable_col=None)
 
                     table_editor.set_data(grp.select(['directory', 'path_id']).unique()
-                                          # .insert_column(0, polars.Series('name',[]).clear(n=grp.shape[0]))
-                                          # .insert_column(2, polars.Series('path',[]).clear(n=grp.shape[0]))
                                           ).hide_columns(['path_id'])
                     table_editor.exec()
 
