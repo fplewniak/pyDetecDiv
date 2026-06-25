@@ -35,7 +35,6 @@ from pydetecdiv.domain.ImageResource import ImageResource
 
 # TypeVar definitions to enable type checking for subclasses of DomainSpecificObject class
 DSO = TypeVar('DSO', bound=DomainSpecificObject)
-# otherDSO = TypeVar('otherDSO', bound=DomainSpecificObject)
 
 class Project:
     """
@@ -122,19 +121,6 @@ class Project:
         """
         self.repository.rollback()
 
-    # def image_resource(self, path: str, pattern: str = None):
-    #     """
-    #     Returns an image resource from a path and a pattern defining c, z and t in the case of multiple files
-    #
-    #     :param path: image path
-    #     :type path: str or list of str
-    #     :param pattern: pattern defining c, z and t in the case of multiple files
-    #     :type pattern: str
-    #     :return: an image resource
-    #     :rtype: ImageResourceData
-    #     """
-    #     return ImageResourceData(path, pattern=pattern)
-
     def import_images(self, image_files: list[str], destination: str | None = None, **kwargs) -> subprocess.Popen:
         """
         Import images specified in a list of files into a destination
@@ -162,7 +148,6 @@ class Project:
         :param in_place: if True, image files are not copied (Obsolete)
         :param kwargs: extra keyword arguments
         """
-        # data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
         dataset: Dataset = cast(Dataset, self.get_named_object('Dataset', 'data'))
         author = get_config_value('project', 'user') if author == '' else author
         date_time = datetime.now() if date == 'now' else datetime.fromisoformat(date)
@@ -177,7 +162,6 @@ class Project:
 
             for d in [v for k, v in metadata.items() if k.startswith('Metadata-')]:
                 if fov is None:
-                    # fov = FOV(project=self, name=positions[d["PositionIndex"]])
                     fov = FOV(project=self, name=d["PositionName"])
                     image_res = ImageResource(project=self, dataset=dataset, fov=fov, multi=True,
                                               resource_format=resource_format,
@@ -189,8 +173,6 @@ class Project:
 
                 image_file = os.path.join(dirname, os.path.basename(str(d["FileName"])))
                 source_dir, rel_url = Device.get_path_id_and_url(image_file)
-                # url = image_file if in_place else os.path.join(destination, os.path.basename(image_file))
-                # source_dir, rel_url = Device.get_path_id_and_url(url)
 
                 _ = Data(project=self, name=os.path.basename(image_file),
                          dataset=dataset, author=author, date=date_time,
@@ -320,7 +302,6 @@ class Project:
                 data_file.z = df.loc[i, 'Z']
             self.save(data_file)
             yield int((i + len(new_fov_names)) * 100 / total)
-        # _ = [image_res.set_image_shape_from_file() for image_res in new_image_resources.values()]
 
     def id_mapping(self, class_name: str) -> dict[str, int]:
         """
@@ -462,9 +443,6 @@ class Project:
         :rtype: int
         """
         return self.repository.count_records(class_name)
-        # if class_name == 'ROI':
-        #     return len(self._get_rois(None))
-        # return len(self.repository.get_records(class_name, None))
 
     def get_annotated_rois(self, ids_only=False, id_list: list[int] | None = None) -> list[ROI] | list[int]:
         """
