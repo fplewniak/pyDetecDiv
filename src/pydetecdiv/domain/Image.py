@@ -40,6 +40,12 @@ class ImgDType(Enum):
 
     @staticmethod
     def get_dtype(torch_dtype: torch.dtype) -> ImgDType:
+        """
+        Converts a torch dtype into the corresponding ImgDType
+
+        :param torch_dtype: the torch dtype to convert
+        :return: the ImgDType for the requested dtype
+        """
         types = {
             torch.uint8  : ImgDType.uint8,
             torch.uint16 : ImgDType.uint16,
@@ -61,7 +67,7 @@ class Image:
     A business-logic class defining valid operations and attributes of 2D images
     """
 
-    def __init__(self, data: np.ndarray | torch.Tensor = None):
+    def __init__(self, data: np.ndarray | torch.Tensor):
         self.torch = data if torch.is_tensor(data) else torch.from_numpy(data.copy())
         self._initial_torch = self.torch
 
@@ -84,16 +90,15 @@ class Image:
         the dtype for this Image
         """
         return ImgDType.get_dtype(self.torch.dtype)
-        # return self.tensor.dtype
 
-    def as_array(self, dtype: ImgDType = None, grayscale: bool = False, channel_last: bool = False) -> np.ndarray:
+    def as_array(self, dtype: ImgDType | None = None, grayscale: bool = False, channel_last: bool = False) -> np.ndarray:
         """
         property returning the image data for this image
         """
         array = self.as_torch(dtype=dtype, grayscale=grayscale).numpy()
         return array
 
-    def as_tensor(self, dtype: ImgDType = None, grayscale: bool = False) -> torch.Tensor:
+    def as_tensor(self, dtype: ImgDType | None = None, grayscale: bool = False) -> torch.Tensor:
         """
         Returns the Image as a tensor
 
@@ -102,10 +107,6 @@ class Image:
         :return: the image as a tensor
         """
         return self.as_torch(dtype=dtype, grayscale=grayscale)
-        # tensor = self.tensor if dtype is None else self._convert_tensor_to_dtype(dtype=dtype)
-        # if grayscale:
-        #     return tf.image.rgb_to_grayscale(tensor)
-        # return tensor
 
     def as_torch(self, dtype: None | ImgDType = None, grayscale: bool = False) -> torch.Tensor:
         """
@@ -121,19 +122,6 @@ class Image:
             return torch.squeeze(v2.Grayscale()(tensor))
         return tensor
 
-    # def _convert_tensor_to_dtype(self, dtype: ImgDType = ImgDType.uint16) -> tf.Tensor:
-    #     """
-    #     Converts the Image to a specified dtype tensor
-    #
-    #     :param dtype: the dtype for the tensor
-    #     :return: the tensor of the requiested dtype
-    #     """
-    #     if isinstance(dtype, ImgDType):
-    #         dtype = dtype.tensor_dtype
-    #     saturate = (self.tensor.dtype.is_floating and dtype.is_integer) or (
-    #             not self.tensor.dtype.is_unsigned and dtype.is_unsigned)
-    #     return tf.image.convert_image_dtype(self.tensor, dtype=dtype, saturate=saturate)
-
     def _convert_to_dtype(self, dtype: ImgDType = ImgDType.uint16) -> torch.Tensor:
         """
         Converts the Image to a specified dtype tensor
@@ -142,8 +130,6 @@ class Image:
         :return: the tensor of the requested dtype
         """
         dtype = dtype.torch_dtype
-        # scale = (self.torch.dtype.is_floating_point and not (dtype.is_floating_point or dtype.is_complex)) or (
-        #         self.torch.dtype.is_signed and not dtype.is_signed)
         scale = True
         return v2.ToDtype(dtype=dtype, scale=scale)(self.torch)
 
@@ -165,15 +151,21 @@ class Image:
         # return tf.image.rgb_to_grayscale(self.tensor)
 
     def warp_affine(self, affine_matrix: np.ndarray, in_place: bool = True) -> Image:
+        """
+        Transforms an image using an affine transform specified by a matrix
+
+        :param affine_matrix: the affine transform matrix
+        :param in_place: returns the same Image object if True
+        :return:
+        """
         tensor = torch.from_numpy(cv2.warpAffine(self.as_array(), np.float32(affine_matrix), (self.shape[1], self.shape[0])))
-        # tensor = v2.functional.affine(self.as_tensor(dtype=ImgDType.float32), translate=(affine_matrix[0,2], affine_matrix[1,2],))
-        if in_place is False:
+        if not in_place:
             return Image(tensor)
         self.torch = tensor
         self.torch = self._convert_to_dtype(dtype=ImgDType.get_dtype(self._initial_torch.dtype))
         return self
 
-    def resize(self, shape: tuple[int, int] = None, method: InterpolationMode = InterpolationMode.NEAREST,
+    def resize(self, shape: tuple[int, int] | None = None, method: InterpolationMode = InterpolationMode.NEAREST,
                antialias: bool = True) -> Image:
         """
         Resize image to the defined shape with the defined method.
@@ -199,8 +191,6 @@ class Image:
 
         :return: the resized Image object
         """
-        # tensor = tf.expand_dims(self.tensor, axis=-1) if len(self.shape) == 2 else self.tensor
-        # return Image(tf.squeeze(tf.image.resize(tensor, shape, method=method)))
         if shape is None or shape == self.shape[-2:]:
             return self
         return Image(v2.Resize(size=shape, interpolation=method)(self.torch))
@@ -274,7 +264,13 @@ class Image:
         #         np.array(ImageOps.autocontrast(PILimage.fromarray(self.as_array(ImgDType.uint8)), preserve_tone=preserve_tone)))
         return self
 
-    def channel_last(self, dtype: ImgDType = None):
+    def channel_last(self, dtype: ImgDType | None = None):
+        """
+        Converts the image tensor to channel-first format
+
+        :param dtype: the desired dtype
+        :return: the converted image tensor
+        """
         tensor = self.torch if dtype is None else v2.ToDtype(dtype=dtype.torch_dtype, scale=True)(self.torch)
         if self.torch.ndim == 3:
             return torch.movedim(tensor, 0, 2)
@@ -290,7 +286,7 @@ class Image:
         self.torch = v2.functional.adjust_contrast(self.torch, factor)
         return self
 
-    def stretch_contrast(self, q: tuple[int, int] = None) -> Image:
+    def stretch_contrast(self, q: tuple[int, int] | None = None) -> Image:
         """
         Stretches the contrast of the Image
 
@@ -349,7 +345,6 @@ class Image:
         :param images: the list of images
         :return: the resulting Image
         """
-        # return Image(tf.math.add_n([i.tensor for i in images]))
         return Image(torch.sum(torch.stack([i.torch for i in images]), dim=0))
 
     @staticmethod
@@ -368,11 +363,6 @@ class Image:
             return Image(v2.ToDtype(images[0].torch.dtype)(tensor))
         return images[0]
 
-        # if len(images) > 1:
-        #     tensor = tf.math.add_n([i.as_tensor(ImgDType.float32) / len(images) for i in images])
-        #     return Image(tf.image.convert_image_dtype(tensor, images[0].tensor.dtype))
-        # return images[0]
-
     @staticmethod
     def compose_channels(channels: list[Image] | tuple[Image], alpha: bool = False) -> Image:
         """
@@ -384,88 +374,5 @@ class Image:
         :return:
         """
         if alpha:
-            # channels.append(Image(tf.math.maximum(tf.math.maximum(channels[0].as_tensor(), channels[1].as_tensor()),
-            #                                       channels[2].as_tensor())))
             channels.append(Image(np.maximum(np.maximum(channels[0].as_array(), channels[1].as_array()), channels[2].as_array())))
-        # return Image(cv2.merge([img.as_array() for img in channels]))
         return Image(torch.stack([c.as_torch() for c in channels], dim=-3))
-
-# def get_rgb_images_from_stacks_memmap(imgdata: ImageResourceData, roi_list: list[ROI], t: int, z: list[int, int, int] = None,
-#                                       apply_drift: bool = True) -> list[torch.Tensor]:
-#     """
-#     Combine 3 z-layers of a grayscale image resource into a RGB image where each of the z-layer is a channel
-#
-#     :param imgdata: the image data resource
-#     :param roi_list: the list of ROIs
-#     :param t: the frame index
-#     :param z: a list of 3 z-layer indices defining the grayscale layers that must be combined as channels
-#     :param apply_drift: True if drift must be applied, False otherwise
-#     :return: a tensor of the combined RGB images
-#     """
-#     if z is None:
-#         z = [0, 0, 0]
-#     roi_images = [
-#         Image.compose_channels([Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
-#                                                            sliceY=slice(roi.y, roi.y + roi.height),
-#                                                            C=0, Z=z[0], T=t,
-#                                                            drift=apply_drift)).stretch_contrast(),
-#                                 Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
-#                                                            sliceY=slice(roi.y, roi.y + roi.height),
-#                                                            C=0, Z=z[1], T=t,
-#                                                            drift=apply_drift)).stretch_contrast(),
-#                                 Image(imgdata.image_memmap(sliceX=slice(roi.x, roi.x + roi.width),
-#                                                            sliceY=slice(roi.y, roi.y + roi.height),
-#                                                            C=0, Z=z[2], T=t,
-#                                                            drift=apply_drift)).stretch_contrast(),
-#                                 ]).as_torch(ImgDType.float32) for roi in roi_list]
-#     return roi_images
-
-
-# def stack_fov_image(imgdata: ImageResourceData, t: int, z: list[int, int, int] = None, apply_drift: bool = True) -> torch.Tensor:
-#     """
-#     Combine 3 z-layers of a grayscale full image resource (one complete FOV) into a RGB image where each of the z-layer is a channel
-#
-#     :param imgdata: the image data resource
-#     :param t: the frame index
-#     :param z: a list of 3 z-layer indices defining the grayscale layers that must be combined as channels
-#     :param apply_drift: True if drift must be applied, False otherwise
-#     :return: a tensor of the combined RGB images
-#     """
-#     if z is None:
-#         z = [0, 0, 0]
-#
-#     image1 = Image(imgdata.image(T=t, Z=z[0], drift=apply_drift))
-#     image2 = Image(imgdata.image(T=t, Z=z[1], drift=apply_drift))
-#     image3 = Image(imgdata.image(T=t, Z=z[2], drift=apply_drift))
-#
-#     rgb_image = Image.compose_channels([image1.stretch_contrast(),
-#                                         image2.stretch_contrast(),
-#                                         image3.stretch_contrast()
-#                                         ]).as_torch(ImgDType.float32)
-#     return rgb_image
-
-
-# def get_rgb_images_from_stacks(imgdata: ImageResourceData, roi_list: list[ROI], t: int, z: list[int, int, int] = None,
-#                                apply_drift: bool = True) -> list[torch.Tensor]:
-#     """
-#     Combine 3 z-layers of a grayscale image resource into a RGB image where each of the z-layer is a channel
-#
-#     :param imgdata: the image data resource
-#     :param roi_list: the list of ROIs
-#     :param t: the frame index
-#     :param z: a list of 3 z-layer indices defining the grayscale layers that must be combined as channels
-#     :param apply_drift: True if drift must be applied, False otherwise
-#     :return: a tensor of the combined RGB images
-#     """
-#     if z is None:
-#         z = [0, 0, 0]
-#
-#     image1 = Image(imgdata.image(T=t, Z=z[0], drift=apply_drift))
-#     image2 = Image(imgdata.image(T=t, Z=z[1], drift=apply_drift))
-#     image3 = Image(imgdata.image(T=t, Z=z[2], drift=apply_drift))
-#
-#     roi_images = [Image.compose_channels([image1.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
-#                                           image2.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast(),
-#                                           image3.crop(roi.y, roi.x, roi.height, roi.width).stretch_contrast()
-#                                           ]).as_torch(ImgDType.float32) for roi in roi_list]
-#     return roi_images
