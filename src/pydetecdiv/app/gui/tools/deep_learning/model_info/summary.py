@@ -6,9 +6,9 @@ from typing import Any
 
 from torchinfo import summary
 
+from pydetecdiv.app import set_connections
 from pydetecdiv.app.tools import Tool
 from pydetecdiv.app.gui.tools import ToolDialog
-from pydetecdiv.plugins.gui import set_connections
 
 
 class ModelSummaryDialog(ToolDialog):

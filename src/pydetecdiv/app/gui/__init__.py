@@ -93,20 +93,20 @@ class DataMenu(QMenu):
         apply_drift.triggered.connect(PyDetecDiv.app.set_apply_drift)
 
 
-class PluginMenu(QMenu):
-    """
-    Plugin menus
-    """
-
-    def __init__(self, parent: 'MainWindow', *args, **kwargs):
-        if PyDetecDiv.app.plugin_list.len:
-            super().__init__(*args, **kwargs)
-            menu = {}
-            for category in PyDetecDiv.app.plugin_list.categories:
-                if category not in menu:
-                    menu[category] = parent.menuBar().addMenu(category)
-            for plugin in PyDetecDiv.app.plugin_list.plugins:
-                plugin.addActions(menu[plugin.category])
+# class PluginMenu(QMenu):
+#     """
+#     Plugin menus
+#     """
+#
+#     def __init__(self, parent: 'MainWindow', *args, **kwargs):
+#         if PyDetecDiv.app.plugin_list.len:
+#             super().__init__(*args, **kwargs)
+#             menu = {}
+#             for category in PyDetecDiv.app.plugin_list.categories:
+#                 if category not in menu:
+#                     menu[category] = parent.menuBar().addMenu(category)
+#             for plugin in PyDetecDiv.app.plugin_list.plugins:
+#                 plugin.addActions(menu[plugin.category])
 
 
 class MainToolBar(QToolBar):
