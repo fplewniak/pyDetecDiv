@@ -61,10 +61,23 @@ class ToolMenu(QMenu):
     Abstract Tool submenu class
     """
 
-    def __init__(self, tool_name: str, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, tool_name: str, enable: Callable | None = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(**kwargs)
         self.tool = PyDetecDiv.tools[tool_name]
         self.setTitle(self.tool.name)
+        self.enabling_function = enable
+        self._parent = None
+
+    def add_to_menu(self, menu: QMenu) -> None:
+        menu.addMenu(self)
+        self._parent = menu
+        menu.aboutToShow.connect(self.determine_enabled_status)
+
+    def determine_enabled_status(self, **kwargs: dict[str, Any]):
+        try:
+            self.enabling_function(self)
+        except TypeError as e:
+            self.setEnabled(True)
 
 
 class ToolAction(QAction):
@@ -79,6 +92,7 @@ class ToolAction(QAction):
         self.enabling_function = enable
         self.launch_callable = launch
         self.triggered.connect(self.launch)
+        self._parent = None
         if parent is not None:
             self.add_to_menu(parent)
 
