@@ -13,10 +13,12 @@ from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui import FileMenu, ProjectMenu, DataMenu, Enable #, PluginMenu
 from pydetecdiv.app.gui.Windows import MainWindow
 from pydetecdiv.app.gui import SourcePath
+from pydetecdiv.app.gui.tools.data.importing import DataImportMenu
 from pydetecdiv.app.gui.tools.deep_learning.classification_schemes import ClassificationSchemeMenu
 from pydetecdiv.app.gui.tools.deep_learning.model_info import ModelInfoMenu
 from pydetecdiv.app.gui.tools.video_classifier import VideoClassifierMenu
 from pydetecdiv.domain.tools.data.hdf5 import ROIseqHDF5creator
+from pydetecdiv.domain.tools.data.importing import DataImportTool
 from pydetecdiv.domain.tools.deep_learning.classification_schemes import ClassificationSchemeManagement
 from pydetecdiv.domain.tools.deep_learning.model_info import ModelInfo
 from pydetecdiv.domain.tools.video_classifier import VideoClassifier
@@ -75,18 +77,20 @@ def main_gui():
                              'cnrs.plewniak.roiseqhdf5creator'    : ROIseqHDF5creator(working_dir='data'),
                              'cnrs.plewniak.classificationschemes': ClassificationSchemeManagement(working_dir='data'),
                              'cnrs.plewniak.deeplearningmodelinfo': ModelInfo(working_dir='data'),
+                             'cnrs.plewniak.dataimport'           : DataImportTool(working_dir='data'),
                              })
 
-    video_tool_actions = [
+    video_tools = [
         VideoClassifierMenu('cnrs.plewniak.videoclassifier'),
         ]
 
-    deeplearning_tool_actions = [
+    deeplearning_tools = [
         ClassificationSchemeMenu('cnrs.plewniak.classificationschemes'),
         ModelInfoMenu('cnrs.plewniak.deeplearningmodelinfo'),
         ]
 
     data_tools = [
+        DataImportMenu('cnrs.plewniak.dataimport', enable=Enable.if_project_exists),
         ToolAction('Create ROI HDF5', 'cnrs.plewniak.roiseqhdf5creator', Create_ROI_HDF5Dialog,
                    enable=Enable.if_rois),
         ]
@@ -97,8 +101,8 @@ def main_gui():
     DataMenu(mw)
     mw.add_top_menus({
         'Data'         : data_tools,
-        'Deep learning': deeplearning_tool_actions,
-        'Video'        : video_tool_actions,
+        'Deep learning': deeplearning_tools,
+        'Video'        : video_tools,
         })
     # PluginMenu(mw)
 

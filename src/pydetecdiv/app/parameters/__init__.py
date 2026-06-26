@@ -3,7 +3,6 @@ Module defining the different types of parameters that may be needed to store in
 be specified using GUI widgets which are synchronized thanks to a shared model
 """
 import json
-import os.path
 from typing import Callable, Any, cast, overload
 
 from PySide6.QtCore import Signal, SignalInstance
@@ -550,7 +549,7 @@ class ChoiceParameter(Parameter):
 
         :return: all choice items
         """
-        return self.qmodel.rows()
+        return self.qmodel.rows().items()
 
     @property
     def item(self) -> object:

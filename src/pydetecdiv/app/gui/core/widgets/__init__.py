@@ -417,9 +417,9 @@ class ListView(QListView):
             clear_list = QAction("Clear list", self)
             context.addAction(clear_list)
             clear_list.triggered.connect(self.clear_list)
-            test_selection = QAction("Test selection", self)
-            context.addAction(test_selection)
-            test_selection.triggered.connect(lambda : print(self.selection()))
+            # test_selection = QAction("Test selection", self)
+            # context.addAction(test_selection)
+            # test_selection.triggered.connect(lambda : print(self.selection()))
             context.exec(e.globalPos())
 
     def unselect(self) -> None:
