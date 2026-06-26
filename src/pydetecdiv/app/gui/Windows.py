@@ -80,10 +80,8 @@ class MainWindow(QMainWindow):
     def add_top_menu(self, title: str, tool_actions: list[ToolMenu | ToolAction], *args, **kwargs):
         menu = self.menuBar().addMenu(title)
         for tool_action in tool_actions:
-            if isinstance(tool_action, ToolAction):
+            if isinstance(tool_action, (ToolMenu, ToolAction)):
                 tool_action.add_to_menu(menu)
-            elif isinstance(tool_action, ToolMenu):
-                menu.addMenu(tool_action)
             else:
                 menu.addSeparator()
 
