@@ -1,12 +1,21 @@
 """
 Import Data dialog window
 """
+from pathlib import Path
+from typing import Callable, Any
+
 from PySide6.QtWidgets import QDialogButtonBox, QFileDialog
 
-from pydetecdiv.app import set_connections
+from pydetecdiv.app import set_connections, pydetecdiv_project, PyDetecDiv
 from pydetecdiv.app.gui.core.widgets import DictListView
 from pydetecdiv.app.gui.tools import ToolDialog
 from pydetecdiv.app.tools import Tool
+
+
+class DataImporter:
+    def __init__(self):
+        self.import_func: Callable[[Path], Any] | None = None
+        self.count_data: Callable[[Path], int] | None = None
 
 
 class DataImportDialog(ToolDialog):
@@ -29,7 +38,7 @@ class DataImportDialog(ToolDialog):
             ])
 
         set_connections({
-            button_box.accepted    : self.tool.import_files,
+            button_box.accepted    : self.import_files,
             add_path_button.pressed: self.choose_path,
             })
 
@@ -37,24 +46,28 @@ class DataImportDialog(ToolDialog):
         self.exec()
 
     def choose_path(self):
-        path, import_func = None, None
+        #path, import_func = None, None
+        path, data_importer = None, DataImporter()
         match self.tool.parameters.format:
             case 'metadata':
                 path = self.choose_metadata_file()
-                import_func = self.tool.import_metadata
+                data_importer.import_func = self.tool.import_metadata
+                data_importer.count_data = self.tool.count_metadata
             case 'NDTiff':
                 path = self.choose_NDTiff()
-                import_func = self.tool.import_ndtiff
+                data_importer.import_func = self.tool.import_ndtiff
+                data_importer.count_data = self.tool.count_ndtiff
             case 'Image files':
                 path = self.choose_image_files()
-                import_func = self.tool.import_image_files
+                data_importer.import_func = self.tool.import_image_files
+                data_importer.count_data = self.tool.count_image_files
             case 'Image directory':
                 path = self.choose_image_dir()
-                import_func = self.tool.import_image_dir
+                data_importer.import_func = self.tool.import_image_dir
+                data_importer.count_data = self.tool.count_image_dir
 
         if path and path is not None:
-            self.tool.parameters.paths.add_item({path: import_func})
-
+            self.tool.parameters.paths.add_item({path: data_importer})
 
     def choose_metadata_file(self):
         filters = ["All files (*)", "Text (*.txt)", ]
@@ -75,3 +88,17 @@ class DataImportDialog(ToolDialog):
     def choose_NDTiff(self):
         dir_name = QFileDialog.getExistingDirectory(self, caption='Choose directory', dir=self.tool.working_dir)
         return dir_name
+
+    def import_files(self):
+        print('Counting data')
+        file_count = 0
+        for path, data_importer in self.tool.parameters.paths.items:
+            file_count += data_importer.count_data(path)
+        print(f'Total files: {file_count}')
+
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            for path, data_importer in self.tool.parameters.paths.items:
+                data_importer.import_func(path, project)
+            project.commit()
+        PyDetecDiv.app.project_selected.emit(PyDetecDiv.project_name)
+        self.tool.parameters.paths.clear()
