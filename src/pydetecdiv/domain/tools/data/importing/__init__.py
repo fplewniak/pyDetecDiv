@@ -32,7 +32,8 @@ class DataImportTool(Tool):
     def import_metadata(self, path, project):
         metadata_file_names = [f for f in glob.glob(path) if os.path.isfile(f)]
         for metadata_file_name in metadata_file_names:
-                project.import_images_from_metadata(metadata_file_name)
+            for i in project.import_images_from_metadata(metadata_file_name):
+                yield i
 
     def count_metadata(self, path):
         metadata_file_names = [f for f in glob.glob(path) if os.path.isfile(f)]
