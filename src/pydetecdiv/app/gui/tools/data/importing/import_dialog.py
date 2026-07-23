@@ -100,7 +100,7 @@ class DataImportDialog(ToolDialog):
         self.finished.connect(wait_dialog.close_window)
         self.progress.connect(wait_dialog.show_progress)
         wait_dialog.wait_for(self.import_files)
-        self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+        # self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
     def import_files(self):
         print('Counting data')

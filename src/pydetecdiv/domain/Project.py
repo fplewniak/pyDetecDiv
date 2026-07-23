@@ -212,6 +212,7 @@ class Project:
         xdim = summary["Width"]
         ydim = summary["Height"]
 
+        count = 0
         for row in dims_df.iter_rows():
             pos_index = row[0]
             tdim = row[1] + 1
@@ -240,6 +241,8 @@ class Project:
             fov.validate()
             data.validate()
             image_res.validate()
+            count += 1
+            yield count
         self.commit()
 
     def annotate(self, dataset: Dataset, source: str | Callable, columns: tuple[str, ...], regex: str) -> pd.DataFrame:
