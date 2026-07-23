@@ -135,7 +135,7 @@ class Project:
         return self.repository.import_images(image_files, data_dir_path, destination, **kwargs)
 
     def import_images_from_metadata(self, metadata_files: str, author: str = '', date: str = 'now', img_format: str = 'imagetiff',
-                                    resource_format=ImageResource.MULTI) -> None:
+                                    resource_format=ImageResource.MULTI) -> Generator[int, Any, None]:
         """
         Import images specified in a list of files into a destination
 
@@ -152,6 +152,7 @@ class Project:
         author = get_config_value('project', 'user') if author == '' else author
         date_time = datetime.now() if date == 'now' else datetime.fromisoformat(date)
         dirname = os.path.dirname(metadata_files)
+        count = 0
 
         with open(metadata_files) as metadata_file:
 
@@ -182,6 +183,8 @@ class Project:
                          c=d["ChannelIndex"], t=d["FrameIndex"], z=d["SliceIndex"],
                          xdim=d["Width"], ydim=d['Height'])
                 maxT = max(sizeT, d["FrameIndex"])
+                count += 1
+                yield count
 
             image_res.xdim, image_res.ydim, image_res.tdim = d["Width"], d['Height'], (maxT + 1)
             image_res.validate()
