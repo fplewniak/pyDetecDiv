@@ -21,7 +21,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
     finished = Signal(bool)
     progress = Signal(int)
 
-    def __init__(self):
+    def __init__(self, tool=None):
         # Base class
         QDialog.__init__(self, PyDetecDiv.main_window)
 
