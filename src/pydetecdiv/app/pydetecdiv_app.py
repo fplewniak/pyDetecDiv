@@ -17,6 +17,7 @@ from pydetecdiv.app.gui.tools.data.importing import DataImportMenu
 from pydetecdiv.app.gui.tools.deep_learning.classification_schemes import ClassificationSchemeMenu
 from pydetecdiv.app.gui.tools.deep_learning.model_info import ModelInfoMenu
 from pydetecdiv.app.gui.tools.video_classifier import VideoClassifierMenu
+from pydetecdiv.app.gui.RawData2FOV import RawData2FOV
 from pydetecdiv.domain.tools.data.hdf5 import ROIseqHDF5creator
 from pydetecdiv.domain.tools.data.importing import DataImportTool
 from pydetecdiv.domain.tools.deep_learning.classification_schemes import ClassificationSchemeManagement
@@ -91,6 +92,7 @@ def main_gui():
 
     data_tools = [
         DataImportMenu('cnrs.plewniak.dataimport', enable=Enable.if_project_exists),
+        ToolAction('Create Image resources', 'cnrs.plewniak.dataimport', RawData2FOV, enable=Enable.if_data_imageres_is_null),
         ToolAction('Create ROI HDF5', 'cnrs.plewniak.roiseqhdf5creator', Create_ROI_HDF5Dialog,
                    enable=Enable.if_rois),
         ]
