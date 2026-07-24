@@ -109,13 +109,14 @@ class DataImportDialog(ToolDialog):
             file_count += data_importer.count_data(path)
         print(f'Total files: {file_count}')
 
-        with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            count = 0
-            for path, data_importer in self.tool.parameters.paths.items:
-                for i in data_importer.import_func(path, project):
-                    self.progress.emit(100 * float(count + i) / float(file_count))
-                count += i
-            project.commit()
-        PyDetecDiv.app.project_selected.emit(PyDetecDiv.project_name)
+        if file_count:
+            with pydetecdiv_project(PyDetecDiv.project_name) as project:
+                count = 0
+                for path, data_importer in self.tool.parameters.paths.items:
+                    for i in data_importer.import_func(path, project):
+                        self.progress.emit(100 * float(count + i) / float(file_count))
+                    count += i
+                project.commit()
+            PyDetecDiv.app.project_selected.emit(PyDetecDiv.project_name)
         self.tool.parameters.paths.clear()
         self.finished.emit(True)

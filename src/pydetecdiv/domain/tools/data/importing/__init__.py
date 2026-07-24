@@ -12,6 +12,7 @@ from ndtiff import NDTiffDataset
 
 from pydetecdiv.app.parameters import Parameters, ChoiceParameter
 from pydetecdiv.app.tools import Tool
+from pydetecdiv.utils.path import files_in_dir
 
 
 class DataImportTool(Tool):
@@ -57,10 +58,24 @@ class DataImportTool(Tool):
         print('counting image files')
 
     def import_image_dir(self, path, project):
-        print(path, 'import image directory')
+        image_dirs = [f for f in glob.glob(path) if os.path.isdir(f) and self.check_contains_tiff(f)]
+        for image_dir in image_dirs:
+            for i in project.import_images_in_dir(image_dir):
+                yield i
 
     def count_image_dir(self, path):
-        print('counting image files')
+        image_dirs = [f for f in glob.glob(path) if os.path.isdir(f) and self.check_contains_tiff(f)]
+        file_count = 0
+        for image_dir in image_dirs:
+            # file_count += len(glob.glob(image_dir + '/*.tiff')) + len(glob.glob(image_dir + '/*.tif'))
+            file_count += len(files_in_dir(str(image_dir), ['*.tiff', '*.tif']))
+        print(f'counting image files: {file_count} image files')
+        return file_count
+
+    @staticmethod
+    def check_contains_tiff(directory):
+        # return (len(glob.glob(os.path.join(directory, '*.tiff'))) + len(glob.glob(os.path.join(directory, '*.tif')))) > 0
+        return len(files_in_dir(directory, ['*.tiff', '*.tif'])) > 0
 
     def import_ndtiff(self, path, project):
         ndtiff_dirs = [f for f in glob.glob(path) if os.path.isdir(f) and self.check_is_ndtiff(f)]
