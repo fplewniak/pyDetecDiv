@@ -393,6 +393,8 @@ class ShallowSQLite3(ShallowDb):
                 linked_rec = dao[parent_cls_name](self.session).image_resources(parent_id)
             case _:
                 linked_rec = []
+        if not any(linked_rec):
+            linked_rec = []
         return linked_rec
 
     def _get_dao(self, class_name: str, id_: int) -> DAO:
