@@ -13,6 +13,7 @@ from collections import defaultdict
 from datetime import datetime
 import pandas as pd
 import polars
+from PIL import Image
 from _polars_runtime_32._polars_runtime import ColumnNotFoundError
 from ndtiff import NDTiffDataset
 
@@ -32,6 +33,7 @@ from pydetecdiv.domain.FOV import FOV
 from pydetecdiv.domain.Experiment import Experiment
 from pydetecdiv.domain.Data import Data
 from pydetecdiv.domain.ImageResource import ImageResource
+from pydetecdiv.utils.path import files_in_dir
 
 # TypeVar definitions to enable type checking for subclasses of DomainSpecificObject class
 DSO = TypeVar('DSO', bound=DomainSpecificObject)
@@ -133,6 +135,29 @@ class Project:
         """
         data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
         return self.repository.import_images(image_files, data_dir_path, destination, **kwargs)
+
+    def import_images_in_dir(self, image_dir:str, author: str = '', date: str = 'now',
+                             img_format: str = 'imagetiff',) -> Generator[int, Any, None]:
+        dataset: Dataset = cast(Dataset, self.get_named_object('Dataset', 'data'))
+        author = get_config_value('project', 'user') if author == '' else author
+        date_time = datetime.now() if date == 'now' else datetime.fromisoformat(date)
+        count = 0
+
+        image_files = files_in_dir(image_dir, ['*.tiff', '*.tif'])
+        for image_file in image_files:
+            source_dir, rel_url = Device.get_path_id_and_url(image_file)
+            with Image.open(image_file) as img:
+                width, height = img.size
+            _ = Data(project=self, name=os.path.basename(image_file),
+                         dataset=dataset, author=author, date=date_time,
+                         url=rel_url,
+                         format_=img_format, source_dir=source_dir, meta_data={},
+                         key_val={}, image_resource=None,
+                         c=None, t=None, z=None,
+                         xdim=width, ydim=height)
+            count += 1
+            yield count
+
 
     def import_images_from_metadata(self, metadata_files: str, author: str = '', date: str = 'now', img_format: str = 'imagetiff',
                                     resource_format=ImageResource.MULTI) -> Generator[int, Any, None]:

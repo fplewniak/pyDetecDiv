@@ -4,6 +4,7 @@
 A utility module for path manipulation
 """
 import os
+import glob
 
 
 def stem(path: str) -> str:
@@ -16,3 +17,9 @@ def stem(path: str) -> str:
     :rtype: str
     """
     return os.path.splitext(os.path.basename(path))[0]
+
+def files_in_dir(directory: str, extensions: list[str]) -> list[str]:
+    file_list = []
+    for extension in extensions:
+        file_list.extend(glob.glob(os.path.join(directory, extension)))
+    return file_list
