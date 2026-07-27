@@ -6,6 +6,7 @@ from typing import Callable, Any
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QDialogButtonBox, QFileDialog
+from pydetecdiv import utils
 
 from pydetecdiv.app import set_connections, pydetecdiv_project, PyDetecDiv, WaitDialog
 from pydetecdiv.app.gui.core.widgets import DictListView
@@ -57,11 +58,11 @@ class DataImportDialog(ToolDialog):
             case 'metadata':
                 path = self.choose_metadata_file()
                 data_importer.import_func = self.tool.import_metadata
-                data_importer.count_data = self.tool.count_metadata
+                data_importer.count_data = utils.count_metadata
             case 'NDTiff':
                 path = self.choose_NDTiff()
                 data_importer.import_func = self.tool.import_ndtiff
-                data_importer.count_data = self.tool.count_ndtiff
+                data_importer.count_data = utils.count_ndtiff
             case 'Image files':
                 path = self.choose_image_files()
                 data_importer.import_func = self.tool.import_image_files
@@ -69,7 +70,7 @@ class DataImportDialog(ToolDialog):
             case 'Image directory':
                 path = self.choose_image_dir()
                 data_importer.import_func = self.tool.import_image_dir
-                data_importer.count_data = self.tool.count_image_dir
+                data_importer.count_data = utils.count_image_dir
 
         if path and path is not None:
             self.tool.parameters.paths.add_item({path: data_importer})

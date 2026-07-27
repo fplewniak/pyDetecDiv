@@ -507,7 +507,10 @@ class Project:
             return list(all_rois)
         return [roi for roi in all_rois if roi.id_ in id_list]
 
-    def count_orphan_data_files(self):
+    def count_orphan_data_files(self) -> int:
+        """
+        Count image files that are not associated with an image resource
+        """
         return self.repository.count_orphan_data_files()
 
     def has_links(self, class_name: str, to: DSO) -> bool:

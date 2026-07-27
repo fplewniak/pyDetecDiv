@@ -4,8 +4,16 @@ A set of general utility functions
 #  CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21
 #  Frédéric PLEWNIAK, CNRS/Université de Strasbourg UMR7156 - GMGM
 from __future__ import annotations
+
+import glob
+import json
+import os
 from typing import Callable, Any
 import numpy as np
+import polars
+from ndtiff import NDTiffDataset
+
+from pydetecdiv.utils.path import files_in_dir
 
 
 def singleton(class_) -> Callable:
@@ -48,6 +56,7 @@ class BidirectionalIterator:
     """
     An iterator that can go backwards
     """
+
     def __init__(self, data: list[Any]):
         self.data = data
         self.index = -1  # Start before the first element
@@ -169,3 +178,60 @@ def increment_string(s: str) -> str:
         s[i] = 'a'  # reset and carry over
         i -= 1
     return 'a' + ''.join(s)  # expand if overflow (zzz → aaaa)
+
+
+def check_is_ndtiff(directory: str | bytes) -> bool:
+    """
+    Check whether the specified path is a NDTiff path and enables the Ok button if it is
+    """
+    return directory != '' and os.path.isfile(os.path.join(str(directory), 'NDTiff.index'))
+
+
+def check_contains_tiff(directory) -> bool:
+    return len(files_in_dir(directory, ['*.tiff', '*.tif'])) > 0
+
+
+def count_ndtiff(path) -> int:
+    """
+    Count NDTiff datasets
+    :param path: the path to the datasets
+    """
+    ndtiff_dirs = [f for f in glob.glob(path) if os.path.isdir(f) and check_is_ndtiff(f)]
+    ndtiff_dir_count = 0
+    for ndtiff_dir in ndtiff_dirs:
+        ndtiff_ds = NDTiffDataset(str(ndtiff_dir))
+        df = polars.DataFrame(ndtiff_ds.get_image_coordinates_list())
+        dims_df = df.group_by(by='position').agg(polars.col('time').max(), polars.col('z').max(), polars.col('channel').max())
+        ndtiff_dir_count += dims_df.select(polars.len()).item()
+
+    print(f'counting ndtiff: {ndtiff_dir_count} NDTIff FOV dataset')
+    return ndtiff_dir_count
+
+
+def count_image_dir(path) -> int:
+    """
+    Count image files in directories
+    :param path: the path to the directories
+    """
+    image_dirs = [f for f in glob.glob(path) if os.path.isdir(f) and check_contains_tiff(f)]
+    file_count = 0
+    for image_dir in image_dirs:
+        # file_count += len(glob.glob(image_dir + '/*.tiff')) + len(glob.glob(image_dir + '/*.tif'))
+        file_count += len(files_in_dir(str(image_dir), ['*.tiff', '*.tif']))
+    print(f'counting image files: {file_count} image files')
+    return file_count
+
+
+def count_metadata(path) -> int:
+    """
+    Count image files using MicroManager metadata files
+    :param path: the path to the metadata file(s)
+    """
+    metadata_file_names = [f for f in glob.glob(path) if os.path.isfile(f)]
+    file_count = 0
+    for metadata_file_name in metadata_file_names:
+        with open(metadata_file_name) as metadata_file:
+            metadata = json.load(metadata_file)
+            file_count += len([v for k, v in metadata.items() if k.startswith('Metadata-')])
+    print(f'counting metadata: {file_count} image files')
+    return file_count
