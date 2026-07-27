@@ -507,6 +507,9 @@ class Project:
             return list(all_rois)
         return [roi for roi in all_rois if roi.id_ in id_list]
 
+    def count_orphan_data_files(self):
+        return self.repository.count_orphan_data_files()
+
     def has_links(self, class_name: str, to: DSO) -> bool:
         """
         Checks whether there are links to a given object from objects of a given class.

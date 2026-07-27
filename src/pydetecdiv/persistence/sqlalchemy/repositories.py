@@ -14,9 +14,10 @@ from PIL import Image
 
 import pandas
 import sqlalchemy
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from sqlalchemy.orm import sessionmaker
 from pandas import DataFrame
+from sqlalchemy.sql.functions import func
 
 from pydetecdiv.domain.Dataset import Dataset
 from pydetecdiv.persistence.repository import ShallowDb
@@ -446,3 +447,11 @@ class ShallowSQLite3(ShallowDb):
         """
         dao1_class, dao2_class = dao[class1_name].__name__, dao[class2_name].__name__
         self.session.delete(self.session.get(Linker.association(dao1_class, dao2_class), (id_1, id_2)))
+
+    def count_orphan_data_files(self):
+        count = self.session.scalar(
+                select(func.count())
+                .select_from(dao['Data'])
+                .where(dao['Data'].image_resource.is_(None))
+                )
+        return count

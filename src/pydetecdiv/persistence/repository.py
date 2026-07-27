@@ -195,3 +195,10 @@ class ShallowDb(abc.ABC):
         :param class2_name: the class name of the second object to unlink
         :param id_2: the id of the second object to unlink
         """
+
+    @abc.abstractmethod
+    def count_orphan_data_files(self):
+        """
+        Counting data files that are not associated with an image resource. This method can be used to detect situations when an
+        image resource should be created from imported image files.
+        """

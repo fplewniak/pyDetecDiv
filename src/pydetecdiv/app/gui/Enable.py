@@ -40,3 +40,10 @@ def if_data_imageres_is_null(action: QAction):
                 if project.count_links('ImageResource', data) == 0:
                     action.setEnabled(True)
                     break
+
+def if_missing_image_resources(action: QAction):
+    action.setEnabled(False)
+    if project_exists(PyDetecDiv.project_name):
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            if project.count_orphan_data_files():
+                action.setEnabled(True)
