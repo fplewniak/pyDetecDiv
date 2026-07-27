@@ -448,7 +448,10 @@ class ShallowSQLite3(ShallowDb):
         dao1_class, dao2_class = dao[class1_name].__name__, dao[class2_name].__name__
         self.session.delete(self.session.get(Linker.association(dao1_class, dao2_class), (id_1, id_2)))
 
-    def count_orphan_data_files(self):
+    def count_orphan_data_files(self) -> int:
+        """
+        Count the number of Data objects with field image_resource == None
+        """
         count = self.session.scalar(
                 select(func.count())
                 .select_from(dao['Data'])
