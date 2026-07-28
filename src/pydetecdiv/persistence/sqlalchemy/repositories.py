@@ -191,7 +191,8 @@ class ShallowSQLite3(ShallowDb):
         :return: list of annotated Data records in a dataframe
         :rtype: pandas.DataFrame
         """
-        data_list = self.session.query(dao['Dataset']).filter(dao['Dataset'].id_ == dataset.id_).first().data_list_
+        # data_list = self.session.query(dao['Dataset']).filter(dao['Dataset'].id_ == dataset.id_).first().data_list_
+        data_list = self.get_orphan_data_objects()
 
         pattern = re.compile(regex)
 
@@ -458,3 +459,6 @@ class ShallowSQLite3(ShallowDb):
                 .where(dao['Data'].image_resource.is_(None))
                 )
         return count
+
+    def get_orphan_data_objects(self) -> list[Any]:
+        return [r[0] for r in self.session.execute(select(dao['Data']).where(dao['Data'].image_resource.is_(None))).unique()]
