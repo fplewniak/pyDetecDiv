@@ -77,7 +77,7 @@ class BidirectionalIterator:
         raise StopIteration("No previous element")
 
 
-def previous(iterator) -> Any:
+def previous(iterator: BidirectionalIterator) -> Any:
     """
     the previous element
 
@@ -187,16 +187,20 @@ def check_is_ndtiff(directory: str | bytes) -> bool:
     return directory != '' and os.path.isfile(os.path.join(str(directory), 'NDTiff.index'))
 
 
-def check_contains_tiff(directory) -> bool:
+def check_contains_tiff(directory: str) -> bool:
+    """
+    Check the directory contains tiff files
+    :param directory: the directory name
+    """
     return len(files_in_dir(directory, ['*.tiff', '*.tif'])) > 0
 
 
-def count_ndtiff(path) -> int:
+def count_ndtiff(dirpath: str) -> int:
     """
     Count NDTiff datasets
-    :param path: the path to the datasets
+    :param dirpath: the path to the datasets
     """
-    ndtiff_dirs = [f for f in glob.glob(path) if os.path.isdir(f) and check_is_ndtiff(f)]
+    ndtiff_dirs = [f for f in glob.glob(dirpath) if os.path.isdir(f) and check_is_ndtiff(f)]
     ndtiff_dir_count = 0
     for ndtiff_dir in ndtiff_dirs:
         ndtiff_ds = NDTiffDataset(str(ndtiff_dir))
@@ -208,12 +212,12 @@ def count_ndtiff(path) -> int:
     return ndtiff_dir_count
 
 
-def count_image_dir(path) -> int:
+def count_image_dir(dirpath) -> int:
     """
     Count image files in directories
-    :param path: the path to the directories
+    :param dirpath: the path to the directories
     """
-    image_dirs = [f for f in glob.glob(path) if os.path.isdir(f) and check_contains_tiff(f)]
+    image_dirs = [f for f in glob.glob(dirpath) if os.path.isdir(f) and check_contains_tiff(f)]
     file_count = 0
     for image_dir in image_dirs:
         # file_count += len(glob.glob(image_dir + '/*.tiff')) + len(glob.glob(image_dir + '/*.tif'))
@@ -222,12 +226,12 @@ def count_image_dir(path) -> int:
     return file_count
 
 
-def count_metadata(path) -> int:
+def count_metadata(filepath) -> int:
     """
     Count image files using MicroManager metadata files
-    :param path: the path to the metadata file(s)
+    :param filepath: the path to the metadata file(s)
     """
-    metadata_file_names = [f for f in glob.glob(path) if os.path.isfile(f)]
+    metadata_file_names = [f for f in glob.glob(filepath) if os.path.isfile(f)]
     file_count = 0
     for metadata_file_name in metadata_file_names:
         with open(metadata_file_name) as metadata_file:

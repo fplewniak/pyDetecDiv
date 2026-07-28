@@ -2,20 +2,14 @@
 Tools to import data into a project
 """
 import glob
-import json
 import os
-from pathlib import Path
-from typing import AnyStr, Any, Generator
+from typing import Generator
 
-import polars
-from ndtiff import NDTiffDataset
 from pydetecdiv import utils
 
 from pydetecdiv.app.parameters import Parameters, ChoiceParameter
 from pydetecdiv.app.tools import Tool
-from pydetecdiv.utils.path import files_in_dir
-
-
+from pydetecdiv.domain.Project import Project
 
 
 class DataImportTool(Tool):
@@ -38,13 +32,13 @@ class DataImportTool(Tool):
                     ]
                 )
 
-    def import_metadata(self, path, project) -> Generator[int, int, None]:
+    def import_metadata(self, filepath: str, project: Project) -> Generator[int, int, None]:
         """
         Import image files using MicroManager metadata files
-        :param path: the path to the metadata file(s)
+        :param filepath: the path to the metadata file(s)
         :param project: the project
         """
-        metadata_file_names = [f for f in glob.glob(path) if os.path.isfile(f)]
+        metadata_file_names = [f for f in glob.glob(filepath) if os.path.isfile(f)]
         for metadata_file_name in metadata_file_names:
             for i in project.import_images_from_metadata(metadata_file_name):
                 yield i
@@ -57,24 +51,24 @@ class DataImportTool(Tool):
     #     print('counting image files')
     #     return 1
 
-    def import_image_dir(self, path, project) -> Generator[int, int, None]:
+    def import_image_dir(self, dirpath: str, project: Project) -> Generator[int, int, None]:
         """
         Import image files from directories
-        :param path: the path to the directories
+        :param dirpath: the path to the directories
         :param project: the project
         """
-        image_dirs = [f for f in glob.glob(path) if os.path.isdir(f) and utils.check_contains_tiff(f)]
+        image_dirs = [f for f in glob.glob(dirpath) if os.path.isdir(f) and utils.check_contains_tiff(f)]
         for image_dir in image_dirs:
             for i in project.import_images_in_dir(image_dir):
                 yield i
 
-    def import_ndtiff(self, path, project) -> Generator[int, int, None]:
+    def import_ndtiff(self, dirpath: str, project: Project) -> Generator[int, int, None]:
         """
         Import image NDTiff datasets
-        :param path: the path to the datasets
+        :param dirpath: the path to the datasets
         :param project: the project
         """
-        ndtiff_dirs = [f for f in glob.glob(path) if os.path.isdir(f) and utils.check_is_ndtiff(f)]
+        ndtiff_dirs = [f for f in glob.glob(dirpath) if os.path.isdir(f) and utils.check_is_ndtiff(f)]
         for ndtiff_dir in ndtiff_dirs:
             for i in project.import_ndtiff_data(ndtiff_dir):
                 yield i

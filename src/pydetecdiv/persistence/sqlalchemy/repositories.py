@@ -461,4 +461,8 @@ class ShallowSQLite3(ShallowDb):
         return count
 
     def get_orphan_data_objects(self) -> list[Any]:
+        """
+        Get Data objects which are not associated with an image resource
+        :return: the list of Data DSO
+        """
         return [r[0] for r in self.session.execute(select(dao['Data']).where(dao['Data'].image_resource.is_(None))).unique()]
