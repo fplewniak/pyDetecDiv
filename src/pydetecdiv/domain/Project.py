@@ -138,6 +138,13 @@ class Project:
 
     def import_images_in_dir(self, image_dir:str, author: str = '', date: str = 'now',
                              img_format: str = 'imagetiff',) -> Generator[int, Any, None]:
+        """
+        Import all tiff files in directory
+        :param image_dir: the directory name
+        :param author: the user importing the data
+        :param date: the date of import
+        :param img_format: the image format
+        """
         dataset: Dataset = cast(Dataset, self.get_named_object('Dataset', 'data'))
         author = get_config_value('project', 'user') if author == '' else author
         date_time = datetime.now() if date == 'now' else datetime.fromisoformat(date)
@@ -160,7 +167,7 @@ class Project:
 
 
     def import_images_from_metadata(self, metadata_files: str, author: str = '', date: str = 'now', img_format: str = 'imagetiff',
-                                    resource_format=ImageResource.MULTI) -> Generator[int, Any, None]:
+                                    resource_format= ImageResource.MULTI) -> Generator[int, Any, None]:
         """
         Import images specified in a list of files into a destination
 

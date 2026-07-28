@@ -102,7 +102,7 @@ def main_gui():
     ProjectMenu(mw)
     DataMenu(mw)
     mw.add_top_menus({
-        'Data'         : data_tools,
+        'Data import'  : data_tools,
         'Deep learning': deeplearning_tools,
         'Video'        : video_tools,
         })

@@ -15,12 +15,18 @@ from pydetecdiv.app.tools import Tool
 
 
 class DataImporter:
+    """
+    Class defining the functions to count and import data files according to the source type
+    """
     def __init__(self):
         self.import_func: Callable[[Path], Any] | None = None
         self.count_data: Callable[[Path], int] | None = None
 
 
 class DataImportDialog(ToolDialog):
+    """
+    Dialog window for importing data files
+    """
     progress = Signal(int)
     finished = Signal(bool)
 
@@ -51,7 +57,10 @@ class DataImportDialog(ToolDialog):
         self.fit_to_contents()
         self.exec()
 
-    def choose_path(self):
+    def choose_path(self) -> None:
+        """
+        Choose a path and define counting and importing functions according to the format
+        """
         #path, import_func = None, None
         path, data_importer = None, DataImporter()
         match self.tool.parameters.format:
@@ -75,27 +84,45 @@ class DataImportDialog(ToolDialog):
         if path and path is not None:
             self.tool.parameters.paths.add_item({path: data_importer})
 
-    def choose_metadata_file(self):
+    def choose_metadata_file(self) -> str:
+        """
+        Choose a metadata file
+        """
         filters = ["All files (*)", "Text (*.txt)", ]
         file_name, _ = QFileDialog.getOpenFileName(self, caption='Choose file', dir=self.tool.working_dir, filter=";;".join(filters),
                                                    selectedFilter="Text (*.txt)")
         return file_name
 
-    def choose_image_files(self):
+    def choose_image_files(self) -> str:
+        """
+        Choose image file using QFileDialog
+        :return: the selected file name
+        """
         filters = ["All files (*)", "TIFF (*.tiff *.tif)", ]
         file_name, _ = QFileDialog.getOpenFileName(self, caption='Choose file', dir=self.tool.working_dir, filter=";;".join(filters),
                                                    selectedFilter="TIFF (*.tiff *.tif)")
         return file_name
 
-    def choose_image_dir(self):
+    def choose_image_dir(self) -> str:
+        """
+        Choose image directory using QFileDialog
+        :return: the selected directory name
+        """
         dir_name = QFileDialog.getExistingDirectory(self, caption='Choose directory', dir=self.tool.working_dir)
         return dir_name
 
-    def choose_NDTiff(self):
+    def choose_NDTiff(self) -> str:
+        """
+        Choose NDTiff dataset using QFileDialog
+        :return: the selected directory name
+        """
         dir_name = QFileDialog.getExistingDirectory(self, caption='Choose directory', dir=self.tool.working_dir)
         return dir_name
 
-    def accept(self):
+    def accept(self) -> None:
+        """
+        Launch the import and wait for completion
+        """
         wait_dialog = WaitDialog(f'Importing data into {PyDetecDiv.project_name}', self,
                                  cancel_msg='Rollback of image import: please wait', progress_bar=True, )
         self.finished.connect(wait_dialog.close_window)
@@ -103,7 +130,10 @@ class DataImportDialog(ToolDialog):
         wait_dialog.wait_for(self.import_files)
         # self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
-    def import_files(self):
+    def import_files(self) -> None:
+        """
+        Import files
+        """
         print('Counting data')
         file_count = 0
         for path, data_importer in self.tool.parameters.paths.items:
