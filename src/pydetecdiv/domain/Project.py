@@ -307,7 +307,8 @@ class Project:
         else:
             _ = {fov.id_: ImageResource(project=self, dataset=self.raw_dataset, fov=fov, multi=False,
                                                           ) for fov in new_fovs}
-        image_resources = {fov.id_: fov.image_resource('data') for fov in self.get_objects('FOV')}
+        image_resources = {fov.id_: fov.image_resource('data') for fov in self.get_objects('FOV')
+                           if fov.image_resource('data').multi}
 
         yield int(len(new_fov_names) * 100 / total)
         df['FOV'] = df['FOV'].map(self.id_mapping('FOV'))
