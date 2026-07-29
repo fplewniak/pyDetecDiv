@@ -323,8 +323,8 @@ class Project:
         if multi:
             # for fov_id, image_res in new_image_resources.items():
             for fov_id, image_res in image_resources.items():
-                (image_res.zdim, image_res.cdim, image_res.tdim) = df.loc[df['FOV'] == fov_id, ['Z', 'C', 'T']].astype(
-                        int).max(axis=0).add(1)
+                # (image_res.zdim, image_res.cdim, image_res.tdim) = df.loc[df['FOV'] == fov_id, ['Z', 'C', 'T']].astype(
+                #         int).max(axis=0).add(1)
                 self.save(image_res)
         else:
             # for fov_id, image_res in new_image_resources.items():
