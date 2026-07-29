@@ -36,7 +36,7 @@ class ROIseqHDF5creator(Tool):
 
     def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None):
         super().__init__(parameters, working_dir)
-        self.parameters.add_parameters(
+        self.parameters.update_parameters(
                 [
                     FileParameter(name='hdf5_file', label='', require_existing=False, default=self.update_file, ),
                     CheckParameter(name='annotations', label='Annotated ROIs', default=True),

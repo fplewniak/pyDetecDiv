@@ -19,7 +19,7 @@ class ClassificationSchemeManagement(Tool):
     def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None):
         super().__init__(parameters=parameters, working_dir=working_dir)
 
-        self.parameters.add_parameters(
+        self.parameters.update_parameters(
                 [
                     StringParameter('name', label='Name'),
                     StringListParameter('classes', label='Classes'),

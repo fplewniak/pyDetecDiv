@@ -18,7 +18,7 @@ class ModelInfo(Tool):
     def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None):
         super().__init__(parameters=parameters, working_dir=working_dir)
 
-        self.parameters.add_parameters(
+        self.parameters.update_parameters(
                 [
                     ChoiceParameter('model', items={
                         'MViT_v2_small': MViT.MViT_v2_s,
