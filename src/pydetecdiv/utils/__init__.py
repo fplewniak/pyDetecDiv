@@ -8,6 +8,7 @@ from __future__ import annotations
 import glob
 import json
 import os
+from pathlib import Path
 from typing import Callable, Any
 import numpy as np
 import polars
@@ -108,7 +109,7 @@ def round_to_even(value: float, ceil: bool = True) -> int:
     return rounded
 
 
-def remove_keys_from_dict(dictionary: dict[str | Any, Any], keys: list[str | Any]):
+def remove_keys_from_dict(dictionary: dict[str | Any, Any], keys: list[str | Any]) -> dict:
     """
     Remove the dictionary entries whose keys are in the key list
 
@@ -195,7 +196,7 @@ def check_contains_tiff(directory: str) -> bool:
     return len(files_in_dir(directory, ['*.tiff', '*.tif'])) > 0
 
 
-def count_ndtiff(dirpath: str) -> int:
+def count_ndtiff(dirpath: str | Path) -> int:
     """
     Count NDTiff datasets
     :param dirpath: the path to the datasets
@@ -212,7 +213,7 @@ def count_ndtiff(dirpath: str) -> int:
     return ndtiff_dir_count
 
 
-def count_image_dir(dirpath) -> int:
+def count_image_dir(dirpath: str | Path) -> int:
     """
     Count image files in directories
     :param dirpath: the path to the directories
@@ -226,7 +227,7 @@ def count_image_dir(dirpath) -> int:
     return file_count
 
 
-def count_metadata(filepath) -> int:
+def count_metadata(filepath: str | Path) -> int:
     """
     Count image files using MicroManager metadata files
     :param filepath: the path to the metadata file(s)
