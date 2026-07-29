@@ -92,9 +92,10 @@ def main_gui():
 
     data_tools = [
         DataImportMenu('cnrs.plewniak.dataimport', enable=Enable.if_project_exists),
-        ToolAction('Create Image resources', 'cnrs.plewniak.dataimport', RawData2FOV, enable=Enable.if_missing_image_resources),
-        ToolAction('Create ROI HDF5', 'cnrs.plewniak.roiseqhdf5creator', Create_ROI_HDF5Dialog,
-                   enable=Enable.if_rois),
+        ToolAction('Create Image resources', 'cnrs.plewniak.dataimport', 'create_resources', RawData2FOV,
+                   enable=Enable.if_missing_image_resources),
+        ToolAction('Create ROI HDF5', 'cnrs.plewniak.roiseqhdf5creator', 'create_hdf5',
+                   Create_ROI_HDF5Dialog,  enable=Enable.if_rois),
         ]
 
     # Create menus

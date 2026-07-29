@@ -4,11 +4,63 @@ Abstract Tool class
 import datetime
 import os
 from abc import ABC
+from collections.abc import Callable
+from dataclasses import dataclass
 from os import makedirs
+from typing import Any
 
 from pydetecdiv.app import get_project_dir, PyDetecDiv, pydetecdiv_project
 from pydetecdiv.app.parameters import Parameters, Parameter
 from pydetecdiv.domain.Run import Run
+
+
+@dataclass
+class Command:
+    name: str
+    message: str
+    callback: Callable[..., Any]
+
+
+class Commands:
+    def __init__(self, commands: list[Command] | Command | None = None) -> None:
+        if isinstance(commands, list):
+            self.command_dict: dict[str, Command] = {command.name: command for command in commands}
+        elif isinstance(commands, Command):
+            self.command_dict: dict[str, Command] = {commands.name: commands}
+        else:
+            self.command_dict: dict[str, Command] = {}
+
+    def __repr__(self) -> str:
+        """
+        Return the commands as a string
+
+        :rtype: str
+        """
+        return f'{self.command_dict}'
+
+    def __getitem__(self, item: str) -> Command:
+        """
+        Private method enabling Commands to behave as if it were a dictionary of Command objects indexed by their
+        name
+
+        :rtype: Parameter
+        """
+        if not isinstance(item, str):
+            raise TypeError
+        if item in self.command_dict:
+            return self.command_dict[item]
+        raise KeyError
+
+    def __getattr__(self, item: str) -> Command:
+        """
+        Dunder method to allow access to commands using attribute syntax
+        :param item: the name of the command
+        :return: the command
+        """
+        return self.__getitem__(item)
+
+    def __contains__(self, item: str) -> bool:
+        return item in self.command_dict
 
 
 class Tool(ABC):
@@ -19,8 +71,9 @@ class Tool(ABC):
     version = '1.0.0'
     name = None
 
-    def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None):
+    def __init__(self, parameters: Parameters = Parameters(), commands: Commands = Commands(), working_dir: str | None = None):
         self.parameters = parameters
+        self.commands = commands
         self._working_dir = '.' if working_dir is None else working_dir
         self._command: str | None = None
         self._log_text = ''
@@ -125,3 +178,11 @@ class Tool(ABC):
     @command.setter
     def command(self, command: str) -> None:
         self._command = command
+
+    @property
+    def callback(self) -> Callable:
+        return self.commands[self.command].callback
+
+    @property
+    def message(self) -> str:
+        return self.commands[self.command].message

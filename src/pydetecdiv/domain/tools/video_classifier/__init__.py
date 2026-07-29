@@ -6,6 +6,7 @@ import tables
 import torch
 from torchvision.transforms import InterpolationMode, v2
 
+from pydetecdiv.app.tools import Commands
 from pydetecdiv.domain.tools.video_classifier.models import MViT, Swin3D, S3D, VideoResNet
 from pydetecdiv.app.parameters import Parameters, IntParameter, FloatParameter, ChoiceParameter, StringParameter
 from pydetecdiv.app.tools.deep_learning import ROIDataset, SupervisedDeepTool
@@ -25,10 +26,13 @@ class VideoClassifier(SupervisedDeepTool):
     version = '1.0.0'
     name = 'Video Classifier'
 
-    def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None):
-        super().__init__(parameters, working_dir)
+    def __init__(self, parameters: Parameters = Parameters(), commands: Commands = Commands(), working_dir: str | None = None,
+                 device: torch.device | None = None, model: torch.nn.Module | None = None):
+        super().__init__(parameters = parameters, commands=commands, working_dir=working_dir, device=device, model=model)
+
         self.parameters.update_parameters(
-                [
+                commands={'train_model'},
+                parameters = [
                     ChoiceParameter(name='model', label='Model name', default='CustomR2Plus_1D',
                                     items={'Swin3D_tiny'    : Swin3D.Swin3D_tiny,
                                            'Swin3D_small'   : Swin3D.Swin3D_small,
@@ -39,12 +43,11 @@ class VideoClassifier(SupervisedDeepTool):
                                            'R2+1d_18'       : VideoResNet.R2Plus1d_18,
                                            'CustomR2Plus_1D': CustomR2Plus_1D,
                                            'MViT_small'     : MViT.MViT_v2_s,
-                                           }, commands={'train_model'}),
-                    StringParameter(name='layers', label='Blocks layers', default='[1, 2]', commands={'train_model'}),
-                    StringParameter(name='strides', label='Strides', default='[1, 2]', commands={'train_model'}),
-                    IntParameter(name='seq_len', label='Sequence length', maximum=16, default=4, commands={'train_model'}),
-                    FloatParameter(name='dropout', label='Dropout', default=0.2, minimum=0.0, maximum=0.9,
-                                   commands={'train_model'}),
+                                           }),
+                    StringParameter(name='layers', label='Blocks layers', default='[1, 2]'),
+                    StringParameter(name='strides', label='Strides', default='[1, 2]'),
+                    IntParameter(name='seq_len', label='Sequence length', maximum=16, default=4),
+                    FloatParameter(name='dropout', label='Dropout', default=0.2, minimum=0.0, maximum=0.9),
                     ]
                 )
 

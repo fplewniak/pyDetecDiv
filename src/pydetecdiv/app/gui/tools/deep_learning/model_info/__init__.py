@@ -7,4 +7,4 @@ from pydetecdiv.app.gui.tools.deep_learning.model_info.summary import ModelSumma
 class ModelInfoMenu(ToolMenu):
     def __init__(self, tool_name: str, **kwargs: dict[str, Any]):
         super().__init__(tool_name, **kwargs)
-        ToolAction('Show model summary', tool_name, ModelSummaryDialog, self)
+        ToolAction('Show model summary', tool_name, 'model_info', ModelSummaryDialog, self)

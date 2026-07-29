@@ -19,7 +19,7 @@ class ModelTrainer(ABC):
     """
     def __init__(self, tool: 'DeepTool'):
         self.tool = tool
-        self.tool.command = 'train_model'
+        # self.tool.command = 'train_model'
 
     @abstractmethod
     def train_model(self) -> TrainingStats:

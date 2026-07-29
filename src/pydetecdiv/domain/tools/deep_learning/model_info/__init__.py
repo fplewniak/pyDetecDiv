@@ -1,7 +1,7 @@
 """
 Tools providing information about deep learning models
 """
-from pydetecdiv.app.tools import Tool
+from pydetecdiv.app.tools import Tool, Commands
 
 from pydetecdiv.app.parameters import Parameters, StringParameter, ChoiceParameter, IntParameter, Parameter
 from pydetecdiv.domain.tools.video_classifier.models import MViT, Swin3D, S3D, VideoResNet
@@ -15,8 +15,8 @@ class ModelInfo(Tool):
     version = '1.0.0'
     name = 'Model information'
 
-    def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None):
-        super().__init__(parameters=parameters, working_dir=working_dir)
+    def __init__(self, parameters: Parameters = Parameters(), commands: Commands = Commands(), working_dir: str | None = None):
+        super().__init__(parameters=parameters, commands=commands, working_dir=working_dir)
 
         self.parameters.update_parameters(
                 [

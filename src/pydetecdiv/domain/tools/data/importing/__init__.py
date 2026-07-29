@@ -9,7 +9,7 @@ from pydetecdiv import utils
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 
 from pydetecdiv.app.parameters import Parameters, ChoiceParameter
-from pydetecdiv.app.tools import Tool
+from pydetecdiv.app.tools import Tool, Commands, Command
 from pydetecdiv.domain.Project import Project
 
 
@@ -18,8 +18,12 @@ class DataImportTool(Tool):
     version = '1.0.0'
     name = 'Import data'
 
-    def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None):
-        super().__init__(parameters=parameters, working_dir=working_dir)
+    def __init__(self, parameters: Parameters = Parameters(), commands: Commands = Commands(), working_dir: str | None = None):
+        super().__init__(parameters=parameters, commands=commands, working_dir=working_dir)
+
+        self.commands.command_dict.update(
+                {'import_images': Command('import_images', 'Import image files', self.import_files)}
+                )
 
         self.parameters.update_parameters(
                 [
@@ -31,7 +35,7 @@ class DataImportTool(Tool):
                                         'Image directory': self.import_image_dir,
                                         }),
                     ],
-                commands={'import_files'}
+                commands={'import_images'}
                 )
 
     def import_metadata(self, filepath: str, project: Project) -> Generator[int, int, None]:

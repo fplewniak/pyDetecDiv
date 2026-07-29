@@ -15,7 +15,7 @@ import numpy as np
 from pydetecdiv.app import set_connections
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
 from pydetecdiv.app.parameters import Parameters, CheckParameter, IntParameter, ChoiceParameter, FileParameter
-from pydetecdiv.app.tools import Tool
+from pydetecdiv.app.tools import Tool, Commands, Command
 from pydetecdiv.domain.Classification import Classification
 from pydetecdiv.domain.FOV import FOV
 from pydetecdiv.domain.Image import ImgDType
@@ -34,8 +34,12 @@ class ROIseqHDF5creator(Tool):
     version = '1.0.0'
     name = 'ROI HDF5 creator'
 
-    def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None):
-        super().__init__(parameters, working_dir)
+    def __init__(self, parameters: Parameters = Parameters(), commands: Commands = Commands(), working_dir: str | None = None):
+        super().__init__(parameters, commands, working_dir)
+        self.commands.command_dict.update(
+                {'create_hdf5': Command('create_hdf5', 'Create ROI HDF5', self.create_file)}
+                )
+
         self.parameters.update_parameters(
                 [
                     FileParameter(name='hdf5_file', label='', require_existing=False, default=self.update_file, ),
