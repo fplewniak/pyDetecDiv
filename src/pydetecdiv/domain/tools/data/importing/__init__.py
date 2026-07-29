@@ -3,9 +3,10 @@ Tools to import data into a project
 """
 import glob
 import os
-from typing import Generator
+from typing import Generator, Any
 
 from pydetecdiv import utils
+from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 
 from pydetecdiv.app.parameters import Parameters, ChoiceParameter
 from pydetecdiv.app.tools import Tool
@@ -29,7 +30,8 @@ class DataImportTool(Tool):
                                         'NDTiff'         : self.import_ndtiff,
                                         'Image directory': self.import_image_dir,
                                         }),
-                    ]
+                    ],
+                commands={'import_files'}
                 )
 
     def import_metadata(self, filepath: str, project: Project) -> Generator[int, int, None]:
@@ -72,3 +74,23 @@ class DataImportTool(Tool):
         for ndtiff_dir in ndtiff_dirs:
             for i in project.import_ndtiff_data(ndtiff_dir):
                 yield i
+
+    def import_files(self) -> Generator[float | int, Any, None]:
+        """
+        Import files
+        """
+        print('Counting data')
+        file_count = 0
+        for path, data_importer in self.parameters.paths.items:
+            file_count += data_importer.count_data(path)
+        print(f'Total files: {file_count}')
+
+        if file_count:
+            with pydetecdiv_project(PyDetecDiv.project_name) as project:
+                count = 0
+                for path, data_importer in self.parameters.paths.items:
+                    for i in data_importer.import_func(path, project):
+                        yield 100 * float(count + i) / float(file_count)
+                    count += i
+                project.commit()
+        self.parameters.paths.clear()
