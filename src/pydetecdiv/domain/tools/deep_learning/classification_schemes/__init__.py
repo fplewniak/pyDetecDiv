@@ -2,7 +2,7 @@
 Tools for management of classification schemes used by deep learning classifiers
 """
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
-from pydetecdiv.app.tools import Tool
+from pydetecdiv.app.tools import Tool, Commands
 
 from pydetecdiv.app.parameters import Parameters, StringParameter, StringListParameter
 from pydetecdiv.domain.Classification import Classification
@@ -16,8 +16,8 @@ class ClassificationSchemeManagement(Tool):
     version = '1.0.0'
     name = 'Classification schemes'
 
-    def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None):
-        super().__init__(parameters=parameters, working_dir=working_dir)
+    def __init__(self, parameters: Parameters = Parameters(), commands: Commands = Commands(), working_dir: str | None = None):
+        super().__init__(parameters=parameters, commands=commands, working_dir=working_dir)
 
         self.parameters.update_parameters(
                 [

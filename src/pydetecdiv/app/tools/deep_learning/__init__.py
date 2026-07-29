@@ -18,7 +18,7 @@ from torchvision.transforms import v2, transforms
 from pydetecdiv.app import pydetecdiv_project, PyDetecDiv, set_connections
 from pydetecdiv.app.gui.core.widgets.viewers.plots import MatplotViewer
 from pydetecdiv.app.parameters import Parameters, IntParameter, ChoiceParameter, FloatParameter, CheckParameter, FileParameter
-from pydetecdiv.app.tools import Tool
+from pydetecdiv.app.tools import Tool, Commands, Command
 
 from pydetecdiv.app.tools.deep_learning.train import ModelTrainer
 from pydetecdiv.app.tools.deep_learning.evaluate import ModelEvaluator
@@ -216,51 +216,52 @@ class DeepTool(Tool):
     DeepTool abstract class providing the basic functionality for deep-learning new_tools
     """
 
-    def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None, device: torch.device | None = None,
-                 model: torch.nn.Module | None = None):
-        super().__init__(parameters=parameters, working_dir=working_dir)
+    def __init__(self, parameters: Parameters = Parameters(), commands: Commands = Commands(),
+                 working_dir: str | None = None, device: torch.device | None = None, model: torch.nn.Module | None = None):
+
+        super().__init__(parameters=parameters, commands=commands, working_dir=working_dir)
+
+        self._model_trainer = None
+        self._model_evaluator = None
+        self._model_predictor = None
+
+        self.commands.command_dict.update(
+                {'train_model': Command('train_model', '**Training Model**', self.model_trainer.train_model)}
+                )
+
         self.parameters.update_parameters(
-                [
-                    IntParameter(name='epochs', label='Epochs', default=32, commands={'train_model'}),
-                    IntParameter(name='batch_size', label='Batch size', default=8, commands={'train_model'}),
+                commands={'train_model'},
+                parameters = [
+                    IntParameter(name='epochs', label='Epochs', default=32),
+                    IntParameter(name='batch_size', label='Batch size', default=8),
                     ChoiceParameter(name='optimizer', label='Optimizer', default='AdamW',
                                     items={'AdamW'   : optim.AdamW,
                                            'SGD'     : optim.SGD,
                                            'Adadelta': optim.Adadelta,
                                            'Adamax'  : optim.Adamax,
                                            'Nadam'   : optim.NAdam,
-                                           }, commands={'train_model'}),
-                    IntParameter(name='seed', label='Random seed', maximum=999999999, default=42, commands={'train_model'}),
-                    FloatParameter(name='learning_rate', label='Learning rate', default=1.0e-4, minimum=1e-20, maximum=1.0,
-                                   commands={'train_model'}),
-                    FloatParameter(name='focal_gamma', label=f'Focal loss {greek["gamma"]}', default=1.5, minimum=0.0, maximum=2.0,
-                                   commands={'train_model'}),
+                                           }),
+                    IntParameter(name='seed', label='Random seed', maximum=999999999, default=42),
+                    FloatParameter(name='learning_rate', label='Learning rate', default=1.0e-4, minimum=1e-20, maximum=1.0),
+                    FloatParameter(name='focal_gamma', label=f'Focal loss {greek["gamma"]}', default=1.5, minimum=0.0, maximum=2.0),
                     ChoiceParameter(name='regularization', label='Regularization method', default='LASSO (L1)',
                                     items={'None'      : 0,
                                            'LASSO (L1)': 1,
                                            'Ridge (L2)': 2,
-                                           }, commands={'train_model'}),
+                                           }),
                     FloatParameter(name='lambda_reg', label=f'{greek["lambda"]} parameter', default=2e-5, minimum=1e-8,
-                                   maximum=10.0, commands={'train_model'}),
-                    CheckParameter(name='warmup', label='Warm-up', default=False, exclusive=False, commands={'train_model'}),
-                    FloatParameter(name='wu_start', label='   * warm-up start factor', default=0.1, minimum=0.1, maximum=0.5,
-                                   commands={'train_model'}),
-                    FloatParameter(name='wu_end', label='   * warm-up end factor', default=1.0, minimum=0.5, maximum=1.0,
-                                   commands={'train_model'}),
-                    IntParameter(name='wu_duration', label='   * warm-up duration', default=8, minimum=2, maximum=100,
-                                 commands={'train_model'}),
-                    CheckParameter(name='step_scheduler', label='Step scheduler', default=True, exclusive=True,
-                                   commands={'train_model'}),
+                                   maximum=10.0),
+                    CheckParameter(name='warmup', label='Warm-up', default=False, exclusive=False),
+                    FloatParameter(name='wu_start', label='   * warm-up start factor', default=0.1, minimum=0.1, maximum=0.5),
+                    FloatParameter(name='wu_end', label='   * warm-up end factor', default=1.0, minimum=0.5, maximum=1.0),
+                    IntParameter(name='wu_duration', label='   * warm-up duration', default=8, minimum=2, maximum=100),
+                    CheckParameter(name='step_scheduler', label='Step scheduler', default=True, exclusive=True),
                     FloatParameter(name='step_gamma', label=f'   * {greek["gamma"]} parameter', default=0.95, minimum=0.01,
-                                   maximum=0.99, commands={'train_model'}),
-                    IntParameter(name='step_size', label='   * step size', default=4, minimum=1, maximum=100,
-                                 commands={'train_model'}),
-                    CheckParameter(name='reduce_lr_on_plateau', label='Reduce LR on plateau', default=False, exclusive=False,
-                                   commands={'train_model'}),
-                    IntParameter(name='reduce_patience', label='   * patience', default=10, minimum=1, maximum=100,
-                                 commands={'train_model'}),
-                    FloatParameter(name='reduction_factor', label='   * reduction factor', default=0.5, minimum=0.1, maximum=1.0,
-                                   commands={'train_model'}),
+                                   maximum=0.99),
+                    IntParameter(name='step_size', label='   * step size', default=4, minimum=1, maximum=100),
+                    CheckParameter(name='reduce_lr_on_plateau', label='Reduce LR on plateau', default=False, exclusive=False),
+                    IntParameter(name='reduce_patience', label='   * patience', default=10, minimum=1, maximum=100),
+                    FloatParameter(name='reduction_factor', label='   * reduction factor', default=0.5, minimum=0.1, maximum=1.0)
                     ]
                 )
 
@@ -270,9 +271,6 @@ class DeepTool(Tool):
             self.model.to(self.device)
         self.train_dataloader, self.val_dataloader, self.test_dataloader = None, None, None
         self.dataloader = None
-        self._model_trainer = None
-        self._model_evaluator = None
-        self._model_predictor = None
 
     def checkpoints_path(self, run: Run) -> str:
         """
@@ -375,23 +373,21 @@ class SupervisedDeepTool(DeepTool):
     """
     Generic class defining tool for supervised deep learning
     """
-    def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None, device: torch.device | None = None,
-                 model: torch.nn.Module | None = None):
-        super().__init__(parameters=parameters, working_dir=working_dir)
+    def __init__(self, parameters: Parameters = Parameters(), commands: Commands = Commands(),
+                 working_dir: str | None = None, device: torch.device | None = None, model: torch.nn.Module | None = None):
+        super().__init__(parameters=parameters, commands=commands, working_dir=working_dir, device=device, model=model)
+
         self.parameters.update_parameters(
-                [FloatParameter(name='num_training', label='Training dataset', default=0.4, minimum=0.01, maximum=0.98,
-                                   commands={'train_model'}),
-                    FloatParameter(name='num_validation', label='Validation dataset', default=0.3, minimum=0.01, maximum=0.98,
-                                   commands={'train_model'}),
-                    FloatParameter(name='num_test', label='Test dataset', default=0.3, minimum=0.01, maximum=0.98,
-                                   commands={'train_model'}),
-                    IntParameter(name='data_seed', label='Random seed', maximum=999999999, default=42,
-                                 commands={'train_model'}),
+                commands={'train_model'},
+                parameters = [
+                    FloatParameter(name='num_training', label='Training dataset', default=0.4, minimum=0.01, maximum=0.98),
+                    FloatParameter(name='num_validation', label='Validation dataset', default=0.3, minimum=0.01, maximum=0.98),
+                    FloatParameter(name='num_test', label='Test dataset', default=0.3, minimum=0.01, maximum=0.98),
+                    IntParameter(name='data_seed', label='Random seed', maximum=999999999, default=42),
                     FileParameter(name='hdf5_file', label='', filters=["HDF5 (*.h5 *.hdf5)"], require_existing=True,
-                                  default=self.update_file, commands={'train_model'}),
+                                  default=self.update_file),
                     CheckParameter(name='time_first', label='Time first', default=False, commands={'train_model'}),
-                    CheckParameter(name='augmentation', label='Augmentation', default=False, exclusive=False,
-                                   commands={'train_model'}),
+                    CheckParameter(name='augmentation', label='Augmentation', default=False, exclusive=False),
                  ]
                 )
         set_connections({PyDetecDiv.app.project_selected: [self.update_file]})

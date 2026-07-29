@@ -137,7 +137,7 @@ class DataImportDialog(ToolDialog):
         """
         Import files
         """
-        for i in self.tool.import_files():
+        for i in self.tool.callback():
             self.progress.emit(i)
         PyDetecDiv.app.project_selected.emit(PyDetecDiv.project_name)
         self.finished.emit(True)

@@ -10,5 +10,6 @@ from pydetecdiv.app.gui.tools.data.importing.import_dialog import DataImportDial
 class DataImportMenu(ToolMenu):
     def __init__(self, tool_name: str, enable = None, **kwargs: dict[str, Any]):
         super().__init__(tool_name, enable=enable, **kwargs)
-        ToolAction('Image files', tool_name, DataImportDialog, self)
-        ToolAction('ROI annotations', tool_name, lambda _: print('importing ROI annotations'), self)
+        ToolAction('Image files', tool_name, 'import_images', DataImportDialog, self)
+        ToolAction('ROI annotations', tool_name, 'import_roi_annotation',
+                   lambda _: print('importing ROI annotations'), self)
