@@ -219,7 +219,7 @@ class DeepTool(Tool):
     def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None, device: torch.device | None = None,
                  model: torch.nn.Module | None = None):
         super().__init__(parameters=parameters, working_dir=working_dir)
-        self.parameters.add_parameters(
+        self.parameters.update_parameters(
                 [
                     IntParameter(name='epochs', label='Epochs', default=32, commands={'train_model'}),
                     IntParameter(name='batch_size', label='Batch size', default=8, commands={'train_model'}),
@@ -378,7 +378,7 @@ class SupervisedDeepTool(DeepTool):
     def __init__(self, parameters: Parameters = Parameters(), working_dir: str | None = None, device: torch.device | None = None,
                  model: torch.nn.Module | None = None):
         super().__init__(parameters=parameters, working_dir=working_dir)
-        self.parameters.add_parameters(
+        self.parameters.update_parameters(
                 [FloatParameter(name='num_training', label='Training dataset', default=0.4, minimum=0.01, maximum=0.98,
                                    commands={'train_model'}),
                     FloatParameter(name='num_validation', label='Validation dataset', default=0.3, minimum=0.01, maximum=0.98,
