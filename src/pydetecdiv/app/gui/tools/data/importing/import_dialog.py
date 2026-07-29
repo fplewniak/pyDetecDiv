@@ -2,10 +2,13 @@
 Import Data dialog window
 """
 from pathlib import Path
-from typing import Callable, Any
+from typing import Any
+from collections.abc import Callable
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QDialogButtonBox, QFileDialog
+from pydetecdiv.domain import Project
+
 from pydetecdiv import utils
 
 from pydetecdiv.app import set_connections, pydetecdiv_project, PyDetecDiv, WaitDialog
@@ -19,8 +22,8 @@ class DataImporter:
     Class defining the functions to count and import data files according to the source type
     """
     def __init__(self):
-        self.import_func: Callable[[Path], Any] | None = None
-        self.count_data: Callable[[Path], int] | None = None
+        self.import_func: Callable[[str | Path, Project], Any] | None = None
+        self.count_data: Callable[[str | Path], int] | None = None
 
 
 class DataImportDialog(ToolDialog):
@@ -134,20 +137,7 @@ class DataImportDialog(ToolDialog):
         """
         Import files
         """
-        print('Counting data')
-        file_count = 0
-        for path, data_importer in self.tool.parameters.paths.items:
-            file_count += data_importer.count_data(path)
-        print(f'Total files: {file_count}')
-
-        if file_count:
-            with pydetecdiv_project(PyDetecDiv.project_name) as project:
-                count = 0
-                for path, data_importer in self.tool.parameters.paths.items:
-                    for i in data_importer.import_func(path, project):
-                        self.progress.emit(100 * float(count + i) / float(file_count))
-                    count += i
-                project.commit()
-            PyDetecDiv.app.project_selected.emit(PyDetecDiv.project_name)
-        self.tool.parameters.paths.clear()
+        for i in self.tool.import_files():
+            self.progress.emit(i)
+        PyDetecDiv.app.project_selected.emit(PyDetecDiv.project_name)
         self.finished.emit(True)
