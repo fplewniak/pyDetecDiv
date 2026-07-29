@@ -3,12 +3,13 @@ Module defining the different types of parameters that may be needed to store in
 be specified using GUI widgets which are synchronized thanks to a shared model
 """
 import json
-from typing import Callable, Any, cast, overload
+from typing import Callable, Any, cast, TypeVar, Generic
 
-from PySide6.QtCore import Signal, SignalInstance
+from PySide6.QtCore import SignalInstance
 
 from pydetecdiv.app.models import ItemModel, DictItemModel, StandardItemModel, StringListModel
 
+Num = TypeVar('Num', float, int)
 
 class Parameter:
     """
@@ -26,7 +27,7 @@ class Parameter:
         self.updater: Callable | None = updater
         self.updater_kwargs: dict[str, Any] = kwargs
         self.groups: set[str] = set() if groups is None else groups
-        self.qmodel: StandardItemModel | None = None
+        self.qmodel: StandardItemModel = StandardItemModel()
         # self.should_be_saved: bool = False
         self.commands: set[str] = set() if commands is None else commands
         self.__dict__.update(kwargs)
@@ -133,16 +134,14 @@ class Parameter:
         return (self.validator is None) or self.validator(value)
 
     @property
-    def changed(self) -> SignalInstance | None:
+    def changed(self) -> SignalInstance:
         """
         return property telling whether the spinbox value has changed. This overwrites the Pyside equivalent method in
          order to have the same method name for all widgets
 
         :return: boolean indication whether the value has changed
         """
-        if self.qmodel is not None:
-            return self.qmodel.itemChanged
-        return None
+        return self.qmodel.itemChanged
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Parameter):
@@ -224,26 +223,12 @@ class ItemParameter(Parameter):
         # self.reset()
 
 
-class NumParameter(ItemParameter):
+class NumParameter(ItemParameter, Generic[Num]):
     """
     Class representing a parameter holding a number.
     """
-    @overload
-    def __init__(self, name: str, label: str | None = None, default: int | None = None, minimum: int | None = None,
-                 maximum: int | None = None, validator: Callable[[int], bool] | None = None,
-                 groups: set[str] | None = None, updater: Callable | None = None, commands: set[str] | None = None,
-                 **kwargs: dict[str, Any]) -> None:
-        pass
-
-    @overload
-    def __init__(self, name: str, label: str | None = None, default: float | None = None, minimum: float | None = None,
-                 maximum: float | None = None, validator: Callable[[float], bool] | None = None,
-                 groups: set[str] | None = None, updater: Callable | None = None, commands: set[str] | None = None,
-                 **kwargs: dict[str, Any]) -> None:
-        pass
-
     def __init__(self, name: str, label: str | None = None, default: int | float | None = None, minimum: int | float | None = None,
-                 maximum: int | float | None = None, validator: Callable[[int | float], bool] | None = None,
+                 maximum: int | float | None = None, validator: Callable[[Num], bool] | None = None,
                  groups: set[str] | None = None, updater: Callable | None = None, commands: set[str] | None = None,
                  **kwargs: dict[str, Any]) -> None:
         self.minimum: int | float | None = minimum
@@ -294,7 +279,7 @@ class NumParameter(ItemParameter):
         self.set_minimum(minimum)
         self.set_maximum(maximum)
 
-    def validate(self, value: int | float) -> bool:
+    def validate(self, value: Num) -> bool:
         """
         Validates a numerical value, returning True if value is numerical and lies within the specified range,
         False otherwise
@@ -307,7 +292,7 @@ class NumParameter(ItemParameter):
         return self.validator(value)
 
 
-class IntParameter(NumParameter):
+class IntParameter(NumParameter[int]):
     """
     Class representing a parameter holding a integer number.
     """
@@ -327,6 +312,7 @@ class IntParameter(NumParameter):
     #     """
     #     return {'default': self.default, 'minimum': self.minimum, 'maximum': self.maximum, 'single_step': self.single_step}
 
+
     def validate(self, value: int) -> bool:
         """
         Validates the value for a integer parameter, making sure it lies within the specified range
@@ -339,7 +325,7 @@ class IntParameter(NumParameter):
         return self.validator(value)
 
 
-class FloatParameter(NumParameter):
+class FloatParameter(NumParameter[float]):
     """
     Class representing a parameter holding a float number.
     """
@@ -542,7 +528,7 @@ class ChoiceParameter(Parameter):
         return self.qmodel.values()
 
     @property
-    def items(self) -> dict[str, object]:
+    def items(self) -> dict[str, Any]:
         """
         Returns all choice items for this parameter as a dictionary with key = name/representation of the corresponding
         option, value = the actual object
@@ -605,7 +591,7 @@ class ChoiceParameter(Parameter):
             self.add_item({k: v})
 
     @property
-    def changed(self) -> Signal:
+    def changed(self) -> SignalInstance:
         return self.qmodel.selection_changed
 
     def __eq__(self, other: Any) -> bool:
@@ -650,14 +636,18 @@ class Parameters:
         else:
             self.parameter_dict: dict[str, Parameter] = {}
 
-    def add_parameters(self, parameters: list[Parameter] | Parameter) -> None:
+    def update_parameters(self, parameters: list[Parameter] | Parameter, commands: set[str] | None = None) -> None:
         """
         Adds parameters to the list of parameters
 
+        :param commands: list of commands the added parameters are for
         :param parameters: the parameter or list of parameters to add
         """
         if not isinstance(parameters, list):
             parameters = [parameters]
+        if commands is not None:
+            for p in parameters:
+                p.commands.update(commands)
         self.parameter_dict.update({p.name: p for p in parameters})
         for parameter in parameters:
             parameter.reset()

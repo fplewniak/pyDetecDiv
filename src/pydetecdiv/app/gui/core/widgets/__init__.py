@@ -3,7 +3,8 @@ Core and absract widgets for application GUI. These widgets provide the basic fu
 to be extended for concrete or more specific purposes
 """
 import os
-from typing import Any, Type, Callable, TypeVar, Union, Self, cast
+from collections.abc import Callable
+from typing import Any, Type, TypeVar, Union, Self, cast
 
 import polars
 from PySide6.QtCore import Signal, Slot, QItemSelectionModel, QItemSelection, SignalInstance
@@ -912,7 +913,7 @@ class DoubleSpinBox(QDoubleSpinBox):
             # self.changed.connect(lambda _: self.mapper.submit())
 
     @property
-    def changed(self):
+    def changed(self) -> SignalInstance:
         """
         method returning whether the spinbox value has been changed
 

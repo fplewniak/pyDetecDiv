@@ -5,7 +5,7 @@ from pydetecdiv.app import PyDetecDiv
 from pydetecdiv.app.gui.core.widgets import set_connections
 from pydetecdiv.app.gui.tools import ToolDialog
 from pydetecdiv.app.gui.tools.deep_learning import plot_training_results
-from pydetecdiv.app.parameters import FloatParameter
+from pydetecdiv.app.parameters import Parameter
 from pydetecdiv.app.tools.deep_learning import DeepTool
 
 
@@ -110,7 +110,7 @@ class TrainModelDialog(ToolDialog):
         self.fit_to_contents()
         self.exec()
 
-    def update_datasets(self, changed_param: FloatParameter) -> None:
+    def update_datasets(self, changed_param: Parameter) -> None:
         """
         Update the dataset proportions values to make sure they sup up to 1
 
