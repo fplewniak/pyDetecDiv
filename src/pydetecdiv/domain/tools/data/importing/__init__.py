@@ -23,8 +23,8 @@ class DataImportTool(Tool):
 
         self.commands.update([
             Command('import_images', 'Image files', self.import_files),
-            Command('import_roi_annotation', 'ROI Annotations', self.import_files),
-            Command('create_resources', 'Create Image resources', self.import_files),
+            Command('import_roi_annotation', 'ROI Annotations', self.import_roi_annotations),
+            Command('create_resources', 'Create Image resources', self.create_image_resources),
             ])
 
         self.parameters.update_parameters(
@@ -94,3 +94,10 @@ class DataImportTool(Tool):
                     count += i
                 project.commit()
         self.parameters.paths.clear()
+
+    def import_roi_annotations(self) -> Generator[float | int, Any, None]:
+        ...
+
+    def create_image_resources(self) -> Generator[float | int, Any, None]:
+        ...
+
