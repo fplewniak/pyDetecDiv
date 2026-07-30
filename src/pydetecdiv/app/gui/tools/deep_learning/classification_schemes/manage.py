@@ -182,6 +182,8 @@ class EditClassificationSchemeDialog(ToolDialog):
         if row is not None:
             self.tool.parameters.name.set_value(row['name'])
             self.tool.parameters.classes.set_value(row['classes'])
+        else:
+            self.tool.parameters.classes.set_value([])
 
         classification_management = self.addGroupBox(
                 parameters=[
