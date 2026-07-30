@@ -108,8 +108,3 @@ class VideoClassifier(SupervisedDeepTool):
         Concrete factory to create video classifier predictor
         """
         return VideoClassifierPredictor(self)
-
-    # def save_run(self, *args, **kwargs):
-    #     """
-    #     Concrete method saving the video classifier run
-    #     """

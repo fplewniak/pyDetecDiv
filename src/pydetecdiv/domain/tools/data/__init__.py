@@ -20,7 +20,7 @@ class RoiDataReader(ABC):
         self.source = source
 
     @abstractmethod
-    def roi_data(self, roi_idx: int | slice = None, frame: int | slice = 0) -> torch.Tensor:
+    def roi_data(self, roi_idx: int | slice | None = None, frame: int | slice = 0) -> torch.Tensor:
         """
         Returns data for the ROI specified by `roi_idx` and `frame`. Should return a sequence only if targets apply when using a
         many-to-one classifier. For many-to-may classifiers, the method should return a single ROI data and it should be the
@@ -32,7 +32,7 @@ class RoiDataReader(ABC):
         """
 
     @abstractmethod
-    def target(self, roi_idx: int = None, frame: int = 0) -> torch.Tensor:
+    def target(self, roi_idx: int | None = None, frame: int = 0) -> torch.Tensor | None:
         """
         Returns target data for the ROI specified by `roi_idx` and `frame`.
         :param roi_idx: the index for the desired ROI
@@ -42,14 +42,14 @@ class RoiDataReader(ABC):
 
     @property
     @abstractmethod
-    def class_names(self) -> list[str]:
+    def class_names(self) -> list[str] | None:
         """
         Returns a list of class names
         :return: the list of class names
         """
 
     @abstractmethod
-    def roi_id(self, roi_idx: int = None) -> int:
+    def roi_id(self, roi_idx: int | None = None) -> int:
         """
         Returns the id_ of the desired ROI, designated by its index in the HDF5 file
         :param roi_idx: the index of the ROI in the HDF5 file
@@ -88,7 +88,7 @@ class RoiDataReader(ABC):
         :return: the number of targets
         """
 
-    def roi(self, roi_idx: int = None) -> ROI:
+    def roi(self, roi_idx: int | None = None) -> ROI:
         """
         Returns the ROI object designated by its index in the HDF5 file
         :param roi_idx: the index of the ROI in the HDF5 file
@@ -97,7 +97,7 @@ class RoiDataReader(ABC):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             return project.get_object('ROI', self.roi_id(roi_idx))
 
-    def target_indices(self, roi_idx: int | list[int] = None) -> polars.DataFrame:
+    def target_indices(self, roi_idx: int | list[int] | None = None) -> polars.DataFrame:
         """
         Returns all the indices of (ROI, frame) pairs in the source that have a target
         :return: the indices
@@ -114,7 +114,7 @@ class RoiDataReader(ABC):
                     frames.append(frame)
         return polars.DataFrame({'roi': rois, 'frame': frames})
 
-    def all_indices(self, roi_idx: int | list[int] = None) -> polars.DataFrame:
+    def all_indices(self, roi_idx: int | list[int] | None = None) -> polars.DataFrame:
         """
         Returns all the indices of (ROI, frame) pairs in the source
         :return: all the indices
@@ -130,7 +130,7 @@ class RoiDataReader(ABC):
                 frames.append(frame)
         return polars.DataFrame({'roi': rois, 'frame': frames})
 
-    def no_target_indices(self, roi_idx: int | list[int] = None) -> polars.DataFrame:
+    def no_target_indices(self, roi_idx: int | list[int] | None = None) -> polars.DataFrame:
         """
         Returns all the indices of (ROI, frame) pairs in the source that do not have any target
         :return: the indices
