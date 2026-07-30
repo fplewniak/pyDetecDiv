@@ -386,7 +386,7 @@ class SupervisedDeepTool(DeepTool):
                     IntParameter(name='data_seed', label='Random seed', maximum=999999999, default=42),
                     FileParameter(name='hdf5_file', label='', filters=["HDF5 (*.h5 *.hdf5)"], require_existing=True,
                                   default=self.update_file),
-                    CheckParameter(name='time_first', label='Time first', default=False, commands={'train_model'}),
+                    CheckParameter(name='time_first', label='Time first', default=False),
                     CheckParameter(name='augmentation', label='Augmentation', default=False, exclusive=False),
                  ]
                 )

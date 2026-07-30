@@ -16,12 +16,21 @@ from pydetecdiv.domain.Run import Run
 
 @dataclass
 class Command:
+    """
+    A class to represent a command:
+    * name: the command name, used to access it from the list of tool commands
+    * title: the title to display in an interface
+    * callback: the callback function or method to execute the command
+    """
     name: str
     title: str
     callback: Callable[..., Any]
 
 
 class Commands:
+    """
+    A class to handle the set of commands associated with each tool
+    """
     def __init__(self, commands: list[Command] | Command | None = None) -> None:
         if isinstance(commands, list):
             self.command_dict: dict[str, Command] = {command.name: command for command in commands}
@@ -31,6 +40,11 @@ class Commands:
             self.command_dict: dict[str, Command] = {}
 
     def update(self, commands: list[Command]):
+        """
+        Update the list of commands
+
+        :param commands: the list of commands to add or update
+        """
         self.command_dict.update({c.name: c for c in commands})
 
     def __repr__(self) -> str:
@@ -144,10 +158,6 @@ class Tool(ABC):
             command = self.command
 
         param_list.extend([p for p in self.parameters.parameter_list if command in p.commands])
-        # param_list.extend([p for p in self.parameters.parameter_list if p.should_be_saved])
-
-        # for parameter in param_list:
-        #     parameter.should_be_saved = False
 
         if key_val is None:
             key_val = {}
@@ -184,8 +194,18 @@ class Tool(ABC):
 
     @property
     def callback(self) -> Callable:
+        """
+        A shortcut to the selected command's callback function, used to launch the function with generic code
+
+        :return: the selected command's callback function
+        """
         return self.commands[self.command].callback
 
     @property
     def title(self) -> str:
+        """
+        A shortcut to the selected command's title, used to display the title with generic code
+
+        :return: the selected command's titles
+        """
         return self.commands[self.command].title

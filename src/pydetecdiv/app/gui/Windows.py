@@ -78,6 +78,14 @@ class MainWindow(QMainWindow):
     #     return self.tabs[title]
 
     def add_top_menu(self, title: str, tool_actions: list[ToolMenu | ToolAction], *args, **kwargs):
+        """
+        Add a menu to the menu bar containing tool submenus and/or tool actions
+
+        :param title: the top menu title
+        :param tool_actions: the list of submenus and actions
+        :param args: extra arguments
+        :param kwargs: extra keywords arguments
+        """
         menu = self.menuBar().addMenu(title)
         for tool_action in tool_actions:
             if isinstance(tool_action, (ToolMenu, ToolAction)):
@@ -86,6 +94,11 @@ class MainWindow(QMainWindow):
                 menu.addSeparator()
 
     def add_top_menus(self, top_menus: dict[str, list[ToolMenu | ToolAction]]):
+        """
+        Add top menus to the menu bar
+
+        :param top_menus: A dictionary of top menu submenus and actions
+        """
         for title, action in top_menus.items():
             self.add_top_menu(title, action)
 

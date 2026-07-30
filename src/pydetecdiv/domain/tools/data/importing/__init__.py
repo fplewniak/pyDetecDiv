@@ -39,7 +39,8 @@ class DataImportTool(Tool):
                                         }),
                     ])
 
-    def import_metadata(self, filepath: str, project: Project) -> Generator[int, int, None]:
+    @staticmethod
+    def import_metadata(filepath: str, project: Project) -> Generator[int, int, None]:
         """
         Import image files using MicroManager metadata files
         :param filepath: the path to the metadata file(s)
@@ -50,7 +51,8 @@ class DataImportTool(Tool):
             for i in project.import_images_from_metadata(metadata_file_name):
                 yield i
 
-    def import_image_dir(self, dirpath: str, project: Project) -> Generator[int, int, None]:
+    @staticmethod
+    def import_image_dir(dirpath: str, project: Project) -> Generator[int, int, None]:
         """
         Import image files from directories
         :param dirpath: the path to the directories
@@ -61,7 +63,8 @@ class DataImportTool(Tool):
             for i in project.import_images_in_dir(image_dir):
                 yield i
 
-    def import_ndtiff(self, dirpath: str, project: Project) -> Generator[int, int, None]:
+    @staticmethod
+    def import_ndtiff(dirpath: str, project: Project) -> Generator[int, int, None]:
         """
         Import image NDTiff datasets
         :param dirpath: the path to the datasets

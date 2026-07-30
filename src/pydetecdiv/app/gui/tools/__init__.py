@@ -69,11 +69,21 @@ class ToolMenu(QMenu):
         self._parent = None
 
     def add_to_menu(self, menu: QMenu) -> None:
+        """
+        Add the menu to another one as a submenu
+
+        :param menu: the menu to add the submenu to
+        """
         menu.addMenu(self)
         self._parent = menu
         menu.aboutToShow.connect(self.determine_enabled_status)
 
     def determine_enabled_status(self, **kwargs: dict[str, Any]):
+        """
+        Enable or disable the menu depending on the enabling function output
+
+        :param kwargs: extra keyword arguments
+        """
         try:
             self.enabling_function(self)
         except TypeError as e:
@@ -101,6 +111,11 @@ class ToolAction(QAction):
             self.add_to_menu(parent)
 
     def add_to_menu(self, menu: QMenu) -> None:
+        """
+        Add the action to a menu
+
+        :param menu: the menu to add the action to
+        """
         menu.addAction(self)
         self._parent = menu
         menu.aboutToShow.connect(self.determine_enabled_status)
@@ -113,6 +128,11 @@ class ToolAction(QAction):
         return self._parent
 
     def determine_enabled_status(self, **kwargs: dict[str, Any]):
+        """
+        Enable or disable the action depending on the enabling function output
+
+        :param kwargs: extra keyword arguments
+        """
         try:
             self.enabling_function(self)
         except TypeError as e:
