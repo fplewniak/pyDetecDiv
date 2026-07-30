@@ -41,7 +41,7 @@ class ModelTrainer(ABC):
 
         for images, gt in training_dataloader:
             images, gt = images.to(device), gt.type(torch.LongTensor).to(device)
-            # optimizer.zero_grad()
+            optimizer.zero_grad()
 
             with autocast(device.type):
                 outputs = model(images)
@@ -56,7 +56,7 @@ class ModelTrainer(ABC):
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
-            optimizer.zero_grad()
+            optimizer.step()
 
             running_loss += loss.item()
 

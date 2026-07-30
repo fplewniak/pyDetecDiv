@@ -85,11 +85,14 @@ class ToolAction(QAction):
     Generic action to trigger a tool process
     """
 
-    def __init__(self, title: str, tool_name: str, command: str, launch: Callable,  parent: QMenu | None = None, enable = None,
+    def __init__(self, tool_name: str, command: str, launch: Callable,  parent: QMenu | None = None, enable = None,
                  **kwargs: dict[str, Any]):
-        super().__init__(title, parent)
         self.tool = PyDetecDiv.tools[tool_name]
         self.command = command
+        super().__init__(self.tool.commands[command].title, parent)
+        # super().__init__(title, parent)
+        # self.tool = PyDetecDiv.tools[tool_name]
+        # self.command = command
         self.enabling_function = enable
         self.launch_callable = launch
         self.triggered.connect(self.launch)

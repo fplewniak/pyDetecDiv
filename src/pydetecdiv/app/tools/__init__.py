@@ -17,7 +17,7 @@ from pydetecdiv.domain.Run import Run
 @dataclass
 class Command:
     name: str
-    message: str
+    title: str
     callback: Callable[..., Any]
 
 
@@ -29,6 +29,9 @@ class Commands:
             self.command_dict: dict[str, Command] = {commands.name: commands}
         else:
             self.command_dict: dict[str, Command] = {}
+
+    def update(self, commands: list[Command]):
+        self.command_dict.update({c.name: c for c in commands})
 
     def __repr__(self) -> str:
         """
@@ -184,5 +187,5 @@ class Tool(ABC):
         return self.commands[self.command].callback
 
     @property
-    def message(self) -> str:
-        return self.commands[self.command].message
+    def title(self) -> str:
+        return self.commands[self.command].title

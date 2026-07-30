@@ -8,5 +8,4 @@ from pydetecdiv.app.gui.tools.deep_learning.classification_schemes.manage import
 class ClassificationSchemeMenu(ToolMenu):
     def __init__(self, tool_name: str, **kwargs: dict[str, Any]):
         super().__init__(tool_name, **kwargs)
-        ToolAction('Manage classification schemes', tool_name, 'manage_schemes', ManageClassificationSchemeDialog,
-                   self, enable=Enable.if_project_exists)
+        ToolAction(tool_name, 'manage_schemes', ManageClassificationSchemeDialog, self, enable=Enable.if_project_exists)

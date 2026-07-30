@@ -21,12 +21,15 @@ class DataImportTool(Tool):
     def __init__(self, parameters: Parameters = Parameters(), commands: Commands = Commands(), working_dir: str | None = None):
         super().__init__(parameters=parameters, commands=commands, working_dir=working_dir)
 
-        self.commands.command_dict.update(
-                {'import_images': Command('import_images', 'Import image files', self.import_files)}
-                )
+        self.commands.update([
+            Command('import_images', 'Image files', self.import_files),
+            Command('import_roi_annotation', 'ROI Annotations', self.import_files),
+            Command('create_resources', 'Create Image resources', self.import_files),
+            ])
 
         self.parameters.update_parameters(
-                [
+                commands={'import_images'},
+                parameters=[
                     ChoiceParameter('paths', label=''),
                     ChoiceParameter('format', label='Format',
                                     items={
@@ -34,9 +37,7 @@ class DataImportTool(Tool):
                                         'NDTiff'         : self.import_ndtiff,
                                         'Image directory': self.import_image_dir,
                                         }),
-                    ],
-                commands={'import_images'}
-                )
+                    ])
 
     def import_metadata(self, filepath: str, project: Project) -> Generator[int, int, None]:
         """
@@ -48,14 +49,6 @@ class DataImportTool(Tool):
         for metadata_file_name in metadata_file_names:
             for i in project.import_images_from_metadata(metadata_file_name):
                 yield i
-
-    # def import_image_files(self, path, project) -> Generator[int, int, None]:
-    #     print(path, 'import image files')
-    #     yield 1
-    #
-    # def count_image_files(self, path) -> int:
-    #     print('counting image files')
-    #     return 1
 
     def import_image_dir(self, dirpath: str, project: Project) -> Generator[int, int, None]:
         """

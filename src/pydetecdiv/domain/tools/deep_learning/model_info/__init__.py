@@ -1,7 +1,11 @@
 """
 Tools providing information about deep learning models
 """
-from pydetecdiv.app.tools import Tool, Commands
+import json
+
+from torchinfo import summary
+
+from pydetecdiv.app.tools import Tool, Commands, Command
 
 from pydetecdiv.app.parameters import Parameters, StringParameter, ChoiceParameter, IntParameter, Parameter
 from pydetecdiv.domain.tools.video_classifier.models import MViT, Swin3D, S3D, VideoResNet
@@ -17,6 +21,10 @@ class ModelInfo(Tool):
 
     def __init__(self, parameters: Parameters = Parameters(), commands: Commands = Commands(), working_dir: str | None = None):
         super().__init__(parameters=parameters, commands=commands, working_dir=working_dir)
+
+        self.commands.update([
+            Command('model_info', 'Show model info', self.show_model_information)
+            ])
 
         self.parameters.update_parameters(
                 [
@@ -39,6 +47,19 @@ class ModelInfo(Tool):
                     IntParameter('depth', label='Depth', default=3)
                     ]
                 )
+
+    def show_model_information(self) -> None:
+        """
+        Shows the model summary
+        """
+        if self.parameters.model.key == 'CustomR2Plus_1D':
+            model = self.parameters.model.value(n_classes=self.parameters.num_classes.value,
+                                                     layers=json.loads(self.parameters.layers.value),
+                                                     strides=json.loads(self.parameters.strides.value),)
+        else:
+            model = self.parameters.model.value(n_classes=self.parameters.num_classes.value)
+        summary(model, (self.parameters.batch_size.value,) + model.expected_shape[1:], device='cpu',
+                depth=self.parameters.depth.value)
 
     def save_run(self, command: str | None = None, param_list: list[Parameter] | None = None, key_val: dict | None = None) -> None:
         pass

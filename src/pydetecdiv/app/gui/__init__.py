@@ -76,7 +76,7 @@ class DataMenu(QMenu):
         menu.addSeparator()
         convert_to_ndtiff = ActionsData.ConvertToNDTiff(menu)
         menu.addSeparator()
-        ToolAction('Create ROI HDF5', 'cnrs.plewniak.roiseqhdf5creator', 'create_roi_hdf5',
+        ToolAction('cnrs.plewniak.roiseqhdf5creator', 'create_roi_hdf5',
                    Create_ROI_HDF5Dialog, parent=menu, enable=Enable.if_rois)
         import_annotated_rois = ImportROIannotations(menu)
         menu.addSeparator()
