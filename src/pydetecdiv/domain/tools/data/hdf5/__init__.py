@@ -36,22 +36,21 @@ class ROIseqHDF5creator(Tool):
 
     def __init__(self, parameters: Parameters = Parameters(), commands: Commands = Commands(), working_dir: str | None = None):
         super().__init__(parameters, commands, working_dir)
-        self.commands.command_dict.update(
-                {'create_hdf5': Command('create_hdf5', 'Create ROI HDF5', self.create_file)}
-                )
 
-        self.parameters.update_parameters(
-                [
-                    FileParameter(name='hdf5_file', label='', require_existing=False, default=self.update_file, ),
-                    CheckParameter(name='annotations', label='Annotated ROIs', default=True),
-                    ChoiceParameter(name='classification', label='Classes', updater=self.update_classification),
-                    IntParameter(name='seqlen', label='Sequence length', default=16),
-                    ChoiceParameter(name='red_channel', label='Red', default='0', updater=self.update_channels),
-                    ChoiceParameter(name='green_channel', label='Green', default='0', updater=self.update_channels),
-                    ChoiceParameter(name='blue_channel', label='Blue', default='0', updater=self.update_channels),
-                    CheckParameter(name='time_first', label='Time first', default=False),
-                    ]
-                )
+        self.commands.update([
+            Command('create_roi_hdf5', 'Create ROI HDF5', self.create_file)
+            ])
+
+        self.parameters.update_parameters([
+            FileParameter(name='hdf5_file', label='', require_existing=False, default=self.update_file, ),
+            CheckParameter(name='annotations', label='Annotated ROIs', default=True),
+            ChoiceParameter(name='classification', label='Classes', updater=self.update_classification),
+            IntParameter(name='seqlen', label='Sequence length', default=16),
+            ChoiceParameter(name='red_channel', label='Red', default='0', updater=self.update_channels),
+            ChoiceParameter(name='green_channel', label='Green', default='0', updater=self.update_channels),
+            ChoiceParameter(name='blue_channel', label='Blue', default='0', updater=self.update_channels),
+            CheckParameter(name='time_first', label='Time first', default=False),
+            ])
 
         set_connections({PyDetecDiv.app.project_selected: [self.update_channels, self.update_classification, self.update_file]})
 

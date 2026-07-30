@@ -225,9 +225,9 @@ class DeepTool(Tool):
         self._model_evaluator = None
         self._model_predictor = None
 
-        self.commands.command_dict.update(
-                {'train_model': Command('train_model', '**Training Model**', self.model_trainer.train_model)}
-                )
+        self.commands.update([
+            Command('train_model', 'Train model', self.model_trainer.train_model)
+            ])
 
         self.parameters.update_parameters(
                 commands={'train_model'},

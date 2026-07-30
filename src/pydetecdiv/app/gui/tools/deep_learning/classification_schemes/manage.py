@@ -101,10 +101,11 @@ class ManageClassificationSchemeDialog(ToolDialog):
         """
         Deletes classification schemes records in repository that were removed from the table view.
         """
-        with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            for row in project.get_polars('Classification').join(self.data_view.data,
-                                                                 left_on='name', right_on='name', how='anti').iter_rows(named=True):
-                project.delete(project.get_object('Classification', row['id_']))
+        self.tool.callback(self.data_view.data)
+        # with pydetecdiv_project(PyDetecDiv.project_name) as project:
+        #     for row in project.get_polars('Classification').join(self.data_view.data,
+        #                                                          left_on='name', right_on='name', how='anti').iter_rows(named=True):
+        #         project.delete(project.get_object('Classification', row['id_']))
         self.close()
 
     def refresh(self) -> None:

@@ -36,21 +36,21 @@ class ModelSummaryDialog(ToolDialog):
             ])
 
         set_connections({
-            button_box.accepted: self.show_model_information,
+            button_box.accepted: self.tool.callback,
             })
 
         self.fit_to_contents()
         self.exec()
 
-    def show_model_information(self) -> None:
-        """
-        Shows the model summary
-        """
-        if self.tool.parameters.model.key == 'CustomR2Plus_1D':
-            model = self.tool.parameters.model.value(n_classes=self.tool.parameters.num_classes.value,
-                                                     layers=json.loads(self.tool.parameters.layers.value),
-                                                     strides=json.loads(self.tool.parameters.strides.value),)
-        else:
-            model = self.tool.parameters.model.value(n_classes=self.tool.parameters.num_classes.value)
-        summary(model, (self.tool.parameters.batch_size.value,) + model.expected_shape[1:], device='cpu',
-                depth=self.tool.parameters.depth.value)
+    # def show_model_information(self) -> None:
+    #     """
+    #     Shows the model summary
+    #     """
+    #     if self.tool.parameters.model.key == 'CustomR2Plus_1D':
+    #         model = self.tool.parameters.model.value(n_classes=self.tool.parameters.num_classes.value,
+    #                                                  layers=json.loads(self.tool.parameters.layers.value),
+    #                                                  strides=json.loads(self.tool.parameters.strides.value),)
+    #     else:
+    #         model = self.tool.parameters.model.value(n_classes=self.tool.parameters.num_classes.value)
+    #     summary(model, (self.tool.parameters.batch_size.value,) + model.expected_shape[1:], device='cpu',
+    #             depth=self.tool.parameters.depth.value)
