@@ -126,7 +126,7 @@ class DataImportDialog(ToolDialog):
         """
         Launch the import and wait for completion
         """
-        wait_dialog = WaitDialog(f'Importing data into {PyDetecDiv.project_name}', self,
+        wait_dialog = WaitDialog(f'Importing image data', self, title=None,
                                  cancel_msg='Rollback of image import: please wait', progress_bar=True, )
         self.finished.connect(wait_dialog.close_window)
         self.progress.connect(wait_dialog.show_progress)
