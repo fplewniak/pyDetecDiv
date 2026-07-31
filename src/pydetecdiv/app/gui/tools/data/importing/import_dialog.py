@@ -38,8 +38,8 @@ class DataImportDialog(ToolDialog):
 
         self.data_sources = self.addGroupBox(title='Data source paths',
                                              parameters=[
-                                                 tool.parameters.paths,
                                                  tool.parameters.format,
+                                                 tool.parameters.paths,
                                                  ],
                                              widget_args={'paths': {'widget': DictListView, 'multiselection': True}}
                                              )
@@ -140,4 +140,56 @@ class DataImportDialog(ToolDialog):
         for i in self.tool.callback():
             self.progress.emit(i)
         PyDetecDiv.app.project_selected.emit(PyDetecDiv.project_name)
+        self.finished.emit(True)
+
+
+class AnnotatedROIsImportDialog(ToolDialog):
+    """
+    Dialog window for importing data files
+    """
+    progress = Signal(int)
+    finished = Signal(bool)
+
+    def __init__(self, tool: Tool, **kwargs):
+        super().__init__(tool, title='Import', **kwargs)
+
+        self.file_name = self.addGroupBox(title='Import annotated ROIs',
+                                          parameters=[
+                                              tool.parameters.roi_annotation_file,
+                                              tool.parameters.classification,
+                                              ],
+                                          widget_args={'roi_annotation_file':
+                                                           {'filters': ["All files (*)", "csv (*.csv)", "tsv (*.tsv)",],
+                                                            'selected_filter': 1,
+                                                            }
+                                                       }
+                                          )
+        self.button_box = self.addButtonBox()
+
+        self.arrangeWidgets([
+            self.file_name,
+            self.button_box
+            ])
+
+        set_connections({
+            # button_box.accepted    : self.import_files,
+            self.button_box.accepted    : self.accept,
+            })
+
+        self.fit_to_contents()
+        self.exec()
+
+    def accept(self) -> None:
+        """
+        Launch the import and wait for completion
+        """
+        wait_dialog = WaitDialog(f'Importing annotated ROIs into {PyDetecDiv.project_name}', self,
+                                 cancel_msg='Rollback of annotations import: please wait', progress_bar=True, )
+        self.finished.connect(wait_dialog.close_window)
+        self.progress.connect(wait_dialog.show_progress)
+        wait_dialog.wait_for(self.import_annotated_rois)
+
+    def import_annotated_rois(self) -> None:
+        for i in self.tool.callback():
+            self.progress.emit(i)
         self.finished.emit(True)
