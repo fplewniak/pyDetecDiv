@@ -177,8 +177,13 @@ class AbstractWaitDialog(QDialog):
     it
     """
 
-    def __init__(self, parent: QWidget, cancel_msg=None, ignore_close_event=True) -> None:
+    def __init__(self, parent: QWidget, title: str | None = None, cancel_msg: str | None = None,
+                 ignore_close_event= True) -> None:
         super().__init__(parent)
+        if title is not None:
+            self.setWindowTitle(title)
+        else:
+            self.setWindowTitle(PyDetecDiv.project_name)
         self.cancel_msg = cancel_msg
         self._ignore_close_event = ignore_close_event
         self.setWindowModality(Qt.WindowModality.WindowModal)
@@ -242,8 +247,9 @@ class WaitDialog(AbstractWaitDialog):
     it
     """
 
-    def __init__(self, msg, parent: QWidget, progress_bar: bool = False, cancel_msg: str = None, ignore_close_event: bool = True):
-        super().__init__(parent, cancel_msg=cancel_msg, ignore_close_event=ignore_close_event)
+    def __init__(self, msg, parent: QWidget, title: str | None = None,
+                 progress_bar: bool = False, cancel_msg: str | None= None, ignore_close_event: bool = True):
+        super().__init__(parent, title=title, cancel_msg=cancel_msg, ignore_close_event=ignore_close_event)
         self.label = QLabel()
         # self.label.setStyleSheet("""
         # font-weight: bold;

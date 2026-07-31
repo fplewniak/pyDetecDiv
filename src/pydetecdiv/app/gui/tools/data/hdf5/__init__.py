@@ -72,7 +72,7 @@ class Create_ROI_HDF5Dialog(ToolDialog):
         """
         Launch the import and wait for completion
         """
-        wait_dialog = WaitDialog(f'Creating ROI HDF5: {self.tool.parameters.hdf5_file.value}', self, progress_bar=True, )
+        wait_dialog = WaitDialog(f'{self.tool.parameters.hdf5_file.value}', self, progress_bar=True, title='Creating ROI HDF5')
         self.finished.connect(wait_dialog.close_window)
         self.progress.connect(wait_dialog.show_progress)
         wait_dialog.wait_for(self.create_file)
