@@ -97,6 +97,11 @@ class ManageClassificationSchemeDialog(ToolDialog):
         EditClassificationSchemeDialog(self.tool, self, title='Add new scheme', row=None)
         self.toggle_buttons()
 
+    def accepted(self) -> None:
+        self.tool.callback(self.data_view.data)
+        PyDetecDiv.app.project_selected.emit(PyDetecDiv.project_name)
+        self.close()
+
     def delete_removed_schemes(self) -> None:
         """
         Deletes classification schemes records in repository that were removed from the table view.
@@ -107,6 +112,7 @@ class ManageClassificationSchemeDialog(ToolDialog):
         #                                                          left_on='name', right_on='name', how='anti').iter_rows(named=True):
         #         project.delete(project.get_object('Classification', row['id_']))
         self.close()
+        PyDetecDiv.app.project_selected.emit(PyDetecDiv.project_name)
 
     def refresh(self) -> None:
         """
