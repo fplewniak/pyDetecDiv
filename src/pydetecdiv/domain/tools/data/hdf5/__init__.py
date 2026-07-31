@@ -4,7 +4,7 @@ Tool for creating HDF5 files with ROI sequences
 import locale
 import os.path
 import time
-from typing import cast
+from typing import cast, Generator, Any
 
 import tables
 import torch
@@ -98,7 +98,7 @@ class ROIseqHDF5creator(Tool):
                     print(f'{roi.id_}, {roi.name}: {t=},'
                           f' {torch.max(img.as_tensor(dtype=ImgDType.float32))}, {img.dtype}, {img.shape}')
 
-    def create_file(self) -> None:
+    def create_file(self) -> Generator[float | int, Any, None]:
         """
         Create the HDF5 file
         """
@@ -114,6 +114,8 @@ class ROIseqHDF5creator(Tool):
             num_rois = project.count_objects('ROI')
             num_frames = int(np.max([fov.image_resource().sizeT for fov in cast(list[FOV], project.get_objects('FOV'))]))
             num_sequences = num_frames - seqlen + 1
+            total_sequences = num_rois * num_sequences
+            sequence_count = 0
             height = np.int64(np.max([roi.height for roi in cast(list[ROI], project.get_objects('ROI'))]))
             width = np.int64(np.max([roi.width for roi in cast(list[ROI], project.get_objects('ROI'))]))
             if self.parameters.time_first:
@@ -127,7 +129,6 @@ class ROIseqHDF5creator(Tool):
             roi_ids_hdf5 = h5file.create_carray(h5file.root, 'roi_ids', atom=tables.UInt16Atom(shape=()),
                                                 chunkshape=(num_rois,), shape=(num_rois,))
             if self.parameters.annotations:
-
                 if self.parameters.time_first:
                     initial_values = np.zeros((num_sequences, num_rois,), dtype=np.int8) - 1
                     targets_hdf5 = h5file.create_carray(h5file.root, 'targets', atom=tables.Int8Atom(shape=()),
@@ -157,7 +158,7 @@ class ROIseqHDF5creator(Tool):
                 # print(image_resource_data.dask_array.chunksize)
                 # print(image_resource_data.dask_array.chunks)
                 for roi in fov.roi_list:
-                    start_partiel = time.perf_counter()
+                    # start_partiel = time.perf_counter()
                     (x1, y1), (x2, y2) = (roi.top_left, roi.bottom_right)
                     t = 0
                     roi_seq = image_resource_data.sequence(seqlen, T=0, Z=z_channels, crop=(slice(x1, x2 + 1), slice(y1, y2 + 1)),
@@ -194,14 +195,17 @@ class ROIseqHDF5creator(Tool):
                             # if self.parameters.annotations and t < (len(targets) - int(seqlen / 2)):
                             if self.parameters.annotations and (t + int(seqlen / 2)) < len(targets):
                                 targets_hdf5[roi_mapping[cast(int, roi.id_)], t] = targets[t + int(seqlen / 2)].annotation
-                    print(f'{roi.name}: {time.perf_counter() - start_partiel} s')
+                        sequence_count += 1
+                        yield 100.0 * float(sequence_count) / float(total_sequences)
+                    # print(f'{roi.name}: {time.perf_counter() - start_partiel} s')
                 print(f'{fov.name}: {time.perf_counter() - start_fov}')
 
             h5file.close()
+            _ = self.save_run()
             print(f'Full job in {time.perf_counter() - start} s')
 
-    def save_run(self, *args, **kwargs) -> None:
-        pass
+    # def save_run(self, *args, **kwargs) -> None:
+    #     pass
 
 
 class ROIHDF5reader(RoiDataReader):

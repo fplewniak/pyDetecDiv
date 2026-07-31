@@ -3,7 +3,9 @@ Classes and functions to manage GUI for ROI HDF5 data source creation
 """
 from typing import cast
 
-from pydetecdiv.app import set_connections
+from PySide6.QtCore import Signal
+
+from pydetecdiv.app import set_connections, WaitDialog
 from pydetecdiv.app.gui.tools import ToolDialog
 from pydetecdiv.domain.tools.data.hdf5 import ROIseqHDF5creator
 
@@ -12,6 +14,8 @@ class Create_ROI_HDF5Dialog(ToolDialog):
     """
     Dialog window to create ROI HDF5 file
     """
+    progress = Signal(int)
+
     def __init__(self, tool):
         super().__init__(tool, title='Create ROI HDF5 file')
 
@@ -54,7 +58,7 @@ class Create_ROI_HDF5Dialog(ToolDialog):
             self.button_box,
             ])
 
-        set_connections({self.button_box.accepted: self.tool.create_file,
+        set_connections({self.button_box.accepted: self.accept,
                          self.button_box.rejected: lambda: print(self.tool.parameters.hdf5_file.value)
                          })
         #
@@ -63,3 +67,18 @@ class Create_ROI_HDF5Dialog(ToolDialog):
 
         self.fit_to_contents()
         self.exec()
+
+    def accept(self) -> None:
+        """
+        Launch the import and wait for completion
+        """
+        wait_dialog = WaitDialog(f'Creating ROI HDF5: {self.tool.parameters.hdf5_file.value}', self, progress_bar=True, )
+        self.finished.connect(wait_dialog.close_window)
+        self.progress.connect(wait_dialog.show_progress)
+        wait_dialog.wait_for(self.create_file)
+        self.close()
+
+    def create_file(self) -> None:
+        for i in self.tool.callback():
+            self.progress.emit(i)
+        self.finished.emit(True)
