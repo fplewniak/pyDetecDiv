@@ -17,6 +17,8 @@ class ToolDialog(Dialog):
     """
     Generic tool dialog window
     """
+    progress = Signal(int)
+    finished = Signal(bool)
     job_finished: Signal = Signal(object)
 
     def __init__(self, tool: Tool, title: str | None = None, **kwargs: dict[str, Any]) -> None:

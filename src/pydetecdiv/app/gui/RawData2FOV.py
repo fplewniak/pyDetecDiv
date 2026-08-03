@@ -328,8 +328,6 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
                 regex = '.*'.join([regexes[col] for col in df.sort_values(0, axis=1, ascending=True).columns])
                 wait_dialog = WaitDialog('Building Image resources', self, cancel_msg='Cancel Image resource creation: please wait',
                                          progress_bar=True, )
-                self.finished.connect(wait_dialog.close_window)
-                self.progress.connect(wait_dialog.show_progress)
                 with pydetecdiv_project(PyDetecDiv.project_name) as project:
                     project.raw_dataset.pattern = '.*'.join(
                         [regexes[col] for col in df.sort_values(0, axis=1, ascending=True).columns if col != 'FOV'])

@@ -14,7 +14,6 @@ from PySide6.QtGui import QCursor, QTextCursor, QCloseEvent
 from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox, QTextEdit, QWidget)
 from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal, QObject, SignalInstance
 
-from pydetecdiv import plugins
 from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.settings import get_config_file, get_appdata_dir, get_config_value, Device
 from pydetecdiv.persistence.project import list_projects
@@ -166,6 +165,7 @@ class PyDetecDivThread(QThread):
         """
         Run the function
         """
+        print(f'Running function {self.func}')
         self.func(*self.args, **self.kwargs)
 
 
@@ -189,6 +189,7 @@ class AbstractWaitDialog(QDialog):
         self.setWindowModality(Qt.WindowModality.WindowModal)
         self.pdd_thread = PyDetecDivThread()
         self.parent = parent
+        self.parent.finished.connect(self.close_window)
 
     def wait_for(self, func: Callable, *args: list, **kwargs: dict) -> None:
         """
@@ -250,6 +251,9 @@ class WaitDialog(AbstractWaitDialog):
     def __init__(self, msg, parent: QWidget, title: str | None = None,
                  progress_bar: bool = False, cancel_msg: str | None= None, ignore_close_event: bool = True):
         super().__init__(parent, title=title, cancel_msg=cancel_msg, ignore_close_event=ignore_close_event)
+        if hasattr(self.parent, 'progress'):
+            self.parent.progress.connect(self.show_progress)
+
         self.label = QLabel()
         # self.label.setStyleSheet("""
         # font-weight: bold;
