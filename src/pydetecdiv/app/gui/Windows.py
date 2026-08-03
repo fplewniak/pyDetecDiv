@@ -77,7 +77,7 @@ class MainWindow(QMainWindow):
     #         self.tabs[title].set_top_tab(ImageViewer(), title)
     #     return self.tabs[title]
 
-    def add_top_menu(self, title: str, tool_actions: list[ToolMenu | ToolAction], *args, **kwargs):
+    def add_top_menu(self, title: str, tool_actions: list[ToolMenu | ToolAction | None], *args, **kwargs):
         """
         Add a menu to the menu bar containing tool submenus and/or tool actions
 
@@ -93,7 +93,7 @@ class MainWindow(QMainWindow):
             else:
                 menu.addSeparator()
 
-    def add_top_menus(self, top_menus: dict[str, list[ToolMenu | ToolAction]]):
+    def add_top_menus(self, top_menus: dict[str, list[ToolMenu | ToolAction | None]]):
         """
         Add top menus to the menu bar
 

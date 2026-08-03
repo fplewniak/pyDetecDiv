@@ -128,10 +128,7 @@ class DataImportDialog(ToolDialog):
         """
         wait_dialog = WaitDialog(f'Importing image data', self, title=None,
                                  cancel_msg='Rollback of image import: please wait', progress_bar=True, )
-        self.finished.connect(wait_dialog.close_window)
-        self.progress.connect(wait_dialog.show_progress)
         wait_dialog.wait_for(self.import_files)
-        # self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
     def import_files(self) -> None:
         """
@@ -185,8 +182,6 @@ class AnnotatedROIsImportDialog(ToolDialog):
         """
         wait_dialog = WaitDialog(f'Importing annotated ROIs into {PyDetecDiv.project_name}', self,
                                  cancel_msg='Rollback of annotations import: please wait', progress_bar=True, )
-        self.finished.connect(wait_dialog.close_window)
-        self.progress.connect(wait_dialog.show_progress)
         wait_dialog.wait_for(self.import_annotated_rois)
 
     def import_annotated_rois(self) -> None:
