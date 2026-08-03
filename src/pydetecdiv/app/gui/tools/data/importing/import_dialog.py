@@ -135,7 +135,7 @@ class DataImportDialog(ToolDialog):
 
     def import_files(self) -> None:
         """
-        Import files
+        Proxy to import files callback used to forward progression counter and wait for completion
         """
         for i in self.tool.callback():
             self.progress.emit(i)
@@ -190,6 +190,9 @@ class AnnotatedROIsImportDialog(ToolDialog):
         wait_dialog.wait_for(self.import_annotated_rois)
 
     def import_annotated_rois(self) -> None:
+        """
+        Proxy to annotated ROIs import callback used to forward progression counter and wait for completion
+        """
         for i in self.tool.callback():
             self.progress.emit(i)
         self.finished.emit(True)
