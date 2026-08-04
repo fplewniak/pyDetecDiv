@@ -11,7 +11,7 @@ from pydetecdiv.domain import Project
 
 from pydetecdiv import utils
 
-from pydetecdiv.app import set_connections, pydetecdiv_project, PyDetecDiv, WaitDialog
+from pydetecdiv.app import set_connections, PyDetecDiv
 from pydetecdiv.app.gui.core.widgets import DictListView
 from pydetecdiv.app.gui.tools import ToolDialog
 from pydetecdiv.app.tools import Tool
@@ -52,10 +52,14 @@ class DataImportDialog(ToolDialog):
             ])
 
         set_connections({
-            # button_box.accepted    : self.import_files,
-            self.button_box.accepted    : self.accept,
+            self.button_box.accepted: lambda: self.wait_for_command(
+                    msg=f'Importing image data into {PyDetecDiv.project_name}',
+                    cancel_msg='Rollback of image import: please wait'
+                    ),
             add_path_button.pressed: self.choose_path,
             })
+
+        self.run_after_process([lambda: PyDetecDiv.app.project_selected.emit(PyDetecDiv.project_name)])
 
         self.fit_to_contents()
         self.exec()
@@ -64,7 +68,6 @@ class DataImportDialog(ToolDialog):
         """
         Choose a path and define counting and importing functions according to the format
         """
-        #path, import_func = None, None
         path, data_importer = None, DataImporter()
         match self.tool.parameters.format:
             case 'metadata':
@@ -122,23 +125,6 @@ class DataImportDialog(ToolDialog):
         dir_name = QFileDialog.getExistingDirectory(self, caption='Choose directory', dir=self.tool.working_dir)
         return dir_name
 
-    def accept(self) -> None:
-        """
-        Launch the import and wait for completion
-        """
-        wait_dialog = WaitDialog(f'Importing image data', self, title=None,
-                                 cancel_msg='Rollback of image import: please wait', progress_bar=True, )
-        wait_dialog.wait_for(self.import_files)
-
-    def import_files(self) -> None:
-        """
-        Proxy to import files callback used to forward progression counter and wait for completion
-        """
-        for i in self.tool.callback():
-            self.progress.emit(i)
-        PyDetecDiv.app.project_selected.emit(PyDetecDiv.project_name)
-        self.finished.emit(True)
-
 
 class AnnotatedROIsImportDialog(ToolDialog):
     """
@@ -169,25 +155,10 @@ class AnnotatedROIsImportDialog(ToolDialog):
             ])
 
         set_connections({
-            # button_box.accepted    : self.import_files,
-            self.button_box.accepted    : self.accept,
+            self.button_box.accepted    : lambda: self.wait_for_command(
+                    msg=f'Importing annotated ROIs into {PyDetecDiv.project_name}',
+                    cancel_msg='Rollback of annotations import: please wait'),
             })
 
         self.fit_to_contents()
         self.exec()
-
-    def accept(self) -> None:
-        """
-        Launch the import and wait for completion
-        """
-        wait_dialog = WaitDialog(f'Importing annotated ROIs into {PyDetecDiv.project_name}', self,
-                                 cancel_msg='Rollback of annotations import: please wait', progress_bar=True, )
-        wait_dialog.wait_for(self.import_annotated_rois)
-
-    def import_annotated_rois(self) -> None:
-        """
-        Proxy to annotated ROIs import callback used to forward progression counter and wait for completion
-        """
-        for i in self.tool.callback():
-            self.progress.emit(i)
-        self.finished.emit(True)
