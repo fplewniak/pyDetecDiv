@@ -53,9 +53,6 @@ class VideoClassifierTrainer(ModelTrainer):
             model = self.tool.parameters.model.value(n_classes=len(training_dataset.class_names),
                                                      dropout=self.tool.parameters.dropout.value)
 
-        # model = self.tool.parameters.model.value(n_classes=len(training_dataset.class_names),
-        #                                          dropout=self.tool.parameters.dropout.value)
-
         model = model.to(device)
 
         optimizer = set_optimizer(self.tool.parameters, model.parameters())

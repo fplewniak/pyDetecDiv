@@ -8,7 +8,7 @@ from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction, QCloseEvent
 from PySide6.QtWidgets import QMenu
 
-from pydetecdiv.app import StdoutWaitDialog, PyDetecDiv
+from pydetecdiv.app import StdoutWaitDialog, PyDetecDiv, WaitDialog
 from pydetecdiv.app.gui.core.widgets import Dialog
 from pydetecdiv.app.tools import Tool
 
@@ -18,28 +18,31 @@ class ToolDialog(Dialog):
     Generic tool dialog window
     """
     progress = Signal(int)
-    finished = Signal(bool)
-    job_finished: Signal = Signal(object)
+    finished = Signal(object)
 
     def __init__(self, tool: Tool, title: str | None = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(title, **kwargs)
         self.tool = cast(type[tool], tool)
 
-    def closeEvent(self, event: QCloseEvent) -> None:
+    def wait_for_command(self, msg: str | None = None, cancel_msg: str | None = None) -> None:
         """
-        When the Dialog is closed, undeclare parameters to save in the run record (they should have been saved already anyway)
-        :param event: the close event
+        Launch the conversion and wait for completion
         """
-        for parameter in self.tool.parameters.parameter_list:
-            parameter.should_be_saved = False
+        wait_dialog = WaitDialog(msg, self, title=self.tool.title, cancel_msg=cancel_msg, progress_bar=True, )
+        wait_dialog.wait_for(self.run_command_with_progress)
 
-    def wait_for_process(self, func: Callable, title: str, **kwargs) -> None:
+    def run_command_with_progress(self):
+        for i in self.tool.callback():
+            self.progress.emit(i)
+        self.finished.emit(True)
+
+    def run_command_with_stdout(self, func: Callable, title: str, **kwargs) -> None:
         """
         Open a waiting dialog window to wait for completion of job
         """
         wait_dialog = StdoutWaitDialog(title, self)
         wait_dialog.resize(500, 300)
-        self.job_finished.connect(wait_dialog.stop_redirection)
+        self.finished.connect(wait_dialog.stop_redirection)
         wait_dialog.wait_for(lambda: self.run_process(func), **kwargs)
         self.close()
 
@@ -49,13 +52,21 @@ class ToolDialog(Dialog):
         :param list_func: the list of functions
         """
         for func in list_func:
-            self.job_finished.connect(func)
+            self.finished.connect(func)
 
     def run_process(self, func: Callable, **kwargs) -> None:
         """
         Run a job
         """
-        self.job_finished.emit(func(**kwargs))
+        self.finished.emit(func(**kwargs))
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """
+        When the Dialog is closed, undeclare parameters to save in the run record (they should have been saved already anyway)
+        :param event: the close event
+        """
+        for parameter in self.tool.parameters.parameter_list:
+            parameter.should_be_saved = False
 
 
 class ToolMenu(QMenu):
@@ -102,9 +113,7 @@ class ToolAction(QAction):
         self.tool = PyDetecDiv.tools[tool_name]
         self.command = command
         super().__init__(self.tool.commands[command].title, parent)
-        # super().__init__(title, parent)
-        # self.tool = PyDetecDiv.tools[tool_name]
-        # self.command = command
+
         self.enabling_function = enable
         self.launch_callable = launch
         self.triggered.connect(self.launch)

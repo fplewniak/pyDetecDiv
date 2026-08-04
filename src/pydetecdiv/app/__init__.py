@@ -65,8 +65,6 @@ class PyDetecDiv(QApplication):
     def __init__(self, *args: list):
         super().__init__(*args)
         self.setApplicationName('pyDetecDiv')
-        # self.load_plugins()
-        # self.check_data_source_paths()
 
     @staticmethod
     def update_tools(new_tools: dict[str, 'Tool']) -> None:
@@ -75,14 +73,6 @@ class PyDetecDiv(QApplication):
         :param new_tools: the dictionary declaring tools
         """
         PyDetecDiv.tools.update(new_tools)
-
-    @staticmethod
-    # def load_plugins() -> None:
-    #     """
-    #     Load the available plugins
-    #     """
-    #     PyDetecDiv.plugin_list = plugins.PluginList()
-    #     PyDetecDiv.plugin_list.load()
 
     @staticmethod
     def check_data_source_paths(table_editor: 'TableEditor') -> None:
@@ -144,9 +134,9 @@ class PyDetecDivThread(QThread):
 
     def __init__(self):
         super().__init__()
-        self.func = None
-        self.args = None
-        self.kwargs = None
+        self.func: Callable | None = None
+        self.args: list = []
+        self.kwargs: dict = {}
 
     def set_function(self, func: Callable, *args: list, **kwargs: dict) -> None:
         """
@@ -165,8 +155,8 @@ class PyDetecDivThread(QThread):
         """
         Run the function
         """
-        print(f'Running function {self.func}')
-        self.func(*self.args, **self.kwargs)
+        if self.func is not None:
+            self.func(*self.args, **self.kwargs)
 
 
 class AbstractWaitDialog(QDialog):
@@ -189,7 +179,8 @@ class AbstractWaitDialog(QDialog):
         self.setWindowModality(Qt.WindowModality.WindowModal)
         self.pdd_thread = PyDetecDivThread()
         self.parent = parent
-        self.parent.finished.connect(self.close_window)
+        if hasattr(self.parent, 'finished'):
+            self.parent.finished.connect(self.close_window)
 
     def wait_for(self, func: Callable, *args: list, **kwargs: dict) -> None:
         """
@@ -285,7 +276,8 @@ class WaitDialog(AbstractWaitDialog):
         Set cancelling message and request for interruption of thread so that the running job can cleanly close
         processes and roll back any modification if needed.
         """
-        self.label.setText(self.cancel_msg)
+        if self.cancel_msg:
+            self.label.setText(self.cancel_msg)
         super().cancel()
 
 
@@ -300,7 +292,7 @@ class MessageDialog(QDialog):
         label = QLabel()
         label.setText(msg)
         if html:
-            label.setTextFormat(Qt.RichText)
+            label.setTextFormat(Qt.TextFormat.RichText)
         layout = QVBoxLayout(self)
         layout.addWidget(label)
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close, self)
@@ -346,7 +338,7 @@ class StdoutWaitDialog(AbstractWaitDialog):
     A Wait dialog that also captures and displays stdout output on the fly.
     """
 
-    def __init__(self, msg: str, parent: QWidget, cancel_msg: str = None, ignore_close_event: bool = True):
+    def __init__(self, msg: str, parent: QWidget, cancel_msg: str | None = None, ignore_close_event: bool = True):
         super().__init__(parent, cancel_msg=cancel_msg, ignore_close_event=ignore_close_event)
         self.log = QTextEdit(self)
         self.log.setReadOnly(True)
@@ -395,7 +387,8 @@ class StdoutWaitDialog(AbstractWaitDialog):
         Set cancelling message and request for interruption of thread so that the running job can cleanly close
         processes and roll back any modification if needed.
         """
-        self.log.append(self.cancel_msg)
+        if self.cancel_msg:
+            self.log.append(self.cancel_msg)
         super().cancel()
 
     def close_window(self) -> None:
@@ -449,18 +442,7 @@ def get_settings() -> QSettings:
     return settings
 
 
-# def get_plugins_dir():
-#     """
-#     Get the user directory where plugins are installed. The directory is created if it does not exist
-#     :return: the user plugin path
-#     :rtype: Path
-#     """
-#     plugins_path = os.path.join(get_appdata_dir(), 'plugins')
-#     if not os.path.exists(plugins_path):
-#         os.mkdir(plugins_path)
-#     return plugins_path
-
-def get_project_dir(project_name: str = None) -> str:
+def get_project_dir(project_name: str | None = None) -> str:
     """
     Gets the directory of a project
 
@@ -496,14 +478,3 @@ def set_connections(connections: dict[SignalInstance, Callable | list[Callable]]
                 signal.connect(s)
         else:
             signal.connect(slot)
-
-# def create_app() -> PyDetecDiv:
-#     """
-#     Creates a GUI application (the global controller for the display layer)
-#
-#     :return: the application
-#     """
-#     PyDetecDiv.app = PyDetecDiv([])
-#     PyDetecDiv.plugin_list.register_all()
-#     pg.setConfigOptions(antialias=True, background='w')
-#     return PyDetecDiv.app

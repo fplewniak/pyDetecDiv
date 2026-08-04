@@ -1,6 +1,5 @@
 from PySide6.QtWidgets import QDialogButtonBox, QFileDialog
 
-from pydetecdiv.app import WaitDialog
 from pydetecdiv.app.tools import Tool
 
 from pydetecdiv import utils
@@ -40,25 +39,15 @@ class Convert2NDTiffDialog(ToolDialog):
             ])
 
         set_connections({
-            self.button_box.accepted    : self.accept,
+            self.button_box.accepted: lambda: self.wait_for_command(
+                    msg=f'Converting image files to NDTiff',
+                    cancel_msg='Rollback NDTiff conversion: please wait',
+                    ),
             add_path_button.pressed     : self.choose_path,
             })
 
         self.fit_to_contents()
         self.exec()
-
-    def accept(self) -> None:
-        """
-        Launch the conversion and wait for completion
-        """
-        wait_dialog = WaitDialog(self.tool.title, self, title=None,
-                                 cancel_msg='Rollback of NDTiff conversion: please wait', progress_bar=True, )
-        wait_dialog.wait_for(self.convert_files)
-
-    def convert_files(self):
-        for i in self.tool.callback():
-            self.progress.emit(i)
-        self.finished.emit(True)
 
     def choose_path(self) -> None:
         """

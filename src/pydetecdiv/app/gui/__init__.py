@@ -66,47 +66,16 @@ class DataMenu(QMenu):
     def __init__(self, parent: 'MainWindow', *args, **kwargs):
         super().__init__(*args, **kwargs)
         menu = parent.menuBar().addMenu("Data")
-        # import_metadata = ActionsData.ImportMetaData(menu)
-        # import_metadata.setShortcut("Ctrl+M")
-        # import_ndtiff = ActionsData.ImportNDTiffData(menu)
-        # import_data = ActionsData.ImportData(menu)
-        # import_data.setShortcut("Ctrl+I")
-        # create_fovs = ActionsData.CreateFOV(menu)
-        # create_fovs.setShortcut("Ctrl+Alt+I")
-        # menu.addSeparator()
         convert_to_ndtiff = ActionsData.ConvertToNDTiff(menu)
         menu.addSeparator()
-        # ToolAction('cnrs.plewniak.roiseqhdf5creator', 'create_roi_hdf5',
-        #            Create_ROI_HDF5Dialog, parent=menu, enable=Enable.if_rois)
-        # import_annotated_rois = ImportROIannotations(menu)
-        # menu.addSeparator()
+
         compute_drift = ActionsData.ComputeDrift(menu)
         apply_drift = ActionsData.ApplyDrift(menu)
-        # PyDetecDiv.app.project_selected.connect(lambda e: import_data.setEnabled(True))
-        # PyDetecDiv.app.project_selected.connect(lambda e: import_metadata.setEnabled(True))
-        # PyDetecDiv.app.raw_data_counted.connect(create_fovs.enable)
-        # PyDetecDiv.app.project_selected.connect(lambda _: import_ndtiff.setEnabled(True))
+
         PyDetecDiv.app.project_selected.connect(compute_drift.enable)
         PyDetecDiv.app.project_selected.connect(apply_drift.enable)
-        # PyDetecDiv.app.project_selected.connect(lambda _: import_annotated_rois.setEnabled(True))
-        # PyDetecDiv.app.roi_counted.connect(create_roi_hdf5.enable)
+
         apply_drift.triggered.connect(PyDetecDiv.app.set_apply_drift)
-
-
-# class PluginMenu(QMenu):
-#     """
-#     Plugin menus
-#     """
-#
-#     def __init__(self, parent: 'MainWindow', *args, **kwargs):
-#         if PyDetecDiv.app.plugin_list.len:
-#             super().__init__(*args, **kwargs)
-#             menu = {}
-#             for category in PyDetecDiv.app.plugin_list.categories:
-#                 if category not in menu:
-#                     menu[category] = parent.menuBar().addMenu(category)
-#             for plugin in PyDetecDiv.app.plugin_list.plugins:
-#                 plugin.addActions(menu[plugin.category])
 
 
 class MainToolBar(QToolBar):
@@ -183,24 +152,14 @@ class Help(QAction):
 
         label = QLabel(about_dialog)
         label.setGeometry(QRect(70, 20, 271, 71))
-        # font = QFont()
-        # font.setFamilies(["Arial"])
-        # font.setPointSize(36)
-        # font.setBold(True)
-        # label.setFont(font)
+
         label_2 = QLabel(about_dialog)
         label_2.setGeometry(QRect(130, 100, 131, 16))
-        # font1 = QFont()
-        # font1.setFamilies(["Arial"])
-        # font1.setPointSize(16)
-        # label_2.setFont(font1)
+
         label_3 = QLabel(about_dialog)
         label_3.setObjectName("label_3")
         label_3.setGeometry(QRect(20, 130, 361, 50))
-        # font2 = QFont()
-        # font2.setFamilies(["Arial"])
-        # font2.setPointSize(8)
-        # label_3.setFont(font2)
+
         label_4 = QLabel(about_dialog)
         label_4.setGeometry(QRect(80, 190, 231, 20))
         label_5 = QLabel(about_dialog)

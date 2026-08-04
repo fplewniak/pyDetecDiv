@@ -58,9 +58,13 @@ class Create_ROI_HDF5Dialog(ToolDialog):
             self.button_box,
             ])
 
-        set_connections({self.button_box.accepted: self.accept,
-                         self.button_box.rejected: lambda: print(self.tool.parameters.hdf5_file.value)
-                         })
+        set_connections({
+            self.button_box.accepted: lambda: self.wait_for_command(
+                    msg=f'Creating {self.tool.parameters.hdf5_file.value}',
+                    cancel_msg=None,
+                    ),
+            self.button_box.rejected: lambda: print(self.tool.parameters.hdf5_file.value)
+            })
         #
         # self.tool.update_channels()
         # self.tool.update_classification()
@@ -68,15 +72,15 @@ class Create_ROI_HDF5Dialog(ToolDialog):
         self.fit_to_contents()
         self.exec()
 
-    def accept(self) -> None:
-        """
-        Launch the import and wait for completion
-        """
-        wait_dialog = WaitDialog(f'{self.tool.parameters.hdf5_file.value}', self, progress_bar=True, title='Creating ROI HDF5')
-        wait_dialog.wait_for(self.create_file)
-        self.close()
-
-    def create_file(self) -> None:
-        for i in self.tool.callback():
-            self.progress.emit(i)
-        self.finished.emit(True)
+    # def accept(self) -> None:
+    #     """
+    #     Launch the import and wait for completion
+    #     """
+    #     wait_dialog = WaitDialog(f'{self.tool.parameters.hdf5_file.value}', self, progress_bar=True, title='Creating ROI HDF5')
+    #     wait_dialog.wait_for(self.create_file)
+    #     self.close()
+    #
+    # def create_file(self) -> None:
+    #     for i in self.tool.callback():
+    #         self.progress.emit(i)
+    #     self.finished.emit(True)

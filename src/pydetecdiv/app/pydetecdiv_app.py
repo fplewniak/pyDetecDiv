@@ -38,7 +38,6 @@ def main_gui():
     Main function for GUI application
     """
     PyDetecDiv.app = PyDetecDiv([])
-    # PyDetecDiv.plugin_list.register_all()
     pg.setConfigOptions(antialias=True, background='w')
 
     style_sheet = """
@@ -112,7 +111,6 @@ def main_gui():
         'Deep learning': deeplearning_tools,
         'Video'        : video_tools,
         })
-    # PluginMenu(mw)
 
     # Launch application GUI
     PyDetecDiv.app.exec()
