@@ -3,7 +3,6 @@ Dialog window handling the definition of patterns for FOV creation from raw data
 """
 import random
 import re
-from typing import Dict
 
 import pandas
 from PySide6.QtCore import Signal, QThread
@@ -52,22 +51,11 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         self.ui.c_left.addItems(['channel', 'c', 'C', ''])
         self.ui.t_left.addItems(['time', 'frame', 't', 'T', ''])
         self.ui.z_left.addItems(['_z', 'z', 'Z', 'layer', ''])
-        self.ui.pos_pattern.addItems(['\d+', 'position\d+', 'Pos\d+'])
-        self.ui.c_pattern.addItems(['\d+', 'c\d+', 'channel\d+'])
-        self.ui.t_pattern.addItems(['\d+', 'frame\d+', 'frame_\d+'])
-        self.ui.z_pattern.addItems(['\d+', 'z\d+', 'z_\d+', 'layer\d+', 'layer_\d+'])
+        self.ui.pos_pattern.addItems([r'\d+', r'position\d+', r'Pos\d+'])
+        self.ui.c_pattern.addItems([r'\d+', r'c\d+', r'channel\d+'])
+        self.ui.t_pattern.addItems([r'\d+', r'frame\d+', r'frame_\d+'])
+        self.ui.z_pattern.addItems([r'\d+', r'z\d+', r'z_\d+', r'layer\d+', r'layer_\d+'])
         self.reset()
-        # with pydetecdiv_project(PyDetecDiv().project_name) as project:
-        #     annotation_pattern = project.raw_dataset.pattern
-        # if annotation_pattern:
-        #     wait_dialog = WaitDialog('Creating Fields of view', self, cancel_msg='Cancel FOV creation: please wait',
-        #                              progress_bar=True, )
-        #     self.finished.connect(wait_dialog.close_window)
-        #     self.progress.connect(wait_dialog.show_progress)
-        #     wait_dialog.wait_for(self.create_fov_annotate, annotation_pattern)
-        #     # self.create_fov_annotate(annotation_pattern)
-        # else:
-        #     self.exec()
         self.exec()
         for child in self.children():
             child.deleteLater()
@@ -180,7 +168,7 @@ class RawData2FOV(QDialog, Ui_RawData2FOV):
         return matches
 
     @staticmethod
-    def get_match_spans(matches: dict[str, list[re.Match]], group: int) -> dict[str, list[tuple[int, int]]]:
+    def get_match_spans(matches: dict[str, list[re.Match]], group: int) -> dict[str, list[tuple[int, int] | None]]:
         """
         Get the list of group positions for matches
 
