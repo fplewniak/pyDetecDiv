@@ -1,8 +1,15 @@
+import glob
+import json
+import os
 from typing import Generator, Any
+
+import tifffile
+from ndtiff import NDTiffDataset
+
+from pydetecdiv import utils
 
 from pydetecdiv.app.parameters import Parameters, ChoiceParameter, DirParameter
 from pydetecdiv.app.tools import Tool, Commands, Command
-from pydetecdiv.domain.Project import Project
 
 
 class DataFormat(Tool):
@@ -17,38 +24,57 @@ class DataFormat(Tool):
         super().__init__(parameters, commands, working_dir)
 
         self.commands.update([
-            Command('convert2ndtiff', 'Convert image files to NDTiff', self.convert_to_ndtiff)
+            Command('metadata2ndtiff', 'Convert image files to NDTiff', self.metadata_to_ndtiff)
             ])
 
         self.parameters.update_parameters(
-                commands={'convert2ndtiff'},
+                commands={'metadata2ndtiff'},
                 parameters=[
                     ChoiceParameter('paths', label=''),
-                    ChoiceParameter('format', label='Format',
-                                    items={
-                                        'metadata'       : self.read_metadata,
-                                        'Image directory': self.read_image_dir,
-                                        }),
-                    DirParameter('destination', 'Destination directory',)
+                    DirParameter('destination', 'Destination directory', default='./NDTiff')
                     ])
 
-    def convert_to_ndtiff(self) -> Generator[float | int, Any, None]:
+    def metadata_to_ndtiff(self) -> Generator[float | int, Any, None]:
         """
         convert files to ndtiff
         """
         print('Counting data')
         file_count = 0
-        for path, data_importer in self.parameters.paths.items:
-            file_count += data_importer.count_data(path)
+        for path, _ in self.parameters.paths.items:
+            file_count += utils.count_metadata(path)
         print(f'Total files: {file_count}')
 
-        for i in range(file_count):
-            yield 100.0 * float(i + 1) / float(file_count)
+        for i in self.convert_metadata():
+            yield 100.0 * float(i) / float(file_count)
 
-    def read_metadata(self, filepath: str, project: Project):
-        print(f'Read metadata: {filepath}')
+    def convert_metadata(self) -> Generator[float | int, Any, Any]:
+        metadata_file_names = [f for path in self.parameters.paths.keys for f in glob.glob(path) if os.path.isfile(f)]
 
-    def read_image_dir(self, dirpath: str, project: Project):
-        print(f'Read directory: {dirpath}')
+        with open(metadata_file_names[0]) as f:
+            summary_metadata = json.load(f)['Summary']
+        if summary_metadata['Width'] == 0:
+            summary_metadata['Width'] = -1
+        if summary_metadata['Height'] == 0:
+            summary_metadata['Height'] = -1
+        dataset = NDTiffDataset(self.parameters.destination.value, summary_metadata=summary_metadata, writable=True)
+
+        count = 0
+
+        for path in self.parameters.paths.keys:
+            print(f'Read metadata: {path}')
+            for metadata_file_name in metadata_file_names:
+                with open(metadata_file_name) as metadata_file:
+                    metadata = json.load(metadata_file)
+                    summary = metadata['Summary']
+                    for d in [v for k, v in metadata.items() if k.startswith('Metadata-')]:
+                        image_coordinates = {'channel' : d['ChannelIndex'], 'time': d['FrameIndex'], 'z': d['SliceIndex'],
+                                             'position': d['PositionIndex']
+                                             }
+                        pixels = tifffile.imread(os.path.join(os.path.dirname(metadata_file_name), os.path.basename(d["FileName"])))
+                        d['PositionName'] = summary['StagePositions'][d['PositionIndex']]['Label']
+                        dataset.put_image(image_coordinates, pixels, d)
+                        count += 1
+                        yield count
+        print(count)
 
 

@@ -80,7 +80,7 @@ def main_gui():
                              'cnrs.plewniak.classificationschemes': ClassificationSchemeManagement(working_dir='data'),
                              'cnrs.plewniak.deeplearningmodelinfo': ModelInfo(working_dir='data'),
                              'cnrs.plewniak.dataimport'           : DataImportTool(working_dir='data'),
-                             'cnrs.plewniak.dataformat'           : DataFormat(working_dir='data'),
+                             'cnrs.plewniak.dataformat'           : DataFormat(),
                              })
 
     video_tools = [
