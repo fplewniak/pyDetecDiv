@@ -1,9 +1,33 @@
 from typing import Callable
 
-from PySide6.QtGui import QAction
-
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 from pydetecdiv.persistence.project import project_exists
+
+
+def AND(*funcs: Callable[..., bool]) -> Callable[..., bool]:
+    return lambda: _and(*funcs)
+
+
+def OR(*funcs: Callable[..., bool]) -> Callable[..., bool]:
+    return lambda: _or(*funcs)
+
+
+def NOT(*funcs: Callable[..., bool]) -> Callable[..., bool]:
+    return lambda: _not(*funcs)
+
+
+def _and(*funcs):
+    results = [func() for func in funcs]
+    return all(results)
+
+
+def _or(*funcs):
+    results = [func() for func in funcs]
+    return any(results)
+
+
+def _not(*funcs):
+    return not _and(*funcs)
 
 
 def if_annotations() -> bool:
@@ -13,9 +37,15 @@ def if_annotations() -> bool:
     """
     if project_exists(PyDetecDiv.project_name):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            return (project.count_objects('RoiAnnotations') > 0) and (project.count_objects('Classification') > 0)
+            return _and(if_annotated_rois, if_class_scheme)
     return False
 
+
+def if_annotated_rois() -> bool:
+    if project_exists(PyDetecDiv.project_name):
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            return project.count_objects('RoiAnnotations') > 0
+    return False
 
 
 def if_class_scheme() -> bool:
@@ -27,7 +57,6 @@ def if_class_scheme() -> bool:
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             return project.count_objects('Classification') > 0
     return False
-
 
 
 def if_project_exists() -> bool:
@@ -46,6 +75,13 @@ def if_rois() -> bool:
     if project_exists(PyDetecDiv.project_name):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             return project.count_objects('ROI') > 0
+    return False
+
+
+def if_image_resources() -> bool:
+    if project_exists(PyDetecDiv.project_name):
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            return project.count_objects('ImageResource') > 0
     return False
 
 
@@ -71,15 +107,3 @@ def if_missing_image_resources() -> bool:
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             return project.count_orphan_data_files() > 0
     return False
-
-
-def _and(func1: Callable[..., bool], func2: Callable[..., bool]) -> bool:
-    return func1() and func2()
-
-
-def _or(func1: Callable[..., bool], func2: Callable[..., bool]) -> bool:
-    return func1() or func2()
-
-
-def _and_not(func1: Callable[..., bool], func2: Callable[..., bool]) -> bool:
-    return func1() and not func2()
