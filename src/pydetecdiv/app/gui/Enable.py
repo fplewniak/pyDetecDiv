@@ -36,8 +36,7 @@ def if_annotations() -> bool:
     :param action: the action
     """
     if project_exists(PyDetecDiv.project_name):
-        with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            return _and(if_annotated_rois, if_class_scheme)
+        return _and(if_annotated_rois, if_class_scheme)
     return False
 
 
