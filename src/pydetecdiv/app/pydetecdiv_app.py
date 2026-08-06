@@ -6,6 +6,7 @@
 from PySide6.QtGui import QIcon
 import pyqtgraph as pg
 from pydetecdiv.app.gui.tools import ToolAction
+from pydetecdiv.app.gui.tools.data.edition import DriftCorrectionMenu
 from pydetecdiv.app.gui.tools.data.format import DataFormatMenu
 
 from pydetecdiv.app.gui.tools.data.hdf5 import Create_ROI_HDF5Dialog
@@ -19,6 +20,7 @@ from pydetecdiv.app.gui.tools.deep_learning.classification_schemes import Classi
 from pydetecdiv.app.gui.tools.deep_learning.model_info import ModelInfoMenu
 from pydetecdiv.app.gui.tools.video_classifier import VideoClassifierMenu
 from pydetecdiv.app.gui.RawData2FOV import RawData2FOV
+from pydetecdiv.domain.tools.data.edition import DriftCorrection
 from pydetecdiv.domain.tools.data.format import DataFormat
 from pydetecdiv.domain.tools.data.hdf5 import ROIseqHDF5creator
 from pydetecdiv.domain.tools.data.importing import DataImportTool
@@ -81,6 +83,7 @@ def main_gui():
                              'cnrs.plewniak.deeplearningmodelinfo': ModelInfo(working_dir='data'),
                              'cnrs.plewniak.dataimport'           : DataImportTool(working_dir='data'),
                              'cnrs.plewniak.dataformat'           : DataFormat(),
+                             'cnrs.plewniak.driftcorrection'      : DriftCorrection(working_dir='.')
                              })
 
     video_tools = [
@@ -99,7 +102,9 @@ def main_gui():
         None,
         ToolAction('cnrs.plewniak.roiseqhdf5creator', 'create_roi_hdf5',
                    Create_ROI_HDF5Dialog,  enable=Enable.if_rois),
-        DataFormatMenu('cnrs.plewniak.dataformat', enable=Enable.if_project_exists)
+        DataFormatMenu('cnrs.plewniak.dataformat'),
+        None,
+        DriftCorrectionMenu('cnrs.plewniak.driftcorrection', enable=Enable.if_image_resources)
         ]
 
     # Create menus
