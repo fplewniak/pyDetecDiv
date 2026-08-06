@@ -472,6 +472,7 @@ class DictListView(ListView):
         else:
             self.qmodel: DictItemModel = DictItemModel()
         self.setModel(qmodel)
+        qmodel.selection_model = self.selectionModel()
         self.setModelColumn(0)
 
     def selection(self) -> list[Any]:
