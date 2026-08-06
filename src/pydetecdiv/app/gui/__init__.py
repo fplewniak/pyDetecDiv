@@ -66,8 +66,6 @@ class DataMenu(QMenu):
     def __init__(self, parent: 'MainWindow', *args, **kwargs):
         super().__init__(*args, **kwargs)
         menu = parent.menuBar().addMenu("Data")
-        convert_to_ndtiff = ActionsData.ConvertToNDTiff(menu)
-        menu.addSeparator()
 
         compute_drift = ActionsData.ComputeDrift(menu)
         apply_drift = ActionsData.ApplyDrift(menu)

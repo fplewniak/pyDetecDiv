@@ -1,3 +1,6 @@
+"""
+Classes for conversion to NDTiff format
+"""
 from PySide6.QtWidgets import QDialogButtonBox, QFileDialog
 
 from pydetecdiv.app.tools import Tool
@@ -8,7 +11,7 @@ from pydetecdiv.app.gui.tools import ToolDialog
 
 class Metadata2NDTiffDialog(ToolDialog):
     """
-    Dialog window to convert TIFF image files to NDTiff format
+    Dialog window to convert TIFF image files to NDTiff format using Micromanager metadata
     """
 
     def __init__(self, tool: Tool):
@@ -36,7 +39,7 @@ class Metadata2NDTiffDialog(ToolDialog):
 
         set_connections({
             self.button_box.accepted: lambda: self.wait_for_command(
-                    msg=f'Converting image files to NDTiff',
+                    msg='Converting image files to NDTiff',
                     cancel_msg='Rollback NDTiff conversion: please wait',
                     ),
             add_path_button.pressed     : self.choose_path,
@@ -59,6 +62,7 @@ class Metadata2NDTiffDialog(ToolDialog):
         Choose a metadata file
         """
         filters = ["All files (*)", "Text (*.txt)", ]
-        file_name, _ = QFileDialog.getOpenFileName(self, caption='Choose file', dir=self.tool.working_dir, filter=";;".join(filters),
+        file_name, _ = QFileDialog.getOpenFileName(self, caption='Choose file', dir=self.tool.working_dir,
+                                                   filter=";;".join(filters),
                                                    selectedFilter="Text (*.txt)")
         return file_name
