@@ -201,6 +201,7 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
         if data_dict:
             self.set_items(data_dict)
         self.selection: int = 0
+        self.selection_model = None
 
     def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
         """
@@ -333,6 +334,9 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
         """
         self.selection = index
         self.selection_changed.emit(index)
+
+    def get_selection(self):
+        return [idx.row() for idx in self.selection_model.selectedIndexes()]
 
 
 class TableModel(QAbstractTableModel):
