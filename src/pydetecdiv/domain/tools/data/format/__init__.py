@@ -1,3 +1,6 @@
+"""
+Data format handling and conversion
+"""
 import glob
 import json
 import os
@@ -36,7 +39,7 @@ class DataFormat(Tool):
 
     def metadata_to_ndtiff(self) -> Generator[float | int, Any, None]:
         """
-        convert files to ndtiff
+        Wrapping the conversion method, sending progress information as percentage
         """
         print('Counting data')
         file_count = 0
@@ -48,6 +51,9 @@ class DataFormat(Tool):
             yield 100.0 * float(i) / float(file_count)
 
     def convert_metadata(self) -> Generator[float | int, Any, Any]:
+        """
+        Convert files listed in MicroManager metadata files to ndtiff
+        """
         metadata_file_names = [f for path in self.parameters.paths.keys for f in glob.glob(path) if os.path.isfile(f)]
 
         with open(metadata_file_names[0]) as f:
@@ -75,6 +81,3 @@ class DataFormat(Tool):
                         dataset.put_image(image_coordinates, pixels, d)
                         count += 1
                         yield count
-        print(count)
-
-
