@@ -98,7 +98,7 @@ class ToolMenu(QMenu):
         :param kwargs: extra keyword arguments
         """
         try:
-            self.enabling_function(self)
+            self.setEnabled(self.enabling_function())
         except TypeError as e:
             self.setEnabled(True)
 
