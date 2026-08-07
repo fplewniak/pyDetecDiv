@@ -6,7 +6,8 @@ from enum import IntEnum
 from typing import Any, Generic, TypeVar
 
 import polars
-from PySide6.QtCore import QModelIndex, Qt, QStringListModel, Signal, QAbstractTableModel, QPersistentModelIndex
+from PySide6.QtCore import (QModelIndex, Qt, QStringListModel, Signal, QAbstractTableModel, QPersistentModelIndex,
+                            QItemSelectionModel, QItemSelection)
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 
 GenericModel = TypeVar('GenericModel')
@@ -81,6 +82,7 @@ class StringListModel(QStringListModel, Generic[GenericModel]):
     def __init__(self, data: list[str] | None = None) -> None:
         super().__init__()
         self._data: list[str] = data if data else []
+        self.selection_model = QItemSelectionModel(self)
 
     def set_value(self, data: list[str]):
         """
@@ -201,7 +203,7 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
         if data_dict:
             self.set_items(data_dict)
         self.selection: int = 0
-        self.selection_model = None
+        self.selection_model = QItemSelectionModel(self)
 
     def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
         """
@@ -244,13 +246,9 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
             key = json.dumps(key)
         if key in self.keys():
             self.set_selection(self.keys().index(key))
+            self.set_model_selection(self.keys().index(key))
 
     def value(self) -> Any:
-        """
-        Returns the selected value in the model
-        
-        :return: the select value object
-        """
         try:
             # return self.row(self.selection).data(Qt.UserRole)
             selected_value = self.values()[self.selection]
@@ -259,6 +257,34 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
             return selected_value
         except IndexError:
             return None
+
+    def selected_value(self) -> Any:
+        """
+        Returns the selected value in the model
+        
+        :return: the select value object
+        """
+        selection = sorted([idx.row() for idx in self.selection_model.selectedIndexes()])
+        if len(selection) == 1:
+            try:
+                # return self.row(self.selection).data(Qt.UserRole)
+                selected_value = self.get_selected_value(selection[0])
+                if selected_value is None:
+                    return self.key()
+                return selected_value
+            except IndexError:
+                return None
+        else:
+            try:
+                # return self.row(self.selection).data(Qt.UserRole)
+                return [self.get_selected_value(i) for i in selection]
+            except IndexError:
+                return None
+
+    def get_selected_value(self, i):
+        if self.values()[i] is None:
+            return self.keys()[i]
+        return self.values()[i]
 
     def rows(self) -> dict[str, Any]:
         """
@@ -334,6 +360,12 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
         """
         self.selection = index
         self.selection_changed.emit(index)
+
+    def set_model_selection(self, index: int):
+        selection = QItemSelection(self.row(index).index(), self.row(index).index())
+        self.selection_model.clear()
+        self.selection_model.select(selection, QItemSelectionModel.SelectionFlag.Select)
+        # self.selection_changed.emit(index)
 
     def get_selection(self):
         return [idx.row() for idx in self.selection_model.selectedIndexes()]

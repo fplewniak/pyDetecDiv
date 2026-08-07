@@ -257,11 +257,19 @@ class ComboBox(QComboBox):
             self.setModel(qmodel)
             self.qmodel = qmodel
             self.setModelColumn(0)
-            self.currentIndexChanged.connect(self.qmodel.set_selection)
-            self.qmodel.selection_changed.connect(self.setCurrentIndex)
-            self.setCurrentIndex(self.qmodel.selection)
+            # self.currentIndexChanged.connect(self.qmodel.set_selection)
+            # self.qmodel.selection_changed.connect(self.setCurrentIndex)
+            # self.setCurrentIndex(self.qmodel.selection)
         self.setEditable(editable)
         self.setEnabled(enabled)
+
+        self.view().setSelectionModel(qmodel.selection_model)
+        self.qmodel.selection_model.selectionChanged.connect(self._on_selection_changed)
+
+    def _on_selection_changed(self,selected, deselected):
+        """Update the combo box index when the model's selection changes."""
+        if selected.indexes():
+            self.setCurrentIndex(selected.indexes()[0].row())
 
     def addItemDict(self, options: dict[str, Any]) -> None:
         """
@@ -459,21 +467,26 @@ class ListView(QListView):
         self.qmodel.clear()
 
 
-class DictListView(ListView):
+class DictListView(QListView):
     """
     An extension of ListView for dictionaries: the key (str) is displayed on the view, and the value is the corresponding data. This
     allows to use a ListView to manage and select any kind of object that has a name.
     """
     def __init__(self, parent: QWidget, qmodel: DictItemModel = DictItemModel(), height: int | None = None,
                  multiselection: bool = False, enabled: bool = True, **kwargs: dict[str, Any]) -> None:
-        super().__init__(parent, height=height, multiselection=multiselection, enabled=enabled)
+        super().__init__(parent)
+        if height is not None:
+            self.setFixedHeight(height)
         if qmodel is not None and qmodel.items() is not None:
             self.qmodel: DictItemModel = qmodel
         else:
             self.qmodel: DictItemModel = DictItemModel()
         self.setModel(qmodel)
-        qmodel.selection_model = self.selectionModel()
+        self.setSelectionModel(qmodel.selection_model)
+        if multiselection:
+            self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
         self.setModelColumn(0)
+        self.setEnabled(enabled)
 
     def selection(self) -> list[Any]:
         """
