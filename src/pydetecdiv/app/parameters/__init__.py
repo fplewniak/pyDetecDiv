@@ -556,7 +556,7 @@ class ChoiceParameter(Parameter):
         if len(self.keys):
             if value is None:
                 value = self.keys[0]
-            if value != self.qmodel.key() and self.validate(value):
+            if (not self.qmodel.selection_model.hasSelection() or value != self.qmodel.key()) and self.validate(value):
                 if isinstance(value, (list, dict)):
                     value = json.dumps(value)
                 self.qmodel.set_value(value)

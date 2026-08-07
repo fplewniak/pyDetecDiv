@@ -34,7 +34,8 @@ class DriftCorrection(Tool):
 
     def compute_drift(self):
         print(f'Computing drift for {self.parameters.FOVs.value} with method {self.parameters.method.value}')
-        print(self.parameters.FOVs.qmodel.get_selection())
+        # print(self.parameters.FOVs.qmodel.selected_value())
+        print(self.parameters.method.qmodel.selected_value())
 
     def update_fov_list(self) -> None:
         """
