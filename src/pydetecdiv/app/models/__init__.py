@@ -9,6 +9,7 @@ import polars
 from PySide6.QtCore import (QModelIndex, Qt, QStringListModel, Signal, QAbstractTableModel, QPersistentModelIndex,
                             QItemSelectionModel, QItemSelection)
 from PySide6.QtGui import QStandardItemModel, QStandardItem
+from PySide6.QtWidgets import QAbstractItemView
 
 GenericModel = TypeVar('GenericModel')
 
@@ -83,6 +84,7 @@ class StringListModel(QStringListModel, Generic[GenericModel]):
         super().__init__()
         self._data: list[str] = data if data else []
         self.selection_model = QItemSelectionModel(self)
+        self.multiselection = False
 
     def set_value(self, data: list[str]):
         """
@@ -204,6 +206,7 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
             self.set_items(data_dict)
         self.selection: int = 0
         self.selection_model = QItemSelectionModel(self)
+        self.multiselection = False
 
     def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
         """
@@ -251,37 +254,26 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
     def value(self) -> Any:
         try:
             # return self.row(self.selection).data(Qt.UserRole)
-            selected_value = self.values()[self.selection]
+            # selection = [idx.row() for idx in self.selection_model.selectedIndexes()]
+            selected_value = self.get_value(self.get_selection()[-1])
             if selected_value is None:
                 return self.key()
             return selected_value
         except IndexError:
             return None
 
-    def selected_value(self) -> Any:
+    def selected_values(self) -> Any:
         """
         Returns the selected value in the model
         
         :return: the select value object
         """
-        selection = sorted([idx.row() for idx in self.selection_model.selectedIndexes()])
-        if len(selection) == 1:
-            try:
-                # return self.row(self.selection).data(Qt.UserRole)
-                selected_value = self.get_selected_value(selection[0])
-                if selected_value is None:
-                    return self.key()
-                return selected_value
-            except IndexError:
-                return None
-        else:
-            try:
-                # return self.row(self.selection).data(Qt.UserRole)
-                return [self.get_selected_value(i) for i in selection]
-            except IndexError:
-                return None
+        try:
+            return [self.get_value(i) for i in sorted(self.get_selection())]
+        except IndexError:
+            return None
 
-    def get_selected_value(self, i):
+    def get_value(self, i):
         if self.values()[i] is None:
             return self.keys()[i]
         return self.values()[i]
