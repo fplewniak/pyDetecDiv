@@ -485,6 +485,7 @@ class DictListView(QListView):
         self.setSelectionModel(qmodel.selection_model)
         if multiselection:
             self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+            self.qmodel.multiselection = True
         self.setModelColumn(0)
         self.setEnabled(enabled)
 

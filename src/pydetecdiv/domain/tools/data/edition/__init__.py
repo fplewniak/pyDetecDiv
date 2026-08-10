@@ -25,7 +25,7 @@ class DriftCorrection(Tool):
         self.parameters.update_parameters(
                 commands={'compute_drift'},
                 parameters=[
-                    ChoiceParameter(name='FOVs', label='FOV', updater=self.update_fov_list),
+                    ChoiceParameter(name='FOVs', label='FOV', updater=self.update_fov_list, multiselection=True),
                     ChoiceParameter(name='method', label='Method', default='vidstab',
                                     items={'vidstab': None, 'phase correlation': None})
                     ])
@@ -33,9 +33,10 @@ class DriftCorrection(Tool):
         set_connections({PyDetecDiv.app.project_selected: [self.update_fov_list,]})
 
     def compute_drift(self):
-        print(f'Computing drift for {self.parameters.FOVs.value} with method {self.parameters.method.value}')
-        # print(self.parameters.FOVs.qmodel.selected_value())
-        print(self.parameters.method.qmodel.selected_value())
+        print(f'Using {self.parameters.method.value} method:')
+        for fov in self.parameters.FOVs.qmodel.selected_values():
+            print(f'Computing drift for {fov.name}')
+        print('Done')
 
     def update_fov_list(self) -> None:
         """

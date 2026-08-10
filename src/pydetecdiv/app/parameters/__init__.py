@@ -456,10 +456,11 @@ class ChoiceParameter(Parameter):
     def __init__(self, name: str, items: dict[str, object] | None = None, label: str | None = None,
                  default: str | int | float | bool | Callable | None = None, validator: Callable[[Any], bool] | None = None,
                  groups: set[str] | None = None, updater: Callable[..., None] | None = None, commands: set[str] | None= None,
-                 **kwargs: dict[str, Any]) -> None:
+                 multiselection: bool = False, **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          commands=commands, **kwargs)
         self.qmodel: DictItemModel = DictItemModel(items)
+        self.multiselection = multiselection
 
     # def kwargs(self) -> dict[str, Any]:
     #     """
