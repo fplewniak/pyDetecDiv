@@ -33,9 +33,18 @@ class ComputeDriftDialog(ToolDialog):
             self.button_box
             ])
 
-        set_connections({self.button_box.accepted       : self.tool.callback,
-                         self.button_box.rejected       : self.close,
-                         PyDetecDiv.app.project_selected: self.tool.update_fov_list,
+        self.run_after_process([self.plot_drift])
+
+        set_connections({self.button_box.accepted: lambda: self.wait_for_command(msg=f'Computing drift, please wait',
+                                                                                 cancel_msg='Cancel drift computation please wait'),
+                         self.button_box.rejected: self.close,
                          })
 
         self.exec()
+
+    def plot_drift(self):
+        tab = PyDetecDiv.main_window.add_tabbed_window(
+                f'{PyDetecDiv.project_name} / Drift correction ({self.tool.parameters.method.value})')
+        tab.project_name = PyDetecDiv.project_name
+        for fov in self.tool.parameters.FOVs.qmodel.selected_values():
+            tab.show_plot(self.tool.drift[fov.name], title=fov.name)
