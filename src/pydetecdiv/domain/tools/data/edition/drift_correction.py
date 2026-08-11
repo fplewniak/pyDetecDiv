@@ -28,7 +28,8 @@ class DriftCorrection(Tool):
         self.count = 0
 
         self.commands.update([
-            Command('compute_drift', 'Compute drift', self.run_drift_computation)
+            Command('compute_drift', 'Compute drift', self.run_drift_computation),
+            Command('apply_drift_correction', 'Apply drift correction', self.apply_drift_correction)
             ])
 
         self.parameters.update_parameters(
@@ -125,3 +126,7 @@ class DriftCorrection(Tool):
             yield self.count
         df = pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)[['dx', 'dy']]
         self.drift[fov.name] = pd.concat([pd.DataFrame([[0, 0]], columns=['dx', 'dy']), df], ignore_index=True)
+
+    def apply_drift_correction(self, tool):
+        PyDetecDiv.app.set_apply_drift(not PyDetecDiv.apply_drift)
+        print(PyDetecDiv.apply_drift)

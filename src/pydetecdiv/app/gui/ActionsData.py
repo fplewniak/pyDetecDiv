@@ -423,39 +423,39 @@ from pydetecdiv.app.gui.core.widgets.files import FileListChooserDialog
 #         _ = ComputeDriftDialog(title='Compute drift')
 #
 
-class ApplyDrift(QAction):
-    """
-    Action to set or unset drift correction
-    """
-
-    def __init__(self, parent: QWidget):
-        super().__init__("Apply drift", parent)
-        # self.triggered.connect(self.)
-        self.setCheckable(True)
-        self.setChecked(False)
-        self.setEnabled(False)
-        parent.addAction(self)
-
-    def enable(self, project_name: str):
-        """
-        Enable or disable this action in the Data menu whether there are raw data or not.
-
-        :param project_name: the name of the project
-        """
-        if project_name:
-            with pydetecdiv_project(project_name) as project:
-                if project.count_objects('FOV'):
-                    self.setEnabled(True)
-                else:
-                    self.setEnabled(False)
-                # # The following should allow to enable drift correction if there is drift information in the database
-                # # but it may be quite time-consuming if there are many FOVs
-                # if any([fov.image_resource().drift is not None for fov in project.get_objects('FOV')]):
-                #     self.setEnabled(True)
-                # else:
-                #     self.setEnabled(False)
-        else:
-            self.setEnabled(False)
+# class ApplyDrift(QAction):
+#     """
+#     Action to set or unset drift correction
+#     """
+#
+#     def __init__(self, parent: QWidget):
+#         super().__init__("Apply drift", parent)
+#         # self.triggered.connect(self.)
+#         self.setCheckable(True)
+#         self.setChecked(False)
+#         self.setEnabled(False)
+#         parent.addAction(self)
+#
+#     def enable(self, project_name: str):
+#         """
+#         Enable or disable this action in the Data menu whether there are raw data or not.
+#
+#         :param project_name: the name of the project
+#         """
+#         if project_name:
+#             with pydetecdiv_project(project_name) as project:
+#                 if project.count_objects('FOV'):
+#                     self.setEnabled(True)
+#                 else:
+#                     self.setEnabled(False)
+#                 # # The following should allow to enable drift correction if there is drift information in the database
+#                 # # but it may be quite time-consuming if there are many FOVs
+#                 # if any([fov.image_resource().drift is not None for fov in project.get_objects('FOV')]):
+#                 #     self.setEnabled(True)
+#                 # else:
+#                 #     self.setEnabled(False)
+#         else:
+#             self.setEnabled(False)
 
 
 # class ConvertToNDTiffDialog(FileListChooserDialog):

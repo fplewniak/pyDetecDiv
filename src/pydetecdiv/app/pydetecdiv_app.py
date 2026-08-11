@@ -12,7 +12,7 @@ from pydetecdiv.app.gui.tools.data.format import DataFormatMenu
 from pydetecdiv.app.gui.tools.data.hdf5 import Create_ROI_HDF5Dialog
 
 from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.app.gui import FileMenu, ProjectMenu, DataMenu, Enable #, PluginMenu
+from pydetecdiv.app.gui import FileMenu, ProjectMenu, Enable
 from pydetecdiv.app.gui.Windows import MainWindow
 from pydetecdiv.app.gui import SourcePath
 from pydetecdiv.app.gui.tools.data.importing import DataImportMenu
@@ -110,7 +110,6 @@ def main_gui():
     # Create menus
     FileMenu(mw)
     ProjectMenu(mw)
-    DataMenu(mw)
     mw.add_top_menus({
         'Data'         : data_tools,
         'Deep learning': deeplearning_tools,

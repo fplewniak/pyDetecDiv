@@ -57,23 +57,6 @@ class ProjectMenu(QMenu):
         PyDetecDiv.app.project_selected.connect(lambda _: configure_source.setEnabled(True))
         PyDetecDiv.app.project_selected.connect(lambda _: upgrade_repository.setEnabled(True))
 
-class DataMenu(QMenu):
-    """
-    The main window Data menu to manage data
-    """
-
-    def __init__(self, parent: 'MainWindow', *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        menu = parent.menuBar().addMenu("Data")
-
-        # compute_drift = ActionsData.ComputeDrift(menu)
-        apply_drift = ActionsData.ApplyDrift(menu)
-
-        # PyDetecDiv.app.project_selected.connect(compute_drift.enable)
-        PyDetecDiv.app.project_selected.connect(apply_drift.enable)
-
-        apply_drift.triggered.connect(PyDetecDiv.app.set_apply_drift)
-
 
 class MainToolBar(QToolBar):
     """

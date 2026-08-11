@@ -106,3 +106,9 @@ def if_missing_image_resources() -> bool:
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             return project.count_orphan_data_files() > 0
     return False
+
+
+def if_drift_correction() -> bool:
+    if project_exists(PyDetecDiv.project_name):
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            return any([(ir.drift is not None) for ir in project.get_objects('ImageResource')])
