@@ -273,6 +273,17 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
         except IndexError:
             return None
 
+    def selected_keys(self) -> Any:
+        """
+        Returns the selected keys in the model
+
+        :return: the selected key
+        """
+        try:
+            return [self.keys()[i] for i in sorted(self.get_selection())]
+        except IndexError:
+            return None
+
     def get_value(self, i):
         if self.values()[i] is None:
             return self.keys()[i]

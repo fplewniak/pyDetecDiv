@@ -149,6 +149,9 @@ Comments:             {self.comments}
             [ir for ir in self.project.get_linked_objects('ImageResource', self) if ir.dataset.name == dataset][0]
         return image_resource
 
+    def image(self, sliceX: slice = None, sliceY: slice = None, T: int = 0, Z: int = 0, C: int = 0):
+        return self.image_resource().image_resource_data().image(T=T, Z=Z, C=C, sliceX=sliceX, sliceY=sliceY)
+
     @property
     def tscale(self) -> float:
         return self.image_resource().tscale
