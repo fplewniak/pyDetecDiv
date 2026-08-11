@@ -10,7 +10,7 @@ import polars
 from pydetecdiv import utils
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, set_connections
 
-from pydetecdiv.app.parameters import Parameters, ChoiceParameter, FileParameter, ObjectListParameter
+from pydetecdiv.app.parameters import Parameters, ChoiceParameter, FileParameter
 from pydetecdiv.app.tools import Tool, Commands, Command
 from pydetecdiv.domain.Classification import Classification
 from pydetecdiv.domain.FOV import FOV
@@ -36,7 +36,7 @@ class DataImportTool(Tool):
         self.parameters.update_parameters(
                 commands={'import_images'},
                 parameters=[
-                    ObjectListParameter('paths', label=''),
+                    ChoiceParameter('paths', label='', all_values=True),
                     ChoiceParameter('format', label='Format',
                                     items={
                                         'metadata'       : self.import_metadata,

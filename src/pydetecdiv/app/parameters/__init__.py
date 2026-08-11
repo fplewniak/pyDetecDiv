@@ -7,7 +7,7 @@ from typing import Callable, Any, cast, TypeVar, Generic
 
 from PySide6.QtCore import SignalInstance
 
-from pydetecdiv.app.models import ItemModel, DictItemModel, StandardItemModel, StringListModel, DictListModel
+from pydetecdiv.app.models import ItemModel, DictItemModel, StandardItemModel, StringListModel
 
 Num = TypeVar('Num', float, int)
 
@@ -456,11 +456,12 @@ class ChoiceParameter(Parameter):
     def __init__(self, name: str, items: dict[str, object] | None = None, label: str | None = None,
                  default: str | int | float | bool | Callable | None = None, validator: Callable[[Any], bool] | None = None,
                  groups: set[str] | None = None, updater: Callable[..., None] | None = None, commands: set[str] | None= None,
-                 multiselection: bool = False, **kwargs: dict[str, Any]) -> None:
+                 multiselection: bool = False, all_values: bool = False, **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
                          commands=commands, **kwargs)
         self.qmodel: DictItemModel = DictItemModel(items)
         self.multiselection = multiselection
+        self.all_values = all_values
 
     # def kwargs(self) -> dict[str, Any]:
     #     """
@@ -478,18 +479,22 @@ class ChoiceParameter(Parameter):
 
         :return: the json-compatible representation of selected key
         """
+        if self.all_values:
+            return self.keys
         try:
             return json.loads(cast(str, self.key))
         except json.decoder.JSONDecodeError:
             return cast(str, self.key)
 
     @property
-    def key(self) -> str | None :
+    def key(self) -> str | list[str] | None :
         """
         Returns the key of the selected choice
 
         :return: the selected key
         """
+        if self.all_values:
+            return self.qmodel.keys()
         return self.qmodel.key()
 
     @property
@@ -499,6 +504,8 @@ class ChoiceParameter(Parameter):
 
         :return: the selected value object
         """
+        if self.all_values:
+            return self.qmodel.keys()
         return self.qmodel.value()
 
     @value.setter
@@ -599,32 +606,6 @@ class ChoiceParameter(Parameter):
         if isinstance(other, ChoiceParameter):
             return self.key == other.key
         return self.key == other
-
-
-class ObjectListParameter(ChoiceParameter):
-    def __init__(self, name: str, items: dict[str, object] | None = None, label: str | None = None,
-                 default: str | int | float | bool | Callable | None = None, validator: Callable[[Any], bool] | None = None,
-                 groups: set[str] | None = None, updater: Callable[..., None] | None = None, commands: set[str] | None= None,
-                 multiselection: bool = False, **kwargs: dict[str, Any]) -> None:
-        super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
-                         commands=commands, **kwargs)
-        self.qmodel: DictListModel = DictListModel(items)
-        self.multiselection = multiselection
-
-    @property
-    def json(self) -> str | list | dict:
-        """
-        Returns the selected key in a way that is compatible with json.dumps. This is important to maintain consistency
-        in the way keys strings representing lists or dictionaries are stored in json format (in SQLite, etc).
-
-        :return: the json-compatible representation of selected key
-        """
-        return self.keys
-        # print(f'{self.name=} {self.key=}')
-        # try:
-        #     return json.loads(cast(str, self.key))
-        # except json.decoder.JSONDecodeError:
-        #     return cast(str, self.key)
 
 
 class Parameters:
