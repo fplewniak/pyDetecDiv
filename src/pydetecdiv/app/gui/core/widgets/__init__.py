@@ -498,63 +498,6 @@ class DictListView(QListView):
         return [self.qmodel.values()[idx.row()] for idx in self.selectionModel().selectedRows()]
 
 
-# class ListWidget(QListView):
-#     """
-#     An extension of the QListView providing consistency with other custom widgets.
-#     """
-#
-#     def __init__(self, parent: QWidget, qmodel: DictItemModel = DictItemModel(), height: int | None = None, editable: bool = False,
-#                  multiselection: bool = False, enabled: bool = True,
-#                  **kwargs: dict[str, Any]) -> None:
-#         super().__init__(parent)
-#         # self.setSelectionModel(QItemSelectionModel())
-#         if multiselection:
-#             self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
-#         if qmodel is not None and qmodel.rows() is not None:
-#             self.setModel(qmodel)
-#             self.setModelColumn(0)
-#             self.addItemDict(qmodel.rows())
-#         self.setEnabled(enabled)
-#         # self.currentIndexChanged.connect(self.model().set_selection)
-#         self.selectionModel().currentChanged.connect(self.setCurrentIndex)
-#
-#     def setCurrentIndex(self, index: QModelIndex) -> None:
-#         """
-#         Sets the current index (current selection)
-#
-#         :param index: the index for the current selection
-#         """
-#         self.model().set_selection(index.row())
-#
-#     def addItemDict(self, options: dict[str, Any]) -> Any:
-#         """
-#         add items to the ListWidget as a dictionary
-#
-#         :param options: dictionary of options specifying labels and corresponding user data {label: userData, ...}
-#         """
-#         self.items = options
-#         for text, data in options.items():
-#             self.addItem(text, userData=data)
-#
-#     def addItem(self, text: str, userData: Any = None) -> None:
-#         """
-#         Adds an item to the list
-#
-#         :param text: the text to display in the List view
-#         :param userData: the associated data (can be any type of object)
-#         """
-#         self.model().add_item({text: userData})
-#
-#     def selection(self) -> list[Any]:
-#         """
-#         method to standardize the way widget values from a form are returned
-#
-#         :return: the current data (if it is defined) or the current text of the selected item
-#         """
-#         return [self.items[self.model().data(idx)] for idx in
-#                 sorted(self.selectedIndexes(), key=lambda x: x.row(), reverse=False)]
-
-
 class LineEdit(QLineEdit):
     """
     an extension of QLineEdit class
@@ -611,7 +554,7 @@ class LineEdit(QLineEdit):
         self.mapper.addMapping(self, 0, b"text")
         self.mapper.toFirst()
         # self.changed.connect(lambda: self.mapper.submit())
-        self.editingFinished.connect(lambda: self.mapper.submit())
+        self.editingFinished.connect(self.mapper.submit)
 
 
 class PathChooser(QWidget):
@@ -936,7 +879,13 @@ class DoubleSpinBox(QDoubleSpinBox):
         """
         return self.valueChanged
 
-    def validate(self, input_str, pos):
+    def validate(self, input_str: str, pos) -> tuple[QValidator.State]:
+        """
+        Validate an input string (typed in by the user)
+        :param input_str: the string input to validate
+        :param pos:
+        :return:
+        """
         # If the input is empty, allow it as intermediate
         if not input_str:
             return (QValidator.State.Intermediate,)
@@ -965,21 +914,28 @@ class DoubleSpinBox(QDoubleSpinBox):
         # If the input is invalid
         return (QValidator.State.Invalid,)
 
-    def valueFromText(self, text):
+    def valueFromText(self, text: str) -> float:
+        """
+        Returna float value correpsonding to the text
+        :param text: the text to convert
+        """
         try:
             return float(text)
         except ValueError:
             return 0.0
 
-    def textFromValue(self, value):
+    def textFromValue(self, value: float) -> str:
+        """
+        Return a text representation of the double value
+        :param value: the value to convert
+        """
         # Format the value in scientific notation if needed
         text = "{:.15}".format(value)
         if 'e' in text:
             mantissa, exponent = text.split('e')
             mantissa = mantissa.rstrip('0').rstrip('.') if '.' in mantissa else mantissa
             return f"{mantissa}e{exponent}"
-        else:
-            return text.rstrip('0').rstrip('.')
+        return text.rstrip('0').rstrip('.')
 
 
 class TableView(QTableView):
@@ -987,7 +943,7 @@ class TableView(QTableView):
     an extension of the QTableView widget
     """
 
-    def __init__(self, parent, qmodel: TableModel = TableModel(polars.DataFrame()), enabled=True, **kwargs):
+    def __init__(self, parent: QWidget, qmodel: TableModel = TableModel(polars.DataFrame()), enabled=True, **kwargs):
         super().__init__(parent)
         if qmodel is not None:
             self.setModel(qmodel)
@@ -1006,31 +962,55 @@ class TableView(QTableView):
         #     self.model().selection_changed.connect(self.setCurrentIndex)
         self.setEnabled(enabled)
 
-    def setModel(self, model: TableModel, /):
+    def setModel(self, model: TableModel, /) -> None:
+        """
+        Set the mtable model
+        :param model: the TableModel
+        """
         super().setModel(model)
         self._model = model
 
-    def row_counts(self):
+    def row_counts(self) -> int:
+        """
+        The number of rows in the table
+        """
         return self._model.rowCount()
 
-    def is_empty(self):
+    def is_empty(self) -> bool:
+        """
+        Return True if the table is empty
+        """
         return self.row_counts() == 0 or self._model.df[0][0] is None
 
-    def selected_rows(self, data=False):
+    def selected_rows(self, data=False) -> polars.DataFrame | list[int]:
+        """
+        Return the selected rows
+        :param data: if True, return the data, return only the indices otherwise
+        """
         selected_rows_idx = [selection.row() for selection in self.selectionModel().selectedRows()]
         if data:
             return self._model.df.gather(selected_rows_idx)
         return selected_rows_idx
 
     @property
-    def data(self):
+    def data(self) -> polars.DataFrame:
+        """
+        The data in the table
+        """
         return self._model.df
 
-    def set_data(self, data):
+    def set_data(self, data) -> None:
+        """
+        Set the data for the table
+        :param data: the data
+        """
         self._model.set_data(data)
 
 
 class EditableTableView(TableView):
+    """
+    A table view that can be edited
+    """
     def __init__(self, parent, qmodel: EditableTableModel = EditableTableModel(polars.DataFrame()), enabled=True, **kwargs):
         super().__init__(parent, qmodel, enabled, **kwargs)
         if qmodel is not None:
@@ -1038,9 +1018,17 @@ class EditableTableView(TableView):
             self._model: EditableTableModel = qmodel
 
     def add_rows(self, df: polars.DataFrame) -> None:
+        """
+        Add rows from a polars DataFrame
+        :param df: the polars DataFrame
+        """
         self._model.add_rows(df)
 
-    def delete_row(self, row_id):
+    def delete_row(self, row_id) -> None:
+        """
+        Delete the row
+        :param row_id: the id of the row to delete
+        """
         self._model.delete_row(row_id)
 
 

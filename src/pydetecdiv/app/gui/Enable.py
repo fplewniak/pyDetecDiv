@@ -1,3 +1,6 @@
+"""
+Functions for the determination of enable status of actions
+"""
 from typing import Callable
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
@@ -5,28 +8,52 @@ from pydetecdiv.persistence.project import project_exists
 
 
 def AND(*funcs: Callable[..., bool]) -> Callable[..., bool]:
+    """
+    Defines a combination of functions with the AND operator
+    :param funcs: the functions to combine
+    """
     return lambda: _and(*funcs)
 
 
 def OR(*funcs: Callable[..., bool]) -> Callable[..., bool]:
+    """
+    Defines a combination of functions with the OR operator
+    :param funcs: the functions to combine
+    """
     return lambda: _or(*funcs)
 
 
 def NOT(*funcs: Callable[..., bool]) -> Callable[..., bool]:
+    """
+    Defines a combination of functions with the NOT operator
+    :param funcs: the functions to combine
+    """
     return lambda: _not(*funcs)
 
 
-def _and(*funcs):
+def _and(*funcs: Callable[..., bool]) -> bool:
+    """
+    Return True if all functions return True
+    :param funcs: the functions to test
+    """
     results = [func() for func in funcs]
     return all(results)
 
 
-def _or(*funcs):
+def _or(*funcs: Callable[..., bool]) -> bool:
+    """
+    Return True if at least one of the functions returns True
+    :param funcs: the functions to test
+    """
     results = [func() for func in funcs]
     return any(results)
 
 
-def _not(*funcs):
+def _not(*funcs: Callable[..., bool]) -> bool:
+    """
+    Return True if all functions return False
+    :param funcs: the functions to test
+    """
     return not _and(*funcs)
 
 
@@ -41,6 +68,9 @@ def if_annotations() -> bool:
 
 
 def if_annotated_rois() -> bool:
+    """
+    Return True if there are annotated ROIs
+    """
     if project_exists(PyDetecDiv.project_name):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             return project.count_objects('RoiAnnotations') > 0
@@ -78,6 +108,9 @@ def if_rois() -> bool:
 
 
 def if_image_resources() -> bool:
+    """
+    Return True if there are image resources
+    """
     if project_exists(PyDetecDiv.project_name):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             return project.count_objects('ImageResource') > 0
@@ -86,8 +119,7 @@ def if_image_resources() -> bool:
 
 def if_data_imageres_is_null() -> bool:
     """
-    Enable action if data has no associated image resource
-    :param action: the action
+    Return True if data has no associated image resource
     """
     if project_exists(PyDetecDiv.project_name):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
@@ -109,6 +141,10 @@ def if_missing_image_resources() -> bool:
 
 
 def if_drift_correction() -> bool:
+    """
+    Return True if the project contains drift correction files
+    """
     if project_exists(PyDetecDiv.project_name):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            return any([(ir.drift is not None) for ir in project.get_objects('ImageResource')])
+            return any((ir.drift is not None) for ir in project.get_objects('ImageResource'))
+    return False
