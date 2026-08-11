@@ -91,7 +91,20 @@ class NDTiffImageResource(ImageResourceData):
             self._ndtiff_ds = NDTiffDataset(self.path[0])
         return self._ndtiff_ds
 
-    def channel_list(self, channel=None, z=None, time=None, sliceX=None, sliceY=None, drift=False, alpha=False, resize: tuple[int, int] = None):
+    def channel_list(self, channel: int | list | tuple | None = None, z: int | None = None, time: int | None = None,
+                     sliceX: slice | None = None, sliceY: slice | None = None, drift: bool = False,
+                     alpha: bool = False, resize: tuple[int, int] | None = None) -> list:
+        """
+        Return data for a list of channels
+        :param channel: the channel or list of channels
+        :param z: the z stack
+        :param time: the time frame
+        :param sliceX: the X slice
+        :param sliceY: the Y slice
+        :param drift: True if drift correction must be applied
+        :param alpha: True if alpha layer should be included
+        :param resize: the new size
+        """
         if not isinstance(channel, (tuple, list)):
             channel = [channel]
         img_list = []
@@ -115,12 +128,19 @@ class NDTiffImageResource(ImageResourceData):
 
     @property
     def dask_array(self):
+        """
+        The image as a dask array
+        :return:
+        """
         if self._dask_array is None:
             self._dask_array = self.ndtiff_ds.as_array(['position', 'time', 'channel', 'z'])[self.pos_in_array]
         return self._dask_array
 
     @property
-    def pos_in_array(self):
+    def pos_in_array(self) -> int:
+        """
+        The position in the dask array
+        """
         return self.ndtiff_ds.axes['position'].index(self.pos_index)
 
     def _image(self, C: int = 0, Z: int = 0, T: int = 0, sliceX: slice = None, sliceY: slice = None,

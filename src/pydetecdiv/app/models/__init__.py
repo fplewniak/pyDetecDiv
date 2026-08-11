@@ -9,7 +9,6 @@ import polars
 from PySide6.QtCore import (QModelIndex, Qt, QStringListModel, Signal, QAbstractTableModel, QPersistentModelIndex,
                             QItemSelectionModel, QItemSelection)
 from PySide6.QtGui import QStandardItemModel, QStandardItem
-from PySide6.QtWidgets import QAbstractItemView
 
 GenericModel = TypeVar('GenericModel')
 
@@ -238,18 +237,18 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
         except IndexError:
             return None
 
-    def set_value(self, key: str) -> None:
+    def set_value(self, value: str) -> None:
         """
         Sets the current selection to the specified key
         
-        :param key: the key to select
+        :param value: the key to select
         """
-        if not isinstance(key, str):
+        if not isinstance(value, str):
             # key = str(key)
-            key = json.dumps(key)
-        if key in self.keys():
-            self.set_selection(self.keys().index(key))
-            self.set_model_selection(self.keys().index(key))
+            value = json.dumps(value)
+        if value in self.keys():
+            self.set_selection(self.keys().index(value))
+            self.set_model_selection(self.keys().index(value))
 
     def value(self) -> Any:
         try:
@@ -285,6 +284,10 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
             return None
 
     def get_value(self, i):
+        """
+        Return the value for the ith element in the model
+        :param i: the index of the wanted element
+        """
         if self.values()[i] is None:
             return self.keys()[i]
         return self.values()[i]
@@ -364,13 +367,20 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
         self.selection = index
         self.selection_changed.emit(index)
 
-    def set_model_selection(self, index: int):
+    def set_model_selection(self, index: int) -> None:
+        """
+        Sets the selection as the specified index
+        :param index: the index to select
+        """
         selection = QItemSelection(self.row(index).index(), self.row(index).index())
         self.selection_model.clear()
         self.selection_model.select(selection, QItemSelectionModel.SelectionFlag.Select)
         # self.selection_changed.emit(index)
 
-    def get_selection(self):
+    def get_selection(self) -> list[int]:
+        """
+        Return the selections row indices
+        """
         return [idx.row() for idx in self.selection_model.selectedIndexes()]
 
 

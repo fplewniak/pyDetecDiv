@@ -3,6 +3,8 @@
 """
 Definition of global objects and methods for easy access from all parts of the application
 """
+from typing import TYPE_CHECKING, Callable, Any, Generator
+
 import os.path
 import sys
 from collections import defaultdict
@@ -18,8 +20,6 @@ from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.settings import get_config_file, get_appdata_dir, get_config_value, Device
 from pydetecdiv.persistence.project import list_projects
 from pydetecdiv.domain.Project import Project
-
-from typing import TYPE_CHECKING, Callable, Any, Generator
 
 if TYPE_CHECKING:
     from pydetecdiv.app.gui.Windows import MainWindow

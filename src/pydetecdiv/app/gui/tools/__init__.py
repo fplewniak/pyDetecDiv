@@ -32,6 +32,9 @@ class ToolDialog(Dialog):
         wait_dialog.wait_for(self.run_command_with_progress)
 
     def run_command_with_progress(self):
+        """
+        Run a command sending progress and finished signals
+        """
         for i in self.tool.callback():
             self.progress.emit(i)
         self.finished.emit(True)
@@ -91,7 +94,7 @@ class ToolMenu(QMenu):
         self._parent = menu
         menu.aboutToShow.connect(self.determine_enabled_status)
 
-    def determine_enabled_status(self, **kwargs: dict[str, Any]):
+    def determine_enabled_status(self):
         """
         Enable or disable the menu depending on the enabling function output
 
@@ -108,8 +111,7 @@ class ToolAction(QAction):
     Generic action to trigger a tool process
     """
 
-    def __init__(self, tool_name: str, command: str, launch: Callable,  parent: QMenu | None = None, enable = None,
-                 **kwargs: dict[str, Any]):
+    def __init__(self, tool_name: str, command: str, launch: Callable,  parent: QMenu | None = None, enable: Callable | None = None,):
         self.tool = PyDetecDiv.tools[tool_name]
         self.command = command
         super().__init__(self.tool.commands[command].title, parent)
@@ -138,7 +140,7 @@ class ToolAction(QAction):
         """
         return self._parent
 
-    def determine_enabled_status(self, **kwargs: dict[str, Any]):
+    def determine_enabled_status(self):
         """
         Enable or disable the action depending on the enabling function output
 
