@@ -193,6 +193,138 @@ class StringListModel(QStringListModel, Generic[GenericModel]):
         #     self.dataChanged.emit(self.index(row, 0), self.index(row, 0), [Qt.ItemDataRole.DisplayRole])
 
 
+class DictListModel(StandardItemModel, Generic[GenericModel]):
+    """
+    Class for Dictionary-based item model.
+    """
+    def __init__(self, data_dict: dict[str, Any] | None = None) -> None:
+        super().__init__()
+        if data_dict:
+            self.set_items(data_dict)
+        self.selection_model = QItemSelectionModel(self)
+        self.multiselection = False
+
+    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
+        """
+        Returns the number of columns (i.e. always 1 for this model)
+
+        :param parent: parent argument for signature consistency with the base method
+        :return: 1
+        """
+        return 1
+
+    def row(self, index: int) -> QStandardItem:
+        """
+        Returns the row (item) at position index
+
+        :param index: the index of the row
+        :return: the row (item)
+        """
+        return self.item(index, 0)
+
+    def key(self) -> list[str] | None:
+        """
+        Returns the currently selected key
+
+        :return: the selected key
+        """
+        try:
+            return self.keys()
+        except IndexError:
+            return None
+
+    # def set_value(self, key: str) -> None:
+    #     """
+    #     Sets the current selection to the specified key
+    #
+    #     :param key: the key to select
+    #     """
+    #     if not isinstance(key, str):
+    #         # key = str(key)
+    #         key = json.dumps(key)
+    #     if key in self.keys():
+    #         self.set_selection(self.keys().index(key))
+    #         self.set_model_selection(self.keys().index(key))
+
+    def value(self) -> Any:
+        return self.values()
+
+    def rows(self) -> dict[str, Any]:
+        """
+        Returns all the rows in the model as a dictionary
+
+        :return: the rows in the model
+        """
+        return {self.row(row).text(): self.row(row).data(Qt.ItemDataRole.UserRole) for row in range(self.rowCount())}
+
+    def keys(self) -> list[str]:
+        """
+        Returns a list of all text keys available in the model
+
+        :return: the list of keys
+        """
+        return [self.row(row).text() for row in range(self.rowCount())]
+
+    def values(self) -> list[Any]:
+        """
+        Returns a list of all values available in the model
+
+        :return: the list of values
+        """
+        return [self.row(row).data(Qt.ItemDataRole.UserRole) for row in range(self.rowCount())]
+
+    def items(self) -> dict[str, Any]:
+        """
+        Returns all the available items in the model as a dictionary
+
+        :return: the available items dictionary
+        """
+        return self.rows()
+
+    def set_items(self, data_dict: dict[str, Any]) -> None:
+        """
+        Sets items for the current data model
+
+        :param data_dict: the dictionary containing the items
+        """
+        self.clear()
+        for key, value in data_dict.items():
+            self.add_item({key: value})
+
+    def add_item(self, item: dict[str, Any]) -> None:
+        """
+        Adds an item, specified by a dictionary, to the current model
+
+        :param item: the dictionary representing the item
+        """
+        for key, value in item.items():
+            if key not in self.keys():
+                key_item = QStandardItem(key)
+                key_item.setData(value, Qt.ItemDataRole.UserRole)
+                self.appendRow([key_item])
+            else:
+                key_item = self.item(self.keys().index(key))
+                key_item.setData(value, Qt.ItemDataRole.UserRole)
+
+    def remove_item(self, row: int) -> None:
+        """
+        Remove the item at the given position
+
+        :param row: the rank of the row to be removed
+        """
+        if 0 <= row < self.rowCount():
+            self.removeRow(row)
+
+    def set_model_selection(self, index: int):
+        selection = QItemSelection(self.row(index).index(), self.row(index).index())
+        self.selection_model.clear()
+        self.selection_model.select(selection, QItemSelectionModel.SelectionFlag.Select)
+        # self.selection_changed.emit(index)
+
+    def get_selection(self):
+        return [idx.row() for idx in self.selection_model.selectedIndexes()]
+
+
 class DictItemModel(StandardItemModel, Generic[GenericModel]):
     """
     Class for Dictionary-based item model. This is used by ChoiceParameter class to hold all choices and the current
@@ -233,7 +365,7 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
         :return: the selected key
         """
         try:
-            return self.row(self.selection).text()
+            return self.row(self.get_selection()[-1]).text()
             # return self.keys()[self.selection]
         except IndexError:
             return None
