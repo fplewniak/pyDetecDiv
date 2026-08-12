@@ -7,6 +7,8 @@ import time
 import warnings
 from typing import TYPE_CHECKING
 
+from pydetecdiv.domain.Image import ImgDType
+
 if TYPE_CHECKING:
     from pydetecdiv.domain.ImageResource import ImageResource
     from pydetecdiv.domain.Data import Data
@@ -149,8 +151,8 @@ Comments:             {self.comments}
             [ir for ir in self.project.get_linked_objects('ImageResource', self) if ir.dataset.name == dataset][0]
         return image_resource
 
-    def image(self, sliceX: slice = None, sliceY: slice = None, T: int = 0, Z: int = 0, C: int = 0):
-        return self.image_resource().image_resource_data().image(T=T, Z=Z, C=C, sliceX=sliceX, sliceY=sliceY)
+    def image(self, sliceX: slice = None, sliceY: slice = None, T: int = 0, Z: int = 0, C: int = 0, imgdtype: ImgDType = ImgDType.uint16):
+        return self.image_resource().image_resource_data().image(T=T, Z=Z, C=C, sliceX=sliceX, sliceY=sliceY, imgdtype=imgdtype)
 
     @property
     def tscale(self) -> float:
