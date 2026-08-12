@@ -123,18 +123,18 @@ class Project:
         """
         self.repository.rollback()
 
-    def import_images(self, image_files: list[str], destination: str | None = None, **kwargs) -> subprocess.Popen:
-        """
-        Import images specified in a list of files into a destination
-
-        :param image_files: list of image files to import
-        :param destination: destination directory to import files into
-        :param kwargs: extra keyword arguments
-
-        :return: the list of imported files. This list can be used to roll the copy back if needed
-        """
-        data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
-        return self.repository.import_images(image_files, data_dir_path, destination, **kwargs)
+    # def import_images(self, image_files: list[str], destination: str | None = None, **kwargs) -> subprocess.Popen:
+    #     """
+    #     Import images specified in a list of files into a destination
+    #
+    #     :param image_files: list of image files to import
+    #     :param destination: destination directory to import files into
+    #     :param kwargs: extra keyword arguments
+    #
+    #     :return: the list of imported files. This list can be used to roll the copy back if needed
+    #     """
+    #     data_dir_path = os.path.join(get_config_value('project', 'workspace'), self.dbname, 'data')
+    #     return self.repository.import_images(image_files, data_dir_path, destination, **kwargs)
 
     def import_images_in_dir(self, image_dir:str, author: str = '', date: str = 'now',
                              img_format: str = 'imagetiff',) -> Generator[int, Any, None]:
