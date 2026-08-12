@@ -43,6 +43,9 @@ class ComputeDriftDialog(ToolDialog):
         self.exec()
 
     def plot_drift(self):
+        """
+        Plots the drift values for the selected FOVs in tabbed windows
+        """
         tab = PyDetecDiv.main_window.add_tabbed_window(
                 f'{PyDetecDiv.project_name} / Drift correction ({self.tool.parameters.method.value})')
         tab.project_name = PyDetecDiv.project_name

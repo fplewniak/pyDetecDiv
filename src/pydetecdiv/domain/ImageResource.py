@@ -252,7 +252,7 @@ class ImageResource(DomainSpecificObject):
         """
         return self.key_val['format'] == file_format
 
-    def image_resource_data(self) -> ImageResourceData | None:
+    def image_resource_data(self) -> ImageResourceData:
         """
         Creates a ImageResourceData object with the appropriate sub-class according to the multi parameter
         :return: the ImageResourceData object

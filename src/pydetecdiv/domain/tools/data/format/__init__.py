@@ -4,7 +4,8 @@ Data format handling and conversion
 import glob
 import json
 import os
-from typing import Generator, Any
+from pathlib import Path
+from typing import Generator, Any, cast
 
 import tifffile
 from ndtiff import NDTiffDataset
@@ -54,7 +55,7 @@ class DataFormat(Tool):
         """
         Convert files listed in MicroManager metadata files to ndtiff
         """
-        metadata_file_names = [f for path in self.parameters.paths.keys for f in glob.glob(path) if os.path.isfile(f)]
+        metadata_file_names = [cast(str, f) for path in self.parameters.paths.keys for f in glob.glob(path) if os.path.isfile(f)]
 
         with open(metadata_file_names[0]) as f:
             summary_metadata = json.load(f)['Summary']
@@ -76,7 +77,8 @@ class DataFormat(Tool):
                         image_coordinates = {'channel' : d['ChannelIndex'], 'time': d['FrameIndex'], 'z': d['SliceIndex'],
                                              'position': d['PositionIndex']
                                              }
-                        pixels = tifffile.imread(os.path.join(os.path.dirname(metadata_file_name), os.path.basename(d["FileName"])))
+                        pixels = tifffile.imread(os.path.join(os.path.dirname(Path(metadata_file_name)),
+                                                              os.path.basename(Path(d["FileName"]))))
                         d['PositionName'] = summary['StagePositions'][d['PositionIndex']]['Label']
                         dataset.put_image(image_coordinates, pixels, d)
                         count += 1

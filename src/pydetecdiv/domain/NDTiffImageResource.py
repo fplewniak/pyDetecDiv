@@ -143,7 +143,7 @@ class NDTiffImageResource(ImageResourceData):
         """
         return self.ndtiff_ds.axes['position'].index(self.pos_index)
 
-    def _image(self, C: int = 0, Z: int = 0, T: int = 0, sliceX: slice = None, sliceY: slice = None,
+    def _image(self, C: int = 0, Z: int = 0, T: int = 0, sliceX: slice | None = None, sliceY: slice | None = None,
                drift: bool = False, imgdtype=ImgDType.uint16) -> np.ndarray:
         """
         A 2D grayscale image (on frame, one channel and one layer)
@@ -171,7 +171,7 @@ class NDTiffImageResource(ImageResourceData):
             return np.zeros((sliceY.stop - sliceY.start, sliceX.stop - sliceX.start), imgdtype)
         return np.zeros((self.sizeY, self.sizeX), imgdtype)
 
-    def _image_memmap(self, sliceX: slice = None, sliceY: slice = None, C: int = 0, Z: int = 0, T: int = 0,
+    def _image_memmap(self, sliceX: slice | None = None, sliceY: slice | None = None, C: int = 0, Z: int = 0, T: int = 0,
                       drift: bool = False) -> np.ndarray:
         if sliceX is None:
             sliceX = slice(0, self.sizeX)

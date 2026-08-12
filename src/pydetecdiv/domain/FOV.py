@@ -4,8 +4,9 @@
  A class defining the business logic methods that can be applied to Fields Of View
 """
 import time
-import warnings
 from typing import TYPE_CHECKING
+
+import numpy as np
 
 from pydetecdiv.domain.Image import ImgDType
 
@@ -14,7 +15,7 @@ if TYPE_CHECKING:
     from pydetecdiv.domain.Data import Data
     from pydetecdiv.domain.ROI import ROI
 
-from pydetecdiv.domain.dso import NamedDSO, BoxedDSO, DomainSpecificObject
+from pydetecdiv.domain.dso import NamedDSO, BoxedDSO
 
 
 class FOV(NamedDSO, BoxedDSO):
@@ -22,7 +23,7 @@ class FOV(NamedDSO, BoxedDSO):
     A business-logic class defining valid operations and attributes of Fields of view (FOV)
     """
 
-    def __init__(self, comments: str = None, key_val: dict = None, **kwargs):
+    def __init__(self, comments: str | None = None, key_val: dict | None = None, **kwargs):
         super().__init__(**kwargs)
         self._comments = comments
         self.key_val = key_val
@@ -90,7 +91,7 @@ Comments:             {self.comments}
         return self.timestamp
 
     @property
-    def comments(self) -> str:
+    def comments(self) -> str | None:
         """
         comments property of FOV
 
@@ -151,19 +152,39 @@ Comments:             {self.comments}
             [ir for ir in self.project.get_linked_objects('ImageResource', self) if ir.dataset.name == dataset][0]
         return image_resource
 
-    def image(self, sliceX: slice = None, sliceY: slice = None, T: int = 0, Z: int = 0, C: int = 0, imgdtype: ImgDType = ImgDType.uint16):
+    def image(self, sliceX: slice | None = None, sliceY: slice | None = None, T: int = 0, Z: int = 0, C: int = 0,
+              imgdtype: ImgDType = ImgDType.uint16) -> np.ndarray:
+        """
+        The image of the FOV
+
+        :param sliceX: X slice for a sub-image
+        :param sliceY: Y slice for a sub-image
+        :param T: the time frame
+        :param Z: the z-stack
+        :param C: the required channel
+        :param imgdtype: the image dtype
+        """
         return self.image_resource().image_resource_data().image(T=T, Z=Z, C=C, sliceX=sliceX, sliceY=sliceY, imgdtype=imgdtype)
 
     @property
     def tscale(self) -> float:
+        """
+        The time scale
+        """
         return self.image_resource().tscale
 
     @property
     def tunit(self) -> float:
+        """
+        The time unit
+        """
         return self.image_resource().tunit
 
     @property
     def sizeT(self) -> int:
+        """
+        The number of frames
+        """
         return self.image_resource().sizeT
 
     @property
@@ -176,4 +197,4 @@ Comments:             {self.comments}
 
     @property
     def top_left(self) -> tuple[int, int]:
-        return (0, 0)
+        return 0, 0

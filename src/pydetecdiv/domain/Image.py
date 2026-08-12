@@ -158,7 +158,7 @@ class Image:
         :param in_place: returns the same Image object if True
         :return:
         """
-        tensor = torch.from_numpy(cv2.warpAffine(self.as_array(), np.float32(affine_matrix), (self.shape[1], self.shape[0])))
+        tensor = torch.from_numpy(cv2.warpAffine(self.as_array(), affine_matrix, (self.shape[1], self.shape[0])))
         if not in_place:
             return Image(tensor)
         self.torch = tensor

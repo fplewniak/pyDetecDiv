@@ -99,7 +99,7 @@ class Quit(QAction):
     Quit action, interrupting the application
     """
 
-    def __init__(self, parent: 'MainWindow | MainToolBar'):
+    def __init__(self, parent: 'MainWindow | MainToolBar | QMenu'):
         super().__init__(QIcon(":icons/exit"), "&Quit", parent)
         self.triggered.connect(QApplication.quit)
         parent.addAction(self)
