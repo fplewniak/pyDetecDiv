@@ -44,21 +44,21 @@ class ShallowDb(abc.ABC):
         Abstract method enforcing the implementation of a close() method in all shallow persistence connectors
         """
 
-    @abc.abstractmethod
-    def import_images(self, image_files: list[str], data_dir_path: str, destination: str | None, author: str = '',
-                      date: str = 'now', in_place: bool = False, img_format: str = 'imagetiff') -> subprocess.Popen:
-        """
-        Import images specified in a list of files into a destination
-
-        :param image_files: list of image files to import
-        :param data_dir_path: path for the current project raw data directory
-        :param destination: destination directory to import files into
-        :param author: the user importing the data
-        :param date: the date of import
-        :param in_place: boolean indicating whether image files should be copied (False) or kept in place (True)
-        :param img_format: the file format
-        :return: the list of imported files. This list can be used to roll the copy back if needed
-        """
+    # @abc.abstractmethod
+    # def import_images(self, image_files: list[str], data_dir_path: str, destination: str | None, author: str = '',
+    #                   date: str = 'now', in_place: bool = False, img_format: str = 'imagetiff') -> subprocess.Popen:
+    #     """
+    #     Import images specified in a list of files into a destination
+    #
+    #     :param image_files: list of image files to import
+    #     :param data_dir_path: path for the current project raw data directory
+    #     :param destination: destination directory to import files into
+    #     :param author: the user importing the data
+    #     :param date: the date of import
+    #     :param in_place: boolean indicating whether image files should be copied (False) or kept in place (True)
+    #     :param img_format: the file format
+    #     :return: the list of imported files. This list can be used to roll the copy back if needed
+    #     """
 
     @abc.abstractmethod
     def annotate_data(self, dataset: Dataset, source: str | Callable, keys_: tuple[str, ...], regex: str) -> pandas.DataFrame:

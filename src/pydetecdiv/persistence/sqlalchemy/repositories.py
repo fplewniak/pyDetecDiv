@@ -119,61 +119,61 @@ class ShallowSQLite3(ShallowDb):
         """
         self.engine.dispose()
 
-    def import_images(self, image_files: list[str], data_dir_path: str, destination: str | None, author: str = '',
-                      date: str = 'now', in_place: bool = False, img_format: str = 'imagetiff') -> subprocess.Popen | None:
-        """
-        Import images specified in a list of files into a destination
-
-        :param image_files: list of image files to import
-        :type image_files: list of str
-        :param data_dir_path: path for the current project raw data directory
-        :type data_dir_path: path or str
-        :param destination: destination directory to import files into
-        :type destination: str
-        :param author: the user importing the data
-        :type author: str
-        :param date: the date of import
-        :type date: str
-        :param in_place: boolean indicating whether image files should be copied (False) or kept in place (True)
-        :type in_place: bool
-        :param img_format: the file format
-        :type img_format: str
-        :return: the list of imported files. This list can be used to roll the copy back if needed
-        :rtype: list of str
-        """
-        # urls = []
-        if destination is not None:
-            data_dir_path = os.path.join(data_dir_path, destination)
-        else:
-            destination = ''
-        try:
-            process = copy_files(image_files, data_dir_path) if not in_place else None
-            for image_file in image_files:
-                url = image_file if in_place else os.path.join(destination, os.path.basename(image_file))
-                record = {
-                    'id_'       : None,
-                    'uuid'      : generate_uuid(),
-                    'name'      : os.path.basename(image_file),
-                    'dataset'   : self.get_record_by_name('Dataset', 'data')['id_'],
-                    'author'    : get_config_value('project', 'user') if author == '' else author,
-                    'date'      : datetime.now() if date == 'now' else datetime.fromisoformat(date),
-                    'url'       : url,
-                    'format'    : img_format,
-                    'source_dir': os.path.dirname(image_file),
-                    'meta_data' : '{}',
-                    'key_val'   : '{}',
-                    }
-                with Image.open(url) as img:
-                    record['xdim'], record['ydim'] = img.size
-
-                record['source_dir'], record['url'] = Device.get_path_id_and_url(record['url'])
-
-                self.save_object('Data', record)
-                # urls.append(record['url'])
-        except Exception as error:
-            raise ImportImagesError('Could not import images') from error
-        # return urls, process
-        return process
+    # def import_images(self, image_files: list[str], data_dir_path: str, destination: str | None, author: str = '',
+    #                   date: str = 'now', in_place: bool = False, img_format: str = 'imagetiff') -> subprocess.Popen | None:
+    #     """
+    #     Import images specified in a list of files into a destination
+    #
+    #     :param image_files: list of image files to import
+    #     :type image_files: list of str
+    #     :param data_dir_path: path for the current project raw data directory
+    #     :type data_dir_path: path or str
+    #     :param destination: destination directory to import files into
+    #     :type destination: str
+    #     :param author: the user importing the data
+    #     :type author: str
+    #     :param date: the date of import
+    #     :type date: str
+    #     :param in_place: boolean indicating whether image files should be copied (False) or kept in place (True)
+    #     :type in_place: bool
+    #     :param img_format: the file format
+    #     :type img_format: str
+    #     :return: the list of imported files. This list can be used to roll the copy back if needed
+    #     :rtype: list of str
+    #     """
+    #     # urls = []
+    #     if destination is not None:
+    #         data_dir_path = os.path.join(data_dir_path, destination)
+    #     else:
+    #         destination = ''
+    #     try:
+    #         process = copy_files(image_files, data_dir_path) if not in_place else None
+    #         for image_file in image_files:
+    #             url = image_file if in_place else os.path.join(destination, os.path.basename(image_file))
+    #             record = {
+    #                 'id_'       : None,
+    #                 'uuid'      : generate_uuid(),
+    #                 'name'      : os.path.basename(image_file),
+    #                 'dataset'   : self.get_record_by_name('Dataset', 'data')['id_'],
+    #                 'author'    : get_config_value('project', 'user') if author == '' else author,
+    #                 'date'      : datetime.now() if date == 'now' else datetime.fromisoformat(date),
+    #                 'url'       : url,
+    #                 'format'    : img_format,
+    #                 'source_dir': os.path.dirname(image_file),
+    #                 'meta_data' : '{}',
+    #                 'key_val'   : '{}',
+    #                 }
+    #             with Image.open(url) as img:
+    #                 record['xdim'], record['ydim'] = img.size
+    #
+    #             record['source_dir'], record['url'] = Device.get_path_id_and_url(record['url'])
+    #
+    #             self.save_object('Data', record)
+    #             # urls.append(record['url'])
+    #     except Exception as error:
+    #         raise ImportImagesError('Could not import images') from error
+    #     # return urls, process
+    #     return process
 
     def annotate_data(self, dataset: Dataset, source: str | Callable, keys_: tuple[str, ...], regex: str) -> pandas.DataFrame:
         """
