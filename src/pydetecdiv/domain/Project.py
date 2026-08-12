@@ -308,9 +308,9 @@ class Project:
                     new_fov_names if fov_name not in fov_names]
         if multi:
             _ = {fov.id_: ImageResource(project=self, dataset=self.raw_dataset, fov=fov, multi=True,
-                                                          zdim=int(df['Z'].max()),
-                                                          cdim=int(df['C'].max()),
-                                                          tdim=int(df['T'].max())) for fov in new_fovs}
+                                                          zdim=int(df['Z'].max()) + 1,
+                                                          cdim=int(df['C'].max()) + 1,
+                                                          tdim=int(df['T'].max()) + 1)  for fov in new_fovs}
         else:
             _ = {fov.id_: ImageResource(project=self, dataset=self.raw_dataset, fov=fov, multi=False,
                                                           ) for fov in new_fovs}
