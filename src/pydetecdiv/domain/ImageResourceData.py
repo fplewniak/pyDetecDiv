@@ -3,19 +3,14 @@
 """
  Class to manipulate Image resources: loading data from files, etc
 """
-import os
 import abc
 
 import torch
-from PySide6.QtCore import QThread
 import numpy as np
 import pandas as pd
-import cv2 as cv
 from bioio_base.dimensions import Dimensions
-from vidstab import VidStab
 
-from pydetecdiv.domain.Image import Image
-from pydetecdiv.settings import get_config_value
+from pydetecdiv.domain.Image import Image, ImgDType
 
 
 class ImageResourceData(abc.ABC):
@@ -93,8 +88,8 @@ class ImageResourceData(abc.ABC):
         """
 
     @abc.abstractmethod
-    def _image(self, C: int = 0, Z: int = 0, T: int = 0, sliceX: slice = None, sliceY: slice = None,
-               drift: bool = False) -> np.ndarray:
+    def _image(self, C: int = 0, Z: int = 0, T: int = 0, sliceX: slice | None = None, sliceY: slice | None = None,
+               drift: bool = False, imgdtype=ImgDType.uint16) -> np.ndarray:
         """
         A 2D grayscale image (one frame, one channel and one layer)
 
@@ -108,7 +103,7 @@ class ImageResourceData(abc.ABC):
         :rtype: 2D numpy.array
         """
 
-    def image(self, sliceX: slice = None, sliceY: slice = None, C: int = 0, **kwargs) -> np.ndarray:
+    def image(self, sliceX: slice | None = None, sliceY: slice | None = None, C: int = 0, **kwargs) -> np.ndarray:
         """
         The in-memory image
         :param sliceX: X slice
@@ -119,7 +114,6 @@ class ImageResourceData(abc.ABC):
         """
         if C is None:
             if sliceX and sliceY:
-                # return np.zeros((self.sizeY, self.sizeX), np.uint16)[sliceY, sliceX]
                 return np.zeros((sliceY.stop - sliceY.start, sliceX.stop - sliceX.start), np.uint16)
             return np.zeros((self.sizeY, self.sizeX), np.uint16)
         if sliceX and sliceY:
@@ -127,7 +121,7 @@ class ImageResourceData(abc.ABC):
         return self._image(C=C, **kwargs)
 
     @abc.abstractmethod
-    def _image_memmap(self, sliceX: slice = None, sliceY: slice = None, C: int = 0, Z: int = 0, T: int = 0,
+    def _image_memmap(self, sliceX: slice | None = None, sliceY: slice | None = None, C: int = 0, Z: int = 0, T: int = 0,
                       drift: bool = False) -> np.ndarray:
 
         """
@@ -143,7 +137,7 @@ class ImageResourceData(abc.ABC):
         :rtype: 2D numpy.array
         """
 
-    def image_memmap(self, sliceX: slice = None, sliceY: slice = None, **kwargs) -> np.ndarray:
+    def image_memmap(self, sliceX: slice | None = None, sliceY: slice | None = None, **kwargs) -> np.ndarray:
         """
         Memory mapped image
         :param sliceX: X slice
@@ -160,41 +154,43 @@ class ImageResourceData(abc.ABC):
         A method to refresh memory mapped files (close and reopen) if max memory is used or do nothing for others
         """
 
-    def auto_channels(self, C: int = 0, T: int = 0, Z: int | list[int] | tuple[int] = 0,
-                      crop: tuple[slice, slice] = None, drift: bool = False, alpha: bool = False, resize: tuple[int, int] = None) -> Image:
+    def auto_channels(self, C: int | list[int] | tuple[int] = 0, T: int = 0, Z: int | list[int] | tuple[int] = 0,
+                      crop: tuple[slice, slice] | None = None, drift: bool = False, alpha: bool = False,
+                      resize: tuple[int, int] | None = None) -> Image:
         """
         Returns a RGB, RGBA or grayscale image depending upon the C or Z values. If C (or Z) is a tuple, it is used as
         RGB values. If alpha is set to True, then the maximum value of every pixel across all channels defines its
         alpha value. If C and Z are both an index, then the returned image is grayscale.
 
-        :param image_resource_data: the image resource data used to create the Image
         :param C: the channel or channels tuple
         :param T: the time frame index
         :param Z: the z-slice or z-slices tuple
         :param crop: a tuple defining the crop values as slices = (slice(xmin, xmax), slice(ymin, ymax))
         :param drift: bool defining whether drift correction should be applied
         :param alpha: bool defining whether the image should contain an alpha channel
-        :return: Image
+        :param resize: the new size of the image if resizing is requested
         """
-        img = None
         if crop is None:
             crop = (None, None)
         if isinstance(C, int):
             if isinstance(Z, (tuple, list)):
-                img = Image.compose_channels(
+                return Image.compose_channels(
                         [Image(self.image(C=C, T=T, Z=c, sliceX=crop[0], sliceY=crop[1], drift=drift)).resize(shape=resize) for c
                          in Z], alpha=alpha)
             else:
-                img = Image(self.image(C=C, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift)).resize(shape=resize)
+                return Image(self.image(C=C, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift)).resize(shape=resize)
         elif isinstance(C, (tuple, list)):
-            img = Image.compose_channels(
-                    [Image(self.image(C=c, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift)).resize(shape=resize) for c in
-                     C], alpha=alpha)
-        return img
+            if isinstance(Z, (tuple, list)):
+                return Image.compose_channels(
+                        [Image(self.image(C=c, T=T, Z=Z[0], sliceX=crop[0], sliceY=crop[1], drift=drift)).resize(shape=resize) for c in
+                         C], alpha=alpha)
+            return Image.compose_channels(
+                        [Image(self.image(C=c, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift)).resize(shape=resize) for c in
+                         C], alpha=alpha)
 
     def sequence(self, seqlen: int,
                  C: int = 0, T: int = 0, Z: int | list[int] | tuple[int] = 0, resize: tuple[int, int] | None = None,
-                 crop: tuple[slice, slice] = None, drift: bool = False, alpha: bool = False) -> torch.Tensor:
+                 crop: tuple[slice, slice] | None = None, drift: bool = False, alpha: bool = False) -> torch.Tensor:
         img = self.auto_channels(C=C, T=T, Z=Z, crop=crop, drift=drift, alpha=alpha, resize=resize)
         sequence = img.as_tensor().unsqueeze(dim=0)
         for frame in range(T + 1, T + seqlen):
