@@ -185,42 +185,43 @@ class NDTiffImageResource(ImageResourceData):
 
         return self._image(C, Z, T)[sliceY, sliceX]
 
-    def auto_channels(self, C: int = 0, T: int = 0, Z: int | list[int] | tuple[int] = 0,
-                      crop: tuple[slice, slice] = None, drift: bool = False, alpha: bool = False, resize: tuple[int, int] = None) -> Image:
-        """
-        Returns a RGB, RGBA or grayscale image depending upon the C or Z values. If C (or Z) is a tuple, it is used as
-        RGB values. If alpha is set to True, then the maximum value of every pixel across all channels defines its
-        alpha value. If C and Z are both an index, then the returned image is grayscale.
-
-        :param image_resource_data: the image resource data used to create the Image
-        :param C: the channel or channels tuple
-        :param T: the time frame index
-        :param Z: the z-slice or z-slices tuple
-        :param crop: a tuple defining the crop values as slices = (slice(xmin, xmax), slice(ymin, ymax))
-        :param drift: bool defining whether drift correction should be applied
-        :param alpha: bool defining whether the image should contain an alpha channel
-        :return: Image
-        """
-        img = None
-
-        if crop is not None:
-            sliceX = crop[0]
-            sliceY = crop[1]
-        else:
-            sliceX = slice(None, None)
-            sliceY = slice(None, None)
-
-        if isinstance(C, int):
-            # data = self.dask_array[T][C][Z][sliceY, sliceX].compute()
-            data = self.dask_array[T, C, Z, sliceY, sliceX].compute()
-            if drift and self.drift is not None:
-                data = cv2.warpAffine(np.array(data),
-                                      np.float32(
-                                              [[1, 0, -self.drift.iloc[T].dx],
-                                               [0, 1, -self.drift.iloc[T].dy]]),
-                                      (data.shape[1], data.shape[0]))
-            img = Image(data).resize(shape=resize)
-        elif isinstance(C, (tuple, list)):
-            img = Image.compose_channels(self.channel_list(channel=C, z=Z, time=T, sliceX=sliceX, sliceY=sliceY, drift=drift),
-                                         alpha=alpha)
-        return img
+    # def auto_channels(self, C: int | list[int] | tuple[int] = 0, T: int = 0, Z: int | list[int] | tuple[int] = 0,
+    #                       crop: tuple[slice, slice] | None = None, drift: bool = False, alpha: bool = False,
+    #                       resize: tuple[int, int] | None = None) -> Image:
+    #     """
+    #     Returns a RGB, RGBA or grayscale image depending upon the C or Z values. If C (or Z) is a tuple, it is used as
+    #     RGB values. If alpha is set to True, then the maximum value of every pixel across all channels defines its
+    #     alpha value. If C and Z are both an index, then the returned image is grayscale.
+    #
+    #     :param image_resource_data: the image resource data used to create the Image
+    #     :param C: the channel or channels tuple
+    #     :param T: the time frame index
+    #     :param Z: the z-slice or z-slices tuple
+    #     :param crop: a tuple defining the crop values as slices = (slice(xmin, xmax), slice(ymin, ymax))
+    #     :param drift: bool defining whether drift correction should be applied
+    #     :param alpha: bool defining whether the image should contain an alpha channel
+    #     :return: Image
+    #     """
+    #     img = None
+    #
+    #     if crop is not None:
+    #         sliceX = crop[0]
+    #         sliceY = crop[1]
+    #     else:
+    #         sliceX = slice(None, None)
+    #         sliceY = slice(None, None)
+    #
+    #     if isinstance(C, int):
+    #         # data = self.dask_array[T][C][Z][sliceY, sliceX].compute()
+    #         data = self.dask_array[T, C, Z, sliceY, sliceX].compute()
+    #         if drift and self.drift is not None:
+    #             data = cv2.warpAffine(np.array(data),
+    #                                   np.float32(
+    #                                           [[1, 0, -self.drift.iloc[T].dx],
+    #                                            [0, 1, -self.drift.iloc[T].dy]]),
+    #                                   (data.shape[1], data.shape[0]))
+    #         img = Image(data).resize(shape=resize)
+    #     elif isinstance(C, (tuple, list)):
+    #         img = Image.compose_channels(self.channel_list(channel=C, z=Z, time=T, sliceX=sliceX, sliceY=sliceY, drift=drift),
+    #                                      alpha=alpha)
+    #     return img
