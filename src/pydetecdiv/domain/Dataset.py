@@ -19,12 +19,12 @@ class Dataset(NamedDSO):
     A business-logic class defining valid operations and attributes of data
     """
 
-    def __init__(self, url: str = '', type_: str = None, run: int = None, pattern: str = None, key_val: dict = None, **kwargs):
+    def __init__(self, url: str = '', type_: str = None, run: int = None, key_val: dict = None, **kwargs):
         super().__init__(**kwargs)
         self.url_ = url
         self.type_ = type_
         self.run = run
-        self.pattern = pattern
+        # self.pattern = pattern
         self.key_val = key_val
         self.validate(updated=False)
 
@@ -64,7 +64,7 @@ class Dataset(NamedDSO):
             'url'    : self.url,
             'type_'  : self.type_,
             'run'    : self.run,
-            'pattern': self.pattern,
+            # 'pattern': self.pattern,
             'uuid'   : self.uuid,
             'key_val': self.key_val,
             }
@@ -79,5 +79,4 @@ class Dataset(NamedDSO):
    Path: {self.url}
    Type: {self.type_}
     Run: {self.run}
-Pattern: {self.pattern}
         """

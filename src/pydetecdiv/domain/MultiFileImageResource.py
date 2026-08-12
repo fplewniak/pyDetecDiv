@@ -38,7 +38,7 @@ class MultiFileImageResource(ImageResourceData):
     def __init__(self, max_mem: int = 5000, image_resource: 'ImageResource | None' = None):
         self.image_files = image_resource.image_files_5d
         self.path = image_resource.image_files
-        self.pattern = image_resource.pattern
+        # self.pattern = image_resource.pattern
         self.fov = image_resource.fov
         self.image_resource = image_resource.id_
         self.max_mem = max_mem
