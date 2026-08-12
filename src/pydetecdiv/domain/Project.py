@@ -3,7 +3,6 @@
 """
 The central class for keeping track of all available objects in a project.
 """
-import subprocess
 from typing import Callable, Any, Generator, cast, TypeVar
 
 import json

@@ -16,8 +16,8 @@ class BoundingBox(NamedDSO):
     A class defining a bounding box with its properties and available methods
     """
 
-    def __init__(self, box: QGraphicsRectItem = None, frame: int = None, entity: Entity = None, key_val: dict = None,
-                 x: float = 0, y: float = 0, width: int = 0, height: int = 0, **kwargs):
+    def __init__(self, box: QGraphicsRectItem | None = None, frame: int | None = None, entity: Entity | None = None,
+                 key_val: dict | None = None, x: float = 0, y: float = 0, width: int = 0, height: int = 0, **kwargs):
         super().__init__(**kwargs)
         self.graphics_item = box
         self.frame = frame

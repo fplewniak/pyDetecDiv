@@ -22,7 +22,7 @@ class Hdf5ImageResource(ImageResourceData):
     A business-logic class defining valid operations and attributes of Image resources stored in HDF5 file
     """
 
-    def __init__(self, max_mem: int = 5000, image_resource: 'ImageResource' = None):
+    def __init__(self, max_mem: int = 5000, image_resource: 'ImageResource | None' = None):
         print('HDF5')
         self.path = os.path.join(get_config_value('project', 'workspace'),
                                  image_resource.fov.project.dbname, 'data',
@@ -36,7 +36,7 @@ class Hdf5ImageResource(ImageResourceData):
         # print(f'Multiple file image resource: {self.dims}')
 
     @property
-    def shape(self) -> tuple[int, ...]:
+    def shape(self) -> tuple[int, int, int, int, int]:
         """
         The image resource shape (should be 5D with the following dimensions TCZYX)
         """
@@ -92,8 +92,8 @@ class Hdf5ImageResource(ImageResourceData):
         return self.shape[4]
         # return self._dims.X
 
-    def _image(self, C: int = 0, Z: int = 0, T: int = 0, sliceX: slice = None, sliceY: slice = None,
-               drift: bool = False) -> np.ndarray:
+    def _image(self, C: int = 0, Z: int = 0, T: int = 0, sliceX: slice | None = None, sliceY: slice | None = None,
+               drift: bool = False, imgdtype=ImgDType.uint16) -> np.ndarray:
         """
         A 2D grayscale image (on frame, one channel and one layer)
 
@@ -112,15 +112,15 @@ class Hdf5ImageResource(ImageResourceData):
             data = hdf5_file[self.fov.name][T, C, Z]
             if drift and self.drift is not None:
                 data = cv2.warpAffine(np.array(data),
-                                      np.float32(
+                                      np.array(
                                               [[1, 0, -self.drift.iloc[T].dx],
-                                               [0, 1, -self.drift.iloc[T].dy]]),
+                                               [0, 1, -self.drift.iloc[T].dy]], dtype=np.float32),
                                       (data.shape[1], data.shape[0]))
             # data = tf.image.convert_image_dtype(data, dtype=tf.uint16, saturate=False).numpy()
-            data = Image(data).as_array(ImgDType.uint16)
+            data = Image(data).as_array(imgdtype)
             return data
 
-    def _image_memmap(self, sliceX: slice = None, sliceY: slice = None, C: int = 0, Z: int = 0, T: int = 0,
+    def _image_memmap(self, sliceX: slice = None, sliceY: slice | None = None, C: int = 0, Z: int = 0, T: int = 0,
                       drift: bool = False) -> np.ndarray:
         if sliceX is None:
             sliceX = slice(0, self.sizeX)
@@ -135,7 +135,7 @@ class Hdf5ImageResource(ImageResourceData):
         with h5py.File(self.path, 'r') as hdf5_file:
             return hdf5_file[self.fov.name][T, C, Z, sliceY, sliceX]
 
-    def data_sample(self, X: slice = None, Y: slice = None) -> np.ndarray:
+    def data_sample(self, X: slice | None = None, Y: slice | None = None) -> np.ndarray:
         """
         Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for
         regions of interest from a field of view.

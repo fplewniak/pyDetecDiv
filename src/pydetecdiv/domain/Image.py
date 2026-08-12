@@ -95,8 +95,8 @@ class Image:
         """
         property returning the image data for this image
         """
-        array = self.as_torch(dtype=dtype, grayscale=grayscale).numpy()
-        return array
+        np_array = self.as_torch(dtype=dtype, grayscale=grayscale).numpy()
+        return np_array
 
     def as_tensor(self, dtype: ImgDType | None = None, grayscale: bool = False) -> torch.Tensor:
         """

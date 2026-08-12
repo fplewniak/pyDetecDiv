@@ -47,7 +47,7 @@ def get_default_settings() -> dict:
             }
 
 
-def get_config_dir() -> Path:
+def get_config_dir() -> Path | str:
     """
     Returns the directory containing the pyDetecDiv configuration files
 
@@ -115,7 +115,7 @@ def get_config_value(section: str, key: str) -> str:
     return config.get(section, key)
 
 
-def get_appdata_dir() -> Path:
+def get_appdata_dir() -> str | Path:
     """
     get the local Application directory (.local/share/pyDetecDiv on Linux, AppData\\pyDetecDiv on Windows)
 
@@ -215,7 +215,7 @@ class Device:
         return ":".join(("%012X" % getnode())[i: i + 2] for i in range(0, 12, 2))
 
     @classmethod
-    def add_path(cls, name: str, path: Path | str, path_id: str = None) -> None:
+    def add_path(cls, name: str, path: Path | str, path_id: str | None = None) -> None:
         """
         Adds a new path specification for the current device. If path_id is None (i.e. this data source has not been set already on
          any device) then a new id is generated from the MAC address and the current time. Otherwise, the specified path id is used,

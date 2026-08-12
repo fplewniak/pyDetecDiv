@@ -20,8 +20,8 @@ class Mask(NamedDSO):
     A class defining masks as predicted by SegmentAnything2 from the prompts
     """
 
-    def __init__(self, mask_item: QGraphicsPolygonItem = None, frame: int = None, entity: Entity = None, bin_mask=None,
-                 key_val: dict = None, **kwargs):
+    def __init__(self, mask_item: QGraphicsPolygonItem | None = None, frame: int | None = None, entity: Entity | None = None,
+                 bin_mask: np.ndarray | None = None, key_val: dict | None = None, **kwargs):
         super().__init__(**kwargs)
         self._graphics_item = mask_item
         self._ellipse_item = None
@@ -34,7 +34,7 @@ class Mask(NamedDSO):
         self.validate(updated=False)
 
     @property
-    def graphics_item(self) -> QGraphicsItem:
+    def graphics_item(self) -> QGraphicsPolygonItem | None:
         """
         Determines and return the graphics item representing the current mask in the Segmentation Tool scene
         :return: the graphics item
@@ -91,15 +91,17 @@ class Mask(NamedDSO):
         The mask contour as determined according to the specified method and relative to ROI size
         """
         contour = self.bitmap2contour(self.bin_mask, self.contour_method)
-        shape = self.entity.roi.size
-        normalised_contour = np.array([[[float(c[0][0] / shape[0]), float(c[0][1] / shape[1])]] for c in contour])
-        # normalised_contour = []
-        # for c in contour:
-        #     x = float(c[0][0] / shape[1])
-        #     y = float(c[0][1] / shape[0])
-        #     normalised_contour.append([[x, y]])
-        # normalised_contour = np.array(normalised_contour)
-        return normalised_contour
+        if contour is not None:
+            shape = self.entity.roi.size
+            normalised_contour = np.array([[[float(c[0][0] / shape[0]), float(c[0][1] / shape[1])]] for c in contour])
+            # normalised_contour = []
+            # for c in contour:
+            #     x = float(c[0][0] / shape[1])
+            #     y = float(c[0][1] / shape[0])
+            #     normalised_contour.append([[x, y]])
+            # normalised_contour = np.array(normalised_contour)
+            return normalised_contour
+        return None
 
     @property
     def ellipse_contour(self) -> np.ndarray | None:
@@ -182,7 +184,7 @@ class Mask(NamedDSO):
     def ellipse_item(self, item: QGraphicsEllipseItem) -> None:
         self._ellipse_item = item
 
-    def setBrush(self, brush: QBrush = None) -> None:
+    def setBrush(self, brush: QBrush | None = None) -> None:
         """
         Set the brush for all representation of the mask (polygon or ellipse)
         :param brush: the brush to use with this mask

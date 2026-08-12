@@ -270,7 +270,7 @@ class ImageResource(DomainSpecificObject):
         return self._image_resource_data
 
     @property
-    def image_files_5d(self) -> np.ndarray[str] | None:
+    def image_files_5d(self) -> np.ndarray[Any] | None:
         """
         property returning the list of file paths as a 3D array. Each file contains a XY 2D image, and there is one
         file for each T, C,Z combination of coordinates

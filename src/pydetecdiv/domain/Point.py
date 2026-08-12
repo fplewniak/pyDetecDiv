@@ -16,8 +16,8 @@ class Point(NamedDSO):
     A class defining a point with its properties and available methods
     """
 
-    def __init__(self, point: QGraphicsEllipseItem = None, label: int = 1, frame: int = None, entity: Entity = None,
-                 x: float = 0, y: float = 0, key_val: dict = None, **kwargs):
+    def __init__(self, point: QGraphicsEllipseItem | None = None, label: int = 1, frame: int | None = None,
+                 entity: Entity | None = None, x: float = 0, y: float = 0, key_val: dict | None = None, **kwargs):
         super().__init__(**kwargs)
         self.graphics_item = point
         self.label = label
