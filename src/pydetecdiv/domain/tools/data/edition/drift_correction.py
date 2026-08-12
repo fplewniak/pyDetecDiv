@@ -11,6 +11,7 @@ from pydetecdiv.app.gui.core.widgets import set_connections
 from pydetecdiv.app.parameters import Parameters, ChoiceParameter
 from pydetecdiv.app.tools import Tool, Commands, Command
 from pydetecdiv.domain.FOV import FOV
+from pydetecdiv.domain.Image import ImgDType
 
 
 class DriftCorrection(Tool):
@@ -47,7 +48,8 @@ class DriftCorrection(Tool):
         Compute the drift for the select FOVs
         """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            fov_list = [project.get_named_object('FOV', name) for name in self.parameters.FOVs.qmodel.selected_keys()]
+            fov_list = [cast(FOV, project.get_named_object('FOV', name))
+                        for name in self.parameters.FOVs.qmodel.selected_keys()]
             total = sum([fov.sizeT for fov in fov_list])
             for i in self.compute_drift(fov_list):
                 yield 100.0 * float(i) / float(total)
@@ -63,6 +65,11 @@ class DriftCorrection(Tool):
             self.parameters.FOVs.set_items({cast(FOV, fov).name: cast(FOV, fov) for fov in project.get_objects('FOV')})
 
     def compute_drift(self, fov_list: list[FOV]):
+        """
+        Compute drift for the selected FOVs
+
+        :param fov_list: the list of FOVs to compute drift for
+        """
         self.count = 0
         for fov in fov_list:
             match self.parameters.method.value:
@@ -98,8 +105,7 @@ class DriftCorrection(Tool):
         """
         df = pd.DataFrame(columns=['dx', 'dy'])
         for frame in range(1, fov.sizeT):
-            df.loc[len(df)], _ = cv.phaseCorrelate(np.float32(fov.image(T=frame - 1, Z=Z, C=C)),
-                                                   np.float32(fov.image(T=frame, Z=Z, C=C)))
+            df.loc[len(df)], _ = cv.phaseCorrelate(fov.image(T=frame - 1, Z=Z, C=C), fov.image(T=frame, Z=Z, C=C))
             self.count += 1
             yield self.count
         df.cumsum(axis=0)
@@ -121,12 +127,14 @@ class DriftCorrection(Tool):
         stabilizer = VidStab()
         for frame in range(0, fov.sizeT):
             _ = stabilizer.stabilize_frame(
-                    input_frame=np.uint8(np.array(fov.image(T=frame, Z=Z, C=C)) / 65535 * 255), smoothing_window=smoothing_window)
+                    input_frame=np.array(fov.image(T=frame, Z=Z, C=C, imgdtype=ImgDType.uint8)), smoothing_window=smoothing_window)
             self.count += 1
             yield self.count
         df = pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)[['dx', 'dy']]
         self.drift[fov.name] = pd.concat([pd.DataFrame([[0, 0]], columns=['dx', 'dy']), df], ignore_index=True)
 
-    def apply_drift_correction(self, tool):
+    def apply_drift_correction(self, tool: Tool):
+        """
+        Toggle the apply_drift global flag: True if correction should be applied, False otherwise
+        """
         PyDetecDiv.app.set_apply_drift(not PyDetecDiv.apply_drift)
-        print(PyDetecDiv.apply_drift)
