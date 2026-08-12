@@ -305,13 +305,11 @@ class ImageResourceData(abc.ABC):
         return img
 
     def sequence(self, seqlen: int,
-                 C: int = 0, T: int = 0, Z: int | list[int] | tuple[int] = 0, resize: tuple[int, int] = None,
+                 C: int = 0, T: int = 0, Z: int | list[int] | tuple[int] = 0, resize: tuple[int, int] | None = None,
                  crop: tuple[slice, slice] = None, drift: bool = False, alpha: bool = False) -> torch.Tensor:
-        sequence = None
-        for frame in range(T, T + seqlen):
+        img = self.auto_channels(C=C, T=T, Z=Z, crop=crop, drift=drift, alpha=alpha, resize=resize)
+        sequence = img.as_tensor().unsqueeze(dim=0)
+        for frame in range(T + 1, T + seqlen):
             img = self.auto_channels(C=C, T=frame, Z=Z, crop=crop, drift=drift, alpha=alpha, resize=resize)
-            if sequence is None:
-                sequence = img.as_tensor().unsqueeze(dim=0)
-            else:
-                sequence = torch.cat([sequence, img.as_tensor().unsqueeze(dim=0)], dim=0)
+            sequence = torch.cat([sequence, img.as_tensor().unsqueeze(dim=0)], dim=0)
         return sequence
