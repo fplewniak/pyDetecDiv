@@ -66,7 +66,7 @@ class ImageResource(DomainSpecificObject):
         self._image_files_5d = None
         self._image_files = None
         self._image_resource_data = None
-        self.pattern = self._pattern
+        # self.pattern = self._pattern
         # self.fov = self._fov
 
     @property

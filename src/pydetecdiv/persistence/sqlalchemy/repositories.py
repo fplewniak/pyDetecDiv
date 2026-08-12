@@ -99,7 +99,7 @@ class ShallowSQLite3(ShallowDb):
                               'url'    : experiment_path,
                               'type_'  : 'raw',
                               'run'    : None,
-                              'pattern': None,
+                              # 'pattern': None,
                               }
             self.save_object('Dataset', dataset_record)
             os.mkdir(os.path.join(experiment_path, 'data'))

@@ -25,7 +25,7 @@ class DatasetDao(DAO, Base):
     url = Column(String)
     type_ = Column(String)
     run = Column(Integer, ForeignKey('run.id_'), nullable=True, index=True)
-    pattern = Column(String)
+    # pattern = Column(String)
     key_val = Column(JSON)
 
     data_list_ = relationship('DataDao')
@@ -61,6 +61,6 @@ class DatasetDao(DAO, Base):
                 'url'    : self.url,
                 'type_'  : self.type_,
                 'run'    : self.run,
-                'pattern': self.pattern,
+                # 'pattern': self.pattern,
                 'key_val': self.key_val,
                 }
