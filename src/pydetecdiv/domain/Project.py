@@ -420,7 +420,7 @@ class Project:
             return self.build_dso(class_name, record, use_pool)
         return None
 
-    def get_objects(self, class_name: str, id_list: list[int] | None = None) -> list[DSO]:
+    def get_objects(self, class_name: str, id_list: list[int] | None = None) -> list[DSO | None]:
         """
         Get a list of all domain objects of a given class in the current project retrieved from the repository
 
@@ -497,7 +497,7 @@ class Project:
             roi_ids = list(set(roi_ids).intersection(set(id_list)))
         if ids_only:
             return sorted(roi_ids)
-        return self.get_objects('ROI', roi_ids)
+        return [cast(ROI, roi) for roi in self.get_objects('ROI', roi_ids)]
 
     def _get_rois(self, id_list: list[int] | None = None) -> list[ROI]:
         """
@@ -614,7 +614,7 @@ class Project:
         if dso1.id_ is not None and dso2.id_ is not None:
             self.repository.unlink(dso1.__class__.__name__, dso1.id_, dso2.__class__.__name__, dso2.id_, )
 
-    def build_dso(self, class_name: str, rec: dict[str, Any], use_pool: bool = True) -> DSO | None:
+    def build_dso(self, class_name: str, rec: dict[str, Any] | None, use_pool: bool = True) -> DSO | None:
         """
         factory method to build a dso of class class_name from record rec or return the pooled object if it was already
         created. Note that if the object was already in the pool, values in the record are not used to update the

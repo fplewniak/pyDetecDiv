@@ -35,7 +35,7 @@ class MultiFileImageResource(ImageResourceData):
     A business-logic class defining valid operations and attributes of Image resources stored in multiple files
     """
 
-    def __init__(self, max_mem: int = 5000, image_resource: 'ImageResource' = None):
+    def __init__(self, max_mem: int = 5000, image_resource: 'ImageResource | None' = None):
         self.image_files = image_resource.image_files_5d
         self.path = image_resource.image_files
         self.pattern = image_resource.pattern
@@ -97,7 +97,7 @@ class MultiFileImageResource(ImageResourceData):
         """
         return self._dims.X
 
-    def _image(self, C: int = 0, Z: int = 0, T: int = 0, sliceX: slice = None, sliceY: slice = None,
+    def _image(self, C: int = 0, Z: int = 0, T: int = 0, sliceX: slice | None = None, sliceY: slice | None  = None,
                drift: bool = False, imgdtype=ImgDType.uint16) -> np.ndarray:
         """
         A 2D grayscale image (on frame, one channel and one layer)
@@ -125,7 +125,7 @@ class MultiFileImageResource(ImageResourceData):
             return np.zeros((sliceY.stop - sliceY.start, sliceX.stop - sliceX.start), imgdtype)
         return np.zeros((self.sizeY, self.sizeX), imgdtype)
 
-    def _image_memmap(self, sliceX: slice = None, sliceY: slice = None, C: int = 0, Z: int = 0, T: int = 0,
+    def _image_memmap(self, sliceX: slice | None = None, sliceY: slice | None = None, C: int = 0, Z: int = 0, T: int = 0,
                       drift: bool = False) -> np.ndarray:
         if sliceX is None:
             sliceX = slice(0, self.sizeX)
@@ -140,18 +140,3 @@ class MultiFileImageResource(ImageResourceData):
         if self.image_files[T, C, Z]:
             return tifffile.memmap(self.image_files[T, C, Z])[sliceY, sliceX]
         return np.zeros((sliceY.stop - sliceY.start, sliceX.stop - sliceX.start), np.uint16)
-
-    # def data_sample(self, X: slice = None, Y: slice = None) -> np.ndarray:
-    #     """
-    #     Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for
-    #     regions of interest from a field of view.
-    #
-    #     :param X: the X slice
-    #     :type X: slice
-    #     :param Y: the Y slice
-    #     :type Y: slice
-    #     :return: the sample data (in-memory)
-    #     :rtype: ndarray
-    #     """
-    #     return (AICSImage(self.path, indexer=lambda x: aics_indexer(x, self.pattern)).reader
-    #             .get_image_dask_data('TCZYX', X=X, Y=Y).compute())

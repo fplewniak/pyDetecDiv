@@ -40,7 +40,7 @@ class ImageResourceData(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def shape(self) -> tuple[int]:
+    def shape(self) -> tuple[int, int, int, int, int]:
         """
         The image resource shape (should habitually be 5D with the following dimensions TCZYX)
         """
@@ -184,9 +184,9 @@ class ImageResourceData(abc.ABC):
                 return Image.compose_channels(
                         [Image(self.image(C=c, T=T, Z=Z[0], sliceX=crop[0], sliceY=crop[1], drift=drift)).resize(shape=resize) for c in
                          C], alpha=alpha)
-            return Image.compose_channels(
-                        [Image(self.image(C=c, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift)).resize(shape=resize) for c in
-                         C], alpha=alpha)
+        return Image.compose_channels(
+                [Image(self.image(C=c, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift)).resize(shape=resize) for c in C],
+                alpha=alpha)
 
     def sequence(self, seqlen: int,
                  C: int = 0, T: int = 0, Z: int | list[int] | tuple[int] = 0, resize: tuple[int, int] | None = None,
