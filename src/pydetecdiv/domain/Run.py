@@ -13,8 +13,8 @@ class Run(DomainSpecificObject):
     A business-logic class defining valid operations and attributes of data
     """
 
-    def __init__(self, tool_name: str = None, tool_version: str = None, is_plugin: bool = False, command: str = None,
-                 parameters: dict[str, object] = None, key_val: dict[str, Any] = None,
+    def __init__(self, tool_name: str | None = None, tool_version: str| None = None, is_plugin: bool = False,
+                 command: str| None = None, parameters: dict[str, object] | None = None, key_val: dict[str, Any] | None = None,
                  **kwargs):
         super().__init__(**kwargs)
         self.tool_name = tool_name

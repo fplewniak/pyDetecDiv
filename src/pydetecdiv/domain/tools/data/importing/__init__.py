@@ -121,6 +121,9 @@ class DataImportTool(Tool):
         self.parameters.paths.clear()
 
     def import_annotated_rois(self) -> Generator[float | int, Any, None]:
+        """
+        Import ROIs and annotations from a csv file
+        """
         print('Import annotated ROIs from file')
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             fov_list = {cast(FOV, fov).name: fov.id_ for fov in project.get_objects('FOV')}

@@ -94,13 +94,13 @@ class ArrayImageResource(ImageResourceData):
 
         if drift and self.drift is not None:
             return cv2.warpAffine(np.array(data),
-                                  np.float32(
+                                  np.array(
                                       [[1, 0, -self.drift.dx],
-                                       [0, 1, -self.drift.dy]]),
+                                       [0, 1, -self.drift.dy]], dtype=np.float32),
                                   (data.shape[1], data.shape[0]))
         return data
 
-    def data_sample(self, X: slice = None, Y: slice = None) -> np.ndarray:
+    def data_sample(self, X: slice | None = None, Y: slice | None = None) -> np.ndarray:
         """
         Return a sample from an image resource, specified by X and Y slices. This is useful to extract resources for
         regions of interest from a field of view.

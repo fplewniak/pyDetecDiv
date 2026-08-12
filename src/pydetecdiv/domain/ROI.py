@@ -21,7 +21,7 @@ class ROI(NamedDSO, BoxedDSO):
     A business-logic class defining valid operations and attributes of Regions of interest (ROI)
     """
 
-    def __init__(self, fov: int | FOV = None, key_val: dict[str, Any] = None,**kwargs):
+    def __init__(self, fov: int | FOV | None = None, key_val: dict[str, Any] | None = None,**kwargs):
         super().__init__(**kwargs)
         self._fov = fov.id_ if isinstance(fov, FOV) else fov
         self.key_val = key_val

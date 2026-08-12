@@ -22,7 +22,7 @@ class SingleFileImageResource(ImageResourceData):
     A business-logic class defining valid operations and attributes of Image resources stored in a single 5D file
     """
 
-    def __init__(self, image_resource: 'ImageResource' = None, max_mem: int = 5000, **kwargs):
+    def __init__(self, image_resource: 'ImageResource', max_mem: int = 5000, **kwargs):
         self.path = image_resource.image_files[0]
         self.fov = image_resource.fov
         self.image_resource = image_resource.id_

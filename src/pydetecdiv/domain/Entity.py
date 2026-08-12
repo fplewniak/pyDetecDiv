@@ -87,7 +87,7 @@ class Entity(NamedDSO):
         all_masks = self.project.get_linked_objects('Mask', self)
         return [m for m in all_masks if m.frame == frame] if frame is not None else all_masks
 
-    def mask(self, frame: int) -> 'Mask':
+    def mask(self, frame: int) -> 'Mask | None':
         """
         The mask at given frame
         :param frame: the frame index

@@ -180,7 +180,7 @@ class BoxedDSO(DomainSpecificObject):
         return self.box.height
 
     @property
-    def top_left(self) -> tuple[int, int]:
+    def top_left(self) -> tuple[int, int] | None:
         """
         The top-left corner of the Box in the coordinate system
 
@@ -195,7 +195,7 @@ class BoxedDSO(DomainSpecificObject):
         self.validate()
 
     @property
-    def bottom_right(self) -> tuple[int, int]:
+    def bottom_right(self) -> tuple[int, int] | None:
         """
         The bottom-right corner of the Box in the coordinate system
 

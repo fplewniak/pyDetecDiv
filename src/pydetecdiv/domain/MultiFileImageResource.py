@@ -1,7 +1,7 @@
 """
  A class handling image resource in multiple files (one for each combination of T, C, Z dimensions)
 """
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from pydetecdiv.domain.ImageResource import ImageResource
@@ -35,13 +35,12 @@ class MultiFileImageResource(ImageResourceData):
     A business-logic class defining valid operations and attributes of Image resources stored in multiple files
     """
 
-    def __init__(self, max_mem: int = 5000, image_resource: 'ImageResource | None' = None):
+    def __init__(self, image_resource: 'ImageResource'):
         self.image_files = image_resource.image_files_5d
         self.path = image_resource.image_files
         # self.pattern = image_resource.pattern
         self.fov = image_resource.fov
         self.image_resource = image_resource.id_
-        self.max_mem = max_mem
         self._shape = image_resource.shape
         self._dims = image_resource.dims
         self._drift = image_resource.drift
@@ -109,12 +108,12 @@ class MultiFileImageResource(ImageResourceData):
         :return: a 2D data array
         """
         if self.image_files[T, C, Z]:
-            data = tifffile.imread(self.image_files[T, C, Z])
+            data = cast(np.ndarray, tifffile.imread(self.image_files[T, C, Z]))
             if drift and self.drift is not None:
                 data = cv2.warpAffine(np.array(data),
-                                      np.float32(
+                                      np.array(
                                               [[1, 0, -self.drift.iloc[T].dx],
-                                               [0, 1, -self.drift.iloc[T].dy]]),
+                                               [0, 1, -self.drift.iloc[T].dy]], dtype=np.float32),
                                       (data.shape[1], data.shape[0]))
             # data = tf.image.convert_image_dtype(data, dtype=tf.uint16, saturate=False).numpy()
             data = Image(data).as_array(dtype=imgdtype)

@@ -19,7 +19,7 @@ class Dataset(NamedDSO):
     A business-logic class defining valid operations and attributes of data
     """
 
-    def __init__(self, url: str = '', type_: str = None, run: int = None, key_val: dict = None, **kwargs):
+    def __init__(self, url: str = '', type_: str | None = None, run: int | None = None, key_val: dict | None = None, **kwargs):
         super().__init__(**kwargs)
         self.url_ = url
         self.type_ = type_

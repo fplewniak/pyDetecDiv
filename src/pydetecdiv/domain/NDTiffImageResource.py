@@ -1,7 +1,7 @@
 """
  A class handling image resource in multiple files (one for each combination of T, C, Z dimensions)
 """
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from ndtiff import NDTiffDataset
 import numpy as np
@@ -20,7 +20,7 @@ class NDTiffImageResource(ImageResourceData):
     A business-logic class defining valid operations and attributes of Image resources stored in multiple files
     """
 
-    def __init__(self, image_resource: 'ImageResource' = None):
+    def __init__(self, image_resource: 'ImageResource'):
         # self.image_files = image_resource.image_files_5d
         self.path = image_resource.image_files
         self.fov = image_resource.fov
@@ -91,7 +91,7 @@ class NDTiffImageResource(ImageResourceData):
             self._ndtiff_ds = NDTiffDataset(self.path[0])
         return self._ndtiff_ds
 
-    def channel_list(self, channel: int | list | tuple | None = None, z: int | None = None, time: int | None = None,
+    def channel_list(self, channel: int | list | tuple | None = None, z: int = 0, time: int = 0,
                      sliceX: slice | None = None, sliceY: slice | None = None, drift: bool = False,
                      alpha: bool = False, resize: tuple[int, int] | None = None) -> list:
         """
@@ -119,9 +119,9 @@ class NDTiffImageResource(ImageResourceData):
                     data = np.zeros((self.sizeY, self.sizeX), np.uint16)
             if drift and self.drift is not None:
                 data = cv2.warpAffine(np.array(data),
-                                      np.float32(
+                                      np.array(
                                               [[1, 0, -self.drift.iloc[time].dx],
-                                               [0, 1, -self.drift.iloc[time].dy]]),
+                                               [0, 1, -self.drift.iloc[time].dy]], dtype=np.float32),
                                       (data.shape[1], data.shape[0]))
             img_list.append(Image(data).resize(shape=resize))
         return img_list
@@ -155,12 +155,12 @@ class NDTiffImageResource(ImageResourceData):
         :return: a 2D data array
         """
         if self.ndtiff_ds.has_image(channel=C, z=Z, time=T, position=self.pos_index):
-            data = self.ndtiff_ds.read_image(channel=C, z=Z, time=T, position=self.pos_index)
+            data = cast(np.ndarray, self.ndtiff_ds.read_image(channel=C, z=Z, time=T, position=self.pos_index))
             if drift and self.drift is not None:
                 data = cv2.warpAffine(np.array(data),
-                                      np.float32(
+                                      np.array(
                                               [[1, 0, -self.drift.iloc[T].dx],
-                                               [0, 1, -self.drift.iloc[T].dy]]),
+                                               [0, 1, -self.drift.iloc[T].dy]], dtype=np.float32),
                                       (data.shape[1], data.shape[0]))
             # data = tf.image.convert_image_dtype(data, dtype=tf.uint16, saturate=False).numpy()
             data = Image(data).as_array(dtype=imgdtype)
