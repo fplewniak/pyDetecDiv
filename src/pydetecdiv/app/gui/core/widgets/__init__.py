@@ -252,14 +252,14 @@ class ComboBox(QComboBox):
     def __init__(self, parent: QWidget, qmodel: DictItemModel = DictItemModel(), editable: bool = False,
                  enabled: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
-        if qmodel is not None and qmodel.rows() is not None:
+        if qmodel.rows() is not None:
             self.addItemDict(qmodel.rows())
-            self.setModel(qmodel)
-            self.qmodel = qmodel
-            self.setModelColumn(0)
-            # self.currentIndexChanged.connect(self.qmodel.set_selection)
-            # self.qmodel.selection_changed.connect(self.setCurrentIndex)
-            # self.setCurrentIndex(self.qmodel.selection)
+        self.setModel(qmodel)
+        self.qmodel = qmodel
+        self.setModelColumn(0)
+        # self.currentIndexChanged.connect(self.qmodel.set_selection)
+        # self.qmodel.selection_changed.connect(self.setCurrentIndex)
+        self.setCurrentIndex(self.qmodel.value_index())
         self.setEditable(editable)
         self.setEnabled(enabled)
 
@@ -269,7 +269,7 @@ class ComboBox(QComboBox):
     def _on_selection_changed(self,selected, deselected):
         """Update the combo box index when the model's selection changes."""
         if selected.indexes():
-            self.setCurrentIndex(selected.indexes()[0].row())
+            self.setCurrentIndex(selected.indexes()[-1].row())
 
     def addItemDict(self, options: dict[str, Any]) -> None:
         """
