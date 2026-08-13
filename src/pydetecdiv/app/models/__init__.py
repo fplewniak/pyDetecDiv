@@ -2,7 +2,6 @@
 Classes for handling models that are used to store Parameters data and ensure their synchronization with GUI widgets
 """
 import json
-from enum import IntEnum
 from typing import Any, Generic, TypeVar
 
 import polars
@@ -55,7 +54,7 @@ class ItemModel(StandardItemModel, Generic[GenericModel]):
         """
         self.setData(self.index(0, 0), value)
 
-    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
+    def rowCount(self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()) -> int:
         """
         Returns the number of rows in the model (always 1)
 
@@ -64,7 +63,7 @@ class ItemModel(StandardItemModel, Generic[GenericModel]):
         """
         return 1
 
-    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
+    def columnCount(self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()) -> int:
         """
         Returns the number of columns in the model (always 1)
 
@@ -93,7 +92,7 @@ class StringListModel(QStringListModel, Generic[GenericModel]):
         """
         self._data: list[str] = data
 
-    def setData(self, index: QModelIndex, value: Any, /, role: int = Qt.ItemDataRole.EditRole):
+    def setData(self, index: QModelIndex | QPersistentModelIndex, value: Any, /, role: int = Qt.ItemDataRole.EditRole):
         """
         Sets the item data at a given index
 
@@ -123,7 +122,7 @@ class StringListModel(QStringListModel, Generic[GenericModel]):
         """
         return self._data
 
-    def data(self, index: QModelIndex, role: IntEnum = Qt.ItemDataRole.DisplayRole) -> str | None:
+    def data(self, index: QModelIndex | QPersistentModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> str | None:
         """
         Returns the data at the specified index
 
@@ -135,7 +134,7 @@ class StringListModel(QStringListModel, Generic[GenericModel]):
             return self._data[index.row()]
         return None
 
-    def rowCount(self, parent: QModelIndex | None = None) -> int:
+    def rowCount(self, parent: QModelIndex | QPersistentModelIndex | None = None) -> int:
         """
         Returns the number of rows in the model
 
@@ -204,7 +203,7 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
         self.selection_model = QItemSelectionModel(self)
         self.multiselection = False
 
-    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
+    def columnCount(self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()) -> int:
         """
         Returns the number of columns (i.e. always 1 for this model)
 
@@ -390,7 +389,7 @@ class TableModel(QAbstractTableModel):
         self.df = data
         self.layoutChanged.emit()
 
-    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
+    def rowCount(self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()) -> int:
         """
         Returns the number of rows in the data
 
@@ -398,7 +397,7 @@ class TableModel(QAbstractTableModel):
         """
         return self.df.shape[0]
 
-    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
+    def columnCount(self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()) -> int:
         """
         Returns the number of columns in the data
 
