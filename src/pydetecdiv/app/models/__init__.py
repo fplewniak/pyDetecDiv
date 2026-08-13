@@ -6,7 +6,7 @@ from enum import IntEnum
 from typing import Any, Generic, TypeVar
 
 import polars
-from PySide6.QtCore import (QModelIndex, Qt, QStringListModel, Signal, QAbstractTableModel, QPersistentModelIndex,
+from PySide6.QtCore import (QModelIndex, Qt, QStringListModel, QAbstractTableModel, QPersistentModelIndex,
                             QItemSelectionModel, QItemSelection)
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 
@@ -197,13 +197,10 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
     Class for Dictionary-based item model. This is used by ChoiceParameter class to hold all choices and the current
     selection
     """
-    selection_changed = Signal(int)
-
     def __init__(self, data_dict: dict[str, Any] | None = None) -> None:
         super().__init__()
         if data_dict:
             self.set_items(data_dict)
-        self.selection: int = 0
         self.selection_model = QItemSelectionModel(self)
         self.multiselection = False
 
@@ -233,7 +230,6 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
         """
         try:
             return self.row(self.get_selection()[-1]).text()
-            # return self.keys()[self.selection]
         except IndexError:
             return None
 
@@ -244,22 +240,24 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
         :param value: the key to select
         """
         if not isinstance(value, str):
-            # key = str(key)
             value = json.dumps(value)
         if value in self.keys():
-            self.set_selection(self.keys().index(value))
             self.set_model_selection(self.keys().index(value))
 
     def value(self) -> Any:
         try:
-            # return self.row(self.selection).data(Qt.UserRole)
-            # selection = [idx.row() for idx in self.selection_model.selectedIndexes()]
             selected_value = self.get_value(self.get_selection()[-1])
             if selected_value is None:
                 return self.key()
             return selected_value
         except IndexError:
             return None
+
+    def value_index(self) -> int:
+        try:
+            return self.get_selection()[-1]
+        except IndexError:
+            return 0
 
     def selected_values(self) -> Any:
         """
@@ -358,15 +356,6 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
         if 0 <= row < self.rowCount():
             self.removeRow(row)
 
-    def set_selection(self, index: int) -> None:
-        """
-        Set the selected item in the model
-
-        :param index: the index (rank) of the selection
-        """
-        self.selection = index
-        self.selection_changed.emit(index)
-
     def set_model_selection(self, index: int) -> None:
         """
         Sets the selection as the specified index
@@ -375,7 +364,6 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
         selection = QItemSelection(self.row(index).index(), self.row(index).index())
         self.selection_model.clear()
         self.selection_model.select(selection, QItemSelectionModel.SelectionFlag.Select)
-        # self.selection_changed.emit(index)
 
     def get_selection(self) -> list[int]:
         """
