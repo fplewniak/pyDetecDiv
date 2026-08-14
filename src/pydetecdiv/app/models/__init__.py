@@ -330,7 +330,8 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
         self.clear()
         for key, value in data_dict.items():
             self.add_item({key: value})
-        self.set_model_selection(0)
+        # if bool(data_dict):
+        #     self.set_model_selection(0)
 
     def add_item(self, item: dict[str, Any]) -> None:
         """
@@ -346,7 +347,8 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
             else:
                 key_item = self.item(self.keys().index(key))
                 key_item.setData(value, Qt.ItemDataRole.UserRole)
-        self.set_model_selection(0)
+        if self.rowCount():
+            self.set_model_selection(0)
 
     def remove_item(self, row: int) -> None:
         """
