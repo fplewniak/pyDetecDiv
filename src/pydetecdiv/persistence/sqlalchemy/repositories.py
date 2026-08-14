@@ -23,7 +23,7 @@ from pydetecdiv.domain.Dataset import Dataset
 from pydetecdiv.persistence.repository import ShallowDb
 from pydetecdiv.persistence.sqlalchemy.orm.main import mapper_registry, DAO
 from pydetecdiv.persistence.sqlalchemy.orm.dao import dso_dao_mapping as dao
-from pydetecdiv.persistence.sqlalchemy.orm.associations import Linker
+# from pydetecdiv.persistence.sqlalchemy.orm.associations import Linker
 from pydetecdiv.settings import get_config_value, Device
 from pydetecdiv import generate_uuid, copy_files
 from pydetecdiv.exceptions import OpenProjectError, ImportImagesError
@@ -383,8 +383,8 @@ class ShallowSQLite3(ShallowDb):
                 linked_rec = dao[parent_cls_name](self.session).points(parent_id)
             case ['Mask', 'Entity']:
                 linked_rec = dao[parent_cls_name](self.session).masks(parent_id)
-            case ['Data', ('FOV' | 'ROI')]:
-                linked_rec = dao[parent_cls_name](self.session).data(parent_id)
+            # case ['Data', ('FOV' | 'ROI')]:
+            #     linked_rec = dao[parent_cls_name](self.session).data(parent_id)
             case ['Data', ('Dataset' | 'ImageResource')]:
                 linked_rec = dao[parent_cls_name](self.session).data_list(parent_id)
             case ['Dataset', 'Data']:
@@ -414,40 +414,40 @@ class ShallowSQLite3(ShallowDb):
         obj.session = self.session
         return obj
 
-    def link(self, class1_name: str, id_1: int, class2_name: str, id_2: int) -> None:
-        """
-        Create a link between two domain-specific objects. There must be a direct link defined in Linker class,
-        otherwise, the link cannot be created.
-
-        :param class1_name: the class name of the first object to link
-        :type class1_name: str
-        :param id_1: the id of the first object to link
-        :type id_1: int
-        :param class2_name: the class name of the second object to link
-        :type class2_name: str
-        :param id_2: the id of the second object to link
-        :type id_2: int
-        """
-        obj1 = self._get_dao(class1_name, id_1)
-        obj2 = self._get_dao(class2_name, id_2)
-        Linker.link(obj1, obj2)
-
-    def unlink(self, class1_name: str, id_1: int, class2_name: str, id_2: int) -> None:
-        """
-        Remove the link between two domain-specific objects. There must be a direct link defined in Linker class,
-        otherwise, the link cannot be removed.
-
-        :param class1_name: the class name of the first object to unlink
-        :type class1_name: str
-        :param id_1: the id of the first object to unlink
-        :type id_1: int
-        :param class2_name: the class name of the second object to unlink
-        :type class2_name: str
-        :param id_2: the id of the second object to unlink
-        :type id_2: int
-        """
-        dao1_class, dao2_class = dao[class1_name].__name__, dao[class2_name].__name__
-        self.session.delete(self.session.get(Linker.association(dao1_class, dao2_class), (id_1, id_2)))
+    # def link(self, class1_name: str, id_1: int, class2_name: str, id_2: int) -> None:
+    #     """
+    #     Create a link between two domain-specific objects. There must be a direct link defined in Linker class,
+    #     otherwise, the link cannot be created.
+    #
+    #     :param class1_name: the class name of the first object to link
+    #     :type class1_name: str
+    #     :param id_1: the id of the first object to link
+    #     :type id_1: int
+    #     :param class2_name: the class name of the second object to link
+    #     :type class2_name: str
+    #     :param id_2: the id of the second object to link
+    #     :type id_2: int
+    #     """
+    #     obj1 = self._get_dao(class1_name, id_1)
+    #     obj2 = self._get_dao(class2_name, id_2)
+    #     Linker.link(obj1, obj2)
+    #
+    # def unlink(self, class1_name: str, id_1: int, class2_name: str, id_2: int) -> None:
+    #     """
+    #     Remove the link between two domain-specific objects. There must be a direct link defined in Linker class,
+    #     otherwise, the link cannot be removed.
+    #
+    #     :param class1_name: the class name of the first object to unlink
+    #     :type class1_name: str
+    #     :param id_1: the id of the first object to unlink
+    #     :type id_1: int
+    #     :param class2_name: the class name of the second object to unlink
+    #     :type class2_name: str
+    #     :param id_2: the id of the second object to unlink
+    #     :type id_2: int
+    #     """
+    #     dao1_class, dao2_class = dao[class1_name].__name__, dao[class2_name].__name__
+    #     self.session.delete(self.session.get(Linker.association(dao1_class, dao2_class), (id_1, id_2)))
 
     def count_orphan_data_files(self) -> int:
         """

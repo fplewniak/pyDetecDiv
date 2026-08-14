@@ -11,7 +11,7 @@ from sqlalchemy.types import JSON
 from sqlalchemy.orm import joinedload, relationship
 
 from pydetecdiv.persistence.sqlalchemy.orm.RoiAnnotationsDao import RoiAnnotationsDao
-from pydetecdiv.persistence.sqlalchemy.orm.associations import ROIdata
+# from pydetecdiv.persistence.sqlalchemy.orm.associations import ROIdata
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
 from pydetecdiv.persistence.sqlalchemy.orm import dao
 
@@ -34,7 +34,7 @@ class ROIdao(DAO, Base):
     uuid = Column(String(36))
     key_val = Column(JSON)
 
-    data_list = ROIdata.roi_to_data()
+    # data_list = ROIdata.roi_to_data()
 
     entities_ = relationship('EntityDao')
 
@@ -56,18 +56,18 @@ class ROIdao(DAO, Base):
                 'key_val'     : self.key_val,
                 }
 
-    def data(self, roi_id: int) -> list[dict[str, Any] | property]:
-        """
-        Returns a list of DataDao objects linked to the ROIdao object with the specified id_
-
-        :param roi_id: the id_ of the ROI
-        :return: the list of Data records linked to the ROI
-        """
-        return [i.record
-                for i in self.session.query(dao.DataDao)
-                .filter(ROIdata.data == dao.DataDao.id_)
-                .filter(ROIdata.roi == roi_id)
-                ]
+    # def data(self, roi_id: int) -> list[dict[str, Any] | property]:
+    #     """
+    #     Returns a list of DataDao objects linked to the ROIdao object with the specified id_
+    #
+    #     :param roi_id: the id_ of the ROI
+    #     :return: the list of Data records linked to the ROI
+    #     """
+    #     return [i.record
+    #             for i in self.session.query(dao.DataDao)
+    #             .filter(ROIdata.data == dao.DataDao.id_)
+    #             .filter(ROIdata.roi == roi_id)
+    #             ]
 
     def entities(self, roi_id: int) -> list[dict[str, Any]]:
         """
