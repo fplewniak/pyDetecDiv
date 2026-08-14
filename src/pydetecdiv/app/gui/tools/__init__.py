@@ -39,11 +39,11 @@ class ToolDialog(Dialog):
             self.progress.emit(i)
         self.finished.emit(True)
 
-    def run_command_with_stdout(self, func: Callable, title: str, **kwargs) -> None:
+    def run_command_with_stdout(self, func: Callable, title: str, close_when_finished: bool = True, **kwargs) -> None:
         """
         Open a waiting dialog window to wait for completion of job
         """
-        wait_dialog = StdoutWaitDialog(title, self)
+        wait_dialog = StdoutWaitDialog(title, self, close_when_finished=close_when_finished)
         wait_dialog.resize(500, 300)
         self.finished.connect(wait_dialog.stop_redirection)
         wait_dialog.wait_for(lambda: self.run_process(func), **kwargs)
