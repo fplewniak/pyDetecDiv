@@ -12,7 +12,7 @@ from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QToolBar, QStatusBar, QMenu, QApplication, QDialog, QDialogButtonBox, QSizePolicy, QLabel
 
 from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.app.gui import ActionsSettings, ActionsProject, Enable
+from pydetecdiv.app.gui import ActionsSettings, ActionsProject
 import pydetecdiv.app.gui.resources_rc
 from pydetecdiv.app.gui.tools import ToolAction
 from pydetecdiv.app.gui.tools.data.hdf5 import Create_ROI_HDF5Dialog
