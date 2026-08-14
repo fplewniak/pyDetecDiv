@@ -168,7 +168,7 @@ class AbstractWaitDialog(QDialog):
     """
 
     def __init__(self, parent: QWidget, title: str | None = None, cancel_msg: str | None = None,
-                 ignore_close_event= True) -> None:
+                 ignore_close_event: bool= True, close_when_finished: bool = True) -> None:
         super().__init__(parent)
         if title is not None:
             self.setWindowTitle(title)
@@ -179,7 +179,7 @@ class AbstractWaitDialog(QDialog):
         self.setWindowModality(Qt.WindowModality.WindowModal)
         self.pdd_thread = PyDetecDivThread()
         self.parent = parent
-        if hasattr(self.parent, 'finished'):
+        if hasattr(self.parent, 'finished') and close_when_finished:
             self.parent.finished.connect(self.close_window)
 
     def wait_for(self, func: Callable, *args: list, **kwargs: dict) -> None:
@@ -239,9 +239,10 @@ class WaitDialog(AbstractWaitDialog):
     it
     """
 
-    def __init__(self, msg, parent: QWidget, title: str | None = None,
-                 progress_bar: bool = False, cancel_msg: str | None= None, ignore_close_event: bool = True):
-        super().__init__(parent, title=title, cancel_msg=cancel_msg, ignore_close_event=ignore_close_event)
+    def __init__(self, msg, parent: QWidget, title: str | None = None, progress_bar: bool = False, cancel_msg: str | None= None,
+                 ignore_close_event: bool = True, close_when_finished: bool = True):
+        super().__init__(parent, title=title, cancel_msg=cancel_msg, ignore_close_event=ignore_close_event,
+                         close_when_finished=close_when_finished)
         if hasattr(self.parent, 'progress'):
             self.parent.progress.connect(self.show_progress)
 
@@ -338,8 +339,10 @@ class StdoutWaitDialog(AbstractWaitDialog):
     A Wait dialog that also captures and displays stdout output on the fly.
     """
 
-    def __init__(self, msg: str, parent: QWidget, cancel_msg: str | None = None, ignore_close_event: bool = True):
-        super().__init__(parent, cancel_msg=cancel_msg, ignore_close_event=ignore_close_event)
+    def __init__(self, msg: str, parent: QWidget, cancel_msg: str | None = None, ignore_close_event: bool = True,
+                 close_when_finished: bool = True):
+        super().__init__(parent, cancel_msg=cancel_msg, ignore_close_event=ignore_close_event,
+                         close_when_finished=close_when_finished)
         self.log = QTextEdit(self)
         self.log.setReadOnly(True)
         self.log.setHtml(markdown.markdown(msg))
