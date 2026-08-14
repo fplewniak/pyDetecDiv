@@ -12,7 +12,8 @@ from pydetecdiv.app.gui.tools.data.format import DataFormatMenu
 from pydetecdiv.app.gui.tools.data.hdf5 import Create_ROI_HDF5Dialog
 
 from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.app.gui import FileMenu, ProjectMenu, Enable
+from pydetecdiv.utils import check
+from pydetecdiv.app.gui import FileMenu, ProjectMenu
 from pydetecdiv.app.gui.Windows import MainWindow
 from pydetecdiv.app.gui import SourcePath
 from pydetecdiv.app.gui.tools.data.importing import DataImportMenu
@@ -96,15 +97,15 @@ def main_gui():
         ]
 
     data_tools = [
-        DataImportMenu('cnrs.plewniak.dataimport', enable=Enable.if_project_exists),
+        DataImportMenu('cnrs.plewniak.dataimport', enable=check.if_project_exists),
         ToolAction('cnrs.plewniak.dataimport', 'create_resources', RawData2FOV,
-                   enable=Enable.if_missing_image_resources),
+                   enable=check.if_missing_image_resources),
         None,
         ToolAction('cnrs.plewniak.roiseqhdf5creator', 'create_roi_hdf5',
-                   Create_ROI_HDF5Dialog,  enable=Enable.if_rois),
+                   Create_ROI_HDF5Dialog,  enable=check.if_rois),
         DataFormatMenu('cnrs.plewniak.dataformat'),
         None,
-        DriftCorrectionMenu('cnrs.plewniak.driftcorrection', enable=Enable.if_image_resources)
+        DriftCorrectionMenu('cnrs.plewniak.driftcorrection', enable=check.if_image_resources)
         ]
 
     # Create menus

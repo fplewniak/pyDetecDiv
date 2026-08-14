@@ -3,7 +3,7 @@ Data import GUI
 """
 from typing import Any
 
-from pydetecdiv.app.gui.Enable import if_project_exists, if_class_scheme, if_image_resources, AND
+from pydetecdiv.utils.check import if_project_exists, if_class_scheme, if_image_resources, AND
 from pydetecdiv.app.gui.tools import ToolMenu, ToolAction
 from pydetecdiv.app.gui.tools.data.importing.import_dialog import DataImportDialog, AnnotatedROIsImportDialog
 
