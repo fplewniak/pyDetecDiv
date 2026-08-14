@@ -9,7 +9,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey, Date, text
 from sqlalchemy.types import JSON
 from sqlalchemy.orm import composite, joinedload
 from pydetecdiv.persistence.sqlalchemy.orm.main import DAO, Base
-from pydetecdiv.persistence.sqlalchemy.orm.associations import ROIdata
+# from pydetecdiv.persistence.sqlalchemy.orm.associations import ROIdata
 from pydetecdiv.persistence.sqlalchemy.orm import dao
 from pydetecdiv.utils import ImageResource
 
@@ -34,7 +34,7 @@ class DataDao(DAO, Base):
     meta_data = Column(JSON)
     key_val = Column(JSON)
 
-    roi_list_ = ROIdata.data_to_roi()
+    # roi_list_ = ROIdata.data_to_roi()
 
     image_resource = Column(Integer, ForeignKey('ImageResource.id_'), index=True)
     xdim = Column(Integer, nullable=False, server_default=text('-1'))
@@ -93,19 +93,19 @@ class DataDao(DAO, Base):
             fov_list = []
         return fov_list
 
-    def roi_list(self, data_id: int) -> list[dict[str, Any] | property]:
-        """
-        A method returning the list of ROI records whose parent Data has id_ == data_id
-
-        :param data_id: the id of the Data
-        :return: a list of FOV records with parent Data has id_ == data_id
-        """
-        if self.session.query(DataDao).filter(DataDao.id_ == data_id).first() is not None:
-            roi_list = [i.record
-                        for i in self.session.query(dao.ROIdao)
-                        .filter(ROIdata.data == data_id)
-                        .filter(ROIdata.roi == dao.ROIdao.id_)
-                        ]
-        else:
-            roi_list = []
-        return roi_list
+    # def roi_list(self, data_id: int) -> list[dict[str, Any] | property]:
+    #     """
+    #     A method returning the list of ROI records whose parent Data has id_ == data_id
+    #
+    #     :param data_id: the id of the Data
+    #     :return: a list of FOV records with parent Data has id_ == data_id
+    #     """
+    #     if self.session.query(DataDao).filter(DataDao.id_ == data_id).first() is not None:
+    #         roi_list = [i.record
+    #                     for i in self.session.query(dao.ROIdao)
+    #                     .filter(ROIdata.data == data_id)
+    #                     .filter(ROIdata.roi == dao.ROIdao.id_)
+    #                     ]
+    #     else:
+    #         roi_list = []
+    #     return roi_list

@@ -5,7 +5,6 @@ Definition of the Repository interface accessible from the Business-logic layer 
 concrete repositories.
 """
 import abc
-import subprocess
 from typing import Any, Callable
 
 import pandas
@@ -172,29 +171,29 @@ class ShallowDb(abc.ABC):
         :return: a list of records
         """
 
-    @abc.abstractmethod
-    def link(self, class1_name: str, id_1: int, class2_name: str, id_2: int) -> None:
-        """
-        Create a link between two domain-specific objects. There must be a direct link defined in Linker class,
-        otherwise, the link cannot be created.
-
-        :param class1_name: the class name of the first object to link
-        :param id_1: the id of the first object to link
-        :param class2_name: the class name of the second object to link
-        :param id_2: the id of the second object to link
-        """
-
-    @abc.abstractmethod
-    def unlink(self, class1_name: str, id_1: int, class2_name: str, id_2: int) -> None:
-        """
-        Remove the link between two domain-specific objects. There must be a direct link defined in Linker class,
-        otherwise, the link cannot be removed.
-
-        :param class1_name: the class name of the first object to unlink
-        :param id_1: the id of the first object to unlink
-        :param class2_name: the class name of the second object to unlink
-        :param id_2: the id of the second object to unlink
-        """
+    # @abc.abstractmethod
+    # def link(self, class1_name: str, id_1: int, class2_name: str, id_2: int) -> None:
+    #     """
+    #     Create a link between two domain-specific objects. There must be a direct link defined in Linker class,
+    #     otherwise, the link cannot be created.
+    #
+    #     :param class1_name: the class name of the first object to link
+    #     :param id_1: the id of the first object to link
+    #     :param class2_name: the class name of the second object to link
+    #     :param id_2: the id of the second object to link
+    #     """
+    #
+    # @abc.abstractmethod
+    # def unlink(self, class1_name: str, id_1: int, class2_name: str, id_2: int) -> None:
+    #     """
+    #     Remove the link between two domain-specific objects. There must be a direct link defined in Linker class,
+    #     otherwise, the link cannot be removed.
+    #
+    #     :param class1_name: the class name of the first object to unlink
+    #     :param id_1: the id of the first object to unlink
+    #     :param class2_name: the class name of the second object to unlink
+    #     :param id_2: the id of the second object to unlink
+    #     """
 
     @abc.abstractmethod
     def count_orphan_data_files(self):

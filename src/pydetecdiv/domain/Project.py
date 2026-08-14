@@ -585,33 +585,33 @@ class Project:
             return self.repository.get_linked_records(class_name, to.__class__.__name__, to.id_)
         return []
 
-    def link_objects(self, dso1: DSO, dso2: DSO) -> None:
-        """
-        Create a direct link between two objects. This method only works for objects that have a direct logical
-        connection defined in an association table. It does not work to create transitive links with intermediate
-        objects
-
-        :param dso1: first domain-specific object to link
-        :type dso1: object
-        :param dso2: second domain-specific object to link
-        :type dso2: object
-        """
-        if dso1.id_ is not None and dso2.id_ is not None:
-            self.repository.link(dso1.__class__.__name__, dso1.id_, dso2.__class__.__name__, dso2.id_, )
-
-    def unlink_objects(self, dso1: DSO, dso2: DSO) -> None:
-        """
-        Delete a direct link between two objects. This method only works for objects that have a direct logical
-        connection defined in an association table. It does not work to delete transitive links with intermediate
-        objects
-
-        :param dso1: first domain-specific object to unlink
-        :type dso1: object
-        :param dso2: second domain-specific object to unlink
-        :type dso2: object
-        """
-        if dso1.id_ is not None and dso2.id_ is not None:
-            self.repository.unlink(dso1.__class__.__name__, dso1.id_, dso2.__class__.__name__, dso2.id_, )
+    # def link_objects(self, dso1: DSO, dso2: DSO) -> None:
+    #     """
+    #     Create a direct link between two objects. This method only works for objects that have a direct logical
+    #     connection defined in an association table. It does not work to create transitive links with intermediate
+    #     objects
+    #
+    #     :param dso1: first domain-specific object to link
+    #     :type dso1: object
+    #     :param dso2: second domain-specific object to link
+    #     :type dso2: object
+    #     """
+    #     if dso1.id_ is not None and dso2.id_ is not None:
+    #         self.repository.link(dso1.__class__.__name__, dso1.id_, dso2.__class__.__name__, dso2.id_, )
+    #
+    # def unlink_objects(self, dso1: DSO, dso2: DSO) -> None:
+    #     """
+    #     Delete a direct link between two objects. This method only works for objects that have a direct logical
+    #     connection defined in an association table. It does not work to delete transitive links with intermediate
+    #     objects
+    #
+    #     :param dso1: first domain-specific object to unlink
+    #     :type dso1: object
+    #     :param dso2: second domain-specific object to unlink
+    #     :type dso2: object
+    #     """
+    #     if dso1.id_ is not None and dso2.id_ is not None:
+    #         self.repository.unlink(dso1.__class__.__name__, dso1.id_, dso2.__class__.__name__, dso2.id_, )
 
     def build_dso(self, class_name: str, rec: dict[str, Any] | None, use_pool: bool = True) -> DSO | None:
         """

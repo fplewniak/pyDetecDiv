@@ -38,14 +38,14 @@ class FOVdao(DAO, Base):
         :return: a list of ImageResource records whose parent FOV has id_ == fov_id
         """
         if self.session.query(FOVdao).filter(FOVdao.id_ == fov_id).first() is not None:
-            data_list = [data.record
-                         for data in self.session.query(FOVdao)
+            imgres_list = [imgres.record
+                         for imgres in self.session.query(FOVdao)
                          .options(joinedload(FOVdao.image_resources_))
                          .filter(FOVdao.id_ == fov_id)
                          .first().image_resources_]
         else:
-            data_list = []
-        return data_list
+            imgres_list = []
+        return imgres_list
 
     @property
     def record(self) -> dict[str, Any]:
