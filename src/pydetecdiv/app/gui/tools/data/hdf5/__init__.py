@@ -1,13 +1,11 @@
 """
 Classes and functions to manage GUI for ROI HDF5 data source creation
 """
-from typing import cast
-
 from PySide6.QtCore import Signal
 
-from pydetecdiv.app import set_connections, WaitDialog
+from pydetecdiv.utils import check
+from pydetecdiv.app import set_connections, PyDetecDiv
 from pydetecdiv.app.gui.tools import ToolDialog
-from pydetecdiv.domain.tools.data.hdf5 import ROIseqHDF5creator
 
 
 class Create_ROI_HDF5Dialog(ToolDialog):
@@ -35,6 +33,7 @@ class Create_ROI_HDF5Dialog(ToolDialog):
                                                      self.tool.parameters.seqlen,
                                                      self.tool.parameters.annotations,
                                                      ],
+                                                 widget_args={'annotations': {'enable': check.if_annotations}}
                                                  )
         self.channels = self.addGroupBox(title='Channels',
                                                  parameters=[
@@ -46,6 +45,7 @@ class Create_ROI_HDF5Dialog(ToolDialog):
 
         self.classification = self.addGroupBox(title='Classification schema',
                                                parameters=[self.tool.parameters.classification],
+                                               widget_args={'classification': {'enable': check.if_class_scheme}}
                                                )
 
         self.button_box = self.addButtonBox()
@@ -63,7 +63,9 @@ class Create_ROI_HDF5Dialog(ToolDialog):
                     msg=f'Creating {self.tool.parameters.hdf5_file.value}',
                     cancel_msg=None,
                     ),
-            self.button_box.rejected: lambda: print(self.tool.parameters.hdf5_file.value)
+            self.button_box.rejected: lambda: print(self.tool.parameters.hdf5_file.value),
+            PyDetecDiv.app.project_selected: [lambda: self.tool.parameters.annotations.reset(),
+                                              lambda: self.tool.parameters.classification.reset()]
             })
         #
         # self.tool.update_channels()

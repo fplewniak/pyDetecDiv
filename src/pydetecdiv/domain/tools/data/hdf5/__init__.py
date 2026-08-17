@@ -23,7 +23,7 @@ from pydetecdiv.domain.ImageResource import ImageResource
 from pydetecdiv.domain.ImageResourceData import ImageResourceData
 from pydetecdiv.domain.ROI import ROI
 from pydetecdiv.domain.tools.data import RoiDataReader
-from pydetecdiv.utils import hdf5
+from pydetecdiv.utils import hdf5, check
 
 
 class ROIseqHDF5creator(Tool):
@@ -43,7 +43,7 @@ class ROIseqHDF5creator(Tool):
 
         self.parameters.update_parameters([
             FileParameter(name='hdf5_file', label='', require_existing=False, default=self.update_file, ),
-            CheckParameter(name='annotations', label='Annotated ROIs', default=True),
+            CheckParameter(name='annotations', label='Annotated ROIs only', default=check.if_annotations),
             ChoiceParameter(name='classification', label='Classes', updater=self.update_classification),
             IntParameter(name='seqlen', label='Sequence length', default=16),
             ChoiceParameter(name='red_channel', label='Red', default='0', updater=self.update_channels),
