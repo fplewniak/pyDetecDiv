@@ -65,6 +65,17 @@ def paramwidget_args(parameter: Parameter, param_args: dict[str, Any] | None) ->
     return {}
 
 
+class ParameterWidget:
+    def __init__(self, parent, enable: Callable | None = None, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.enabling_function = enable
+
+    def check_enable(self):
+        if self.enabling_function is not None:
+            return self.enabling_function()
+        return True
+
+
 class GroupBox(QGroupBox):
     """
     an extension of QGroupBox class
@@ -124,7 +135,8 @@ class GroupBox(QGroupBox):
             self.layout.addWidget(sub_box)
         if parameters is not None:
             for parameter in parameters:
-                sub_box.addOption(parameter, **paramwidget_args(parameter, widget_args))
+                option = sub_box.addOption(parameter, **paramwidget_args(parameter, widget_args))
+                self.check_enable(option)
         return sub_box
 
     def addOption(self, parameter: Parameter | None = None, label: bool = True, widget: Type[QWidget] | None = None,
@@ -144,6 +156,11 @@ class GroupBox(QGroupBox):
         """
         Method to add a widget to the Group box. This method should be implemented by subclasses
         """
+
+    def check_enable(self, option):
+
+        if hasattr(option, 'check_enable'):
+            option.setEnabled(option.check_enable())
 
     def __getattr__(self, item: str) -> QWidget:
         """
@@ -231,7 +248,7 @@ class ParametersFormGroupBox(GroupBox):
             self.layout.addRow(self.option[parameter.name])
         else:
             self.layout.addRow(QLabel(parameter.label), self.option[parameter.name])
-        # parameter.should_be_saved = True
+        self.check_enable(self.option[parameter.name])
         return self.option[parameter.name]
 
     def setRowVisible(self, index: int, on: bool = True) -> None:
@@ -244,14 +261,14 @@ class ParametersFormGroupBox(GroupBox):
         self.layout.setRowVisible(index, on)
 
 
-class ComboBox(QComboBox):
+class ComboBox(ParameterWidget, QComboBox):
     """
     an extension of the QComboBox class with a custom model/view architecture
     """
 
     def __init__(self, parent: QWidget, qmodel: DictItemModel = DictItemModel(), editable: bool = False,
-                 enabled: bool = True, **kwargs: dict[str, Any]) -> None:
-        super().__init__(parent)
+                 enable: Callable | None = None, enabled: bool = True, **kwargs: dict[str, Any]) -> None:
+        super().__init__(parent, enable=enable)
         if qmodel.rows() is not None:
             self.addItemDict(qmodel.rows())
         self.setModel(qmodel)
@@ -346,14 +363,15 @@ class ComboBox(QComboBox):
         self.setCurrentText(value)
 
 
-class ListView(QListView):
+class ListView(ParameterWidget, QListView):
     """
     an extension of the QListView class providing generic methods for managing lists
     """
 
     def __init__(self, parent: QWidget, qmodel: StringListModel = StringListModel(), height: int | None = None,
-                 multiselection: bool = False, enabled: bool = True, **kwargs: dict[str, Any]) -> None:
-        super().__init__(parent)
+                 multiselection: bool = False, enable: Callable | None = None, enabled: bool = True,
+                 **kwargs: dict[str, Any]) -> None:
+        super().__init__(parent, enable=enable)
         self.multiselection = multiselection
         if multiselection:
             self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
@@ -467,14 +485,15 @@ class ListView(QListView):
         self.qmodel.clear()
 
 
-class DictListView(QListView):
+class DictListView(ParameterWidget, QListView):
     """
     An extension of ListView for dictionaries: the key (str) is displayed on the view, and the value is the corresponding data. This
     allows to use a ListView to manage and select any kind of object that has a name.
     """
     def __init__(self, parent: QWidget, qmodel: DictItemModel = DictItemModel(), height: int | None = None,
-                 multiselection: bool = False, enabled: bool = True, **kwargs: dict[str, Any]) -> None:
-        super().__init__(parent)
+                 multiselection: bool = False, enabled: bool = True, enable: Callable | None = None,
+                 **kwargs: dict[str, Any]) -> None:
+        super().__init__(parent, enable=enable)
         if height is not None:
             self.setFixedHeight(height)
         if qmodel is not None and qmodel.items() is not None:
@@ -498,14 +517,14 @@ class DictListView(QListView):
         return [self.qmodel.values()[idx.row()] for idx in self.selectionModel().selectedRows()]
 
 
-class LineEdit(QLineEdit):
+class LineEdit(ParameterWidget, QLineEdit):
     """
     an extension of QLineEdit class
     """
 
     def __init__(self, parent: QWidget, qmodel: ItemModel = ItemModel(), editable: bool = True, enabled: bool = True,
-                 **kwargs: dict[str, Any]) -> None:
-        super().__init__(parent)
+                 enable: Callable | None = None, **kwargs: dict[str, Any]) -> None:
+        super().__init__(parent, enable=enable)
         self.setEditable(editable)
         self.mapper = QDataWidgetMapper(self)
         self.setModel(qmodel)
@@ -672,8 +691,8 @@ class PushButton(QPushButton):
     an extension of QPushButton class
     """
 
-    def __init__(self, parent: QWidget, text: str, icon: QIcon | None = None, flat: bool = False,
-                 enabled: bool = True) -> None:
+    def __init__(self, parent: QWidget, text: str = '', icon: QIcon | None = None, flat: bool = False,
+                 enabled: bool = True, ) -> None:
         if icon is None:
             super().__init__(text, parent)
         else:
@@ -687,7 +706,7 @@ class ExpandCollapseButton(PushButton):
     an extension of PushButton class to control collapsible group boxes
     """
 
-    def __init__(self, parent: QWidget, text: str | None = None, show: bool = True) -> None:
+    def __init__(self, parent: QWidget, text: str = '', show: bool = True) -> None:
         super().__init__(parent, text=text, icon=QIcon(':icons/show'), flat=True)
         self.group_box: GroupBox | None = None
         self.clicked.connect(self.toggle)
@@ -755,14 +774,14 @@ class ExpandCollapseButton(PushButton):
         return self.group_box.addOption(parameter, label, widget, **kwargs)
 
 
-class RadioButton(QRadioButton):
+class RadioButton(ParameterWidget, QRadioButton):
     """
     an extension of the QRadioButton class
     """
 
     def __init__(self, parent: QWidget, qmodel: ItemModel = ItemModel(), exclusive: bool = True, enabled: bool = True,
-                 **kwargs: dict[str, Any]) -> None:
-        super().__init__(parent)
+                 enable: Callable | None = None, **kwargs: dict[str, Any]) -> None:
+        super().__init__(parent, enable=enable)
         self.setAutoExclusive(exclusive)
         self.mapper = QDataWidgetMapper(self)
         self.setModel(qmodel)
@@ -801,14 +820,15 @@ class RadioButton(QRadioButton):
         self.mapper.model().set_value(checked)
 
 
-class SpinBox(QSpinBox):
+class SpinBox(ParameterWidget, QSpinBox):
     """
     an extension of the QSpinBox class
     """
 
     def __init__(self, parent: QWidget, qmodel: ItemModel = ItemModel(), minimum: int = 1, maximum: int = 4096,
-                 single_step: int = 1, adaptive: bool = False, enabled: bool = True, **kwargs: dict[str, Any]) -> None:
-        super().__init__(parent)
+                 single_step: int = 1, adaptive: bool = False, enabled: bool = True, enable: Callable | None = None,
+                 **kwargs: dict[str, Any]) -> None:
+        super().__init__(parent, enable=enable)
         self.setRange(minimum, maximum)
         self.setSingleStep(single_step)
         if adaptive:
@@ -840,15 +860,15 @@ class SpinBox(QSpinBox):
         return self.valueChanged
 
 
-class DoubleSpinBox(QDoubleSpinBox):
+class DoubleSpinBox(ParameterWidget, QDoubleSpinBox):
     """
     an extension of the QDoubleSpinBox class
     """
 
     def __init__(self, parent: QWidget, qmodel: ItemModel = ItemModel(), minimum: float = 0.1, maximum: float = 1.0,
                  decimals: int = 15, single_step: float = 0.1, adaptive: bool = False, enabled: bool = True,
-                 **kwargs: dict[str, Any]) -> None:
-        super().__init__(parent)
+                 enable: Callable | None = None, **kwargs: dict[str, Any]) -> None:
+        super().__init__(parent, enable=enable)
         self.setRange(minimum, maximum)
         self.setDecimals(decimals)
         self.setSingleStep(single_step)
@@ -1011,8 +1031,9 @@ class EditableTableView(TableView):
     """
     A table view that can be edited
     """
-    def __init__(self, parent, qmodel: EditableTableModel = EditableTableModel(polars.DataFrame()), enabled=True, **kwargs):
-        super().__init__(parent, qmodel, enabled, **kwargs)
+    def __init__(self, parent, qmodel: EditableTableModel = EditableTableModel(polars.DataFrame()), enabled=True,
+                 **kwargs):
+        super().__init__(parent, qmodel, enabled,  **kwargs)
         if qmodel is not None:
             self.setModel(qmodel)
             self._model: EditableTableModel = qmodel
