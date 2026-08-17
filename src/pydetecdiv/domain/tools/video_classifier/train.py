@@ -76,6 +76,8 @@ class VideoClassifierTrainer(ModelTrainer):
         run = self.tool.save_run()
         pprint(run)
 
+        print(f"Start training: {datetime.now().strftime('%H:%M:%S')}")
+
         for epoch in range(self.tool.parameters['epochs'].value):
             self.training_loop(training_dataloader, validation_dataloader, model, loss_fn, optimizer, device, train_stats)
             print(f"Epoch {epoch + 1}/{self.tool.parameters['epochs'].value}, "
