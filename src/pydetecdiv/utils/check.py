@@ -1,6 +1,8 @@
 """
 Functions for the determination of enable status of actions
 """
+import glob
+import os
 from typing import Callable
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
@@ -147,4 +149,14 @@ def if_drift_correction() -> bool:
     if project_exists(PyDetecDiv.project_name):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             return any((ir.drift is not None) for ir in project.get_objects('ImageResource'))
+    return False
+
+
+def if_exists_roi_hdf5() -> bool:
+    """
+    Return True if the project contains a HDF5 ROI file
+    """
+    if project_exists(PyDetecDiv.project_name):
+        file_paths = glob.glob(os.path.join(PyDetecDiv.tools['cnrs.plewniak.roiseqhdf5creator'].working_dir, '*.h5'))
+        return bool(file_paths)
     return False
