@@ -1,12 +1,12 @@
 """
-Classes for handling models that are used to store Parameters data and ensure their synchronization with GUI widgets
+Classes for handling models that are used to store Parameters data and ensure their synchronisation with GUI widgets
 """
 import json
 from typing import Any, Generic, TypeVar
 
 import polars
 from PySide6.QtCore import (QModelIndex, Qt, QStringListModel, QAbstractTableModel, QPersistentModelIndex,
-                            QItemSelectionModel, QItemSelection)
+                            QItemSelectionModel, QItemSelection, SignalInstance)
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 
 GenericModel = TypeVar('GenericModel')
@@ -253,6 +253,9 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
             return None
 
     def value_index(self) -> int:
+        """
+        Return the index of the selection (or the last selected value if multiple selections are allowed)
+        """
         try:
             return self.get_selection()[-1]
         except IndexError:
@@ -374,10 +377,17 @@ class DictItemModel(StandardItemModel, Generic[GenericModel]):
         """
         return [idx.row() for idx in self.selection_model.selectedIndexes()]
 
+    @property
+    def selection_changed(self) -> SignalInstance:
+        """
+        Indicates when selection has changed
+        """
+        return self.selection_model.selectionChanged
+
 
 class TableModel(QAbstractTableModel):
     """
-    A table model based on a polars dataframe. This model can be used to visualize non-editable tabular data
+    A table model based on a polars dataframe. This model can be used to visualise non-editable tabular data
     """
 
     def __init__(self, data: polars.DataFrame):
@@ -447,7 +457,7 @@ class TableModel(QAbstractTableModel):
 
 class EditableTableModel(TableModel):
     """
-    A table model based on a polars dataframe. This model can be used to visualize editable tabular data
+    A table model based on a polars dataframe. This model can be used to visualise editable tabular data
     """
 
     def __init__(self, data: polars.DataFrame, editable_col=None, editable_row=None):

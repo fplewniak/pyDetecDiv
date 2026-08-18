@@ -3,7 +3,7 @@ Module defining the different types of parameters that may be needed to store in
 be specified using GUI widgets which are synchronized thanks to a shared model
 """
 import json
-from typing import Callable, Any, cast, TypeVar, Generic
+from typing import Callable, Any, cast, TypeVar, Generic, ItemsView
 
 from PySide6.QtCore import SignalInstance
 
@@ -16,12 +16,12 @@ class Parameter:
     Generic class defining the general behaviour of parameters
     """
 
-    def __init__(self, name: str, label: str | None = None, default: Any = None, validator: Callable[[Any], bool] | None = None,
+    def __init__(self, name: str, label: str = '', default: Any = None, validator: Callable[[Any], bool] | None = None,
                  groups: set[str] | None = None, updater: Callable | None = None, commands: set[str] | None = None,
                  **kwargs: dict[str, Any]) -> None:
         super().__init__()
         self.name: str = name
-        self.label: str | None = label
+        self.label: str = label
         self._default: Any = default
         self.validator: Callable[[Any], bool] | None = validator
         self.updater: Callable | None = updater
@@ -214,7 +214,7 @@ class ItemParameter(Parameter):
     Class representing a parameter holding any kind of single value parameter (item).
     """
 
-    def __init__(self, name: str, label: str | None = None, default: Any | None = None,
+    def __init__(self, name: str, label: str = '', default: Any | None = None,
                  validator: Callable[..., bool] | None = None, groups: set[str] | None = None, updater: Callable | None = None,
                  commands: set[str] | None = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
@@ -227,7 +227,7 @@ class NumParameter(ItemParameter, Generic[Num]):
     """
     Class representing a parameter holding a number.
     """
-    def __init__(self, name: str, label: str | None = None, default: int | float | None = None, minimum: int | float | None = None,
+    def __init__(self, name: str, label: str = '', default: int | float | None = None, minimum: int | float | None = None,
                  maximum: int | float | None = None, validator: Callable[[Num], bool] | None = None,
                  groups: set[str] | None = None, updater: Callable | None = None, commands: set[str] | None = None,
                  **kwargs: dict[str, Any]) -> None:
@@ -297,7 +297,7 @@ class IntParameter(NumParameter[int]):
     Class representing a parameter holding a integer number.
     """
 
-    def __init__(self, name: str, label: str | None = None, default: int = 1, validator: Callable[[int], bool] | None = None,
+    def __init__(self, name: str, label: str = '', default: int = 1, validator: Callable[[int], bool] | None = None,
                  minimum: int = 1, maximum: int = 4096, groups: set[str] | None = None, updater: Callable | None = None,
                  commands: set[str] | None = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
@@ -330,7 +330,7 @@ class FloatParameter(NumParameter[float]):
     Class representing a parameter holding a float number.
     """
 
-    def __init__(self, name: str, label: str | None = None, default: float = 0.0,
+    def __init__(self, name: str, label: str = '', default: float = 0.0,
                  validator: Callable[[float], bool] | None = None, minimum: float = 0.0, maximum: float = 1.0,
                  groups: set[str] | None = None, updater: Callable | None = None, commands: set[str] | None = None,
                  **kwargs: dict[str, Any]) -> None:
@@ -354,7 +354,7 @@ class StringParameter(ItemParameter):
     Class representing a parameter holding text.
     """
 
-    def __init__(self, name: str, label: str | None = None, default: str = '', validator: Callable[[str], bool] | None = None,
+    def __init__(self, name: str, label: str = '', default: str = '', validator: Callable[[str], bool] | None = None,
                  groups: set[str] | None = None, updater: Callable | None = None, commands: set[str] | None = None,
                  **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
@@ -365,7 +365,7 @@ class StringListParameter(Parameter):
     """
     A parameter defining a list of strings
     """
-    def __init__(self, name: str, label: str | None = None, default: list[str] | None = None,
+    def __init__(self, name: str, label: str = '', default: list[str] | None = None,
                  validator: Callable[[str], bool] | None = None, groups: set[str] | None = None, updater: Callable | None = None,
                  commands: set[str] | None = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
@@ -390,7 +390,7 @@ class FileParameter(ItemParameter):
     """
     A parameter for choosing a file path.
     """
-    def __init__(self, name: str, label: str | None = None, default: str | Callable = '',
+    def __init__(self, name: str, label: str = '', default: str | Callable = '',
                  validator: Callable[[str], bool] | None = None, groups: set[str]  | None = None, updater: Callable | None = None,
                  commands: set[str]  | None = None, require_existing: bool = False, **kwargs) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
@@ -402,7 +402,7 @@ class DirParameter(ItemParameter):
     """
     A parameter for choosing a directory path.
     """
-    def __init__(self, name: str, label: str | None = None, default: str | Callable = '.',
+    def __init__(self, name: str, label: str = '', default: str | Callable = '.',
                  validator: Callable[[str], bool] | None = None, groups: set[str]  | None = None, updater: Callable | None = None,
                  commands: set[str]  | None = None, **kwargs) -> None:
         super().__init__(name=name, label=label, default=default, validator=validator, groups=groups, updater=updater,
@@ -431,7 +431,7 @@ class CheckParameter(ItemParameter):
     linked to CheckBox arranged in the same GroupBox and set to be mutually exclusive.
     """
 
-    def __init__(self, name: str, label: str | None = None, exclusive: bool = True,
+    def __init__(self, name: str, label: str = '', exclusive: bool = True,
                  default: str | int | float | bool | Callable | None = None, validator: Callable[[bool], bool] | None = None,
                  groups: set[str] | None = None, updater: Callable[..., None] | None = None, commands: set[str] | None = None,
                  **kwargs: dict[str, Any]) -> None:
@@ -453,7 +453,7 @@ class ChoiceParameter(Parameter):
     Class representing a parameter whose value is a selection among several options (items)
     """
 
-    def __init__(self, name: str, items: dict[str, object] | None = None, label: str | None = None,
+    def __init__(self, name: str, items: dict[str, object] | None = None, label: str = '',
                  default: str | int | float | bool | Callable | None = None, validator: Callable[[Any], bool] | None = None,
                  groups: set[str] | None = None, updater: Callable[..., None] | None = None, commands: set[str] | None= None,
                  multiselection: bool = False, all_values: bool = False, **kwargs: dict[str, Any]) -> None:
@@ -536,7 +536,7 @@ class ChoiceParameter(Parameter):
         return self.qmodel.values()
 
     @property
-    def items(self) -> dict[str, Any]:
+    def items(self) -> ItemsView[str, Any]:
         """
         Returns all choice items for this parameter as a dictionary with key = name/representation of the corresponding
         option, value = the actual object

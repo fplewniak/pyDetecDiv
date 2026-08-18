@@ -66,11 +66,17 @@ def paramwidget_args(parameter: Parameter, param_args: dict[str, Any] | None) ->
 
 
 class ParameterWidget:
+    """
+    Top parameter widget class, providing methods shared by all subclasses
+    """
     def __init__(self, parent, enable: Callable | None = None, **kwargs):
         super().__init__(parent, **kwargs)
         self.enabling_function = enable
 
     def check_enable(self):
+        """
+        Return the result of enabling function for the parameter widget, True if it should be enabled, False otherwise
+        """
         if self.enabling_function is not None:
             return self.enabling_function()
         return True
@@ -94,7 +100,7 @@ class GroupBox(QGroupBox):
     def parameter_widget_factory(self, parameter: Parameter, **kwargs) -> QWidget:
         """
         A factory method to create a parameter widget for a given parameter
-        :param parent: the parent for the created parameter widget
+
         :param parameter: the parameter
         :param kwargs: any additional keyword arguments passed to the created widget
         :return:
@@ -112,9 +118,9 @@ class GroupBox(QGroupBox):
         self.parameter_widgets[parameter.name] = parameter_widgets[parameter.type](parent=self, **parameter.kwargs(), **kwargs)
         return self.parameter_widgets[parameter.name]
 
-    def addSubBox(self, widget: Type[Self], expandable: bool = False, show: bool = True, title: str | None = None,
+    def addSubBox(self, widget: Type['GroupBox | ExpandCollapseButton'], expandable: bool = False, show: bool = True, title: str | None = None,
                   parameters: list | None = None, widget_args: dict[str, Any] | None = None,
-                  **kwargs: dict[str, Any]) -> 'Self | ExpandCollapseButton':
+                  **kwargs: dict[str, Any]) -> 'GroupBox | ExpandCollapseButton':
         """
         Adds a sub-box to the current GroupBox
 
@@ -144,7 +150,6 @@ class GroupBox(QGroupBox):
         """
         add an option to the current Form
 
-        :param enabled: whether this option is enabled
         :param parameter: the Parameter attached to the widget
         :param label: the label for the option
         :param widget: the widget to specify the option value, etc
@@ -157,8 +162,12 @@ class GroupBox(QGroupBox):
         Method to add a widget to the Group box. This method should be implemented by subclasses
         """
 
-    def check_enable(self, option):
+    def check_enable(self, option: QWidget) -> None:
+        """
+        Check whether the option widget should be enabled or not
 
+        :param option: the option widget to check
+        """
         if hasattr(option, 'check_enable'):
             option.setEnabled(option.check_enable())
 
@@ -198,7 +207,7 @@ class ParametersFormGroupBox(GroupBox):
         self.setLayout(self.layout)
         self.setVisible(show)
 
-    def addSubBox(self, widget: Type[GroupBox], expandable: bool = False, show: bool = True, title: str | None = None,
+    def addSubBox(self, widget: Type['GroupBox | ExpandCollapseButton'], expandable: bool = False, show: bool = True, title: str | None = None,
                   parameters: list | None = None, widget_args: dict[str, Any] | None = None,
                   **kwargs: dict[str, Any]) -> 'GroupBox | ExpandCollapseButton':
         """
@@ -229,7 +238,6 @@ class ParametersFormGroupBox(GroupBox):
         """
         add an option to the current Form
 
-        :param enabled: whether this option is enabled
         :param parameter: the Parameter attached to the widget
         :param label: the label for the option
         :param widget: the widget to specify the option value, etc
@@ -346,9 +354,9 @@ class ComboBox(ParameterWidget, QComboBox):
 
     def value(self) -> str | Any:
         """
-        method to standardize the way widget values from a form are returned
+        method to standardise the way widget values from a form are returned
 
-        :return: the current data if it can be json serialized or the current text of the selected item if it can't
+        :return: the current data if it can be JSON serialized or the current text of the selected item if it can't
         """
         if self.currentData() is not None:
             return self.currentData()
@@ -388,7 +396,7 @@ class ListView(ParameterWidget, QListView):
         """
         add items to the ComboBox as a dictionary
 
-        :param options: dictionary of options specifying labels and corresponding user data {label: userData, ...}
+        :param items: dictionary of options specifying labels and corresponding user data {label: userData, ...}
         """
         self.qmodel.add_items(items)
 
@@ -404,7 +412,7 @@ class ListView(ParameterWidget, QListView):
 
     def selection(self) -> list[Any]:
         """
-        method to standardize the way widget values from a form are returned
+        method to standardise the way widget values from a form are returned
 
         :return: the current data (if it is defined) or the current text of the selected item
         """
@@ -510,7 +518,7 @@ class DictListView(ParameterWidget, QListView):
 
     def selection(self) -> list[Any]:
         """
-        method to standardize the way widget values from a form are returned
+        method to standardise the way widget values from a form are returned
 
         :return: the current data (if it is defined) or the current text of the selected item
         """
@@ -567,7 +575,7 @@ class LineEdit(ParameterWidget, QLineEdit):
         """
         Sets the model for the LineEdit widget
 
-        :param model: the item model containing a str value
+        :param qmodel: the item model containing a str value
         """
         self.mapper.setModel(qmodel)
         self.mapper.addMapping(self, 0, b"text")
@@ -691,8 +699,10 @@ class PushButton(QPushButton):
     an extension of QPushButton class
     """
 
-    def __init__(self, parent: QWidget, text: str = '', icon: QIcon | None = None, flat: bool = False,
+    def __init__(self, parent: QWidget, text: str | None = '', icon: QIcon | None = None, flat: bool = False,
                  enabled: bool = True, ) -> None:
+        if text is None:
+            text = ''
         if icon is None:
             super().__init__(text, parent)
         else:
@@ -706,7 +716,7 @@ class ExpandCollapseButton(PushButton):
     an extension of PushButton class to control collapsible group boxes
     """
 
-    def __init__(self, parent: QWidget, text: str = '', show: bool = True) -> None:
+    def __init__(self, parent: QWidget, text: str | None = '', show: bool = True) -> None:
         super().__init__(parent, text=text, icon=QIcon(':icons/show'), flat=True)
         self.group_box: GroupBox | None = None
         self.clicked.connect(self.toggle)
@@ -748,15 +758,17 @@ class ExpandCollapseButton(PushButton):
             self.group_box.setVisible(True)
         self.parent().parent().fit_to_contents()
 
-    def addSubBox(self, widget: Type[Self], expandable: bool = False, show: bool = True, title: str | None = None,
+    def addSubBox(self, widget: Type['GroupBox | ExpandCollapseButton'], expandable: bool = False, show: bool = True, title: str | None = None,
                   parameters: list | None = None, widget_args: dict[str, Any] | None = None,
-                  **kwargs: dict[str, Any]) -> Self:
+                  **kwargs: dict[str, Any]) -> 'GroupBox | ExpandCollapseButton':
         """
         Add a sub box to the current collapsable group box
+        :param parameters: the list of parameters
         :param widget: the widget to add
         :param expandable: whether the widget is expandable or not
         :param show: whether the widget is shown or not
         :param title: the sub box title
+        :param widget_args: arguments passed to the widget
         :param kwargs: additional keyword arguments
         """
         return self.group_box.addSubBox(widget, expandable, show, title, parameters, widget_args, **kwargs)
@@ -767,7 +779,6 @@ class ExpandCollapseButton(PushButton):
         Add an option to the current collapsable group box
         :param parameter: the parameter to add
         :param label: the label to show
-        :param enabled: whether the option is enabled
         :param widget: the widget to show
         :param kwargs: additional keyword arguments
         """
@@ -792,7 +803,7 @@ class RadioButton(ParameterWidget, QRadioButton):
         """
         Sets the model for the radio button
 
-        :param model: the item model containing a bool value
+        :param qmodel: the item model containing a bool value
         """
         if qmodel is not None:
             self.mapper.setModel(qmodel)
@@ -841,7 +852,7 @@ class SpinBox(ParameterWidget, QSpinBox):
         """
         Sets the model for the spin box
 
-        :param model: the item model containing an int value
+        :param qmodel: the item model containing an int value
         """
         if qmodel is not None:
             self.mapper.setModel(qmodel)
@@ -936,7 +947,7 @@ class DoubleSpinBox(ParameterWidget, QDoubleSpinBox):
 
     def valueFromText(self, text: str) -> float:
         """
-        Returna float value correpsonding to the text
+        Return a float value corresponding to the text
         :param text: the text to convert
         """
         try:
@@ -1055,7 +1066,7 @@ class EditableTableView(TableView):
 
 class DialogButtonBox(QDialogButtonBox):
     """
-    A extension of QDialogButtonBox to add a button box
+    An extension of QDialogButtonBox to add a button box
     """
 
     def __init__(self, parent: QWidget,
