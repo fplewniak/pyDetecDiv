@@ -69,7 +69,7 @@ class ParameterWidget:
     """
     Top parameter widget class, providing methods shared by all subclasses
     """
-    def __init__(self, parent, enable: Callable | None = None, **kwargs):
+    def __init__(self, parent, enable: Callable | bool | None = None, **kwargs):
         super().__init__(parent, **kwargs)
         self.enabling_function = enable
 
@@ -78,7 +78,9 @@ class ParameterWidget:
         Return the result of enabling function for the parameter widget, True if it should be enabled, False otherwise
         """
         if self.enabling_function is not None:
-            return self.enabling_function()
+            if isinstance(self.enabling_function, Callable):
+                return self.enabling_function()
+            return self.enabling_function
         return True
 
 
@@ -275,7 +277,7 @@ class ComboBox(ParameterWidget, QComboBox):
     """
 
     def __init__(self, parent: QWidget, qmodel: DictItemModel = DictItemModel(), editable: bool = False,
-                 enable: Callable | None = None, enabled: bool = True, **kwargs: dict[str, Any]) -> None:
+                 enable: Callable | bool | None = None, enabled: bool = True, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent, enable=enable)
         if qmodel.rows() is not None:
             self.addItemDict(qmodel.rows())
@@ -286,7 +288,7 @@ class ComboBox(ParameterWidget, QComboBox):
         # self.qmodel.selection_changed.connect(self.setCurrentIndex)
         self.setCurrentIndex(self.qmodel.value_index())
         self.setEditable(editable)
-        self.setEnabled(enabled)
+        # self.setEnabled(enabled)
 
         self.view().setSelectionModel(qmodel.selection_model)
         self.qmodel.selection_model.selectionChanged.connect(self._on_selection_changed)
@@ -377,7 +379,7 @@ class ListView(ParameterWidget, QListView):
     """
 
     def __init__(self, parent: QWidget, qmodel: StringListModel = StringListModel(), height: int | None = None,
-                 multiselection: bool = False, enable: Callable | None = None, enabled: bool = True,
+                 multiselection: bool = False, enable: Callable | bool | None = None, enabled: bool = True,
                  **kwargs: dict[str, Any]) -> None:
         super().__init__(parent, enable=enable)
         self.multiselection = multiselection
@@ -390,7 +392,7 @@ class ListView(ParameterWidget, QListView):
         else:
             self.qmodel: StringListModel = StringListModel()
         self.setModel(self.qmodel)
-        self.setEnabled(enabled)
+        # self.setEnabled(enabled)
 
     def addItems(self, items: list[str]) -> None:
         """
@@ -499,7 +501,7 @@ class DictListView(ParameterWidget, QListView):
     allows to use a ListView to manage and select any kind of object that has a name.
     """
     def __init__(self, parent: QWidget, qmodel: DictItemModel = DictItemModel(), height: int | None = None,
-                 multiselection: bool = False, enabled: bool = True, enable: Callable | None = None,
+                 multiselection: bool = False, enabled: bool = True, enable: Callable | bool | None = None,
                  **kwargs: dict[str, Any]) -> None:
         super().__init__(parent, enable=enable)
         if height is not None:
@@ -514,7 +516,7 @@ class DictListView(ParameterWidget, QListView):
             self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
             self.qmodel.multiselection = True
         self.setModelColumn(0)
-        self.setEnabled(enabled)
+        # self.setEnabled(enabled)
 
     def selection(self) -> list[Any]:
         """
@@ -531,12 +533,12 @@ class LineEdit(ParameterWidget, QLineEdit):
     """
 
     def __init__(self, parent: QWidget, qmodel: ItemModel = ItemModel(), editable: bool = True, enabled: bool = True,
-                 enable: Callable | None = None, **kwargs: dict[str, Any]) -> None:
+                 enable: Callable | bool | None = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent, enable=enable)
         self.setEditable(editable)
         self.mapper = QDataWidgetMapper(self)
         self.setModel(qmodel)
-        self.setEnabled(enabled)
+        # self.setEnabled(enabled)
 
     @property
     def changed(self):
@@ -588,18 +590,18 @@ class PathChooser(QWidget):
     """
     A generic class providing the basic methods for file and directory choosers
     """
-    def __init__(self, parent: QWidget, qmodel: ItemModel = ItemModel(), editable: bool = True, enabled: bool = True,
+    def __init__(self, parent: QWidget, qmodel: ItemModel = ItemModel(), editable: bool = True, enable: bool = True,
                  min_width=350, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent)
         layout = QHBoxLayout()
-        self.path: LineEdit = LineEdit(self, qmodel=qmodel, editable=editable, enabled=enabled)
+        self.path: LineEdit = LineEdit(self, qmodel=qmodel, editable=editable, enabled=enable)
         self.path.setMinimumWidth(min_width)
         button_path = QPushButton(self)
         button_path.setIcon(QIcon(":icons/file_chooser"))
         layout.addWidget(self.path)
         layout.addWidget(button_path)
         self.setLayout(layout)
-        self.setEnabled(enabled)
+        self.setEnabled(enable)
         button_path.clicked.connect(self.select_path)
 
     def select_path(self) -> None:
@@ -700,7 +702,7 @@ class PushButton(QPushButton):
     """
 
     def __init__(self, parent: QWidget, text: str | None = '', icon: QIcon | None = None, flat: bool = False,
-                 enabled: bool = True, ) -> None:
+                 enable: bool = True, ) -> None:
         if text is None:
             text = ''
         if icon is None:
@@ -708,7 +710,7 @@ class PushButton(QPushButton):
         else:
             super().__init__(icon, text, parent)
         self.setFlat(flat)
-        self.setEnabled(enabled)
+        self.setEnabled(enable)
 
 
 class ExpandCollapseButton(PushButton):
@@ -791,13 +793,13 @@ class RadioButton(ParameterWidget, QRadioButton):
     """
 
     def __init__(self, parent: QWidget, qmodel: ItemModel = ItemModel(), exclusive: bool = True, enabled: bool = True,
-                 enable: Callable | None = None, **kwargs: dict[str, Any]) -> None:
+                 enable: Callable | bool | None = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(parent, enable=enable)
         self.setAutoExclusive(exclusive)
         self.mapper = QDataWidgetMapper(self)
         self.setModel(qmodel)
         self.toggled.connect(self.on_toggled)
-        self.setEnabled(enabled)
+        # self.setEnabled(enabled)
 
     def setModel(self, qmodel: ItemModel) -> None:
         """
@@ -846,7 +848,7 @@ class SpinBox(ParameterWidget, QSpinBox):
             self.setStepType(QAbstractSpinBox.StepType.AdaptiveDecimalStepType)
         self.mapper = QDataWidgetMapper(self)
         self.setModel(qmodel)
-        self.setEnabled(enabled)
+        # self.setEnabled(enabled)
 
     def setModel(self, qmodel: ItemModel):
         """
@@ -887,7 +889,7 @@ class DoubleSpinBox(ParameterWidget, QDoubleSpinBox):
             self.setStepType(QAbstractSpinBox.StepType.AdaptiveDecimalStepType)
         self.mapper: QDataWidgetMapper = QDataWidgetMapper(self)
         self.setModel(qmodel)
-        self.setEnabled(enabled)
+        # self.setEnabled(enabled)
 
     def setModel(self, qmodel: ItemModel) -> None:
         """
@@ -974,7 +976,7 @@ class TableView(QTableView):
     an extension of the QTableView widget
     """
 
-    def __init__(self, parent: QWidget, qmodel: TableModel = TableModel(polars.DataFrame()), enabled=True, **kwargs):
+    def __init__(self, parent: QWidget, qmodel: TableModel = TableModel(polars.DataFrame()), enable=True, **kwargs):
         super().__init__(parent)
         if qmodel is not None:
             self.setModel(qmodel)
@@ -991,7 +993,7 @@ class TableView(QTableView):
         #     self.setModelColumn(0)
         #     self.currentIndexChanged.connect(self.model().set_selection)
         #     self.model().selection_changed.connect(self.setCurrentIndex)
-        self.setEnabled(enabled)
+        self.setEnabled(enable)
 
     def setModel(self, model: TableModel, /) -> None:
         """

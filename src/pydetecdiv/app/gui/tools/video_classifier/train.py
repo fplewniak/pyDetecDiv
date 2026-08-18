@@ -75,7 +75,7 @@ class TrainModelDialog(ToolDialog):
                                              tool.parameters.seq_len,
                                              ],
                                          widget_args={
-                                             'num_test': {'enabled': False},
+                                             'num_test': {'enable': False},
                                              }
                                          )
 
