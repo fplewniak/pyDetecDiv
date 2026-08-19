@@ -4,6 +4,7 @@ from typing import cast
 import numpy as np
 import pandas as pd
 import cv2 as cv
+from skimage.registration import phase_cross_correlation
 from vidstab import VidStab
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
@@ -37,7 +38,7 @@ class DriftCorrection(Tool):
                 commands={'compute_drift'},
                 parameters=[
                     ChoiceParameter(name='FOVs', label='FOV', updater=self.update_fov_list, multiselection=True),
-                    ChoiceParameter(name='method', label='Method', default='vidstab',
+                    ChoiceParameter(name='method', label='Method', default='phase correlation',
                                     items={'vidstab': None, 'phase correlation': None})
                     ])
 
@@ -74,7 +75,7 @@ class DriftCorrection(Tool):
         for fov in fov_list:
             match self.parameters.method.value:
                 case 'phase correlation':
-                    for i in self.compute_drift_phase_correlation_cv2(fov):
+                    for i in self.compute_drift_phase_cross_correlation(fov):
                         yield i
                 case 'vidstab':
                     for i in self.compute_drift_vidstab(fov):
@@ -109,6 +110,30 @@ class DriftCorrection(Tool):
             self.count += 1
             yield self.count
         df.cumsum(axis=0)
+        self.drift[fov.name] = pd.concat([pd.DataFrame([[0, 0]], columns=['dx', 'dy']), df], ignore_index=True)
+
+    def compute_drift_phase_cross_correlation(self, fov: FOV, Z: int = 0, C: int = 0):
+        """
+        Compute the cumulative transforms (dx, dy) to apply in order to correct the drift using phase cross correlation
+
+        :param fov: the FOV to compute drift correction for
+        :param Z: the layer index
+        :type Z: int
+        :param C: the channel index
+        :type C: int
+        :return: the cumulative drift transforms dx, dy, dr
+        :rtype: pandas DataFrame
+        """
+        df = pd.DataFrame(columns=['dx', 'dy'])
+        for frame in range(1, fov.sizeT):
+        # for frame in range(1, 10):
+            (dy, dx), error, diffphase = phase_cross_correlation(fov.image(T=0, Z=Z, C=C, imgdtype=ImgDType.float64),
+                                                              fov.image(T=frame, Z=Z, C=C, imgdtype=ImgDType.float64),
+                                                              upsample_factor=10, overlap_ratio=0.9)
+            df.loc[len(df)] = (-dx, -dy)
+            self.count += 1
+            yield self.count
+        # df.cumsum(axis=0)
         self.drift[fov.name] = pd.concat([pd.DataFrame([[0, 0]], columns=['dx', 'dy']), df], ignore_index=True)
 
     def compute_drift_vidstab(self, fov: FOV, Z: int = 0, C: int = 0, smoothing_window: int = 1):

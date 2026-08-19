@@ -21,15 +21,15 @@ class ComputeDriftDialog(ToolDialog):
                                            widget_args={'FOVs': {'widget': DictListView}}
                                            )
 
-        # self.method_box = self.addGroupBox('Method',
-        #                                    parameters=[self.tool.parameters.method],
-        #                                    )
+        self.method_box = self.addGroupBox('Method',
+                                           parameters=[self.tool.parameters.method],
+                                           )
 
         self.button_box = self.addButtonBox()
 
         self.arrangeWidgets([
             self.select_FOV,
-            # self.method_box,
+            self.method_box,
             self.button_box
             ])
 
