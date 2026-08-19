@@ -80,6 +80,10 @@ class DomainSpecificObject:
             self.id_ = self.project.save(self)
         return self
 
+    def save(self):
+        _ = self.project.save(self)
+        return self
+
     def commit(self) -> None:
         """
         Commit changes

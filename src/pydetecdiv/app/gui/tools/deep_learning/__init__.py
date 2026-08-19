@@ -20,15 +20,16 @@ def plot_training_results(train_stats: ClassifierTrainingStats) -> None:
 
     :param train_stats: the statistics from training process
     """
-    module_name, history = train_stats.model_name, train_stats.history
-    tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {module_name}')
-    tab.project_name = PyDetecDiv.project_name
-    history_plot = plot_history(history)
-    tab.addTab(history_plot, 'Training history')
-    tab.setCurrentWidget(history_plot)
+    if train_stats.metrics_values:
+        module_name, history = train_stats.model_name, train_stats.history
+        tab = PyDetecDiv.main_window.add_tabbed_window(f'{PyDetecDiv.project_name} / {module_name}')
+        tab.project_name = PyDetecDiv.project_name
+        history_plot = plot_history(history)
+        tab.addTab(history_plot, 'Training history')
+        tab.setCurrentWidget(history_plot)
 
-    interactive = plot_interactive_history(train_stats)
-    tab.addTab(interactive, 'Interactive history')
+        interactive = plot_interactive_history(train_stats)
+        tab.addTab(interactive, 'Interactive history')
 
 
 def plot_interactive_history(train_stats: ClassifierTrainingStats) -> QFrame:
