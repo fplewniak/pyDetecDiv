@@ -80,35 +80,41 @@ class VideoClassifierTrainer(ModelTrainer):
 
         print(f"Start training: {datetime.now().strftime('%H:%M:%S')}")
 
-        for epoch in range(self.tool.parameters['epochs'].value):
-            self.training_loop(training_dataloader, validation_dataloader, model, loss_fn, optimizer, device, train_stats)
-            print(f"Epoch {epoch + 1}/{self.tool.parameters['epochs'].value}, "
-                  f"Training Loss: {train_stats.history.loss[-1]:.4f}, "
-                  f"Validation Loss: {train_stats.history.val_loss[-1]:.4f}, "
-                  f"{main_metric}: {train_stats.history.metric_history(main_metric)[-1]:.3f}, "
-                  f"Val {main_metric}: {train_stats.history.val_metric_history(main_metric)[-1]:.3f}, "
-                  f"learning rate: {main_scheduler.get_last_lr()[0]:0.2e}, "
-                  f" -- ({datetime.now().strftime('%H:%M:%S')})")
+        try:
+            for epoch in range(self.tool.parameters['epochs'].value):
+                self.training_loop(training_dataloader, validation_dataloader, model, loss_fn, optimizer, device, train_stats)
+                print(f"Epoch {epoch + 1}/{self.tool.parameters['epochs'].value}, "
+                      f"Training Loss: {train_stats.history.loss[-1]:.4f}, "
+                      f"Validation Loss: {train_stats.history.val_loss[-1]:.4f}, "
+                      f"{main_metric}: {train_stats.history.metric_history(main_metric)[-1]:.3f}, "
+                      f"Val {main_metric}: {train_stats.history.val_metric_history(main_metric)[-1]:.3f}, "
+                      f"learning rate: {main_scheduler.get_last_lr()[0]:0.2e}, "
+                      f" -- ({datetime.now().strftime('%H:%M:%S')})")
 
-            if train_stats.is_best_val_loss(epoch):
-                checkpoint_filepath = os.path.join(self.tool.checkpoints_path(run), f'epoch{epoch}_best_loss.pt')
-                model_scripted = torch.jit.script(model)
-                model_scripted.save(checkpoint_filepath)
-                print(f"Saving best model at epoch {epoch + 1} with val loss {train_stats.history.val_loss[-1]:.4f}"
-                      f" and train loss {train_stats.history.loss[-1]:.4f}")
+                if train_stats.is_best_val_loss(epoch):
+                    checkpoint_filepath = os.path.join(self.tool.checkpoints_path(run), f'epoch{epoch}_best_loss.pt')
+                    model_scripted = torch.jit.script(model)
+                    model_scripted.save(checkpoint_filepath)
+                    print(f"Saving best model at epoch {epoch + 1} with val loss {train_stats.history.val_loss[-1]:.4f}"
+                          f" and train loss {train_stats.history.loss[-1]:.4f}")
 
-            main_scheduler.step()
-            if reduce_on_plateau is not None:
-                reduce_on_plateau.step(train_stats.history.val_loss[-1])
+                main_scheduler.step()
+                if reduce_on_plateau is not None:
+                    reduce_on_plateau.step(train_stats.history.val_loss[-1])
 
-        checkpoint_filepath = os.path.join(self.tool.checkpoints_path(run), f'last_epoch{epoch}.pt')
-        model_scripted = torch.jit.script(model)
-        model_scripted.save(checkpoint_filepath)
+            checkpoint_filepath = os.path.join(self.tool.checkpoints_path(run), f'last_epoch{epoch}.pt')
+            model_scripted = torch.jit.script(model)
+            model_scripted.save(checkpoint_filepath)
+            del model_scripted
+        except torch.OutOfMemoryError as err:
+            print(err)
+            run.key_val.update({'error': 'Run aborted due to OutOfMemoryError'})
+            run.save().commit()
 
         training_dataset.close()
         validation_dataset.close()
 
-        del model, model_scripted, optimizer, loss_fn, training_dataloader, validation_dataloader
+        del model, optimizer, loss_fn, training_dataloader, validation_dataloader
         # train_stats.metrics_to_cpu()
         gc.collect()
         torch.cuda.empty_cache()
