@@ -25,21 +25,23 @@ class Run(DomainSpecificObject):
         self.key_val = key_val
         self.validate()
 
-    def filter(self, commands: list[str] | None = None, has_parameters: list[str] | None = None,
+    def filter(self, tools: list[str] | None = None, commands: list[str] | None = None, has_parameters: list[str] | None = None,
                has_key_val: list[str] | None = None) -> bool:
         """
         Checks run against filter by commands, parameters and key val
 
+        :param tools: the list of tools to filter
         :param commands: the list of commands
         :param has_parameters: the list of parameters
         :param has_key_val: the list of keys in key_val
         :return: the result of the filter
         """
+        tool_filter = tools is None or self.tool_name in tools
         command_filter = commands is None or self.command in commands
         param_filter = has_parameters is None or all(key in self.parameters.keys() for key in has_parameters)
         key_val_filter = has_key_val is None or (
                 self.key_val is not None and all(key in self.key_val.keys() for key in has_key_val))
-        return command_filter and param_filter and key_val_filter
+        return tool_filter and command_filter and param_filter and key_val_filter
 
     def record(self, no_id: bool = False) -> dict[str, Any]:
         """
