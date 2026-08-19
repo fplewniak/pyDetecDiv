@@ -74,6 +74,8 @@ class VideoClassifierTrainer(ModelTrainer):
         main_scheduler, reduce_on_plateau = set_schedulers(parameters=self.tool.parameters, optimizer=optimizer)
 
         run = self.tool.save_run()
+        run.key_val.update({'checkpoints': self.tool.checkpoints_path(run)})
+        run.save().commit()
         pprint(run)
 
         print(f"Start training: {datetime.now().strftime('%H:%M:%S')}")
