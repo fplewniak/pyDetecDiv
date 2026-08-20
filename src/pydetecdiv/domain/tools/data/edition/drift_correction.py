@@ -1,6 +1,7 @@
 import os
 from typing import cast
 
+import numpy as np
 import pandas as pd
 import cv2 as cv
 
@@ -36,8 +37,11 @@ class DriftCorrection(Tool):
                 parameters=[
                     ChoiceParameter(name='FOVs', label='FOV', updater=self.update_fov_list, multiselection=True),
                     ChoiceParameter(name='method', label='Method', default='optical flow',
-                                    items={'optical flow': None}
-                                    # items={'vidstab': None, 'phase correlation cv2': None, 'phase correlation skimage': None, 'optical flow': None}
+                                    items={'optical flow': None,
+                                           'DIS optical flow ultrafast': None,
+                                           'DIS optical flow fast': None,
+                                           'DIS optical flow': None,
+                                           }
                                     )
                     ])
 
@@ -76,15 +80,15 @@ class DriftCorrection(Tool):
                 case 'optical flow':
                     for i in self.compute_drift_optical_flow(fov):
                         yield i
-                # case 'phase correlation cv2':
-                #     for i in self.compute_drift_phase_correlation_cv2(fov):
-                #         yield i
-                # case 'phase correlation skimage':
-                #     for i in self.compute_drift_phase_cross_correlation(fov):
-                #         yield i
-                # case 'vidstab':
-                #     for i in self.compute_drift_vidstab(fov):
-                #         yield i
+                case 'DIS optical flow ultrafast':
+                    for i in self.compute_drift_disoptical(fov, cv.DISOPTICAL_FLOW_PRESET_ULTRAFAST):
+                        yield i
+                case 'DIS optical flow fast':
+                    for i in self.compute_drift_disoptical(fov, cv.DISOPTICAL_FLOW_PRESET_FAST):
+                        yield i
+                case 'DIS optical flow':
+                    for i in self.compute_drift_disoptical(fov, cv.DISOPTICAL_FLOW_PRESET_MEDIUM):
+                        yield i
             image_resource = fov.image_resource()
             if image_resource.key_val is None:
                 image_resource.key_val = {}
@@ -95,6 +99,25 @@ class DriftCorrection(Tool):
             image_resource.key_val.update({'drift': drift_file, 'drift method': self.parameters.method.value})
             image_resource.validate()
             image_resource.project.commit()
+
+    def compute_drift_disoptical(self, fov: FOV, Z: int = 0, C: int = 0, preset: int = cv.DISOPTICAL_FLOW_PRESET_ULTRAFAST):
+        df = pd.DataFrame(columns=['dx', 'dy'])
+        dis = cv.DISOpticalFlow_create(preset)
+        dis.setVariationalRefinementIterations(0)
+        dis.setUseSpatialPropagation(True)
+
+        for frame in range(1, fov.sizeT):
+            flow = dis.calc(fov.image(T=0, Z=Z, C=C, imgdtype=ImgDType.uint8),
+                            fov.image(T=frame, Z=Z, C=C, imgdtype=ImgDType.uint8), None)
+            dx = np.median(flow[..., 0])
+            dy = np.median(flow[..., 1])
+            df.loc[len(df)] = (dx, dy)
+            self.count += 1
+            yield self.count
+
+        # self.drift[fov.name] = pd.concat([pd.DataFrame([[0, 0]], columns=['dx', 'dy']), df.cumsum(axis=0)], ignore_index=True)
+        self.drift[fov.name] = pd.concat([pd.DataFrame([[0, 0]], columns=['dx', 'dy']), df], ignore_index=True)
+
 
     def compute_drift_optical_flow(self, fov: FOV, Z: int = 0, C: int = 0):
         df = pd.DataFrame(columns=['dx', 'dy'])
