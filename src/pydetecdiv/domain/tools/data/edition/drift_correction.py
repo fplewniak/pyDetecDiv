@@ -1,11 +1,8 @@
 import os
 from typing import cast
 
-import numpy as np
 import pandas as pd
 import cv2 as cv
-from skimage.registration import phase_cross_correlation
-from vidstab import VidStab
 
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 from pydetecdiv.app.gui.core.widgets import set_connections
@@ -38,8 +35,10 @@ class DriftCorrection(Tool):
                 commands={'compute_drift'},
                 parameters=[
                     ChoiceParameter(name='FOVs', label='FOV', updater=self.update_fov_list, multiselection=True),
-                    ChoiceParameter(name='method', label='Method', default='phase correlation',
-                                    items={'vidstab': None, 'phase correlation': None})
+                    ChoiceParameter(name='method', label='Method', default='optical flow',
+                                    items={'optical flow': None}
+                                    # items={'vidstab': None, 'phase correlation cv2': None, 'phase correlation skimage': None, 'optical flow': None}
+                                    )
                     ])
 
         set_connections({PyDetecDiv.app.project_selected: [self.update_fov_list, ]})
@@ -74,12 +73,18 @@ class DriftCorrection(Tool):
         self.count = 0
         for fov in fov_list:
             match self.parameters.method.value:
-                case 'phase correlation':
-                    for i in self.compute_drift_phase_cross_correlation(fov):
+                case 'optical flow':
+                    for i in self.compute_drift_optical_flow(fov):
                         yield i
-                case 'vidstab':
-                    for i in self.compute_drift_vidstab(fov):
-                        yield i
+                # case 'phase correlation cv2':
+                #     for i in self.compute_drift_phase_correlation_cv2(fov):
+                #         yield i
+                # case 'phase correlation skimage':
+                #     for i in self.compute_drift_phase_cross_correlation(fov):
+                #         yield i
+                # case 'vidstab':
+                #     for i in self.compute_drift_vidstab(fov):
+                #         yield i
             image_resource = fov.image_resource()
             if image_resource.key_val is None:
                 image_resource.key_val = {}
@@ -91,72 +96,49 @@ class DriftCorrection(Tool):
             image_resource.validate()
             image_resource.project.commit()
 
-    def compute_drift_phase_correlation_cv2(self, fov: FOV, Z: int = 0, C: int = 0):
-        """
-        Compute the cumulative transforms (dx, dy) to apply in order to correct the drift using phase correlation
-
-        :param Z: the layer index
-        :type Z: int
-        :param C: the channel index
-        :type C: int
-        :param max_mem: maximum memory use when using memory mapped TIFF
-        :type max_mem: int
-        :return: the cumulative drift transforms dx, dy, dr
-        :rtype: pandas DataFrame
-        """
+    def compute_drift_optical_flow(self, fov: FOV, Z: int = 0, C: int = 0):
         df = pd.DataFrame(columns=['dx', 'dy'])
         for frame in range(1, fov.sizeT):
-            df.loc[len(df)], _ = cv.phaseCorrelate(fov.image(T=frame - 1, Z=Z, C=C), fov.image(T=frame, Z=Z, C=C))
+            prev = fov.image(T=frame - 1, Z=Z, C=C, imgdtype=ImgDType.uint8)
+            curr = fov.image(T=frame, Z=Z, C=C, imgdtype=ImgDType.uint8)
+            points0 = cv.goodFeaturesToTrack(prev, maxCorners=200, qualityLevel=0.01, minDistance=30, blockSize=3,)
+
+            # if points0 is None or len(points0) < 10:
+            #     raise RuntimeError("Insufficient features.")
+
+            points1, status, errors = cv.calcOpticalFlowPyrLK(prev, curr, points0, None,)
+
+            good = status.ravel().astype(bool)
+
+            p0 = points0[good].reshape(-1, 2)
+            p1 = points1[good].reshape(-1, 2)
+
+            # if len(p0) < 10:
+            #     raise RuntimeError("Too few valid optical-flow tracks.")
+
+            # Estimate a 2-D affine transformation.
+            #
+            # Since we know the true transformation is translation only,
+            # we only retain the translation component.
+            matrix, inliers = cv.estimateAffinePartial2D( p0, p1,
+                    method=cv.RANSAC,
+                    ransacReprojThreshold=1.5,
+                    maxIters=1000,
+                    confidence=0.99,
+                    refineIters=10,
+                    )
+
+            if matrix is None:
+                raise RuntimeError("RANSAC failed.")
+
+            dx = matrix[0, 2]
+            dy = matrix[1, 2]
+            df.loc[len(df)] = (dx, dy)
+            # inlier_fraction = np.mean(inliers)
             self.count += 1
             yield self.count
-        df.cumsum(axis=0)
-        self.drift[fov.name] = pd.concat([pd.DataFrame([[0, 0]], columns=['dx', 'dy']), df], ignore_index=True)
 
-    def compute_drift_phase_cross_correlation(self, fov: FOV, Z: int = 0, C: int = 0):
-        """
-        Compute the cumulative transforms (dx, dy) to apply in order to correct the drift using phase cross correlation
-
-        :param fov: the FOV to compute drift correction for
-        :param Z: the layer index
-        :type Z: int
-        :param C: the channel index
-        :type C: int
-        :return: the cumulative drift transforms dx, dy, dr
-        :rtype: pandas DataFrame
-        """
-        df = pd.DataFrame(columns=['dx', 'dy'])
-        for frame in range(1, fov.sizeT):
-        # for frame in range(1, 10):
-            (dy, dx), error, diffphase = phase_cross_correlation(fov.image(T=0, Z=Z, C=C, imgdtype=ImgDType.float64),
-                                                              fov.image(T=frame, Z=Z, C=C, imgdtype=ImgDType.float64),
-                                                              upsample_factor=10, overlap_ratio=0.9)
-            df.loc[len(df)] = (-dx, -dy)
-            self.count += 1
-            yield self.count
-        # df.cumsum(axis=0)
-        self.drift[fov.name] = pd.concat([pd.DataFrame([[0, 0]], columns=['dx', 'dy']), df], ignore_index=True)
-
-    def compute_drift_vidstab(self, fov: FOV, Z: int = 0, C: int = 0, smoothing_window: int = 1):
-        """
-        Compute the cumulative transforms (dx, dy, dr) to apply in order to stabilize the time series and correct drift
-
-        :param Z: the layer index
-        :type Z: int
-        :param C: the channel index
-        :type C: int
-        :param max_mem: maximum memory use when using memory mapped TIFF
-        :type max_mem: int
-        :return: the cumulative drift transforms dx, dy, dr
-        :rtype: pandas DataFrame
-        """
-        stabilizer = VidStab()
-        for frame in range(0, fov.sizeT):
-            _ = stabilizer.stabilize_frame(
-                    input_frame=np.array(fov.image(T=frame, Z=Z, C=C, imgdtype=ImgDType.uint8)), smoothing_window=smoothing_window)
-            self.count += 1
-            yield self.count
-        df = pd.DataFrame(stabilizer.transforms, columns=('dx', 'dy', 'dr')).cumsum(axis=0)[['dx', 'dy']]
-        self.drift[fov.name] = pd.concat([pd.DataFrame([[0, 0]], columns=['dx', 'dy']), df], ignore_index=True)
+        self.drift[fov.name] = pd.concat([pd.DataFrame([[0, 0]], columns=['dx', 'dy']), df.cumsum(axis=0)], ignore_index=True)
 
     def apply_drift_correction(self, tool: Tool):
         """
