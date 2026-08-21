@@ -101,6 +101,16 @@ class DriftCorrection(Tool):
             image_resource.project.commit()
 
     def compute_drift_disoptical(self, fov: FOV, Z: int = 0, C: int = 0, preset: int = cv.DISOPTICAL_FLOW_PRESET_ULTRAFAST):
+        """
+        Compute drift using Dense Inverse Search (DIS) optical flow algorithm. The reference is the first frame to avoid error
+        accumulation.
+
+        :param fov: the FOV to compute the drift for
+        :param Z: the Z coordinate of the image
+        :param C: the channel
+        :param preset: the DIS algorithm preset (one of cv.DISOPTICAL_FLOW_PRESET_ULTRAFAST, cv.DISOPTICAL_FLOW_PRESET_FAST
+         or cv.DISOPTICAL_FLOW_PRESET_MEDIUM)
+        """
         df = pd.DataFrame(columns=['dx', 'dy'])
         dis = cv.DISOpticalFlow_create(preset)
         dis.setVariationalRefinementIterations(0)
@@ -120,6 +130,15 @@ class DriftCorrection(Tool):
 
 
     def compute_drift_optical_flow(self, fov: FOV, Z: int = 0, C: int = 0):
+        """
+        Compute drift using optical flow algorithm. Image shift is computed for each pair of successive frames and the actual
+        drift over time is determined by computing the cumulative sum of shifts. Parameters are those used by VidStab python
+        package. This method actually has a similar efficiency
+
+        :param fov: the FOV to compute the drift for
+        :param Z: the Z coordinate of the image
+        :param C: the channel
+        """
         df = pd.DataFrame(columns=['dx', 'dy'])
         for frame in range(1, fov.sizeT):
             prev = fov.image(T=frame - 1, Z=Z, C=C, imgdtype=ImgDType.uint8)
