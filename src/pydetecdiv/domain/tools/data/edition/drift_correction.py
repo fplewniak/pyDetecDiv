@@ -29,7 +29,7 @@ class DriftCorrection(Tool):
 
         self.commands.update([
             Command('compute_drift', 'Compute drift', self.run_drift_computation),
-            Command('apply_drift_correction', 'Apply drift correction', self.apply_drift_correction)
+            Command('apply_drift_correction', 'Apply drift correction', self.toggle_drift_correction)
             ])
 
         self.parameters.update_parameters(
@@ -182,7 +182,7 @@ class DriftCorrection(Tool):
 
         self.drift[fov.name] = pd.concat([pd.DataFrame([[0, 0]], columns=['dx', 'dy']), df.cumsum(axis=0)], ignore_index=True)
 
-    def apply_drift_correction(self, tool: Tool):
+    def toggle_drift_correction(self, tool: Tool):
         """
         Toggle the apply_drift global flag: True if correction should be applied, False otherwise
         """

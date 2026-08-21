@@ -118,11 +118,12 @@ class NDTiffImageResource(ImageResourceData):
                 else:
                     data = np.zeros((self.sizeY, self.sizeX), np.uint16)
             if drift and self.drift is not None:
-                data = cv2.warpAffine(np.array(data),
-                                      np.array(
-                                              [[1, 0, -self.drift.iloc[time].dx],
-                                               [0, 1, -self.drift.iloc[time].dy]], dtype=np.float32),
-                                      (data.shape[1], data.shape[0]))
+                data = self.apply_drift_correction(data, time)
+                # data = cv2.warpAffine(np.array(data),
+                #                       np.array(
+                #                               [[1, 0, -self.drift.iloc[time].dx],
+                #                                [0, 1, -self.drift.iloc[time].dy]], dtype=np.float32),
+                #                       (data.shape[1], data.shape[0]))
             img_list.append(Image(data).resize(shape=resize))
         return img_list
 

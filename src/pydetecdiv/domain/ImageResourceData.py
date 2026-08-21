@@ -5,6 +5,7 @@
 """
 import abc
 
+import cv2
 import torch
 import numpy as np
 import pandas as pd
@@ -197,3 +198,9 @@ class ImageResourceData(abc.ABC):
             img = self.auto_channels(C=C, T=frame, Z=Z, crop=crop, drift=drift, alpha=alpha, resize=resize)
             sequence = torch.cat([sequence, img.as_tensor().unsqueeze(dim=0)], dim=0)
         return sequence
+
+    def apply_drift_correction(self, data: np.ndarray, time: int = 0) -> np.ndarray:
+        return cv2.warpAffine(np.array(data),
+                              np.array([[1, 0, -self.drift.iloc[time].dx],
+                                       [0, 1, -self.drift.iloc[time].dy]], dtype=np.float32),
+                              (data.shape[1], data.shape[0]))

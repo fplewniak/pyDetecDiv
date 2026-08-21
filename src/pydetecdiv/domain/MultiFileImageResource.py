@@ -110,11 +110,12 @@ class MultiFileImageResource(ImageResourceData):
         if self.image_files[T, C, Z]:
             data = cast(np.ndarray, tifffile.imread(self.image_files[T, C, Z]))
             if drift and self.drift is not None:
-                data = cv2.warpAffine(np.array(data),
-                                      np.array(
-                                              [[1, 0, -self.drift.iloc[T].dx],
-                                               [0, 1, -self.drift.iloc[T].dy]], dtype=np.float32),
-                                      (data.shape[1], data.shape[0]))
+                data = self.apply_drift_correction(data, T)
+                # data = cv2.warpAffine(np.array(data),
+                #                       np.array(
+                #                               [[1, 0, -self.drift.iloc[T].dx],
+                #                                [0, 1, -self.drift.iloc[T].dy]], dtype=np.float32),
+                #                       (data.shape[1], data.shape[0]))
             # data = tf.image.convert_image_dtype(data, dtype=tf.uint16, saturate=False).numpy()
             data = Image(data).as_array(dtype=imgdtype)
             if sliceX and sliceY:
