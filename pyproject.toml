@@ -9,7 +9,8 @@ description = "Python tools for DetecDiv (https://github.com/gcharvin/DetecDiv/)
 license = {text = "CeCILL FREE SOFTWARE LICENSE AGREEMENT Version 2.1 dated 2013-06-21"}
 authors = [{name = "Frédéric PLEWNIAK", email = "f.plewniak@unistra.fr"}]
 readme = "README.md"
-keywords = ["cell division", "light microscopy", "deep learning", "neural network", "computer vision"]
+keywords = ["cell division", "light microscopy", "time-lapse microscopy",
+            "deep learning", "neural network", "computer vision"]
 classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
@@ -20,7 +21,7 @@ classifiers=[
         "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 
-requires-python = ">=3.10.0, <3.14"
+requires-python = ">=3.10.0"
 dependencies = [
     "bioio",
     "bioio-tifffile",
