@@ -189,9 +189,22 @@ class ImageResourceData(abc.ABC):
                 [Image(self.image(C=c, T=T, Z=Z, sliceX=crop[0], sliceY=crop[1], drift=drift)).resize(shape=resize) for c in C],
                 alpha=alpha)
 
-    def sequence(self, seqlen: int,
-                 C: int = 0, T: int = 0, Z: int | list[int] | tuple[int] = 0, resize: tuple[int, int] | None = None,
-                 crop: tuple[slice, slice] | None = None, drift: bool = False, alpha: bool = False) -> torch.Tensor:
+    def sequence(self, seqlen: int, C: int = 0, T: int = 0, Z: int | list[int] | tuple[int] = 0,
+                 resize: tuple[int, int] | None = None, crop: tuple[slice, slice] | None = None, drift: bool = False,
+                 alpha: bool = False) -> torch.Tensor:
+        """
+        Return an image sequence of length seqlen, starting at frame T
+
+        :param seqlen: the sequence length
+        :param C: the channel
+        :param T: the starting frame
+        :param Z: the Z stack(s)
+        :param resize: new size if frames should be resized to a given size (mainly for AI model compatibility)
+        :param crop: the crop size if the image resource needs to be cropped (mainly for extracting ROIs in a FOV)
+        :param drift: whether drift should be corrected for
+        :param alpha: whether alpha transparency should be used
+        :return: the sequence as a Tensor
+        """
         img = self.auto_channels(C=C, T=T, Z=Z, crop=crop, drift=drift, alpha=alpha, resize=resize)
         sequence = img.as_tensor().unsqueeze(dim=0)
         for frame in range(T + 1, T + seqlen):
@@ -200,6 +213,13 @@ class ImageResourceData(abc.ABC):
         return sequence
 
     def apply_drift_correction(self, data: np.ndarray, time: int = 0) -> np.ndarray:
+        """
+        Apply drift correction to an image array at the given time and return the resulting image data
+
+        :param data: the image data
+        :param time: the frame index
+        :return: the drift-corrected image data
+        """
         return cv2.warpAffine(np.array(data),
                               np.array([[1, 0, -self.drift.iloc[time].dx],
                                        [0, 1, -self.drift.iloc[time].dy]], dtype=np.float32),
