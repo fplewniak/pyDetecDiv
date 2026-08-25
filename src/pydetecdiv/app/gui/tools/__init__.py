@@ -111,7 +111,8 @@ class ToolAction(QAction):
     Generic action to trigger a tool process
     """
 
-    def __init__(self, tool_name: str, command: str, launch: Callable,  parent: QMenu | None = None, enable: Callable | None = None,):
+    def __init__(self, tool_name: str, command: str, launch: Callable,  parent: QMenu | None = None,
+                 enable: Callable | None = None, checkable: bool = False):
         self.tool = PyDetecDiv.tools[tool_name]
         self.command = command
         super().__init__(self.tool.commands[command].title, parent)
@@ -122,6 +123,7 @@ class ToolAction(QAction):
         self._parent = None
         if parent is not None:
             self.add_to_menu(parent)
+        self.setCheckable(checkable)
 
     def add_to_menu(self, menu: QMenu) -> None:
         """
