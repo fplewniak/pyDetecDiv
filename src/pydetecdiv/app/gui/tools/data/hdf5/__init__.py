@@ -33,7 +33,8 @@ class Create_ROI_HDF5Dialog(ToolDialog):
                                                      self.tool.parameters.seqlen,
                                                      self.tool.parameters.annotations,
                                                      ],
-                                                 widget_args={'annotations': {'enable': check.if_annotations}}
+                                                 widget_args={'annotations': {'enable': check.if_annotations,
+                                                                              'default': check.if_annotations,}}
                                                  )
         self.channels = self.addGroupBox(title='Channels',
                                                  parameters=[
