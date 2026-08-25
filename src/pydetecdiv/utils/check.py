@@ -5,6 +5,8 @@ import glob
 import os
 from typing import Callable
 
+import tables
+
 from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
 from pydetecdiv.persistence.project import project_exists
 
@@ -159,4 +161,10 @@ def if_exists_roi_hdf5() -> bool:
     if project_exists(PyDetecDiv.project_name):
         file_paths = glob.glob(os.path.join(PyDetecDiv.tools['cnrs.plewniak.roiseqhdf5creator'].working_dir, '*.h5'))
         return bool(file_paths)
+    return False
+
+def if_hdf5_has_targets() -> bool:
+    if project_exists(PyDetecDiv.project_name):
+        file_paths = glob.glob(os.path.join(PyDetecDiv.tools['cnrs.plewniak.roiseqhdf5creator'].working_dir, '*.h5'))
+        return any([tables.open_file(f, mode='r').__contains__('/targets') for f in file_paths])
     return False
