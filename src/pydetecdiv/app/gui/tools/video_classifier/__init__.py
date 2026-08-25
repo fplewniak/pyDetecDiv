@@ -9,4 +9,4 @@ class VideoClassifierMenu(ToolMenu):
     def __init__(self, tool_name: str, **kwargs: dict[str, Any]):
         super().__init__(tool_name, **kwargs)
         ToolAction(tool_name, 'train_model', TrainModelDialog, self,
-                   enable=check.AND(check.if_annotations, check.if_exists_roi_hdf5))
+                   enable=check.AND(check.if_hdf5_has_targets, check.if_exists_roi_hdf5))
