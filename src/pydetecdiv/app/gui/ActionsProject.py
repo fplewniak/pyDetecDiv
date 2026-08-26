@@ -8,7 +8,8 @@ import polars
 from PySide6.QtCore import Qt, QRegularExpression, Slot, Signal
 from PySide6.QtGui import QAction, QIcon, QRegularExpressionValidator
 from PySide6.QtWidgets import (QLabel, QVBoxLayout, QLineEdit, QDialogButtonBox, QComboBox, QMessageBox, QDialog, QWidget, )
-from pydetecdiv.app import PyDetecDiv, project_list, WaitDialog, pydetecdiv_project, ConfirmDialog
+from pydetecdiv.app import PyDetecDiv, project_list, pydetecdiv_project, ConfirmDialog
+from pydetecdiv.app.gui.core.widgets.threading import WaitDialog
 from pydetecdiv.app import MessageDialog
 from pydetecdiv.app.gui.SourcePath import TableEditor, PathCreator
 from pydetecdiv.persistence.project import delete_project

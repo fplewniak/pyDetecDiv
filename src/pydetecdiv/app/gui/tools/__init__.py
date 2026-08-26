@@ -8,7 +8,8 @@ from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction, QCloseEvent
 from PySide6.QtWidgets import QMenu
 
-from pydetecdiv.app import StdoutWaitDialog, PyDetecDiv, WaitDialog
+from pydetecdiv.app import PyDetecDiv
+from pydetecdiv.app.gui.core.widgets.threading import StdoutWaitDialog, WaitDialog
 from pydetecdiv.app.gui.core.widgets import Dialog
 from pydetecdiv.app.tools import Tool
 

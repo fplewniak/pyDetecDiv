@@ -10,7 +10,8 @@ from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QDialog, QColorDialog, QDialogButtonBox, QPushButton
 
 from pydetecdiv.app.gui.ui.RawData2FOV import Ui_RawData2FOV
-from pydetecdiv.app import PyDetecDiv, pydetecdiv_project, WaitDialog
+from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
+from pydetecdiv.app.gui.core.widgets.threading import WaitDialog
 
 
 class RawData2FOV(QDialog, Ui_RawData2FOV):
