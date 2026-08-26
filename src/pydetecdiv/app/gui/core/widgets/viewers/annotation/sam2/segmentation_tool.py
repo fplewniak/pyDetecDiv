@@ -17,7 +17,8 @@ from PySide6.QtWidgets import (QGraphicsSceneMouseEvent, QMenu, QWidget, QGraphi
 import torch.cuda
 from sam2.build_sam import build_sam2_video_predictor
 
-from pydetecdiv.app import PyDetecDiv, DrawingTools, ConfirmDialog, pydetecdiv_project
+from pydetecdiv.app import PyDetecDiv, DrawingTools, pydetecdiv_project
+from pydetecdiv.app.gui.core.widgets.dialog import ConfirmDialog
 from pydetecdiv.app.gui.core.widgets.viewers.annotation.sam2.objectsmodel import (ObjectsTreeView, PromptProxyModel,
                                                                                   PromptSourceModel, ObjectReferenceRole,
                                                                                   Point, ModelItem, Mask)

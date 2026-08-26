@@ -6,15 +6,12 @@ Definition of global objects and methods for easy access from all parts of the a
 from typing import TYPE_CHECKING, Callable, Any, Generator
 
 import os.path
-import sys
 from collections import defaultdict
 from contextlib import contextmanager
 from enum import StrEnum
-import markdown
 
-from PySide6.QtGui import QCursor, QTextCursor, QCloseEvent
-from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QVBoxLayout, QProgressBar, QDialogButtonBox, QTextEdit, QWidget)
-from PySide6.QtCore import Qt, QSettings, Slot, QThread, Signal, QObject, SignalInstance
+from PySide6.QtWidgets import (QApplication, QDialog, QLabel, QVBoxLayout, QDialogButtonBox)
+from PySide6.QtCore import Qt, QSettings, Signal, SignalInstance
 
 from pydetecdiv.domain.dso import DomainSpecificObject
 from pydetecdiv.settings import get_config_file, get_appdata_dir, get_config_value, Device
@@ -125,58 +122,6 @@ def pydetecdiv_project(project_name: str) -> Generator[Project, Any, None]:
         project.commit()
         project.repository.close()
         project.pool = defaultdict(DomainSpecificObject)
-
-
-class MessageDialog(QDialog):
-    """
-    Generic dialog to communicate a message to the user (error, warning or any other information)
-    """
-
-    def __init__(self, msg: str, html: bool = True):
-        super().__init__()
-        # self.setWindowModality(Qt.WindowModal)
-        label = QLabel()
-        label.setText(msg)
-        if html:
-            label.setTextFormat(Qt.TextFormat.RichText)
-        layout = QVBoxLayout(self)
-        layout.addWidget(label)
-        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close, self)
-        button_box.rejected.connect(self.close)
-        layout.addWidget(button_box)
-        self.setLayout(layout)
-        self.exec()
-
-
-class ConfirmDialog(QDialog):
-    """
-    Generic dialog asking for confirmation from the user to launch an action
-    """
-
-    def __init__(self, msg: str, action: Callable):
-        super().__init__()
-        # self.setWindowModality(Qt.WindowModal)
-        self.action = action
-        label = QLabel()
-        # label.setStyleSheet("""
-        # font-weight: bold;
-        # """)
-        label.setText(msg)
-        layout = QVBoxLayout(self)
-        layout.addWidget(label)
-        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel, self)
-        button_box.accepted.connect(self.accept)
-        button_box.rejected.connect(self.close)
-        layout.addWidget(button_box)
-        self.setLayout(layout)
-        self.exec()
-
-    def accept(self, /):
-        """
-        Close the window and launch action
-        """
-        self.close()
-        self.action()
 
 
 def get_settings() -> QSettings:

@@ -3,8 +3,9 @@ from typing import Any
 import polars
 from PySide6.QtWidgets import QDialogButtonBox, QFileDialog
 
-from pydetecdiv.app import pydetecdiv_project, PyDetecDiv, MessageDialog
+from pydetecdiv.app import pydetecdiv_project, PyDetecDiv
 from pydetecdiv.app.gui.core.widgets import set_connections, EditableTableView
+from pydetecdiv.app.gui.core.widgets.dialog import MessageDialog
 from pydetecdiv.app.models import EditableTableModel
 from pydetecdiv.app.gui.tools import ToolDialog
 from pydetecdiv.domain.Classification import Classification
