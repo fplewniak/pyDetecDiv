@@ -51,13 +51,13 @@ class DriftCorrection(Tool):
         """
         Compute the drift for the select FOVs
         """
+        self.save_run()
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             fov_list = [cast(FOV, project.get_named_object('FOV', name))
                         for name in self.parameters.FOVs.qmodel.selected_keys()]
             total = sum([fov.sizeT for fov in fov_list])
             for i in self.compute_drift(fov_list):
                 yield 100.0 * float(i) / float(total)
-        self.save_run()
 
     def update_fov_list(self) -> None:
         """

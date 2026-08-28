@@ -38,7 +38,7 @@ class PyDetecDivThread(QThread):
         Run the function
         """
         if self.func is not None:
-            self.func(*self.args, **self.kwargs)
+            self.func(*self.args, thread=self, **self.kwargs)
 
 
 class AbstractWaitDialog(QDialog):
@@ -83,6 +83,8 @@ class AbstractWaitDialog(QDialog):
         """
         self.hide()
         PyDetecDiv.app.restoreOverrideCursor()
+        if self.pdd_thread.isRunning():
+            self.pdd_thread.terminate()
         self.destroy()
 
     def cancel(self) -> None:
@@ -139,11 +141,11 @@ class WaitDialog(AbstractWaitDialog):
             self.progress_bar_widget = QProgressBar()
             layout.addWidget(self.progress_bar_widget)
         if cancel_msg:
-            button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel, self)
-            button_box.rejected.connect(self.cancel)
-            button_box.rejected.connect(button_box.hide)
-            button_box.rejected.connect(self.set_ignore_close_event)
-            layout.addWidget(button_box)
+            self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel, self)
+            self.button_box.rejected.connect(self.cancel)
+            # self.button_box.rejected.connect(self.button_box.hide)
+            # self.button_box.rejected.connect(self.set_ignore_close_event)
+            layout.addWidget(self.button_box)
         self.setLayout(layout)
 
     def show_progress(self, i: int) -> None:
@@ -159,9 +161,12 @@ class WaitDialog(AbstractWaitDialog):
         Set cancelling message and request for interruption of thread so that the running job can cleanly close
         processes and roll back any modification if needed.
         """
+        self.button_box.button(QDialogButtonBox.StandardButton.Cancel).setEnabled(False)
+        self.set_ignore_close_event(True)
         if self.cancel_msg:
             self.label.setText(self.cancel_msg)
         super().cancel()
+        # self.close_window()
 
 
 class StdoutWaitDialog(AbstractWaitDialog):

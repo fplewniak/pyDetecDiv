@@ -139,7 +139,7 @@ class ProjectDialog(QDialog):
         self.finished.connect(self.hide)
         self.wait.wait_for(action_method, project_name=p_name)
 
-    def open_create_project(self, project_name: str) -> None:
+    def open_create_project(self, project_name: str, **kwargs) -> None:
         """
         Open a project called project_name, create a new project if it does not exist, and set the Window title
         accordingly before closing the project connexion.
@@ -157,7 +157,7 @@ class ProjectDialog(QDialog):
             self.finished.emit(True)
             MessageDialog(e.message)
 
-    def delete_project(self, project_name: str) -> None:
+    def delete_project(self, project_name: str, **kwargs) -> None:
         """
         Delete project called project_name,
 

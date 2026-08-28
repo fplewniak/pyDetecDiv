@@ -33,6 +33,8 @@ class VideoClassifierTrainer(ModelTrainer):
         Train the video classifier model, running the training loop once per epoch for as many epochs as requested by the user
         """
         print("Training video classifier model...")
+        run = self.tool.save_run()
+
         training_dataset, validation_dataset, class_weights = self.tool.prepare_data_for_training()
 
         print(f'Training dataset size: {len(training_dataset)}')
@@ -73,7 +75,6 @@ class VideoClassifierTrainer(ModelTrainer):
 
         main_scheduler, reduce_on_plateau = set_schedulers(parameters=self.tool.parameters, optimizer=optimizer)
 
-        run = self.tool.save_run()
         run.key_val.update({'checkpoints': self.tool.checkpoints_path(run)})
         run.save().commit()
         pprint(run)

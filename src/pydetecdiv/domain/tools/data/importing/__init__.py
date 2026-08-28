@@ -117,7 +117,7 @@ class DataImportTool(Tool):
                     for i in data_importer.import_func(path, project):
                         yield 100 * float(count + i) / float(file_count)
                     count += i
-                project.commit()
+                # project.commit()
         self.parameters.paths.clear()
 
     def import_annotated_rois(self) -> Generator[float | int, Any, None]:
@@ -126,6 +126,7 @@ class DataImportTool(Tool):
         """
         print('Import annotated ROIs from file')
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            run = self.save_run()
             fov_list = {cast(FOV, fov).name: fov.id_ for fov in project.get_objects('FOV')}
             roi_names = [cast(ROI, roi).name for roi in project.get_objects('ROI')]
             annotated_rois = polars.read_csv(self.parameters.roi_annotation_file.value).filter(polars.col('fov').is_in(fov_list))
@@ -136,7 +137,7 @@ class DataImportTool(Tool):
             if not set(class_names).issubset(set(classification.classes)):
                 print('Invalid class names: not compatible with the current classification scheme.')
                 return
-            run = self.save_run()
+
             i = 0
             for row in annotated_rois.iter_rows(named=True):
                 if row['roi'] not in roi_names:

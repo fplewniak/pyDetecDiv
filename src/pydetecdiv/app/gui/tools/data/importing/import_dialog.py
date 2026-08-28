@@ -30,8 +30,6 @@ class DataImportDialog(ToolDialog):
     """
     Dialog window for importing data files
     """
-    progress = Signal(int)
-    finished = Signal(bool)
 
     def __init__(self, tool: Tool, **kwargs):
         super().__init__(tool, title='Import', **kwargs)
@@ -130,9 +128,6 @@ class AnnotatedROIsImportDialog(ToolDialog):
     """
     Dialog window for importing data files
     """
-    progress = Signal(int)
-    finished = Signal(bool)
-
     def __init__(self, tool: Tool, **kwargs):
         super().__init__(tool, title='Import', **kwargs)
 

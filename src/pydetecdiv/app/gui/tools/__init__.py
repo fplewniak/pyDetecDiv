@@ -8,8 +8,8 @@ from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction, QCloseEvent
 from PySide6.QtWidgets import QMenu
 
-from pydetecdiv.app import PyDetecDiv
-from pydetecdiv.app.gui.core.widgets.threading import StdoutWaitDialog, WaitDialog
+from pydetecdiv.app import PyDetecDiv, pydetecdiv_project
+from pydetecdiv.app.gui.core.widgets.threading import StdoutWaitDialog, WaitDialog, PyDetecDivThread
 from pydetecdiv.app.gui.core.widgets import Dialog
 from pydetecdiv.app.tools import Tool
 
@@ -24,21 +24,31 @@ class ToolDialog(Dialog):
     def __init__(self, tool: Tool, title: str | None = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(title, **kwargs)
         self.tool = cast(type[tool], tool)
+        self.post_command_func = []
+        self.finished.connect(self.on_finished)
 
     def wait_for_command(self, msg: str | None = None, cancel_msg: str | None = None) -> None:
         """
         Launch the conversion and wait for completion
         """
         wait_dialog = WaitDialog(msg, self, title=self.tool.title, cancel_msg=cancel_msg, progress_bar=True, )
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            project.back_up()
         wait_dialog.wait_for(self.run_command_with_progress)
 
-    def run_command_with_progress(self):
+    def run_command_with_progress(self, thread: PyDetecDivThread | None = None):
         """
         Run a command sending progress and finished signals
         """
-        for i in self.tool.callback():
-            self.progress.emit(i)
-        self.finished.emit(True)
+        try:
+            for i in self.tool.callback():
+                if thread and thread.isInterruptionRequested():
+                    self.finished.emit(False)  # False = cancelled
+                    return
+                self.progress.emit(i)
+            self.finished.emit(True)  # True = success
+        except Exception as e:
+            self.finished.emit(e)  # Exception = error
 
     def run_command_with_stdout(self, func: Callable, title: str, close_when_finished: bool = True, **kwargs) -> None:
         """
@@ -55,14 +65,33 @@ class ToolDialog(Dialog):
         Declares the list of functions that should be run when the job is finished
         :param list_func: the list of functions
         """
-        for func in list_func:
-            self.finished.connect(func)
+        self.post_command_func.extend(list_func)
 
     def run_process(self, func: Callable, **kwargs) -> None:
         """
         Run a job
         """
         self.finished.emit(func(**kwargs))
+
+    def on_finished(self, success):
+        if self.tool.run:
+            print(f"Run {self.tool.run.id_}")
+        if success is False:
+            print("Job was cancelled")
+            self.tool.cancel_run()
+            if self.tool.rollback is not None:
+                self.tool.rollback()
+        elif isinstance(success, Exception):
+            print(f"Job failed: {success}")
+            self.tool.cancel_run()
+            if self.tool.rollback is not None:
+                self.tool.rollback()
+        else:
+            with pydetecdiv_project(PyDetecDiv.project_name) as project:
+                project.delete_backup()
+            for func in self.post_command_func:
+                func()
+            print("Job completed successfully")
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """

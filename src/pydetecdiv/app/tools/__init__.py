@@ -25,6 +25,7 @@ class Command:
     name: str
     title: str
     callback: Callable[..., Any]
+    rollback: Callable[..., Any] | None = None
 
 
 class Commands:
@@ -175,6 +176,7 @@ class Tool(ABC):
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             self.run = Run(project=project, **record)
         # project.commit()
+        project.back_up()
         return self.run
 
     @property
@@ -192,6 +194,14 @@ class Tool(ABC):
     def command(self, command: str) -> None:
         self._command = command
 
+    def cancel_run(self):
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            project.restore()
+        if self.run:
+            self.run.key_val.update({'status': 'cancelled'})
+            self.run.validate()
+            self.run.project.commit()
+
     @property
     def callback(self) -> Callable:
         """
@@ -200,6 +210,16 @@ class Tool(ABC):
         :return: the selected command's callback function
         """
         return self.commands[self.command].callback
+
+    @property
+    def rollback(self) -> Callable | None:
+        """
+        A shortcut to the selected command's rollback function, used to launch the function that should be called when cancelling
+        the command
+
+        :return: the selected command's rollback function
+        """
+        return self.commands[self.command].rollback
 
     @property
     def title(self) -> str:

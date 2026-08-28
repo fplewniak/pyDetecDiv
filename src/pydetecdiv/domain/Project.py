@@ -122,6 +122,17 @@ class Project:
         """
         self.repository.rollback()
 
+    def back_up(self) -> None:
+        print('Back up database')
+        self.repository.back_up()
+
+    def restore(self) -> None:
+        print('Restore database')
+        self.repository.restore()
+
+    def delete_backup(self):
+        self.repository.delete_backup()
+
     # def import_images(self, image_files: list[str], destination: str | None = None, **kwargs) -> subprocess.Popen:
     #     """
     #     Import images specified in a list of files into a destination

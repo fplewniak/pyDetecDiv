@@ -102,6 +102,7 @@ class ROIseqHDF5creator(Tool):
         """
         Create the HDF5 file
         """
+        _ = self.save_run()
         if self.parameters.annotations:
             print(f'Create ROI HDF5 file with annotations: {self.parameters.hdf5_file}')
         else:
@@ -201,11 +202,7 @@ class ROIseqHDF5creator(Tool):
                 print(f'{fov.name}: {time.perf_counter() - start_fov}')
 
             h5file.close()
-            _ = self.save_run()
             print(f'Full job in {time.perf_counter() - start} s')
-
-    # def save_run(self, *args, **kwargs) -> None:
-    #     pass
 
 
 class ROIHDF5reader(RoiDataReader):

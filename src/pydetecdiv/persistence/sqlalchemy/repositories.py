@@ -5,6 +5,7 @@ Concrete Repositories using a SQL database with the sqlalchemy toolkit
 """
 import os
 import re
+import shutil
 import sqlite3
 import subprocess
 from datetime import datetime
@@ -68,6 +69,17 @@ class ShallowSQLite3(ShallowDb):
         """
         if self.session_ is not None:
             self.session_.rollback()
+
+    def back_up(self):
+        self.commit()
+        shutil.copyfile(self.name, self.name +'.backup')
+
+    def restore(self):
+        self.commit()
+        shutil.move(self.name + '.backup', self.name)
+
+    def delete_backup(self):
+        os.remove(self.name + '.backup')
 
     def executescript(self, script):
         """
