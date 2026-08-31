@@ -236,7 +236,7 @@ class StdoutWaitDialog(AbstractWaitDialog):
         sys.stdout = sys.__stdout__
         super().close_window()
 
-    def stop_redirection(self, signal: Signal) -> None:
+    def stop_redirection(self, signal: Signal | None = None) -> None:
         """
         Stops capturing the stdout output, which is therefore printed to the terminal again
 

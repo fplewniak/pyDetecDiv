@@ -31,9 +31,9 @@ class ToolDialog(Dialog):
         """
         Launch the conversion and wait for completion
         """
-        wait_dialog = WaitDialog(msg, self, title=self.tool.title, cancel_msg=cancel_msg, progress_bar=True, )
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             project.back_up()
+        wait_dialog = WaitDialog(msg, self, title=self.tool.title, cancel_msg=cancel_msg, progress_bar=True, )
         wait_dialog.wait_for(self.run_command_with_progress)
 
     def run_command_with_progress(self, thread: PyDetecDivThread | None = None):
@@ -50,14 +50,17 @@ class ToolDialog(Dialog):
         except Exception as e:
             self.finished.emit(e)  # Exception = error
 
-    def run_command_with_stdout(self, func: Callable, title: str, close_when_finished: bool = True, **kwargs) -> None:
+    def run_command_with_stdout(self, title: str, close_when_finished: bool = True, cancel_msg: str | None = None, **kwargs) -> None:
         """
         Open a waiting dialog window to wait for completion of job
         """
-        wait_dialog = StdoutWaitDialog(title, self, close_when_finished=close_when_finished)
+        with pydetecdiv_project(PyDetecDiv.project_name) as project:
+            project.back_up()
+        wait_dialog = StdoutWaitDialog(title, self, close_when_finished=close_when_finished, cancel_msg=cancel_msg)
         wait_dialog.resize(500, 300)
         self.finished.connect(wait_dialog.stop_redirection)
-        wait_dialog.wait_for(lambda: self.run_process(func), **kwargs)
+        # wait_dialog.wait_for(self.run_process, **kwargs)
+        wait_dialog.wait_for(self.run_process)
         self.close()
 
     def run_after_process(self, list_func: list[Callable]) -> None:
@@ -67,22 +70,23 @@ class ToolDialog(Dialog):
         """
         self.post_command_func.extend(list_func)
 
-    def run_process(self, func: Callable, **kwargs) -> None:
+    def run_process(self, **kwargs) -> None:
         """
         Run a job
         """
-        self.finished.emit(func(**kwargs))
+        # self.finished.emit(self.tool.callback(**kwargs))
+        self.finished.emit(self.tool.callback())
 
-    def on_finished(self, success):
+    def on_finished(self, signal):
         if self.tool.run:
             print(f"Run {self.tool.run.id_}")
-        if success is False:
+        if signal is False:
             print("Job was cancelled")
             self.tool.cancel_run()
             if self.tool.rollback is not None:
                 self.tool.rollback()
-        elif isinstance(success, Exception):
-            print(f"Job failed: {success}")
+        elif isinstance(signal, Exception):
+            print(f"Job failed: {signal}")
             self.tool.cancel_run()
             if self.tool.rollback is not None:
                 self.tool.rollback()
@@ -90,7 +94,7 @@ class ToolDialog(Dialog):
             with pydetecdiv_project(PyDetecDiv.project_name) as project:
                 project.delete_backup()
             for func in self.post_command_func:
-                func()
+                func(signal)
             print("Job completed successfully")
 
     def closeEvent(self, event: QCloseEvent) -> None:
