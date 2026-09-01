@@ -2,6 +2,7 @@
 Generic widgets providing basic functionalities to build tool GUIs. These widgets are expected to be extended and implemented
 to meet the specific needs of new_tools
 """
+import inspect
 from typing import Any, Callable, cast
 
 from PySide6.QtCore import Signal
@@ -27,14 +28,20 @@ class ToolDialog(Dialog):
         self.post_command_func = []
         self.finished.connect(self.on_finished)
 
-    def wait_for_command(self, msg: str | None = None, cancel_msg: str | None = None) -> None:
+    def wait_for_command(self, msg: str | None = None, cancel_msg: str | None = None, stdout: bool = False) -> None:
         """
         Launch the conversion and wait for completion
         """
         with pydetecdiv_project(PyDetecDiv.project_name) as project:
             project.back_up()
-        wait_dialog = WaitDialog(msg, self, title=self.tool.title, cancel_msg=cancel_msg, progress_bar=True, )
-        wait_dialog.wait_for(self.run_command_with_progress)
+        if stdout:
+            wait_dialog = StdoutWaitDialog(msg, self, cancel_msg=cancel_msg)
+            wait_dialog.resize(500, 300)
+            self.finished.connect(wait_dialog.stop_redirection)
+            wait_dialog.wait_for(self.run_process)
+        else:
+            wait_dialog = WaitDialog(msg, self, title=self.tool.title, cancel_msg=cancel_msg, progress_bar=True, )
+            wait_dialog.wait_for(self.run_command_with_progress)
 
     def run_command_with_progress(self, thread: PyDetecDivThread | None = None):
         """
@@ -50,18 +57,18 @@ class ToolDialog(Dialog):
         except Exception as e:
             self.finished.emit(e)  # Exception = error
 
-    def run_command_with_stdout(self, title: str, close_when_finished: bool = True, cancel_msg: str | None = None, **kwargs) -> None:
-        """
-        Open a waiting dialog window to wait for completion of job
-        """
-        with pydetecdiv_project(PyDetecDiv.project_name) as project:
-            project.back_up()
-        wait_dialog = StdoutWaitDialog(title, self, close_when_finished=close_when_finished, cancel_msg=cancel_msg)
-        wait_dialog.resize(500, 300)
-        self.finished.connect(wait_dialog.stop_redirection)
-        # wait_dialog.wait_for(self.run_process, **kwargs)
-        wait_dialog.wait_for(self.run_process)
-        self.close()
+    # def run_command_with_stdout(self, title: str, close_when_finished: bool = True, cancel_msg: str | None = None, **kwargs) -> None:
+    #     """
+    #     Open a waiting dialog window to wait for completion of job
+    #     """
+    #     with pydetecdiv_project(PyDetecDiv.project_name) as project:
+    #         project.back_up()
+    #     wait_dialog = StdoutWaitDialog(title, self, close_when_finished=close_when_finished, cancel_msg=cancel_msg)
+    #     wait_dialog.resize(500, 300)
+    #     self.finished.connect(wait_dialog.stop_redirection)
+    #     # wait_dialog.wait_for(self.run_process, **kwargs)
+    #     wait_dialog.wait_for(self.run_process)
+    #     self.close()
 
     def run_after_process(self, list_func: list[Callable]) -> None:
         """
@@ -75,7 +82,10 @@ class ToolDialog(Dialog):
         Run a job
         """
         # self.finished.emit(self.tool.callback(**kwargs))
-        self.finished.emit(self.tool.callback())
+        try:
+            self.finished.emit(self.tool.callback())
+        except Exception as e:
+            self.finished.emit(e)
 
     def on_finished(self, signal):
         if self.tool.run:
@@ -94,7 +104,10 @@ class ToolDialog(Dialog):
             with pydetecdiv_project(PyDetecDiv.project_name) as project:
                 project.delete_backup()
             for func in self.post_command_func:
-                func(signal)
+                if len(inspect.signature(func).parameters):
+                    func(signal)
+                else:
+                    func()
             print("Job completed successfully")
 
     def closeEvent(self, event: QCloseEvent) -> None:

@@ -175,7 +175,7 @@ class StdoutWaitDialog(AbstractWaitDialog):
     """
 
     def __init__(self, msg: str, parent: QWidget, cancel_msg: str | None = None, ignore_close_event: bool = True,
-                 close_when_finished: bool = True):
+                 close_when_finished: bool = False):
         super().__init__(parent, cancel_msg=cancel_msg, ignore_close_event=ignore_close_event,
                          close_when_finished=close_when_finished)
         self.log = QTextEdit(self)
